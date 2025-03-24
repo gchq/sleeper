@@ -47,6 +47,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 
 public class AwsCompactionJobDispatcher {
 
+    private AwsCompactionJobDispatcher() {
+    }
+
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionJobDispatcher.class);
 
     public static CompactionJobDispatcher from(
