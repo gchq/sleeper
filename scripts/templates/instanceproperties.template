@@ -1008,11 +1008,13 @@ sleeper.gc.offline.enabled=false
 sleeper.gc.batch.size=10000
 
 # The maximum number of files that can be deleted per invocation of the garbage collector.
-# This restriction is placed to avoid reaching the lambda timeout for the garbage collector, which
-# would leave deleted but uncommitted files in the state store until the next run.
 # If a batch of files exceeds this limit, the whole batch will be deleted before terminating.
 # This limit is applied separately for each Sleeper table.
-sleeper.gc.files.maximum=1000000
+# This restriction is placed to avoid reaching the lambda timeout for the garbage collector. If this
+# timeout is met, it is most likely to happen whilst deleting a batch of files. This would result in
+# files being deleted, but the state store not being updated. Any files caught in such a state will be
+# found on the next garbage collector run and deleted again, updating the state store as expected.
+sleeper.gc.files.maximum=750000
 
 # A file will not be deleted until this number of minutes have passed after it has been marked as
 # ready for garbage collection. The reason for not deleting files immediately after they have been
