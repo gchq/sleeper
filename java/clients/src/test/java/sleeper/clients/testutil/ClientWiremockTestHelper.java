@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
-import static sleeper.task.common.WiremockTestHelper.wiremockAwsV2Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 public class ClientWiremockTestHelper {
 

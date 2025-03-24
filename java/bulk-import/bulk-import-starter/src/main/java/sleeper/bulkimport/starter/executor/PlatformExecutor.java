@@ -33,7 +33,7 @@ public interface PlatformExecutor {
         switch (platform) {
             case "NonPersistentEMR":
                 return new EmrPlatformExecutor(
-                        EmrClient.create(),
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
                         instanceProperties, tablePropertiesProvider);
             case "EKS":
                 return new StateMachinePlatformExecutor(
@@ -41,10 +41,12 @@ public interface PlatformExecutor {
                         instanceProperties);
             case "PersistentEMR":
                 return new PersistentEmrPlatformExecutor(
-                        EmrClient.create(),
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
                         instanceProperties);
             case "EMRServerless":
-                return new EmrServerlessPlatformExecutor(EmrServerlessClient.create(), instanceProperties);
+                return new EmrServerlessPlatformExecutor(
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrServerlessClient.builder()),
+                        instanceProperties);
             default:
                 throw new IllegalArgumentException("Invalid platform: " + platform);
         }
