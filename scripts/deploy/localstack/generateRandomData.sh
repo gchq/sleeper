@@ -16,12 +16,13 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ];  then
-  echo "Usage: $0 <instance-id> <optional-number-of-records>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ];  then
+  echo "Usage: $0 <instance-id> <table-name> <optional-number-of-records>"
   exit 1
 fi
 INSTANCE_ID="$1"
-NUM_OF_RECORDS="$2"
+TABLE_NAME="$2"
+shift 2
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 OUTPUT_DIR="$THIS_DIR/output/"
@@ -30,4 +31,4 @@ VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 mkdir -p "$OUTPUT_DIR"
 java -cp "${SCRIPTS_DIR}/jars/system-test-data-generation-${VERSION}.jar" \
-  sleeper.systemtest.datageneration.GenerateRandomDataFiles "$INSTANCE_ID" "$OUTPUT_DIR" "$NUM_OF_RECORDS"
+  sleeper.systemtest.datageneration.GenerateRandomDataFiles "$INSTANCE_ID" "$TABLE_NAME" "$OUTPUT_DIR" "$@"
