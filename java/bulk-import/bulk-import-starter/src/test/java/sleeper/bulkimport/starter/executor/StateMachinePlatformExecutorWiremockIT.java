@@ -15,11 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.retry.PredefinedRetryPolicies;
-import com.amazonaws.retry.RetryPolicy;
-import com.amazonaws.retry.RetryPolicy.BackoffStrategy;
-import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
@@ -28,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
@@ -62,7 +58,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.localstack.test.WiremockAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 class StateMachinePlatformExecutorWiremockIT {
@@ -220,12 +216,7 @@ class StateMachinePlatformExecutorWiremockIT {
 
     private StateMachinePlatformExecutor createPlatformExecutor(WireMockRuntimeInfo runtimeInfo) {
         return new StateMachinePlatformExecutor(
-                buildAwsV1Client(runtimeInfo, AWSStepFunctionsClientBuilder.standard()
-                        .withClientConfiguration(new ClientConfiguration()
-                                .withRetryPolicy(new RetryPolicy(
-                                        PredefinedRetryPolicies.DEFAULT_RETRY_CONDITION,
-                                        BackoffStrategy.NO_DELAY,
-                                        2, false)))),
+                wiremockAwsV2Client(runtimeInfo, SfnClient.builder()),
                 instanceProperties);
     }
 
