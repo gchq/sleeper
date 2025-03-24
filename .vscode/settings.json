@@ -39,7 +39,9 @@
     "sleeper.core.tracker.ingest.job.IngestJobEventTestData",
     "sleeper.core.tracker.ingest.job.IngestJobStatusTestData",
     "sleeper.core.tracker.job.run.JobRunTestData",
-    "sleeper.core.statestore.testutils.StateStoreUpdatesWrapper"
+    "sleeper.core.statestore.testutils.StateStoreUpdatesWrapper",
+    "sleeper.localstack.test.WiremockAwsV1ClientHelper",
+    "sleeper.localstack.test.WiremockAwsV2ClientHelper"
   ],
   "comment.java.configuration.runtimes": [
     {

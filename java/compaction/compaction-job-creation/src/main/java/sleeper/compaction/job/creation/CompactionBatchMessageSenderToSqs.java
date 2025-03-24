@@ -16,6 +16,8 @@
 package sleeper.compaction.job.creation;
 
 import com.amazonaws.services.sqs.AmazonSQS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
@@ -25,6 +27,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 
 public class CompactionBatchMessageSenderToSqs implements CreateCompactionJobs.BatchMessageSender {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionBatchMessageSenderToSqs.class);
 
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
@@ -37,6 +40,7 @@ public class CompactionBatchMessageSenderToSqs implements CreateCompactionJobs.B
 
     @Override
     public void sendMessage(CompactionJobDispatchRequest dispatchRequest) {
+        LOGGER.info("Sending compaction jobs batch: {}", dispatchRequest);
         sqsClient.sendMessage(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL), serDe.toJson(dispatchRequest));
     }
 }

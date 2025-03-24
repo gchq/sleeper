@@ -21,6 +21,7 @@ import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -166,6 +167,16 @@ public class InMemoryCompaction {
                             .build());
                 }
             });
+        }
+
+        @Override
+        public String sendCompactionBatchGetKey(List<CompactionJob> jobs) {
+            throw new UnsupportedOperationException("Compaction batches are not used in memory");
+        }
+
+        @Override
+        public List<CompactionJobDispatchRequest> drainPendingDeadLetterQueueForWholeInstance() {
+            throw new UnsupportedOperationException("Pending compactions are not used in memory");
         }
 
         private CreateCompactionJobs jobCreator() {
