@@ -49,11 +49,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-tracker</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>compaction-job-creation</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -71,20 +66,6 @@
             <groupId>sleeper</groupId>
             <artifactId>common-invoke-tables</artifactId>
             <version>${project.parent.version}</version>
-        </dependency>
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>localstack-test</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
