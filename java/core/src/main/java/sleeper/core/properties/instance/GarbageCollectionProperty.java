@@ -72,6 +72,12 @@ public interface GarbageCollectionProperty {
                     "store, and updates the state store whenever it has deleted this many files.")
             .defaultValue("10000")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION = Index.propertyBuilder("sleeper.gc.files.maximum")
+            .description("The maximum number of files that can be deleted per invocation of the garbage collector.\n" +
+                    "This restriction is placed to avoid reaching the lambda timeout for the garbage collector, and leaving " +
+                    "deleted but uncommitted files in the state store until the next run.")
+            .defaultValue("1000000")
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.minutes")
             .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
