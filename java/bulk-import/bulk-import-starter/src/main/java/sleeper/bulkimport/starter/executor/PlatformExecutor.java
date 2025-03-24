@@ -15,9 +15,9 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -37,7 +37,7 @@ public interface PlatformExecutor {
                         instanceProperties, tablePropertiesProvider);
             case "EKS":
                 return new StateMachinePlatformExecutor(
-                        AWSStepFunctionsClientBuilder.defaultClient(),
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(SfnClient.builder()),
                         instanceProperties);
             case "PersistentEMR":
                 return new PersistentEmrPlatformExecutor(

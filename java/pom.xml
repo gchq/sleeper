@@ -353,6 +353,11 @@
                 <artifactId>aws-crt</artifactId>
                 <version>${aws-crt.version}</version>
             </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>sfn</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
             <!-- Data processing -->
             <dependency>
                 <groupId>com.joom.spark</groupId>
