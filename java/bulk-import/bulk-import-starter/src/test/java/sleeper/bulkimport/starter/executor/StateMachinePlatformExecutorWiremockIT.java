@@ -23,6 +23,7 @@ import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -39,6 +40,8 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -87,16 +90,12 @@ class StateMachinePlatformExecutorWiremockIT {
                 .id("test-job")
                 .files(List.of("file.parquet"))
                 .build();
-        stubFor(post("/")
-                .withHeader("X-Amz-Target", equalTo("AWSStepFunctions.StartExecution"))
-                .willReturn(aResponse().withStatus(200)));
+        stubStartExecutionIsSuccessful();
 
         // When
         createExecutor(runtimeInfo).runJob(job, "test-job-run");
 
         // Then
-        List<LoggedRequest> requests = findAll(postRequestedFor(urlEqualTo("/")));
-        LOGGER.info("Found requests: {}", requests);
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", equalTo("AWSStepFunctions.StartExecution"))))
                 .singleElement().extracting(LoggedRequest::getBodyAsString)
@@ -107,6 +106,103 @@ class StateMachinePlatformExecutorWiremockIT {
                             .satisfies(input -> assertThatJson(input)
                                     .isEqualTo(exampleString("example/step-functions/startexecution-input.json")));
                 });
+    }
+
+    @Test
+    void shouldOverwriteDefaultConfigurationIfSpecifiedInJob(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = jobForTable()
+                .id("my-job")
+                .files(List.of("file1.parquet"))
+                .sparkConf("spark.driver.memory", "10g")
+                .build();
+        stubStartExecutionIsSuccessful();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-job-run");
+
+        // Then
+        findInputJson(input -> assertThatJson(input)
+                .inPath("$.args").isArray().extracting(Objects::toString)
+                .filteredOn(s -> s.startsWith("spark.driver.memory="))
+                .containsExactly("spark.driver.memory=10g"));
+    }
+
+    @Test
+    void shouldIgnoreUserConfigurationIfSetToNull(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob myJob = jobForTable()
+                .id("my-job")
+                .files(List.of("file1.parquet"))
+                .sparkConf("spark.driver.memory", null)
+                .build();
+        stubStartExecutionIsSuccessful();
+
+        // When
+        createExecutor(runtimeInfo).runJob(myJob);
+
+        // Then
+        findInputJson(input -> assertThatJson(input)
+                .inPath("$.args").isArray().extracting(Objects::toString)
+                .filteredOn(s -> s.startsWith("spark.driver.memory="))
+                .containsExactly("spark.driver.memory=7g"));
+    }
+
+    @Test
+    void shouldTruncateTableNameInStateMachineExecutionName(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        tableProperties.set(TABLE_NAME, "this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-combined-with-the-job-id");
+        BulkImportJob myJob = jobForTable()
+                .id("my-job")
+                .files(List.of("file1.parquet"))
+                .build();
+        stubStartExecutionIsSuccessful();
+
+        // When
+        createExecutor(runtimeInfo).runJob(myJob);
+
+        // Then
+        findRequestBody(body -> assertThatJson(body)
+                .inPath("$.name").asString()
+                .isEqualTo("this-is-a-long-table-name-that-will-not-fit-in-an-execution-name-when-com-my-job")
+                .hasSize(80));
+    }
+
+    @Test
+    void shouldNotTruncateTableNameInStateMachineExecutionNameWhenItFits(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        tableProperties.set(TABLE_NAME, "short-table-name");
+        BulkImportJob myJob = jobForTable()
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+        stubStartExecutionIsSuccessful();
+
+        // When
+        createExecutor(runtimeInfo).runJob(myJob);
+
+        // Then
+        findRequestBody(body -> assertThatJson(body)
+                .inPath("$.name").asString()
+                .isEqualTo("short-table-name-my-job"));
+    }
+
+    private void stubStartExecutionIsSuccessful() {
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("AWSStepFunctions.StartExecution"))
+                .willReturn(aResponse().withStatus(200)));
+    }
+
+    private void findInputJson(Consumer<String> assertion) {
+        findRequestBody(body -> assertThatJson(body)
+                .inPath("$.input").asString().satisfies(assertion));
+    }
+
+    private void findRequestBody(Consumer<String> assertion) {
+        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("AWSStepFunctions.StartExecution"))))
+                .singleElement().extracting(LoggedRequest::getBodyAsString)
+                .satisfies(assertion);
     }
 
     private BulkImportExecutor createExecutor(WireMockRuntimeInfo runtimeInfo) {
