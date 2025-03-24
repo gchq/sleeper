@@ -1011,6 +1011,7 @@ sleeper.gc.batch.size=10000
 # This restriction is placed to avoid reaching the lambda timeout for the garbage collector, which
 # would leave deleted but uncommitted files in the state store until the next run.
 # If a batch of files exceeds this limit, the whole batch will be deleted before terminating.
+# This limit is applied separately for each Sleeper table.
 sleeper.gc.files.maximum=1000000
 
 # A file will not be deleted until this number of minutes have passed after it has been marked as

@@ -76,7 +76,8 @@ public interface GarbageCollectionProperty {
             .description("The maximum number of files that can be deleted per invocation of the garbage collector.\n" +
                     "This restriction is placed to avoid reaching the lambda timeout for the garbage collector, " +
                     "which would leave deleted but uncommitted files in the state store until the next run.\n" +
-                    "If a batch of files exceeds this limit, the whole batch will be deleted before terminating.")
+                    "If a batch of files exceeds this limit, the whole batch will be deleted before terminating.\n" +
+                    "This limit is applied separately for each Sleeper table.")
             .defaultValue("1000000")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.minutes")
