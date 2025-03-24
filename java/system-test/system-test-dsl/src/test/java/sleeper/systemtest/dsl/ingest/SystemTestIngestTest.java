@@ -21,10 +21,16 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.LongStream;
+import java.util.stream.StreamSupport;
 
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
@@ -75,5 +81,25 @@ public class SystemTestIngestTest {
                 .containsExactly(record);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
+    }
+
+    @Test
+    void shouldIngestSplitIntoFiles(SleeperSystemTest sleeper) {
+        // Given
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100_000));
+
+        // When
+        sleeper.ingest().direct(null)
+                .splitIntoFiles(1_000, numbers);
+
+        // Then
+        assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
+                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 100_000))));
+        assertThat(sleeper.tableFiles().references())
+                .hasSize(1_000);
+    }
+
+    private static <T> Set<T> setFrom(Iterable<T> iterable) {
+        return StreamSupport.stream(iterable.spliterator(), false).collect(toSet());
     }
 }

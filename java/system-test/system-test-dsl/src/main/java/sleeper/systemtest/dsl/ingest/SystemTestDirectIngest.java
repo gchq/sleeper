@@ -18,9 +18,11 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 public class SystemTestDirectIngest {
@@ -33,6 +35,13 @@ public class SystemTestDirectIngest {
         this.instance = instance;
         this.driver = driver;
         this.tempDir = tempDir;
+    }
+
+    public SystemTestDirectIngest splitIntoFiles(int numFiles, RecordNumbers numbers) {
+        int recordsPerFile = numbers.numRecords() / numFiles;
+        IntStream.range(0, numFiles)
+                .forEach(i -> numberedRecords(numbers.range(i * recordsPerFile, i * recordsPerFile + recordsPerFile)));
+        return this;
     }
 
     public SystemTestDirectIngest numberedRecords(LongStream numbers) {
