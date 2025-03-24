@@ -57,7 +57,7 @@ public class BucketUtils {
         ListObjectsV2Request req = new ListObjectsV2Request()
                 .withBucketName(bucketName)
                 .withPrefix(prefix + "/")
-                .withMaxKeys(100);
+                .withMaxKeys(1000);
         ListObjectsV2Result result;
 
         LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);
