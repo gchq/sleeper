@@ -252,12 +252,5 @@
             <outputDirectory>scripts/jars/</outputDirectory>
             <destName>bulk-export-task-creator-${project.version}.jar</destName>
         </file>
-        <file>
-            <source>
-                ${project.basedir}/../bulk-export/bulk-export-task-execution/target/bulk-export-task-execution-${project.version}-utility.jar
-            </source>
-            <outputDirectory>scripts/jars/</outputDirectory>
-            <destName>bulk-export-task-execution-${project.version}.jar</destName>
-        </file>
     </files>
 </assembly>
