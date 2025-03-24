@@ -32,6 +32,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -168,6 +169,36 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeFilesReport(oldEnoughTime,
                             activeReference("new-file.parquet")));
+        }
+
+        @Test
+        void shouldDeleteFilesUpToLimitWithinSingleInvocation() throws Exception {
+            // Given
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            stateStore.fixFileUpdateTime(oldEnoughTime);
+            table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION, 2);
+            createFileWithNoReferencesByCompaction(stateStore, "old-file1.parquet", "new-file1.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, "old-file2.parquet", "new-file2.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, "old-file3.parquet", "new-file3.parquet");
+
+            // When
+            collectGarbageAtTime(currentTime);
+
+            // Then
+            assertThat(filesInBucket).isEqualTo(Set.of(
+                    "old-file3.parquet",
+                    "new-file1.parquet",
+                    "new-file2.parquet",
+                    "new-file3.parquet"));
+            assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
+                    activeAndReadyForGCFilesReport(oldEnoughTime,
+                            List.of(activeReference("new-file1.parquet"),
+                                    activeReference("new-file2.parquet"),
+                                    activeReference("new-file3.parquet")),
+                            List.of("old-file3.parquet")));
         }
     }
 
