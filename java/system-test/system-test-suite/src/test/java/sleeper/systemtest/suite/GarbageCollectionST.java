@@ -80,7 +80,10 @@ public class GarbageCollectionST {
         SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, numberOfFilesToGC)
                 .forEach(i -> ingest.numberedRecords(numbers.range(i * 100, i * 100 + 100)));
-        sleeper.compaction().createJobs(numberOfCompactions).waitForTasks(1).waitForJobs();
+        sleeper.compaction()
+                .createJobs(numberOfCompactions,
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(5)))
+                .waitForTasks(1).waitForJobs();
 
         // When
         sleeper.garbageCollection().invoke().waitFor(
