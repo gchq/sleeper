@@ -94,15 +94,16 @@ public class GarbageCollector {
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) {
-        int garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
+        int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
+        int maxFiles = instanceProperties.getInt(GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
         List<String> batch = new ArrayList<>();
         while (readyForGC.hasNext() &&
-                deleted.getDeletedFileCount() < instanceProperties.getInt(GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION)) {
+                deleted.getDeletedFileCount() < maxFiles) {
             String filename = readyForGC.next();
             batch.add(filename);
-            if (batch.size() == garbageCollectorBatchSize) {
+            if (batch.size() == batchSize) {
                 deleteBatch(batch, tableProperties, stateStore, deleted);
                 batch.clear();
             }
