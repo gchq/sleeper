@@ -45,6 +45,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 public class DispatchCompactionJobsClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(DispatchCompactionJobsClient.class);
 
+    private DispatchCompactionJobsClient() {
+    }
+
     public static void main(String[] args) throws ObjectFactoryException, IOException {
         if (args.length < 1) {
             System.out.println("Usage: <instance-id>");
