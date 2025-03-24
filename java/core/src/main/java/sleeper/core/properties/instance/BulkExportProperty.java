@@ -79,7 +79,7 @@ public interface BulkExportProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_ECR_REPO = Index.propertyBuilder("sleeper.bulk.export.ecr.repo")
             .description("The name of the repository for the bulk export container. The Docker image should have been" +
-                    "uploaded to an ECR repository of this name in this account.")
+                    " uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_TASK_CREATION_PERIOD_IN_MINUTES = Index
