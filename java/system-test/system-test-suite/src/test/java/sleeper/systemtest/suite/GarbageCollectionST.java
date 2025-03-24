@@ -91,7 +91,7 @@ public class GarbageCollectionST {
                 .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, numberOfRecords))));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
-            assertThat(files.listFileReferences()).hasSize(200);
+            assertThat(files.listFileReferences()).hasSize(numberOfCompactions);
         });
     }
 
