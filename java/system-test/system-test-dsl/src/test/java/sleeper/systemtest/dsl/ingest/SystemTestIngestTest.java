@@ -91,7 +91,7 @@ public class SystemTestIngestTest {
 
         // When
         sleeper.ingest().direct(null)
-                .splitIntoFiles(1_000, numbers);
+                .splitIngests(1_000, numbers);
 
         // Then
         assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
@@ -107,7 +107,7 @@ public class SystemTestIngestTest {
         SystemTestDirectIngest ingest = sleeper.ingest().direct(null);
 
         // When / Then
-        assertThatThrownBy(() -> ingest.splitIntoFiles(3, numbers))
+        assertThatThrownBy(() -> ingest.splitIngests(3, numbers))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

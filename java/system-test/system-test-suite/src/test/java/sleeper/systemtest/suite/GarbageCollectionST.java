@@ -77,7 +77,7 @@ public class GarbageCollectionST {
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
         RecordNumbers records = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
         sleeper.ingest().direct(tempDir)
-                .splitIntoFiles(numberOfFilesToGC, records);
+                .splitIngests(numberOfFilesToGC, records);
         sleeper.compaction()
                 .createJobs(numberOfCompactions)
                 .waitForTasks(1).waitForJobs();

@@ -40,14 +40,14 @@ public class SystemTestDirectIngest {
         this.tempDir = tempDir;
     }
 
-    public SystemTestDirectIngest splitIntoFiles(int numFiles, RecordNumbers numbers) {
-        if (numbers.numRecords() % numFiles != 0) {
-            throw new IllegalArgumentException("Number of files must split number of records exactly");
+    public SystemTestDirectIngest splitIngests(int numIngests, RecordNumbers numbers) {
+        if (numbers.numRecords() % numIngests != 0) {
+            throw new IllegalArgumentException("Number of ingests must split number of records exactly");
         }
-        int recordsPerFile = numbers.numRecords() / numFiles;
+        int recordsPerIngest = numbers.numRecords() / numIngests;
         List<FileReference> fileReferences = new ArrayList<>();
-        IntStream.range(0, numFiles)
-                .mapToObj(i -> numbers.range(i * recordsPerFile, i * recordsPerFile + recordsPerFile))
+        IntStream.range(0, numIngests)
+                .mapToObj(i -> numbers.range(i * recordsPerIngest, i * recordsPerIngest + recordsPerIngest))
                 .map(range -> instance.numberedRecords().iteratorFrom(range))
                 .forEach(records -> driver.ingest(tempDir, records, fileReferences::addAll));
         AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(instance.getStateStore());
