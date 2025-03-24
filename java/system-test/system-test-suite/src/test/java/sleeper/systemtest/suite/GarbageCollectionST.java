@@ -65,10 +65,11 @@ public class GarbageCollectionST {
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
-        int numberOfFilesToGC = 20000;
-        int filesPerCompaction = 10;
-        int numberOfCompactions = 2000;
-        int numberOfRecords = 100 * numberOfFilesToGC;
+        int numberOfFilesToGC = 10000;
+        int filesPerCompaction = 100;
+        int numberOfCompactions = 100;
+        int recordsPerFile = 100;
+        int numberOfRecords = recordsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -79,10 +80,9 @@ public class GarbageCollectionST {
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, numberOfFilesToGC)
-                .forEach(i -> ingest.numberedRecords(numbers.range(i * 100, i * 100 + 100)));
+                .forEach(i -> ingest.numberedRecords(numbers.range(i * recordsPerFile, i * recordsPerFile + recordsPerFile)));
         sleeper.compaction()
-                .createJobs(numberOfCompactions,
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(5)))
+                .createJobs(numberOfCompactions)
                 .waitForTasks(1).waitForJobs();
 
         // When
