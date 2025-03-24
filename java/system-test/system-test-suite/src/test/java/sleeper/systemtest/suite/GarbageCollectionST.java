@@ -24,7 +24,6 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -34,7 +33,6 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
@@ -77,10 +75,9 @@ public class GarbageCollectionST {
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
-        SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
-        IntStream.range(0, numberOfFilesToGC)
-                .forEach(i -> ingest.numberedRecords(numbers.range(i * recordsPerFile, i * recordsPerFile + recordsPerFile)));
+        RecordNumbers records = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
+        sleeper.ingest().direct(tempDir)
+                .splitIntoFiles(numberOfFilesToGC, records);
         sleeper.compaction()
                 .createJobs(numberOfCompactions)
                 .waitForTasks(1).waitForJobs();

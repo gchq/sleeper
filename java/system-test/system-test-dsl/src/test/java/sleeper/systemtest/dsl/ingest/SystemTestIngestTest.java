@@ -32,6 +32,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
@@ -97,6 +98,17 @@ public class SystemTestIngestTest {
                 .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1_000);
+    }
+
+    @Test
+    void shouldNotSplitIntoFilesIfNotExactSplit(SleeperSystemTest sleeper) {
+        // Given
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 10));
+        SystemTestDirectIngest ingest = sleeper.ingest().direct(null);
+
+        // When / Then
+        assertThatThrownBy(() -> ingest.splitIntoFiles(3, numbers))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static <T> Set<T> setFrom(Iterable<T> iterable) {

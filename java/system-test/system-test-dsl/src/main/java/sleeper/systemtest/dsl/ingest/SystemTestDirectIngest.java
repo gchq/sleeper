@@ -17,10 +17,13 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.record.Record;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -38,9 +41,16 @@ public class SystemTestDirectIngest {
     }
 
     public SystemTestDirectIngest splitIntoFiles(int numFiles, RecordNumbers numbers) {
+        if (numbers.numRecords() % numFiles != 0) {
+            throw new IllegalArgumentException("Number of files must split number of records exactly");
+        }
         int recordsPerFile = numbers.numRecords() / numFiles;
+        List<FileReference> fileReferences = new ArrayList<>();
         IntStream.range(0, numFiles)
-                .forEach(i -> numberedRecords(numbers.range(i * recordsPerFile, i * recordsPerFile + recordsPerFile)));
+                .mapToObj(i -> numbers.range(i * recordsPerFile, i * recordsPerFile + recordsPerFile))
+                .map(range -> instance.numberedRecords().iteratorFrom(range))
+                .forEach(records -> driver.ingest(tempDir, records, fileReferences::addAll));
+        AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(instance.getStateStore());
         return this;
     }
 
