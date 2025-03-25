@@ -55,7 +55,7 @@ public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
         expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export");
+        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(ACCOUNT, stsClient.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());

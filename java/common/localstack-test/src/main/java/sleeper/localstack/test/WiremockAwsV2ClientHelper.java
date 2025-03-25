@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.task.common;
+package sleeper.localstack.test;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.ecs.EcsClient;
 
 import java.net.URI;
 
-import static com.amazonaws.regions.Regions.DEFAULT_REGION;
-
-public class WiremockTestHelper {
+public class WiremockAwsV2ClientHelper {
 
     public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
-    private WiremockTestHelper() {
+    private WiremockAwsV2ClientHelper() {
     }
 
     public static <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>, T> T wiremockAwsV2Client(WireMockRuntimeInfo runtimeInfo, B builder) {
@@ -44,17 +37,5 @@ public class WiremockTestHelper {
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY)))
                 .build();
-    }
-
-    public static EcsClient wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
-        return wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
-    }
-
-    public static AwsClientBuilder.EndpointConfiguration wiremockEndpointConfiguration(WireMockRuntimeInfo runtimeInfo) {
-        return new AwsClientBuilder.EndpointConfiguration(runtimeInfo.getHttpBaseUrl(), DEFAULT_REGION.getName());
-    }
-
-    public static AWSCredentialsProvider wiremockCredentialsProvider() {
-        return new AWSStaticCredentialsProvider(new BasicAWSCredentials(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY));
     }
 }

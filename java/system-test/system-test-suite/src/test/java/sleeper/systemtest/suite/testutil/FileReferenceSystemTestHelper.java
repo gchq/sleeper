@@ -17,12 +17,18 @@
 package sleeper.systemtest.suite.testutil;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.util.List;
 
 public class FileReferenceSystemTestHelper {
 
     private FileReferenceSystemTestHelper() {
+    }
+
+    public static FileReferenceFactory fileFactory(SleeperSystemTest sleeper) {
+        return FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), sleeper.partitioning().tree());
     }
 
     public static long numberOfRecordsIn(List<? extends FileReference> files) {

@@ -84,7 +84,7 @@ public class GeneratePropertiesTemplates {
             BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner",
             BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless",
             ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution",
-            BULK_EXPORT_ECR_REPO, "<insert-unique-sleeper-id>/bulk-export");
+            BULK_EXPORT_ECR_REPO, "<insert-unique-sleeper-id>/bulk-export-task-execution");
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",

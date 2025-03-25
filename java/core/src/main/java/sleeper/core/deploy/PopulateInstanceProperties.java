@@ -116,7 +116,7 @@ public class PopulateInstanceProperties {
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
         properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
-        properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export");
+        properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export-task-execution");
         properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
         properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");
         properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, ecrPrefix + "/bulk-import-runner-emr-serverless");

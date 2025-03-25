@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -93,14 +94,16 @@ public class GarbageCollector {
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) {
-        int garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
+        int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
+        int maxFiles = instanceProperties.getInt(GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
         List<String> batch = new ArrayList<>();
-        while (readyForGC.hasNext()) {
+        while (readyForGC.hasNext() &&
+                deleted.getDeletedFileCount() < maxFiles) {
             String filename = readyForGC.next();
             batch.add(filename);
-            if (batch.size() == garbageCollectorBatchSize) {
+            if (batch.size() == batchSize) {
                 deleteBatch(batch, tableProperties, stateStore, deleted);
                 batch.clear();
             }

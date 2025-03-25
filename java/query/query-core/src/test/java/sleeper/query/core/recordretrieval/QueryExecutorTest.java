@@ -292,7 +292,7 @@ public class QueryExecutorTest {
         @Test
         public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
             // Given files are added after the executor is first initialised
-            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
 
@@ -307,7 +307,7 @@ public class QueryExecutorTest {
         @Test
         public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
             // Given files are added after the executor is first initialised
-            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
 
