@@ -1,27 +1,27 @@
 ## Instance Properties
 
-[Common](/instance/common.md)<br>
-[Table State](/instance/table_state.md)<br>
-[Ingest](/instance/ingest.md)<br>
-[Bulk Export](/instance/bulk_export.md)<br>
-[Bulk Import](/instance/bulk_import.md)<br>
-[Partition Splitting](/instance/partition_splitting.md)<br>
-[Garbage Collector](/instance/garbage_collector.md)<br>
-[Compaction](/instance/compaction.md)<br>
-[Query](/instance/query.md)<br>
-[Metrics](/instance/metrics.md)<br>
-[Logging](/instance/logging.md)<br>
-[Athena](/instance/athena.md)<br>
-[Table Property Default](/instance/table_property_default.md)<br>
+[Common](/properties/instance/common.md)<br>
+[Table State](/properties/instance/table_state.md)<br>
+[Ingest](/properties/instance/ingest.md)<br>
+[Bulk Export](/properties/instance/bulk_export.md)<br>
+[Bulk Import](/properties/instance/bulk_import.md)<br>
+[Partition Splitting](/properties/instance/partition_splitting.md)<br>
+[Garbage Collector](/properties/instance/garbage_collector.md)<br>
+[Compaction](/properties/instance/compaction.md)<br>
+[Query](/properties/instance/query.md)<br>
+[Metrics](/properties/instance/metrics.md)<br>
+[Logging](/properties/instance/logging.md)<br>
+[Athena](/properties/instance/athena.md)<br>
+[Table Property Default](/properties/instance/table_property_default.md)<br>
 
 ## Table Properties
 
-[Data Definition](/table/data_definition.md)<br>
-[Partition Splitting](/table/partition_splitting.md)<br>
-[Data Storage](/table/data_storage.md)<br>
-[Compaction](/table/compaction.md)<br>
-[Metadata](/table/metadata.md)<br>
-[Ingest](/table/ingest.md)<br>
-[Bulk Import](/table/bulk_import.md)<br>
-[Ingest Batcher](/table/ingest_batcher.md)<br>
-[Query Execution](/table/query_execution.md)<br>
+[Data Definition](/properties/table/data_definition.md)<br>
+[Partition Splitting](/properties/table/partition_splitting.md)<br>
+[Data Storage](/properties/table/data_storage.md)<br>
+[Compaction](/properties/table/compaction.md)<br>
+[Metadata](/properties/table/metadata.md)<br>
+[Ingest](/properties/table/ingest.md)<br>
+[Bulk Import](/properties/table/bulk_import.md)<br>
+[Ingest Batcher](/properties/table/ingest_batcher.md)<br>
+[Query Execution](/properties/table/query_execution.md)<br>
