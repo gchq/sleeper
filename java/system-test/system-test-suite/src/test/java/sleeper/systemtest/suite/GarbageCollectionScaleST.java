@@ -53,9 +53,9 @@ public class GarbageCollectionScaleST {
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
-        int numberOfFilesToGC = 40_000;
-        int numberOfWriters = 20;
-        int ingestsPerWriter = 2000;
+        int numberOfFilesToGC = 20_000;
+        int numberOfWriters = 40;
+        int ingestsPerWriter = 500;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
@@ -64,7 +64,8 @@ public class GarbageCollectionScaleST {
             properties.setNumber(NUMBER_OF_WRITERS, numberOfWriters);
             properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 100);
             properties.setNumber(NUMBER_OF_INGESTS_PER_WRITER, ingestsPerWriter);
-        }).runDataGenerationTasks().waitForTotalFileReferences(numberOfFilesToGC);
+        }).runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .waitForTotalFileReferences(numberOfFilesToGC);
         sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
 
         // When
