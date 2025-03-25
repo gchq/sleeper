@@ -37,7 +37,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGE
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
 @Expensive // Works with a larger set of data requiring the system test cluster
@@ -47,7 +47,7 @@ public class GarbageCollectionScaleST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceNoTables(COMPACTION_PERFORMANCE);
+        sleeper.connectToInstanceNoTables(MAIN);
     }
 
     @Test
