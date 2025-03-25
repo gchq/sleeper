@@ -27,7 +27,7 @@ The following improvements will be worked on in future (these are in no particul
 - Scaling improvements.
     - https://github.com/gchq/sleeper/issues/4215 Service that maintains an up-to-date cache of the state store.
     - https://github.com/gchq/sleeper/issues/4218 Batch up updates to job trackers from state store commits.
-    - https://github.com/gchq/sleeper/issues/3117 Improve throughput of transactions with multiple Sleeper tables.
+    - https://github.com/gchq/sleeper/issues/4525 Mitigate transaction throughput limitations.
     - https://github.com/gchq/sleeper/issues/4214 Mitigate memory limitations with multiple Sleeper tables.
     - https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
     - https://github.com/gchq/sleeper/issues/4394 Parallelise garbage collection.
