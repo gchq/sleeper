@@ -65,7 +65,7 @@ public class GarbageCollectionST {
         // Given
         int numberOfFilesToGC = 1000;
         int filesPerCompaction = 50;
-        int numberOfCompactions = 50;
+        int numberOfCompactions = 20;
         int recordsPerFile = 100;
         int numberOfRecords = recordsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
