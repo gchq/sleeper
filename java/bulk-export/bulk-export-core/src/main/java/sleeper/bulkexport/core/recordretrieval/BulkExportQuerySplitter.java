@@ -91,7 +91,7 @@ public class BulkExportQuerySplitter {
                 .collect(Collectors.toList());
         partitionTree = new PartitionTree(partitions);
         partitionToFiles = partitionToFileMapping;
-        nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
+        nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.SECONDS);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
                 tableProperties.getStatus(), partitions.size(), nextInitialiseTime);
     }
