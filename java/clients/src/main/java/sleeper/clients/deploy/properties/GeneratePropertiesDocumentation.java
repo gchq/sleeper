@@ -88,7 +88,7 @@ public class GeneratePropertiesDocumentation {
     }
 
     private static String pageLinkFromGroupName(PropertyGroup group, String directory) {
-        return String.format("[%s](usage/properties/%s%s)<br>", group.getName(), directory, groupNameToFileName(group));
+        return String.format("[%s](properties/%s%s)<br>", group.getName(), directory, groupNameToFileName(group));
     }
 
     /**
