@@ -43,7 +43,7 @@ public class GeneratePropertiesDocumentation {
         Path instancePath = Files.createDirectories(headPath.resolve("instance/"));
         InstancePropertyGroup.getAll().forEach(instancePropertyGroup -> {
             try {
-                writeFile(instancePath.resolve(instancePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
+                writeFile(instancePath.resolve(groupNameToFileName(instancePropertyGroup)),
                         stream -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + instancePropertyGroup.getName());
@@ -54,7 +54,7 @@ public class GeneratePropertiesDocumentation {
         Path tablePath = Files.createDirectories(headPath.resolve("table/"));
         TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
             try {
-                writeFile(tablePath.resolve(tablePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
+                writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup)),
                         stream -> writePropertiesMarkdownFile(new TableProperties(new InstanceProperties()), tablePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
@@ -84,5 +84,9 @@ public class GeneratePropertiesDocumentation {
         try (OutputStream stream = Files.newOutputStream(file)) {
             generator.accept(stream);
         }
+    }
+
+    private static String groupNameToFileName(PropertyGroup group) {
+        return group.getName().toLowerCase().replace(" ", "_") + ".md";
     }
 }
