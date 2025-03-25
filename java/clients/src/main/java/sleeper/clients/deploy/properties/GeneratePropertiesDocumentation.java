@@ -77,18 +77,18 @@ public class GeneratePropertiesDocumentation {
         out.println("## Instance Properties");
         out.println();
         InstancePropertyGroup.getAll().forEach(group -> {
-            out.println(pageLinkFromGroupName(group));
+            out.println(pageLinkFromGroupName(group, "instance/"));
         });
         out.println();
         out.println("## Table Properties");
         out.println();
         TablePropertyGroup.getAll().forEach(group -> {
-            out.println(pageLinkFromGroupName(group));
+            out.println(pageLinkFromGroupName(group, "table/"));
         });
     }
 
-    private static String pageLinkFromGroupName(PropertyGroup group) {
-        return String.format("[%s](usage/properties/%s)", group.getName(), groupNameToFileName(group));
+    private static String pageLinkFromGroupName(PropertyGroup group, String directory) {
+        return String.format("[%s](usage/properties/%s%s)<br>", group.getName(), directory, groupNameToFileName(group));
     }
 
     /**
