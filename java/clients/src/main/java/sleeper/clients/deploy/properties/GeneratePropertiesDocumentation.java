@@ -44,7 +44,7 @@ public class GeneratePropertiesDocumentation {
         Path instancePath = Files.createDirectories(headPath.resolve("instance/"));
         InstancePropertyGroup.getAll().forEach(instancePropertyGroup -> {
             try {
-                writeFile(instancePath.resolve(groupNameToFileName(instancePropertyGroup)),
+                writeFile(instancePath.resolve(groupNameToFileName(instancePropertyGroup.getName())),
                         stream -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + instancePropertyGroup.getName());
@@ -55,7 +55,7 @@ public class GeneratePropertiesDocumentation {
         Path tablePath = Files.createDirectories(headPath.resolve("table/"));
         TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
             try {
-                writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup)),
+                writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup.getName())),
                         stream -> writePropertiesMarkdownFile(new TableProperties(new InstanceProperties()), tablePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
@@ -76,19 +76,19 @@ public class GeneratePropertiesDocumentation {
         PrintStream out = new PrintStream(stream);
         out.println("## Instance Properties");
         out.println();
-        InstancePropertyGroup.getAll().forEach(group -> {
+        InstancePropertyGroup.getAllGroupNamesAlphabetically().forEach(group -> {
             out.println(pageLinkFromGroupName(group, "instance/"));
         });
         out.println();
         out.println("## Table Properties");
         out.println();
-        TablePropertyGroup.getAll().forEach(group -> {
+        TablePropertyGroup.getAllGroupNamesAlphabetically().forEach(group -> {
             out.println(pageLinkFromGroupName(group, "table/"));
         });
     }
 
-    private static String pageLinkFromGroupName(PropertyGroup group, String directory) {
-        return String.format("[%s](properties/%s%s)<br>", group.getName(), directory, groupNameToFileName(group));
+    private static String pageLinkFromGroupName(String group, String directory) {
+        return String.format("[%s](properties/%s%s)<br>", group, directory, groupNameToFileName(group));
     }
 
     /**
@@ -115,7 +115,7 @@ public class GeneratePropertiesDocumentation {
         }
     }
 
-    private static String groupNameToFileName(PropertyGroup group) {
-        return group.getName().toLowerCase().replace(" ", "_") + ".md";
+    private static String groupNameToFileName(String group) {
+        return group.toLowerCase().replace(" ", "_") + ".md";
     }
 }
