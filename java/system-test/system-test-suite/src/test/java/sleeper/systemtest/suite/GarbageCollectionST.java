@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -38,8 +37,6 @@ import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -64,23 +61,17 @@ public class GarbageCollectionST {
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
         int numberOfFilesToGC = 1000;
-        int filesPerCompaction = 50;
-        int numberOfCompactions = 20;
         int recordsPerFile = 100;
         int numberOfRecords = recordsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "" + filesPerCompaction,
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
         RecordNumbers records = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
         sleeper.ingest().direct(tempDir)
                 .splitIngests(numberOfFilesToGC, records);
-        sleeper.compaction()
-                .createJobs(numberOfCompactions)
-                .waitForTasks(1).waitForJobs();
+        sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
 
         // When
         sleeper.garbageCollection().invoke().waitFor(
@@ -91,7 +82,7 @@ public class GarbageCollectionST {
                 .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, numberOfRecords))));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
-            assertThat(files.listFileReferences()).hasSize(numberOfCompactions);
+            assertThat(files.listFileReferences()).hasSize(1);
         });
     }
 
