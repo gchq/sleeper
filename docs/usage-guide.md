@@ -72,3 +72,7 @@ See the [Python API documentation](usage/python-api.md) for details of the Pytho
 
 Experimental integrations are available to interact with Sleeper
 via [Athena](usage/data-retrieval.md#use-athena-to-perform-sql-analytics-and-queries) and [Trino](usage/trino.md).
+
+## Properties
+
+The details for all of the properties used within Sleeper are available here: [Properties](usage/property-master.md).

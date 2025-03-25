@@ -37,6 +37,7 @@ public class GeneratePropertiesDocumentation {
     }
 
     public static void generateDocumentation(Path root) throws IOException {
+        generateMasterPage(root);
         Path headPath = Files.createDirectories(root.resolve("docs/usage/properties"));
 
         //---------- Instance Properties ----------
@@ -60,6 +61,34 @@ public class GeneratePropertiesDocumentation {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
             }
         });
+    }
+
+    private static void generateMasterPage(Path root) {
+        try {
+            writeFile(root.resolve("docs/usage/property-master.md"),
+                    stream -> generateDocumentLinks(stream));
+        } catch (IOException e) {
+            System.out.println("Unable to generate property master document");
+        }
+    }
+
+    private static void generateDocumentLinks(OutputStream stream) {
+        PrintStream out = new PrintStream(stream);
+        out.println("## Instance Properties");
+        out.println();
+        InstancePropertyGroup.getAll().forEach(group -> {
+            out.println(pageLinkFromGroupName(group));
+        });
+        out.println();
+        out.println("## Table Properties");
+        out.println();
+        TablePropertyGroup.getAll().forEach(group -> {
+            out.println(pageLinkFromGroupName(group));
+        });
+    }
+
+    private static String pageLinkFromGroupName(PropertyGroup group) {
+        return String.format("[%s](usage/properties/%s)", group.getName(), groupNameToFileName(group));
     }
 
     /**
