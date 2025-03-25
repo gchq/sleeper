@@ -32,11 +32,8 @@ To deploy an instance of Sleeper to your LocalStack container, you can run the f
 ./scripts/deploy/localstack/deploy.sh <instance-id>
 ```
 
-Note that you will not be able to run this command unless you have the AWS_ENDPOINT_URL environment variable
-set as described in the previous section.
-
-This will create a config bucket and a table bucket in LocalStack, and upload the necessary properties files.
-A single table will be created with the name `system-test`.
+This will create a S3 buckets, DynamoDB tables and SQS queues in LocalStack, and upload a Sleeper instance
+configuration. A single Sleeper table will be created with the name `system-test`.
 
 Once the instance is deployed, you can launch the admin client to view the instance and table properties of the
 instance, as well as running partition and file status reports.
