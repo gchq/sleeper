@@ -599,9 +599,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "new data.\n" +
                     "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.table.query.processor.cache.timeout")
+    TableProperty QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.table.query.processor.cache.timeout.seconds")
             .defaultProperty(DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT)
-            .description("The amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
+            .description("The amount of time in seconds the query executor's cache of partition and file " +
+                    "reference information is valid for. After this it will time out and need refreshing.\n" +
+                    "If this is set too low, then queries will be slower. This due to the state needing to be " +
+                    "updated from the state store.\n" +
+                    "If this is set too high, then queries may not have access to all the latest data.\n" +
+                    "Future work will remove or reduce this trade-off.\n" +
+                    "If you know the table is inactive, then set this to a higher value.")
             .propertyGroup(TablePropertyGroup.QUERY_EXECUTION).build();
     TableProperty INGEST_FILE_WRITING_STRATEGY = Index.propertyBuilder("sleeper.table.ingest.file.writing.strategy")
             .defaultProperty(DEFAULT_INGEST_FILE_WRITING_STRATEGY)
