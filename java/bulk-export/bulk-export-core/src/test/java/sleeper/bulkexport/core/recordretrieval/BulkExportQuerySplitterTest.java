@@ -126,7 +126,7 @@ public class BulkExportQuerySplitterTest {
     public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
         // Given the second initialisation occurs after the cache expires
         BulkExportQuery bulkExportQuery = bulkExportQuery();
-        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
         setTimeSupplier(supplyTimes(
                 Instant.parse("2023-11-27T09:30:00Z"),
                 Instant.parse("2023-11-27T09:35:00Z")));
@@ -144,7 +144,7 @@ public class BulkExportQuerySplitterTest {
     public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
         // Given the second initialisation occurs before the cache expires
         BulkExportQuery bulkExportQuery = bulkExportQuery();
-        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
         setTimeSupplier(supplyTimes(
                 Instant.parse("2023-11-27T09:30:00Z"),
                 Instant.parse("2023-11-27T09:31:00Z")));
