@@ -29,7 +29,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
 
 public class GeneratePropertiesDocumentation {
@@ -82,7 +81,7 @@ public class GeneratePropertiesDocumentation {
     }
 
     private static void writeFile(Path file, Consumer<OutputStream> generator) throws IOException {
-        try (OutputStream stream = Files.newOutputStream(file, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+        try (OutputStream stream = Files.newOutputStream(file)) {
             generator.accept(stream);
         }
     }
