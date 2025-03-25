@@ -57,7 +57,7 @@ public class GarbageCollectionST {
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
-        int numberOfFilesToGC = 1000;
+        int numberOfFilesToGC = 20_000;
         int recordsPerFile = 100;
         int numberOfRecords = recordsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
