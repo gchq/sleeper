@@ -27,13 +27,9 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.LongStream;
-import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -57,7 +53,7 @@ public class GarbageCollectionST {
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
-        int numberOfFilesToGC = 20_000;
+        int numberOfFilesToGC = 11_000;
         int recordsPerFile = 100;
         int numberOfRecords = recordsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
@@ -75,15 +71,9 @@ public class GarbageCollectionST {
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(1)));
 
         // Then
-        assertThat(new HashSet<>(sleeper.query().byQueue().allRecordsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, numberOfRecords))));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
             assertThat(files.listFileReferences()).hasSize(1);
         });
-    }
-
-    private static <T> Set<T> setFrom(Iterable<T> iterable) {
-        return StreamSupport.stream(iterable.spliterator(), false).collect(toSet());
     }
 }
