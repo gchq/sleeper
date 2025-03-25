@@ -18,6 +18,7 @@ package sleeper.clients.deploy.properties;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterPropertyHelper;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TableProperties;
@@ -44,7 +45,7 @@ public class GeneratePropertiesDocumentation {
         InstancePropertyGroup.getAll().forEach(instancePropertyGroup -> {
             try {
                 writeFile(instancePath.resolve(instancePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
-                        stream -> writeInstancePropertiesMarkdownTable(instancePropertyGroup, stream));
+                        stream -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + instancePropertyGroup.getName());
             }
@@ -55,7 +56,7 @@ public class GeneratePropertiesDocumentation {
         TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
             try {
                 writeFile(tablePath.resolve(tablePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
-                        stream -> writeTablePropertiesMarkdownTable(tablePropertyGroup, stream));
+                        stream -> writePropertiesMarkdownFile(new TableProperties(new InstanceProperties()), tablePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
             }
@@ -63,38 +64,20 @@ public class GeneratePropertiesDocumentation {
     }
 
     /**
-     * Generates table containing all the instance properties for a given property group in markdown format.
-     * This is then written out to a named file.
+     * Generates table containing all the properties for a given property group in markdown format.
+     * This is then written out to a file named for the property group.
      *
      * @param group the group of properties
-     * @param out   the writer for the files
+     * @param out   the stream for the output
      */
-    private static void writeInstancePropertiesMarkdownTable(PropertyGroup group, OutputStream out) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void writePropertiesMarkdownFile(SleeperProperties properties, PropertyGroup group, OutputStream out) {
         PrintStream stream = new PrintStream(out);
-        InstanceProperties properties = new InstanceProperties();
         stream.println(group.getName().toUpperCase());
         stream.println();
-        stream.println("Below is a table containing all the details relevant for the instance properties within the " + group.getName() + " group.");
+        stream.println("Below is a table containing all the details for the property group: " + group.getName());
         stream.println();
         TableWriter tableWriter = TableWriterPropertyHelper.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
-        tableWriter.write(stream);
-    }
-
-    /**
-     * Generates table containing all the table properties for a given property group in markdown format.
-     * This is then written out to a named file.
-     *
-     * @param group the group of properties
-     * @param out   the writer for the file
-     */
-    private static void writeTablePropertiesMarkdownTable(PropertyGroup group, OutputStream out) {
-        PrintStream stream = new PrintStream(out);
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        stream.println(group.getName().toUpperCase());
-        stream.println();
-        stream.println("Below is a table containing all the details relevant for the table properties within the " + group.getName() + " group.");
-        stream.println();
-        TableWriter tableWriter = TableWriterPropertyHelper.generateTableBuildForGroupTable(tableProperties.getPropertiesIndex().getAllInGroup(group).stream());
         tableWriter.write(stream);
     }
 

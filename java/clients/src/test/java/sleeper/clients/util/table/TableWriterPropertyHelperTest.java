@@ -18,6 +18,7 @@ package sleeper.clients.util.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
+import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.instance.InstanceProperty;
 
@@ -82,7 +83,7 @@ public class TableWriterPropertyHelperTest {
 
         ToStringConsoleOutput output = new ToStringConsoleOutput();
 
-        List<InstanceProperty> propertyList = List.of(CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,
+        List<SleeperProperty> propertyList = List.of(CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,
                 CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS);
 
         TableWriter writer = TableWriterPropertyHelper.generateTableBuildForGroup(propertyList.stream());

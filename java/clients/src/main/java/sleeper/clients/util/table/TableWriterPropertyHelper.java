@@ -17,7 +17,6 @@ package sleeper.clients.util.table;
 
 import sleeper.clients.util.table.TableRow.Builder;
 import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperty;
 
 import java.util.List;
@@ -29,7 +28,7 @@ public class TableWriterPropertyHelper {
     private TableWriterPropertyHelper() {
     }
 
-    public static TableWriter generateTableBuildForGroup(Stream<InstanceProperty> propertyStream) {
+    public static TableWriter generateTableBuildForGroup(Stream<SleeperProperty> propertyStream) {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
         factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
         TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
