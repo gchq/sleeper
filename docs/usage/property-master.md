@@ -1,6 +1,6 @@
 ## Instance Properties
 
-[Common](docs/usage/properties/instance/common.md)<br>
+[Common](properties/instance/common.md)<br>
 [Table State](docs/usage/properties/instance/table_state.md)<br>
 [Ingest](docs/usage/properties/instance/ingest.md)<br>
 [Bulk Export](docs/usage/properties/instance/bulk_export.md)<br>
