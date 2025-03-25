@@ -8,6 +8,9 @@ ingest, and run reports and scripts against the instance.
 These instructions will assume you start in the project root directory and Sleeper has been built
 (see [the developer guide](../developer-guide.md) for how to set that up).
 
+**Currently these scripts are only supported when run from the Docker host.** It may be possible to adjust these to run
+in a Docker container, e.g. in a dev container or a `sleeper builder` container.
+
 ## Launch LocalStack container
 
 To launch the LocalStack container, you can run the following command:
@@ -94,12 +97,9 @@ Note: If you do not provide a number of records in the data generation scripts, 
 
 ## Compaction
 
-**There's currently a known problem preventing compaction from running against LocalStack.** See the following
-issue: https://github.com/gchq/sleeper/issues/3856
-
 To create compaction jobs for files that you have ingested, you can run the following command:
 ```shell
-./scripts/deploy/localstack/createCompactionJobs.sh <instance-id> <optional-compact-all-flag>
+./scripts/deploy/localstack/createCompactionJobs.sh default <instance-id> <table-name>
 ```
 
 This script will run the `CreateJobs` class (which would normally run periodically in a lambda), and put the created
@@ -108,10 +108,10 @@ jobs on the compaction job SQS queue.
 Note that by default the `SizeRatioCompactionStrategy` will be used to determine whether a compaction job will be
 created for a collection of files in the same partition. You can either change this strategy to the
 `BasicCompactionStrategy`, which just uses the `COMPACTION_FILES_BATCH_SIZE` table property to batch files into jobs,
-or you can skip this strategy and force creation of compaction jobs, by using the `--all` flag when calling the script:
+or you can skip this strategy and force creation of compaction jobs, by using the `all` mode when calling the script:
 
 ```shell
-./scripts/deploy/localstack/createCompactionJobs.sh my-instance --all
+./scripts/deploy/localstack/createCompactionJobs.sh all <instance-id> <table-name>
 ```
 
 To run these compaction jobs, you need to launch a compaction task. These would normally be run in ECS tasks, launched
@@ -119,7 +119,7 @@ by a lambda periodically based on how many compaction jobs are waiting. The foll
 image that the ECS tasks use, and run a docker container using the built image.
 
 ```shell
-./scripts/deploy/localstack/runCompactionTask.sh my-instance --all
+./scripts/deploy/localstack/runCompactionTask.sh <instance-id>
 ```
 
 You can view the statistic for jobs and tasks by using the `compactionJobStatusReport.sh` and
