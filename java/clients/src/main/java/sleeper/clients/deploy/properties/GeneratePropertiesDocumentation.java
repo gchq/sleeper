@@ -72,7 +72,7 @@ public class GeneratePropertiesDocumentation {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static void writePropertiesMarkdownFile(SleeperProperties properties, PropertyGroup group, OutputStream out) {
         PrintStream stream = new PrintStream(out);
-        stream.println(group.getName().toUpperCase());
+        stream.println("## " + group.getName().toUpperCase());
         stream.println();
         stream.println("Below is a table containing all the details for the property group: " + group.getName());
         stream.println();
