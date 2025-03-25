@@ -18,6 +18,7 @@ package sleeper.clients.util.table;
 import sleeper.clients.util.table.TableRow.Builder;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.table.TableProperty;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -31,13 +32,23 @@ public class TableWriterPropertyHelper {
     public static TableWriter generateTableBuildForGroup(Stream<InstanceProperty> propertyStream) {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
         factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
-        TableWriterFactory factory = factoryBuilder.build();
-
+        TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
         propertyStream.forEach(property -> {
-            factory.tableBuilder().row(generatePropertyDetails(factoryBuilder.getFields(), property));
+            builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
         });
 
-        return factory.tableBuilder().build();
+        return builder.build();
+    }
+
+    public static TableWriter generateTableBuildForGroupTable(Stream<TableProperty> propertyStream) {
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
+        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
+        propertyStream.forEach(property -> {
+            builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
+        });
+
+        return builder.build();
     }
 
     public static List<String> getMarkdownFields() {

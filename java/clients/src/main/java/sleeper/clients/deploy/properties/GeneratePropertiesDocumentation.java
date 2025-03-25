@@ -20,14 +20,15 @@ import sleeper.clients.util.table.TableWriterPropertyHelper;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
 
 public class GeneratePropertiesDocumentation {
@@ -43,7 +44,7 @@ public class GeneratePropertiesDocumentation {
         InstancePropertyGroup.getAll().forEach(instancePropertyGroup -> {
             try {
                 writeFile(instancePath.resolve(instancePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
-                        writer -> writeInstancePropertiesMarkdownTable(instancePropertyGroup, writer));
+                        stream -> writeInstancePropertiesMarkdownTable(instancePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + instancePropertyGroup.getName());
             }
@@ -54,7 +55,7 @@ public class GeneratePropertiesDocumentation {
         TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
             try {
                 writeFile(tablePath.resolve(tablePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
-                        writer -> writeTablePropertiesMarkdownTable(tablePropertyGroup, writer));
+                        stream -> writeTablePropertiesMarkdownTable(tablePropertyGroup, stream));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
             }
@@ -68,11 +69,15 @@ public class GeneratePropertiesDocumentation {
      * @param group the group of properties
      * @param out   the writer for the files
      */
-    private static void writeInstancePropertiesMarkdownTable(PropertyGroup group, Writer out) {
-        PrintWriter writer = new PrintWriter(out);
-        writer.println(">>>>>>>>>>>>>" + group.getName() + "<<<<<<<<<<");
+    private static void writeInstancePropertiesMarkdownTable(PropertyGroup group, OutputStream out) {
+        PrintStream stream = new PrintStream(out);
         InstanceProperties properties = new InstanceProperties();
+        stream.println(group.getName().toUpperCase());
+        stream.println();
+        stream.println("Below is a table containing all the details relevant for the instance properties within the " + group.getName() + " group.");
+        stream.println();
         TableWriter tableWriter = TableWriterPropertyHelper.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
+        tableWriter.write(stream);
     }
 
     /**
@@ -82,14 +87,20 @@ public class GeneratePropertiesDocumentation {
      * @param group the group of properties
      * @param out   the writer for the file
      */
-    private static void writeTablePropertiesMarkdownTable(PropertyGroup group, Writer out) {
-        PrintWriter writer = new PrintWriter(out);
-        writer.println(">>>>>>>>>>>>>" + group.getName() + "<<<<<<<<<<");
+    private static void writeTablePropertiesMarkdownTable(PropertyGroup group, OutputStream out) {
+        PrintStream stream = new PrintStream(out);
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        stream.println(group.getName().toUpperCase());
+        stream.println();
+        stream.println("Below is a table containing all the details relevant for the table properties within the " + group.getName() + " group.");
+        stream.println();
+        TableWriter tableWriter = TableWriterPropertyHelper.generateTableBuildForGroupTable(tableProperties.getPropertiesIndex().getAllInGroup(group).stream());
+        tableWriter.write(stream);
     }
 
-    private static void writeFile(Path file, Consumer<Writer> generator) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
-            generator.accept(writer);
+    private static void writeFile(Path file, Consumer<OutputStream> generator) throws IOException {
+        try (OutputStream stream = Files.newOutputStream(file, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+            generator.accept(stream);
         }
     }
 }
