@@ -57,7 +57,8 @@ public class BucketUtils {
         ListObjectsV2Request req = new ListObjectsV2Request()
                 .withBucketName(bucketName)
                 .withPrefix(prefix + "/")
-                .withMaxKeys(100);
+                //Keys set to 1000 as this is the maximum value permitted by S3 delete action
+                .withMaxKeys(1000);
         ListObjectsV2Result result;
 
         LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);

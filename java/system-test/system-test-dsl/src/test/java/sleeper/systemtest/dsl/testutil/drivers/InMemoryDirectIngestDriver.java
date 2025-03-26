@@ -20,26 +20,28 @@ import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.ObjectFactory;
-import sleeper.ingest.core.IngestResult;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.ingest.runner.testutils.InMemoryIngest;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
-    private final InMemoryDataStore data;
+    private final InMemoryRecordStore data;
     private final InMemorySketchesStore sketches;
 
-    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryDataStore data, InMemorySketchesStore sketches) {
+    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryRecordStore data, InMemorySketchesStore sketches) {
         this.instance = instance;
         this.data = data;
         this.sketches = sketches;
@@ -47,25 +49,32 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
 
     @Override
     public void ingest(Path tempDir, Iterator<Record> records) {
+        ingest(records, ingestCoordinatorBuilder(tempDir));
+    }
+
+    @Override
+    public void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles) {
+        ingest(records, ingestCoordinatorBuilder(tempDir)
+                .addFilesToStateStore(addFiles::accept));
+    }
+
+    private void ingest(Iterator<Record> records, IngestCoordinator.Builder<Record> builder) {
+        try (IngestCoordinator<Record> coordinator = builder.build()) {
+            while (records.hasNext()) {
+                coordinator.write(records.next());
+            }
+        } catch (IteratorCreationException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(Path tempDir) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        ingest(instanceProperties, tableProperties, stateStore, AddFilesToStateStore.synchronousNoJob(stateStore), records);
-    }
-
-    public IngestResult ingest(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            StateStore stateStore, AddFilesToStateStore addFilesToStateStore, Iterator<Record> records) {
-        try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
-                .objectFactory(ObjectFactory.noUserJars())
-                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
-                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(data, sketches, instanceProperties, tableProperties))
-                .stateStore(stateStore)
-                .addFilesToStateStore(addFilesToStateStore)
-                .build()) {
-            return new IngestRecordsFromIterator(coordinator, records).write();
-        } catch (IteratorCreationException | IOException e) {
-            throw new RuntimeException(e);
-        }
+        InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
+        return ingest.coordinatorBuilder();
     }
 }

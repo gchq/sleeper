@@ -16,9 +16,11 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
@@ -32,8 +34,11 @@ import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
+import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.ingest.runner.testutils.InMemoryIngest;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
@@ -43,6 +48,7 @@ import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -63,12 +69,12 @@ public class InMemoryIngestByQueue {
     private final List<IngestTask> runningTasks = new ArrayList<>();
     private final IngestTaskTracker taskTracker = new InMemoryIngestTaskTracker();
     private final IngestJobTracker jobTracker = new InMemoryIngestJobTracker();
-    private final InMemoryDataStore sourceFiles;
-    private final InMemoryDataStore data;
+    private final InMemoryRecordStore sourceFiles;
+    private final InMemoryRecordStore data;
     private final InMemorySketchesStore sketches;
     private final Supplier<Instant> timeSupplier = () -> Instant.now().plus(Duration.ofSeconds(1));
 
-    public InMemoryIngestByQueue(InMemoryDataStore sourceFiles, InMemoryDataStore data, InMemorySketchesStore sketches) {
+    public InMemoryIngestByQueue(InMemoryRecordStore sourceFiles, InMemoryRecordStore data, InMemorySketchesStore sketches) {
         this.sourceFiles = sourceFiles;
         this.data = data;
         this.sketches = sketches;
@@ -166,10 +172,15 @@ public class InMemoryIngestByQueue {
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
-        AddFilesToStateStore addFilesToStateStore = AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds);
         Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
-        return new InMemoryDirectIngestDriver(context.instance(), data, sketches)
-                .ingest(instanceProperties, tableProperties, stateStore, addFilesToStateStore, iterator);
+        InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
+        try (IngestCoordinator<Record> coordinator = ingest.coordinatorBuilder()
+                .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds))
+                .build()) {
+            return new IngestRecordsFromIterator(coordinator, iterator).write();
+        } catch (IteratorCreationException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private List<String> filesWithFs(InstanceProperties instanceProperties, IngestJob job) {

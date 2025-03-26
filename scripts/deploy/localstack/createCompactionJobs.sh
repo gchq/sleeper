@@ -29,3 +29,8 @@ echo "-------------------------------------------------------"
 echo "Running compaction job creation"
 echo "-------------------------------------------------------"
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateCompactionJobsClient "$@"
+
+echo "-------------------------------------------------------"
+echo "Running compaction job dispatch"
+echo "-------------------------------------------------------"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.DispatchCompactionJobsClient "$2"

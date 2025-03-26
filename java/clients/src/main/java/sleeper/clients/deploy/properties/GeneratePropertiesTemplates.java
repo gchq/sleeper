@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
@@ -82,7 +83,8 @@ public class GeneratePropertiesTemplates {
             ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest",
             BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner",
             BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless",
-            ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
+            ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution",
+            BULK_EXPORT_ECR_REPO, "<insert-unique-sleeper-id>/bulk-export-task-execution");
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",

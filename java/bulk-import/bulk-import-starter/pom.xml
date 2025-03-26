@@ -38,17 +38,16 @@
             <version>${aws-lambda-java-events.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-stepfunctions</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emr</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emrserverless</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sfn</artifactId>
         </dependency>
         <!-- Sleeper Dependencies -->
         <dependency>

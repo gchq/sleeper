@@ -15,9 +15,9 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -33,18 +33,20 @@ public interface PlatformExecutor {
         switch (platform) {
             case "NonPersistentEMR":
                 return new EmrPlatformExecutor(
-                        EmrClient.create(),
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
                         instanceProperties, tablePropertiesProvider);
             case "EKS":
                 return new StateMachinePlatformExecutor(
-                        AWSStepFunctionsClientBuilder.defaultClient(),
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(SfnClient.builder()),
                         instanceProperties);
             case "PersistentEMR":
                 return new PersistentEmrPlatformExecutor(
-                        EmrClient.create(),
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
                         instanceProperties);
             case "EMRServerless":
-                return new EmrServerlessPlatformExecutor(EmrServerlessClient.create(), instanceProperties);
+                return new EmrServerlessPlatformExecutor(
+                        BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrServerlessClient.builder()),
+                        instanceProperties);
             default:
                 throw new IllegalArgumentException("Invalid platform: " + platform);
         }

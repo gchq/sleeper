@@ -53,6 +53,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(AsyncIngestPartitionFileWriterProperty.getAll());
             index.addAll(BatcherProperty.getAll());
             index.addAll(BulkImportProperty.getAll());
+            index.addAll(BulkExportProperty.getAll());
             index.addAll(EMRProperty.getAll());
             index.addAll(EMRServerlessProperty.getAll());
             index.addAll(NonPersistentEMRProperty.getAll());

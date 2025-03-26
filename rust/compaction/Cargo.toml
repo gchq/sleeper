@@ -32,15 +32,15 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.146" } # Exception handling for Rust
+cxx = { version = "1.0.150" } # Exception handling for Rust
 
 libc = { version = "0.2.171" } # FFI type support
-log = { version = "0.4.26" } # Logging support
+log = { version = "0.4.27" } # Logging support
 
 arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
-async-trait = { version = "0.1.87" }
-datafusion = { version = "46.0.0", features = ["backtrace"] }
+async-trait = { version = "0.1.88" }
+datafusion = { version = "46.0.1", features = ["backtrace"] }
 object_store = { version = "0.11.2", features = [
     "aws",
 ] } # Remote cloud storage access
@@ -64,7 +64,7 @@ color-eyre = { version = "0.6.3" } # Error handling
 ring = { version = "0.17.14" }
 
 [dev-dependencies]
-tempfile = { version = "3.19.0" }                                 # Create temporary files
+tempfile = { version = "3.19.1" }                                 # Create temporary files
 object_store = { version = "0.11.2", features = ["integration"] }
 testing_logger = { version = "0.1.1" }                            # Assert on logger output in tests
 test-log = { version = "0.2.17" }                                 # Enable logging in tests

@@ -14,8 +14,7 @@
   ~ limitations under the License.
   -->
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
     <id>bin</id>
     <formats>
         <format>${distribution.format}</format>
@@ -87,6 +86,13 @@
                 <exclude>*.jar</exclude>
             </excludes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../bulk-export/bulk-export-task-execution/docker</directory>
+            <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
+            <excludes>
+                <exclude>*.jar</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
 
     <files>
@@ -124,6 +130,13 @@
             </source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
             <destName>compaction-job-execution.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../bulk-export/bulk-export-task-execution/target/bulk-export-task-execution-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
+            <destName>bulk-export-task-execution.jar</destName>
         </file>
         <file>
             <source>
@@ -227,10 +240,17 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-export/bulk-export-lambda/target/bulk-export-lambda-${project.version}-utility.jar
+                ${project.basedir}/../bulk-export/bulk-export-planner/target/bulk-export-planner-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars/</outputDirectory>
-            <destName>bulk-export-lambda-${project.version}.jar</destName>
+            <destName>bulk-export-planner-${project.version}.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../bulk-export/bulk-export-task-creator/target/bulk-export-task-creator-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars/</outputDirectory>
+            <destName>bulk-export-task-creator-${project.version}.jar</destName>
         </file>
     </files>
 </assembly>

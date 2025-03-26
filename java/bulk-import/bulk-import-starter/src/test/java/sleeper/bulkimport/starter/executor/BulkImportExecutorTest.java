@@ -103,6 +103,28 @@ class BulkImportExecutorTest {
         }
 
         @Test
+        void shouldFailValidationIfFileListIsNull() {
+            // Given
+            BulkImportJob importJob = jobForTable()
+                    .id("my-job")
+                    .files(null)
+                    .build();
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
+
+            // When
+            executor(atTime(validationTime)).runJob(importJob);
+
+            // Then
+            assertThat(jobsInBucket).isEmpty();
+            assertThat(jobsRun).isEmpty();
+            assertThat(tracker.getAllJobs(tableId))
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                    .containsExactly(ingestJobStatus(importJob.toIngestJob(),
+                            rejectedRun(importJob.toIngestJob(), validationTime,
+                                    "The input files must be set to a non-null and non-empty value.")));
+        }
+
+        @Test
         void shouldFailValidationIfJobIdContainsMoreThan63Characters() {
             // Given
             String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
@@ -144,6 +166,26 @@ class BulkImportExecutorTest {
                     .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job Ids must only contain lowercase alphanumerics and dashes.")));
+        }
+
+        @Test
+        void shouldFailValidationIfMinimumPartitionCountNotReached() {
+            // Given
+            tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
+            BulkImportJob myJob = jobForTable()
+                    .id("my-job")
+                    .files(Lists.newArrayList("file1.parquet"))
+                    .build();
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
+
+            // When
+            executor(atTime(validationTime)).runJob(myJob);
+
+            // Then
+            assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
+                    .containsExactly(ingestJobStatus(myJob.toIngestJob(),
+                            rejectedRun(myJob.toIngestJob(), validationTime,
+                                    "The minimum partition count was not reached")));
         }
     }
 
