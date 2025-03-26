@@ -18,12 +18,9 @@ package sleeper.clients.deploy.properties;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.clients.util.table.TableStructure;
 import sleeper.clients.util.table.TableWriter;
-import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.CommonProperty;
-import sleeper.core.properties.instance.InstanceProperty;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,22 +31,17 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 public class SleeperPropertyMarkdownTableTest {
 
     @Test
-    void shouldCreateMarkdownTableWithProvidedInstanceProperties() throws IOException {
+    void shouldCreateValidPropertiesTableWhenGivenAStreamOfProperties() throws IOException {
         // Given
-        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
-        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
-
-        TableWriterFactory factory = factoryBuilder.build();
         ToStringConsoleOutput output = new ToStringConsoleOutput();
 
-        InstanceProperty property1 = CommonProperty.JARS_BUCKET;
-        InstanceProperty property2 = CommonProperty.FILE_SYSTEM;
+        List<SleeperProperty> propertyList = List.of(CommonProperty.JARS_BUCKET,
+                CommonProperty.FILE_SYSTEM);
+
+        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList.stream());
 
         // When
-        factory.tableBuilder()
-                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property1))
-                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property2))
-                .build().write(output.getPrintStream());
+        writer.write(output.getPrintStream());
         // Then
         assertThat(output).hasToString(example("reports/table/property.txt"));
     }
@@ -57,33 +49,6 @@ public class SleeperPropertyMarkdownTableTest {
     @Test
     void shouldCreateMarkdownTableWithLongDescriptionEntry() throws IOException {
         // Given
-        TableStructure structure = TableStructure.MARKDOWN_FORMAT;
-        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
-        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
-
-        TableWriterFactory factory = factoryBuilder.build();
-        ToStringConsoleOutput output = new ToStringConsoleOutput();
-
-        InstanceProperty property1 = CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-        InstanceProperty property2 = CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-
-        // When
-        factory.tableBuilder()
-                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property1))
-                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property2))
-                .build().write(output.getPrintStream());
-        // Then
-        assertThat(output).hasToString(example("reports/table/propertyLong.txt"));
-
-    }
-
-    @Test
-    void shouldCreateValidPropertiesTableWhenGivenAStreamOfProperties() throws IOException {
-        // Given
-        TableStructure structure = TableStructure.MARKDOWN_FORMAT;
-        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
-        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
-
         ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         List<SleeperProperty> propertyList = List.of(CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,

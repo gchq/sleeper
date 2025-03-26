@@ -21,7 +21,6 @@ import sleeper.clients.util.table.TableStructure;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.properties.SleeperProperty;
-import sleeper.core.properties.table.TableProperty;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -43,22 +42,11 @@ public class SleeperPropertyMarkdownTable {
         return builder.build();
     }
 
-    public static TableWriter generateTableBuildForGroupTable(Stream<TableProperty> propertyStream) {
-        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
-        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
-        TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
-        propertyStream.forEach(property -> {
-            builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
-        });
-
-        return builder.build();
-    }
-
-    public static List<String> getMarkdownFields() {
+    private static List<String> getMarkdownFields() {
         return List.of("Property Name", "Description", "Default Value", "Run CdkDeploy When Changed");
     }
 
-    public static Consumer<Builder> generatePropertyDetails(List<TableField> fields, SleeperProperty property) {
+    private static Consumer<Builder> generatePropertyDetails(List<TableField> fields, SleeperProperty property) {
         return row -> {
             row.value(fields.get(0), property.getPropertyName());
             row.value(fields.get(1), adjustLongEntryForMarkdown(property.getDescription()));
