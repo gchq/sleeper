@@ -3,22 +3,30 @@ Design Risks and Mitigations
 
 In this section we outline some of the risks in the current design of Sleeper, and document some of the potential
 mitigations. There are 3 main risks to the current design:
+
 - Running out of memory when loading information about all the current file references in a Sleeper table or tables
 in to memory.
 - Slow or out-of-date queries due to needing to periodically update the view of the file references in tables.
 - Limited throughput of the state store committer.
+
 Each of these risks is considered separately in the following subsections.
 
-## Running out of memory when loading information about all the current file references in a Sleeper table or tables in to memory.
+## Running out of memory when loading Sleeper table state into memory.
 
 See https://github.com/gchq/sleeper/issues/4214 for the issue that tracks possible work on this.
 
 In many places in Sleeper, we need to load the current state of a table in to memory from the state store. This state
 includes the details of the partitions and the file references. Examples of places where we load this state include:
-garbage collection, creation of compaction jobs, metrics, queries and the state store committer lambda. All of these
-approaches currently use AWS lambda. Currently an invocation of a lambda can have at most 10240MB of memory. Hence there
-is a risk of running out of memory if a table has lots of partitions and hence lots of file references or if the file
-references for multiple tables are all loaded in to memory at the same time.
+
+- Garbage collection
+- Creation of compaction jobs
+- Metrics
+- Queries
+- The state store committer
+
+All of these currently use AWS Lambda. Currently an invocation of a lambda can have at most 10240MB of memory. Hence
+there is a risk of running out of memory if a table has lots of partitions and hence lots of file references, or if the
+state for multiple tables are loaded in to memory at the same time.
 
 Most of the places where we need to load the state only require the state of a single table to be in memory at a time.
 For example, garbage collection happens independently for each Sleeper table and so only the state of one table needs
