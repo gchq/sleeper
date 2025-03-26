@@ -36,8 +36,8 @@ echo "-------------------------------------------------------"
 echo "Running compaction task in docker."
 echo "-------------------------------------------------------"
 docker run --rm \
-  --add-host=host.docker.internal:host-gateway \
-  -e AWS_ENDPOINT_URL=http://host.docker.internal:4566 \
+  --network=host \
+  -e AWS_ENDPOINT_URL=http://localhost:4566 \
   -e AWS_ACCESS_KEY_ID=test-access-key \
   -e AWS_SECRET_ACCESS_KEY=test-secret-key \
   --name="$CONTAINER_NAME" $COMPACTION_JOB_EXECUTION_IMAGE "sleeper-$INSTANCE_ID-config"
