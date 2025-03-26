@@ -26,8 +26,11 @@ import sleeper.core.properties.table.TablePropertyGroup;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 public class GeneratePropertiesDocumentation {
@@ -45,7 +48,7 @@ public class GeneratePropertiesDocumentation {
             try {
                 writeFile(instancePath.resolve(groupNameToFileName(instancePropertyGroup.getName())),
                         stream -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, stream));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.out.println("Unable to write property file for group: " + instancePropertyGroup.getName());
             }
         });
@@ -56,7 +59,7 @@ public class GeneratePropertiesDocumentation {
             try {
                 writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup.getName())),
                         stream -> writePropertiesMarkdownFile(new TableProperties(new InstanceProperties()), tablePropertyGroup, stream));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
             }
         });
@@ -66,24 +69,28 @@ public class GeneratePropertiesDocumentation {
         try {
             writeFile(root.resolve("docs/usage/property-master.md"),
                     stream -> generateDocumentLinks(stream));
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Unable to generate property master document");
         }
     }
 
     private static void generateDocumentLinks(OutputStream stream) {
-        PrintStream out = new PrintStream(stream);
-        out.println("## Instance Properties");
-        out.println();
-        InstancePropertyGroup.getAllGroupNamesAlphabetically().forEach(group -> {
-            out.println(pageLinkFromGroupName(group, "instance/"));
-        });
-        out.println();
-        out.println("## Table Properties");
-        out.println();
-        TablePropertyGroup.getAllGroupNamesAlphabetically().forEach(group -> {
-            out.println(pageLinkFromGroupName(group, "table/"));
-        });
+        try {
+            PrintStream out = new PrintStream(stream, true, StandardCharsets.UTF_8.name());
+            out.println("## Instance Properties");
+            out.println();
+            InstancePropertyGroup.getAllGroupNamesAlphabetically().forEach(group -> {
+                out.println(pageLinkFromGroupName(group, "instance/"));
+            });
+            out.println();
+            out.println("## Table Properties");
+            out.println();
+            TablePropertyGroup.getAllGroupNamesAlphabetically().forEach(group -> {
+                out.println(pageLinkFromGroupName(group, "table/"));
+            });
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Unable to encode output file");
+        }
     }
 
     private static String pageLinkFromGroupName(String group, String directory) {
@@ -94,18 +101,23 @@ public class GeneratePropertiesDocumentation {
      * Generates table containing all the properties for a given property group in markdown format.
      * This is then written out to a file named for the property group.
      *
-     * @param group the group of properties
-     * @param out   the stream for the output
+     * @param  group                        the group of properties
+     * @param  out                          the stream for the output
+     * @throws UnsupportedEncodingException thrown if uft8 unavailable
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static void writePropertiesMarkdownFile(SleeperProperties properties, PropertyGroup group, OutputStream out) {
-        PrintStream stream = new PrintStream(out);
-        stream.println("## " + group.getName().toUpperCase());
-        stream.println();
-        stream.println("Below is a table containing all the details for the property group: " + group.getName());
-        stream.println();
-        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
-        tableWriter.write(stream);
+        try {
+            PrintStream stream = new PrintStream(out, true, StandardCharsets.UTF_8.name());
+            stream.println("## " + group.getName().toUpperCase(Locale.ENGLISH));
+            stream.println();
+            stream.println("Below is a table containing all the details for the property group: " + group.getName());
+            stream.println();
+            TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
+            tableWriter.write(stream);
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Unable to encode output file");
+        }
     }
 
     private static void writeFile(Path file, Consumer<OutputStream> generator) throws IOException {
@@ -115,6 +127,6 @@ public class GeneratePropertiesDocumentation {
     }
 
     private static String groupNameToFileName(String group) {
-        return group.toLowerCase().replace(" ", "_") + ".md";
+        return group.toLowerCase(Locale.ENGLISH).replace(" ", "_") + ".md";
     }
 }
