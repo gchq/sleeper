@@ -21,6 +21,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
@@ -29,8 +30,11 @@ import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
@@ -45,16 +49,32 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
 
     @Override
     public void ingest(Path tempDir, Iterator<Record> records) {
+        ingest(records, ingestCoordinatorBuilder(tempDir));
+    }
+
+    @Override
+    public void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles) {
+        ingest(records, ingestCoordinatorBuilder(tempDir)
+                .addFilesToStateStore(addFiles::accept));
+    }
+
+    private void ingest(Iterator<Record> records, IngestCoordinator.Builder<Record> builder) {
+        try (IngestCoordinator<Record> coordinator = builder.build()) {
+            while (records.hasNext()) {
+                coordinator.write(records.next());
+            }
+        } catch (IteratorCreationException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(Path tempDir) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         StateStore stateStore = instance.getStateStore(tableProperties);
         InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
-        try (IngestCoordinator<Record> coordinator = ingest.createCoordinator()) {
-            while (records.hasNext()) {
-                coordinator.write(records.next());
-            }
-        } catch (IteratorCreationException | IOException e) {
-            throw new RuntimeException(e);
-        }
+        return ingest.coordinatorBuilder();
     }
 }

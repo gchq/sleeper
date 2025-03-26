@@ -170,7 +170,7 @@ public class SystemTestInstance {
 
     private static DeployInstanceConfiguration createCompactionPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
-        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
