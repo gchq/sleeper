@@ -11,7 +11,7 @@ in to memory.
 
 Each of these risks is considered separately in the following subsections.
 
-## Running out of memory when loading Sleeper table state into memory.
+## Running out of memory when loading Sleeper table state.
 
 See https://github.com/gchq/sleeper/issues/4214 for the issue that tracks possible work on this.
 
