@@ -31,13 +31,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
-public class TableWriterPropertyHelperTest {
+public class SleeperPropertyMarkdownTableTest {
 
     @Test
     void shouldCreateMarkdownTableWithProvidedInstanceProperties() throws IOException {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
-        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
 
         TableWriterFactory factory = factoryBuilder.build();
         ToStringConsoleOutput output = new ToStringConsoleOutput();
@@ -47,8 +47,8 @@ public class TableWriterPropertyHelperTest {
 
         // When
         factory.tableBuilder()
-                .row(TableWriterPropertyHelper.generatePropertyDetails(factoryBuilder.getFields(), property1))
-                .row(TableWriterPropertyHelper.generatePropertyDetails(factoryBuilder.getFields(), property2))
+                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property1))
+                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property2))
                 .build().write(output.getPrintStream());
         // Then
         assertThat(output).hasToString(example("reports/table/property.txt"));
@@ -59,7 +59,7 @@ public class TableWriterPropertyHelperTest {
         // Given
         TableStructure structure = TableStructure.MARKDOWN_FORMAT;
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
-        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
 
         TableWriterFactory factory = factoryBuilder.build();
         ToStringConsoleOutput output = new ToStringConsoleOutput();
@@ -69,8 +69,8 @@ public class TableWriterPropertyHelperTest {
 
         // When
         factory.tableBuilder()
-                .row(TableWriterPropertyHelper.generatePropertyDetails(factoryBuilder.getFields(), property1))
-                .row(TableWriterPropertyHelper.generatePropertyDetails(factoryBuilder.getFields(), property2))
+                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property1))
+                .row(SleeperPropertyMarkdownTable.generatePropertyDetails(factoryBuilder.getFields(), property2))
                 .build().write(output.getPrintStream());
         // Then
         assertThat(output).hasToString(example("reports/table/propertyLong.txt"));
@@ -82,14 +82,14 @@ public class TableWriterPropertyHelperTest {
         // Given
         TableStructure structure = TableStructure.MARKDOWN_FORMAT;
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
-        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
 
         ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         List<SleeperProperty> propertyList = List.of(CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,
                 CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS);
 
-        TableWriter writer = TableWriterPropertyHelper.generateTableBuildForGroup(propertyList.stream());
+        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList.stream());
 
         // When
         writer.write(output.getPrintStream());

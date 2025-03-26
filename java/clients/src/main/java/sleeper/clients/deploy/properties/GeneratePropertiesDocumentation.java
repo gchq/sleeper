@@ -104,7 +104,7 @@ public class GeneratePropertiesDocumentation {
         stream.println();
         stream.println("Below is a table containing all the details for the property group: " + group.getName());
         stream.println();
-        TableWriter tableWriter = TableWriterPropertyHelper.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
+        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
         tableWriter.write(stream);
     }
 

@@ -27,14 +27,14 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class TableWriterPropertyHelper {
+public class SleeperPropertyMarkdownTable {
 
-    private TableWriterPropertyHelper() {
+    private SleeperPropertyMarkdownTable() {
     }
 
     public static TableWriter generateTableBuildForGroup(Stream<SleeperProperty> propertyStream) {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
-        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
         TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
         propertyStream.forEach(property -> {
             builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
@@ -45,7 +45,7 @@ public class TableWriterPropertyHelper {
 
     public static TableWriter generateTableBuildForGroupTable(Stream<TableProperty> propertyStream) {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
-        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
         TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
         propertyStream.forEach(property -> {
             builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
