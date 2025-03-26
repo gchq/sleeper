@@ -15,7 +15,11 @@
  */
 package sleeper.clients.deploy.properties;
 
+import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow.Builder;
+import sleeper.clients.util.table.TableStructure;
+import sleeper.clients.util.table.TableWriter;
+import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.table.TableProperty;
 
