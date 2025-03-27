@@ -11,9 +11,9 @@ The following steps explain how to prepare and publish a release for Sleeper.
        give an up to date view of upcoming work.
    - Prepare release `<version>`
      - Set the version number using `scripts/dev/updateVersionNumber.sh <version>`.
-     - Update the performance figures in the [system tests guide](system-tests.md#performance-benchmarks)
+     - Update the performance figures in the [system tests guide](system-tests.md#performance-benchmarks).
    - Update version number to `<next-version>-SNAPSHOT`
-     - This will be done immediately after the release
+     - This will be done immediately after the release.
 
 2. Read through the documentation to find anything that may need updating, and raise issues to document features or
    design that has changed in this release.
@@ -24,7 +24,7 @@ The following steps explain how to prepare and publish a release for Sleeper.
    changelog should be updated with any bug fixes or further changes.
 
 5. Review the output of nightly system tests. If there are any failures, fix them. This should be done daily, regardless
-   of releases.
+   of release.
 
 There should be a cron job configured to run the test suite nightly. Running it manually and retrieving the results is
 documented in the [system tests guide](system-tests.md#nightly-test-scripts).
@@ -77,16 +77,17 @@ should be quicker.
 
 Choose the same options as above, and results should be returned.
 
-10. Ensure you have an up to date run of the performance test suite at the latest commit, and get the performance
-    figures from the test output. Ideally this can come from the nightly system tests, but it may be necessary to re-run
-    the test suite. Create a pull request for release preparation, with the performance figures and version number
-    update.
+10. Ensure you have an up to date run of the performance test suite run against the latest commit, and get the
+    performance figures from the test output. Ideally this can come from the nightly system tests, but it may be
+    necessary to re-run the test suite. See the [system test guide](system-tests.md#performange-tests).
 
-11. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
+11. Create a pull request for release preparation, with the performance figures and version number update.
+
+12. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
     and release preparation.
 
-12. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
+13. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
     main. Then checkout the main branch, set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
-13. Create a pull request to update the version number for the next release as a snapshot version. Merge it when
+14. Create a pull request to update the version number for the next release as a snapshot version. Merge it when
     everything passes.
