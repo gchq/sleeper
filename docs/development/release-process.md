@@ -1,7 +1,7 @@
 Release Process
 ===============
 
-The following steps explain how to prepare and publish a release for Sleeper, by using the Maven system test suite:
+The following steps explain how to prepare and publish a release for Sleeper.
 
 1. Create the following issues in GitHub:
    - Update changelog for `<version>`
