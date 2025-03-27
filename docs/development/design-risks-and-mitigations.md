@@ -54,10 +54,12 @@ the state of multiple tables in memory at once. See the next subsection for othe
 Tests have shown it is possible to hold the information about the file references and the partitions in a table with
 132,000 leaf partitions and tens of files per leaf partition in memory. Thus the memory limit may not be a problem in
 practice. Moreover, the use of AWS lambda is a convenience rather than a fundamental requirement. Lambdas can be easily
-replaced by ECS services or tasks which have a memory limit of 120GB. In the cases where we have large tables, the
-potential additional cost savings due to use of an on-demand lambda rather than a long-running ECS task are likely
-to be negligible. Hence the current approach appears to be viable and in future it would be relatively easy to replace
-the use of lambda with long-running services which could have more memory.
+replaced by ECS services or tasks which have a memory limit of 120GB. This could be combined with caching the state in
+a local disk-based store rather than needing to have the entire state in memory. In the cases where we have large
+tables, the potential additional cost savings due to the use of an on-demand lambda rather than a long-running ECS task
+are likely to be negligible, and in fact a long-running task might be cheaper. Hence the current approach appears to be
+viable and in future it would be relatively easy to replace the use of lambda with long-running services which could
+have more memory.
 
 ## Slow or out-of-date queries due to needing to periodically update view of file references in tables
 
