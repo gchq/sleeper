@@ -79,7 +79,7 @@ Choose the same options as above, and results should be returned.
 
 10. Ensure you have an up to date run of the performance test suite run against the latest commit, and get the
     performance figures from the test output. Ideally this can come from the nightly system tests, but it may be
-    necessary to re-run the test suite. See the [system test guide](system-tests.md#performange-tests).
+    necessary to re-run the test suite. See the [system test guide](system-tests.md#performance-tests).
 
 11. Create a pull request for release preparation, with the performance figures and version number update.
 
