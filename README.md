@@ -32,9 +32,9 @@ order (sorted by the key field and then by the sort field).
 Sleeper is deployed using CDK. Each bit of functionality is deployed using a separate CDK substack of one main
 stack.
 
-- State store stacks: Each table has a state store that stores metadata about the table such as files 
+- State store stacks: Each table has a state store that stores metadata about the table such as files
   that are in the table, the partitions they are in and information about the partitions themselves.
-- Compaction stack: As the number of files in a partition increases, their contents must be merged 
+- Compaction stack: As the number of files in a partition increases, their contents must be merged
   ("compacted") into a single sorted file. The compaction stack performs this task using lambda and SQS for job
   creation, queueing and Fargate/EC2 for execution of the tasks.
 - Garbage collector stack: After compaction jobs have completed, the input files are deleted (after a user
@@ -59,8 +59,8 @@ stack.
 - Persistent EMR bulk import stack: Similar to the above stack, but the EMR cluster is persistent, i.e. it never
   shuts down. This is appropriate if there is a steady stream of import jobs. The cluster can either be of fixed
   size or it can use EMR managed scaling.
-- EMR Serverless Bulk Import stack: Similar to the above 2 stacks in behaviour. This stack is created at Sleeper 
-  instance deployment. It is the default way in which the bulk imports are run and provides benefit by the fact that 
+- EMR Serverless Bulk Import stack: Similar to the above 2 stacks in behaviour. This stack is created at Sleeper
+  instance deployment. It is the default way in which the bulk imports are run and provides benefit by the fact that
   when no bulk import jobs are present, no computing resources are used.
 - Dashboard stack: This displays properties of the system in a Cloudwatch dashboard.
 
@@ -99,5 +99,6 @@ See the documentation contained in the docs folder:
 3. [Usage guide](docs/usage-guide.md)
 4. [Developer guide](docs/developer-guide.md)
 5. [Design](docs/design.md)
-6. [Common problems and their solutions](docs/common-problems-and-their-solutions.md)
-7. [Roadmap](docs/development/roadmap.md)
+6. [Design risks and mitigations](docs/development/design-risks-and-mitigations.md)
+7. [Common problems and their solutions](docs/common-problems-and-their-solutions.md)
+8. [Roadmap](docs/development/roadmap.md)

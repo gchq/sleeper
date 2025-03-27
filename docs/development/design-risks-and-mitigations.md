@@ -26,34 +26,38 @@ includes the details of the partitions and the file references. Examples of plac
 
 All of these currently use AWS Lambda. Currently an invocation of a lambda can have at most 10240MB of memory. Hence
 there is a risk of running out of memory if a table has lots of partitions and hence lots of file references, or if the
-state for multiple tables are loaded in to memory at the same time.
+state of multiple tables is loaded in to memory at the same time.
 
-Most of the places where we need to load the state only require the state of a single table to be in memory at a time.
-For example, garbage collection happens independently for each Sleeper table and so only the state of one table needs
-be in memory at a time. However, there are two places where the state of multiple tables needs to be held in memory at
-once: the query executor lambda and the state store committer lambda; these are discussed separately below. Tests have
-shown it is possible to hold the information about the file references and the partitions in a table with 132,000 leaf
-partitions and tens of files per leaf partition in memory. Thus the memory limit may not be a problem in practice.
-Moreover, the use of AWS lambda is a convenience rather than a fundamental requirement. Lambdas can be easily replaced by
-ECS services or tasks which have a memory limit of 120GB. In the cases where we have large tables, the potential
-additional cost savings due to use of on-demand lambda rather than a long-running ECS task are likely to be negligible.
-Hence the current approach appears to be viable and in future it would be relatively easy to replace the use of lambda
-with long-running services which could have more memory.
+Most of the components that interact with the state store are not latency sensitive, e.g. the garbage collection process
+and the creation of compaction jobs happen periodically (at most once a minute) and there is no requirement for them to
+execute instantly after they are invoked. The property `sleeper.statestore.provider.cache.size` controls the number of
+state stores that are held in memory at a time. This can be set to 1 to ensure that we only need to have enough memory
+for the state of one table. Setting this to 1 means that if a lambda instance is reused across multiple tables then the
+state store will need to be reloaded but this does not matter as latency is not a concern. If the size of the state of a
+single table is too much for a lambda to handle then the lambda-based approach can be replaced by the use of
+long-running ECS tasks.
 
-The property `sleeper.statestore.provider.cache.size` controls the number of tables for which the state store
-information is held in memory at once. For the lambdas that do not need to hold the state of multiple tables in memory
-at once, setting this to 1 will mean that only one state store is in memory even if a lambda instance is reused across
-different tables. However, if we set this property to 1 for the query executor lambda then it means that if a lambda
-instance receives queries for multiple tables then it will have to reload the statestore information each time a query
-for a different table is received. This would result in slow queries. Again, this can be mitigated by replacing the
- query executor lambda with a long running ECS task that would enable it to hold the state of mulitple tables in memory
- at once. See the next subsection for other advantages that might bring.
+However, there are two places where latency is a concern and so the state of multiple tables needs to be held in memory
+at once: the query executor lambda and the state store committer lambda. The state store committer lambda is latency
+sensitive as we want it to quickly receive a new transaction and apply it to the transaction log. If the state store
+provider cache size is set to 1 then any time the committer lambda has to deal with a transaction for a different table
+it will have to create its state from scratch from the snapshots and the transaction log which will be slow. Hence in
+practice we want the state store committer lambda to have multiple tables in memory at once. This can be achieved by
+replacing the state store commit lambda by one or more long running ECS tasks.
 
-The state store committer lambda will need to have the information about multiple tables in memory at once. If the
-state store provider cache size is set to 1 then any time the committer lambda has to deal with a transaction for a
-different table it will have to create its state from scratch from the snapshots and the transaction log which will be
-slow. Hence in practice we want the state store committer lambda to have multiple tables in memory at once. This can
-again be achieved by replacing the state store commit lambda by one or more long running ECS tasks.
+Latency is obviously a concern in the query executor lambda as we want to respond to queries quickly. If the state store
+cache size is set to 1 then if a lambda instance receives queries for multiple tables it will have to reload the
+statestore information each time a query for a different table is received. This will result in slow queries. Again,
+this can be mitigated by replacing the query executor lambda with a long running ECS task that would enable it to hold
+the state of multiple tables in memory at once. See the next subsection for other advantages that might bring.
+
+Tests have shown it is possible to hold the information about the file references and the partitions in a table with
+132,000 leaf partitions and tens of files per leaf partition in memory. Thus the memory limit may not be a problem in
+practice. Moreover, the use of AWS lambda is a convenience rather than a fundamental requirement. Lambdas can be easily
+replaced by ECS services or tasks which have a memory limit of 120GB. In the cases where we have large tables, the
+potential additional cost savings due to use of an on-demand lambda rather than a long-running ECS task are likely
+to be negligible. Hence the current approach appears to be viable and in future it would be relatively easy to replace
+the use of lambda with long-running services which could have more memory.
 
 ## Slow or out-of-date queries due to needing to periodically update view of file references in tables
 
