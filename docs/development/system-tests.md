@@ -106,14 +106,8 @@ You can run specific tests like this:
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceST,IngestPerformanceST
 ```
 
-You can run a specific test suite like this:
-
-```bash
-./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> NightlyPerformanceSystemTestSuite
-```
-
-This can also be used with NightlyFunctionalSystemTestSuite.
+You can pass a single test class, a list of tests as above, or you can pass the name of a test suite as listed in the
+previous section.
 
 Note that some system tests are designed to run on at least 3 subnets in different availability zones. There is no
 guarantee that these tests will pass if you use fewer subnets than this, as there might not be enough capacity in

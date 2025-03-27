@@ -26,8 +26,8 @@ The following steps explain how to prepare and publish a release for Sleeper.
 5. Review the output of nightly system tests. If there are any failures, fix them. This should be done daily, regardless
    of release.
 
-There should be a cron job configured to run the test suite nightly. Running it manually and retrieving the results is
-documented in the [system tests guide](system-tests.md#nightly-test-scripts).
+There should be a cron job configured to run the test suite nightly. This setup is documented in
+the [system tests guide](system-tests.md#nightly-test-scripts).
 
 At this point we can pause merging any pull requests that are not essential for the release. This includes version
 upgrades done by Dependabot.
@@ -79,7 +79,7 @@ Choose the same options as above, and results should be returned.
 
 10. Ensure you have an up to date run of the performance test suite run against the latest commit, and get the
     performance figures from the test output. Ideally this can come from the nightly system tests, but it may be
-    necessary to re-run the test suite. See the [system test guide](system-tests.md#performance-tests).
+    necessary to re-run the tests manually. See the [system test guide](system-tests.md#acceptance-tests).
 
 11. Create a pull request for release preparation, with the performance figures and version number update.
 
