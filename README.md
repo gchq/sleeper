@@ -99,6 +99,6 @@ See the documentation contained in the docs folder:
 3. [Usage guide](docs/usage-guide.md)
 4. [Developer guide](docs/developer-guide.md)
 5. [Design](docs/design.md)
-6. [Design risks and mitigations](docs/development/design-risks-and-mitigations.md)
+6. [Design risks and mitigations](docs/design-risks-and-mitigations.md)
 7. [Common problems and their solutions](docs/common-problems-and-their-solutions.md)
 8. [Roadmap](docs/development/roadmap.md)
