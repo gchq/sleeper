@@ -323,14 +323,11 @@
         <mxCell id="Wp74-Qy4HKATFHPHKayA-32" value="Ingest" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="-280" y="100" width="60" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="Wp74-Qy4HKATFHPHKayA-33" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;fillColor=#d5e8d4;strokeColor=#82b366;exitX=0.25;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="rmGUA4Gjx7cMflotxFhx-22" target="Wp74-Qy4HKATFHPHKayA-31" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="-152" y="285" as="sourcePoint" />
-            <mxPoint x="-152" y="200" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
         <mxCell id="BYH0yZn23pgxhlCghBGR-1" value="Direct Queries" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" parent="1" vertex="1">
           <mxGeometry x="-480" y="410" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="fpTUCIz6S3QmbaHzECP9-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;fillColor=#d5e8d4;strokeColor=#82b366;" edge="1" parent="1" source="rmGUA4Gjx7cMflotxFhx-36" target="Wp74-Qy4HKATFHPHKayA-31">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
