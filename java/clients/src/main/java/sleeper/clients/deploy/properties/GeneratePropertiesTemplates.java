@@ -95,7 +95,7 @@ public class GeneratePropertiesTemplates {
     private GeneratePropertiesTemplates() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         createTemplates(Path.of(args[0]));
         createDocumentation(Path.of(args[0]));
     }
