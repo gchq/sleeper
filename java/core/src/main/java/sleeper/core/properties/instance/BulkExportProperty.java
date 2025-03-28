@@ -94,7 +94,11 @@ public interface BulkExportProperty {
             .description("The maximum number of concurrent bulk export tasks to run.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
-
+UserDefinedInstanceProperty BULK_EXPORT_S3_BUCKET_LOCATION = Index
+            .propertyBuilder("sleeper.bulk.export.s3.bucket.location")
+            .description("The location of the S3 bucket where the bulk export files are stored.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .runCdkDeployWhenChanged(true).build();
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
