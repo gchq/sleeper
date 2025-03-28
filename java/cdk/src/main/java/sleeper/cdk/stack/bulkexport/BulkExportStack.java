@@ -56,11 +56,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -123,8 +123,7 @@ public class BulkExportStack extends NestedStack {
         /*
          * Output the role arn of the lambda as a property so that clients that want the
          * results of queries written to their own SQS queue can give the role
-         * permission
-         * to write to their queue
+         * permission to write to their queue
          */
         IRole bulkExportLambdaRole = Objects.requireNonNull(bulkExportLambda.getRole());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_LAMBDA_ROLE_ARN,
