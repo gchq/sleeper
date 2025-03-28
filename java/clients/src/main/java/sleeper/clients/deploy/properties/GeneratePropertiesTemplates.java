@@ -127,7 +127,7 @@ public class GeneratePropertiesTemplates {
                 GeneratePropertiesTemplates::writeTablePropertiesTemplate);
     }
 
-    private static void createDocumentation(Path path) throws IOException {
+    private static void createDocumentation(Path path) throws Exception {
         GeneratePropertiesDocumentation.generateDocumentation(path);
     }
 
