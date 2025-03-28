@@ -84,7 +84,8 @@ public interface BulkExportProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_TASK_CREATION_PERIOD_IN_MINUTES = Index
             .propertyBuilder("sleeper.bulk.export.task.creation.period.minutes")
-            .description("The rate at which a check to see if bulk export ECS tasks need to be created is made (in minutes, must be >= 1).")
+            .description(
+                    "The rate at which a check to see if bulk export ECS tasks need to be created is made (in minutes, must be >= 1).")
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
@@ -94,6 +95,14 @@ public interface BulkExportProperty {
             .description("The maximum number of concurrent bulk export tasks to run.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS = Index
+            .propertyBuilder("sleeper.bulk.export.results.bucket.expiry.days")
+            .description("The length of time the results of bulk export remain in the bulk" +
+                    " export results bucket before being deleted.")
+            .defaultValue("7")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

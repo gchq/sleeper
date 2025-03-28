@@ -72,11 +72,11 @@ public class BulkExportTaskResources {
     private final Stack stack;
 
     public BulkExportTaskResources(Stack stack, CoreStacks coreStacks, InstanceProperties instanceProperties,
-            LambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue) {
+            LambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
         lambdaToCreateTasks(coreStacks, lambdaCode, jobsQueue, instanceProperties);
-        ecsClusterForBulkExportTasks(coreStacks, jarsBucket, lambdaCode);
+        ecsClusterForBulkExportTasks(coreStacks, jarsBucket, lambdaCode, resultsBucket);
     }
 
     private void lambdaToCreateTasks(
@@ -124,7 +124,8 @@ public class BulkExportTaskResources {
         instanceProperties.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    private void ecsClusterForBulkExportTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar) {
+    private void ecsClusterForBulkExportTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar,
+            IBucket resultsBucket) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -151,6 +152,7 @@ public class BulkExportTaskResources {
 
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
+        resultsBucket.grantReadWrite(taskDefinition.getTaskRole());
 
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
