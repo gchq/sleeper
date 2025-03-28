@@ -16,7 +16,7 @@ ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
 FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
-    java-21-amazon-corretto \
+    java-21-amazon-corretto-jdk \
     maven \
     git \
     python3 \
