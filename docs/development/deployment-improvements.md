@@ -16,8 +16,8 @@ At time of writing the deployment process consists of:
 - A script to tear down an instance at `scripts/deploy/tearDown.sh`
 - The admin client to edit the instance configuration at `scripts/utility/adminClient.sh`
 
-Currently these scripts perform some preparatory steps before they invoke the CDK. We'll look at them one at a time,
-then see how this is handled in the CDK.
+Currently these scripts perform some extra deployment steps outside of the CDK. We'll look at them one at a time, and
+see how they relate to the CDK app.
 
 We'll also look at other potential improvements, including to creation and configuration of Sleeper tables.
 
