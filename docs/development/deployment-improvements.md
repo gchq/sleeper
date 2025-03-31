@@ -7,6 +7,7 @@ improvements.
 We have the following epics for improvements to deployment:
 - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
 - https://github.com/gchq/sleeper/issues/3693 Declarative deployment for infrastructure as code.
+- https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
 
 At time of writing the deployment process consists of:
 - The CDK app which deploys Sleeper
