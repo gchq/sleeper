@@ -47,7 +47,7 @@ including:
 We could support setting specific locations for every individual jar and Docker image, or just with predefined names
 under a given location.
 
-We could provide support for each of these options as part of the build process.
+We could provide support to publish artifacts to each of these locations as part of the build process.
 
 This also relates to plans for the CLI, as we consider a unified CLI to replace the scripts. Other scripts currently
 require jars built by this script. We may adjust the entrypoint for operations currently implemented as scripts,
