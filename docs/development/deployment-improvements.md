@@ -132,8 +132,29 @@ is currently part of the epic for support for declarative deployment, in https:/
 When these changes are done, this script should be unnecessary, or can call the CDK directly. All functionality will be
 in the CDK app.
 
+## Admin client (`scripts/utility/adminClient.sh`)
+
+This script invokes a CLI to perform various admin operations. The relevant parts here are to edit the configuration of
+a Sleeper instance and its tables. This opens a text editor for the instance properties or table properties, and then
+saves any changes directly to AWS. If you edit an instance property that requires a CDK deployment to apply, the
+instance configuration is written to a local directory and the CDK is invoked pointing to that configuration.
+
+When we add support for declarative deployment in https://github.com/gchq/sleeper/issues/3693, this may no longer be the
+recommended way to apply changes to instance or table properties. Instead, you would check your instance configuration
+into version control, and when you make a change you would invoke the CDK to update the Sleeper instance. This may
+include table properties as well.
+
+## Sleeper table configuration
+
+Currently Sleeper tables are managed by a separate set of scripts to manage Sleeper tables, documented
+separately [here](../usage/tables.md).
+
+When we add support for declarative deployment in https://github.com/gchq/sleeper/issues/3693, we may add an alternative
+flow for applying configuration of Sleeper tables. We may split that out as a separate epic.
+
 ## Other improvements
 
 One option for the CLI would be to retrieve a jar or executable for the client when you install the CLI, instead of a
 Docker image. This could be used as the entry point for all operations that are currently Bash scripts, as described
-in https://github.com/gchq/sleeper/issues/1328.
+in https://github.com/gchq/sleeper/issues/1328. This could potentially simplify the local build artifacts currently
+required for scripts to work with an instance of Sleeper.
