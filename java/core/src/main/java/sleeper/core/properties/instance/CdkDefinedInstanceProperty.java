@@ -319,6 +319,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the SQS dead letter queue that is used by the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_S3_BUCKET = Index
+            .propertyBuilder("sleeper.bulk.export.s3.bucket")
+            .description("The location of the S3 bucket where the bulk export files are stored.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
     // Compactions
     CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")
