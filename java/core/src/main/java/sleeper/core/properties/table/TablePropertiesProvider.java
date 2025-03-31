@@ -79,7 +79,13 @@ public class TablePropertiesProvider {
         return get(tableId, cacheById, () -> propertiesStore.loadById(tableId));
     }
 
-    private TableProperties get(TableStatus table) {
+    /**
+     * Retrieves properties by table status.
+     *
+     * @param  table the table status
+     * @return       the table properties
+     */
+    public TableProperties get(TableStatus table) {
         return get(table.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(table));
     }
 

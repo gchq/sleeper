@@ -35,6 +35,10 @@ public class RecordNumbers {
         return new RecordNumbers(records);
     }
 
+    public int numRecords() {
+        return records.size();
+    }
+
     public LongStream stream() {
         return records.stream().mapToLong(Long::longValue);
     }

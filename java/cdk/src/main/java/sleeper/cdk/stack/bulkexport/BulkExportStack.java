@@ -77,12 +77,13 @@ public class BulkExportStack extends NestedStack {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
-                instanceId, "bulk-export");
+                instanceId, "bulk-export_planner");
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT, "BulkExportLambda",
+        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER,
+                "BulkExportPlanner",
                 builder -> builder
                         .functionName(functionName)
                         .description("Sends a message to export for a leaf partition")
@@ -93,13 +94,12 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        attachPolicy(bulkExportLambda, "BulkExportLambda");
+        attachPolicy(bulkExportLambda, "BulkExportPlanner");
 
         List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
         Queue bulkExportQ = bulkExportQueues.get(0);
         Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
-        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq,
-                QueueType.EXPORT);
+        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -115,7 +115,8 @@ public class BulkExportStack extends NestedStack {
 
         /*
          * Output the role arn of the lambda as a property so that clients that want the
-         * results of queries written to their own SQS queue can give the role permission
+         * results of queries written to their own SQS queue can give the role
+         * permission
          * to write to their queue
          */
         IRole bulkExportLambdaRole = Objects.requireNonNull(bulkExportLambda.getRole());
@@ -127,14 +128,16 @@ public class BulkExportStack extends NestedStack {
                 .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_LAMBDA_ROLE_ARN)
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
+
+        new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
     }
 
     /**
      * Create a queue and a dead letter queue for the queue.
      *
-     * @param  id                 the id of the queue
-     * @param  instanceProperties the instance properties
-     * @return                    the queue and the dead letter queue
+     * @param id                 the id of the queue
+     * @param instanceProperties the instance properties
+     * @return the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -193,6 +196,8 @@ public class BulkExportStack extends NestedStack {
                         dlQueue.getQueueUrl());
                 instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN,
                         queue.getQueueArn());
+                instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_ARN,
+                        dlQueue.getQueueArn());
 
                 new CfnOutput(this, LEAF_PARTITION_BULK_EXPORT_QUEUE_NAME, new CfnOutputProps.Builder()
                         .value(queue.getQueueName())
@@ -222,6 +227,7 @@ public class BulkExportStack extends NestedStack {
                 instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_URL,
                         dlQueue.getQueueUrl());
                 instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_ARN, queue.getQueueArn());
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_ARN, dlQueue.getQueueArn());
 
                 new CfnOutput(this, BULK_EXPORT_QUEUE_NAME, new CfnOutputProps.Builder()
                         .value(queue.getQueueName())

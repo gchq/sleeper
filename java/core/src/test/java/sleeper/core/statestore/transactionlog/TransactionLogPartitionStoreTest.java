@@ -28,6 +28,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.InitialiseWithFilesPresentException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -217,7 +218,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
 
             // When / Then
             assertThatThrownBy(() -> update(store).initialise(partitionsAfter.buildList()))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(InitialiseWithFilesPresentException.class);
             assertThat(store.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(partitionsBefore.buildList());
         }

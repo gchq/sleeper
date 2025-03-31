@@ -27,7 +27,8 @@
 
     <modules>
         <module>bulk-export-core</module>
-        <module>bulk-export-runner</module>
-        <module>bulk-export-lambda</module>
+        <module>bulk-export-planner</module>
+        <module>bulk-export-task-creator</module>
+        <module>bulk-export-task-execution</module>
     </modules>
 </project>

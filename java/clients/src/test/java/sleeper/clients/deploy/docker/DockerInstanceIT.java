@@ -48,6 +48,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
@@ -70,12 +73,14 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
-            assertThatCode(() -> describeTables(instanceProperties,
+            assertTablesExist(instanceProperties,
+                    TABLE_NAME_INDEX_DYNAMO_TABLENAME,
+                    TABLE_ONLINE_INDEX_DYNAMO_TABLENAME,
+                    TABLE_ID_INDEX_DYNAMO_TABLENAME,
                     TRANSACTION_LOG_FILES_TABLENAME,
                     TRANSACTION_LOG_PARTITIONS_TABLENAME,
                     TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME,
-                    TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME))
-                    .doesNotThrowAnyException();
+                    TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         }
 
         @Test
@@ -93,20 +98,29 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> dynamoClient.describeTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME)))
-                    .isInstanceOf(ResourceNotFoundException.class);
-            assertThatThrownBy(() -> dynamoClient.describeTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME)))
-                    .isInstanceOf(ResourceNotFoundException.class);
-            assertThatThrownBy(() -> dynamoClient.describeTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME)))
-                    .isInstanceOf(ResourceNotFoundException.class);
-            assertThatThrownBy(() -> dynamoClient.describeTable(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME)))
-                    .isInstanceOf(ResourceNotFoundException.class);
-
+            assertTablesDoNotExist(instanceProperties,
+                    TABLE_NAME_INDEX_DYNAMO_TABLENAME,
+                    TABLE_ONLINE_INDEX_DYNAMO_TABLENAME,
+                    TABLE_ID_INDEX_DYNAMO_TABLENAME,
+                    TRANSACTION_LOG_FILES_TABLENAME,
+                    TRANSACTION_LOG_PARTITIONS_TABLENAME,
+                    TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME,
+                    TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         }
 
-        private void describeTables(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) throws AmazonDynamoDBException {
+        private void assertTablesExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) throws AmazonDynamoDBException {
             for (InstanceProperty tableNameProperty : tableNameProperties) {
-                dynamoClient.describeTable(instanceProperties.get(tableNameProperty));
+                assertThatCode(() -> dynamoClient.describeTable(instanceProperties.get(tableNameProperty)))
+                        .describedAs("Table should exist: " + tableNameProperty)
+                        .doesNotThrowAnyException();
+            }
+        }
+
+        private void assertTablesDoNotExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) {
+            for (InstanceProperty tableNameProperty : tableNameProperties) {
+                assertThatThrownBy(() -> dynamoClient.describeTable(instanceProperties.get(tableNameProperty)),
+                        "Table should not exist: " + tableNameProperty)
+                        .isInstanceOf(ResourceNotFoundException.class);
             }
         }
 

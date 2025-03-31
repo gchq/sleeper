@@ -44,7 +44,8 @@ public class DockerImageConfiguration {
             OptionalStack.IngestStack, dockerBuildImage("ingest"),
             OptionalStack.EksBulkImportStack, dockerBuildImage("bulk-import-runner"),
             OptionalStack.CompactionStack, dockerBuildxImage("compaction-job-execution"),
-            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
+            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"),
+            OptionalStack.BulkExportStack, dockerBuildImage("bulk-export-task-execution"));
 
     private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaHandler.all());
 

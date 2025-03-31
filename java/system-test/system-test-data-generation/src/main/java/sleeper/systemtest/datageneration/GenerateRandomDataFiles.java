@@ -51,14 +51,15 @@ public class GenerateRandomDataFiles {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <instance-id> <output-directory> <optional-number-of-records>");
+        if (args.length < 3 || args.length > 4) {
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-directory> <optional-number-of-records>");
         }
         String instanceId = args[0];
-        String outputDirectory = args[1];
+        String tableName = args[1];
+        String outputDirectory = args[2];
         long numberOfRecords = 100000;
-        if (args.length > 2 && !"".equals(args[2])) {
-            numberOfRecords = Long.parseLong(args[2]);
+        if (args.length > 3) {
+            numberOfRecords = Long.parseLong(args[3]);
         }
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
@@ -66,7 +67,7 @@ public class GenerateRandomDataFiles {
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
-                    .loadByName("system-test");
+                    .loadByName(tableName);
 
             new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
                     .run();

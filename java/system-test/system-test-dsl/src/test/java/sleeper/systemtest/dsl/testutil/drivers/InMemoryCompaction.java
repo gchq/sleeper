@@ -21,6 +21,7 @@ import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -30,6 +31,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
@@ -46,7 +48,7 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -72,10 +74,10 @@ public class InMemoryCompaction {
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     private final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
-    private final InMemoryDataStore dataStore;
+    private final InMemoryRecordStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
-    public InMemoryCompaction(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore) {
+    public InMemoryCompaction(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
     }
@@ -165,6 +167,16 @@ public class InMemoryCompaction {
                             .build());
                 }
             });
+        }
+
+        @Override
+        public String sendCompactionBatchGetKey(List<CompactionJob> jobs) {
+            throw new UnsupportedOperationException("Compaction batches are not used in memory");
+        }
+
+        @Override
+        public List<CompactionJobDispatchRequest> drainPendingDeadLetterQueueForWholeInstance() {
+            throw new UnsupportedOperationException("Pending compactions are not used in memory");
         }
 
         private CreateCompactionJobs jobCreator() {
