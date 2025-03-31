@@ -44,7 +44,7 @@ use arrow::{
     datatypes::{ByteArrayType, DataType, Field, Int64Type},
 };
 use datafusion::{
-    common::{exec_err, internal_err, HashMap},
+    common::{exec_err, internal_err, not_impl_err, HashMap},
     error::Result,
     logical_expr::{
         function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
@@ -98,9 +98,10 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        Ok(Box::new(
-            MapAccumulator::<StringBuilder, Int64Builder>::new(acc_args.return_type)?,
-        ))
+        Ok(Box::new(super::accumulator::PrimMapAccumulator::<
+            Int64Builder,
+            Int64Builder,
+        >::new(acc_args.return_type)?))
     }
 
     fn is_nullable(&self) -> bool {
@@ -136,189 +137,31 @@ impl AggregateUDFImpl for MapAggregator {
     }
 }
 
-trait AppendValue {
-    type ArrowType: Send + Sync;
-    type Native: Debug + Sync + Send + Sized;
-    const DATATYPE: DataType;
-    fn append_value<'a>(&mut self, v: &'a Self::Native);
-}
-
-impl<T: ArrowPrimitiveType + Send + Sync> AppendValue for PrimitiveBuilder<T> {
-    type ArrowType = T;
-    type Native = T::Native;
-    const DATATYPE: DataType = T::DATA_TYPE;
-    fn append_value<'a>(&mut self, v: &'a Self::Native) {
-        self.append_value(*v);
-    }
-}
-
-impl<T> AppendValue for GenericByteBuilder<T>
-where
-    T: ByteArrayType + Send + Sync,
-    <T as ByteArrayType>::Native: ToOwned,
-    <<T as ByteArrayType>::Native as ToOwned>::Owned:
-        AsRef<<T as ByteArrayType>::Native> + Debug + Send + Sync + Sized,
-{
-    type ArrowType = T;
-    type Native = <<T as ByteArrayType>::Native as ToOwned>::Owned;
-    const DATATYPE: DataType = T::DATA_TYPE;
-    fn append_value<'a>(&mut self, v: &'a Self::Native) {
-        self.append_value(v);
-    }
-}
-
-fn update_string_map<'a, VBuilder>(
-    input: &'a Option<StructArray>,
-    map: &mut HashMap<String, <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native>,
-) where
-    VBuilder: ArrayBuilder + Debug + AppendValue,
-    <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
-    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
-{
-    if let Some(entries) = input {
-        let col1 = entries.column(0).as_string::<i32>();
-        let col2 = entries
-            .column(1)
-            .as_primitive::<<VBuilder as AppendValue>::ArrowType>();
-        for (k, v) in col1.into_iter().zip(col2) {
-            match (k, v) {
-                (Some(key), Some(value)) => {
-                    map.entry_ref(key)
-                        .and_modify(|v| *v += value)
-                        .or_insert(value);
-                }
-                _ => panic!("Nullable entries aren't supported"),
-            }
-        }
-    }
-}
-
-fn update_primitive_map<'a, K, V>(
-    input: &'a Option<StructArray>,
-    map: &mut HashMap<<K as ArrowPrimitiveType>::Native, <V as ArrowPrimitiveType>::Native>,
-) where
-    K: ArrowPrimitiveType,
-    V: ArrowPrimitiveType,
-    <K as ArrowPrimitiveType>::Native:
-        Hash + Eq + for<'b> From<&'b <K as ArrowPrimitiveType>::Native>,
-    <V as ArrowPrimitiveType>::Native: AddAssign,
-{
-    if let Some(entries) = input {
-        let col1 = entries.column(0).as_primitive::<K>();
-        let col2 = entries.column(1).as_primitive::<V>();
-        for (k, v) in col1.into_iter().zip(col2) {
-            match (k, v) {
-                (Some(key), Some(value)) => {
-                    map.entry_ref(&key)
-                        .and_modify(|v| *v += value)
-                        .or_insert(value);
-                }
-                _ => panic!("Nullable entries aren't supported"),
-            }
-        }
-    }
-}
-
-/// Single value accumulator function for maps.
-#[derive(Debug)]
-struct MapAccumulator<KBuilder, VBuilder>
-where
-    KBuilder: ArrayBuilder + Debug + AppendValue,
-    VBuilder: ArrayBuilder + Debug + AppendValue,
-    <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
-    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
-{
-    map_type: DataType,
-    values: HashMap<<KBuilder as AppendValue>::Native, <VBuilder as AppendValue>::Native>,
-    _p: PhantomData<KBuilder>,
-    _p2: PhantomData<VBuilder>,
-}
-
-impl<KBuilder, VBuilder> MapAccumulator<KBuilder, VBuilder>
-where
-    KBuilder: ArrayBuilder + Debug + AppendValue,
-    VBuilder: ArrayBuilder + Debug + AppendValue,
-    <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
-    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
-{
-    // Creates a new accumulator.
-    //
-    // The type of the map must be specified so that the correct sort
-    // of map builder can be created.
-    fn new(map_type: &DataType) -> Result<Self> {
-        if !matches!(*map_type, DataType::Map(_, _)) {
-            internal_err!("Invalid datatype for MapAccumulator {map_type:?}")
-        } else {
-            Ok(Self {
-                map_type: map_type.clone(),
-                values: HashMap::default(),
-                _p: PhantomData,
-                _p2: PhantomData,
-            })
-        }
-    }
-}
-
-impl<KBuilder, VBuilder> Accumulator for MapAccumulator<KBuilder, VBuilder>
-where
-    KBuilder: ArrayBuilder + Debug + AppendValue,
-    VBuilder: ArrayBuilder + Debug + AppendValue,
-    <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
-    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
-{
-    fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
-        if values.len() != 1 {
-            return exec_err!("MapAccumulator only accepts single column input");
-        }
-
-        let input = values[0].as_map();
-        // For each map we get, feed it into our internal aggregated map
-        for map in input.iter() {
-            match <KBuilder as AppendValue>::DATATYPE {
-                DataType::Utf8 => {
-                    let ref_map: &mut dyn Any = &mut self.values as &mut dyn Any;
-                    let mappy = ref_map
-                        .downcast_mut::<HashMap<
-                            String,
-                            <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native,
-                        >>()
-                        .expect("Couldn't downcast string map correctly");
-                    update_string_map::<VBuilder>(&map, mappy);
-                }
-                _ => {
-                    unimplemented!()
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn evaluate(&mut self) -> Result<ScalarValue> {
-        let mut build_binding = make_builder(&self.map_type, self.values.len());
-        let builder = build_binding
-            .as_any_mut()
-            .downcast_mut::<MapBuilder<KBuilder, VBuilder>>()
-            .expect("Builder downcast failed");
-        for (key, val) in &self.values {
-            builder.keys().append_value(key);
-            builder.values().append_value(val);
-        }
-        builder.append(true).expect("Can't finish MapBuilder");
-        Ok(ScalarValue::Map(Arc::new(builder.finish())))
-    }
-
-    fn size(&self) -> usize {
-        size_of_val(self)
-    }
-
-    fn state(&mut self) -> Result<Vec<ScalarValue>> {
-        self.evaluate().map(|e| vec![e])
-    }
-
-    fn merge_batch(&mut self, states: &[ArrayRef]) -> Result<()> {
-        self.update_batch(states)
-    }
-}
+// fn update_string_map<'a, VBuilder>(
+//     input: &'a Option<StructArray>,
+//     map: &mut HashMap<String, <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native>,
+// ) where
+//     VBuilder: ArrayBuilder + Debug + AppendValue,
+//     <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
+//     <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+// {
+//     if let Some(entries) = input {
+//         let col1 = entries.column(0).as_string::<i32>();
+//         let col2 = entries
+//             .column(1)
+//             .as_primitive::<<VBuilder as AppendValue>::ArrowType>();
+//         for (k, v) in col1.into_iter().zip(col2) {
+//             match (k, v) {
+//                 (Some(key), Some(value)) => {
+//                     map.entry_ref(key)
+//                         .and_modify(|v| *v += value)
+//                         .or_insert(value);
+//                 }
+//                 _ => panic!("Nullable entries aren't supported"),
+//             }
+//         }
+//     }
+// }
 
 // #[derive(Debug, Default)]
 // struct GroupMapAccumulator {

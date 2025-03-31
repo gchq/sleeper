@@ -24,6 +24,7 @@ use datafusion::{
     logical_expr::{Expr, ScalarUDF},
 };
 
+mod accumulator;
 pub mod ageoff;
 pub mod map_agg;
 mod state;
