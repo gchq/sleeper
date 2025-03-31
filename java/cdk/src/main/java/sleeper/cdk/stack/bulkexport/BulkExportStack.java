@@ -82,7 +82,8 @@ public class BulkExportStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER, "BulkExportPlanner",
+        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER,
+                "BulkExportPlanner",
                 builder -> builder
                         .functionName(functionName)
                         .description("Sends a message to export for a leaf partition")
@@ -195,6 +196,8 @@ public class BulkExportStack extends NestedStack {
                         dlQueue.getQueueUrl());
                 instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN,
                         queue.getQueueArn());
+                instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_ARN,
+                        dlQueue.getQueueArn());
 
                 new CfnOutput(this, LEAF_PARTITION_BULK_EXPORT_QUEUE_NAME, new CfnOutputProps.Builder()
                         .value(queue.getQueueName())
@@ -224,6 +227,7 @@ public class BulkExportStack extends NestedStack {
                 instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_URL,
                         dlQueue.getQueueUrl());
                 instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_ARN, queue.getQueueArn());
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_ARN, dlQueue.getQueueArn());
 
                 new CfnOutput(this, BULK_EXPORT_QUEUE_NAME, new CfnOutputProps.Builder()
                         .value(queue.getQueueName())

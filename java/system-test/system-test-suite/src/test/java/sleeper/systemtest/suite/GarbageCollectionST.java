@@ -20,37 +20,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
-import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.partitionsBuilder;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -61,47 +46,34 @@ public class GarbageCollectionST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
-        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
+        int numberOfFilesToGC = 11_000;
+        int recordsPerFile = 100;
+        int numberOfRecords = recordsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
-                INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "10",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
-        sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
-                .rootFirst("root")
-                .splitToNewChildren("root", UUID.randomUUID().toString(), UUID.randomUUID().toString(), "row-50000")
-                .buildTree());
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100_000));
-        SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
-        IntStream.range(0, 1000)
-                .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
-                .forEach(range -> ingest.numberedRecords(range));
-        sleeper.compaction().createJobs(200).waitForTasks(1).waitForJobs();
+        RecordNumbers records = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
+        sleeper.ingest().direct(tempDir)
+                .splitIngests(numberOfFilesToGC, records);
+        sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
 
         // When
         sleeper.garbageCollection().invoke().waitFor(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(1)));
 
         // Then
-        assertThat(new HashSet<>(sleeper.query().byQueue().allRecordsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
-            assertThat(files.listFileReferences()).hasSize(200);
+            assertThat(files.listFileReferences()).hasSize(1);
         });
-    }
-
-    private static <T> Set<T> setFrom(Iterable<T> iterable) {
-        return StreamSupport.stream(iterable.spliterator(), false).collect(toSet());
     }
 }

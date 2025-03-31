@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.creation.lambda;
+package sleeper.compaction.job.creation;
 
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
@@ -60,7 +60,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
+public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
     StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
@@ -204,7 +204,7 @@ public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return CompactionJobDispatchLambda.dispatcher(s3Client, dynamoClient, sqsClient, hadoopConf, instanceProperties, times.iterator()::next);
+        return AwsCompactionJobDispatcher.from(s3Client, dynamoClient, sqsClient, hadoopConf, instanceProperties, times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {
@@ -233,4 +233,5 @@ public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
                 .map(Message::getBody)
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
+
 }

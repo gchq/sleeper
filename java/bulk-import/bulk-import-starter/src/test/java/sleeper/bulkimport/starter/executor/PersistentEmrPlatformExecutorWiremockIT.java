@@ -26,8 +26,15 @@ import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
+import java.time.Instant;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -45,35 +52,41 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
-public class PersistentEmrPlatformExecutorWiremockIT {
+class PersistentEmrPlatformExecutorWiremockIT {
     public static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutorWiremockIT.class);
 
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
 
     @BeforeEach
     void setUp() {
+        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(CONFIG_BUCKET, "test-config-bucket");
         instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-cluster");
         instanceProperties.set(BULK_IMPORT_CLASS_NAME, "BulkImportClass");
+        tableProperties.set(TABLE_ID, "table-id");
+        tableProperties.set(TABLE_NAME, "table-name");
+        transactionLogs.initialiseTable(tableProperties);
     }
 
     @Test
     void shouldRunAJob(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        BulkImportJob job = BulkImportJob.builder()
+        BulkImportJob job = jobForTable()
                 .id("test-job")
                 .files(List.of("file.parquet"))
-                .tableName("table-name")
-                .build();
-        BulkImportArguments arguments = BulkImportArguments.builder()
-                .instanceProperties(instanceProperties)
-                .bulkImportJob(job).jobRunId("test-run")
                 .build();
         stubFor(post("/")
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
@@ -84,7 +97,7 @@ public class PersistentEmrPlatformExecutorWiremockIT {
                 .willReturn(aResponse().withStatus(200)));
 
         // When
-        executor(runtimeInfo).runJobOnPlatform(arguments);
+        createExecutor(runtimeInfo).runJob(job, "test-run");
 
         // Then
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
@@ -102,14 +115,9 @@ public class PersistentEmrPlatformExecutorWiremockIT {
     @Test
     void shouldRetryWhenRateLimitedOnListClusters(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        BulkImportJob job = BulkImportJob.builder()
+        BulkImportJob job = jobForTable()
                 .id("test-job")
                 .files(List.of("file.parquet"))
-                .tableName("table-name")
-                .build();
-        BulkImportArguments arguments = BulkImportArguments.builder()
-                .instanceProperties(instanceProperties)
-                .bulkImportJob(job).jobRunId("test-run")
                 .build();
         stubFor(post("/")
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
@@ -130,7 +138,7 @@ public class PersistentEmrPlatformExecutorWiremockIT {
                 .willReturn(aResponse().withStatus(200)));
 
         // When
-        executor(runtimeInfo).runJobOnPlatform(arguments);
+        createExecutor(runtimeInfo).runJob(job, "test-run");
 
         // Then
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
@@ -148,14 +156,9 @@ public class PersistentEmrPlatformExecutorWiremockIT {
     @Test
     void shouldRetryWhenRateLimitedOnAddJob(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        BulkImportJob job = BulkImportJob.builder()
+        BulkImportJob job = jobForTable()
                 .id("test-job")
                 .files(List.of("file.parquet"))
-                .tableName("table-name")
-                .build();
-        BulkImportArguments arguments = BulkImportArguments.builder()
-                .instanceProperties(instanceProperties)
-                .bulkImportJob(job).jobRunId("test-run")
                 .build();
         stubFor(post("/")
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
@@ -176,7 +179,7 @@ public class PersistentEmrPlatformExecutorWiremockIT {
                 .willReturn(aResponse().withStatus(200)));
 
         // When
-        executor(runtimeInfo).runJobOnPlatform(arguments);
+        createExecutor(runtimeInfo).runJob(job, "test-run");
 
         // Then
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
@@ -191,7 +194,41 @@ public class PersistentEmrPlatformExecutorWiremockIT {
                         .isEqualTo(exampleString("example/persistent-emr/addjobflow-request.json")));
     }
 
-    private PersistentEmrPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {
+    @Test
+    void shouldReturnToQueueWhenClusterIsFull(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .build();
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
+                .willReturn(aResponse().withStatus(200)
+                        .withBody(exampleString("example/persistent-emr/listclusters-response.json"))));
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
+                .willReturn(aResponse().withStatus(200))); // TODO fake cluster is full
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-run");
+
+        // Then
+        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))))
+                .singleElement()
+                .satisfies(request -> assertThatJson(request.getBodyAsString())
+                        .isEqualTo(exampleString("example/persistent-emr/addjobflow-request.json")));
+    }
+
+    private BulkImportExecutor createExecutor(WireMockRuntimeInfo runtimeInfo) {
+        return new BulkImportExecutor(
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
+                IngestJobTracker.NONE, noWriteToBucket(),
+                createPlatformExecutor(runtimeInfo), Instant::now);
+    }
+
+    private PersistentEmrPlatformExecutor createPlatformExecutor(WireMockRuntimeInfo runtimeInfo) {
         return new PersistentEmrPlatformExecutor(
                 wiremockAwsV2Client(runtimeInfo, EmrClient.builder()
                         .overrideConfiguration(config -> config
@@ -200,6 +237,17 @@ public class PersistentEmrPlatformExecutorWiremockIT {
                                         .backoffStrategy(BackoffStrategy.retryImmediately())
                                         .throttlingBackoffStrategy(BackoffStrategy.retryImmediately())))),
                 instanceProperties);
+    }
+
+    private WriteJobToBucket noWriteToBucket() {
+        return (job, jobRunId) -> {
+        };
+    }
+
+    private BulkImportJob.Builder jobForTable() {
+        return BulkImportJob.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .tableName(tableProperties.get(TABLE_NAME));
     }
 
 }
