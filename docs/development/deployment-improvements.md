@@ -31,10 +31,11 @@ This is currently the only supported way to prepare to run the other scripts loc
 ### Potential changes
 
 When we add support to deploy a published version of Sleeper in https://github.com/gchq/sleeper/issues/1330, we will
-need an alternative for this, in some combination of:
+need an alternative for this. Here are the cases we will need to implement:
 
-- Pull artifacts locally from a published location at installation
-- Pull artifacts in AWS from a configured location as part of the CDK deployment
+- Build and publish artifacts
+- Retrieve artifacts for a local installation of clients/scripts
+- Prepare artifacts in AWS as part of a CDK deployment
 
 We will need to decide which published locations we should support for the jars and Docker images, potentially
 including:
