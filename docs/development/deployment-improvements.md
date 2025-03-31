@@ -117,6 +117,7 @@ When we add support to deploy a published version of Sleeper in https://github.c
 if we move the upload of jars and Docker images into the CDK app, all functionality in this script may be moved into the
 CDK. If we do that first, we may not need any additional changes for declarative deployment
 in https://github.com/gchq/sleeper/issues/3693, as invoking the CDK directly should accomplish that goal.
+This would be done in https://github.com/gchq/sleeper/issues/3628.
 
 We could remove this script, or have it call the CDK directly. Operations for Sleeper tables could be handled
 separately, or this script could combine a CDK invocation with management of Sleeper table configuration.
@@ -168,9 +169,21 @@ separately [here](../usage/tables.md).
 When we add support for declarative deployment in https://github.com/gchq/sleeper/issues/3693, we may add an alternative
 flow for applying configuration of Sleeper tables. We may split that out as a separate epic.
 
+Here are some potential improvements currently under that epic:
+- https://github.com/gchq/sleeper/issues/583 Add table split points into local configuration folder structure
+- https://github.com/gchq/sleeper/issues/3627 Declarative update of table configuration
+
 ## Other improvements
 
 One option for the CLI would be to retrieve a jar or executable for the client when you install the CLI, instead of a
 Docker image. This could be used as the entry point for all operations that are currently Bash scripts, as described
 in https://github.com/gchq/sleeper/issues/1328. This could potentially simplify the local build artifacts currently
 required for scripts to work with an instance of Sleeper.
+
+As part of support for declarative deployment in https://github.com/gchq/sleeper/issues/3693, we have an issue to apply
+this to manual system tests, so we can have different configurations we can deploy for testing,
+in https://github.com/gchq/sleeper/issues/2384.
+
+We also have a separate epic https://github.com/gchq/sleeper/issues/4235 for graceful upgrade of a Sleeper instance
+while it's running. This is not currently supported, but we can add appropriate testing so we can support this in the
+future.
