@@ -24,8 +24,9 @@ We'll also look at other potential improvements, including to creation and confi
 ## Build the system (`scripts/build/build.sh`)
 
 This script must be run before any of the other scripts can be used. This builds the code, and outputs artifacts to the
-`scripts/jars` and `scripts/docker` directories. This is currently the only supported way to prepare to run the other
-scripts locally.
+`scripts/jars` and `scripts/docker` directories.
+
+This is currently the only supported way to prepare to run the other scripts locally.
 
 ### Potential changes
 
