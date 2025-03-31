@@ -24,14 +24,29 @@ We'll also look at other potential improvements, including to creation and confi
 ## Build the system (`scripts/build/build.sh`)
 
 This script must be run before any of the other scripts can be used. This builds the code, and outputs artifacts to the
-`scripts/jars` and `scripts/docker` directories. This is currently the only supported way to prepare to run the scripts
-locally.
+`scripts/jars` and `scripts/docker` directories. This is currently the only supported way to prepare to run the other
+scripts locally.
+
+### Potential changes
 
 When we add support to deploy a published version of Sleeper in https://github.com/gchq/sleeper/issues/1330, we will
-add an alternative for this, in some combination of:
+need an alternative for this, in some combination of:
 
 - Pull artifacts locally from a published location at installation
 - Pull artifacts in AWS from a configured location as part of the CDK deployment
+
+We will need to decide which published locations we should support for the jars and Docker images, potentially
+including:
+
+- A jars bucket in another AWS account
+- A shared jars bucket for instances in the same AWS account (as in the current automated system tests)
+- A Maven repository, either specified or e.g. Maven central, GitHub packages
+- Specified Docker repositories, or e.g. Docker Hub, GitHub packages
+
+We could support setting specific locations for every individual jar and Docker image, or just with predefined names
+under a given location.
+
+We could provide support for each of these options as part of the build process.
 
 This also relates to plans for the CLI, as we consider a unified CLI to replace the scripts. Other scripts currently
 require jars built by this script. We may adjust the entrypoint for operations currently implemented as scripts,
