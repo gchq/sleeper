@@ -97,7 +97,7 @@ public interface BulkExportProperty {
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
     UserDefinedInstanceProperty BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS = Index
             .propertyBuilder("sleeper.bulk.export.results.bucket.expiry.days")
-            .description("The length of time the results of bulk export remain in the bulk" +
+            .description("The number of days the results of bulk export remain in the bulk" +
                     " export results bucket before being deleted.")
             .defaultValue("7")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
