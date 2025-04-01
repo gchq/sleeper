@@ -39,3 +39,6 @@ The following improvements will be worked on in future (these are in no particul
 - https://github.com/gchq/sleeper/issues/1390 Review and extend the integrations with Athena and Trino.
 - Metrics page. Review and extend the metrics produced.
 - Purge data from a table, i.e. delete any items matching a predicate.
+
+We also have an article on [potential deployment improvements](deployment-improvements.md), examining how the current
+deployment setup relates to the planned improvements linked above.
