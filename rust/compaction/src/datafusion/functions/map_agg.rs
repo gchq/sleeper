@@ -98,8 +98,7 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        Ok(Box::new(super::accumulator::PrimMapAccumulator::<
-            Int64Builder,
+        Ok(Box::new(super::accumulator::StringMapAccumulator::<
             Int64Builder,
         >::new(acc_args.return_type)?))
     }

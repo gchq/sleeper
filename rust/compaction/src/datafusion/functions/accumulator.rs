@@ -17,7 +17,7 @@
 use arrow::{
     array::{
         make_builder, ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, GenericByteBuilder,
-        MapBuilder, PrimitiveBuilder, StructArray,
+        MapBuilder, PrimitiveBuilder, StringBuilder, StructArray,
     },
     datatypes::{ByteArrayType, DataType},
 };
@@ -166,46 +166,23 @@ where
     }
 }
 
-/// Trait to allow all `GenericByteBuilder` types to be used as builders in evaluate function in accumulator implementations.
-pub trait ByteBuilderType {
-    /// The Arrow data type that contains associated types.
-    type ArrowType: ByteArrayType;
-    /// Allow access of underlying append_value function.
-    fn append_value(&mut self, v: &<Self::ArrowType as ByteArrayType>::Native);
-}
-
-impl<T: ByteArrayType> ByteBuilderType for GenericByteBuilder<T> {
-    type ArrowType = T;
-    fn append_value(&mut self, v: &<Self::ArrowType as ByteArrayType>::Native) {
-        self.append_value(v);
-    }
-}
-
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
-/// This implementation is for maps with byte keys and primitive values.
+/// This implementation is for maps with string keys and primitive values.
 ///
 /// All nulls keys/values are skipped over.
-fn update_byte_map<KBuilder, VBuilder>(
+fn update_string_map<VBuilder>(
     input: &Option<StructArray>,
     map: &mut HashMap<
-        <<<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native as ToOwned>::Owned,
+        String,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
 ) where
-    KBuilder: ArrayBuilder + Debug + ByteBuilderType,
     VBuilder: ArrayBuilder + Debug + PrimBuilderType,
-    <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native: ToOwned + Hash + Eq,
-    <<<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native as ToOwned>::Owned:
-        Hash
-            + Eq
-            + for<'a> From<&'a <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native>,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     if let Some(entries) = input {
-        let col1 = entries
-            .column(0)
-            .as_bytes::<<KBuilder as ByteBuilderType>::ArrowType>();
+        let col1 = entries.column(0).as_string::<i32>();
         let col2 = entries
             .column(1)
             .as_primitive::<<VBuilder as PrimBuilderType>::ArrowType>();
@@ -224,26 +201,19 @@ fn update_byte_map<KBuilder, VBuilder>(
 
 /// Single value primitive accumulator function for maps.
 #[derive(Debug)]
-pub struct ByteMapAccumulator<KBuilder, VBuilder>
+pub struct StringMapAccumulator<VBuilder>
 where
-    KBuilder: ArrayBuilder + Debug + ByteBuilderType,
     VBuilder: ArrayBuilder + Debug + PrimBuilderType,
-    <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native: Clone,
 {
     map_type: DataType,
-    values: HashMap<
-        <<<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native as ToOwned>::Owned,
-        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-    >,
-    _p: PhantomData<KBuilder>,
+    values:
+        HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
     _p2: PhantomData<VBuilder>,
 }
 
-impl<KBuilder, VBuilder> ByteMapAccumulator<KBuilder, VBuilder>
+impl<VBuilder> StringMapAccumulator<VBuilder>
 where
-    KBuilder: ArrayBuilder + Debug + ByteBuilderType,
     VBuilder: ArrayBuilder + Debug + PrimBuilderType,
-    <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native: Clone,
 {
     // Creates a new accumulator.
     //
@@ -256,26 +226,15 @@ where
             Ok(Self {
                 map_type: map_type.clone(),
                 values: HashMap::default(),
-                _p: PhantomData,
                 _p2: PhantomData,
             })
         }
     }
 }
 
-impl<KBuilder, VBuilder> Accumulator for ByteMapAccumulator<KBuilder, VBuilder>
+impl<VBuilder> Accumulator for StringMapAccumulator<VBuilder>
 where
-    KBuilder: ArrayBuilder + Debug + ByteBuilderType,
     VBuilder: ArrayBuilder + Debug + PrimBuilderType,
-    <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native:
-        ToOwned + Hash + Eq + Clone,
-    <<<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native as ToOwned>::Owned:
-        Hash
-            + Eq
-            + Send
-            + Sync
-            + for<'a> From<&'a <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native>
-            + Deref<Target = <<KBuilder as ByteBuilderType>::ArrowType as ByteArrayType>::Native>,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
@@ -286,7 +245,7 @@ where
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_byte_map::<KBuilder, VBuilder>(&map, &mut self.values);
+            update_string_map::<VBuilder>(&map, &mut self.values);
         }
         Ok(())
     }
@@ -295,7 +254,7 @@ where
         let mut build_binding = make_builder(&self.map_type, self.values.len());
         let builder = build_binding
             .as_any_mut()
-            .downcast_mut::<MapBuilder<KBuilder, VBuilder>>()
+            .downcast_mut::<MapBuilder<StringBuilder, VBuilder>>()
             .expect("Builder downcast failed");
         for (key, val) in &self.values {
             builder.keys().append_value(key);
