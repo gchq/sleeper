@@ -136,32 +136,6 @@ impl AggregateUDFImpl for MapAggregator {
     }
 }
 
-// fn update_string_map<'a, VBuilder>(
-//     input: &'a Option<StructArray>,
-//     map: &mut HashMap<String, <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native>,
-// ) where
-//     VBuilder: ArrayBuilder + Debug + AppendValue,
-//     <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
-//     <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
-// {
-//     if let Some(entries) = input {
-//         let col1 = entries.column(0).as_string::<i32>();
-//         let col2 = entries
-//             .column(1)
-//             .as_primitive::<<VBuilder as AppendValue>::ArrowType>();
-//         for (k, v) in col1.into_iter().zip(col2) {
-//             match (k, v) {
-//                 (Some(key), Some(value)) => {
-//                     map.entry_ref(key)
-//                         .and_modify(|v| *v += value)
-//                         .or_insert(value);
-//                 }
-//                 _ => panic!("Nullable entries aren't supported"),
-//             }
-//         }
-//     }
-// }
-
 // #[derive(Debug, Default)]
 // struct GroupMapAccumulator {
 //     word_cache: HashMap<String, usize>,
