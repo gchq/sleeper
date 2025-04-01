@@ -17,9 +17,9 @@
 use arrow::{
     array::{
         make_builder, ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder,
-        GenericByteBuilder, MapBuilder, PrimitiveBuilder, StringBuilder, StructArray,
+        MapBuilder, PrimitiveBuilder, StringBuilder, StructArray,
     },
-    datatypes::{ByteArrayType, DataType},
+    datatypes::DataType,
 };
 use datafusion::{
     common::{exec_err, internal_err, HashMap},
@@ -27,8 +27,7 @@ use datafusion::{
     logical_expr::Accumulator,
     scalar::ScalarValue,
 };
-use std::{fmt::Debug, marker::PhantomData, ops::AddAssign, sync::Arc};
-use std::{hash::Hash, ops::Deref};
+use std::{fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
 
 /// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
 pub trait PrimBuilderType {
