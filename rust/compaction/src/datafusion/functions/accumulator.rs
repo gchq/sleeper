@@ -283,11 +283,11 @@ where
             return exec_err!("MapAccumulator only accepts single column input");
         }
 
-        // let input = values[0].as_map();
-        // // For each map we get, feed it into our internal aggregated map
-        // for map in input.iter() {
-        //     update_primitive_map::<KBuilder, VBuilder>(&map, &mut self.values);
-        // }
+        let input = values[0].as_map();
+        // For each map we get, feed it into our internal aggregated map
+        for map in input.iter() {
+            update_byte_map::<KBuilder, VBuilder>(&map, &mut self.values);
+        }
         Ok(())
     }
 
