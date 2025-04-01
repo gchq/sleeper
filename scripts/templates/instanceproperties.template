@@ -505,7 +505,7 @@ sleeper.bulk.export.task.creation.period.minutes=1
 # The maximum number of concurrent bulk export tasks to run.
 sleeper.bulk.export.max.concurrent.tasks=300
 
-# The length of time the results of bulk export remain in the bulk export results bucket before being
+# The number of days the results of bulk export remain in the bulk export results bucket before being
 # deleted.
 sleeper.bulk.export.results.bucket.expiry.days=7
 
