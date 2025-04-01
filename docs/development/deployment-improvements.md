@@ -32,7 +32,7 @@ This is currently the only supported way to prepare to run the other scripts loc
 ### Potential changes
 
 When we add support to deploy a published version of Sleeper in https://github.com/gchq/sleeper/issues/1330, we will
-need an alternative for this. Here are the cases we will need to implement:
+need an alternative for this. Here are cases we could implement:
 
 - Build and publish artifacts
 - Retrieve artifacts for a local installation of clients/scripts
