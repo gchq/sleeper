@@ -232,9 +232,10 @@ The automated deployment creates an instance of Sleeper either from your own con
 This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
 necessary deployment artifacts to AWS.
 
-We have planned to improve this by adding support for deploying a published version of Sleeper, and better support for
-declarative deployment with infrastructure as code. Please see the article
-on [potential deployment improvements](usage/deployment-improvements.md).
+We have planned to improve this by adding support for deploying a published version of Sleeper. We also plan to extend
+support for declarative deployment with infrastructure as code, by simplifying the process of versioning an instance
+configuration, and by moving some steps into the CDK that are currently done separately. Please see the article
+on [potential deployment improvements](development/deployment-improvements.md).
 
 Please ensure Sleeper has been built successfully before using this. This guide assumes you are in a `sleeper builder`
 container in an EC2 deployed with `sleeper environment`.
