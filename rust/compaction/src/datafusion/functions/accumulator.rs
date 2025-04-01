@@ -16,8 +16,8 @@
 */
 use arrow::{
     array::{
-        make_builder, ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, GenericByteBuilder,
-        MapBuilder, PrimitiveBuilder, StringBuilder, StructArray,
+        make_builder, ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder,
+        GenericByteBuilder, MapBuilder, PrimitiveBuilder, StringBuilder, StructArray,
     },
     datatypes::{ByteArrayType, DataType},
 };
@@ -208,7 +208,7 @@ where
     map_type: DataType,
     values:
         HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
-    _p2: PhantomData<VBuilder>,
+    _p: PhantomData<VBuilder>,
 }
 
 impl<VBuilder> StringMapAccumulator<VBuilder>
@@ -226,7 +226,7 @@ where
             Ok(Self {
                 map_type: map_type.clone(),
                 values: HashMap::default(),
-                _p2: PhantomData,
+                _p: PhantomData,
             })
         }
     }
@@ -255,6 +255,117 @@ where
         let builder = build_binding
             .as_any_mut()
             .downcast_mut::<MapBuilder<StringBuilder, VBuilder>>()
+            .expect("Builder downcast failed");
+        for (key, val) in &self.values {
+            builder.keys().append_value(key);
+            builder.values().append_value(val);
+        }
+        builder.append(true).expect("Can't finish MapBuilder");
+        Ok(ScalarValue::Map(Arc::new(builder.finish())))
+    }
+
+    fn size(&self) -> usize {
+        size_of_val(self)
+    }
+
+    fn state(&mut self) -> Result<Vec<ScalarValue>> {
+        self.evaluate().map(|e| vec![e])
+    }
+
+    fn merge_batch(&mut self, states: &[ArrayRef]) -> Result<()> {
+        self.update_batch(states)
+    }
+}
+
+/// Given an Arrow [`StructArray`] of keys and values, update the given map.
+///
+/// This implementation is for maps with byte keys and primitive values.
+///
+/// All nulls keys/values are skipped over.
+fn update_byte_map<VBuilder>(
+    input: &Option<StructArray>,
+    map: &mut HashMap<
+        Vec<u8>,
+        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    >,
+) where
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+{
+    if let Some(entries) = input {
+        let col1 = entries.column(0).as_binary::<i32>();
+        let col2 = entries
+            .column(1)
+            .as_primitive::<<VBuilder as PrimBuilderType>::ArrowType>();
+        for (k, v) in col1.into_iter().zip(col2) {
+            match (k, v) {
+                (Some(key), Some(value)) => {
+                    map.entry_ref(key)
+                        .and_modify(|v| *v += value)
+                        .or_insert(value);
+                }
+                _ => panic!("Nullable entries aren't supported"),
+            }
+        }
+    }
+}
+
+/// Single value primitive accumulator function for maps.
+#[derive(Debug)]
+pub struct ByteMapAccumulator<VBuilder>
+where
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+{
+    map_type: DataType,
+    values:
+        HashMap<Vec<u8>, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+    _p: PhantomData<VBuilder>,
+}
+
+impl<VBuilder> ByteMapAccumulator<VBuilder>
+where
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+{
+    // Creates a new accumulator.
+    //
+    // The type of the map must be specified so that the correct sort
+    // of map builder can be created.
+    pub fn new(map_type: &DataType) -> Result<Self> {
+        if !matches!(*map_type, DataType::Map(_, _)) {
+            internal_err!("Invalid datatype for string map accumulator {map_type:?}")
+        } else {
+            Ok(Self {
+                map_type: map_type.clone(),
+                values: HashMap::default(),
+                _p: PhantomData,
+            })
+        }
+    }
+}
+
+impl<VBuilder> Accumulator for ByteMapAccumulator<VBuilder>
+where
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+{
+    fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
+        if values.len() != 1 {
+            return exec_err!("MapAccumulator only accepts single column input");
+        }
+
+        let input = values[0].as_map();
+        // For each map we get, feed it into our internal aggregated map
+        for map in input.iter() {
+            update_byte_map::<VBuilder>(&map, &mut self.values);
+        }
+        Ok(())
+    }
+
+    fn evaluate(&mut self) -> Result<ScalarValue> {
+        let mut build_binding = make_builder(&self.map_type, self.values.len());
+        let builder = build_binding
+            .as_any_mut()
+            .downcast_mut::<MapBuilder<BinaryBuilder, VBuilder>>()
             .expect("Builder downcast failed");
         for (key, val) in &self.values {
             builder.keys().append_value(key);

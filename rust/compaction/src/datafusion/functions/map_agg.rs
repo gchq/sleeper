@@ -98,7 +98,7 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        Ok(Box::new(super::accumulator::StringMapAccumulator::<
+        Ok(Box::new(super::accumulator::ByteMapAccumulator::<
             Int64Builder,
         >::new(acc_args.return_type)?))
     }
