@@ -98,6 +98,29 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
+        let map_type = acc_args.return_type;
+        match map_type {
+            DataType::Map(field, _) => match field.data_type() {
+                DataType::Struct(struct_fields) => {
+                    if struct_fields.len() != 1 {
+                        return internal_err!("MapAggregator Map inner struct length is not 2");
+                    }
+                    if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
+                        return internal_err!(
+                            "MapAggregator can only process maps with String keys!"
+                        );
+                    }
+                    let value_type = struct_fields[1].data_type();
+                }
+                _ => {
+                    return internal_err!("MapAggregator Map field is not a Struct type!");
+                }
+            },
+            _ => {
+                return internal_err!("MapAggregator can only be used on Map column types");
+            }
+        }
+
         Ok(Box::new(super::accumulator::ByteMapAccumulator::<
             Int64Builder,
         >::new(acc_args.return_type)?))
