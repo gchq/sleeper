@@ -113,7 +113,8 @@ public class GeneratePropertiesDocumentation {
             TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
             tableWriter.write(stream);
         } catch (UnsupportedEncodingException e) {
-            System.out.println("Unable to encode output file");
+            System.out.println("Unable to encode output file for group: " + group.getName());
+            throw new RuntimeException(e);
         }
     }
 
