@@ -65,8 +65,12 @@ public class TableStructure {
         return Math.max(0, fields - 1) * paddingBetweenColumns.length();
     }
 
+    public boolean hasHorizontalBorder() {
+        return this.hasHorizontalBorder;
+    }
+
     String horizontalBorder(int length) {
-        return (hasHorizontalBorder ? StringUtils.repeat(horizontalBorderCharacter, length) : "");
+        return StringUtils.repeat(horizontalBorderCharacter, length);
     }
 
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {

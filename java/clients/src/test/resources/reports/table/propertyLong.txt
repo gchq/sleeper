@@ -1,0 +1,4 @@
+| Property Name                       | Description                                                                                                                             | Default Value | Run CdkDeploy When Changed |
+|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|
+| sleeper.task.runner.memory.mb       | The amount of memory in MB for the lambda that creates ECS tasks to execute compaction and ingest jobs.                                 | 1024          | true                       |
+| sleeper.task.runner.timeout.seconds | The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest jobs.<br>This must be >0 and <= 900. | 900           | true                       |
