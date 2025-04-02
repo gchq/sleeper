@@ -36,7 +36,7 @@ use std::fmt::Debug;
 
 use super::accumulator::StringMapAccumulator;
 use arrow::{
-    array::{downcast_primitive, ArrayBuilder, PrimitiveBuilder},
+    array::{downcast_primitive, PrimitiveBuilder},
     datatypes::DataType,
 };
 use datafusion::{
@@ -59,8 +59,8 @@ impl MapAggregator {
     /// Create a map aggregation function for the given column.
     ///
     /// # Errors
-    /// If the given column is not a map column
-    pub fn new(column_type: &DataType) -> Result<Self> {
+    /// If the given column is not a map column.
+    pub fn try_new(column_type: &DataType) -> Result<Self> {
         if !matches!(column_type, DataType::Map(_, _)) {
             internal_err!("MapAggregator can only be used on Map column types")
         } else {
@@ -93,7 +93,6 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        let map_type = acc_args.return_type;
         let DataType::Map(field, _) = acc_args.return_type else {
             return internal_err!("MapAggregator can only be used on Map column types");
         };
@@ -103,7 +102,8 @@ impl AggregateUDFImpl for MapAggregator {
         if struct_fields.len() != 1 {
             return internal_err!("MapAggregator Map inner struct length is not 2");
         }
-        if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
+        if !matches!(struct_fields[0].data_type(), DataType::Int64) {
+            //TODO: switch this for string type
             return internal_err!("MapAggregator can only process maps with String keys!");
         }
         let value_type = struct_fields[1].data_type();

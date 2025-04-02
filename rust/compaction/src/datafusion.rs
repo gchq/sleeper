@@ -39,7 +39,7 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
-use functions::{validate_aggregations, Aggregate, FilterAggregationConfig};
+use functions::{validate_aggregations, FilterAggregationConfig};
 use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
@@ -251,8 +251,8 @@ fn apply_aggregations(
             validate_aggregations(row_key_cols, frame.schema(), aggregation)?;
             let aggregations = aggregation
                 .iter()
-                .map(Aggregate::to_expr)
-                .collect::<Vec<_>>();
+                .map(|agg| agg.to_expr(row_key_cols, &frame))
+                .collect::<Result<Vec<_>, _>>()?;
             frame.aggregate(row_key_exprs, aggregations)?
         } else {
             frame

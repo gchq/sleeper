@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 /// Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
 /// `DataFusion`.
 /*
@@ -16,13 +18,15 @@
 * limitations under the License.
 */
 use ageoff::AgeOff;
-use datafusion::common::{config_err, DFSchema, HashSet};
-use datafusion::functions_aggregate::expr_fn::{count, max, min, sum};
-use datafusion::logical_expr::col;
 use datafusion::{
+    common::{config_err, DFSchema, HashSet},
     error::{DataFusionError, Result},
-    logical_expr::{Expr, ScalarUDF},
+    execution::FunctionRegistry,
+    functions_aggregate::expr_fn::{count, max, min, sum},
+    logical_expr::{col, AggregateUDF, Expr, ExprSchemable, ScalarUDF},
+    prelude::DataFrame,
 };
+use map_agg::MapAggregator;
 
 mod accumulator;
 pub mod ageoff;
@@ -61,16 +65,22 @@ pub struct Aggregate(String, AggOp);
 
 impl Aggregate {
     // Create a DataFusion logical expression to represent this aggregation operation.
-    pub fn to_expr(&self) -> Expr {
-        match self.1 {
+    pub fn to_expr(&self, _row_key_cols: &[String], frame: &DataFrame) -> Result<Expr> {
+        Ok(match self.1 {
             AggOp::Count => count(col(&self.0)),
             AggOp::Sum => sum(col(&self.0)),
             AggOp::Min => min(col(&self.0)),
             AggOp::Max => max(col(&self.0)),
-            AggOp::MapSum =>
+            AggOp::MapSum => {
+                let col_dt = col(&self.0).get_type(frame.schema())?;
+                println!("I done got a {col_dt:?}");
+                let map_sum = AggregateUDF::from(MapAggregator::try_new(&col_dt)?);
+                frame.task_ctx().register_udaf(Arc::new(map_sum.clone()))?;
+                map_sum.call(vec![col(&self.0)])
+            }
         }
         // Rename column to original name
-        .alias(&self.0)
+        .alias(&self.0))
     }
 }
 
@@ -104,7 +114,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
     type Error = DataFusionError;
 
     /// This is a minimum viable parser for the configuration for filters/aggregators.
-    /// It is a really good example of how NOT to do it. This routine has some odd
+    /// It is a really good example of how NOT to do it. This routine has some odd behaviour.
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         // Create list of strings delimited by comma as iterator
         let values = value.split(',').map(str::trim).collect::<Vec<_>>();
