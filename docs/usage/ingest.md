@@ -65,6 +65,19 @@ This example shows that ingest is a balancing act between adding data quickly an
 If too many import jobs finish in a short period then query performance will suffer. A small number of large
 import jobs is better than a large number of small jobs.
 
+## Job tracker
+
+If you submit your files to an ingest queue as a job, the progress is tracked in DynamoDB. This updates each time your
+job progresses to the next step of the process. In Java you can query this with an `IngestJobTracker` object, created
+by `IngestJobTrackerFactory`. You can set an ID for your job in the message on the ingest queue, and then call
+`IngestJobTracker.getJob` to check its status. This API is not currently stable. We may add a REST API to serve
+this purpose in the future. At time of writing, you can check the status of the job by calling
+`getFurthestRunStatusType` on the status object.
+
+Note that if a run of the job has finished, it may still be uncommitted. This means the data has been sorted and written
+to files in S3, but it is not yet in the Sleeper table. The result is then committed to the state store to add the files
+to the Sleeper table.
+
 ## Standard Ingest
 
 Sleeper's standard ingest process is based around the class `sleeper.ingest.IngestRecords`. This contains a
