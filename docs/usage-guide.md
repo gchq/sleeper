@@ -64,6 +64,13 @@ skipped by the compaction strategy:
 ./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
 
+## Java API
+
+The clients module can be used as a dependency for an application to interact with Sleeper. This is not currently
+published but is built with Maven. We have a class `SleeperClient` that can be used as an entrypoint for direct access
+to an instance of Sleeper. This requires permissions to interact with the underlying AWS resources. We have an open
+issue to introduce a REST API that may simplify this in the future (https://github.com/gchq/sleeper/issues/1786).
+
 ## Python API
 
 See the [Python API documentation](usage/python-api.md) for details of the Python client library for Sleeper.

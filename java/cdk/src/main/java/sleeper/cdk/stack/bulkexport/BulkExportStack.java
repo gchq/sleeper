@@ -23,6 +23,7 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
@@ -31,8 +32,11 @@ import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
+import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -41,6 +45,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -51,9 +56,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -116,8 +123,7 @@ public class BulkExportStack extends NestedStack {
         /*
          * Output the role arn of the lambda as a property so that clients that want the
          * results of queries written to their own SQS queue can give the role
-         * permission
-         * to write to their queue
+         * permission to write to their queue
          */
         IRole bulkExportLambdaRole = Objects.requireNonNull(bulkExportLambda.getRole());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_LAMBDA_ROLE_ARN,
@@ -129,7 +135,9 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
-        new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
+        IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode);
+        new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ,
+                exportResultsBucket);
     }
 
     /**
@@ -163,6 +171,49 @@ public class BulkExportStack extends NestedStack {
         return Arrays.asList(queue, queueDLQ);
     }
 
+    /**
+     * Create the export results bucket.
+     *
+     * @param instanceProperties the instance properties
+     * @param coreStacks         the core stacks
+     * @param lambdaCode         the lambda code
+     * @return the export results bucket
+     */
+    private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
+            LambdaCode lambdaCode) {
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+        String bucketName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "bulk-export-results");
+        Bucket exportBucket = Bucket.Builder
+                .create(this, "BulkExportResultsBucket")
+                .bucketName(bucketName)
+                .versioned(false)
+                .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
+                .encryption(BucketEncryption.S3_MANAGED)
+                .removalPolicy(removalPolicy)
+                .lifecycleRules(Collections.singletonList(
+                        LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(
+                                BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
+                .build();
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET, exportBucket.getBucketName());
+
+        if (removalPolicy == RemovalPolicy.DESTROY) {
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode,
+                    exportBucket, bucketName,
+                    coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE),
+                    coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE_PROVIDER));
+        }
+
+        return exportBucket;
+    }
+
+    /**
+     * Attach the policy to the lambda function.
+     *
+     * @param lambda the lambda function
+     * @param id     the id of the lambda function
+     */
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void attachPolicy(IFunction lambda, String id) {
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)

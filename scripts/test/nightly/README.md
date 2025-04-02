@@ -7,8 +7,17 @@ and tear them down afterwards.
 
 ### Setup
 
-It's easiest to run this through the Sleeper CLI. You can bring the CLI up to date and check out the Git repository like
-this:
+Setup of nightly system test automation is included in `sleeper environment deploy`. See
+the [deployment guide](../../../docs/deployment-guide.md#deployment-environment) for details. Here's a command to deploy
+a VPC and build EC2 with a cron job enabled to run the nightly test suite:
+
+```bash
+# Set nightlyTestDeployId to your own 2-character value
+sleeper environment deploy <environment-id> -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
+```
+
+You can also run the test suite from a `sleeper builder` container, preferably from inside AWS. You can bring the CLI up
+to date and check out the Git repository like this:
 
 ```bash
 sleeper cli upgrade

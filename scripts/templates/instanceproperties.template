@@ -505,6 +505,10 @@ sleeper.bulk.export.task.creation.period.minutes=1
 # The maximum number of concurrent bulk export tasks to run.
 sleeper.bulk.export.max.concurrent.tasks=300
 
+# The number of days the results of bulk export remain in the bulk export results bucket before being
+# deleted.
+sleeper.bulk.export.results.bucket.expiry.days=7
+
 
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
