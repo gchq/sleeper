@@ -1,4 +1,3 @@
-#![allow(unused_imports)]
 /// Implementation of [`AggregateUDFImpl`] for aggregating maps of integers.
 /// For example, given:
 ///
@@ -35,11 +34,12 @@
  */
 use std::{any::Any, fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
 
+use super::accumulator::StringMapAccumulator;
 use arrow::{
     array::{
-        downcast_array, make_builder, ArrayAccessor, ArrayBuilder, ArrayData, ArrayIter, ArrayRef,
-        ArrowPrimitiveType, AsArray, GenericByteBuilder, Int64Builder, MapBuilder, PrimitiveArray,
-        PrimitiveBuilder, StringArray, StringBuilder, StructArray,
+        downcast_array, downcast_primitive, make_builder, ArrayAccessor, ArrayBuilder, ArrayData,
+        ArrayIter, ArrayRef, ArrowPrimitiveType, AsArray, GenericByteBuilder, Int64Builder,
+        MapBuilder, PrimitiveArray, PrimitiveBuilder, StringArray, StringBuilder, StructArray,
     },
     datatypes::{ByteArrayType, DataType, Field, Int64Type},
 };
@@ -99,31 +99,48 @@ impl AggregateUDFImpl for MapAggregator {
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
         let map_type = acc_args.return_type;
-        match map_type {
-            DataType::Map(field, _) => match field.data_type() {
-                DataType::Struct(struct_fields) => {
-                    if struct_fields.len() != 1 {
-                        return internal_err!("MapAggregator Map inner struct length is not 2");
-                    }
-                    if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
-                        return internal_err!(
-                            "MapAggregator can only process maps with String keys!"
-                        );
-                    }
-                    let value_type = struct_fields[1].data_type();
-                }
-                _ => {
-                    return internal_err!("MapAggregator Map field is not a Struct type!");
-                }
-            },
-            _ => {
-                return internal_err!("MapAggregator can only be used on Map column types");
-            }
+        let DataType::Map(field, _) = acc_args.return_type else {
+            return internal_err!("MapAggregator can only be used on Map column types");
+        };
+        let DataType::Struct(struct_fields) = field.data_type() else {
+            return internal_err!("MapAggregator Map field is not a Struct type!");
+        };
+        if struct_fields.len() != 1 {
+            return internal_err!("MapAggregator Map inner struct length is not 2");
+        }
+        if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
+            return internal_err!("MapAggregator can only process maps with String keys!");
+        }
+        let value_type = struct_fields[1].data_type();
+
+        // These macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
+        macro_rules! helper {
+            ($t:ty, $dt:expr) => {
+                Ok(Box::new(StringMapAccumulator::<PrimitiveBuilder<$t>>::new(
+                    $dt,
+                )?))
+            };
         }
 
-        Ok(Box::new(super::accumulator::ByteMapAccumulator::<
-            Int64Builder,
-        >::new(acc_args.return_type)?))
+        macro_rules! downcast_map {
+            ($dt:ident, $helper:ident) => {
+                match $dt {
+                    DataType::UInt64 => $helper!(UInt64Builder, $dt),
+                    DataType::Int64 => $helper!(Int64Type, $dt),
+                    DataType::Float64 => $helper!(Float64Type, $dt),
+                    DataType::Decimal128(_, _) => $helper!(Decimal128Type, $dt),
+                    DataType::Decimal256(_, _) => $helper!(Decimal256Type, $dt),
+                    _ => {
+                        not_impl_err!("Map aggregation not supported for {:?}", $dt)
+                    }
+                }
+            };
+        }
+
+        downcast_primitive! {
+            value_type=>(helper,value_type),
+            _=> panic!()
+        }
     }
 
     fn is_nullable(&self) -> bool {
