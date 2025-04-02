@@ -34,8 +34,6 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 public class GeneratePropertiesDocumentation {
-    private static SleeperProperties presentProperties;
-    private static PropertyGroup presentGroup;
 
     private GeneratePropertiesDocumentation() {
     }
@@ -46,25 +44,25 @@ public class GeneratePropertiesDocumentation {
 
         //---------- Instance Properties ----------
         Path instancePath = Files.createDirectories(headPath.resolve("instance/"));
-        presentProperties = new InstanceProperties();
         InstancePropertyGroup.getAll().forEach(instancePropertyGroup -> {
             try {
-                presentGroup = instancePropertyGroup;
-                writeFile(instancePath.resolve(groupNameToFileName(instancePropertyGroup.getName())), GeneratePropertiesDocumentation::writePropertiesMarkdownFile);
+                writeFile(instancePath.resolve(groupNameToFileName(instancePropertyGroup.getName())),
+                        stream -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, stream));
             } catch (Exception e) {
                 System.out.println("Unable to write property file for group: " + instancePropertyGroup.getName());
+                throw new RuntimeException(e);
             }
         });
 
         //---------- Table Properties ----------
         Path tablePath = Files.createDirectories(headPath.resolve("table/"));
-        presentProperties = new TableProperties(new InstanceProperties());
         TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
             try {
-                presentGroup = tablePropertyGroup;
-                writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup.getName())), GeneratePropertiesDocumentation::writePropertiesMarkdownFile);
+                writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup.getName())),
+                        stream -> writePropertiesMarkdownFile(new TableProperties(new InstanceProperties()), tablePropertyGroup, stream));
             } catch (Exception e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
+                throw new RuntimeException(e);
             }
         });
     }
@@ -88,7 +86,8 @@ public class GeneratePropertiesDocumentation {
                 out.println(pageLinkFromGroupName(group, "table/"));
             });
         } catch (UnsupportedEncodingException e) {
-            System.out.println("Unable to encode output file");
+            System.out.println("Unable to encode output file for document links");
+            throw new RuntimeException(e);
         }
     }
 
@@ -103,15 +102,15 @@ public class GeneratePropertiesDocumentation {
      * @param  out                          the stream for the output
      * @throws UnsupportedEncodingException thrown if uft8 unavailable
      */
-    @SuppressWarnings("unchecked")
-    private static void writePropertiesMarkdownFile(OutputStream out) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void writePropertiesMarkdownFile(SleeperProperties properties, PropertyGroup group, OutputStream out) {
         try {
             PrintStream stream = new PrintStream(out, true, StandardCharsets.UTF_8.name());
-            stream.println("## " + presentGroup.getName().toUpperCase(Locale.ENGLISH));
+            stream.println("## " + group.getName().toUpperCase(Locale.ENGLISH));
             stream.println();
-            stream.println("Below is a table containing all the details for the property group: " + presentGroup.getName());
+            stream.println("Below is a table containing all the details for the property group: " + group.getName());
             stream.println();
-            TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(presentProperties.getPropertiesIndex().getAllInGroup(presentGroup).stream());
+            TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
             tableWriter.write(stream);
         } catch (UnsupportedEncodingException e) {
             System.out.println("Unable to encode output file");
