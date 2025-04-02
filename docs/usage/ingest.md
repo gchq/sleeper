@@ -50,9 +50,9 @@ will be submitted to either standard ingest or bulk import, based on the configu
 In theory, an arbitrary number of ingest jobs can run simultaneously. If the limits on your AWS account allowed
 it, you could have 100 EMR clusters each running a job to import 10 billion records. Each job will be writing
 files to S3, and when it is finished the state store will be updated. All of these operations are independent.
-Therefore the only limit is the capacity of the S3 bucket to receive data and the capacity of the DynamoDB-based
-state store to receive PUTs. Thus if the 100 bulk import jobs complete at roughly the same time, the number of
-records in the table would increase by 1 trillion very quickly.
+Therefore the only limit is the capacity of the S3 bucket to receive data and the capacity of the state store to receive
+updates. Thus if the 100 bulk import jobs complete at roughly the same time, the number of records in the table would
+increase by 1 trillion very quickly.
 
 However, in order for a query to return results quickly, there needs to be a modest number of files in each
 partition. If there are around 10 files in a partition, then queries will be quick. In the above example,
