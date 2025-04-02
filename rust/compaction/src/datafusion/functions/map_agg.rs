@@ -32,25 +32,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use std::{any::Any, fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
+use std::fmt::Debug;
 
 use super::accumulator::StringMapAccumulator;
 use arrow::{
-    array::{
-        downcast_array, downcast_primitive, make_builder, ArrayAccessor, ArrayBuilder, ArrayData,
-        ArrayIter, ArrayRef, ArrowPrimitiveType, AsArray, GenericByteBuilder, Int64Builder,
-        MapBuilder, PrimitiveArray, PrimitiveBuilder, StringArray, StringBuilder, StructArray,
-    },
-    datatypes::{ByteArrayType, DataType, Field, Int64Type},
+    array::{downcast_primitive, ArrayBuilder, PrimitiveBuilder},
+    datatypes::DataType,
 };
 use datafusion::{
-    common::{exec_err, internal_err, not_impl_err, HashMap},
+    common::internal_err,
     error::Result,
     logical_expr::{
         function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
         GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, Volatility,
     },
-    scalar::ScalarValue,
 };
 
 /// A aggregator for map columns. See module documentation.
@@ -122,24 +117,9 @@ impl AggregateUDFImpl for MapAggregator {
             };
         }
 
-        macro_rules! downcast_map {
-            ($dt:ident, $helper:ident) => {
-                match $dt {
-                    DataType::UInt64 => $helper!(UInt64Builder, $dt),
-                    DataType::Int64 => $helper!(Int64Type, $dt),
-                    DataType::Float64 => $helper!(Float64Type, $dt),
-                    DataType::Decimal128(_, _) => $helper!(Decimal128Type, $dt),
-                    DataType::Decimal256(_, _) => $helper!(Decimal256Type, $dt),
-                    _ => {
-                        not_impl_err!("Map aggregation not supported for {:?}", $dt)
-                    }
-                }
-            };
-        }
-
         downcast_primitive! {
-            value_type=>(helper,value_type),
-            _=> panic!()
+            value_type => (helper,value_type),
+            _ => todo!()
         }
     }
 

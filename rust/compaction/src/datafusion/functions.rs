@@ -67,6 +67,7 @@ impl Aggregate {
             AggOp::Sum => sum(col(&self.0)),
             AggOp::Min => min(col(&self.0)),
             AggOp::Max => max(col(&self.0)),
+            AggOp::MapSum =>
         }
         // Rename column to original name
         .alias(&self.0)
@@ -80,6 +81,7 @@ pub enum AggOp {
     Count,
     Min,
     Max,
+    MapSum,
 }
 
 impl TryFrom<&str> for AggOp {
@@ -90,6 +92,7 @@ impl TryFrom<&str> for AggOp {
             "count" => Ok(Self::Count),
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
+            "map_sum" => Ok(Self::MapSum),
             _ => Err(Self::Error::NotImplemented(format!(
                 "Aggregation operator {value} not recognised"
             ))),
