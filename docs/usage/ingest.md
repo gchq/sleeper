@@ -9,7 +9,7 @@ Sleeper is given some data to ingest it must partition and sort it. This data mu
 table.
 
 To write data to Sleeper, you can either create a custom ingest process by interacting directly with the Sleeper code,
-or follow these steps:
+or:
 
 1. Write your data to Parquet files in S3, in the data bucket or the configured ingest source bucket
 2. Send a message to an ingest queue as a job pointing to those files
@@ -18,29 +18,29 @@ or follow these steps:
 The ingest system will sort your data and write it to one or more Parquet files in the Sleeper table. You can choose
 which ingest system to use for this by which ingest queue you send your message to.
 
-There are two types of system for ingesting data: standard ingest and bulk import. The former refers to a process in
-a container that reads data and partitions and sorts it locally before writing it to files in S3. Scalability is
-achieved by running many of these in parallel. Bulk import means using [Apache Spark](https://spark.apache.org/)
-to run a MapReduce-like job to partition and sort a batch of data so that it can be ingested into a Sleeper table.
-
-The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
-allows you to provide the data to be ingested as Parquet files. By sending a message to an SQS queue you can tell
-Sleeper to ingest this data. Sleeper will spin up ECS tasks to perform this ingest.
-
-Ingesting data using the bulk import approach requires the data to first be written to Parquet files. Then you
-tell Sleeper to ingest that data by sending a message to an SQS queue. This will use an EMR cluster to run the
-Spark job to perform the ingest. There are two stacks that can be used for this approach: the `EmrBulkImportStack` and
-the `PersistentEmrBulkImportStack`. The former creates an EMR cluster on demand to run the Spark job. The cluster is
-only used for that bulk import job. The latter creates an EMR cluster that is permanently running. By default it
-scales up and down so that if there are no bulk import jobs to run then minimal resources will be used. There is
-also an experimental option to run bulk import jobs using Spark running on an EKS cluster.
-
-For ingesting large volumes of data, the bulk import process is preferred because the number of files written
-to S3 is smaller, which means the cost for S3 PUTs is less and there is less compaction work to do later.
-
 Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
 the cost, with lower latency generally costing more.
+
+## Ingest systems
+
+There are two types of system for ingesting data: standard ingest and bulk import. The former refers to a process that
+reads data and partitions and sorts it locally before writing it to files in S3. Scalability is achieved by running many
+of these in parallel. Bulk import means using [Apache Spark](https://spark.apache.org/) to run a MapReduce-like job to
+partition and sort a batch of data as a distributed process.
+
+The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
+deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message to an ingest queue in SQS.
+
+Ingesting data using the bulk import approach can be customised to run in your own Spark cluster, or Sleeper can run it
+for you via an ingest queue in SQS. There are multiple stacks that can be deployed for this approach.
+`EmrServerlessBulkImportStack` runs the Spark job on EMR Serverless. `EmrBulkImportStack` creates an EMR cluster on
+demand to run the Spark job. The cluster is only used for that bulk import job. `PersistentEmrBulkImportStack` creates
+an EMR cluster that is permanently running. By default it scales up and down so that if there are no bulk import jobs to
+run then minimal resources will be used. `EksBulkImportStack` is an experimental option to run on an EKS cluster.
+
+For ingesting large volumes of data, the bulk import process is preferred because the number of files written
+to S3 is smaller, which means the cost for S3 PUTs is less and there is less compaction work to do later.
 
 An ingest batcher is also available to automatically group smaller files into jobs of a configurable size. These jobs
 will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
