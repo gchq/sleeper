@@ -32,12 +32,12 @@ partition and sort a batch of data as a distributed process.
 The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
 deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message to an ingest queue in SQS.
 
-Ingesting data using the bulk import approach can be customised to run in your own Spark cluster, or Sleeper can run it
-for you via an ingest queue in SQS. There are multiple stacks that can be deployed for this approach.
-`EmrServerlessBulkImportStack` runs the Spark job on EMR Serverless. `EmrBulkImportStack` creates an EMR cluster on
-demand to run the Spark job. The cluster is only used for that bulk import job. `PersistentEmrBulkImportStack` creates
-an EMR cluster that is permanently running. By default it scales up and down so that if there are no bulk import jobs to
-run then minimal resources will be used. `EksBulkImportStack` is an experimental option to run on an EKS cluster.
+The bulk import approach can be customised to run in your own Spark cluster, or Sleeper can run it for you via an ingest
+queue in SQS. There are multiple stacks that can be deployed for this approach. `EmrServerlessBulkImportStack` runs the
+Spark job on EMR Serverless. `EmrBulkImportStack` creates an EMR cluster on demand to run the Spark job. The cluster is
+only used for that bulk import job. `PersistentEmrBulkImportStack` creates an EMR cluster that is permanently running.
+By default it scales up and down so that if there are no bulk import jobs to run then minimal resources will be used.
+`EksBulkImportStack` is an experimental option to run Spark on an EKS cluster.
 
 For ingesting large volumes of data, the bulk import process is preferred because the number of files written
 to S3 is smaller, which means the cost for S3 PUTs is less and there is less compaction work to do later.
