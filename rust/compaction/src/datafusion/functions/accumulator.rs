@@ -27,7 +27,14 @@ use datafusion::{
     logical_expr::Accumulator,
     scalar::ScalarValue,
 };
-use std::{fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
+use std::{
+    any::{Any, TypeId},
+    fmt::Debug,
+    hash::Hash,
+    marker::PhantomData,
+    ops::AddAssign,
+    sync::Arc,
+};
 
 /// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
 pub trait PrimBuilderType {
@@ -106,7 +113,7 @@ where
     // of map builder can be created.
     pub fn new(map_type: &DataType) -> Result<Self> {
         if !matches!(*map_type, DataType::Map(_, _)) {
-            internal_err!("Invalid datatype for primitive map accumulator {map_type:?}")
+            internal_err!("Invalid datatype for PrimMapAccumulator {map_type:?}")
         } else {
             Ok(Self {
                 map_type: map_type.clone(),
@@ -220,7 +227,7 @@ where
     // of map builder can be created.
     pub fn new(map_type: &DataType) -> Result<Self> {
         if !matches!(*map_type, DataType::Map(_, _)) {
-            internal_err!("Invalid datatype for string map accumulator {map_type:?}")
+            internal_err!("Invalid datatype for StringMapAccumulator {map_type:?}")
         } else {
             Ok(Self {
                 map_type: map_type.clone(),
@@ -238,7 +245,7 @@ where
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
-            return exec_err!("MapAccumulator only accepts single column input");
+            return exec_err!("StringMapAccumulator only accepts single column input");
         }
 
         let input = values[0].as_map();
@@ -251,10 +258,12 @@ where
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
         let mut build_binding = make_builder(&self.map_type, self.values.len());
+        println!("{:?}", self.map_type);
         let builder = build_binding
             .as_any_mut()
             .downcast_mut::<MapBuilder<StringBuilder, VBuilder>>()
             .expect("Builder downcast failed");
+        panic!();
         for (key, val) in &self.values {
             builder.keys().append_value(key);
             builder.values().append_value(val);
@@ -331,7 +340,7 @@ where
     // of map builder can be created.
     pub fn new(map_type: &DataType) -> Result<Self> {
         if !matches!(*map_type, DataType::Map(_, _)) {
-            internal_err!("Invalid datatype for string map accumulator {map_type:?}")
+            internal_err!("Invalid datatype for ByteMapAccumulator {map_type:?}")
         } else {
             Ok(Self {
                 map_type: map_type.clone(),
@@ -349,7 +358,7 @@ where
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
-            return exec_err!("MapAccumulator only accepts single column input");
+            return exec_err!("ByteMapAccumulator only accepts single column input");
         }
 
         let input = values[0].as_map();

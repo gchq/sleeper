@@ -73,7 +73,6 @@ impl Aggregate {
             AggOp::Max => max(col(&self.0)),
             AggOp::MapSum => {
                 let col_dt = col(&self.0).get_type(frame.schema())?;
-                println!("I done got a {col_dt:?}");
                 let map_sum = AggregateUDF::from(MapAggregator::try_new(&col_dt)?);
                 frame.task_ctx().register_udaf(Arc::new(map_sum.clone()))?;
                 map_sum.call(vec![col(&self.0)])

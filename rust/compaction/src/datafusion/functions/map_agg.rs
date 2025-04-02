@@ -99,10 +99,10 @@ impl AggregateUDFImpl for MapAggregator {
         let DataType::Struct(struct_fields) = field.data_type() else {
             return internal_err!("MapAggregator Map field is not a Struct type!");
         };
-        if struct_fields.len() != 1 {
+        if struct_fields.len() != 2 {
             return internal_err!("MapAggregator Map inner struct length is not 2");
         }
-        if !matches!(struct_fields[0].data_type(), DataType::Int64) {
+        if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
             //TODO: switch this for string type
             return internal_err!("MapAggregator can only process maps with String keys!");
         }
@@ -117,8 +117,9 @@ impl AggregateUDFImpl for MapAggregator {
             };
         }
 
+        let map_type = acc_args.return_type;
         downcast_primitive! {
-            value_type => (helper,value_type),
+            value_type => (helper, map_type),
             _ => todo!()
         }
     }
