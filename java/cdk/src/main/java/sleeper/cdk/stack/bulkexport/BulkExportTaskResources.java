@@ -161,13 +161,13 @@ public class BulkExportTaskResources {
                         String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
                                 instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
                         String.format("arn:aws:sqs:%s:%s:*", instanceProperties.get(REGION),
-                                instanceProperties.get(ACCOUNT)) // Specific SQS queue
+                                instanceProperties.get(ACCOUNT))
                 ))
                 .actions(List.of(
-                        "ecs:DescribeContainerInstances", // ECS action
-                        "sqs:ReceiveMessage", // SQS action
+                        "ecs:DescribeContainerInstances",
+                        "sqs:ReceiveMessage",
                         "sqs:DeleteMessage",
-                        "sqs:ChangeMessageVisibility" // SQS action
+                        "sqs:ChangeMessageVisibility"
                 ))
                 .build());
 
