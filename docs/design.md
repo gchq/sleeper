@@ -168,7 +168,7 @@ no longer need to read the whole log to derive the state.
 
 #### Updates
 
-State store updates can be applied directly by writing to the log, but this causes problems with contention. In order to
+State store updates can be applied directly by writing to the log, but this causes problems with contention. To
 establish an ordering of the transaction log, a transaction can only be written when the local state is fully up to
 date. If another process adds a transaction at the same time, we read the new transaction and retry. If many processes
 are adding transactions, the retries can cause problems with load, and the throughput of adding transactions is reduced.
