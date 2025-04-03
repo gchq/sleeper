@@ -49,7 +49,10 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty TAGS = Index.propertyBuilder("sleeper.tags")
-            .description("A list of tags for the project.")
+            .description("A list of tags that will automatically be applied to all the resources in this deployment " +
+                    "of Sleeper. The list should be in the form \"key1,value1,key2,value2,key3,value3,...\".\n" +
+                    "For example if you want to add tags of \"user=some-user\" and \"project-name=sleeper-test\", " +
+                    "then the list should be \"user,some-user,project-name,sleeper-test\".")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
