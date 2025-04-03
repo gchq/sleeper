@@ -17,7 +17,7 @@
 use arrow::{
     array::{
         make_builder, ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder,
-        MapBuilder, PrimitiveBuilder, StringBuilder, StructArray,
+        MapBuilder, MapFieldNames, PrimitiveBuilder, StringBuilder, StructArray,
     },
     datatypes::DataType,
 };
@@ -27,14 +27,7 @@ use datafusion::{
     logical_expr::Accumulator,
     scalar::ScalarValue,
 };
-use std::{
-    any::{Any, TypeId},
-    fmt::Debug,
-    hash::Hash,
-    marker::PhantomData,
-    ops::AddAssign,
-    sync::Arc,
-};
+use std::{fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
 
 /// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
 pub trait PrimBuilderType {
@@ -209,9 +202,9 @@ fn update_string_map<VBuilder>(
 #[derive(Debug)]
 pub struct StringMapAccumulator<VBuilder>
 where
-    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType + Default,
 {
-    map_type: DataType,
+    inner_field_type: DataType,
     values:
         HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
     _p: PhantomData<VBuilder>,
@@ -219,28 +212,54 @@ where
 
 impl<VBuilder> StringMapAccumulator<VBuilder>
 where
-    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType + Default,
 {
     // Creates a new accumulator.
     //
     // The type of the map must be specified so that the correct sort
     // of map builder can be created.
     pub fn new(map_type: &DataType) -> Result<Self> {
-        if !matches!(*map_type, DataType::Map(_, _)) {
-            internal_err!("Invalid datatype for StringMapAccumulator {map_type:?}")
-        } else {
+        if let DataType::Map(field, _) = map_type {
+            let DataType::Struct(_) = field.data_type() else {
+                return internal_err!("Map inner field type should be a DataType::Struct");
+            };
             Ok(Self {
-                map_type: map_type.clone(),
+                inner_field_type: field.data_type().clone(),
                 values: HashMap::default(),
                 _p: PhantomData,
             })
+        } else {
+            return internal_err!("Invalid datatype for StringMapAccumulator {map_type:?}");
+        }
+    }
+
+    fn make_map_builder(&self, cap: usize) -> Result<MapBuilder<StringBuilder, VBuilder>> {
+        match &self.inner_field_type {
+            DataType::Struct(fields) => {
+                let names = MapFieldNames {
+                    key: fields[0].name().clone(),
+                    value: fields[1].name().clone(),
+                    entry: "key_value".into(),
+                };
+                let key_builder = StringBuilder::with_capacity(cap, 1024);
+                let value_builder = VBuilder::default();
+                Ok(
+                    MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
+                        .with_keys_field(fields[0].clone())
+                        .with_values_field(fields[1].clone()),
+                )
+            }
+            _ => unreachable!(
+                "Invalid datatype inside StringMapAccumulator {:?}",
+                self.inner_field_type
+            ),
         }
     }
 }
 
 impl<VBuilder> Accumulator for StringMapAccumulator<VBuilder>
 where
-    VBuilder: ArrayBuilder + Debug + PrimBuilderType,
+    VBuilder: ArrayBuilder + Debug + PrimBuilderType + Default,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
@@ -257,13 +276,7 @@ where
     }
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
-        let mut build_binding = make_builder(&self.map_type, self.values.len());
-        println!("{:?}", self.map_type);
-        let builder = build_binding
-            .as_any_mut()
-            .downcast_mut::<MapBuilder<StringBuilder, VBuilder>>()
-            .expect("Builder downcast failed");
-        panic!();
+        let mut builder = self.make_map_builder(self.values.len())?;
         for (key, val) in &self.values {
             builder.keys().append_value(key);
             builder.values().append_value(val);
