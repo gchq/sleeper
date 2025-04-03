@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.deploy;
+package sleeper.clients.deploy.properties;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -58,7 +58,7 @@ class GeneratePropertiesTemplatesTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        GeneratePropertiesTemplates.fromRepositoryPath(tempDir);
+        GeneratePropertiesTemplates.createTemplates(tempDir);
     }
 
     static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
