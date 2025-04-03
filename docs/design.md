@@ -55,19 +55,19 @@ sometimes be used to avoid reading a lot of the data).
 ## Tables
 
 All records in a table conform to a schema. The records in a table are stored in multiple files, with each file
-belonging to a partition. These files are all stored in an S3 bucket deployed at an instance level, referred to as 
+belonging to a partition. These files are all stored in an S3 bucket deployed at an instance level, referred to as
 the data bucket.
 
 Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
 the table and how the records in the table are partitioned.
 
-When an instance is deployed, it creates an S3 data bucket and creates the infrastructure for all future state stores. 
-When a table is created, a state store for that table is initialised (to achieve this, state store implementations 
+When an instance is deployed, it creates an S3 data bucket and creates the infrastructure for all future state stores.
+When a table is created, a state store for that table is initialised (to achieve this, state store implementations
 support storing metadata for files in all tables).
 
-Tables can also be taken offline and put online. Offline tables will be ignored when it comes to finding partitions 
-that need splitting and creating compaction jobs. You are still able to ingest files to them, and perform queries 
-against them. When creating a new table, the boolean table property `sleeper.table.online` determines whether a table 
+Tables can also be taken offline and put online. Offline tables will be ignored when it comes to finding partitions
+that need splitting and creating compaction jobs. You are still able to ingest files to them, and perform queries
+against them. When creating a new table, the boolean table property `sleeper.table.online` determines whether a table
 starts online or offline. This property defaults to `true`.
 
 ## Sorted files
@@ -117,11 +117,11 @@ are read from S3, and merged together. Then the median is found and used as the 
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
-a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each online table, this queries the 
-state store to find the leaf partitions and the active files. For each leaf partition it then calculates the 
-number of records and if that is greater than a threshold it sends a message to an SQS queue saying that this partition 
-should be split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue. 
-This lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process 
+a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each online table, this queries the
+state store to find the leaf partitions and the active files. For each leaf partition it then calculates the
+number of records and if that is greater than a threshold it sends a message to an SQS queue saying that this partition
+should be split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue.
+This lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process
 described in the previous paragraph.
 
 Note that this partition splitting process happens independently of other parts of Sleeper. For example, the ingest
@@ -152,6 +152,33 @@ PostgreSQL.
 
 Previous state store implementations stored the data in DynamoDB, or in Parquet files in S3 with a consistency layer in
 DynamoDB. See the design documents linked above for comparisons.
+
+### Transaction log implementation
+
+The transaction log state store holds an ordered log of transactions. The state of the Sleeper table can be derived by
+reading these transactions in order. Each transaction results in some update to the state held in memory.
+
+We store the transaction log in DynamoDB to fit in with a serverless deployment model. This means any process can read
+the state when it needs it, rather than e.g. a Kafka stream keeping a persistent instance up to date. Most Sleeper
+operations are done in a lambda, which may or may not cache the state in memory.
+
+We also have snapshots, where the whole state is written to a file. Metadata for the snapshot points to the last
+transaction that was applied to the state in the snapshot. This lets us skip to that point in the transaction log, so we
+no longer need to read the whole log to derive the state.
+
+State store updates can be applied directly by writing to the log, but this causes problems with contention. In order to
+establish an ordering of the transaction log, a transaction can only be written when the local state is fully up to
+date. If another process adds a transaction at the same time, we read the new transaction and retry. If many processes
+are adding transactions, the retries can cause problems with load, and the throughput of adding transactions is reduced.
+To avoid this, we have a queue of asynchronous state store commits, and a lambda to apply these in order in one place.
+
+Below is a diagram of the process of applying an asynchronous update. A request to add a transaction log entry is
+placed on a queue. If the transaction is too big to fit in the entry, it is saved to S3. A state store committer then
+reads the queue in order and saves each transaction entry to the log. We also have a separate transaction follower,
+which lets us perform operations that should happen after a transaction, since it would reduce throughput to perform
+them in the committer.
+
+![Transaction log commits diagram](design/transaction-log-state-store-commits.png)
 
 ## Ingest of data
 
@@ -240,8 +267,8 @@ simple streaming merge that requires negligible amounts of memory. The input fil
 
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
 are created by a lambda that runs the class `sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda`. This
-lambda is triggered periodically by a Cloudwatch rule. For each online table, it performs a pre-splitting operation 
-on file references in the state store. This involves looking for file references that exist within non-leaf partitions, 
+lambda is triggered periodically by a Cloudwatch rule. For each online table, it performs a pre-splitting operation
+on file references in the state store. This involves looking for file references that exist within non-leaf partitions,
 and atomically removing the original reference and creating 2 new references in the child partitions. This only moves
 file references down one "level" on each execution of the lambda, so the lambda would need to be invoked multiple times
 for the file references in the root partition to be moved down to the bottom of the tree.
