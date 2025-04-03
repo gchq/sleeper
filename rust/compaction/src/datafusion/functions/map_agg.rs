@@ -34,12 +34,14 @@
  */
 use std::fmt::Debug;
 
-use crate::datafusion::functions::map_accumulator::ByteMapAccumulator;
+use crate::datafusion::functions::{
+    map_accumulator::ByteMapAccumulator, map_group_accumulator::StringGroupMapAccumulator,
+};
 
 use super::map_accumulator::StringMapAccumulator;
 use arrow::{
     array::{downcast_primitive, ArrowPrimitiveType, PrimitiveBuilder},
-    datatypes::DataType,
+    datatypes::{DataType, Fields},
 };
 use datafusion::{
     common::{exec_err, internal_err, plan_err},
@@ -63,6 +65,26 @@ impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
     fn append_value(&mut self, v: &<Self::ArrowType as ArrowPrimitiveType>::Native) {
         self.append_value(*v);
     }
+}
+
+// This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
+macro_rules! helper {
+    ($t:ty, $acc:ident, $dt:expr) => {
+        Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt)?))
+    };
+}
+
+fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a Fields> {
+    let DataType::Map(field, _) = acc_args.return_type else {
+        return exec_err!("MapAggregator can only be used on Map column types");
+    };
+    let DataType::Struct(struct_fields) = field.data_type() else {
+        return exec_err!("MapAggregator Map field is not a Struct type!");
+    };
+    if struct_fields.len() != 2 {
+        return exec_err!("MapAggregator Map inner struct length is not 2");
+    }
+    Ok(struct_fields)
 }
 
 /// A aggregator for map columns. See module documentation.
@@ -110,21 +132,8 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        let DataType::Map(field, _) = acc_args.return_type else {
-            return exec_err!("MapAggregator can only be used on Map column types");
-        };
-        let DataType::Struct(struct_fields) = field.data_type() else {
-            return exec_err!("MapAggregator Map field is not a Struct type!");
-        };
-        if struct_fields.len() != 2 {
-            return exec_err!("MapAggregator Map inner struct length is not 2");
-        }
-        // This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
-        macro_rules! helper {
-            ($t:ty, $acc:ident, $dt:expr) => {
-                Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt)?))
-            };
-        }
+        let struct_fields = validate_map_struct_type(&acc_args)?;
+
         let value_type = struct_fields[1].data_type();
         let map_type = acc_args.return_type;
 
@@ -151,10 +160,24 @@ impl AggregateUDFImpl for MapAggregator {
 
     fn create_groups_accumulator(
         &self,
-        _args: AccumulatorArgs,
+        args: AccumulatorArgs,
     ) -> Result<Box<dyn GroupsAccumulator>> {
-        // Ok(Box::new(GroupMapAccumulator::new()))
-        unimplemented!();
+        let struct_fields = validate_map_struct_type(&args)?;
+
+        let value_type = struct_fields[1].data_type();
+        let map_type = args.return_type;
+
+        match struct_fields[0].data_type() {
+            DataType::Utf8 => downcast_primitive! {
+                value_type => (helper, StringGroupMapAccumulator, map_type),
+                _ => unreachable!()
+            },
+            // DataType::Binary => downcast_primitive! {
+            //     value_type => (helper, ByteMapAccumulator, map_type),
+            //     _ => unreachable!()
+            // },
+            _ => exec_err!("MapAggregator can only process maps with String keys!"),
+        }
     }
 
     fn order_sensitivity(&self) -> AggregateOrderSensitivity {

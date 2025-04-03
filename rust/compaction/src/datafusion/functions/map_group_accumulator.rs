@@ -1,4 +1,4 @@
-use std::ops::AddAssign;
+use std::{ops::AddAssign, sync::Arc};
 
 /// Simple [`GroupAccumulator`] implementations for map aggregation.
 /*
@@ -19,19 +19,20 @@ use std::ops::AddAssign;
 use super::{map_agg::PrimBuilderType, state::MapNullState};
 use arrow::{
     array::{
-        ArrayBuilder, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames, StringBuilder,
-        StructArray,
+        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
+        MapFieldNames, StringBuilder, StructArray,
     },
-    datatypes::DataType,
+    datatypes::{DataType, Field},
 };
 use datafusion::{
-    common::{plan_err, HashMap},
+    common::{exec_err, plan_err, HashMap},
     error::Result,
+    logical_expr::{EmitTo, GroupsAccumulator},
 };
 use nohash::BuildNoHashHasher;
 
 #[derive(Debug)]
-struct StringGroupMapAccumulator<VBuilder>
+pub struct StringGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
@@ -126,99 +127,104 @@ fn update_string_map_group<VBuilder>(
     }
 }
 
-// impl GroupsAccumulator for GroupMapAccumulator {
-//     fn update_batch(
-//         &mut self,
-//         values: &[ArrayRef],
-//         group_indices: &[usize],
-//         opt_filter: Option<&BooleanArray>,
-//         total_num_groups: usize,
-//     ) -> Result<()> {
-//         if values.len() != 1 {
-//             return Err(DataFusionError::Execution(
-//                 "GroupMapAccumulator only accepts single column input".into(),
-//             ));
-//         }
-//         let data = values[0].as_map();
-//         // make sure we have room for the groups count
-//         self.group_maps.resize(total_num_groups, Default::default());
-//         self.nulls.accumulate(
-//             group_indices,
-//             data,
-//             opt_filter,
-//             total_num_groups,
-//             |g_idx, val| {
-//                 let agg_map = &mut self.group_maps[g_idx];
-//                 update_map_group(&Some(val), agg_map, &mut self.word_cache, &mut self.words);
-//             },
-//         );
-//         Ok(())
-//     }
+impl<VBuilder> GroupsAccumulator for StringGroupMapAccumulator<VBuilder>
+where
+    VBuilder: ArrayBuilder + PrimBuilderType,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+{
+    fn update_batch(
+        &mut self,
+        values: &[ArrayRef],
+        group_indices: &[usize],
+        opt_filter: Option<&BooleanArray>,
+        total_num_groups: usize,
+    ) -> Result<()> {
+        if values.len() != 1 {
+            return exec_err!("StringGroupMapAccumulator only accepts single column input");
+        }
+        let data = values[0].as_map();
+        // make sure we have room for the groups count
+        self.group_maps.resize(total_num_groups, Default::default());
+        self.nulls.accumulate(
+            group_indices,
+            data,
+            opt_filter,
+            total_num_groups,
+            |g_idx, val| {
+                let agg_map = &mut self.group_maps[g_idx];
+                update_string_map_group::<VBuilder>(
+                    Some(val).as_ref(),
+                    agg_map,
+                    &mut self.word_cache,
+                    &mut self.words,
+                );
+            },
+        );
+        Ok(())
+    }
 
-//     fn evaluate(&mut self, emit_to: EmitTo) -> Result<ArrayRef> {
-//         let result = emit_to.take_needed(&mut self.group_maps);
-//         let nulls = self.nulls.build(emit_to);
-//         assert_eq!(result.len(), nulls.len());
-//         // if nulls are present in data, we have to make sure we don't try to sum them
-//         let mut builder = MapBuilder::new(
-//             Some(MapFieldNames {
-//                 entry: "key_value".into(),
-//                 key: "key".into(),
-//                 value: "value".into(),
-//             }),
-//             StringBuilder::new(),
-//             Int64Builder::new(),
-//         )
-//         .with_values_field(Field::new("value", DataType::Int64, false));
-//         for (v, is_valid) in result.into_iter().zip(nulls.iter()) {
-//             if is_valid {
-//                 for (key, val) in &v {
-//                     builder.keys().append_value(self.words[*key].clone());
-//                     builder.values().append_value(*val);
-//                 }
-//                 builder.append(true).expect("Can't finish Map");
-//             } else {
-//                 builder.append(false).expect("Can't finish Map");
-//             }
-//         }
-//         Ok(Arc::new(builder.finish()))
-//     }
+    fn evaluate(&mut self, emit_to: EmitTo) -> Result<ArrayRef> {
+        let result = emit_to.take_needed(&mut self.group_maps);
+        let nulls = self.nulls.build(emit_to);
+        assert_eq!(result.len(), nulls.len());
+        // if nulls are present in data, we have to make sure we don't try to sum them
+        let mut builder = self.make_map_builder(result.len());
+        for (v, is_valid) in result.into_iter().zip(nulls.iter()) {
+            if is_valid {
+                for (key, val) in &v {
+                    builder.keys().append_value(self.words[*key].clone());
+                    builder.values().append_value(val);
+                }
+                builder.append(true).expect("Can't finish MapBuilder");
+            } else {
+                builder.append(false).expect("Can't finish MapBuilder");
+            }
+        }
+        Ok(Arc::new(builder.finish()))
+    }
 
-//     fn state(&mut self, emit_to: EmitTo) -> Result<Vec<ArrayRef>> {
-//         self.evaluate(emit_to).map(|arr| vec![arr])
-//     }
+    fn state(&mut self, emit_to: EmitTo) -> Result<Vec<ArrayRef>> {
+        self.evaluate(emit_to).map(|arr| vec![arr])
+    }
 
-//     fn merge_batch(
-//         &mut self,
-//         values: &[ArrayRef],
-//         group_indices: &[usize],
-//         opt_filter: Option<&BooleanArray>,
-//         total_num_groups: usize,
-//     ) -> Result<()> {
-//         self.update_batch(values, group_indices, opt_filter, total_num_groups)
-//     }
+    fn merge_batch(
+        &mut self,
+        values: &[ArrayRef],
+        group_indices: &[usize],
+        opt_filter: Option<&BooleanArray>,
+        total_num_groups: usize,
+    ) -> Result<()> {
+        self.update_batch(values, group_indices, opt_filter, total_num_groups)
+    }
 
-//     fn size(&self) -> usize {
-//         (std::mem::size_of::<HashMap<String, i64>>() * self.group_maps.capacity())
-//             + self.nulls.size()
-//     }
+    fn size(&self) -> usize {
+        (std::mem::size_of::<HashMap<String, i64>>() * self.group_maps.capacity())
+            + self.nulls.size()
+    }
 
-//     fn convert_to_state(
-//         &self,
-//         values: &[ArrayRef],
-//         opt_filter: Option<&BooleanArray>,
-//     ) -> Result<Vec<ArrayRef>> {
-//         let mut grouper = GroupMapAccumulator::new();
-//         grouper.update_batch(
-//             values,
-//             &(0usize..values[0].len()).collect::<Vec<_>>(),
-//             opt_filter,
-//             values[0].len(),
-//         )?;
-//         grouper.state(EmitTo::All)
-//     }
+    fn convert_to_state(
+        &self,
+        values: &[ArrayRef],
+        opt_filter: Option<&BooleanArray>,
+    ) -> Result<Vec<ArrayRef>> {
+        let mut grouper = StringGroupMapAccumulator::<VBuilder>::try_new(&DataType::Map(
+            Arc::new(Field::new(
+                "key_value",
+                self.inner_field_type.clone(),
+                false,
+            )),
+            false,
+        ))?;
+        grouper.update_batch(
+            values,
+            &(0usize..values[0].len()).collect::<Vec<_>>(),
+            opt_filter,
+            values[0].len(),
+        )?;
+        grouper.state(EmitTo::All)
+    }
 
-//     fn supports_convert_to_state(&self) -> bool {
-//         true
-//     }
-// }
+    fn supports_convert_to_state(&self) -> bool {
+        true
+    }
+}
