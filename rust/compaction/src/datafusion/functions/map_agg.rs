@@ -111,9 +111,9 @@ impl AggregateUDFImpl for MapAggregator {
         // These macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
         macro_rules! helper {
             ($t:ty, $dt:expr) => {
-                Ok(Box::new(StringMapAccumulator::<PrimitiveBuilder<$t>>::new(
-                    $dt,
-                )?))
+                Ok(Box::new(
+                    StringMapAccumulator::<PrimitiveBuilder<$t>>::try_new($dt)?,
+                ))
             };
         }
 
