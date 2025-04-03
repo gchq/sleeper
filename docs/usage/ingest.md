@@ -25,9 +25,12 @@ the cost, with lower latency generally costing more.
 ## Ingest systems
 
 There are two types of system for ingesting data: standard ingest and bulk import. The former refers to a process that
-reads data and partitions and sorts it locally before writing it to files in S3. Scalability is achieved by running many
-of these in parallel. Bulk import means using [Apache Spark](https://spark.apache.org/) to run a MapReduce-like job to
-partition and sort a batch of data as a distributed process.
+reads data and partitions and sorts it locally before writing it to files in S3. Bulk import means using
+[Apache Spark](https://spark.apache.org/) to run a MapReduce-like job to partition and sort a batch of data as a
+distributed process.
+
+For ingesting any significant volumes of data, the bulk import process is preferred because it is faster and results in
+less compaction work later. The standard ingest process is mainly used for testing purposes.
 
 The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
 deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message to an ingest queue in SQS.
@@ -39,9 +42,6 @@ only used for that bulk import job. `PersistentEmrBulkImportStack` creates an EM
 By default it scales up and down so that if there are no bulk import jobs to run then minimal resources will be used.
 `EksBulkImportStack` is an experimental option to run Spark on an EKS cluster. If you have a lot of import jobs then the
 persistent EMR approach is recommended. If you have occasional jobs then use the serverless EMR approach.
-
-For ingesting large volumes of data, the bulk import process is preferred because the number of files written
-to S3 is smaller, which means the cost for S3 PUTs is less and there is less compaction work to do later.
 
 An ingest batcher is also available to automatically group smaller files into jobs of a configurable size. These jobs
 will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
