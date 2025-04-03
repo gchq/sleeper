@@ -41,7 +41,7 @@ use crate::datafusion::functions::{
 
 use super::map_accumulator::StringMapAccumulator;
 use arrow::{
-    array::{downcast_primitive, ArrowPrimitiveType, PrimitiveBuilder},
+    array::{downcast_integer, ArrowPrimitiveType, PrimitiveBuilder},
     datatypes::{DataType, Fields},
 };
 use datafusion::{
@@ -139,15 +139,15 @@ impl AggregateUDFImpl for MapAggregator {
         let map_type = acc_args.return_type;
 
         match struct_fields[0].data_type() {
-            DataType::Utf8 => downcast_primitive! {
+            DataType::Utf8 => downcast_integer! {
                 value_type => (helper, StringMapAccumulator, map_type),
                 _ => unreachable!()
             },
-            DataType::Binary => downcast_primitive! {
+            DataType::Binary => downcast_integer! {
                 value_type => (helper, ByteMapAccumulator, map_type),
                 _ => unreachable!()
             },
-            _ => exec_err!("MapAggregator can only process maps with String keys!"),
+            _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
         }
     }
 
@@ -156,7 +156,7 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn groups_accumulator_supported(&self, _args: AccumulatorArgs) -> bool {
-        false
+        true
     }
 
     fn create_groups_accumulator(
@@ -169,15 +169,15 @@ impl AggregateUDFImpl for MapAggregator {
         let map_type = args.return_type;
 
         match struct_fields[0].data_type() {
-            DataType::Utf8 => downcast_primitive! {
+            DataType::Utf8 => downcast_integer! {
                 value_type => (helper, StringGroupMapAccumulator, map_type),
                 _ => unreachable!()
             },
-            DataType::Binary => downcast_primitive! {
+            DataType::Binary => downcast_integer! {
                 value_type => (helper, ByteGroupMapAccumulator, map_type),
                 _ => unreachable!()
             },
-            _ => exec_err!("MapAggregator can only process maps with String keys!"),
+            _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
         }
     }
 
