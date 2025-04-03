@@ -85,10 +85,14 @@ where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
-    // Creates a new accumulator.
-    //
-    // The type of the map must be specified so that the correct sort
-    // of map builder can be created.
+    /// Creates a new accumulator.
+    ///
+    /// The type of the map must be specified so that the correct sort
+    /// of map builder can be created.
+    ///
+    /// # Errors
+    /// If the incorrect type of data type is provided. Must me a map type with an
+    /// inner Struct type.
     #[allow(dead_code)]
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
@@ -106,6 +110,13 @@ where
         }
     }
 
+    /// Makes a map builder type suitable for this accumulator. The runtime inner type
+    /// of the map this accumulator is working with is used as the basis to determine the
+    /// types of the builder that are placed in the returned [`MapBuilder`].
+    ///
+    /// # Panics
+    /// If an invalid map type is found. This condition shouldn't occur as it is checked
+    /// upon construction.
     fn make_map_builder(&self, cap: usize) -> MapBuilder<KBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
@@ -219,10 +230,14 @@ impl<VBuilder> StringMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
-    // Creates a new accumulator.
-    //
-    // The type of the map must be specified so that the correct sort
-    // of map builder can be created.
+    /// Creates a new accumulator.
+    ///
+    /// The type of the map must be specified so that the correct sort
+    /// of map builder can be created.
+    ///
+    /// # Errors
+    /// If the incorrect type of data type is provided. Must me a map type with an
+    /// inner Struct type.
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
@@ -239,6 +254,13 @@ where
         }
     }
 
+    /// Makes a map builder type suitable for this accumulator. The runtime inner type
+    /// of the map this accumulator is working with is used as the basis to determine the
+    /// types of the builder that are placed in the returned [`MapBuilder`].
+    ///
+    /// # Panics
+    /// If an invalid map type is found. This condition shouldn't occur as it is checked
+    /// upon construction.
     fn make_map_builder(&self, cap: usize) -> MapBuilder<StringBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
@@ -350,10 +372,14 @@ impl<VBuilder> ByteMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
-    // Creates a new accumulator.
-    //
-    // The type of the map must be specified so that the correct sort
-    // of map builder can be created.
+    /// Creates a new accumulator.
+    ///
+    /// The type of the map must be specified so that the correct sort
+    /// of map builder can be created.
+    ///
+    /// # Errors
+    /// If the incorrect type of data type is provided. Must me a map type with an
+    /// inner Struct type.
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
@@ -370,6 +396,13 @@ where
         }
     }
 
+    /// Makes a map builder type suitable for this accumulator. The runtime inner type
+    /// of the map this accumulator is working with is used as the basis to determine the
+    /// types of the builder that are placed in the returned [`MapBuilder`].
+    ///
+    /// # Panics
+    /// If an invalid map type is found. This condition shouldn't occur as it is checked
+    /// upon construction.
     fn make_map_builder(&self, cap: usize) -> MapBuilder<BinaryBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {

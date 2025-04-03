@@ -46,6 +46,7 @@ impl MapNullState {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new_with_capacity(capacity: usize) -> Self {
         Self {
             seen_values: BooleanBufferBuilder::new(capacity),
