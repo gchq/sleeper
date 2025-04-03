@@ -27,9 +27,10 @@ use datafusion::{
 use map_agg::MapAggregator;
 use std::sync::Arc;
 
-mod accumulator;
 pub mod ageoff;
+mod map_accumulator;
 pub mod map_agg;
+mod map_group_accumulator;
 mod state;
 
 /// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.

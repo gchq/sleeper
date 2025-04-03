@@ -34,9 +34,9 @@
  */
 use std::fmt::Debug;
 
-use crate::datafusion::functions::accumulator::ByteMapAccumulator;
+use crate::datafusion::functions::map_accumulator::ByteMapAccumulator;
 
-use super::accumulator::StringMapAccumulator;
+use super::map_accumulator::StringMapAccumulator;
 use arrow::{
     array::{downcast_primitive, PrimitiveBuilder},
     datatypes::DataType,
