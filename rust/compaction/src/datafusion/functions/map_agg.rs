@@ -35,7 +35,8 @@
 use std::fmt::Debug;
 
 use crate::datafusion::functions::{
-    map_accumulator::ByteMapAccumulator, map_group_accumulator::StringGroupMapAccumulator,
+    map_accumulator::ByteMapAccumulator,
+    map_group_accumulator::{ByteGroupMapAccumulator, StringGroupMapAccumulator},
 };
 
 use super::map_accumulator::StringMapAccumulator;
@@ -172,10 +173,10 @@ impl AggregateUDFImpl for MapAggregator {
                 value_type => (helper, StringGroupMapAccumulator, map_type),
                 _ => unreachable!()
             },
-            // DataType::Binary => downcast_primitive! {
-            //     value_type => (helper, ByteMapAccumulator, map_type),
-            //     _ => unreachable!()
-            // },
+            DataType::Binary => downcast_primitive! {
+                value_type => (helper, ByteGroupMapAccumulator, map_type),
+                _ => unreachable!()
+            },
             _ => exec_err!("MapAggregator can only process maps with String keys!"),
         }
     }
