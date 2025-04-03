@@ -50,10 +50,10 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="2BP0mcNtexj8iC0AKuNT-1" value="Data Bucket&lt;div&gt;(Sleeper table directory)&lt;/div&gt;" style="fillColor=none;strokeColor=#5A6C86;dashed=1;verticalAlign=top;fontStyle=0;fontColor=#5A6C86;whiteSpace=wrap;html=1;align=left;spacingLeft=5;fontSize=14;" vertex="1" parent="1">
-          <mxGeometry x="400" y="130" width="260" height="150" as="geometry" />
+          <mxGeometry x="400" y="140" width="260" height="140" as="geometry" />
         </mxCell>
         <mxCell id="2BP0mcNtexj8iC0AKuNT-2" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
-          <mxGeometry x="620" y="130" width="40" height="40" as="geometry" />
+          <mxGeometry x="620" y="140" width="40" height="40" as="geometry" />
         </mxCell>
         <mxCell id="2BP0mcNtexj8iC0AKuNT-4" value="Snapshot Files" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" vertex="1" parent="1">
           <mxGeometry x="430" y="210" width="80" height="40" as="geometry" />
