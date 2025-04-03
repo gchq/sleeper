@@ -166,6 +166,8 @@ We also have snapshots, where the whole state is written to a file. Metadata for
 transaction that was applied to the state in the snapshot. This lets us skip to that point in the transaction log, so we
 no longer need to read the whole log to derive the state.
 
+#### Updates
+
 State store updates can be applied directly by writing to the log, but this causes problems with contention. In order to
 establish an ordering of the transaction log, a transaction can only be written when the local state is fully up to
 date. If another process adds a transaction at the same time, we read the new transaction and retry. If many processes
@@ -179,6 +181,16 @@ which lets us perform operations that should happen after a transaction, since i
 them in the committer.
 
 ![Transaction log commits diagram](design/transaction-log-state-store-commits.png)
+
+#### Snapshots & cleanup
+
+To keep queries of the state store fast, we take regular snapshots of the state, and delete old transactions and
+snapshots that are no longer needed. This keeps the number of transactions in the DynamoDB table manageable. This
+process is triggered on a schedule, one for each operation. Each schedule invokes a trigger lambda, which distributes
+the work as a separate SQS message for each Sleeper table. Each operation is deployed as a separate lambda, each with
+its own trigger setup that invokes an instance of the lambda for each Sleeper table.
+
+![Transaction log snapshots and cleanup diagram](design/transaction-log-state-store-snapshots.png)
 
 ## Ingest of data
 
@@ -369,8 +381,8 @@ under [checking the status of the system](usage/status.md).
 
 ## Scheduled rules scaling across tables
 
-Most internal operations in a Sleeper instance operate on a schedule. We use CloudWatch scheduled rules to invoke these.
-For operations that apply against Sleeper tables, we use an SQS FIFO queue to ensure the system can scale to an
+Most internal operations in a Sleeper instance operate on a schedule. We use EventBridge scheduled rules to invoke
+these. For operations that apply against Sleeper tables, we use an SQS FIFO queue to ensure the system can scale to an
 arbitrary number of tables.
 
 The scheduled rule actually invokes a trigger lambda. The trigger lambda creates messages on an SQS FIFO queue to
