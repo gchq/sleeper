@@ -185,10 +185,15 @@ them in the committer.
 #### Snapshots & cleanup
 
 To keep queries of the state store fast, we take regular snapshots of the state, and delete old transactions and
-snapshots that are no longer needed. This keeps the number of transactions in the DynamoDB table manageable. This
-process is triggered on a schedule, one for each operation. Each schedule invokes a trigger lambda, which distributes
-the work as a separate SQS message for each Sleeper table. Each operation is deployed as a separate lambda, each with
-its own trigger setup that invokes an instance of the lambda for each Sleeper table.
+snapshots that are no longer needed. This keeps the number of transactions in the DynamoDB table manageable.
+
+This process is triggered on a schedule, one for each operation. Each schedule invokes a trigger lambda, which
+distributes the work as a separate SQS message for each Sleeper table. Each operation is deployed as a separate lambda,
+each with its own trigger setup that invokes an instance of the lambda for each Sleeper table.
+
+The following diagram also includes two separate DynamoDB tables for snapshot metadata. The latest snapshots table is
+used when reading the Sleeper table state. The all snapshots table is used by the transaction follower, in case it is
+out of date with the head of the transaction log, and it is used to find old snapshots that can be deleted.
 
 ![Transaction log snapshots and cleanup diagram](design/transaction-log-state-store-snapshots.png)
 
