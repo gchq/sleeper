@@ -16,8 +16,8 @@
 package sleeper.clients.util;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.deploy.properties.GeneratePropertiesTemplates;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.core.deploy.GeneratePropertiesTemplates;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;

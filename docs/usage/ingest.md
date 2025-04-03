@@ -8,29 +8,40 @@ Sleeper is given some data to ingest it must partition and sort it. This data mu
 (one per leaf partition) and then the state store must be updated so that it is aware that the new data is in the
 table.
 
-There are two ways of ingesting data: standard ingest and bulk import. The former refers to a process that runs in
-a container that reads data and partitions and sorts it locally before writing it to files in S3. Scalability is
-achieved by running many of these in parallel. Bulk import means using [Apache Spark](https://spark.apache.org/)
-to run a MapReduce-like job to partition and sort a batch of data so that it can be ingested into a Sleeper table.
+To write data to Sleeper, you can either create a custom ingest process by interacting directly with the Sleeper code,
+or:
 
-The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
-allows you to provide the data to be ingested as Parquet files. By sending a message to an SQS queue you can tell
-Sleeper to ingest this data. Sleeper will spin up ECS tasks to perform this ingest.
+1. Write your data to Parquet files in S3, in the data bucket or the configured ingest source bucket
+2. Send a message to an ingest queue as a job pointing to those files
+3. Poll the ingest job tracker until the ingest is complete
 
-Ingesting data using the bulk import approach requires the data to first be written to Parquet files. Then you
-tell Sleeper to ingest that data by sending a message to an SQS queue. This will use an EMR cluster to run the
-Spark job to perform the ingest. There are two stacks that can be used for this approach: the `EmrBulkImportStack` and
-the `PersistentEmrBulkImportStack`. The former creates an EMR cluster on demand to run the Spark job. The cluster is
-only used for that bulk import job. The latter creates an EMR cluster that is permanently running. By default it
-scales up and down so that if there are no bulk import jobs to run then minimal resources will be used. There is
-also an experimental option to run bulk import jobs using Spark running on an EKS cluster.
-
-For ingesting large volumes of data, the bulk import process is preferred because the number of files written
-to S3 is smaller, which means the cost for S3 PUTs is less and there is less compaction work to do later.
+The ingest system will sort your data and write it to one or more Parquet files in the Sleeper table. You can choose
+which ingest system to use for this by which ingest queue you send your message to.
 
 Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
 the cost, with lower latency generally costing more.
+
+## Ingest systems
+
+There are two types of system for ingesting data: standard ingest and bulk import. The former refers to a process that
+reads data and partitions and sorts it locally before writing it to files in S3. Bulk import means using
+[Apache Spark](https://spark.apache.org/) to run a MapReduce-like job to partition and sort a batch of data as a
+distributed process.
+
+For ingesting any significant volumes of data, the bulk import process is preferred because it is faster and results in
+less compaction work later. The standard ingest process is mainly used for testing purposes.
+
+The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
+deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message to an ingest queue in SQS.
+
+The bulk import approach can be customised to run in your own Spark cluster, or Sleeper can run it for you via an ingest
+queue in SQS. There are multiple stacks that can be deployed for this approach. `EmrServerlessBulkImportStack` runs the
+Spark job on EMR Serverless. `EmrBulkImportStack` creates an EMR cluster on demand to run the Spark job. The cluster is
+only used for that bulk import job. `PersistentEmrBulkImportStack` creates an EMR cluster that is permanently running.
+By default it scales up and down so that if there are no bulk import jobs to run then minimal resources will be used.
+`EksBulkImportStack` is an experimental option to run Spark on an EKS cluster. If you have a lot of import jobs then the
+persistent EMR approach is recommended. If you have occasional jobs then use the serverless EMR approach.
 
 An ingest batcher is also available to automatically group smaller files into jobs of a configurable size. These jobs
 will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
@@ -40,9 +51,9 @@ will be submitted to either standard ingest or bulk import, based on the configu
 In theory, an arbitrary number of ingest jobs can run simultaneously. If the limits on your AWS account allowed
 it, you could have 100 EMR clusters each running a job to import 10 billion records. Each job will be writing
 files to S3, and when it is finished the state store will be updated. All of these operations are independent.
-Therefore the only limit is the capacity of the S3 bucket to receive data and the capacity of the DynamoDB-based
-state store to receive PUTs. Thus if the 100 bulk import jobs complete at roughly the same time, the number of
-records in the table would increase by 1 trillion very quickly.
+Therefore the only limit is the capacity of the S3 bucket to receive data and the capacity of the state store to receive
+updates. Thus if the 100 bulk import jobs complete at roughly the same time, the number of records in the table would
+increase by 1 trillion very quickly.
 
 However, in order for a query to return results quickly, there needs to be a modest number of files in each
 partition. If there are around 10 files in a partition, then queries will be quick. In the above example,
@@ -54,6 +65,19 @@ smaller number of files. Once this is done, queries will be quick.
 This example shows that ingest is a balancing act between adding data quickly and maintaining query performance.
 If too many import jobs finish in a short period then query performance will suffer. A small number of large
 import jobs is better than a large number of small jobs.
+
+## Job tracker
+
+If you submit your files to an ingest queue as a job, the progress is tracked in DynamoDB. This updates each time your
+job progresses to the next step of the process. In Java you can query this with an `IngestJobTracker` object, created
+by `IngestJobTrackerFactory`. You can set an ID for your job in the message on the ingest queue, and then call
+`IngestJobTracker.getJob` to check its status. This API is not currently stable. We may add a REST API to serve
+this purpose in the future. At time of writing, you can check the status of the job by calling
+`getFurthestRunStatusType` on the status object.
+
+Note that if a run of the job has finished, it may still be uncommitted. This means the data has been sorted and written
+to files in S3, but it is not yet in the Sleeper table. The result is then committed to the state store to add the files
+to the Sleeper table.
 
 ## Standard Ingest
 
@@ -141,9 +165,9 @@ imported ([see here](../usage/tables.md#reinitialise-a-table)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
-- `EmrServerlessBulkImportStack` - this causes an EMR Serverless application to be created when the Sleeper instance is deployed. 
-  This is the default EMR Bulk Import Stack. The advantage of using EMR Serverless is that when there are no bulk import jobs 
-  the applications stops with no wasted compute. The startup of the application is greatly reduced compared to standard EMR. 
+- `EmrServerlessBulkImportStack` - this causes an EMR Serverless application to be created when the Sleeper instance is deployed.
+  This is the default EMR Bulk Import Stack. The advantage of using EMR Serverless is that when there are no bulk import jobs
+  the applications stops with no wasted compute. The startup of the application is greatly reduced compared to standard EMR.
 - `EmrBulkImportStack` - this causes an EMR cluster to be deployed each time a job is submitted to the EMR bulk import
   queue. Each job is processed on a separate EMR cluster. The advantage of the cluster being used for one job and then
   destroyed is that there is no wasted compute if jobs are submitted infrequently. The downside is that there is a
@@ -162,8 +186,8 @@ These can all be deployed independently of each other. Each stack has its own qu
 
 #### Bulk import on EMR Serverless
 
-The EMR Serverless stack creates an EMR Serverless application that only runs when there are jobs to process. 
-When you want to run a job the application is started by EMR Serverless. After 15 minutes of inactivity the application 
+The EMR Serverless stack creates an EMR Serverless application that only runs when there are jobs to process.
+When you want to run a job the application is started by EMR Serverless. After 15 minutes of inactivity the application
 is shutdown ready to be started when needed. This can be overridden by changing the value of `sleeper.bulk.import.emr.serverless.autostop.timeout`
 
 A simple example of the message to send is:
@@ -180,12 +204,12 @@ A simple example of the message to send is:
 This message needs to be sent to the queue with URL given by the value of the
 property `sleeper.bulk.import.emr.serverless.job.queue.url`.
 
-When you submit your JSON job via the SQS Queue, an EMR Serverless job should appear in the application found in 
-the EMR Studio part of the AWS console with your desired 
-configuration. Once the job starts (around 2 minutes), you will be able to follow the links in EMR Studio to access your Spark UI. 
-This will allow you to monitor your job and view logs from the Spark executors and driver. You can also access previous job Spark UI's from EMR Studio. 
+When you submit your JSON job via the SQS Queue, an EMR Serverless job should appear in the application found in the EMR
+Studio part of the AWS console with your desired configuration. Once the job starts (around 2 minutes), you will be able
+to follow the links in EMR Studio to access your Spark UI. This will allow you to monitor your job and view logs from
+the Spark executors and driver. You can also access previous job Spark UIs from EMR Studio.
 
-It is possible to get Sleeper to deploy EMR Studio by enabling the optional stack `EmrStudioStack`. 
+It is possible to get Sleeper to deploy EMR Studio by enabling the optional stack `EmrStudioStack`.
 Note if EMR Serverless is not enabled then EMR Studio won't be deployed even if added to the optional stacks.
 
 After your job finishes the application will auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
@@ -208,7 +232,7 @@ An example for overriding at the job level is:
   }
 }
 ```
-##### All Available Properties 
+##### All Available Properties
 
 ```properties
 # The following properties are used to define the custom Spark image used that has Java 11 installed
@@ -240,15 +264,15 @@ sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec=lz4
 ```
 
 ##### Pre-initialised Capacity
-EMR Serverless can be configured to have a pre-initialised capacity where resources are ready to process jobs. 
-This does incur an additional cost when the Application is not in the CREATED or STOPPED states. 
+EMR Serverless can be configured to have a pre-initialised capacity where resources are ready to process jobs.
+This does incur an additional cost when the Application is not in the CREATED or STOPPED states.
 
-Spark adds a 10% memory overhead to the drivers and executors which needs to be factored in to the resource requested. 
+Spark adds a 10% memory overhead to the drivers and executors which needs to be factored in to the resource requested.
 
 See [here](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html)
-for more information. 
+for more information.
 
-By default the pre-initialised capacity is disabled. 
+By default the pre-initialised capacity is disabled.
 
 To enable it set `sleeper.bulk.import.emr.serverless.initial.capacity.enabled`
 
@@ -267,7 +291,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
 ```
 When pre-initialised capacity is turned on it is recommend to ensure that auto stop is also enabled by setting `sleeper.bulk.import.emr.serverless.autostop.enabled`.
 
-This is to release the resources once jobs have finished thus reducing the overall cost of using EMR Serverless. 
+This is to release the resources once jobs have finished thus reducing the overall cost of using EMR Serverless.
 
 More information about EMR Serverless can be found [here](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/emr-serverless.html).
 

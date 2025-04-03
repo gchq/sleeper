@@ -44,12 +44,16 @@ public class TableWriter {
         List<TableFieldSummary> fieldSummaries = fieldSummaries();
         int totalMaxValueLength = fieldSummaries.stream().mapToInt(TableFieldSummary::getMaxValueLength).sum();
         int maxRowLength = totalMaxValueLength + structure.paddingLengthForFields(fields.size() - hideFieldIndexes.size());
-        out.println(structure.horizontalBorder(maxRowLength));
+        if (structure.hasHorizontalBorder()) {
+            out.println(structure.horizontalBorder(maxRowLength));
+        }
         out.println(structure.headerRow(fields, fieldSummaries));
         for (TableRow row : rows) {
             out.println(structure.row(row, fieldSummaries));
         }
-        out.println(structure.horizontalBorder(maxRowLength));
+        if (structure.hasHorizontalBorder()) {
+            out.println(structure.horizontalBorder(maxRowLength));
+        }
     }
 
     private List<TableFieldSummary> fieldSummaries() {
