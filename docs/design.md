@@ -171,7 +171,7 @@ no longer need to read the whole log to derive the state.
 State store updates can be applied directly by writing to the log, but this causes problems with contention. To
 establish an ordering of the transaction log, a transaction can only be written when the local state is fully up to
 date. If another process adds a transaction at the same time, we read the new transaction and retry. If many processes
-are adding transactions, the retries can cause problems with load, and the throughput of adding transactions is reduced.
+are adding transactions, the retries can cause problems with load, and the throughput of new transactions is reduced.
 To avoid this, we have a queue of asynchronous state store commits, and a lambda to apply these in order in one place.
 
 Below is a diagram of the process of applying an asynchronous update. A request to add a transaction log entry is
