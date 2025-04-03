@@ -1,4 +1,4 @@
-/// Simple ['Accumulator`] implementations for map aggregation.
+/// Simple [`Accumulator`] implementations for map aggregation.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -33,7 +33,7 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc
 pub trait PrimBuilderType: Default + Debug {
     /// The Arrow data type that contains associated types.
     type ArrowType: ArrowPrimitiveType;
-    /// Allow access of underlying append_value function.
+    /// Allow access of underlying `append_value` function.
     fn append_value(&mut self, v: &<Self::ArrowType as ArrowPrimitiveType>::Native);
 }
 
@@ -50,7 +50,7 @@ impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
 ///
 /// All nulls keys/values are skipped over.
 fn update_primitive_map<KBuilder, VBuilder>(
-    input: &Option<StructArray>,
+    input: Option<&StructArray>,
     map: &mut HashMap<
         <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
@@ -104,6 +104,7 @@ where
     //
     // The type of the map must be specified so that the correct sort
     // of map builder can be created.
+    #[allow(dead_code)]
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
@@ -118,11 +119,11 @@ where
                 _p2: PhantomData,
             })
         } else {
-            return plan_err!("Invalid datatype for PrimMapAccumulator {map_type:?}");
+            plan_err!("Invalid datatype for PrimMapAccumulator {map_type:?}")
         }
     }
 
-    fn make_map_builder(&self, cap: usize) -> Result<MapBuilder<KBuilder, VBuilder>> {
+    fn make_map_builder(&self, cap: usize) -> MapBuilder<KBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
                 let names = MapFieldNames {
@@ -132,11 +133,9 @@ where
                 };
                 let key_builder = KBuilder::default();
                 let value_builder = VBuilder::default();
-                Ok(
-                    MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
-                        .with_keys_field(fields[0].clone())
-                        .with_values_field(fields[1].clone()),
-                )
+                MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
+                    .with_keys_field(fields[0].clone())
+                    .with_values_field(fields[1].clone())
             }
             _ => unreachable!(
                 "Invalid datatype inside PrimMapAccumulator {:?}",
@@ -161,13 +160,13 @@ where
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_primitive_map::<KBuilder, VBuilder>(&map, &mut self.values);
+            update_primitive_map::<KBuilder, VBuilder>(map.as_ref(), &mut self.values);
         }
         Ok(())
     }
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
-        let mut builder = self.make_map_builder(self.values.len())?;
+        let mut builder = self.make_map_builder(self.values.len());
         for (key, val) in &self.values {
             builder.keys().append_value(key);
             builder.values().append_value(val);
@@ -195,7 +194,7 @@ where
 ///
 /// All nulls keys/values are skipped over.
 fn update_string_map<VBuilder>(
-    input: &Option<StructArray>,
+    input: Option<&StructArray>,
     map: &mut HashMap<
         String,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
@@ -255,11 +254,11 @@ where
                 _p: PhantomData,
             })
         } else {
-            return plan_err!("Invalid datatype for StringMapAccumulator {map_type:?}");
+            plan_err!("Invalid datatype for StringMapAccumulator {map_type:?}")
         }
     }
 
-    fn make_map_builder(&self, cap: usize) -> Result<MapBuilder<StringBuilder, VBuilder>> {
+    fn make_map_builder(&self, cap: usize) -> MapBuilder<StringBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
                 let names = MapFieldNames {
@@ -269,11 +268,9 @@ where
                 };
                 let key_builder = StringBuilder::with_capacity(cap, 1024);
                 let value_builder = VBuilder::default();
-                Ok(
-                    MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
-                        .with_keys_field(fields[0].clone())
-                        .with_values_field(fields[1].clone()),
-                )
+                MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
+                    .with_keys_field(fields[0].clone())
+                    .with_values_field(fields[1].clone())
             }
             _ => unreachable!(
                 "Invalid datatype inside StringMapAccumulator {:?}",
@@ -296,13 +293,13 @@ where
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_string_map::<VBuilder>(&map, &mut self.values);
+            update_string_map::<VBuilder>(map.as_ref(), &mut self.values);
         }
         Ok(())
     }
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
-        let mut builder = self.make_map_builder(self.values.len())?;
+        let mut builder = self.make_map_builder(self.values.len());
         for (key, val) in &self.values {
             builder.keys().append_value(key);
             builder.values().append_value(val);
@@ -330,7 +327,7 @@ where
 ///
 /// All nulls keys/values are skipped over.
 fn update_byte_map<VBuilder>(
-    input: &Option<StructArray>,
+    input: Option<&StructArray>,
     map: &mut HashMap<
         Vec<u8>,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
@@ -390,11 +387,11 @@ where
                 _p: PhantomData,
             })
         } else {
-            return plan_err!("Invalid datatype for ByteMapAccumulator {map_type:?}");
+            plan_err!("Invalid datatype for ByteMapAccumulator {map_type:?}")
         }
     }
 
-    fn make_map_builder(&self, cap: usize) -> Result<MapBuilder<BinaryBuilder, VBuilder>> {
+    fn make_map_builder(&self, cap: usize) -> MapBuilder<BinaryBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
                 let names = MapFieldNames {
@@ -404,11 +401,9 @@ where
                 };
                 let key_builder = BinaryBuilder::with_capacity(cap, 1024);
                 let value_builder = VBuilder::default();
-                Ok(
-                    MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
-                        .with_keys_field(fields[0].clone())
-                        .with_values_field(fields[1].clone()),
-                )
+                MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
+                    .with_keys_field(fields[0].clone())
+                    .with_values_field(fields[1].clone())
             }
             _ => unreachable!(
                 "Invalid datatype inside ByteMapAccumulator {:?}",
@@ -431,13 +426,13 @@ where
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_byte_map::<VBuilder>(&map, &mut self.values);
+            update_byte_map::<VBuilder>(map.as_ref(), &mut self.values);
         }
         Ok(())
     }
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
-        let mut builder = self.make_map_builder(self.values.len())?;
+        let mut builder = self.make_map_builder(self.values.len());
         for (key, val) in &self.values {
             builder.keys().append_value(key);
             builder.values().append_value(val);

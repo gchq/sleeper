@@ -1,5 +1,6 @@
+#![allow(dead_code)]
 /// A specialised version of [`NullState`] for map column types.
-/// Adapted from (https://docs.rs/datafusion/latest/datafusion/physical_expr/struct.NullState.html)
+/// Adapted from <`https://docs.rs/datafusion/latest/datafusion/physical_expr/struct.NullState.html`>
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -65,13 +66,13 @@ impl MapNullState {
     /// # Arguments:
     ///
     /// * `values`: the input arguments to the accumulator
-    /// * `group_indices`:  To which groups do the rows in `values` belong, (aka group_index)
+    /// * `group_indices`:  To which groups do the rows in `values` belong, (aka `group_index`)
     /// * `opt_filter`: if present, only rows for which is Some(true) are included
-    /// * `value_fn`: function invoked for  (group_index, value) where value is non null
+    /// * `value_fn`: function invoked for  (`group_index`, value) where value is non null
     ///
-    /// See [`accumulate`], for more details on how value_fn is called
+    /// See [`accumulate`], for more details on how `value_fn` is called
     ///
-    /// When value_fn is called it also sets
+    /// When `value_fn` is called it also sets
     ///
     /// 1. `self.seen_values[group_index]` to true for all rows that had a non null value
     pub fn accumulate<F>(
@@ -93,7 +94,7 @@ impl MapNullState {
         });
     }
 
-    /// Creates the a [`NullBuffer`] representing which group_indices
+    /// Creates the a [`NullBuffer`] representing which `group_indices`
     /// should have null values (because they never saw any values)
     /// for the `emit_to` rows.
     ///
@@ -125,10 +126,10 @@ impl MapNullState {
 ///
 /// # Arguments:
 ///
-/// * `group_indices`:  To which groups do the rows in `values` belong, (aka group_index)
+/// * `group_indices`:  To which groups do the rows in `values` belong, (aka `group_index`)
 /// * `values`: the input arguments to the accumulator
 /// * `opt_filter`: if present, only rows for which is Some(true) are included
-/// * `value_fn`: function invoked for  (group_index, value) where value is non null
+/// * `value_fn`: function invoked for  (`group_index`, value) where value is non null
 ///
 /// # Example
 ///
@@ -150,7 +151,7 @@ impl MapNullState {
 /// group_indices   values        opt_filter
 /// ```
 ///
-/// In the example above, `value_fn` is invoked for each (group_index,
+/// In the example above, `value_fn` is invoked for each (`group_index`,
 /// value) pair where `opt_filter[i]` is true and values is non null
 ///
 /// ```text
@@ -210,7 +211,7 @@ pub fn accumulate<F>(
                             new_value.expect("Nulls shouldn't be present in non-nullable column"),
                         );
                     }
-                })
+                });
         }
         // both null values and filters
         (true, Some(filter)) => {
@@ -225,15 +226,15 @@ pub fn accumulate<F>(
                 .for_each(|((filter_value, &group_index), new_value)| {
                     if let Some(true) = filter_value {
                         if let Some(new_value) = new_value {
-                            value_fn(group_index, new_value)
+                            value_fn(group_index, new_value);
                         }
                     }
-                })
+                });
         }
     }
 }
 
-/// Ensures that `builder` contains a `BooleanBufferBuilder with at
+/// Ensures that `builder` contains a `BooleanBufferBuilder` with at
 /// least `total_num_groups`.
 ///
 /// All new entries are initialized to `default_value`

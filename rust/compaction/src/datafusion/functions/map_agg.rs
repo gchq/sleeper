@@ -10,7 +10,7 @@
 /// | ....|
 ///
 ///
-/// Given a "map_sum" aggregator configured, the query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
+/// Given a "`map_sum`" aggregator configured, the query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
 /// | Key |Total | Items |
 /// |--|--|--|
 /// | a | 9 | { 'k1' = 2, 'k2' = 3, 'k3' = 4, 'k4' = 1} |
@@ -63,12 +63,12 @@ impl MapAggregator {
     /// # Errors
     /// If the given column is not a map column.
     pub fn try_new(column_type: &DataType) -> Result<Self> {
-        if !matches!(column_type, DataType::Map(_, _)) {
-            plan_err!("MapAggregator can only be used on Map column types")
-        } else {
+        if matches!(column_type, DataType::Map(_, _)) {
             Ok(Self {
                 signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
             })
+        } else {
+            plan_err!("MapAggregator can only be used on Map column types")
         }
     }
 }
@@ -78,7 +78,7 @@ impl AggregateUDFImpl for MapAggregator {
         self
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "map_agg"
     }
 
@@ -87,10 +87,10 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn return_type(&self, arg_types: &[DataType]) -> Result<DataType> {
-        if arg_types.len() != 1 {
-            internal_err!("MapAggregator expects a single column of Map type")
-        } else {
+        if arg_types.len() == 1 {
             Ok(arg_types[0].clone())
+        } else {
+            internal_err!("MapAggregator expects a single column of Map type")
         }
     }
 
