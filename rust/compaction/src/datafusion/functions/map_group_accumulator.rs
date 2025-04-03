@@ -164,7 +164,7 @@ where
         }
         let data = values[0].as_map();
         // make sure we have room for the groups count
-        self.group_maps.resize(total_num_groups, Default::default());
+        self.group_maps.resize(total_num_groups, HashMap::default());
         self.nulls.accumulate(
             group_indices,
             data,
