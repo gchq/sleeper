@@ -17,7 +17,7 @@
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, MapBuilder,
-        MapFieldNames, PrimitiveBuilder, StringBuilder, StructArray,
+        MapFieldNames, StringBuilder, StructArray,
     },
     datatypes::DataType,
 };
@@ -27,22 +27,9 @@ use datafusion::{
     logical_expr::Accumulator,
     scalar::ScalarValue,
 };
-use std::{fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
+use std::{fmt::Debug, hash::Hash, ops::AddAssign, sync::Arc};
 
-/// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
-pub trait PrimBuilderType: Default + Debug {
-    /// The Arrow data type that contains associated types.
-    type ArrowType: ArrowPrimitiveType;
-    /// Allow access of underlying `append_value` function.
-    fn append_value(&mut self, v: &<Self::ArrowType as ArrowPrimitiveType>::Native);
-}
-
-impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
-    type ArrowType = T;
-    fn append_value(&mut self, v: &<Self::ArrowType as ArrowPrimitiveType>::Native) {
-        self.append_value(*v);
-    }
-}
+use super::map_agg::PrimBuilderType;
 
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
@@ -91,8 +78,6 @@ where
         <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    _p: PhantomData<KBuilder>,
-    _p2: PhantomData<VBuilder>,
 }
 
 impl<KBuilder, VBuilder> PrimMapAccumulator<KBuilder, VBuilder>
@@ -115,8 +100,6 @@ where
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
                 values: HashMap::default(),
-                _p: PhantomData,
-                _p2: PhantomData,
             })
         } else {
             plan_err!("Invalid datatype for PrimMapAccumulator {map_type:?}")
@@ -230,7 +213,6 @@ where
     inner_field_type: DataType,
     values:
         HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
-    _p: PhantomData<VBuilder>,
 }
 
 impl<VBuilder> StringMapAccumulator<VBuilder>
@@ -251,7 +233,6 @@ where
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
                 values: HashMap::default(),
-                _p: PhantomData,
             })
         } else {
             plan_err!("Invalid datatype for StringMapAccumulator {map_type:?}")
@@ -363,7 +344,6 @@ where
     inner_field_type: DataType,
     values:
         HashMap<Vec<u8>, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
-    _p: PhantomData<VBuilder>,
 }
 
 impl<VBuilder> ByteMapAccumulator<VBuilder>
@@ -384,7 +364,6 @@ where
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
                 values: HashMap::default(),
-                _p: PhantomData,
             })
         } else {
             plan_err!("Invalid datatype for ByteMapAccumulator {map_type:?}")
