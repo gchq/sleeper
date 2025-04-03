@@ -59,6 +59,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_E
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -156,10 +157,19 @@ public class BulkExportTaskResources {
 
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
-                .resources(Collections.singletonList("*"))
-                .actions(List.of("ecs:DescribeContainerInstances"))
+                .resources(List.of(
+                        String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
+                                instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
+                        String.format("arn:aws:sqs:%s:%s:*", instanceProperties.get(REGION),
+                                instanceProperties.get(ACCOUNT)) // Specific SQS queue
+                ))
+                .actions(List.of(
+                        "ecs:DescribeContainerInstances", // ECS action
+                        "sqs:ReceiveMessage", // SQS action
+                        "sqs:DeleteMessage",
+                        "sqs:ChangeMessageVisibility" // SQS action
+                ))
                 .build());
-
 
         CfnOutputProps bulkExportClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())

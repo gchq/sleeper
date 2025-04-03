@@ -21,34 +21,24 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.job.execution.JavaCompactionRunner;
-import sleeper.configuration.jars.S3UserJarsLoader;
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
-
-import static sleeper.compaction.job.execution.AwsV1ClientHelper.buildAwsV2Client;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.List;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_S3_BUCKET_LOCATION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Main class to run the ECS bulk export task.
@@ -69,34 +59,47 @@ public class ECSBulkExportTaskRunner {
      * @throws IOException
      */
     public static void main(String[] args) throws ObjectFactoryException, IOException, IteratorCreationException {
-        if (1 != args.length) {
-            LOGGER.error("Error: must have 1 argument (config bucket), got " + args.length + " arguments (" + StringUtils.join(args, ',') + ")");
-            System.exit(1);
-        }
-        String s3Bucket = args[0];
-
         Instant startTime = Instant.now();
+        String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        Configuration configuration = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        String outputBucket = instanceProperties.get(BULK_EXPORT_S3_BUCKET_LOCATION);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
+                dynamoDBClient);
 
-        Partition partition = null;
-        CompactionJob job = CompactionJob.builder()
-                .tableId("tableId")
-                .jobId("jobId")
-                .inputFiles(List.of("inputFile1", "inputFile2"))
-                .outputFile(String.format("s3://%s/outputFile.parquet", outputBucket))
-                .partitionId(partition.getId())
-                .build();
+        SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
+                tablePropertiesProvider, instanceProperties);
+        LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
+                instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
 
-        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
-        JavaCompactionRunner runner = new JavaCompactionRunner(objectFactory, configuration);
-        runner.compact(job, tablePropertiesProvider.getById("tableId"), partition);
-
+        exportQueueHandler.receiveMessage().ifPresent(messageHandle -> {
+            try {
+                BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
+                LOGGER.info("Received leaf partition bulk export job: {}", exportTask);
+                exportTask.getFiles().forEach(inputFile -> {
+                    LOGGER.info("Input file: {}", inputFile);
+                });
+                String partitionId = exportTask.getLeafPartitionId();
+                LOGGER.info("Partition ID: {}", partitionId);
+                String tableId = exportTask.getTableId();
+                LOGGER.info("Table ID: {}", tableId);
+                messageHandle.deleteFromQueue();
+                LOGGER.info("Deleted message from queue");
+            } catch (Exception e) {
+                LOGGER.error("Error processing compaction job", e);
+                messageHandle.returnToQueue();
+                LOGGER.info("Returned message to queue");
+            }
+        });
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
+    }
+
+    private static String validateParameter(String parameterName) {
+        String parameter = System.getenv(parameterName);
+        if (null == parameter || parameter.isEmpty()) {
+            throw new IllegalArgumentException("Missing environment variable: " + parameter);
+        }
+        return parameter;
     }
 }
