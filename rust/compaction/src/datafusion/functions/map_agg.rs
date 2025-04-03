@@ -34,6 +34,8 @@
  */
 use std::fmt::Debug;
 
+use crate::datafusion::functions::accumulator::ByteMapAccumulator;
+
 use super::accumulator::StringMapAccumulator;
 use arrow::{
     array::{downcast_primitive, PrimitiveBuilder},
@@ -102,24 +104,25 @@ impl AggregateUDFImpl for MapAggregator {
         if struct_fields.len() != 2 {
             return exec_err!("MapAggregator Map inner struct length is not 2");
         }
-        if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
-            return exec_err!("MapAggregator can only process maps with String keys!");
-        }
-        let value_type = struct_fields[1].data_type();
-
-        // These macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
+        // This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
         macro_rules! helper {
-            ($t:ty, $dt:expr) => {
-                Ok(Box::new(
-                    StringMapAccumulator::<PrimitiveBuilder<$t>>::try_new($dt)?,
-                ))
+            ($t:ty, $acc:ident, $dt:expr) => {
+                Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt)?))
             };
         }
-
+        let value_type = struct_fields[1].data_type();
         let map_type = acc_args.return_type;
-        downcast_primitive! {
-            value_type => (helper, map_type),
-            _ => todo!()
+
+        match struct_fields[0].data_type() {
+            DataType::Utf8 => downcast_primitive! {
+                value_type => (helper, StringMapAccumulator, map_type),
+                _ => unreachable!()
+            },
+            DataType::Binary => downcast_primitive! {
+                value_type => (helper, ByteMapAccumulator, map_type),
+                _ => unreachable!()
+            },
+            _ => exec_err!("MapAggregator can only process maps with String keys!"),
         }
     }
 
