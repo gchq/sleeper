@@ -37,7 +37,8 @@ queue in SQS. There are multiple stacks that can be deployed for this approach. 
 Spark job on EMR Serverless. `EmrBulkImportStack` creates an EMR cluster on demand to run the Spark job. The cluster is
 only used for that bulk import job. `PersistentEmrBulkImportStack` creates an EMR cluster that is permanently running.
 By default it scales up and down so that if there are no bulk import jobs to run then minimal resources will be used.
-`EksBulkImportStack` is an experimental option to run Spark on an EKS cluster.
+`EksBulkImportStack` is an experimental option to run Spark on an EKS cluster. If you have a lot of import jobs then the
+persistent EMR approach is recommended. If you have occasional jobs then use the serverless EMR approach.
 
 For ingesting large volumes of data, the bulk import process is preferred because the number of files written
 to S3 is smaller, which means the cost for S3 PUTs is less and there is less compaction work to do later.
