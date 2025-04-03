@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 /// Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
 /// `DataFusion`.
 /*
@@ -27,6 +25,7 @@ use datafusion::{
     prelude::DataFrame,
 };
 use map_agg::MapAggregator;
+use std::sync::Arc;
 
 mod accumulator;
 pub mod ageoff;

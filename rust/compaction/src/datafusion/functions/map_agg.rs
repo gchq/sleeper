@@ -40,7 +40,7 @@ use arrow::{
     datatypes::DataType,
 };
 use datafusion::{
-    common::internal_err,
+    common::{exec_err, internal_err, plan_err},
     error::Result,
     logical_expr::{
         function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
@@ -62,7 +62,7 @@ impl MapAggregator {
     /// If the given column is not a map column.
     pub fn try_new(column_type: &DataType) -> Result<Self> {
         if !matches!(column_type, DataType::Map(_, _)) {
-            internal_err!("MapAggregator can only be used on Map column types")
+            plan_err!("MapAggregator can only be used on Map column types")
         } else {
             Ok(Self {
                 signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
@@ -94,17 +94,16 @@ impl AggregateUDFImpl for MapAggregator {
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
         let DataType::Map(field, _) = acc_args.return_type else {
-            return internal_err!("MapAggregator can only be used on Map column types");
+            return exec_err!("MapAggregator can only be used on Map column types");
         };
         let DataType::Struct(struct_fields) = field.data_type() else {
-            return internal_err!("MapAggregator Map field is not a Struct type!");
+            return exec_err!("MapAggregator Map field is not a Struct type!");
         };
         if struct_fields.len() != 2 {
-            return internal_err!("MapAggregator Map inner struct length is not 2");
+            return exec_err!("MapAggregator Map inner struct length is not 2");
         }
         if !matches!(struct_fields[0].data_type(), DataType::Utf8) {
-            //TODO: switch this for string type
-            return internal_err!("MapAggregator can only process maps with String keys!");
+            return exec_err!("MapAggregator can only process maps with String keys!");
         }
         let value_type = struct_fields[1].data_type();
 

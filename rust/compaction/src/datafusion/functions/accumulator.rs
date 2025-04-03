@@ -22,7 +22,7 @@ use arrow::{
     datatypes::DataType,
 };
 use datafusion::{
-    common::{exec_err, internal_err, HashMap},
+    common::{exec_err, plan_err, HashMap},
     error::Result,
     logical_expr::Accumulator,
     scalar::ScalarValue,
@@ -107,7 +107,7 @@ where
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
-                return internal_err!(
+                return plan_err!(
                     "PrimMapAccumulator inner field type should be a DataType::Struct"
                 );
             };
@@ -118,7 +118,7 @@ where
                 _p2: PhantomData,
             })
         } else {
-            return internal_err!("Invalid datatype for PrimMapAccumulator {map_type:?}");
+            return plan_err!("Invalid datatype for PrimMapAccumulator {map_type:?}");
         }
     }
 
@@ -245,7 +245,7 @@ where
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
-                return internal_err!(
+                return plan_err!(
                     "StringMapAccumulator inner field type should be a DataType::Struct"
                 );
             };
@@ -255,7 +255,7 @@ where
                 _p: PhantomData,
             })
         } else {
-            return internal_err!("Invalid datatype for StringMapAccumulator {map_type:?}");
+            return plan_err!("Invalid datatype for StringMapAccumulator {map_type:?}");
         }
     }
 
@@ -380,7 +380,7 @@ where
     pub fn try_new(map_type: &DataType) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
-                return internal_err!(
+                return plan_err!(
                     "ByteMapAccumulator inner field type should be a DataType::Struct"
                 );
             };
@@ -390,7 +390,7 @@ where
                 _p: PhantomData,
             })
         } else {
-            return internal_err!("Invalid datatype for ByteMapAccumulator {map_type:?}");
+            return plan_err!("Invalid datatype for ByteMapAccumulator {map_type:?}");
         }
     }
 
