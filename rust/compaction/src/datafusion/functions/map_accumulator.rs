@@ -27,6 +27,7 @@ use datafusion::{
     logical_expr::Accumulator,
     scalar::ScalarValue,
 };
+use num_traits::NumAssign;
 use std::{fmt::Debug, hash::Hash, ops::AddAssign, sync::Arc};
 
 use super::map_agg::PrimBuilderType;
@@ -189,15 +190,20 @@ where
 /// This implementation is for maps with string keys and primitive values.
 ///
 /// All nulls keys/values are skipped over.
-fn update_string_map<VBuilder>(
+fn update_string_map<VBuilder, F>(
     input: Option<&StructArray>,
     map: &mut HashMap<
         String,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
+    mut op: F,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
+    F: FnMut(
+        &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    ),
 {
     if let Some(entries) = input {
         let col1 = entries.column(0).as_string::<i32>();
@@ -208,7 +214,7 @@ fn update_string_map<VBuilder>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
-                        .and_modify(|current_value| *current_value += value)
+                        .and_modify(|current_value| op(current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -218,19 +224,29 @@ fn update_string_map<VBuilder>(
 }
 
 /// Single value primitive accumulator function for maps.
-#[derive(Debug)]
-pub struct StringMapAccumulator<VBuilder>
+pub struct StringMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
 {
     inner_field_type: DataType,
     values:
         HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+    op: F,
 }
 
-impl<VBuilder> StringMapAccumulator<VBuilder>
+impl<VBuilder, F> StringMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
 {
     /// Creates a new accumulator.
     ///
@@ -240,7 +256,7 @@ where
     /// # Errors
     /// If the incorrect type of data type is provided. Must me a map type with an
     /// inner Struct type.
-    pub fn try_new(map_type: &DataType) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: F) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -250,6 +266,7 @@ where
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
                 values: HashMap::default(),
+                op,
             })
         } else {
             plan_err!("Invalid datatype for StringMapAccumulator {map_type:?}")
@@ -285,10 +302,32 @@ where
     }
 }
 
-impl<VBuilder> Accumulator for StringMapAccumulator<VBuilder>
+impl<VBuilder, F> Debug for StringMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StringMapAccumulator")
+            .field("inner_field_type", &self.inner_field_type)
+            .field("values", &self.values)
+            .finish()
+    }
+}
+
+impl<VBuilder, F> Accumulator for StringMapAccumulator<VBuilder, F>
+where
+    VBuilder: ArrayBuilder + PrimBuilderType,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
@@ -298,7 +337,7 @@ where
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_string_map::<VBuilder>(map.as_ref(), &mut self.values);
+            update_string_map::<VBuilder, _>(map.as_ref(), &mut self.values, &self.op);
         }
         Ok(())
     }
@@ -331,15 +370,20 @@ where
 /// This implementation is for maps with byte keys and primitive values.
 ///
 /// All nulls keys/values are skipped over.
-fn update_byte_map<VBuilder>(
+fn update_byte_map<VBuilder, F>(
     input: Option<&StructArray>,
     map: &mut HashMap<
         Vec<u8>,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
+    mut op: F,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
+    F: FnMut(
+        &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    ),
 {
     if let Some(entries) = input {
         let col1 = entries.column(0).as_binary::<i32>();
@@ -350,7 +394,7 @@ fn update_byte_map<VBuilder>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
-                        .and_modify(|current_value| *current_value += value)
+                        .and_modify(|current_value| op(current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -360,19 +404,29 @@ fn update_byte_map<VBuilder>(
 }
 
 /// Single value primitive accumulator function for maps.
-#[derive(Debug)]
-pub struct ByteMapAccumulator<VBuilder>
+pub struct ByteMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
 {
     inner_field_type: DataType,
     values:
         HashMap<Vec<u8>, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+    op: F,
 }
 
-impl<VBuilder> ByteMapAccumulator<VBuilder>
+impl<VBuilder, F> ByteMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
 {
     /// Creates a new accumulator.
     ///
@@ -382,7 +436,7 @@ where
     /// # Errors
     /// If the incorrect type of data type is provided. Must me a map type with an
     /// inner Struct type.
-    pub fn try_new(map_type: &DataType) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: F) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -392,6 +446,7 @@ where
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
                 values: HashMap::default(),
+                op,
             })
         } else {
             plan_err!("Invalid datatype for ByteMapAccumulator {map_type:?}")
@@ -427,10 +482,32 @@ where
     }
 }
 
-impl<VBuilder> Accumulator for ByteMapAccumulator<VBuilder>
+impl<VBuilder, F> Debug for ByteMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ByteMapAccumulator")
+            .field("inner_field_type", &self.inner_field_type)
+            .field("values", &self.values)
+            .finish()
+    }
+}
+
+impl<VBuilder, F> Accumulator for ByteMapAccumulator<VBuilder, F>
+where
+    VBuilder: ArrayBuilder + PrimBuilderType,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
+    F: Fn(
+            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) + Send
+        + Sync,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
@@ -440,7 +517,7 @@ where
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_byte_map::<VBuilder>(map.as_ref(), &mut self.values);
+            update_byte_map::<VBuilder, _>(map.as_ref(), &mut self.values, &self.op);
         }
         Ok(())
     }

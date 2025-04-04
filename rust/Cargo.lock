@@ -1160,6 +1160,7 @@ dependencies = [
  "log",
  "nohash",
  "num-format",
+ "num-traits",
  "object_store",
  "ring",
  "rust_sketch",

@@ -75,6 +75,16 @@ macro_rules! helper {
     };
 }
 
+macro_rules! op_helper {
+    ($t:ty, $acc:ident, $dt:expr) => {{
+        let op = |acc: &mut <$t as ArrowPrimitiveType>::Native,
+                  val: <$t as ArrowPrimitiveType>::Native| {
+            *acc += val;
+        };
+        Ok(Box::new($acc::<PrimitiveBuilder<$t>, _>::try_new($dt, op)?))
+    }};
+}
+
 fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a Fields> {
     let DataType::Map(field, _) = acc_args.return_type else {
         return exec_err!("MapAggregator can only be used on Map column types");
@@ -140,11 +150,11 @@ impl AggregateUDFImpl for MapAggregator {
 
         match struct_fields[0].data_type() {
             DataType::Utf8 => downcast_integer! {
-                value_type => (helper, StringMapAccumulator, map_type),
+                value_type => (op_helper, StringMapAccumulator, map_type),
                 _ => unreachable!()
             },
             DataType::Binary => downcast_integer! {
-                value_type => (helper, ByteMapAccumulator, map_type),
+                value_type => (op_helper, ByteMapAccumulator, map_type),
                 _ => unreachable!()
             },
             _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
