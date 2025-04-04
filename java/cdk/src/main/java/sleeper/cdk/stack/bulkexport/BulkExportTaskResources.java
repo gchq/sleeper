@@ -58,7 +58,6 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -72,17 +71,19 @@ public class BulkExportTaskResources {
 
     private final InstanceProperties instanceProperties;
     private final Stack stack;
+    private final Queue jobsQueue;
 
     public BulkExportTaskResources(Stack stack, CoreStacks coreStacks, InstanceProperties instanceProperties,
             LambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
-        lambdaToCreateTasks(coreStacks, lambdaCode, jobsQueue, instanceProperties);
+        this.jobsQueue = jobsQueue;
+        lambdaToCreateTasks(coreStacks, lambdaCode, instanceProperties);
         ecsClusterForBulkExportTasks(coreStacks, jarsBucket, lambdaCode, resultsBucket);
     }
 
     private void lambdaToCreateTasks(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue jobsQueue, InstanceProperties instanceProperties) {
+            CoreStacks coreStacks, LambdaCode lambdaCode, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export-tasks-creator");
@@ -156,7 +157,7 @@ public class BulkExportTaskResources {
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         resultsBucket.grantReadWrite(taskDefinition.getTaskRole());
 
-        String queueName = getQueueNameFromArn(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN));
+        String queueName = jobsQueue.getQueueName();
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of(
@@ -184,16 +185,5 @@ public class BulkExportTaskResources {
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances"))
                 .resources(List.of("*"))
                 .build();
-    }
-
-    private static String getQueueNameFromArn(String arn) {
-        if (arn == null || arn.isEmpty()) {
-            throw new IllegalArgumentException("ARN cannot be null or empty");
-        }
-        String[] arnParts = arn.split(":");
-        if (arnParts.length < 6) {
-            throw new IllegalArgumentException("Invalid SQS ARN format: " + arn);
-        }
-        return arnParts[arnParts.length - 1]; // The queue name is the last part
     }
 }
