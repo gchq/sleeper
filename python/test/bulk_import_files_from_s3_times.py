@@ -29,6 +29,6 @@ if __name__ == "__main__":
 
     sleeper_client = SleeperClient(args.instance)
 
-    for i in range(args.times):
+    for i in range(int(args.times)):
         job_id = str(uuid.uuid4())
         sleeper_client.bulk_import_parquet_files_from_s3(args.table, args.files, job_id, args.platform)
