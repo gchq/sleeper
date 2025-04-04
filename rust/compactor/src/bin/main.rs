@@ -162,7 +162,7 @@ async fn main() -> color_eyre::Result<()> {
         Err(e) => {
             bail!(e);
         }
-    };
+    }
     Ok(())
 }
 
