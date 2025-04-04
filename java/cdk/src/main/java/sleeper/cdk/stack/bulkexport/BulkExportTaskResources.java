@@ -58,6 +58,7 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -155,20 +156,19 @@ public class BulkExportTaskResources {
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         resultsBucket.grantReadWrite(taskDefinition.getTaskRole());
 
+        String queueName = getQueueNameFromArn(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN));
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of(
                         String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
                                 instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
-                        String.format("arn:aws:sqs:%s:%s:*", instanceProperties.get(REGION),
-                                instanceProperties.get(ACCOUNT))
-                ))
+                        String.format("arn:aws:sqs:%s:%s:%s", instanceProperties.get(REGION),
+                                instanceProperties.get(ACCOUNT), queueName)))
                 .actions(List.of(
                         "ecs:DescribeContainerInstances",
                         "sqs:ReceiveMessage",
                         "sqs:DeleteMessage",
-                        "sqs:ChangeMessageVisibility"
-                ))
+                        "sqs:ChangeMessageVisibility"))
                 .build());
 
         CfnOutputProps bulkExportClusterProps = new CfnOutputProps.Builder()
@@ -184,5 +184,16 @@ public class BulkExportTaskResources {
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances"))
                 .resources(List.of("*"))
                 .build();
+    }
+
+    private static String getQueueNameFromArn(String arn) {
+        if (arn == null || arn.isEmpty()) {
+            throw new IllegalArgumentException("ARN cannot be null or empty");
+        }
+        String[] arnParts = arn.split(":");
+        if (arnParts.length < 6) {
+            throw new IllegalArgumentException("Invalid SQS ARN format: " + arn);
+        }
+        return arnParts[arnParts.length - 1]; // The queue name is the last part
     }
 }

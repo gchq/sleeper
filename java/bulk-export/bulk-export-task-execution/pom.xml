@@ -32,6 +32,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>common-job</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -41,14 +46,9 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>compaction-core</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>compaction-job-execution</artifactId>
-            <version>${project.parent.version}</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sqs</artifactId>
+            <version>${aws-java-sdk.version}</version>
         </dependency>
     </dependencies>
 

@@ -33,12 +33,17 @@ import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import java.io.IOException;
 import java.util.Optional;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 
+/**
+ * This class is used to handle the SQS queue for bulk export jobs.
+ * It receives messages from the queue and deserialises them into
+ * BulkExportLeafPartitionQuery objects.
+ */
 public class SqsBulkExportQueueHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsBulkExportQueueHandler.class);
 
@@ -52,6 +57,14 @@ public class SqsBulkExportQueueHandler {
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
+    /**
+     * Receive a BulkExportLeafPartitionQuery message from the SQS queue and returns
+     * a SqsMessageHandle that contains the deserialised message.
+     *
+     * @return an Optional containing the SqsMessageHandle if a message was
+     *         received, or an empty Optional if no message was received
+     * @throws IOException if there was an error deserialising the message
+     */
     public Optional<SqsMessageHandle> receiveMessage() throws IOException {
         int waitTimeSeconds = instanceProperties.getInt(BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS);
         int keepAliveFrequency = instanceProperties.getInt(BULK_EXPORT_KEEP_ALIVE_PERIOD_IN_SECONDS);
@@ -86,6 +99,12 @@ public class SqsBulkExportQueueHandler {
         }
     }
 
+    /**
+     * This class is used to handle the SQS message for a bulk export job.
+     * It contains the job, the message reference, and a background thread to keep the message alive.
+     * The message is deleted from the queue when the job is complete.
+     * The message is returned to the queue if the job fails.
+     */
     public class SqsMessageHandle {
         private final BulkExportLeafPartitionQuery job;
         private final MessageReference message;
@@ -102,6 +121,9 @@ public class SqsBulkExportQueueHandler {
             return job;
         }
 
+        /**
+         * Delete the message from the queue.
+         */
         public void deleteFromQueue() {
             // Delete message from queue
             LOGGER.info("Bulk Export job {}: Deleting message from queue", job.getSubExportId());
@@ -112,6 +134,9 @@ public class SqsBulkExportQueueHandler {
             }
         }
 
+        /**
+         * Return the message to the queue.
+         */
         public void returnToQueue() {
             LOGGER.info("Bulk Export job {}: Returning message to queue", job.getSubExportId());
             int visibilityTimeout = instanceProperties.getInt(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
@@ -119,6 +144,9 @@ public class SqsBulkExportQueueHandler {
             sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
         }
 
+        /**
+         * Stop the background thread to keep the message alive.
+         */
         public void close() {
             LOGGER.info("Bulk Export job {}: Stopping background thread to keep SQS messages alive", job.getSubExportId());
             if (keepAliveRunnable != null) {
