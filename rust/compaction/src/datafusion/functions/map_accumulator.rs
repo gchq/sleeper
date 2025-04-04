@@ -58,7 +58,9 @@ fn update_primitive_map<KBuilder, VBuilder>(
         for (k, v) in col1.into_iter().zip(col2) {
             match (k, v) {
                 (Some(key), Some(value)) => {
-                    map.entry(key).and_modify(|v| *v += value).or_insert(value);
+                    map.entry(key)
+                        .and_modify(|current_value| *current_value += value)
+                        .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
             }
@@ -206,7 +208,7 @@ fn update_string_map<VBuilder>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
-                        .and_modify(|v| *v += value)
+                        .and_modify(|current_value| *current_value += value)
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -348,7 +350,7 @@ fn update_byte_map<VBuilder>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
-                        .and_modify(|v| *v += value)
+                        .and_modify(|current_value| *current_value += value)
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),

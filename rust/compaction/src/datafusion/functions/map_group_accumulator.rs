@@ -149,7 +149,9 @@ fn update_prim_map_group<KBuilder, VBuilder>(
                         words.push(key);
                         words.len() - 1
                     });
-                    map.entry(*i).and_modify(|v| *v += value).or_insert(value);
+                    map.entry(*i)
+                        .and_modify(|current_value| *current_value += value)
+                        .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
             }
@@ -375,7 +377,9 @@ fn update_string_map_group<VBuilder>(
                         words.push(key.into());
                         words.len() - 1
                     });
-                    map.entry(*i).and_modify(|v| *v += value).or_insert(value);
+                    map.entry(*i)
+                        .and_modify(|current_value| *current_value += value)
+                        .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
             }
@@ -599,7 +603,9 @@ fn update_byte_map_group<VBuilder>(
                         words.push(key.into());
                         words.len() - 1
                     });
-                    map.entry(*i).and_modify(|v| *v += value).or_insert(value);
+                    map.entry(*i)
+                        .and_modify(|current_value| *current_value += value)
+                        .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
             }
