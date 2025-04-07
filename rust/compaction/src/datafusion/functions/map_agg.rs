@@ -71,12 +71,6 @@ impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
 
 // This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
 macro_rules! helper {
-    ($t:ty, $acc:ident, $dt:expr) => {
-        Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt)?))
-    };
-}
-
-macro_rules! op_helper {
     ($t:ty, $acc:ident, $dt: expr, $op: expr) => {{
         Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt, $op)?))
     }};
@@ -179,11 +173,11 @@ impl AggregateUDFImpl for MapAggregator {
 
         match struct_fields[0].data_type() {
             DataType::Utf8 => downcast_integer! {
-                value_type => (op_helper, StringMapAccumulator, map_type, op_type),
+                value_type => (helper, StringMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             },
             DataType::Binary => downcast_integer! {
-                value_type => (op_helper, ByteMapAccumulator, map_type, op_type),
+                value_type => (helper, ByteMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             },
             _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
@@ -206,14 +200,15 @@ impl AggregateUDFImpl for MapAggregator {
 
         let value_type = struct_fields[1].data_type();
         let map_type = args.return_type;
+        let op_type = self.op.clone();
 
         match struct_fields[0].data_type() {
             DataType::Utf8 => downcast_integer! {
-                value_type => (helper, StringGroupMapAccumulator, map_type),
+                value_type => (helper, StringGroupMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             },
             DataType::Binary => downcast_integer! {
-                value_type => (helper, ByteGroupMapAccumulator, map_type),
+                value_type => (helper, ByteGroupMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             },
             _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),

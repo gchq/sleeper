@@ -14,7 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use super::{map_agg::PrimBuilderType, state::MapNullState};
+use super::{
+    map_agg::{MapAggregatorOp, PrimBuilderType},
+    state::MapNullState,
+};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, BooleanArray,
@@ -28,7 +31,8 @@ use datafusion::{
     logical_expr::{EmitTo, GroupsAccumulator},
 };
 use nohash::BuildNoHashHasher;
-use std::{hash::Hash, ops::AddAssign, sync::Arc};
+use num_traits::NumAssign;
+use std::{hash::Hash, sync::Arc};
 
 /// An enhanced accumulator for maps of primitive values that implements [`GroupAccumulator`].
 #[derive(Debug)]
@@ -49,6 +53,7 @@ where
         >,
     >,
     nulls: MapNullState,
+    op: MapAggregatorOp,
 }
 
 impl<KBuilder, VBuilder> PrimGroupMapAccumulator<KBuilder, VBuilder>
@@ -64,7 +69,7 @@ where
     // # Errors
     // If the incorrect type of data type is provided. Must me a map type with an
     // inner Struct type.
-    pub fn try_new(map_type: &DataType) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -77,6 +82,7 @@ where
                 words: Vec::with_capacity(200),
                 nulls: MapNullState::new(),
                 word_cache: HashMap::with_capacity(200),
+                op,
             })
         } else {
             plan_err!("Invalid datatype for PrimGroupMapAccumulator {map_type:?}")
@@ -129,11 +135,12 @@ fn update_prim_map_group<KBuilder, VBuilder>(
         usize,
     >,
     words: &mut Vec<<<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+    op: &MapAggregatorOp,
 ) where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     if let Some(entries) = input {
         let map_keys = entries
@@ -150,7 +157,7 @@ fn update_prim_map_group<KBuilder, VBuilder>(
                         words.len() - 1
                     });
                     map.entry(*i)
-                        .and_modify(|current_value| *current_value += value)
+                        .and_modify(|current_value| *current_value = op.op(*current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -164,7 +171,7 @@ where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     fn update_batch(
         &mut self,
@@ -191,6 +198,7 @@ where
                     agg_map,
                     &mut self.word_cache,
                     &mut self.words,
+                    &self.op,
                 );
             },
         );
@@ -246,14 +254,17 @@ where
         values: &[ArrayRef],
         opt_filter: Option<&BooleanArray>,
     ) -> Result<Vec<ArrayRef>> {
-        let mut grouper = PrimGroupMapAccumulator::<KBuilder, VBuilder>::try_new(&DataType::Map(
-            Arc::new(Field::new(
-                "key_value",
-                self.inner_field_type.clone(),
+        let mut grouper = PrimGroupMapAccumulator::<KBuilder, VBuilder>::try_new(
+            &DataType::Map(
+                Arc::new(Field::new(
+                    "key_value",
+                    self.inner_field_type.clone(),
+                    false,
+                )),
                 false,
-            )),
-            false,
-        ))?;
+            ),
+            self.op.clone(),
+        )?;
         grouper.update_batch(
             values,
             &(0usize..values[0].len()).collect::<Vec<_>>(),
@@ -285,6 +296,7 @@ where
         >,
     >,
     nulls: MapNullState,
+    op: MapAggregatorOp,
 }
 
 impl<VBuilder> StringGroupMapAccumulator<VBuilder>
@@ -299,7 +311,7 @@ where
     // # Errors
     // If the incorrect type of data type is provided. Must me a map type with an
     // inner Struct type.
-    pub fn try_new(map_type: &DataType) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -312,6 +324,7 @@ where
                 words: Vec::with_capacity(200),
                 nulls: MapNullState::new(),
                 word_cache: HashMap::with_capacity(200),
+                op,
             })
         } else {
             plan_err!("Invalid datatype for StringGroupMapAccumulator {map_type:?}")
@@ -361,9 +374,10 @@ fn update_string_map_group<VBuilder>(
     >,
     word_cache: &mut HashMap<String, usize>,
     words: &mut Vec<String>,
+    op: &MapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     if let Some(entries) = input {
         let map_keys = entries.column(0).as_string::<i32>();
@@ -378,7 +392,7 @@ fn update_string_map_group<VBuilder>(
                         words.len() - 1
                     });
                     map.entry(*i)
-                        .and_modify(|current_value| *current_value += value)
+                        .and_modify(|current_value| *current_value = op.op(*current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -390,7 +404,7 @@ fn update_string_map_group<VBuilder>(
 impl<VBuilder> GroupsAccumulator for StringGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     fn update_batch(
         &mut self,
@@ -417,6 +431,7 @@ where
                     agg_map,
                     &mut self.word_cache,
                     &mut self.words,
+                    &self.op,
                 );
             },
         );
@@ -472,14 +487,17 @@ where
         values: &[ArrayRef],
         opt_filter: Option<&BooleanArray>,
     ) -> Result<Vec<ArrayRef>> {
-        let mut grouper = StringGroupMapAccumulator::<VBuilder>::try_new(&DataType::Map(
-            Arc::new(Field::new(
-                "key_value",
-                self.inner_field_type.clone(),
+        let mut grouper = StringGroupMapAccumulator::<VBuilder>::try_new(
+            &DataType::Map(
+                Arc::new(Field::new(
+                    "key_value",
+                    self.inner_field_type.clone(),
+                    false,
+                )),
                 false,
-            )),
-            false,
-        ))?;
+            ),
+            self.op.clone(),
+        )?;
         grouper.update_batch(
             values,
             &(0usize..values[0].len()).collect::<Vec<_>>(),
@@ -511,6 +529,7 @@ where
         >,
     >,
     nulls: MapNullState,
+    op: MapAggregatorOp,
 }
 
 impl<VBuilder> ByteGroupMapAccumulator<VBuilder>
@@ -525,7 +544,7 @@ where
     // # Errors
     // If the incorrect type of data type is provided. Must me a map type with an
     // inner Struct type.
-    pub fn try_new(map_type: &DataType) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -538,6 +557,7 @@ where
                 words: Vec::with_capacity(200),
                 nulls: MapNullState::new(),
                 word_cache: HashMap::with_capacity(200),
+                op,
             })
         } else {
             plan_err!("Invalid datatype for ByteGroupMapAccumulator {map_type:?}")
@@ -587,9 +607,10 @@ fn update_byte_map_group<VBuilder>(
     >,
     word_cache: &mut HashMap<Vec<u8>, usize>,
     words: &mut Vec<Vec<u8>>,
+    op: &MapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     if let Some(entries) = input {
         let map_keys = entries.column(0).as_binary::<i32>();
@@ -604,7 +625,7 @@ fn update_byte_map_group<VBuilder>(
                         words.len() - 1
                     });
                     map.entry(*i)
-                        .and_modify(|current_value| *current_value += value)
+                        .and_modify(|current_value| *current_value = op.op(*current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -616,7 +637,7 @@ fn update_byte_map_group<VBuilder>(
 impl<VBuilder> GroupsAccumulator for ByteGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     fn update_batch(
         &mut self,
@@ -643,6 +664,7 @@ where
                     agg_map,
                     &mut self.word_cache,
                     &mut self.words,
+                    &self.op,
                 );
             },
         );
@@ -698,14 +720,17 @@ where
         values: &[ArrayRef],
         opt_filter: Option<&BooleanArray>,
     ) -> Result<Vec<ArrayRef>> {
-        let mut grouper = ByteGroupMapAccumulator::<VBuilder>::try_new(&DataType::Map(
-            Arc::new(Field::new(
-                "key_value",
-                self.inner_field_type.clone(),
+        let mut grouper = ByteGroupMapAccumulator::<VBuilder>::try_new(
+            &DataType::Map(
+                Arc::new(Field::new(
+                    "key_value",
+                    self.inner_field_type.clone(),
+                    false,
+                )),
                 false,
-            )),
-            false,
-        ))?;
+            ),
+            self.op.clone(),
+        )?;
         grouper.update_batch(
             values,
             &(0usize..values[0].len()).collect::<Vec<_>>(),
