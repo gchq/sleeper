@@ -53,8 +53,7 @@ public class ECSBulkExportTaskRunner {
      * Main method to run the ECS bulk export task.
      *
      * This method initializes AWS clients for DynamoDB, SQS, and S3, loads instance
-     * and table properties,
-     * and processes messages from the SQS queue for bulk export tasks.
+     * and table properties, and processes messages from the SQS queue for bulk export tasks.
      *
      * @param args Command line arguments
      * @throws ObjectFactoryException    If there is an error creating objects
@@ -87,6 +86,18 @@ public class ECSBulkExportTaskRunner {
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
+    /**
+     * Run the ECS bulk export task runner.
+     * This method initialises the SQS bulk export queue handler and processes
+     * messages from the SQS queue for bulk export tasks.
+     *
+     * @param sqsClient               an AmazonSQS client
+     * @param instanceProperties      an InstanceProperties object
+     * @param tablePropertiesProvider a TablePropertiesProvider object
+     * @throws IOException               if there is an error interacting with S3
+     * @throws IteratorCreationException if there is an error creating iterators
+     * @throws ObjectFactoryException    if there is an error creating objects
+     */
     public static void runECSBulkExportTaskRunner(AmazonSQS sqsClient, InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider)
             throws IOException, IteratorCreationException, ObjectFactoryException {
