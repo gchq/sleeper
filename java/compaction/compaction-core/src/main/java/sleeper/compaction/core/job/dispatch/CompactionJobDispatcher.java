@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import com.amazonaws.SdkClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,7 @@ public class CompactionJobDispatcher {
     private final ReadBatch readBatch;
     private final SendJobs sendJobs;
     private final int sendBatchSize;
+    private final DeleteBatch deleteBatch;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
     private final SendDeadLetter sendDeadLetter;
     private final Supplier<Instant> timeSupplier;
@@ -55,7 +57,7 @@ public class CompactionJobDispatcher {
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, CompactionJobTracker tracker, ReadBatch readBatch,
-            SendJobs sendJobs, int sendBatchSize,
+            SendJobs sendJobs, int sendBatchSize, DeleteBatch deleteBatch,
             ReturnRequestToPendingQueue returnToPendingQueue, SendDeadLetter sendDeadLetter,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
@@ -65,6 +67,7 @@ public class CompactionJobDispatcher {
         this.readBatch = readBatch;
         this.sendJobs = sendJobs;
         this.sendBatchSize = sendBatchSize;
+        this.deleteBatch = deleteBatch;
         this.returnToPendingQueue = returnToPendingQueue;
         this.sendDeadLetter = sendDeadLetter;
         this.timeSupplier = timeSupplier;
@@ -79,6 +82,7 @@ public class CompactionJobDispatcher {
         try {
             if (batchIsReadyToBeSent(tableProperties, batch)) {
                 send(batch);
+                delete(request.getBatchKey(), batch.size());
             } else {
                 returnToQueueWithDelay(tableProperties, request);
             }
@@ -119,10 +123,24 @@ public class CompactionJobDispatcher {
                 delaySeconds, request.getBatchKey());
     }
 
+    private void delete(String batchKey, int batchSize) {
+        LOGGER.info("Deleting batch after sending {} jobs", batchSize);
+        try {
+            deleteBatch.delete(instanceProperties.get(DATA_BUCKET), batchKey);
+        } catch (SdkClientException e) {
+            LOGGER.error("Batch not deleted", e);
+        }
+    }
+
     @FunctionalInterface
     public interface ReadBatch {
 
         List<CompactionJob> read(String bucketName, String key);
+    }
+
+    @FunctionalInterface
+    public interface DeleteBatch {
+        void delete(String bucketName, String key);
     }
 
     @FunctionalInterface
