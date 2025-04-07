@@ -77,13 +77,15 @@ macro_rules! helper {
 }
 
 macro_rules! op_helper {
-    ($t:ty, $acc:ident, $dt:expr) => {{
-        let op = |acc: <$t as ArrowPrimitiveType>::Native,
-                  val: <$t as ArrowPrimitiveType>::Native| { acc + val };
-        Ok(Box::new($acc::<PrimitiveBuilder<$t>, _>::try_new($dt, op)?))
+    ($t:ty, $acc:ident, $dt: expr, $op: expr) => {{
+        Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt, $op)?))
     }};
 }
 
+/// Check that the struct type from a map type is compatible.
+///
+/// # Errors
+/// Produces an execution error if the field is not a struct type with 2 inner fields.
 fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a Fields> {
     let DataType::Map(field, _) = acc_args.return_type else {
         return exec_err!("MapAggregator can only be used on Map column types");
@@ -99,7 +101,7 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
 
 /// The aggregation operation to peform inside of each map. The values
 /// of identical keys will be aggregated according to the specified operation.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MapAggregatorOp {
     Sum,
     Count,
@@ -107,16 +109,19 @@ pub enum MapAggregatorOp {
     Max,
 }
 
-/// The aggregation implementation. This is kept separate from the public specification to allow
-/// for generics to be added as well as extra behaviour in the future.
-enum MapAggOpImpl<T> {
-    Sum,
-    Count,
-    Min,
-    Max,
+impl MapAggregatorOp {
+    pub fn op<T>(&self, acc: T, value: T) -> T
+    where
+        T: NumAssign + Ord,
+    {
+        match self {
+            Self::Sum => acc + value,
+            Self::Count => acc.add(T::one()),
+            Self::Min => std::cmp::min(acc, value),
+            Self::Max => std::cmp::max(acc, value),
+        }
+    }
 }
-
-impl<T> MapAggOpImpl<T> where T: NumAssign {}
 
 /// A aggregator for map columns. See module documentation.
 #[derive(Debug)]
@@ -170,14 +175,15 @@ impl AggregateUDFImpl for MapAggregator {
 
         let value_type = struct_fields[1].data_type();
         let map_type = acc_args.return_type;
+        let op_type = self.op.clone();
 
         match struct_fields[0].data_type() {
             DataType::Utf8 => downcast_integer! {
-                value_type => (op_helper, StringMapAccumulator, map_type),
+                value_type => (op_helper, StringMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             },
             DataType::Binary => downcast_integer! {
-                value_type => (op_helper, ByteMapAccumulator, map_type),
+                value_type => (op_helper, ByteMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             },
             _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
@@ -189,7 +195,7 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn groups_accumulator_supported(&self, _args: AccumulatorArgs) -> bool {
-        true
+        false
     }
 
     fn create_groups_accumulator(

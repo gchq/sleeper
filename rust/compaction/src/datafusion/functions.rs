@@ -66,15 +66,14 @@ pub struct Aggregate(String, AggOp);
 impl Aggregate {
     // Create a DataFusion logical expression to represent this aggregation operation.
     pub fn to_expr(&self, _row_key_cols: &[String], frame: &DataFrame) -> Result<Expr> {
-        Ok(match self.1 {
+        Ok(match &self.1 {
             AggOp::Count => count(col(&self.0)),
             AggOp::Sum => sum(col(&self.0)),
             AggOp::Min => min(col(&self.0)),
             AggOp::Max => max(col(&self.0)),
-            AggOp::MapSum => {
+            AggOp::MapSum(op) => {
                 let col_dt = col(&self.0).get_type(frame.schema())?;
-                let map_sum =
-                    AggregateUDF::from(MapAggregator::try_new(&col_dt, MapAggregatorOp::Sum)?);
+                let map_sum = AggregateUDF::from(MapAggregator::try_new(&col_dt, op.clone())?);
                 frame.task_ctx().register_udaf(Arc::new(map_sum.clone()))?;
                 map_sum.call(vec![col(&self.0)])
             }
@@ -91,7 +90,7 @@ pub enum AggOp {
     Count,
     Min,
     Max,
-    MapSum,
+    MapSum(MapAggregatorOp),
 }
 
 impl TryFrom<&str> for AggOp {
@@ -102,7 +101,10 @@ impl TryFrom<&str> for AggOp {
             "count" => Ok(Self::Count),
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
-            "map_sum" => Ok(Self::MapSum),
+            "map_sum" => Ok(Self::MapSum(MapAggregatorOp::Sum)),
+            "map_count" => Ok(Self::MapSum(MapAggregatorOp::Count)),
+            "map_min" => Ok(Self::MapSum(MapAggregatorOp::Min)),
+            "map_max" => Ok(Self::MapSum(MapAggregatorOp::Max)),
             _ => Err(Self::Error::NotImplemented(format!(
                 "Aggregation operator {value} not recognised"
             ))),
