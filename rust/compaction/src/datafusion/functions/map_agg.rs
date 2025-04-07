@@ -52,6 +52,7 @@ use datafusion::{
         GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, Volatility,
     },
 };
+use num_traits::NumAssign;
 
 /// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
 pub trait PrimBuilderType: Default + Debug {
@@ -77,10 +78,8 @@ macro_rules! helper {
 
 macro_rules! op_helper {
     ($t:ty, $acc:ident, $dt:expr) => {{
-        let op = |acc: &mut <$t as ArrowPrimitiveType>::Native,
-                  val: <$t as ArrowPrimitiveType>::Native| {
-            *acc += val;
-        };
+        let op = |acc: <$t as ArrowPrimitiveType>::Native,
+                  val: <$t as ArrowPrimitiveType>::Native| { acc + val };
         Ok(Box::new($acc::<PrimitiveBuilder<$t>, _>::try_new($dt, op)?))
     }};
 }
@@ -98,11 +97,34 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
     Ok(struct_fields)
 }
 
+/// The aggregation operation to peform inside of each map. The values
+/// of identical keys will be aggregated according to the specified operation.
+#[derive(Debug)]
+pub enum MapAggregatorOp {
+    Sum,
+    Count,
+    Min,
+    Max,
+}
+
+/// The aggregation implementation. This is kept separate from the public specification to allow
+/// for generics to be added as well as extra behaviour in the future.
+enum MapAggOpImpl<T> {
+    Sum,
+    Count,
+    Min,
+    Max,
+}
+
+impl<T> MapAggOpImpl<T> where T: NumAssign {}
+
 /// A aggregator for map columns. See module documentation.
 #[derive(Debug)]
 pub struct MapAggregator {
     /// Defines what column types this function can work on
     signature: Signature,
+    /// What sort of aggregation operation to perform
+    op: MapAggregatorOp,
 }
 
 impl MapAggregator {
@@ -110,10 +132,11 @@ impl MapAggregator {
     ///
     /// # Errors
     /// If the given column is not a map column.
-    pub fn try_new(column_type: &DataType) -> Result<Self> {
+    pub fn try_new(column_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
         if matches!(column_type, DataType::Map(_, _)) {
             Ok(Self {
                 signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
+                op,
             })
         } else {
             plan_err!("MapAggregator can only be used on Map column types")

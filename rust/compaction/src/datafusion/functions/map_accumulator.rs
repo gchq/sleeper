@@ -43,16 +43,16 @@ fn update_primitive_map<KBuilder, VBuilder, F>(
         <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    mut op: F,
+    op: F,
 ) where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
-    F: FnMut(
-        &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    F: Fn(
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-    ),
+        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
 {
     if let Some(entries) = input {
         let col1 = entries
@@ -65,7 +65,7 @@ fn update_primitive_map<KBuilder, VBuilder, F>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry(key)
-                        .and_modify(|current_value| op(current_value, value))
+                        .and_modify(|current_value| *current_value = op(*current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -80,9 +80,10 @@ where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     inner_field_type: DataType,
@@ -98,9 +99,10 @@ where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     /// Creates a new accumulator.
@@ -163,9 +165,10 @@ where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -183,9 +186,10 @@ where
     <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
@@ -235,14 +239,14 @@ fn update_string_map<VBuilder, F>(
         String,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    mut op: F,
+    op: F,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
-    F: FnMut(
-        &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    F: Fn(
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-    ),
+        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
 {
     if let Some(entries) = input {
         let col1 = entries.column(0).as_string::<i32>();
@@ -253,7 +257,7 @@ fn update_string_map<VBuilder, F>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
-                        .and_modify(|current_value| op(current_value, value))
+                        .and_modify(|current_value| *current_value = op(*current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -267,9 +271,10 @@ pub struct StringMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     inner_field_type: DataType,
@@ -282,9 +287,10 @@ impl<VBuilder, F> StringMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     /// Creates a new accumulator.
@@ -345,9 +351,10 @@ impl<VBuilder, F> Debug for StringMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -363,9 +370,10 @@ where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
@@ -415,14 +423,14 @@ fn update_byte_map<VBuilder, F>(
         Vec<u8>,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    mut op: F,
+    op: F,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
-    F: FnMut(
-        &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    F: Fn(
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-    ),
+        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
 {
     if let Some(entries) = input {
         let col1 = entries.column(0).as_binary::<i32>();
@@ -433,7 +441,7 @@ fn update_byte_map<VBuilder, F>(
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
-                        .and_modify(|current_value| op(current_value, value))
+                        .and_modify(|current_value| *current_value = op(*current_value, value))
                         .or_insert(value);
                 }
                 _ => panic!("Nullable entries aren't supported"),
@@ -447,9 +455,10 @@ pub struct ByteMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     inner_field_type: DataType,
@@ -462,9 +471,10 @@ impl<VBuilder, F> ByteMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     /// Creates a new accumulator.
@@ -525,9 +535,10 @@ impl<VBuilder, F> Debug for ByteMapAccumulator<VBuilder, F>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -543,9 +554,10 @@ where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign,
     F: Fn(
-            &mut <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        ) + Send
+            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+        ) -> <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native
+        + Send
         + Sync,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
