@@ -17,6 +17,7 @@ package sleeper.clients;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.util.SleeperClientIngest;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
@@ -36,6 +37,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
@@ -45,8 +47,10 @@ import sleeper.query.core.recordretrieval.QueryExecutor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +69,7 @@ class SleeperClientTest {
     Schema schema = schemaWithKey("key", new StringType());
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
+    Queue<IngestJob> ingestQueue = new LinkedList<>();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -72,6 +77,7 @@ class SleeperClientTest {
             .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
             .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
             .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
+            .sleeperClientIngest(clientIngest())
             .build();
 
     @Test
@@ -125,6 +131,26 @@ class SleeperClientTest {
                 new Record(Map.of("key", "B")));
     }
 
+    @Test
+    void shouldIngestParquetFilesFromS3() {
+
+        String tableName = "";
+        String jobId = UUID.randomUUID().toString();
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        // When
+        String output = sleeperClient.ingestParquetFilesFromS3(tableName, jobId, fileList);
+
+        // Then
+        assertThat(ingestQueue)
+                .containsExactly(IngestJob.builder()
+                        .tableName(tableName)
+                        .id(jobId)
+                        .files(fileList)
+                        .build());
+        assertThat(jobId).isEqualTo(output);
+    }
+
     private TableProperties createTableProperties(String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
@@ -154,4 +180,7 @@ class SleeperClientTest {
         return new RangeFactory(schema);
     }
 
+    private SleeperClientIngest clientIngest() {
+        return (job) -> ingestQueue.add(job);
+    }
 }

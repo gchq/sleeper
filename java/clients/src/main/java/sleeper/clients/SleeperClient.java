@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.clients.util.SleeperClientIngest;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -35,6 +36,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
@@ -43,6 +45,7 @@ import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -50,9 +53,12 @@ import java.util.stream.Stream;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
- * requires permissions against those resources, e.g. the configuration and data buckets in S3, the transaction logs and
- * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
+ * A client to interact with an instance of Sleeper. This interacts directly
+ * with the underlying AWS resources, and
+ * requires permissions against those resources, e.g. the configuration and data
+ * buckets in S3, the transaction logs and
+ * table index in DynamoDB. There are managed policies and roles deployed with
+ * Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
  */
 public class SleeperClient {
@@ -64,6 +70,7 @@ public class SleeperClient {
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+    private final SleeperClientIngest sleeperClientIngest;
 
     private SleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -73,6 +80,7 @@ public class SleeperClient {
         stateStoreProvider = builder.stateStoreProvider;
         objectFactory = builder.objectFactory;
         recordRetrieverProvider = builder.recordRetrieverProvider;
+        sleeperClientIngest = builder.sleeperClientIngest;
     }
 
     /**
@@ -108,9 +116,11 @@ public class SleeperClient {
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client))
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
+                .stateStoreProvider(
+                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
+                .recordRetrieverProvider(
+                        LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
                 .build();
     }
 
@@ -194,6 +204,20 @@ public class SleeperClient {
         return executor;
     }
 
+    public String ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
+        if (jobId == null) {
+            jobId = UUID.randomUUID().toString();
+
+        }
+        sleeperClientIngest.sendFilesToIngest(IngestJob.builder()
+                .tableName(tableName)
+                .id(jobId)
+                .files(files)
+                .build());
+
+        return jobId;
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
@@ -202,6 +226,7 @@ public class SleeperClient {
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+        private SleeperClientIngest sleeperClientIngest;
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -277,6 +302,17 @@ public class SleeperClient {
          */
         public Builder recordRetrieverProvider(LeafPartitionRecordRetrieverProvider recordRetrieverProvider) {
             this.recordRetrieverProvider = recordRetrieverProvider;
+            return this;
+        }
+
+        /**
+         * Sets the interface for ingesting records from s3.
+         *
+         * @param  sleeperClientIngest the ingest for client
+         * @return                     this builder for chaining
+         */
+        public Builder sleeperClientIngest(SleeperClientIngest sleeperClientIngest) {
+            this.sleeperClientIngest = sleeperClientIngest;
             return this;
         }
 
