@@ -32,7 +32,7 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.153" } # Exception handling for Rust
+cxx = { version = "1.0.155" } # Exception handling for Rust
 
 libc = { version = "0.2.171" } # FFI type support
 log = { version = "0.4.27" } # Logging support
@@ -46,7 +46,7 @@ object_store = { version = "0.11.2", features = [
 ] } # Remote cloud storage access
 thiserror = { version = "2.0.12" } # Derivable error enums
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
-tokio = { version = "1.44.1", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 aws-config = { version = "1.6.1" } # Credential loading
 aws-credential-types = { version = "1.2.2", features = [
     "hardcoded-credentials",
