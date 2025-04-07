@@ -46,7 +46,7 @@ object_store = { version = "0.11.2", features = [
 ] } # Remote cloud storage access
 thiserror = { version = "2.0.12" } # Derivable error enums
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
-tokio = { version = "1.44.1", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 aws-config = { version = "1.6.1" } # Credential loading
 aws-credential-types = { version = "1.2.2", features = [
     "hardcoded-credentials",
