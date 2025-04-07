@@ -189,7 +189,7 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn groups_accumulator_supported(&self, _args: AccumulatorArgs) -> bool {
-        false
+        true
     }
 
     fn create_groups_accumulator(
