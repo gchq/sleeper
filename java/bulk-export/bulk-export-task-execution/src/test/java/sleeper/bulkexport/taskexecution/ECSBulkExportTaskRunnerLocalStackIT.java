@@ -1,0 +1,127 @@
+/*
+ * Copyright 2022-2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.bulkexport.taskexecution;
+
+import com.amazonaws.services.sqs.model.Message;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
+import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.properties.testutils.InstancePropertiesTestHelper;
+import sleeper.core.properties.testutils.TablePropertiesTestHelper;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.util.ObjectFactoryException;
+import sleeper.localstack.test.LocalStackTestBase;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+
+public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
+    private InstanceProperties instanceProperties = InstancePropertiesTestHelper.createTestInstanceProperties();
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = Schema.builder()
+            .rowKeyFields(field)
+            .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
+            .build();
+    private TablePropertiesProvider tablePropertiesProvider;
+    private BulkExportLeafPartitionQuerySerDe bulkExportSerDe;
+    private TableProperties tableProperties;
+
+    @BeforeEach
+    void setUp() {
+        String jobQueueUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobDlqUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, jobQueueUrl);
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL, jobDlqUrl);
+        tableProperties = TablePropertiesTestHelper.createTestTableProperties(instanceProperties, schema);
+
+    }
+
+    @Test
+    public void testECSBulkExportTaskRunnerProcessesMessages() throws IOException, IteratorCreationException, ObjectFactoryException {
+        // Given
+        String tableId = "t-id";
+        tableProperties.set(TABLE_ID, tableId);
+        tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        bulkExportSerDe = new BulkExportLeafPartitionQuerySerDe(tablePropertiesProvider);
+        BulkExportLeafPartitionQuery exportTaskMessage = createMessage(tableId);
+        String messageBody = bulkExportSerDe.toJson(exportTaskMessage);
+
+        // When
+        sqsClient.sendMessage(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL), messageBody);
+
+        // Verify the message is on the queue before processing
+        List<String> messagesBeforeProcessing = getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+        assertTrue(messagesBeforeProcessing.contains(messageBody),
+                "The message should be on the queue before processing");
+
+        // Run the ECS bulk export task runner
+        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, instanceProperties, tablePropertiesProvider);
+
+        // Then
+        // Verify the queue is empty
+        List<String> messages = getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+        assertTrue(messages.isEmpty(), "The queue should be empty after processing the message");
+
+        // Verify the DLQ is empty
+        List<String> dlqMessages = getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL));
+        assertTrue(dlqMessages.isEmpty(), "The DLQ should be empty after processing the message");
+    }
+
+    private BulkExportLeafPartitionQuery createMessage(String tableId) {
+        String exportId = "e-id";
+        String subExportId = "se-id";
+        String leafPartitionId = "lp-id";
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region1 = new Region(rangeFactory.createRange(field, 1, true, 10, true));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, 0, 1000));
+        return BulkExportLeafPartitionQuery.builder()
+                .tableId(tableId)
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of(region1))
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(Collections.singletonList("/test/file.parquet"))
+                .build();
+    }
+
+    private List<String> getMessagesFromQueue(String queueUrl) {
+        return sqsClient.receiveMessage(queueUrl)
+                .getMessages()
+                .stream()
+                .map(Message::getBody)
+                .toList();
+    }
+}

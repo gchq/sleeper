@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.time.Instant;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Main class to run the ECS bulk export task.
@@ -50,27 +49,47 @@ public class ECSBulkExportTaskRunner {
     private ECSBulkExportTaskRunner() {
     }
 
-     /**
+    /**
      * Main method to run the ECS bulk export task.
      *
-     * This method initializes AWS clients for DynamoDB, SQS, and S3, loads instance and table properties,
+     * This method initializes AWS clients for DynamoDB, SQS, and S3, loads instance
+     * and table properties,
      * and processes messages from the SQS queue for bulk export tasks.
      *
      * @param args Command line arguments
-     * @throws ObjectFactoryException If there is an error creating objects dynamically.
-     * @throws IteratorCreationException If there is an error creating iterators for processing.
-     * @throws IOException If there is an error interacting with S3 or other I/O operations.
+     * @throws ObjectFactoryException    If there is an error creating objects
+     *                                   dynamically.
+     * @throws IteratorCreationException If there is an error creating iterators for
+     *                                   processing.
+     * @throws IOException               If there is an error interacting with S3 or
+     *                                   other I/O operations.
      */
     public static void main(String[] args) throws ObjectFactoryException, IOException, IteratorCreationException {
+
+        if (1 != args.length) {
+            if (1 != args.length) {
+                System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
+                        + String.join(",", args) + ")");
+                System.exit(1);
+            }
+            System.exit(1);
+        }
+
+        String s3Bucket = args[0];
         Instant startTime = Instant.now();
-        String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
                 dynamoDBClient);
+        runECSBulkExportTaskRunner(sqsClient, instanceProperties, tablePropertiesProvider);
+        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
+    }
 
+    public static void runECSBulkExportTaskRunner(AmazonSQS sqsClient, InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider)
+            throws IOException, IteratorCreationException, ObjectFactoryException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
@@ -95,14 +114,5 @@ public class ECSBulkExportTaskRunner {
                 LOGGER.info("Returned message to queue");
             }
         });
-        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
-    }
-
-    private static String validateParameter(String parameterName) {
-        String parameter = System.getenv(parameterName);
-        if (null == parameter || parameter.isEmpty()) {
-            throw new IllegalArgumentException("Missing environment variable: " + parameter);
-        }
-        return parameter;
     }
 }
