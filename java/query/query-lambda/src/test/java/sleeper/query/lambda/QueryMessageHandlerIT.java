@@ -43,7 +43,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryMessageHandlerIT extends LocalStackTestBase {
 
@@ -246,7 +246,7 @@ public class QueryMessageHandlerIT extends LocalStackTestBase {
     private TableProperties createTable(String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schemaWithKey("key", new LongType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new LongType()));
         return tableProperties;
     }
 

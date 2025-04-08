@@ -72,7 +72,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class QueryClientIT {
     @TempDir
@@ -95,7 +94,7 @@ public class QueryClientIT {
         @Test
         void shouldReturnNoRecordsWhenExactRecordNotFound() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key");
+            Schema schema = createSchemaWithKey("key");
             createTable("test-table", schema);
 
             // When
@@ -145,7 +144,7 @@ public class QueryClientIT {
         @Test
         void shouldRunRangeRecordQuery() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key");
+            Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
             List<Record> records = LongStream.rangeClosed(0, 10)
                     .mapToObj(num -> new Record(Map.of("key", num)))
@@ -177,7 +176,7 @@ public class QueryClientIT {
         @Test
         void shouldDefaultToFullRangeWhenMinMaxPromptsAreIgnored() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key");
+            Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
             List<Record> records = LongStream.rangeClosed(0, 3)
                     .mapToObj(num -> new Record(Map.of("key", num)))
@@ -252,7 +251,7 @@ public class QueryClientIT {
         @Test
         void shouldRetryPromptWhenKeyTypeDoesNotMatchSchema() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key");
+            Schema schema = createSchemaWithKey("key");
             createTable("test-table", schema);
 
             // When
@@ -280,7 +279,7 @@ public class QueryClientIT {
         @Test
         void shouldRunQueryForTableWhereMultipleTablesArePresent() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key");
+            Schema schema = createSchemaWithKey("key");
             createTable("test-table-1", schema);
             createTable("test-table-2", schema);
 

@@ -38,14 +38,14 @@ import static sleeper.core.properties.instance.CommonProperty.ID_MAX_LENGTH;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
 import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
 
 public class CompactionCommitMessageSerDeTest {
 
     InstanceProperties instanceProperties = createTestInstancePropertiesWithId("I".repeat(ID_MAX_LENGTH));
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     String tableId = TableIdGenerator.fromRandomSeed(0).generateString();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, tableId);
     TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
@@ -54,7 +54,7 @@ public class CompactionCommitMessageSerDeTest {
     @Test
     void shouldSerialiseCompactionCommitRequest() {
         // Given
-        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+        PartitionTree partitions = new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree();
         ReplaceFileReferencesRequest filesRequest = ReplaceFileReferencesRequest.builder()
                 .jobId("test-job")
                 .taskId("test-task")

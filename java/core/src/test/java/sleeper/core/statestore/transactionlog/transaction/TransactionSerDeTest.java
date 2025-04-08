@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
@@ -72,7 +72,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeAddFiles() {
         // Given
-        Schema schema = schemaWithKey("key");
+        Schema schema = createSchemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
@@ -90,7 +90,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeAddSplitFile() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
@@ -120,7 +120,7 @@ public class TransactionSerDeTest {
                         List.of("file3.parquet", "file4.parquet"))));
 
         // When / Then
-        whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
+        whenSerDeThenMatchAndVerify(createSchemaWithKey("key"), transaction);
     }
 
     @Test
@@ -129,7 +129,7 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new ClearFilesTransaction();
 
         // When / Then
-        whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
+        whenSerDeThenMatchAndVerify(createSchemaWithKey("key"), transaction);
     }
 
     @Test
@@ -138,13 +138,13 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of("file1.parquet", "file2.parquet"));
 
         // When / Then
-        whenSerDeThenMatchAndVerify(schemaWithKey("key"), transaction);
+        whenSerDeThenMatchAndVerify(createSchemaWithKey("key"), transaction);
     }
 
     @Test
     void shouldSerDeInitialisePartitions() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
@@ -159,7 +159,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerialiseTooManyPartitionsToFitInOneDynamoDBTransaction() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<String> leafIds = IntStream.range(0, 250)
                 .mapToObj(i -> "" + i)
                 .collect(toUnmodifiableList());
@@ -184,7 +184,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerialiseFewEnoughPartitionsToFitInOneDynamoDBTransaction() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<String> leafIds = IntStream.range(0, 200)
                 .mapToObj(i -> "" + i)
                 .collect(toUnmodifiableList());
@@ -209,7 +209,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeReplaceFileReferences() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key");
+        Schema schema = createSchemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
@@ -224,7 +224,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeReplaceFileReferencesWithTrackingIds() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key");
+        Schema schema = createSchemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
@@ -244,7 +244,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeSplitFileReferences() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
@@ -266,7 +266,7 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeSplitPartition() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
@@ -289,7 +289,7 @@ public class TransactionSerDeTest {
         @Test
         void shouldSerialiseFileTransactionWithoutSchema() {
             // Given
-            PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+            PartitionTree partitions = new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree();
             FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(
                     FileReferenceFactory.from(partitions).rootFile("file.parquet", 100)));
 
@@ -303,7 +303,7 @@ public class TransactionSerDeTest {
         @Test
         void shouldRefusePartitionTransactionWithoutSchema() {
             // Given
-            Schema schema = schemaWithKey("key");
+            Schema schema = createSchemaWithKey("key");
             PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
 

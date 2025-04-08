@@ -31,7 +31,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
@@ -41,7 +41,7 @@ import static sleeper.core.statestore.SplitFileReference.referenceForChildPartit
 
 public class FileReferencePrinterTest {
 
-    private final Schema schema = schemaWithKey("key", new StringType());
+    private final Schema schema = createSchemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
 
     @Nested

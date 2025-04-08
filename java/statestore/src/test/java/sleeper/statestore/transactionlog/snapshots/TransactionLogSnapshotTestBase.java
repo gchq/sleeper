@@ -49,7 +49,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.getBasePath;
 
@@ -57,7 +57,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     @TempDir
     private java.nio.file.Path tempDir;
     private FileSystem fs;
-    protected final Schema schema = schemaWithKey("key", new LongType());
+    protected final Schema schema = createSchemaWithKey("key", new LongType());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
 

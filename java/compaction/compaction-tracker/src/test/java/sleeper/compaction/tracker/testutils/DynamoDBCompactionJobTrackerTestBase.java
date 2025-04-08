@@ -52,7 +52,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
@@ -72,7 +72,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String jobStatusTableName = DynamoDBCompactionJobTracker.jobLookupTableName(instanceProperties.get(ID));
-    private final Schema schema = schemaWithKey("key", new StringType());
+    private final Schema schema = createSchemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     protected final String tableId = tableProperties.get(TABLE_ID);

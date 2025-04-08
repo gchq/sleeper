@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -46,8 +46,8 @@ public class CheckTransactionLogsTest {
 
     static final Instant UPDATE_TIME = Instant.parse("2025-02-27T12:43:00Z");
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    Schema schema = schemaWithKey("key");
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    Schema schema = createSchemaWithKey("key");
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
 

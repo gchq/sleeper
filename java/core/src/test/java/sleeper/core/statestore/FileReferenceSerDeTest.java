@@ -24,7 +24,7 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class FileReferenceSerDeTest {
 
@@ -32,7 +32,7 @@ public class FileReferenceSerDeTest {
     public void shouldSerDeRootFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
-                new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+                new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree());
         FileReference file = fileReferenceFactory.rootFile("test.parquet", 100);
         FileReferenceSerDe serde = new FileReferenceSerDe();
 
@@ -47,7 +47,7 @@ public class FileReferenceSerDeTest {
     public void shouldSerDeSplitFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
-                new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
@@ -67,7 +67,7 @@ public class FileReferenceSerDeTest {
     public void shouldSerDeSplitFileFromAllReferencesToAFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
-                new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
@@ -91,7 +91,7 @@ public class FileReferenceSerDeTest {
     public void shouldSerDeSingleReferenceFromAllReferencesToAFile() {
         // Given
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(
-                new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                         .rootFirst("root")
                         .splitToNewChildren("root", "L", "R", "aaa")
                         .buildTree());
