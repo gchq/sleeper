@@ -17,6 +17,7 @@ package sleeper.clients;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.ingest.SleeperClientIngest;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -70,6 +71,7 @@ class SleeperClientTest {
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
+    List<BulkImportJob> jobsInBucket = new LinkedList<>();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -78,6 +80,7 @@ class SleeperClientTest {
             .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
             .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
             .sleeperClientIngest(clientIngest())
+            .sleeperClientImport(clientImport())
             .build();
 
     @Test
@@ -133,8 +136,7 @@ class SleeperClientTest {
 
     @Test
     void shouldIngestParquetFilesFromS3() {
-
-        String tableName = "";
+        String tableName = "ingest-table";
         String jobId = UUID.randomUUID().toString();
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
@@ -149,6 +151,20 @@ class SleeperClientTest {
                         .files(fileList)
                         .build());
         assertThat(output).isEqualTo(jobId);
+    }
+
+    void shouldImportParquetFilesFromS3() {
+        String tableName = "import-table";
+        String jobId = UUID.randomUUID().toString();
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        int fileCount = sleeperClient.importParquetFilesFromS3(tableName, jobId, fileList);
+
+        assertThat(jobsInBucket).containsExactly(BulkImportJob.builder()
+                .id(jobId)
+                .tableName(tableName)
+                .files(fileList).build());
+        assertThat(fileCount).isEqualTo(fileList.size());
     }
 
     private TableProperties createTableProperties(String tableName) {
@@ -183,4 +199,9 @@ class SleeperClientTest {
     private SleeperClientIngest clientIngest() {
         return (job) -> ingestQueue.add(job);
     }
+
+    private SleeperClientImport clientImport() {
+        return (job) -> jobsInBucket.add(job);
+    }
+
 }

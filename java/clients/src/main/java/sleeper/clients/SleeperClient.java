@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.ingest.SleeperClientIngest;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -45,6 +46,7 @@ import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,6 +70,7 @@ public class SleeperClient {
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest sleeperClientIngest;
+    private final SleeperClientImport sleeperClientImport;
 
     private SleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -78,6 +81,7 @@ public class SleeperClient {
         objectFactory = builder.objectFactory;
         recordRetrieverProvider = builder.recordRetrieverProvider;
         sleeperClientIngest = builder.sleeperClientIngest;
+        sleeperClientImport = builder.sleeperClientImport;
     }
 
     /**
@@ -204,7 +208,6 @@ public class SleeperClient {
     public String ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
         if (jobId == null) {
             jobId = UUID.randomUUID().toString();
-
         }
         sleeperClientIngest.sendFilesToIngest(IngestJob.builder()
                 .tableName(tableName)
@@ -213,6 +216,37 @@ public class SleeperClient {
                 .build());
 
         return jobId;
+    }
+
+    /**
+     * Ingests the data in the given files to the Sleeper table with name table_name using the bulk
+     * import method. This is done by posting a message containing the list of files to the bulk
+     * import queue. These files must be in S3. They can be either files or directories. If they
+     * are directories then all Parquet files under the directory will be ingested. Files should
+     * be specified in the format 'bucket/file'.
+     *
+     * Instructs Sleeper to bulk import the given files from S3.
+     *
+     * @param tableName the table name to write to
+     * @param jobId     the id of the bulk import job - if one is not provided then a UUID will be assigned
+     * @param files     list of the files containing the records to ingest
+     *
+     */
+    public int importParquetFilesFromS3(String tableName, String jobId, List<String> files) {
+        Map<String, String> platformSpec = null;
+        String className = null;
+
+        if (jobId == null) {
+            jobId = UUID.randomUUID().toString();
+        }
+        sleeperClientImport.importFilesFromS3(BulkImportJob.builder()
+                .tableName(tableName)
+                .tableId(tableName)
+                .files(files)
+                .className(className)
+                .platformSpec(platformSpec)
+                .build());
+        return files.size();
     }
 
     public static class Builder {
@@ -224,6 +258,7 @@ public class SleeperClient {
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest sleeperClientIngest;
+        private SleeperClientImport sleeperClientImport;
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -310,6 +345,11 @@ public class SleeperClient {
          */
         public Builder sleeperClientIngest(SleeperClientIngest sleeperClientIngest) {
             this.sleeperClientIngest = sleeperClientIngest;
+            return this;
+        }
+
+        public Builder sleeperClientImport(SleeperClientImport sleeperClientImport) {
+            this.sleeperClientImport = sleeperClientImport;
             return this;
         }
 
