@@ -42,8 +42,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -61,15 +61,14 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         String jobQueueUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
-        String jobDlqUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
         instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, jobQueueUrl);
-        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL, jobDlqUrl);
+        instanceProperties.setNumber(BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS, 0);
         tableProperties = TablePropertiesTestHelper.createTestTableProperties(instanceProperties, schema);
 
     }
 
     @Test
-    public void testECSBulkExportTaskRunnerProcessesMessages() throws IOException, IteratorCreationException, ObjectFactoryException {
+    public void shouldProcessesMessages() throws IOException, IteratorCreationException, ObjectFactoryException {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
@@ -81,22 +80,13 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         // When
         sqsClient.sendMessage(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL), messageBody);
 
-        // Verify the message is on the queue before processing
-        List<String> messagesBeforeProcessing = getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
-        assertTrue(messagesBeforeProcessing.contains(messageBody),
-                "The message should be on the queue before processing");
-
         // Run the ECS bulk export task runner
         ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, null, null, instanceProperties, tablePropertiesProvider);
 
         // Then
         // Verify the queue is empty
         List<String> messages = getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
-        assertTrue(messages.isEmpty(), "The queue should be empty after processing the message");
-
-        // Verify the DLQ is empty
-        List<String> dlqMessages = getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL));
-        assertTrue(dlqMessages.isEmpty(), "The DLQ should be empty after processing the message");
+        assertThat(messages).isEmpty();
     }
 
     private BulkExportLeafPartitionQuery createMessage(String tableId) {
