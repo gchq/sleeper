@@ -87,7 +87,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 "The message should be on the queue before processing");
 
         // Run the ECS bulk export task runner
-        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, instanceProperties, tablePropertiesProvider);
+        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, null, null, instanceProperties, tablePropertiesProvider);
 
         // Then
         // Verify the queue is empty
