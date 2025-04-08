@@ -23,6 +23,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 
+/**
+ * Requeues bulk import job messages to the bulk import queue with a delay. This is done when a persistent EMR cluster
+ * is full, so that the job can be sent when it has had time to clear.
+ * <p>
+ * This also lets us test this independently. Requests to the EMR API are tested with WireMock, but the SQS API includes
+ * a checksum hash in the response, which is difficult to mock correctly.
+ */
 public interface ReturnBulkImportJobToQueue {
 
     void send(BulkImportJob job);
