@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.sfn.SfnClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.bulkimport.starter.retry.ReturnBulkImportJobToQueue;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 
@@ -43,7 +44,7 @@ public interface PlatformExecutor {
             case "PersistentEMR":
                 return new PersistentEmrPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
-                        SqsClient.create(),
+                        ReturnBulkImportJobToQueue.forFullPersistentEmrCluster(instanceProperties, SqsClient.create()),
                         instanceProperties);
             case "EMRServerless":
                 return new EmrServerlessPlatformExecutor(

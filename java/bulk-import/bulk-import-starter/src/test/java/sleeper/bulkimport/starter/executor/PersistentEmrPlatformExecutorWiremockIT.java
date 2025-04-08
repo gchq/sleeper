@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emr.EmrClient;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
@@ -35,6 +34,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -46,7 +46,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.bulkimport.starter.testutil.TestResources.exampleString;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
@@ -68,6 +67,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    List<BulkImportJob> jobsReturnedToQueue = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -210,12 +210,9 @@ class PersistentEmrPlatformExecutorWiremockIT {
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
                 .willReturn(aResponse().withStatus(400)
                         .withBody(exampleString("example/persistent-emr/addjobflow-error-cluster-full.json"))));
-        stubFor(post("/")
-                .withHeader("X-Amz-Target", equalTo("AmazonSQS.SendMessage"))
-                .willReturn(aResponse().withStatus(200)));
 
         // When
-        assertThatThrownBy(() -> createExecutor(runtimeInfo).runJob(job, "test-run"));
+        createExecutor(runtimeInfo).runJob(job, "test-run");
 
         // Then
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
@@ -223,11 +220,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
                 .singleElement()
                 .satisfies(request -> assertThatJson(request.getBodyAsString())
                         .isEqualTo(exampleString("example/persistent-emr/addjobflow-request.json")));
-        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
-                .withHeader("X-Amz-Target", equalTo("AmazonSQS.SendMessage"))))
-                .singleElement()
-                .satisfies(request -> assertThatJson(request.getBodyAsString())
-                        .isEqualTo(exampleString("example/persistent-emr/sendmessage-delayed-request.json")));
+        assertThat(jobsReturnedToQueue).containsExactly(job);
     }
 
     private BulkImportExecutor createExecutor(WireMockRuntimeInfo runtimeInfo) {
@@ -241,7 +234,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
     private PersistentEmrPlatformExecutor createPlatformExecutor(WireMockRuntimeInfo runtimeInfo) {
         return new PersistentEmrPlatformExecutor(
                 wiremockAwsV2ClientWithRetryAttempts(2, runtimeInfo, EmrClient.builder()),
-                wiremockAwsV2ClientWithRetryAttempts(1, runtimeInfo, SqsClient.builder()),
+                jobsReturnedToQueue::add,
                 instanceProperties);
     }
 
