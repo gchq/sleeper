@@ -406,6 +406,10 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .execution
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
+    sf.options_mut()
+        .execution
+        .parquet
+        .statistics_truncate_length = Some(input_data.stats_truncate_length);
     sf
 }
 
