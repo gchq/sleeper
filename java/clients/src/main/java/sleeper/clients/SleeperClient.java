@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.clients.util.SleeperClientIngest;
+import sleeper.clients.ingest.SleeperClientIngest;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -53,12 +53,9 @@ import java.util.stream.Stream;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
- * A client to interact with an instance of Sleeper. This interacts directly
- * with the underlying AWS resources, and
- * requires permissions against those resources, e.g. the configuration and data
- * buckets in S3, the transaction logs and
- * table index in DynamoDB. There are managed policies and roles deployed with
- * Sleeper that can help with this, e.g.
+ * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
+ * requires permissions against those resources, e.g. the configuration and data buckets in S3, the transaction logs and
+ * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
  */
 public class SleeperClient {

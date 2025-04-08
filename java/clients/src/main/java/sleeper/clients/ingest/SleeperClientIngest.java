@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.util;
+package sleeper.clients.ingest;
 
 import sleeper.ingest.core.job.IngestJob;
 
 @FunctionalInterface
 public interface SleeperClientIngest {
-
     void sendFilesToIngest(IngestJob job);
 }

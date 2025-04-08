@@ -17,7 +17,7 @@ package sleeper.clients;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.util.SleeperClientIngest;
+import sleeper.clients.ingest.SleeperClientIngest;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
@@ -148,7 +148,7 @@ class SleeperClientTest {
                         .id(jobId)
                         .files(fileList)
                         .build());
-        assertThat(jobId).isEqualTo(output);
+        assertThat(output).isEqualTo(jobId);
     }
 
     private TableProperties createTableProperties(String tableName) {
