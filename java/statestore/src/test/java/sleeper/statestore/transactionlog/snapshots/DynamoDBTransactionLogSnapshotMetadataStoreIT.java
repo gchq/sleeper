@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
 public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTestBase {

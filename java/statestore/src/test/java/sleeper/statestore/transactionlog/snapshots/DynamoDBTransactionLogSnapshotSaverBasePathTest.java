@@ -26,6 +26,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DynamoDBTransactionLogSnapshotSaverBasePathTest {
 
