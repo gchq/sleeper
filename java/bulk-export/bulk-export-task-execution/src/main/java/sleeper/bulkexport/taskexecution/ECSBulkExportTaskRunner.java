@@ -53,7 +53,8 @@ public class ECSBulkExportTaskRunner {
      * Main method to run the ECS bulk export task.
      *
      * This method initializes AWS clients for DynamoDB, SQS, and S3, loads instance
-     * and table properties, and processes messages from the SQS queue for bulk export tasks.
+     * and table properties, and processes messages from the SQS queue for bulk
+     * export tasks.
      *
      * @param args Command line arguments
      * @throws ObjectFactoryException    If there is an error creating objects
@@ -66,11 +67,8 @@ public class ECSBulkExportTaskRunner {
     public static void main(String[] args) throws ObjectFactoryException, IOException, IteratorCreationException {
 
         if (1 != args.length) {
-            if (1 != args.length) {
-                System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
-                        + String.join(",", args) + ")");
-                System.exit(1);
-            }
+            System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
+                    + String.join(",", args) + ")");
             System.exit(1);
         }
 
