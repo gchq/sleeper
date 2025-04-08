@@ -22,25 +22,35 @@ import software.amazon.awssdk.services.emr.model.ActionOnFailure;
 import software.amazon.awssdk.services.emr.model.AddJobFlowStepsRequest;
 import software.amazon.awssdk.services.emr.model.ClusterState;
 import software.amazon.awssdk.services.emr.model.ClusterSummary;
+import software.amazon.awssdk.services.emr.model.EmrException;
 import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emr.model.StepConfig;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.regex.Pattern;
+
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 
 public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
 
     private final EmrClient emrClient;
+    private final SqsClient sqsClient;
     private final InstanceProperties instanceProperties;
     private final String clusterId;
     private final String clusterName;
+    private final BulkImportJobSerDe jobSerDe = new BulkImportJobSerDe();
 
     public PersistentEmrPlatformExecutor(
             EmrClient emrClient,
+            SqsClient sqsClient,
             InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
+        this.sqsClient = sqsClient;
         this.instanceProperties = instanceProperties;
         this.clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
@@ -62,7 +72,19 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
                 .build();
 
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest);
-        emrClient.addJobFlowSteps(addJobFlowStepsRequest);
+        try {
+            emrClient.addJobFlowSteps(addJobFlowStepsRequest);
+        } catch (EmrException e) {
+            String message = e.awsErrorDetails().errorMessage();
+            if (Pattern.matches("Maximum number of active steps.+ for cluster exceeded.", message)) {
+                sqsClient.sendMessage(send -> send
+                        .queueUrl(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
+                        .delaySeconds(60)
+                        .messageBody(jobSerDe.toJson(arguments.getBulkImportJob())));
+            } else {
+                throw e;
+            }
+        }
     }
 
     private static String getClusterIdFromName(EmrClient emrClient, String clusterName) {
