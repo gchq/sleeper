@@ -57,14 +57,16 @@ public class ReturnBulkImportJobToQueueIT extends LocalStackTestBase {
                 .send(job);
 
         // Then
-        assertThat(receiveBulkImportJobs())
+        assertThat(receiveBulkImportJobsWithWaitTimeSeconds(0))
+                .isEmpty();
+        assertThat(receiveBulkImportJobsWithWaitTimeSeconds(2))
                 .containsExactly(job);
     }
 
-    private List<BulkImportJob> receiveBulkImportJobs() {
+    private List<BulkImportJob> receiveBulkImportJobsWithWaitTimeSeconds(int waitTimeSeconds) {
         return sqsClient.receiveMessage(
                 new ReceiveMessageRequest(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
-                        .withWaitTimeSeconds(2))
+                        .withWaitTimeSeconds(waitTimeSeconds))
                 .getMessages().stream()
                 .map(Message::getBody)
                 .map(new BulkImportJobSerDe()::fromJson)
