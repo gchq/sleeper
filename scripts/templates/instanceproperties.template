@@ -468,10 +468,10 @@ sleeper.ingest.batcher.job.creation.period.minutes=1
 sleeper.bulk.export.memory.mb=4096
 
 # The default timeout in seconds for the bulk export lambda.
-sleeper.bulk.export.timeout.seconds=800
+sleeper.bulk.export.timeout.seconds=900
 
 # The visibility timeout in seconds for the bulk export queue.
-sleeper.bulk.export.queue.visibility.timeout.seconds=800
+sleeper.bulk.export.queue.visibility.timeout.seconds=900
 
 # The CPU architecture to run bulk export tasks on. Valid values are X86_64 and ARM64.
 # See Task CPU architecture at
