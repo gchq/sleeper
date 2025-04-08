@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
+import sleeper.bulkimport.starter.executor.persistent.PersistentEmrPlatformExecutor;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;

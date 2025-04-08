@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.starter.retry;
+package sleeper.bulkimport.starter.executor.persistent;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.starter.executor;
+package sleeper.bulkimport.starter.executor.persistent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +26,9 @@ import software.amazon.awssdk.services.emr.model.EmrException;
 import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emr.model.StepConfig;
 
-import sleeper.bulkimport.starter.retry.ReturnBulkImportJobToQueue;
+import sleeper.bulkimport.starter.executor.BulkImportArguments;
+import sleeper.bulkimport.starter.executor.EmrJarLocation;
+import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.regex.Pattern;
