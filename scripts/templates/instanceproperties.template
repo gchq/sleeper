@@ -919,6 +919,10 @@ sleeper.bulk.import.persistent.emr.max.capacity=10
 # (Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
 
+# (Persistent EMR mode only) The number of seconds to wait before requeueing a bulk import job because
+# the persistant EMR cluster is full.
+sleeper.bulk.import.persistent.emr.cluster.full.requeue.delay=60
+
 # (EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.
 # sleeper.bulk.import.eks.cluster.admin.roles=
 

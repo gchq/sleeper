@@ -111,6 +111,11 @@ public interface PersistentEMRProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_REQUEUE_DELAY_SECONDS = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.cluster.full.requeue.delay")
+            .description("(Persistent EMR mode only) The number of seconds to wait before requeueing a bulk import job because the persistant EMR cluster is full.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

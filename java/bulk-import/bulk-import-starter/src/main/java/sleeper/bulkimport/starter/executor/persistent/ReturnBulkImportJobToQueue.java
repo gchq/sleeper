@@ -22,6 +22,7 @@ import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_REQUEUE_DELAY_SECONDS;
 
 /**
  * Requeues bulk import job messages to the bulk import queue with a delay. This is done when a persistent EMR cluster
@@ -34,11 +35,11 @@ public interface ReturnBulkImportJobToQueue {
 
     void send(BulkImportJob job);
 
-    public static ReturnBulkImportJobToQueue forFullPersistentEmrCluster(InstanceProperties instanceProperties, SqsClient sqsClient) {
+    static ReturnBulkImportJobToQueue forFullPersistentEmrCluster(InstanceProperties instanceProperties, SqsClient sqsClient) {
         BulkImportJobSerDe serDe = new BulkImportJobSerDe();
         return job -> sqsClient.sendMessage(send -> send
                 .queueUrl(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
-                .delaySeconds(60)
+                .delaySeconds(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_REQUEUE_DELAY_SECONDS))
                 .messageBody(serDe.toJson(job)));
     }
 
