@@ -13,15 +13,16 @@
 # limitations under the License.
 [package]
 name = "compaction"
-version = "0.30.0-SNAPSHOT"
-edition = "2021"
-authors = ["GCHQ"]
-rust-version = "1.79"
 description = "This is the compaction library that implements all the core data compaction and sketches writing functionality that will be needed in Sleeper."
-license = "Apache-2.0"
 keywords = ["sleeper", "compaction"]
 categories = ["science"]
-publish = false
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+authors = { workspace = true }
+rust-version = { workspace = true }
+publish = { workspace = true }
 
 [lib]
 doc = true
@@ -29,42 +30,34 @@ doctest = true
 test = true
 crate-type = ["cdylib", "rlib"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-cxx = { version = "1.0.156" } # Exception handling for Rust
-
-libc = { version = "0.2.171" } # FFI type support
-log = { version = "0.4.27" } # Logging support
-
-arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
-futures = { version = "0.3.31" } # Async processing
-async-trait = { version = "0.1.88" }
-datafusion = { version = "46.0.1", features = ["backtrace"] }
-object_store = { version = "0.11.2", features = [
-    "aws",
-] } # Remote cloud storage access
-thiserror = { version = "2.0.12" } # Derivable error enums
-rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
-tokio = { version = "1.44.2", features = ["full"] }
-aws-config = { version = "1.6.1" } # Credential loading
-aws-credential-types = { version = "1.2.2", features = [
-    "hardcoded-credentials",
-] } # Credential provider types
-aws-types = { version = "1.3.5" } # for Region
-url = { version = "2.5.4" } # URL processing for S3
-bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
-num-format = { version = "0.4.4" } # Nicely formatted numbers
-tokio-test = { version = "0.4.4" } # Doc tests
-env_logger = { version = "0.11.8" }
-chrono = { version = "0.4.39" } # Log helper
-color-eyre = { version = "0.6.3" } # Error handling
+arrow = { workspace = true, features = ["prettyprint"] }
+async-trait = { workspace = true }
+aws-config = { workspace = true }
+aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+aws-types = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true }
+color-eyre = { workspace = true }
+cxx = { workspace = true }
+datafusion = { workspace = true }
+env_logger = { workspace = true }
+futures = { workspace = true }
+libc = { workspace = true }
+log = { workspace = true }
+num-format = { workspace = true }
+object_store = { workspace = true, features = [ "aws" ] }
+rust_sketch = { path = "../rust_sketch" }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-test = { workspace = true }
+url = { workspace = true }
 
 # Transitive dependency
-ring = { version = "0.17.14" }
+ring = { workspace = true }
 
 [dev-dependencies]
-tempfile = { version = "3.19.1" }                                 # Create temporary files
-object_store = { version = "0.11.2", features = ["integration"] }
-testing_logger = { version = "0.1.1" }                            # Assert on logger output in tests
-test-log = { version = "0.2.17" }                                 # Enable logging in tests
+tempfile = { workspace = true }
+object_store = { workspace = true, features = ["integration"] }
+testing_logger = { workspace = true }
+test-log = { workspace = true }
