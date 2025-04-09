@@ -249,7 +249,7 @@ public class SleeperClient {
      * @return              number of files imported
      *
      */
-    public int importParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
+    public int bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
         if (jobId == null) {
             jobId = UUID.randomUUID().toString();
         }
@@ -259,6 +259,7 @@ public class SleeperClient {
         }
 
         sleeperClientImport.importFilesFromS3(BulkImportJob.builder()
+                .id(jobId)
                 .tableName(tableName)
                 .tableId(tableName)
                 .files(files)
@@ -357,9 +358,9 @@ public class SleeperClient {
         }
 
         /**
-         * Sets the interface for ingesting records from s3.
+         * Provides functionality to send ingest job.
          *
-         * @param  sleeperClientIngest the ingest for client
+         * @param  sleeperClientIngest the ingest interface for client
          * @return                     this builder for chaining
          */
         public Builder sleeperClientIngest(SleeperClientIngest sleeperClientIngest) {
@@ -367,6 +368,12 @@ public class SleeperClient {
             return this;
         }
 
+        /**
+         * Provides functionality for bulk import of parquet files for client.
+         *
+         * @param  sleeperClientImport the bulk import interface for client
+         * @return                     this builder for chaining
+         */
         public Builder sleeperClientImport(SleeperClientImport sleeperClientImport) {
             this.sleeperClientImport = sleeperClientImport;
             return this;

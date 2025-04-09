@@ -15,6 +15,7 @@
  */
 package sleeper.clients.cli;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -55,6 +56,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -70,7 +72,7 @@ class SleeperClientTest {
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
-    List<BulkImportJob> jobsInBucket = new LinkedList<>();
+    Queue<BulkImportJob> jobsInBucket = new LinkedList<>();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -152,16 +154,20 @@ class SleeperClientTest {
         assertThat(output).isEqualTo(jobId);
     }
 
+    @Test
     void shouldImportParquetFilesFromS3() {
         String tableName = "import-table";
         String jobId = UUID.randomUUID().toString();
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
-        int fileCount = sleeperClient.importParquetFilesFromS3(tableName, jobId, fileList);
-
+        int fileCount = sleeperClient.bulkImportParquetFilesFromS3(tableName, jobId, fileList, null);
+        Map<String, String> platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
         assertThat(jobsInBucket).containsExactly(BulkImportJob.builder()
                 .id(jobId)
+                .tableId(tableName)
                 .tableName(tableName)
+                .className("")
+                .platformSpec(platformSpec)
                 .files(fileList).build());
         assertThat(fileCount).isEqualTo(fileList.size());
     }
