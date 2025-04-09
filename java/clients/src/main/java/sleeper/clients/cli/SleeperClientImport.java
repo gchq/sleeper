@@ -15,9 +15,18 @@
  */
 package sleeper.clients.cli;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 
 @FunctionalInterface
 public interface SleeperClientImport {
     void importFilesFromS3(BulkImportJob job);
+
+    static SleeperClientImport importParquetFilesFromS3(String queueUrl, AmazonSQS sqsClient) {
+        return (job) -> {
+            sqsClient.sendMessage(queueUrl, new BulkImportJobSerDe().toJson((job)));
+        };
+    }
 }

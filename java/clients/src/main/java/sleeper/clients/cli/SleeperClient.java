@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.common.collect.ImmutableMap;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -52,6 +53,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 
 /**
  * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
@@ -237,23 +239,30 @@ public class SleeperClient {
      *
      * Instructs Sleeper to bulk import the given files from S3.
      *
-     * @param tableName the table name to write to
-     * @param jobId     the id of the bulk import job - if one is not provided then a UUID will be assigned
-     * @param files     list of the files containing the records to ingest
+     * @param  tableName    the table name to write to
+     * @param  jobId        the id of the bulk import job - if one is not provided then a UUID will be assigned
+     * @param  files        list of the files containing the records to ingest
+     * @param  platformSpec This optional parameter allows you to configure details of the EMR cluster that is created
+     *                      to run the bulk import job. This should be a map, containing parameters specifying details
+     *                      of the cluster. If this is not provided then sensible defaults are used.
+     *
+     * @return              number of files imported
      *
      */
-    public int importParquetFilesFromS3(String tableName, String jobId, List<String> files) {
-        Map<String, String> platformSpec = null;
-        String className = null;
-
+    public int importParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
         if (jobId == null) {
             jobId = UUID.randomUUID().toString();
         }
+
+        if (platformSpec == null || platformSpec.isEmpty()) {
+            platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
+        }
+
         sleeperClientImport.importFilesFromS3(BulkImportJob.builder()
                 .tableName(tableName)
                 .tableId(tableName)
                 .files(files)
-                .className(className)
+                .className("")
                 .platformSpec(platformSpec)
                 .build());
         return files.size();
