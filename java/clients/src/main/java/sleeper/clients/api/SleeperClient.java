@@ -250,9 +250,9 @@ public class SleeperClient {
      * @param  tableName    the table name to write to
      * @param  jobId        the id of the bulk import job - if one is not provided then a UUID will be assigned
      * @param  files        list of the files containing the records to ingest
-     * @param  platformSpec This optional parameter allows you to configure details of the EMR cluster that is created
+     * @param  platformSpec This parameter allows you to configure details of the EMR cluster that is created
      *                      to run the bulk import job. This should be a map, containing parameters specifying details
-     *                      of the cluster. If this is not provided then sensible defaults are used.
+     *                      of the cluster.
      *
      * @return              number of files imported
      *
@@ -273,7 +273,9 @@ public class SleeperClient {
      *
      * @param  tableName    the table name to write to
      * @param  files        list of the files containing the records to ingest
-     * @param  platformSpec
+     * @param  platformSpec This parameter allows you to configure details of the EMR cluster that is created
+     *                      to run the bulk import job. This should be a map, containing parameters specifying details
+     *                      of the cluster.
      * @return              the number of files
      */
     public int bulkImportParquetFilesFromS3(String tableName, List<String> files, Map<String, String> platformSpec) {
@@ -287,8 +289,8 @@ public class SleeperClient {
      * @param  files     list of the files containing the records to ingest
      * @return           the number of files
      */
-    public int bulkImportParquetFilesFromS3(String table, List<String> files) {
-        return bulkImportParquetFilesFromS3(table, UUID.randomUUID().toString(), files,
+    public int bulkImportParquetFilesFromS3(String tableName, List<String> files) {
+        return bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files,
                 ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
     }
 
@@ -300,8 +302,8 @@ public class SleeperClient {
      * @param  files     list of the files containing the records to ingest
      * @return           the number of files
      */
-    public int bulkImportParquetFilesFromS3(String table, String jobId, List<String> files) {
-        return bulkImportParquetFilesFromS3(table, jobId, files,
+    public int bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files) {
+        return bulkImportParquetFilesFromS3(tableName, jobId, files,
                 ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
     }
 
