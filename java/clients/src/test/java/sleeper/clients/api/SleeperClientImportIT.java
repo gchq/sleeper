@@ -49,8 +49,8 @@ public class SleeperClientImportIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        SleeperClientImport.importParquetFilesFromS3(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL), sqsClient)
-                .importFilesFromS3(job);
+        SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL), sqsClient)
+                .bulkImportFilesFromS3(job);
         assertThat(recieveImportJobs()).containsExactly(job);
     }
 

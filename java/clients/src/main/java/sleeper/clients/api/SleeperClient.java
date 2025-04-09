@@ -262,7 +262,7 @@ public class SleeperClient {
             platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
         }
 
-        sleeperClientImport.importFilesFromS3(BulkImportJob.builder()
+        sleeperClientImport.bulkImportFilesFromS3(BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
                 .tableId(tableName)
