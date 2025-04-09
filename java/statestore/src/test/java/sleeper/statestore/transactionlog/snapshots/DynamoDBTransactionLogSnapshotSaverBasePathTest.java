@@ -26,7 +26,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DynamoDBTransactionLogSnapshotSaverBasePathTest {
 
@@ -36,7 +36,7 @@ public class DynamoDBTransactionLogSnapshotSaverBasePathTest {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, "test-bucket");
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
         tableProperties.set(TABLE_ID, "test-table-id");
 
         // When / Then

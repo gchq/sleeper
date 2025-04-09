@@ -32,8 +32,8 @@ public class SchemaTestHelper {
      * @param  key the name of the row key field
      * @return     a {@link Schema} with one row key field
      */
-    public static Schema schemaWithKey(String key) {
-        return schemaWithKey(key, new LongType());
+    public static Schema createSchemaWithKey(String key) {
+        return createSchemaWithKey(key, new LongType());
     }
 
     /**
@@ -43,7 +43,7 @@ public class SchemaTestHelper {
      * @param  type the type of the row key field
      * @return      a {@link Schema} with one row key field
      */
-    public static Schema schemaWithKey(String key, PrimitiveType type) {
+    public static Schema createSchemaWithKey(String key, PrimitiveType type) {
         return Schema.builder().rowKeyFields(new Field(key, type)).build();
     }
 

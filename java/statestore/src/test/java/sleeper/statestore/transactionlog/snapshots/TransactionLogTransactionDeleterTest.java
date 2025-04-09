@@ -43,12 +43,12 @@ import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 
 public class TransactionLogTransactionDeleterTest {
-    private final Schema schema = schemaWithKey("key", new StringType());
+    private final Schema schema = createSchemaWithKey("key", new StringType());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final TableStatus tableStatus = tableProperties.getStatus();

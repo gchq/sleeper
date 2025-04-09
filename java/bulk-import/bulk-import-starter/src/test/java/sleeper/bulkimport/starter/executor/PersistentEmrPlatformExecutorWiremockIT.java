@@ -58,15 +58,20 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+<<<<<<< HEAD
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
+=======
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+>>>>>>> origin/develop
 
 @WireMockTest
 class PersistentEmrPlatformExecutorWiremockIT {
     public static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutorWiremockIT.class);
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     List<BulkImportJob> jobsReturnedToQueue = new ArrayList<>();
 

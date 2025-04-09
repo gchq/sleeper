@@ -49,14 +49,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.core.task.StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_ATTEMPTS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     private final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();

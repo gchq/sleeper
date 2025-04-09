@@ -63,7 +63,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class RustCompactionRunnerIT {
@@ -88,7 +88,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldMergeFilesWithStringKey() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", "record-1"));
@@ -111,7 +111,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldMergeFilesWithLongKey() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", 1L));
@@ -135,7 +135,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldMergeFilesWithIntKey() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new IntType());
+            Schema schema = createSchemaWithKey("key", new IntType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", 1));
@@ -159,7 +159,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldMergeFilesWithByteArrayKey() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new ByteArrayType());
+            Schema schema = createSchemaWithKey("key", new ByteArrayType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", new byte[]{1, 2}));
@@ -188,7 +188,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldMergeEmptyAndNonEmptyFile() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record = new Record(Map.of("key", "test-value"));
@@ -209,7 +209,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldMergeTwoEmptyFiles() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             String file1 = writeFileForPartition("root", List.of());
@@ -233,7 +233,7 @@ public class RustCompactionRunnerIT {
         @Test
         void shouldWriteSketchWhenMergingFiles() throws Exception {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", "record-1"));

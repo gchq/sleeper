@@ -40,7 +40,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployInstanceConfigurationIT {
     @TempDir
@@ -67,7 +67,7 @@ public class DeployInstanceConfigurationIT {
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "set-table");
             expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
-            expectedTableProperties.setSchema(schemaWithKey("template-key"));
+            expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
@@ -112,7 +112,7 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
             Files.writeString(propertiesDir.resolve("tags.properties"), "Project=TestProject");
             Files.writeString(propertiesDir.resolve("table.properties"), "sleeper.table.name=test-table");
-            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
+            Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
 
             // When
             DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(
@@ -124,7 +124,7 @@ public class DeployInstanceConfigurationIT {
             expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "test-table");
-            expectedTableProperties.setSchema(schemaWithKey("key"));
+            expectedTableProperties.setSchema(createSchemaWithKey("key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
@@ -248,7 +248,7 @@ public class DeployInstanceConfigurationIT {
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "template-table");
             expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
-            expectedTableProperties.setSchema(schemaWithKey("template-key"));
+            expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
             assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
         }
     }
@@ -258,7 +258,7 @@ public class DeployInstanceConfigurationIT {
         Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.filesystem=test://");
         Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
         Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.rowgroup.size=123");
-        Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
+        Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(createSchemaWithKey("template-key")));
     }
 
     private DeployInstanceConfiguration fromTemplatesDirWithTable(String tableName) {
