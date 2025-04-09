@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.ingest.SleeperClientIngest;
+import sleeper.clients.util.SleeperClientImport;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
