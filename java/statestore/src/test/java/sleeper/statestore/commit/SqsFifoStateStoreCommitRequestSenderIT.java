@@ -53,12 +53,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryTransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
     private final StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);

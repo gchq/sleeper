@@ -35,13 +35,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class WaitForPartitionSplittingTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key", new StringType()));
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
     StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     PartitionsBuilder partitions;
 

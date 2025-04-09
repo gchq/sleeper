@@ -60,11 +60,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryWebSocketClientTest {
     private final InstanceProperties instanceProperties = createInstance();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final QuerySerDe querySerDe = new QuerySerDe(schema);

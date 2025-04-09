@@ -62,13 +62,13 @@ import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class SplitPartitionLambdaIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstance();
-    private final Schema schema = schemaWithKey("key", new IntType());
+    private final Schema schema = createSchemaWithKey("key", new IntType());
     private final PartitionTree partitionTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final TableProperties tableProperties = createTable(schema, partitionTree);
     private final SplitPartitionJobDefinitionSerDe serDe = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider());

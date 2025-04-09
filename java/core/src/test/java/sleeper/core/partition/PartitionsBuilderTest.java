@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class PartitionsBuilderTest {
 
@@ -125,7 +125,7 @@ class PartitionsBuilderTest {
 
     @Test
     void shouldBuildSinglePartitionTree() {
-        Schema schema = schemaWithKey("key");
+        Schema schema = createSchemaWithKey("key");
         PartitionTree tree = new PartitionsBuilder(schema)
                 .singlePartition("A")
                 .buildTree();
@@ -138,7 +138,7 @@ class PartitionsBuilderTest {
 
     @Test
     void shouldFailSpecifyingRootTwice() {
-        Schema schema = schemaWithKey("key");
+        Schema schema = createSchemaWithKey("key");
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .rootFirst("root");
 
@@ -148,7 +148,7 @@ class PartitionsBuilderTest {
 
     @Test
     void shouldFailSpecifyingSameChildTwice() {
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "A", "B", "aaa");

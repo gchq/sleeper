@@ -25,11 +25,11 @@ import sleeper.core.schema.type.LongType;
 
 import java.util.Map;
 
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionsPrinterTest {
 
-    private final Schema schema = schemaWithKey("key", new LongType());
+    private final Schema schema = createSchemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
 
     @Test
