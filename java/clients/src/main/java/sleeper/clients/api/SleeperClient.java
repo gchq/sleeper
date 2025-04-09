@@ -21,10 +21,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.google.common.collect.ImmutableMap;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -41,14 +43,18 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 /**
  * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
@@ -108,7 +114,7 @@ public class SleeperClient {
      * @return              the client
      */
     public static SleeperClient createForInstanceId(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId, ) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
@@ -122,7 +128,7 @@ public class SleeperClient {
                 .recordRetrieverProvider(
                         LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
                 .sleeperClientIngest(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties.get(INGEST_JOB_QUEUE_URL), sqsClient))
-                .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(instanceId, sqsClient))
+                .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(sqsClient))
                 .build();
     }
 
@@ -244,56 +250,21 @@ public class SleeperClient {
      * Instructs Sleeper to bulk import the given files from S3.
      *
      * @param tableName    the table name to write to
+     * @param platform     the platform which the import is to run on
      * @param jobId        the id of the bulk import job - if one is not provided then a UUID will be assigned
      * @param files        list of the files containing the records to ingest
      * @param platformSpec This parameter allows you to configure details of the EMR cluster that is created
      *                     to run the bulk import job. This should be a map, containing parameters specifying details
      *                     of the cluster.
      */
-    public void bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
-        sleeperClientImport.bulkImportFilesFromS3(BulkImportJob.builder()
+    public void bulkImportParquetFilesFromS3(String tableName, String platform, String jobId, List<String> files, Map<String, String> platformSpec) {
+        sleeperClientImport.bulkImportFilesFromS3(instanceProperties, platform, BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
                 .tableId(tableName)
                 .files(files)
                 .platformSpec(platformSpec)
                 .build());
-    }
-
-    /**
-     * Calls import of parquetFiles and generates jobId as not provided.
-     *
-     * @param tableName    the table name to write to
-     * @param files        list of the files containing the records to ingest
-     * @param platformSpec This parameter allows you to configure details of the EMR cluster that is created
-     *                     to run the bulk import job. This should be a map, containing parameters specifying details
-     *                     of the cluster.
-     */
-    public void bulkImportParquetFilesFromS3(String tableName, List<String> files, Map<String, String> platformSpec) {
-        bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files, platformSpec);
-    }
-
-    /**
-     * Calls import of parquetFiles and generates jobId and platform spec as not provided.
-     *
-     * @param tableName the table name to write to
-     * @param files     list of the files containing the records to ingest
-     */
-    public void bulkImportParquetFilesFromS3(String tableName, List<String> files) {
-        bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files,
-                ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
-    }
-
-    /**
-     * Calls import of parquetFiles and generates jobId and platform spec as not provided.
-     *
-     * @param tableName the table name to write to
-     * @param jobId     the id of the bulk import job
-     * @param files     list of the files containing the records to ingest
-     */
-    public void bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files) {
-        bulkImportParquetFilesFromS3(tableName, jobId, files,
-                ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
     }
 
     //Initial framework for IngestBatcher
