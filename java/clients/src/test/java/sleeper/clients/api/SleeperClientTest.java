@@ -159,14 +159,14 @@ class SleeperClientTest {
         String tableName = "import-table";
         String jobId = UUID.randomUUID().toString();
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
-
-        int fileCount = sleeperClient.bulkImportParquetFilesFromS3(tableName, jobId, fileList, null);
         Map<String, String> platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
+
+        int fileCount = sleeperClient.bulkImportParquetFilesFromS3(tableName, jobId, fileList, platformSpec);
+
         assertThat(jobsInBucket).containsExactly(BulkImportJob.builder()
                 .id(jobId)
                 .tableId(tableName)
                 .tableName(tableName)
-                .className("")
                 .platformSpec(platformSpec)
                 .files(fileList).build());
         assertThat(fileCount).isEqualTo(fileList.size());

@@ -263,7 +263,6 @@ public class SleeperClient {
                 .tableName(tableName)
                 .tableId(tableName)
                 .files(files)
-                .className("")
                 .platformSpec(platformSpec)
                 .build());
         return files.size();
