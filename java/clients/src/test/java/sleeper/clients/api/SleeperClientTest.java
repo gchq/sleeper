@@ -16,6 +16,7 @@
 package sleeper.clients.api;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -82,6 +83,7 @@ class SleeperClientTest {
             .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
             .sleeperClientIngest(clientIngest())
             .sleeperClientImport(clientImport())
+            .sleeperClientIngestBatcher(clientIngestBatcher())
             .build();
 
     @Test
@@ -172,6 +174,25 @@ class SleeperClientTest {
         assertThat(fileCount).isEqualTo(fileList.size());
     }
 
+    @Disabled //Initial framework for IngestBatcher
+    @Test
+    void shouldSendFilesToIngestBatcher() {
+        String tableName = "ingest-table";
+        String jobId = UUID.randomUUID().toString();
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        // When
+        sleeperClient.sendFilesToIngestBatcher(tableName, jobId, fileList);
+
+        // Then
+        assertThat(ingestQueue)
+                .containsExactly(IngestJob.builder()
+                        .tableName(tableName)
+                        .id(jobId)
+                        .files(fileList)
+                        .build());
+    }
+
     private TableProperties createTableProperties(String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
@@ -207,6 +228,10 @@ class SleeperClientTest {
 
     private SleeperClientImport clientImport() {
         return (job) -> jobsInBucket.add(job);
+    }
+
+    private SleeperClientIngestBatcher clientIngestBatcher() {
+        return (job) -> ingestQueue.add(job);
     }
 
 }
