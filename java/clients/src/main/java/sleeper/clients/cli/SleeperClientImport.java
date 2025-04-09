@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.ingest;
+package sleeper.clients.cli;
 
-import sleeper.ingest.core.job.IngestJob;
+import sleeper.bulkimport.core.job.BulkImportJob;
 
 @FunctionalInterface
-public interface SleeperClientIngest {
-    void sendFilesToIngest(IngestJob job);
+public interface SleeperClientImport {
+    void importFilesFromS3(BulkImportJob job);
 }

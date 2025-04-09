@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.cli;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.clients.ingest.SleeperClientIngest;
-import sleeper.clients.util.SleeperClientImport;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
