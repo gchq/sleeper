@@ -56,7 +56,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRA
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFinishedEvent;
@@ -74,7 +74,7 @@ import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 public class TransactionLogFollowerLambdaTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     String tableId = tableProperties.get(TABLE_ID);
     PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();

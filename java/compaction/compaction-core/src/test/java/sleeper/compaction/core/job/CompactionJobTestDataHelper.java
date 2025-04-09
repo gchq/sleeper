@@ -35,7 +35,7 @@ import java.util.function.Function;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class CompactionJobTestDataHelper {
 
@@ -52,7 +52,7 @@ public class CompactionJobTestDataHelper {
 
     public CompactionJobTestDataHelper() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
         this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 

@@ -34,10 +34,10 @@ import java.util.stream.IntStream;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public abstract class CompactionStrategyTestBase {
-    protected static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
+    protected static final Schema DEFAULT_SCHEMA = createSchemaWithKey("key");
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
     protected final PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)

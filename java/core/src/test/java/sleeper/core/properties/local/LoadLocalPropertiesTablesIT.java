@@ -38,7 +38,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class LoadLocalPropertiesTablesIT {
 
@@ -70,7 +70,7 @@ class LoadLocalPropertiesTablesIT {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
-        Schema schema = schemaWithKey("test-key");
+        Schema schema = createSchemaWithKey("test-key");
         schema.save(tempDir.resolve("schema.json"));
 
         // When / Then
@@ -90,9 +90,9 @@ class LoadLocalPropertiesTablesIT {
         TableProperties properties2 = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
-        Schema schema1 = schemaWithKey("test-key1");
+        Schema schema1 = createSchemaWithKey("test-key1");
         schema1.save(tempDir.resolve("tables/table1/schema.json"));
-        Schema schema2 = schemaWithKey("test-key2");
+        Schema schema2 = createSchemaWithKey("test-key2");
         schema2.save(tempDir.resolve("tables/table2/schema.json"));
 
         // When / Then
@@ -134,7 +134,7 @@ class LoadLocalPropertiesTablesIT {
     @Test
     void shouldLoadInvalidProperties() {
         // Given
-        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties properties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
         properties.unset(TABLE_NAME);
         properties.save(tempDir.resolve("table.properties"));
 
@@ -161,7 +161,7 @@ class LoadLocalPropertiesTablesIT {
     @Test
     void shouldLoadFileNextToInstancePropertiesFileWithSchemaInProperties() {
         // Given
-        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
+        TableProperties properties = createTestTableProperties(instanceProperties, createSchemaWithKey("test-key"));
         properties.save(tempDir.resolve("table.properties"));
 
         // When / Then
@@ -174,9 +174,9 @@ class LoadLocalPropertiesTablesIT {
         // Given
         Files.createDirectories(tempDir.resolve("tables/table1"));
         Files.createDirectory(tempDir.resolve("tables/table2"));
-        TableProperties properties1 = createTestTableProperties(instanceProperties, schemaWithKey("test-key1"));
+        TableProperties properties1 = createTestTableProperties(instanceProperties, createSchemaWithKey("test-key1"));
         properties1.save(tempDir.resolve("tables/table1/table.properties"));
-        TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
+        TableProperties properties2 = createTestTableProperties(instanceProperties, createSchemaWithKey("test-key2"));
         properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
         // When / Then

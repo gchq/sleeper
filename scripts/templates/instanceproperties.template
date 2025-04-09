@@ -468,10 +468,10 @@ sleeper.ingest.batcher.job.creation.period.minutes=1
 sleeper.bulk.export.memory.mb=4096
 
 # The default timeout in seconds for the bulk export lambda.
-sleeper.bulk.export.timeout.seconds=800
+sleeper.bulk.export.timeout.seconds=900
 
 # The visibility timeout in seconds for the bulk export queue.
-sleeper.bulk.export.queue.visibility.timeout.seconds=800
+sleeper.bulk.export.queue.visibility.timeout.seconds=900
 
 # The CPU architecture to run bulk export tasks on. Valid values are X86_64 and ARM64.
 # See Task CPU architecture at
@@ -508,6 +508,22 @@ sleeper.bulk.export.max.concurrent.tasks=300
 # The number of days the results of bulk export remain in the bulk export results bucket before being
 # deleted.
 sleeper.bulk.export.results.bucket.expiry.days=7
+
+# The delay in seconds until a failed bulk export job becomes visible on the bulk export queue and can
+# be processed again.
+sleeper.bulk.export.job.failed.visibility.timeout.seconds=60
+
+# The time in seconds for a bulk export task to wait for a bulk export job to appear on the SQS queue
+# (must be <= 20).
+# When a bulk export task waits for bulk export jobs to appear on the SQS queue, if the task receives
+# no messages in the time defined by this property, it will try to wait for a message again.
+sleeper.bulk.export.task.wait.time.seconds=20
+
+# The frequency, in seconds, with which change message visibility requests are sent to extend the
+# visibility of messages on the bulk export job queue so that they are not processed by other
+# processes.
+# This should be less than the value of sleeper.bulk.export.queue.visibility.timeout.seconds.
+sleeper.bulk.export.keepalive.period.seconds=300
 
 
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR

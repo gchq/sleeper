@@ -33,13 +33,13 @@ import java.io.DataOutputStream;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SketchesSerDeTest {
 
     @Test
     void shouldSerDeIntType() throws Exception {
-        Schema schema = schemaWithKey("key", new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
             sketches.update(new Record(Map.of("key", i)));
@@ -61,7 +61,7 @@ public class SketchesSerDeTest {
 
     @Test
     void shouldSerDeLongType() throws Exception {
-        Schema schema = schemaWithKey("key", new LongType());
+        Schema schema = createSchemaWithKey("key", new LongType());
         Sketches sketches = Sketches.from(schema);
         for (long i = 0; i < 100; i++) {
             sketches.update(new Record(Map.of("key", i)));
@@ -83,7 +83,7 @@ public class SketchesSerDeTest {
 
     @Test
     void shouldSerDeStringType() throws Exception {
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
             sketches.update(new Record(Map.of("key", "" + i)));
@@ -105,7 +105,7 @@ public class SketchesSerDeTest {
 
     @Test
     void shouldSerDeByteArrayType() throws Exception {
-        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         Sketches sketches = Sketches.from(schema);
         for (byte i = 0; i < 100; i++) {
             sketches.update(new Record(Map.of("key", new byte[]{i, (byte) (i + 1)})));

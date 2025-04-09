@@ -33,7 +33,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     @TempDir
@@ -60,8 +60,8 @@ class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     void shouldLoadTablePropertiesFromS3() throws IOException {
         // Given
         InstanceProperties properties = createTestInstance();
-        TableProperties table1 = createTestTable(properties, schemaWithKey("key1"));
-        TableProperties table2 = createTestTable(properties, schemaWithKey("key2"));
+        TableProperties table1 = createTestTable(properties, createSchemaWithKey("key1"));
+        TableProperties table2 = createTestTable(properties, createSchemaWithKey("key2"));
 
         // When
         saveFromS3(properties.get(ID));

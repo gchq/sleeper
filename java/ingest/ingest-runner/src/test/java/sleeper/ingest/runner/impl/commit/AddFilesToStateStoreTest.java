@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
@@ -54,10 +54,10 @@ import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedSt
 
 public class AddFilesToStateStoreTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key");
     private final PartitionTree partitionTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     private final InMemoryIngestJobTracker jobTracker = new InMemoryIngestJobTracker();
