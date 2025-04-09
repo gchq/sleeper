@@ -207,6 +207,17 @@ public class SleeperClient {
     }
 
     /**
+     * Calls ingest of parquetFiles and generates jobId as not provided.
+     *
+     * @param  tableName table name to write to
+     * @param  files     list of files containing records to ingest
+     * @return           id of the ingest job
+     */
+    public String ingestParquetFilesFromS3(String tableName, List<String> files) {
+        return ingestParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files);
+    }
+
+    /**
      * Ingests the data in the given files to the Sleeper table with name table_name. This is done by posting a
      * message containing the list of files to the ingest queue. These files must be in S3. They can be either files or
      * directories. If they are directories then all Parquet files under the directory will be ingested.
@@ -218,9 +229,6 @@ public class SleeperClient {
      * @return           id for the job create for the ingest
      */
     public String ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
-        if (jobId == null) {
-            jobId = UUID.randomUUID().toString();
-        }
         sleeperClientIngest.sendFilesToIngest(IngestJob.builder()
                 .tableName(tableName)
                 .id(jobId)
@@ -250,10 +258,6 @@ public class SleeperClient {
      *
      */
     public int bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
-        if (jobId == null) {
-            jobId = UUID.randomUUID().toString();
-        }
-
         if (platformSpec == null || platformSpec.isEmpty()) {
             platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
         }
@@ -267,6 +271,18 @@ public class SleeperClient {
                 .platformSpec(platformSpec)
                 .build());
         return files.size();
+    }
+
+    /**
+     * Calls import of parquetFiles and generates jobId as not provided.
+     *
+     * @param  tableName    the table name to write to
+     * @param  files        list of the files containing the records to ingest
+     * @param  platformSpec
+     * @return              the number of files
+     */
+    public int bulkImportParquetFilesFromS3(String tableName, List<String> files, Map<String, String> platformSpec) {
+        return bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files, platformSpec);
     }
 
     public static class Builder {
