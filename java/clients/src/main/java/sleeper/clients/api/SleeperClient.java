@@ -212,30 +212,26 @@ public class SleeperClient {
      * directories. If they are directories then all Parquet files under the directory will be ingested.
      * Files should be specified in the format 'bucket/file'.
      *
-     * @param  tableName table name to write to
-     * @param  jobId     id of the ingest job, randomly generated if not set
-     * @param  files     list of files containing records to ingest
-     * @return           id for the job create for the ingest
+     * @param tableName table name to write to
+     * @param jobId     id of the ingest job, randomly generated if not set
+     * @param files     list of files containing records to ingest
      */
-    public String ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
+    public void ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
         sleeperClientIngest.sendFilesToIngest(IngestJob.builder()
                 .tableName(tableName)
                 .id(jobId)
                 .files(files)
                 .build());
-
-        return jobId;
     }
 
     /**
      * Calls ingest of parquetFiles and generates jobId as not provided.
      *
-     * @param  tableName table name to write to
-     * @param  files     list of files containing records to ingest
-     * @return           id of the ingest job
+     * @param tableName table name to write to
+     * @param files     list of files containing records to ingest
      */
-    public String ingestParquetFilesFromS3(String tableName, List<String> files) {
-        return ingestParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files);
+    public void ingestParquetFilesFromS3(String tableName, List<String> files) {
+        ingestParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files);
     }
 
     /**
@@ -247,17 +243,14 @@ public class SleeperClient {
      *
      * Instructs Sleeper to bulk import the given files from S3.
      *
-     * @param  tableName    the table name to write to
-     * @param  jobId        the id of the bulk import job - if one is not provided then a UUID will be assigned
-     * @param  files        list of the files containing the records to ingest
-     * @param  platformSpec This parameter allows you to configure details of the EMR cluster that is created
-     *                      to run the bulk import job. This should be a map, containing parameters specifying details
-     *                      of the cluster.
-     *
-     * @return              number of files imported
-     *
+     * @param tableName    the table name to write to
+     * @param jobId        the id of the bulk import job - if one is not provided then a UUID will be assigned
+     * @param files        list of the files containing the records to ingest
+     * @param platformSpec This parameter allows you to configure details of the EMR cluster that is created
+     *                     to run the bulk import job. This should be a map, containing parameters specifying details
+     *                     of the cluster.
      */
-    public int bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
+    public void bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
         sleeperClientImport.bulkImportFilesFromS3(BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
@@ -265,45 +258,41 @@ public class SleeperClient {
                 .files(files)
                 .platformSpec(platformSpec)
                 .build());
-        return files.size();
     }
 
     /**
      * Calls import of parquetFiles and generates jobId as not provided.
      *
-     * @param  tableName    the table name to write to
-     * @param  files        list of the files containing the records to ingest
-     * @param  platformSpec This parameter allows you to configure details of the EMR cluster that is created
-     *                      to run the bulk import job. This should be a map, containing parameters specifying details
-     *                      of the cluster.
-     * @return              the number of files
+     * @param tableName    the table name to write to
+     * @param files        list of the files containing the records to ingest
+     * @param platformSpec This parameter allows you to configure details of the EMR cluster that is created
+     *                     to run the bulk import job. This should be a map, containing parameters specifying details
+     *                     of the cluster.
      */
-    public int bulkImportParquetFilesFromS3(String tableName, List<String> files, Map<String, String> platformSpec) {
-        return bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files, platformSpec);
+    public void bulkImportParquetFilesFromS3(String tableName, List<String> files, Map<String, String> platformSpec) {
+        bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files, platformSpec);
     }
 
     /**
      * Calls import of parquetFiles and generates jobId and platform spec as not provided.
      *
-     * @param  tableName the table name to write to
-     * @param  files     list of the files containing the records to ingest
-     * @return           the number of files
+     * @param tableName the table name to write to
+     * @param files     list of the files containing the records to ingest
      */
-    public int bulkImportParquetFilesFromS3(String tableName, List<String> files) {
-        return bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files,
+    public void bulkImportParquetFilesFromS3(String tableName, List<String> files) {
+        bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files,
                 ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
     }
 
     /**
      * Calls import of parquetFiles and generates jobId and platform spec as not provided.
      *
-     * @param  tableName the table name to write to
-     * @param  jobId     the id of the bulk import job
-     * @param  files     list of the files containing the records to ingest
-     * @return           the number of files
+     * @param tableName the table name to write to
+     * @param jobId     the id of the bulk import job
+     * @param files     list of the files containing the records to ingest
      */
-    public int bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files) {
-        return bulkImportParquetFilesFromS3(tableName, jobId, files,
+    public void bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files) {
+        bulkImportParquetFilesFromS3(tableName, jobId, files,
                 ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
     }
 
@@ -314,7 +303,6 @@ public class SleeperClient {
                 .id(jobId)
                 .files(files)
                 .build());
-
     }
 
     public static class Builder {

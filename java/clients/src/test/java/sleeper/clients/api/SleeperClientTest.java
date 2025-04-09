@@ -144,7 +144,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
         // When
-        String output = sleeperClient.ingestParquetFilesFromS3(tableName, jobId, fileList);
+        sleeperClient.ingestParquetFilesFromS3(tableName, jobId, fileList);
 
         // Then
         assertThat(ingestQueue)
@@ -153,7 +153,6 @@ class SleeperClientTest {
                         .id(jobId)
                         .files(fileList)
                         .build());
-        assertThat(output).isEqualTo(jobId);
     }
 
     @Test
@@ -163,7 +162,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
         Map<String, String> platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
 
-        int fileCount = sleeperClient.bulkImportParquetFilesFromS3(tableName, jobId, fileList, platformSpec);
+        sleeperClient.bulkImportParquetFilesFromS3(tableName, jobId, fileList, platformSpec);
 
         assertThat(jobsInBucket).containsExactly(BulkImportJob.builder()
                 .id(jobId)
@@ -171,7 +170,6 @@ class SleeperClientTest {
                 .tableName(tableName)
                 .platformSpec(platformSpec)
                 .files(fileList).build());
-        assertThat(fileCount).isEqualTo(fileList.size());
     }
 
     @Disabled //Initial framework for IngestBatcher
