@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.ingest.SleeperClientIngest;
+import sleeper.clients.util.SleeperClientImport;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
