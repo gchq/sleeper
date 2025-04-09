@@ -258,10 +258,6 @@ public class SleeperClient {
      *
      */
     public int bulkImportParquetFilesFromS3(String tableName, String jobId, List<String> files, Map<String, String> platformSpec) {
-        if (platformSpec == null || platformSpec.isEmpty()) {
-            platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
-        }
-
         sleeperClientImport.bulkImportFilesFromS3(BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
@@ -283,6 +279,31 @@ public class SleeperClient {
      */
     public int bulkImportParquetFilesFromS3(String tableName, List<String> files, Map<String, String> platformSpec) {
         return bulkImportParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files, platformSpec);
+    }
+
+    /**
+     * Calls import of parquetFiles and generates jobId and platform spec as not provided.
+     *
+     * @param  tableName the table name to write to
+     * @param  files     list of the files containing the records to ingest
+     * @return           the number of files
+     */
+    public int bulkImportParquetFilesFromS3(String table, List<String> files) {
+        return bulkImportParquetFilesFromS3(table, UUID.randomUUID().toString(), files,
+                ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
+    }
+
+    /**
+     * Calls import of parquetFiles and generates jobId and platform spec as not provided.
+     *
+     * @param  tableName the table name to write to
+     * @param  jobId     the id of the bulk import job
+     * @param  files     list of the files containing the records to ingest
+     * @return           the number of files
+     */
+    public int bulkImportParquetFilesFromS3(String table, String jobId, List<String> files) {
+        return bulkImportParquetFilesFromS3(table, jobId, files,
+                ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"));
     }
 
     public static class Builder {
