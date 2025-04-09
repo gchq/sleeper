@@ -22,8 +22,8 @@ use futures::stream::BoxStream;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    path::Path, GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta,
-    ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart,
+    GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
+    PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
 };
 use std::sync::{Arc, Mutex};
 
@@ -472,7 +472,10 @@ mod tests {
                 "TEST GET request on test_file byte range 1 to 5 = 4 bytes"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "LoggingObjectStore \"TEST\" made 1 GET requests and requested a total of 4 bytes (range bounded)");
+            assert_eq!(
+                captured_logs[2].body,
+                "LoggingObjectStore \"TEST\" made 1 GET requests and requested a total of 4 bytes (range bounded)"
+            );
             assert_eq!(captured_logs[2].level, Level::Info);
         });
 
