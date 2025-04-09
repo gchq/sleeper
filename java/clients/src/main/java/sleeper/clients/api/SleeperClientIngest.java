@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.cli;
+package sleeper.clients.api;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
-import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.core.job.BulkImportJobSerDe;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
 
 @FunctionalInterface
-public interface SleeperClientImport {
-    void importFilesFromS3(BulkImportJob job);
+public interface SleeperClientIngest {
+    void sendFilesToIngest(IngestJob job);
 
-    static SleeperClientImport importParquetFilesFromS3(String queueUrl, AmazonSQS sqsClient) {
+    static SleeperClientIngest ingestParquetFilesFromS3(String queueUrl, AmazonSQS sqsClient) {
         return (job) -> {
-            sqsClient.sendMessage(queueUrl, new BulkImportJobSerDe().toJson((job)));
+            sqsClient.sendMessage(queueUrl, new IngestJobSerDe().toJson((job)));
         };
     }
 }
