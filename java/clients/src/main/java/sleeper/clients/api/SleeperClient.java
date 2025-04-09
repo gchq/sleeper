@@ -19,13 +19,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.common.collect.ImmutableMap;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -42,14 +41,10 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -98,6 +93,7 @@ public class SleeperClient {
         return createForInstanceId(
                 buildAwsV1Client(AmazonS3ClientBuilder.standard()),
                 buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()),
+                AmazonSQSClientBuilder.defaultClient(),
                 HadoopConfigurationProvider.getConfigurationForClient(),
                 instanceId);
     }
@@ -112,7 +108,7 @@ public class SleeperClient {
      * @return              the client
      */
     public static SleeperClient createForInstanceId(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId, ) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
@@ -125,6 +121,8 @@ public class SleeperClient {
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordRetrieverProvider(
                         LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
+                .sleeperClientIngest(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties.get(INGEST_JOB_QUEUE_URL), sqsClient))
+                .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(instanceId, sqsClient))
                 .build();
     }
 
