@@ -24,7 +24,7 @@ import sleeper.core.schema.Schema;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.UNIT_TEST_PARAMETERS;
 
 public class SystemTestParametersTest {
@@ -33,7 +33,7 @@ public class SystemTestParametersTest {
     void shouldCreateValidTableProperties() {
         // Given
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        Schema schema = schemaWithKey("key");
+        Schema schema = createSchemaWithKey("key");
 
         // When
         TableProperties tableProperties = UNIT_TEST_PARAMETERS.createTableProperties(instanceProperties, schema);

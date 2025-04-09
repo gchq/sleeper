@@ -57,7 +57,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
@@ -65,7 +65,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
     public static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutorWiremockIT.class);
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
 
     @BeforeEach

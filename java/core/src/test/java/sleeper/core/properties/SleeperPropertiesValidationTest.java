@@ -43,7 +43,7 @@ import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SleeperPropertiesValidationTest {
     @DisplayName("Trigger validation")
@@ -57,7 +57,7 @@ public class SleeperPropertiesValidationTest {
         }
 
         private TableProperties invalidTableProperties(InstanceProperties instanceProperties) {
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
             return tableProperties;
         }
@@ -145,7 +145,7 @@ public class SleeperPropertiesValidationTest {
         void shouldFailValidationIfCompressionCodecIsInvalid() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
             // When / Then
             assertThatThrownBy(tableProperties::validate)
@@ -156,7 +156,7 @@ public class SleeperPropertiesValidationTest {
         void shouldFailValidationIfTableNameIsAbsent() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
             tableProperties.unset(TABLE_NAME);
             // When / Then
             assertThatThrownBy(tableProperties::validate)
@@ -188,7 +188,7 @@ public class SleeperPropertiesValidationTest {
         void shouldFailValidationWithTwoInvalidTableProperties() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
             tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, -100);
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
 

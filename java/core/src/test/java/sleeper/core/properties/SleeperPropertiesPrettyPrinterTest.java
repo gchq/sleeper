@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -328,7 +328,7 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldFilterTablePropertiesByGroup() {
             // When
-            TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), createSchemaWithKey("key"));
             String output = printTablePropertiesByGroup(tableProperties, TablePropertyGroup.METADATA);
 
             // Then

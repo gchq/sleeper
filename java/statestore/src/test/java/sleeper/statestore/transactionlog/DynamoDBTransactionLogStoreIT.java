@@ -52,7 +52,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
@@ -62,7 +62,7 @@ import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
 
 public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestBase {
 
-    private final Schema schema = schemaWithKey("key", new StringType());
+    private final Schema schema = createSchemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final TransactionLogStore fileLogStore = fileLogStore();
     private final TransactionLogStore partitionLogStore = partitionLogStore();

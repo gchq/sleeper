@@ -45,12 +45,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class S3TransactionBodyStoreIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     String tableId = tableProperties.get(TABLE_ID);
 
     @BeforeEach

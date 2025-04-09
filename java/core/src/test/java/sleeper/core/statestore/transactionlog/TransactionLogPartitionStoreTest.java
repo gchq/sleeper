@@ -33,7 +33,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBas
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStateStoreTestBase {
@@ -45,7 +45,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldInitialiseRootPartitionWithIntKey() {
             // Given
-            Schema schema = schemaWithKey("key", new IntType());
+            Schema schema = createSchemaWithKey("key", new IntType());
 
             // When
             initialiseWithSchema(schema);
@@ -58,7 +58,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldInitialiseRootPartitionWithLongKey() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
 
             // When
             initialiseWithSchema(schema);
@@ -71,7 +71,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldInitialiseRootPartitionWithStringKey() {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
 
             // When
             initialiseWithSchema(schema);
@@ -84,7 +84,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldInitialiseRootPartitionWithByteArrayKey() {
             // Given
-            Schema schema = schemaWithKey("key", new ByteArrayType());
+            Schema schema = createSchemaWithKey("key", new ByteArrayType());
 
             // When
             initialiseWithSchema(schema);
@@ -97,7 +97,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldStorePartitionsSplitOnLongKey() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L);
@@ -112,7 +112,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldStorePartitionsSplitOnStringKey() {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "A");
@@ -127,7 +127,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldStorePartitionsSplitOnByteArrayKey() {
             // Given
-            Schema schema = schemaWithKey("key", new ByteArrayType());
+            Schema schema = createSchemaWithKey("key", new ByteArrayType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", new byte[]{1, 2, 3, 4});
@@ -163,7 +163,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldStoreSeveralLayersOfPartitions() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L)
@@ -185,7 +185,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         void shouldReinitialisePartitionsWhenNoFilesArePresent() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "before1", "before2", 0L);
@@ -205,7 +205,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         void shouldNotReinitialisePartitionsWhenAFileIsPresent() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "before1", "before2", 0L);
@@ -231,7 +231,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldSplitAPartition() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -252,7 +252,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldSplitAChildToTwoNestedAndGetLeafPartitions() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
 
             // When
@@ -275,7 +275,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldFailSplittingAPartitionWhichHasAlreadyBeenSplit() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -297,7 +297,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldFailSplittingAPartitionWithWrongChildren() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -316,7 +316,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldFailSplittingAPartitionWithChildrenOfWrongParent() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
             PartitionTree parentTree = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -339,7 +339,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         public void shouldFailSplittingAPartitionWhenNewPartitionIsNotALeaf() {
             // Given
-            Schema schema = schemaWithKey("key", new LongType());
+            Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -362,7 +362,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         void shouldDeleteSinglePartitionOnClear() {
             // Given
-            Schema schema = schemaWithKey("key", new IntType());
+            Schema schema = createSchemaWithKey("key", new IntType());
             initialiseWithSchema(schema);
 
             // When
@@ -376,7 +376,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         void shouldDeletePartitionTreeOnClear() {
             // Given
-            Schema schema = schemaWithKey("key", new IntType());
+            Schema schema = createSchemaWithKey("key", new IntType());
             initialiseWithPartitions(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123));

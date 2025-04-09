@@ -37,14 +37,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 
-    private final Schema schema = schemaWithKey("key", new StringType());
+    private final Schema schema = createSchemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private final InMemoryTransactionLogSnapshots fileSnapshots = transactionLogs.getFilesSnapshots();
     private final InMemoryTransactionLogSnapshots partitionSnapshots = transactionLogs.getPartitionsSnapshots();
