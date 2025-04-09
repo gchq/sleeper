@@ -53,9 +53,6 @@ tokio = { workspace = true, features = ["full"] }
 tokio-test = { workspace = true }
 url = { workspace = true }
 
-# Transitive dependency
-ring = { workspace = true }
-
 [dev-dependencies]
 tempfile = { workspace = true }
 object_store = { workspace = true, features = ["integration"] }
