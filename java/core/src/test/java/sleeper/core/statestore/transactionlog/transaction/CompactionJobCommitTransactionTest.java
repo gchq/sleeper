@@ -39,7 +39,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
@@ -54,9 +54,9 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
 
     @BeforeEach
     void setUp() {
-        initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
+        initialiseWithPartitions(new PartitionsBuilder(createSchemaWithKey("key", new LongType())).singlePartition("root"));
         committerStore = (TransactionLogStateStore) super.store;
-        followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
+        followerStore = stateStoreBuilder(createSchemaWithKey("key", new LongType())).build();
     }
 
     @Test

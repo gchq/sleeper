@@ -32,7 +32,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
@@ -88,7 +88,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobTrackerTestBase {
         IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant startTime = Instant.parse("2022-09-22T12:00:15Z");
         Instant writtenTime = Instant.parse("2022-09-22T12:00:14Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree());
         List<AllReferencesToAFile> outputFiles = filesWithReferences(List.of(
                 fileFactory.rootFile("file1.parquet", 123),
                 fileFactory.rootFile("file2.parquet", 456)));

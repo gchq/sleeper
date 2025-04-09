@@ -77,7 +77,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
@@ -86,7 +86,7 @@ class EmrPlatformExecutorTest {
     private final EmrClient emr = mock(EmrClient.class);
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable().initialiseTable(tableProperties);
     private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();

@@ -33,10 +33,10 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class CompactionJobFactoryTest {
-    private static final Schema DEFAULT_SCHEMA = schemaWithKey("key");
+    private static final Schema DEFAULT_SCHEMA = createSchemaWithKey("key");
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
     private final PartitionTree partitionTree = new PartitionsBuilder(DEFAULT_SCHEMA)

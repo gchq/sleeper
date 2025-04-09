@@ -47,7 +47,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -67,7 +67,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStoreOneTableTestBase {
 
-    private final Schema schema = schemaWithKey("key", new LongType());
+    private final Schema schema = createSchemaWithKey("key", new LongType());
 
     @BeforeEach
     void setUp() throws Exception {

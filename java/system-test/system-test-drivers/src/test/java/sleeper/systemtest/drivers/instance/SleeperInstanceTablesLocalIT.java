@@ -44,7 +44,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 
 @LocalStackDslTest
@@ -63,8 +63,8 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldCreateTwoTablesWithDifferentPartitionsAndSchemas(SleeperSystemTest sleeper) {
             // Given
-            Schema schemaA = schemaWithKey("keyA", new StringType());
-            Schema schemaB = schemaWithKey("keyA", new LongType());
+            Schema schemaA = createSchemaWithKey("keyA", new StringType());
+            Schema schemaB = createSchemaWithKey("keyA", new LongType());
             PartitionTree partitionsA = new PartitionsBuilder(schemaA)
                     .rootFirst("A-root")
                     .splitToNewChildren("A-root", "AL", "AR", "aaa")
@@ -90,7 +90,7 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldSetPartitionsForMultipleTables(SleeperSystemTest sleeper) {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             sleeper.tables().create(List.of("A", "B"), schema);
             PartitionTree partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -118,7 +118,7 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldQueryRecordsForNamedTables(SleeperSystemTest sleeper) {
             // Given
-            sleeper.tables().create(List.of("A", "B"), schemaWithKey("key", new LongType()));
+            sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
             sleeper.table("A").ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2));
             sleeper.table("B").ingest().direct(tempDir).numberedRecords(LongStream.of(3, 4));
 
@@ -136,7 +136,7 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldQueryNoRecordsForNamedTables(SleeperSystemTest sleeper) {
             // Given
-            sleeper.tables().create(List.of("A", "B"), schemaWithKey("key", new LongType()));
+            sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
 
             // When / Then
             Map<String, List<Record>> expectedRecords = Map.of(
@@ -149,7 +149,7 @@ public class SleeperInstanceTablesLocalIT {
         void shouldNotIncludeTablesNotManagedByDsl(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestContext context) {
             // Given
             InstanceProperties instanceProperties = context.instance().getInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
 
             // When
             drivers.tables(context.parameters()).addTable(instanceProperties, tableProperties);
@@ -163,7 +163,7 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldIncludeUnnamedTables(SleeperSystemTest sleeper) {
             // When
-            sleeper.tables().createMany(2, schemaWithKey("key"));
+            sleeper.tables().createMany(2, createSchemaWithKey("key"));
 
             // Then
             assertThat(sleeper.tables().list()).hasSize(2);

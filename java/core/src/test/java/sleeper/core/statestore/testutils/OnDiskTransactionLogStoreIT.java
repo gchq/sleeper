@@ -40,14 +40,14 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class OnDiskTransactionLogStoreIT {
     @TempDir
     Path tempDir;
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
     TransactionLogStore store;

@@ -66,7 +66,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryWebSocketCommandLineClientTest {
     private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
@@ -74,7 +74,7 @@ public class QueryWebSocketCommandLineClientTest {
     private static final Instant START_TIME = Instant.parse("2024-04-03T14:00:00Z");
     private static final Instant FINISH_TIME = Instant.parse("2024-04-03T14:00:01Z");
     private final InstanceProperties instanceProperties = createInstance();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final ToStringConsoleOutput out = new ToStringConsoleOutput();
