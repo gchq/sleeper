@@ -23,13 +23,13 @@ import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
@@ -50,30 +50,29 @@ public class SleeperClientImportIT extends LocalStackTestBase {
 
     @Test
     void shouldImportParquetFilesFromS3UsingEMR() {
-        executeTest("NonPersistentEMR");
+        BulkImportJob job = sendJob(BulkImportPlatform.NonPersistentEMR);
+        assertThat(recieveJobs(BULK_IMPORT_EMR_JOB_QUEUE_URL)).containsExactly(job);
     }
 
     @Test
     void shouldImportParquetFilesFromS3UsingEKS() {
-        executeTest("EKS");
+        BulkImportJob job = sendJob(BulkImportPlatform.EKS);
+        assertThat(recieveJobs(BULK_IMPORT_EKS_JOB_QUEUE_URL)).containsExactly(job);
     }
 
     @Test
     void shouldImportParquetFilesFromS3UsingPersistentEMR() {
-        executeTest("PersistentEMR");
+        BulkImportJob job = sendJob(BulkImportPlatform.PersistentEMR);
+        assertThat(recieveJobs(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL)).containsExactly(job);
     }
 
     @Test
     void shouldImportParquetFilesFromS3UsingEMRServerless() {
-        executeTest("EMRServerless");
+        BulkImportJob job = sendJob(BulkImportPlatform.EMRServerless);
+        assertThat(recieveJobs(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL)).containsExactly(job);
     }
 
-    @Test
-    void shouldFailWhenPlatformInvalid() {
-        assertThatThrownBy(() -> executeTest("INVALID PLATFORM")).isInstanceOf(RuntimeException.class);
-    }
-
-    private void executeTest(String platform) {
+    private BulkImportJob sendJob(BulkImportPlatform platform) {
         BulkImportJob job = BulkImportJob.builder()
                 .tableName("Import-table")
                 .id(UUID.randomUUID().toString())
@@ -81,11 +80,11 @@ public class SleeperClientImportIT extends LocalStackTestBase {
                 .build();
         SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient)
                 .bulkImportFilesFromS3(platform, job);
-        assertThat(recieveImportJobs(platform)).containsExactly(job);
+        return job;
     }
 
-    private List<BulkImportJob> recieveImportJobs(String platform) {
-        return sqsClient.receiveMessage(BulkImportPlatform.fromString(platform).getBulkImportQueueUrl(instanceProperties))
+    private List<BulkImportJob> recieveJobs(InstanceProperty queueUrlProperty) {
+        return sqsClient.receiveMessage(instanceProperties.get(queueUrlProperty))
                 .getMessages().stream()
                 .map(Message::getBody)
                 .map(new BulkImportJobSerDe()::fromJson)
