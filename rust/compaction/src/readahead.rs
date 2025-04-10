@@ -60,14 +60,14 @@ mod stream;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use futures::stream::{empty, BoxStream};
+use futures::stream::{BoxStream, empty};
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    path::Path, Attributes, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
-    MultipartUpload, ObjectMeta, ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult,
-    Result,
+    Attributes, GetOptions, GetRange, GetResult, GetResultPayload, ListResult, MultipartUpload,
+    ObjectMeta, ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result,
+    path::Path,
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -576,7 +576,7 @@ mod tests {
     use crate::store::LoggingObjectStore;
 
     use super::*;
-    use futures::{stream, StreamExt};
+    use futures::{StreamExt, stream};
     use object_store::{integration::*, local::LocalFileSystem, memory::InMemory};
     use tempfile::TempDir;
 
@@ -1836,13 +1836,15 @@ mod tests {
 
         // When
         // Check cache entry empty
-        assert!(cache_ptr
-            .lock()
-            .unwrap()
-            .get(&"test".into())
-            .unwrap()
-            .streams
-            .is_empty());
+        assert!(
+            cache_ptr
+                .lock()
+                .unwrap()
+                .get(&"test".into())
+                .unwrap()
+                .streams
+                .is_empty()
+        );
         inserter.cache_used_stream(&mut ps);
 
         // Then

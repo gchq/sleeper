@@ -15,8 +15,50 @@
 members = ["compactor", "compaction", "rust_sketch"]
 resolver = "2"
 
+[workspace.package]
+version = "0.30.0-SNAPSHOT"
+edition = "2024"
+rust-version = "1.86"
+publish = false
+license = "Apache-2.0"
+repository = "https://github.com/gchq/sleeper"
+authors = ["GCHQ"]
+
+[workspace.dependencies]
+arrow = { version = "54.2.1" } # Batch of reading from Parquet files
+async-trait = { version = "0.1.88" }
+aws-config = { version = "1.6.1" } # Credential loading
+aws-credential-types = { version = "1.2.2" } # Credential provider types
+aws-types = { version = "1.3.5" } # for Region
+bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
+chrono = { version = "0.4.40" } # Log helper
+clap = { version = "4.5.35" } # Cmd line args processing
+color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
+cxx = { version = "1.0.156" } # Exception handling for Rust
+cxx-build = { version = "1.0.156" }
+datafusion = { version = "46.0.1" }
+env_logger = { version = "0.11.8" } # Standard logging to stderr
+futures = { version = "0.3.31" } # Async processing
+git2 = { version = "0.20.1" } # Interact with version control
+human-panic = { version = "2.0.2" } # Readable panic messages
+libc = { version = "0.2.171" } # FFI type support
+log = { version = "0.4.27" } # Standard logging framework
+num-format = { version = "0.4.4" } # Nicely formatted numbers
+object_store = { version = "0.11.2" } # Remote cloud storage access
+openssl = { version = "0.10.72" } # Use vendored feature to build from source for cross compilation
+owo-colors = { version = "4.2.0" } # Colourised output
+rand = { version = "0.9.0" }
+tempfile = { version = "3.19.1" } # Create temporary files
+test-log = { version = "0.2.17" }
+testing_logger = { version = "0.1.1" } # Assert on logger output in tests
+thiserror = { version = "2.0.12" } # Derivable error enums
+tokio = { version = "1.44.2", features = ["full"] } # Async runtime
+tokio-test = { version = "0.4.4" } # Doc tests
+url = { version = "2.5.4" } # URL processing for S3
+
 [profile.release]
 incremental = true
 lto = false
 overflow-checks = true
 debug = false
+strip = true

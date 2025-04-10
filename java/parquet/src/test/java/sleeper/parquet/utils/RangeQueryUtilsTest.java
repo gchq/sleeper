@@ -41,14 +41,14 @@ import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
 import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
 import static org.apache.parquet.filter2.predicate.FilterApi.longColumn;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class RangeQueryUtilsTest {
 
     @Test
     void shouldGivePredicateAcceptingAnyValueForLongRootPartition() {
         // Given
-        Schema schema = schemaWithKey("key", new LongType());
+        Schema schema = createSchemaWithKey("key", new LongType());
         Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
 
         // When
@@ -62,7 +62,7 @@ public class RangeQueryUtilsTest {
     @Test
     void shouldGivePredicateAcceptingAnyValueForStringRootPartition() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
 
         // When
@@ -76,7 +76,7 @@ public class RangeQueryUtilsTest {
     @Test
     void shouldGivePredicateAcceptingAnyValueForByteArrayRootPartition() {
         // Given
-        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         Partition partition = new PartitionsBuilder(schema).singlePartition("root").buildTree().getRootPartition();
 
         // When

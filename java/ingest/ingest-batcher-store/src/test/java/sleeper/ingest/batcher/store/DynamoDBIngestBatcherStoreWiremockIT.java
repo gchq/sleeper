@@ -48,14 +48,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.localstack.test.WiremockAwsV1ClientHelper.buildAwsV1Client;
 
 @WireMockTest
 public class DynamoDBIngestBatcherStoreWiremockIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties table = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties table = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     private final String tableId = table.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(table);
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();

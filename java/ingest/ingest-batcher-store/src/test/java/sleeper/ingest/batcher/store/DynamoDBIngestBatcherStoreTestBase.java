@@ -30,12 +30,12 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DynamoDBIngestBatcherStoreTestBase extends LocalStackTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final TableProperties table1 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    protected final TableProperties table2 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    protected final TableProperties table1 = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    protected final TableProperties table2 = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     protected final String tableId = table1.get(TABLE_ID);
     protected final String tableId1 = table1.get(TABLE_ID);
     protected final String tableId2 = table2.get(TABLE_ID);

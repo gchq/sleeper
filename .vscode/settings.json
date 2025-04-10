@@ -89,7 +89,7 @@
     "files.insertFinalNewline": true
   },
   "java.debug.settings.onBuildFailureProceed": true,
-  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.configuration.updateBuildConfiguration": "automatic",
   "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
   "java.codeGeneration.hashCodeEquals.useInstanceof": true,
   "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
