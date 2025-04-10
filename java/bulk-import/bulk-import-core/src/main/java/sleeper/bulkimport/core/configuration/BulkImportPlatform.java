@@ -18,6 +18,7 @@ package sleeper.bulkimport.core.configuration;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
@@ -26,21 +27,19 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 
 public enum BulkImportPlatform {
 
-    EMRServerless, NonPersistentEMR, PersistentEMR, EKS;
+    EMRServerless(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL),
+    NonPersistentEMR(BULK_IMPORT_EMR_JOB_QUEUE_URL),
+    PersistentEMR(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL),
+    EKS(BULK_IMPORT_EKS_JOB_QUEUE_URL);
+
+    private final InstanceProperty queueUrlProperty;
+
+    BulkImportPlatform(InstanceProperty queueUrlProperty) {
+        this.queueUrlProperty = queueUrlProperty;
+    }
 
     public String getBulkImportQueueUrl(InstanceProperties instanceProperties) {
-        switch (this) {
-            case EMRServerless:
-                return instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
-            case NonPersistentEMR:
-                return instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL);
-            case PersistentEMR:
-                return instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
-            case EKS:
-                return instanceProperties.get(BULK_IMPORT_EKS_JOB_QUEUE_URL);
-            default:
-                throw new RuntimeException("Unexpected platform");
-        }
+        return instanceProperties.get(queueUrlProperty);
     }
 
     public static BulkImportPlatform fromString(String value) {
