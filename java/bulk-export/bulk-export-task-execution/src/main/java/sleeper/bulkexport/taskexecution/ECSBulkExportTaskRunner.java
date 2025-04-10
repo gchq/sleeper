@@ -49,7 +49,6 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.List;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -151,7 +150,7 @@ public class ECSBulkExportTaskRunner {
                 dynamoDBClient, confForStateStore);
 
         String exportBucket = instanceProperties.get(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET);
-        String outputFile = String.format("s3://%s/%s/%s.parquet", exportBucket,
+        String outputFile = String.format("s3a://%s/%s/%s.parquet", exportBucket,
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getSubExportId());
         LOGGER.info("Output file: {}", outputFile);
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
@@ -172,8 +171,9 @@ public class ECSBulkExportTaskRunner {
         LOGGER.info("Compacting partition: {}", partition);
         LOGGER.info("Compaction runner: {}", compactor);
         LOGGER.info("Compaction: {}", job);
-        //RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
-
-        LOGGER.info("Compaction runner language: {}", compactor.implementationLanguage());
+        RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+        LOGGER.info("Compaction completed: {} records read, {} records written", recordsProcessed.getRecordsRead(),
+                recordsProcessed.getRecordsWritten());
+        LOGGER.info("Compaction job completed successfully");
     }
 }
