@@ -19,6 +19,7 @@ import com.amazonaws.services.sqs.model.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -49,7 +50,7 @@ public class SleeperClientImportIT extends LocalStackTestBase {
 
     @Test
     void shouldImportParquetFilesFromS3UsingEMR() {
-        executeTest("EMR");
+        executeTest("NonPersistentEMR");
     }
 
     @Test
@@ -84,7 +85,7 @@ public class SleeperClientImportIT extends LocalStackTestBase {
     }
 
     private List<BulkImportJob> recieveImportJobs(String platform) {
-        return sqsClient.receiveMessage(SleeperClientImport.determinePlatform(instanceProperties, platform))
+        return sqsClient.receiveMessage(BulkImportPlatform.fromString(platform).getBulkImportQueueUrl(instanceProperties))
                 .getMessages().stream()
                 .map(Message::getBody)
                 .map(new BulkImportJobSerDe()::fromJson)

@@ -17,6 +17,7 @@ package sleeper.clients.api;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -28,11 +29,15 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 
 @FunctionalInterface
 public interface SleeperClientImport {
-    void bulkImportFilesFromS3(String platform, BulkImportJob job);
+    default void bulkImportFilesFromS3(String platform, BulkImportJob job) {
+        bulkImportFilesFromS3(BulkImportPlatform.fromString(platform), job);
+    }
+
+    void bulkImportFilesFromS3(BulkImportPlatform platform, BulkImportJob job);
 
     static SleeperClientImport bulkImportParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return (platform, job) -> {
-            sqsClient.sendMessage(determinePlatform(instanceProperties, platform), new BulkImportJobSerDe().toJson((job)));
+            sqsClient.sendMessage(platform.getBulkImportQueueUrl(instanceProperties), new BulkImportJobSerDe().toJson((job)));
         };
     }
 

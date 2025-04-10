@@ -160,7 +160,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
         Map<String, String> platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
 
-        sleeperClient.bulkImportParquetFilesFromS3(tableName, "EMR", jobId, fileList, platformSpec);
+        sleeperClient.bulkImportParquetFilesFromS3(tableName, "NonPersistentEMR", jobId, fileList, platformSpec);
 
         assertThat(bulkImportQueue).containsExactly(BulkImportJob.builder()
                 .id(jobId)
