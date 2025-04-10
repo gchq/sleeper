@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
-import com.amazonaws.SdkClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +81,7 @@ public class CompactionJobDispatcher {
         try {
             if (batchIsReadyToBeSent(tableProperties, batch)) {
                 send(batch);
-                delete(request.getBatchKey(), batch.size());
+                delete(request, batch.size());
             } else {
                 returnToQueueWithDelay(tableProperties, request);
             }
@@ -123,11 +122,13 @@ public class CompactionJobDispatcher {
                 delaySeconds, request.getBatchKey());
     }
 
-    private void delete(String batchKey, int batchSize) {
+    private void delete(CompactionJobDispatchRequest request, int batchSize) {
         LOGGER.info("Deleting batch after sending {} jobs", batchSize);
         try {
-            deleteBatch.delete(instanceProperties.get(DATA_BUCKET), batchKey);
-        } catch (SdkClientException e) {
+            deleteBatch.delete(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
+        } catch (RuntimeException e) {
+            LOGGER.error("Batch send to dead letter queue", e);
+            sendDeadLetter.send(request);
             LOGGER.error("Batch not deleted", e);
         }
     }
