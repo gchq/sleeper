@@ -131,10 +131,18 @@ public class ECSBulkExportTaskRunner {
                 runCompaction(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient);
                 messageHandle.deleteFromQueue();
                 LOGGER.info("Deleted message from queue");
-            } catch (Exception e) {
-                LOGGER.error("Error processing compaction job", e);
+            } catch (IOException e) {
+                LOGGER.error("I/O error while processing compaction job", e);
                 messageHandle.returnToQueue();
-                LOGGER.info("Returned message to queue");
+                LOGGER.info("Returned message to queue due to I/O error");
+            } catch (ObjectFactoryException | IteratorCreationException e) {
+                LOGGER.error("Error creating objects or iterators for compaction job", e);
+                messageHandle.returnToQueue();
+                LOGGER.info("Returned message to queue due to object/iterator creation error");
+            } catch (Exception e) {
+                LOGGER.error("Unexpected error processing compaction job", e);
+                messageHandle.returnToQueue();
+                LOGGER.info("Returned message to queue due to unexpected error");
             }
         });
     }
