@@ -48,6 +48,7 @@ import sleeper.query.core.recordretrieval.QueryExecutor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ class SleeperClientTest {
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
-    Queue<BulkImportJob> bulkImportQueue = new LinkedList<>();
+    Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -164,12 +165,13 @@ class SleeperClientTest {
 
         // Then
         assertThat(jobId).isNotBlank();
-        assertThat(bulkImportQueue).containsExactly(
-                BulkImportJob.builder()
-                        .id(jobId)
-                        .tableName(tableName)
-                        .files(fileList)
-                        .build());
+        assertThat(bulkImportQueues).isEqualTo(
+                Map.of(platform, List.of(
+                        BulkImportJob.builder()
+                                .id(jobId)
+                                .tableName(tableName)
+                                .files(fileList)
+                                .build())));
     }
 
     private TableProperties createTableProperties(String tableName) {
@@ -202,10 +204,12 @@ class SleeperClientTest {
     }
 
     private SleeperClientIngest ingestSender() {
-        return (job) -> ingestQueue.add(job);
+        return job -> ingestQueue.add(job);
     }
 
     private SleeperClientBulkImport bulkImportSender() {
-        return (queue, job) -> bulkImportQueue.add(job);
+        return (platform, job) -> bulkImportQueues
+                .computeIfAbsent(platform, p -> new LinkedList<>())
+                .add(job);
     }
 }
