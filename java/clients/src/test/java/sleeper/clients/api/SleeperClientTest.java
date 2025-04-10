@@ -138,15 +138,15 @@ class SleeperClientTest {
     @Test
     void shouldIngestParquetFilesFromS3() {
         String tableName = "ingest-table";
-        String jobId = UUID.randomUUID().toString();
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
         // When
-        sleeperClient.ingestParquetFilesFromS3(tableName, jobId, fileList);
+        String jobId = sleeperClient.ingestParquetFilesFromS3(tableName, fileList);
 
         // Then
-        assertThat(ingestQueue)
-                .containsExactly(IngestJob.builder()
+        assertThat(jobId).isNotBlank();
+        assertThat(ingestQueue).containsExactly(
+                IngestJob.builder()
                         .tableName(tableName)
                         .id(jobId)
                         .files(fileList)

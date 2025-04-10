@@ -228,13 +228,37 @@ public class SleeperClient {
     }
 
     /**
-     * Calls ingest of parquetFiles and generates jobId as not provided.
+     * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
+     * containing a list of files. These files must be in S3. They can be either files or directories. If they are
+     * directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
      *
-     * @param tableName table name to write to
-     * @param files     list of files containing records to ingest
+     * @param  tableName the name of the Sleeper table to write to
+     * @param  files     list of files containing records to ingest
+     * @return           the ID of the job for tracking
      */
-    public void ingestParquetFilesFromS3(String tableName, List<String> files) {
-        ingestParquetFilesFromS3(tableName, UUID.randomUUID().toString(), files);
+    public String ingestParquetFilesFromS3(String tableName, List<String> files) {
+        String jobId = UUID.randomUUID().toString();
+        ingestParquetFilesFromS3(IngestJob.builder()
+                .tableName(tableName)
+                .id(jobId)
+                .files(files)
+                .build());
+        return jobId;
+    }
+
+    /**
+     * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
+     * containing a list of files. These files must be in S3. They can be either files or directories. If they are
+     * directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param job the job listing files in S3 to ingest
+     */
+    public void ingestParquetFilesFromS3(IngestJob job) {
+        sleeperClientIngest.sendFilesToIngest(job);
     }
 
     /**
