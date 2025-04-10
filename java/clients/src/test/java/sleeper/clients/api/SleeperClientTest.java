@@ -206,7 +206,7 @@ class SleeperClientTest {
         return (job) -> ingestQueue.add(job);
     }
 
-    private SleeperClientImport bulkImportSender() {
+    private SleeperClientBulkImport bulkImportSender() {
         return (queue, job) -> bulkImportQueue.add(job);
     }
 }

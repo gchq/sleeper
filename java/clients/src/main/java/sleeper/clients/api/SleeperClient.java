@@ -72,7 +72,7 @@ public class SleeperClient {
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest ingestJobSender;
-    private final SleeperClientImport bulkImportJobSender;
+    private final SleeperClientBulkImport bulkImportJobSender;
 
     private SleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -117,7 +117,7 @@ public class SleeperClient {
                 .recordRetrieverProvider(
                         LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
                 .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
-                .bulkImportJobSender(SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
+                .bulkImportJobSender(SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
                 .build();
     }
 
@@ -300,7 +300,7 @@ public class SleeperClient {
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest ingestJobSender;
-        private SleeperClientImport bulkImportJobSender;
+        private SleeperClientBulkImport bulkImportJobSender;
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -396,7 +396,7 @@ public class SleeperClient {
          * @param  bulkImportJobSender the client
          * @return                     this builder for chaining
          */
-        public Builder bulkImportJobSender(SleeperClientImport bulkImportJobSender) {
+        public Builder bulkImportJobSender(SleeperClientBulkImport bulkImportJobSender) {
             this.bulkImportJobSender = bulkImportJobSender;
             return this;
         }
