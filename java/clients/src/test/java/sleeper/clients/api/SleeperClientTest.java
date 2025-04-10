@@ -56,7 +56,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -159,18 +158,18 @@ class SleeperClientTest {
         String tableName = "import-table";
         BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
-        Map<String, String> platformSpec = Map.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
 
         // When
-        String jobId = sleeperClient.bulkImportParquetFilesFromS3(tableName, platform, fileList, platformSpec);
+        String jobId = sleeperClient.bulkImportParquetFilesFromS3(tableName, platform, fileList);
 
         // Then
-        assertThat(bulkImportQueue).containsExactly(BulkImportJob.builder()
-                .id(jobId)
-                .tableId(tableName)
-                .tableName(tableName)
-                .platformSpec(platformSpec)
-                .files(fileList).build());
+        assertThat(jobId).isNotBlank();
+        assertThat(bulkImportQueue).containsExactly(
+                BulkImportJob.builder()
+                        .id(jobId)
+                        .tableName(tableName)
+                        .files(fileList)
+                        .build());
     }
 
     private TableProperties createTableProperties(String tableName) {
