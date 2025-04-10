@@ -54,7 +54,6 @@ import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 /**
  * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
@@ -125,7 +124,7 @@ public class SleeperClient {
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordRetrieverProvider(
                         LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
-                .sleeperClientIngest(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties.get(INGEST_JOB_QUEUE_URL), sqsClient))
+                .sleeperClientIngest(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
                 .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(sqsClient))
                 .build();
     }

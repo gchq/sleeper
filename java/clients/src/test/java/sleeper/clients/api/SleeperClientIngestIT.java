@@ -49,7 +49,7 @@ public class SleeperClientIngestIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties.get(INGEST_JOB_QUEUE_URL), sqsClient)
+        SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient)
                 .sendFilesToIngest(job);
         assertThat(recieveIngestJobs()).containsExactly(job);
     }

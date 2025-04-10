@@ -17,16 +17,19 @@ package sleeper.clients.api;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 @FunctionalInterface
 public interface SleeperClientIngest {
     void sendFilesToIngest(IngestJob job);
 
-    static SleeperClientIngest ingestParquetFilesFromS3(String queueUrl, AmazonSQS sqsClient) {
+    static SleeperClientIngest ingestParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return (job) -> {
-            sqsClient.sendMessage(queueUrl, new IngestJobSerDe().toJson((job)));
+            sqsClient.sendMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson((job)));
         };
     }
 }
