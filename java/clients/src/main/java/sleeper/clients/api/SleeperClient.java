@@ -73,7 +73,6 @@ public class SleeperClient {
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest sleeperClientIngest;
     private final SleeperClientImport sleeperClientImport;
-    private final SleeperClientIngestBatcher sleeperClientIngestBatcher;
 
     private SleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -85,7 +84,6 @@ public class SleeperClient {
         recordRetrieverProvider = builder.recordRetrieverProvider;
         sleeperClientIngest = builder.sleeperClientIngest;
         sleeperClientImport = builder.sleeperClientImport;
-        sleeperClientIngestBatcher = builder.sleeperClientIngestBatcher;
     }
 
     /**
@@ -267,15 +265,6 @@ public class SleeperClient {
                 .build());
     }
 
-    //Initial framework for IngestBatcher
-    public void sendFilesToIngestBatcher(String tableName, String jobId, List<String> files) {
-        sleeperClientIngestBatcher.sendFilesToIngestBatcher(IngestJob.builder()
-                .tableName(tableName)
-                .id(jobId)
-                .files(files)
-                .build());
-    }
-
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
@@ -286,7 +275,6 @@ public class SleeperClient {
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest sleeperClientIngest;
         private SleeperClientImport sleeperClientImport;
-        private SleeperClientIngestBatcher sleeperClientIngestBatcher;
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -384,17 +372,6 @@ public class SleeperClient {
          */
         public Builder sleeperClientImport(SleeperClientImport sleeperClientImport) {
             this.sleeperClientImport = sleeperClientImport;
-            return this;
-        }
-
-        /**
-         * Provides functionality to send ingest job.
-         *
-         * @param  sleeperClientIngestBatcher the ingest interface for client
-         * @return                            this builder for chaining
-         */
-        public Builder sleeperClientIngestBatcher(SleeperClientIngestBatcher sleeperClientIngestBatcher) {
-            this.sleeperClientIngestBatcher = sleeperClientIngestBatcher;
             return this;
         }
 
