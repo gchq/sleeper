@@ -81,7 +81,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         sqsClient.sendMessage(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL), messageBody);
 
         // Run the ECS bulk export task runner
-        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, null, null, instanceProperties, tablePropertiesProvider);
+        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoClient, instanceProperties, tablePropertiesProvider);
 
         // Then
         // Verify the queue is empty
