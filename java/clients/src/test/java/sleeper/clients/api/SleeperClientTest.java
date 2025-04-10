@@ -72,7 +72,7 @@ class SleeperClientTest {
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
-    Queue<BulkImportJob> jobsInBucket = new LinkedList<>();
+    Queue<BulkImportJob> bulkImportQueue = new LinkedList<>();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -80,8 +80,8 @@ class SleeperClientTest {
             .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
             .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
             .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
-            .sleeperClientIngest(clientIngest())
-            .sleeperClientImport(clientImport())
+            .ingestJobSender(ingestSender())
+            .bulkImportJobSender(bulkImportSender())
             .build();
 
     @Test
@@ -154,7 +154,7 @@ class SleeperClientTest {
     }
 
     @Test
-    void shouldImportParquetFilesFromS3() {
+    void shouldBulkImportParquetFilesFromS3() {
         String tableName = "import-table";
         String jobId = UUID.randomUUID().toString();
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
@@ -162,7 +162,7 @@ class SleeperClientTest {
 
         sleeperClient.bulkImportParquetFilesFromS3(tableName, "EMR", jobId, fileList, platformSpec);
 
-        assertThat(jobsInBucket).containsExactly(BulkImportJob.builder()
+        assertThat(bulkImportQueue).containsExactly(BulkImportJob.builder()
                 .id(jobId)
                 .tableId(tableName)
                 .tableName(tableName)
@@ -199,11 +199,11 @@ class SleeperClientTest {
         return new RangeFactory(schema);
     }
 
-    private SleeperClientIngest clientIngest() {
+    private SleeperClientIngest ingestSender() {
         return (job) -> ingestQueue.add(job);
     }
 
-    private SleeperClientImport clientImport() {
-        return (queue, job) -> jobsInBucket.add(job);
+    private SleeperClientImport bulkImportSender() {
+        return (queue, job) -> bulkImportQueue.add(job);
     }
 }

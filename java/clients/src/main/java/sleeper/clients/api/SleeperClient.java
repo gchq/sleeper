@@ -70,8 +70,8 @@ public class SleeperClient {
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
-    private final SleeperClientIngest sleeperClientIngest;
-    private final SleeperClientImport sleeperClientImport;
+    private final SleeperClientIngest ingestJobSender;
+    private final SleeperClientImport bulkImportJobSender;
 
     private SleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
@@ -81,8 +81,8 @@ public class SleeperClient {
         stateStoreProvider = builder.stateStoreProvider;
         objectFactory = builder.objectFactory;
         recordRetrieverProvider = builder.recordRetrieverProvider;
-        sleeperClientIngest = builder.sleeperClientIngest;
-        sleeperClientImport = builder.sleeperClientImport;
+        ingestJobSender = builder.ingestJobSender;
+        bulkImportJobSender = builder.bulkImportJobSender;
     }
 
     /**
@@ -124,8 +124,8 @@ public class SleeperClient {
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordRetrieverProvider(
                         LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
-                .sleeperClientIngest(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
-                .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
+                .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
+                .bulkImportJobSender(SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
                 .build();
     }
 
@@ -220,7 +220,7 @@ public class SleeperClient {
      * @param files     list of files containing records to ingest
      */
     public void ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
-        sleeperClientIngest.sendFilesToIngest(IngestJob.builder()
+        ingestJobSender.sendFilesToIngest(IngestJob.builder()
                 .tableName(tableName)
                 .id(jobId)
                 .files(files)
@@ -258,7 +258,7 @@ public class SleeperClient {
      * @param job the job listing files in S3 to ingest
      */
     public void ingestParquetFilesFromS3(IngestJob job) {
-        sleeperClientIngest.sendFilesToIngest(job);
+        ingestJobSender.sendFilesToIngest(job);
     }
 
     /**
@@ -279,7 +279,7 @@ public class SleeperClient {
      *                     of the cluster.
      */
     public void bulkImportParquetFilesFromS3(String tableName, String platform, String jobId, List<String> files, Map<String, String> platformSpec) {
-        sleeperClientImport.bulkImportFilesFromS3(platform, BulkImportJob.builder()
+        bulkImportJobSender.bulkImportFilesFromS3(platform, BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
                 .tableId(tableName)
@@ -296,8 +296,8 @@ public class SleeperClient {
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
-        private SleeperClientIngest sleeperClientIngest;
-        private SleeperClientImport sleeperClientImport;
+        private SleeperClientIngest ingestJobSender;
+        private SleeperClientImport bulkImportJobSender;
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -377,24 +377,24 @@ public class SleeperClient {
         }
 
         /**
-         * Provides functionality to send ingest job.
+         * Sets the client to send an ingest job.
          *
-         * @param  sleeperClientIngest the ingest interface for client
-         * @return                     this builder for chaining
+         * @param  ingestJobSender the client
+         * @return                 this builder for chaining
          */
-        public Builder sleeperClientIngest(SleeperClientIngest sleeperClientIngest) {
-            this.sleeperClientIngest = sleeperClientIngest;
+        public Builder ingestJobSender(SleeperClientIngest ingestJobSender) {
+            this.ingestJobSender = ingestJobSender;
             return this;
         }
 
         /**
-         * Provides functionality for bulk import of parquet files for client.
+         * Sets the client to send a bulk import job.
          *
-         * @param  sleeperClientImport the bulk import interface for client
+         * @param  bulkImportJobSender the client
          * @return                     this builder for chaining
          */
-        public Builder sleeperClientImport(SleeperClientImport sleeperClientImport) {
-            this.sleeperClientImport = sleeperClientImport;
+        public Builder bulkImportJobSender(SleeperClientImport bulkImportJobSender) {
+            this.bulkImportJobSender = bulkImportJobSender;
             return this;
         }
 
