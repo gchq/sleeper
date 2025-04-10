@@ -76,6 +76,7 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
         } catch (EmrException e) {
             String message = e.awsErrorDetails().errorMessage();
             if (Pattern.matches("Maximum number of active steps.+ for cluster exceeded\\.", message)) {
+                LOGGER.info("Cluster is full, returning job {} to queue with a delay", arguments.getBulkImportJob().getId());
                 returnToQueueWhenClusterIsFull.send(arguments.getBulkImportJob());
             } else {
                 throw e;
