@@ -34,6 +34,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.CoreStacks;
@@ -89,12 +90,12 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             List<IMetric> errorMetrics) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "PersistentEMR", instanceProperties, coreStacks, errorMetrics);
+                this, BulkImportPlatform.PersistentEMR, instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "PersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
+                bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
