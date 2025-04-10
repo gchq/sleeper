@@ -48,8 +48,6 @@
     <suppress files="[\\/]common[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]clients[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]clients[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]compaction[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]compaction[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]splitter[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]splitter[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]garbage-collector[\\/].*" id="missingJavadocMethod"/>
