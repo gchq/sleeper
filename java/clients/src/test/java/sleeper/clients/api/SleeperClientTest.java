@@ -204,6 +204,6 @@ class SleeperClientTest {
     }
 
     private SleeperClientImport clientImport() {
-        return (properties, queue, job) -> jobsInBucket.add(job);
+        return (queue, job) -> jobsInBucket.add(job);
     }
 }

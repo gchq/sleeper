@@ -125,7 +125,7 @@ public class SleeperClient {
                 .recordRetrieverProvider(
                         LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
                 .sleeperClientIngest(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
-                .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(sqsClient))
+                .sleeperClientImport(SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
                 .build();
     }
 
@@ -255,7 +255,7 @@ public class SleeperClient {
      *                     of the cluster.
      */
     public void bulkImportParquetFilesFromS3(String tableName, String platform, String jobId, List<String> files, Map<String, String> platformSpec) {
-        sleeperClientImport.bulkImportFilesFromS3(instanceProperties, platform, BulkImportJob.builder()
+        sleeperClientImport.bulkImportFilesFromS3(platform, BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
                 .tableId(tableName)

@@ -28,11 +28,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 
 @FunctionalInterface
 public interface SleeperClientImport {
-    void bulkImportFilesFromS3(InstanceProperties properties, String platform, BulkImportJob job);
+    void bulkImportFilesFromS3(String platform, BulkImportJob job);
 
-    static SleeperClientImport bulkImportParquetFilesFromS3(AmazonSQS sqsClient) {
-        return (properties, platform, job) -> {
-            sqsClient.sendMessage(determinePlatform(properties, platform), new BulkImportJobSerDe().toJson((job)));
+    static SleeperClientImport bulkImportParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        return (platform, job) -> {
+            sqsClient.sendMessage(determinePlatform(instanceProperties, platform), new BulkImportJobSerDe().toJson((job)));
         };
     }
 
