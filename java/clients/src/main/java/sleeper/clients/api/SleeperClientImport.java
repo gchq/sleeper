@@ -22,11 +22,6 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-
 @FunctionalInterface
 public interface SleeperClientImport {
     default void bulkImportFilesFromS3(String platform, BulkImportJob job) {
@@ -39,19 +34,5 @@ public interface SleeperClientImport {
         return (platform, job) -> {
             sqsClient.sendMessage(platform.getBulkImportQueueUrl(instanceProperties), new BulkImportJobSerDe().toJson((job)));
         };
-    }
-
-    static String determinePlatform(InstanceProperties instanceProperties, String platform) {
-        if (platform.equalsIgnoreCase("EMR")) {
-            return instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL);
-        } else if (platform.equalsIgnoreCase("EKS")) {
-            return instanceProperties.get(BULK_IMPORT_EKS_JOB_QUEUE_URL);
-        } else if (platform.equalsIgnoreCase("PersistentEMR")) {
-            return instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
-        } else if (platform.equalsIgnoreCase("EMRServerless")) {
-            return instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
-        } else {
-            throw new RuntimeException("Platform must be 'EMR' or 'PersistentEMR' or 'EKS' or 'EMRServerless'");
-        }
     }
 }
