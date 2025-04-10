@@ -120,21 +120,16 @@ public class ECSBulkExportTaskRunner {
         exportQueueHandler.receiveMessage().ifPresent(messageHandle -> {
             try {
                 BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
-                LOGGER.info("Received leaf partition bulk export job: {}", exportTask);
-                exportTask.getFiles().forEach(inputFile -> {
-                    LOGGER.info("Input file: {}", inputFile);
-                });
-                String partitionId = exportTask.getLeafPartitionId();
-                LOGGER.info("Partition ID: {}", partitionId);
-                String tableId = exportTask.getTableId();
-                LOGGER.info("Table ID: {}", tableId);
+                LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
+                LOGGER.debug("Export task details: {}", exportTask);
+
                 runCompaction(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient);
                 messageHandle.deleteFromQueue();
-                LOGGER.info("Deleted message from queue");
+                LOGGER.info("Successfully processed and deleted message from queue");
             } catch (IOException e) {
-                LOGGER.error("I/O error while processing compaction job", e);
+                LOGGER.error("I/O error while processing bulk export job", e);
                 messageHandle.returnToQueue();
-                LOGGER.info("Returned message to queue due to I/O error");
+                LOGGER.warn("Returned message to queue due to I/O error");
             } catch (ObjectFactoryException | IteratorCreationException e) {
                 LOGGER.error("Error creating objects or iterators for compaction job", e);
                 messageHandle.returnToQueue();
@@ -152,7 +147,9 @@ public class ECSBulkExportTaskRunner {
             TablePropertiesProvider tablePropertiesProvider,
             AmazonS3 s3Client,
             AmazonDynamoDB dynamoDBClient) throws IOException, IteratorCreationException, ObjectFactoryException {
-        LOGGER.info("Running compaction for bulk export task: {}", bulkExportLeafPartitionQuery);
+        LOGGER.info("Starting compaction for table ID: {}, partition ID: {}",
+                bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getLeafPartitionId());
+
         Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client,
                 dynamoDBClient, confForStateStore);
@@ -160,7 +157,8 @@ public class ECSBulkExportTaskRunner {
         String exportBucket = instanceProperties.get(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET);
         String outputFile = String.format("s3a://%s/%s/%s.parquet", exportBucket,
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getSubExportId());
-        LOGGER.info("Output file: {}", outputFile);
+        LOGGER.debug("Output file path: {}", outputFile);
+
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
         DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
@@ -172,16 +170,18 @@ public class ECSBulkExportTaskRunner {
                 .inputFiles(bulkExportLeafPartitionQuery.getFiles())
                 .outputFile(outputFile)
                 .build();
+        LOGGER.debug("Compaction job details: {}", job);
+
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
         Partition partition = stateStore.getPartition(bulkExportLeafPartitionQuery.getLeafPartitionId());
-        LOGGER.info("Compacting partition: {}", partition);
-        LOGGER.info("Compaction runner: {}", compactor);
-        LOGGER.info("Compaction: {}", job);
+
         RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
-        LOGGER.info("Compaction completed: {} records read, {} records written", recordsProcessed.getRecordsRead(),
+        LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Records read: {}, records written: {}",
+                bulkExportLeafPartitionQuery.getTableId(),
+                bulkExportLeafPartitionQuery.getLeafPartitionId(),
+                recordsProcessed.getRecordsRead(),
                 recordsProcessed.getRecordsWritten());
-        LOGGER.info("Compaction job completed successfully");
     }
 }
