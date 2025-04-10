@@ -461,6 +461,13 @@ testing_logger (https://github.com/brucechapman/rust_testing_logger)
 
 - The 3-Clause BSD License
 
+cargo_metadata (https://github.com/oli-obk/cargo_metadata)
+
+- MIT License
+
+serde_json (https://github.com/serde-rs/json)
+
+- Apache 2 License
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.
