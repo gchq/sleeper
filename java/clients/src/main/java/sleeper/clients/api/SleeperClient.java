@@ -202,24 +202,6 @@ public class SleeperClient {
     }
 
     /**
-     * Ingests the data in the given files to the Sleeper table with name table_name. This is done by posting a
-     * message containing the list of files to the ingest queue. These files must be in S3. They can be either files or
-     * directories. If they are directories then all Parquet files under the directory will be ingested.
-     * Files should be specified in the format 'bucket/file'.
-     *
-     * @param tableName table name to write to
-     * @param jobId     id of the ingest job, randomly generated if not set
-     * @param files     list of files containing records to ingest
-     */
-    public void ingestParquetFilesFromS3(String tableName, String jobId, List<String> files) {
-        ingestJobSender.sendFilesToIngest(IngestJob.builder()
-                .tableName(tableName)
-                .id(jobId)
-                .files(files)
-                .build());
-    }
-
-    /**
      * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
      * containing a list of files. These files must be in S3. They can be either files or directories. If they are
      * directories then all Parquet files under the directory will be ingested.
