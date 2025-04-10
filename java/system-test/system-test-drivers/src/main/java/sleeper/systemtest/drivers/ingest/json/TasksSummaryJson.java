@@ -51,7 +51,6 @@ public class TasksSummaryJson {
         if (string != null) {
             stringToCount.compute(string, (key, count) -> count == null ? 1 : count + 1);
         }
-
     }
 
     public String toString() {
