@@ -79,7 +79,7 @@ public class SleeperClientImportIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
         SleeperClientImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient)
-                .bulkImportFilesFromS3(platform, job);
+                .sendFilesToBulkImport(platform, job);
         return job;
     }
 

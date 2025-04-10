@@ -23,6 +23,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -96,21 +97,12 @@ public class SleeperClient {
         return createForInstanceId(
                 buildAwsV1Client(AmazonS3ClientBuilder.standard()),
                 buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()),
-                AmazonSQSClientBuilder.defaultClient(),
+                buildAwsV1Client(AmazonSQSClientBuilder.standard()),
                 HadoopConfigurationProvider.getConfigurationForClient(),
                 instanceId);
     }
 
-    /**
-     * Creates a client to interact with the instance of Sleeper with the given ID.
-     *
-     * @param  s3Client     the AWS S3 client
-     * @param  dynamoClient the AWS DynamoDB client
-     * @param  hadoopConf   the Hadoop configuration
-     * @param  instanceId   the instance ID
-     * @return              the client
-     */
-    public static SleeperClient createForInstanceId(
+    private static SleeperClient createForInstanceId(
             AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
@@ -262,30 +254,41 @@ public class SleeperClient {
     }
 
     /**
-     * Ingests the data in the given files to the Sleeper table with name table_name using the bulk
-     * import method. This is done by posting a message containing the list of files to the bulk
-     * import queue. These files must be in S3. They can be either files or directories. If they
-     * are directories then all Parquet files under the directory will be ingested. Files should
-     * be specified in the format 'bucket/file'.
+     * Ingests the data in some given files to a Sleeper table with the bulk import method. This is done by sending a
+     * message to a bulk import queue containing a list of files. These files must be in S3. They can be either files or
+     * directories. If they are directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
      *
-     * Instructs Sleeper to bulk import the given files from S3.
-     *
-     * @param tableName    the table name to write to
-     * @param platform     the platform which the import is to run on
-     * @param jobId        the id of the bulk import job - if one is not provided then a UUID will be assigned
-     * @param files        list of the files containing the records to ingest
-     * @param platformSpec This parameter allows you to configure details of the EMR cluster that is created
-     *                     to run the bulk import job. This should be a map, containing parameters specifying details
-     *                     of the cluster.
+     * @param  tableName    the table name to write to
+     * @param  platform     the platform the import should run on
+     * @param  files        list of the files containing the records to ingest
+     * @param  platformSpec overrides for table properties just for this job
+     * @return              the ID of the job for tracking
      */
-    public void bulkImportParquetFilesFromS3(String tableName, String platform, String jobId, List<String> files, Map<String, String> platformSpec) {
-        bulkImportJobSender.bulkImportFilesFromS3(platform, BulkImportJob.builder()
+    public String bulkImportParquetFilesFromS3(String tableName, BulkImportPlatform platform, List<String> files, Map<String, String> platformSpec) {
+        String jobId = UUID.randomUUID().toString();
+        bulkImportParquetFilesFromS3(platform, BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
-                .tableId(tableName)
                 .files(files)
                 .platformSpec(platformSpec)
                 .build());
+        return jobId;
+    }
+
+    /**
+     * Ingests the data in some given files to a Sleeper table with the bulk import method. This is done by sending a
+     * message to a bulk import queue containing a list of files. These files must be in S3. They can be either files or
+     * directories. If they are directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param platform the platform the import should run on
+     * @param job      the job listing files in S3 to ingest
+     */
+    public void bulkImportParquetFilesFromS3(BulkImportPlatform platform, BulkImportJob job) {
+        bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
     public static class Builder {

@@ -24,15 +24,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 @FunctionalInterface
 public interface SleeperClientImport {
-    default void bulkImportFilesFromS3(String platform, BulkImportJob job) {
-        bulkImportFilesFromS3(BulkImportPlatform.fromString(platform), job);
-    }
-
-    void bulkImportFilesFromS3(BulkImportPlatform platform, BulkImportJob job);
+    void sendFilesToBulkImport(BulkImportPlatform platform, BulkImportJob job);
 
     static SleeperClientImport bulkImportParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        BulkImportJobSerDe serDe = new BulkImportJobSerDe();
         return (platform, job) -> {
-            sqsClient.sendMessage(platform.getBulkImportQueueUrl(instanceProperties), new BulkImportJobSerDe().toJson((job)));
+            sqsClient.sendMessage(platform.getBulkImportQueueUrl(instanceProperties), serDe.toJson(job));
         };
     }
 }

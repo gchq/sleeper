@@ -28,8 +28,9 @@ public interface SleeperClientIngest {
     void sendFilesToIngest(IngestJob job);
 
     static SleeperClientIngest ingestParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        IngestJobSerDe serDe = new IngestJobSerDe();
         return (job) -> {
-            sqsClient.sendMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson((job)));
+            sqsClient.sendMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL), serDe.toJson(job));
         };
     }
 }

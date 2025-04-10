@@ -15,9 +15,9 @@
  */
 package sleeper.clients.api;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -155,13 +155,16 @@ class SleeperClientTest {
 
     @Test
     void shouldBulkImportParquetFilesFromS3() {
+        // Given
         String tableName = "import-table";
-        String jobId = UUID.randomUUID().toString();
+        BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
-        Map<String, String> platformSpec = ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
+        Map<String, String> platformSpec = Map.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge");
 
-        sleeperClient.bulkImportParquetFilesFromS3(tableName, "NonPersistentEMR", jobId, fileList, platformSpec);
+        // When
+        String jobId = sleeperClient.bulkImportParquetFilesFromS3(tableName, platform, fileList, platformSpec);
 
+        // Then
         assertThat(bulkImportQueue).containsExactly(BulkImportJob.builder()
                 .id(jobId)
                 .tableId(tableName)
