@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * This cass is used to track compaction tasks that are being ran.
+ */
 public class InMemoryCompactionTaskTracker implements CompactionTaskTracker {
     private final Map<String, CompactionTaskStatus> statusByTaskId = new LinkedHashMap<>();
 
@@ -45,6 +48,13 @@ public class InMemoryCompactionTaskTracker implements CompactionTaskTracker {
         statusByTaskId.put(taskStatus.getTaskId(), taskStatus);
     }
 
+    /**
+     * This method adds a task to the tracker.
+     * If the tasks already exsists in the tracker it throwns and IllegalStateException.
+     *
+     * @param  taskStatus            CompactionTaskStatus containing the taskId to start.
+     * @throws IllegalStateException if task already started.
+     */
     public void taskStartedAndFinished(CompactionTaskStatus taskStatus) {
         if (statusByTaskId.containsKey(taskStatus.getTaskId())) {
             throw new IllegalStateException("Task already started: " + taskStatus.getTaskId());

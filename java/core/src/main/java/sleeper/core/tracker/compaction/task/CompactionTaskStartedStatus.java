@@ -21,6 +21,9 @@ import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * This class holds the start time of a CompactionTask.
+ */
 public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
 
     private final Instant startTime;
@@ -29,6 +32,12 @@ public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
+    /**
+     * This method returns a new CompactionTaskStartedStatus with the provided startTime.
+     *
+     * @param  startTime Instant of the time the task started.
+     * @return           CompactionTaskStartedStatus.
+     */
     public static CompactionTaskStartedStatus startTime(Instant startTime) {
         return new CompactionTaskStartedStatus(startTime);
     }

@@ -40,14 +40,32 @@ import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
+/**
+ * This class provides and number of methods for generating test data CompactionJobStatuses.
+ */
 public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {
     }
 
+    /**
+     * This method builds a CompactionJobStatus in the created status with a default CompactionJobCreatedEvent.
+     *
+     * @param  createdTime     Instant.
+     * @param  runsLatestFirst JobRun optional
+     * @return                 CompactionJobStatus.
+     */
     public static CompactionJobStatus compactionJobCreated(Instant createdTime, JobRun... runsLatestFirst) {
         return compactionJobCreated(defaultCompactionJobCreatedEvent(), createdTime, runsLatestFirst);
     }
 
+    /**
+     * This method builds a CompactionJobStatus in the created status.
+     *
+     * @param  event           CompactionJobCreatedEvent.
+     * @param  createdTime     Instant.
+     * @param  runsLatestFirst JobRun optional
+     * @return                 CompactionJobStatus.
+     */
     public static CompactionJobStatus compactionJobCreated(CompactionJobCreatedEvent event, Instant createdTime, JobRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(event.getJobId())
@@ -56,16 +74,38 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    /**
+     * This method creates a number of job statuses and then a started compaction jobRun from those statuses.
+     *
+     * @param  taskId    String.
+     * @param  startTime Instant.
+     * @return           JobRun.
+     */
     public static JobRun startedCompactionRun(String taskId, Instant startTime) {
         return jobRunOnTask(taskId, compactionStartedStatus(startTime));
     }
 
+    /**
+     * This method creates a number of job statuses and then a uncommitted compaction jobRun from those statuses.
+     *
+     * @param  taskId  String.
+     * @param  summary JobRunSummary.
+     * @return         JobRun.
+     */
     public static JobRun uncommittedCompactionRun(String taskId, JobRunSummary summary) {
         return jobRunOnTask(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary));
     }
 
+    /**
+     * This method creates a number of job statuses and then a finished compaction jobRun from those statuses.
+     *
+     * @param  taskId     String.
+     * @param  summary    JobRunSummary.
+     * @param  commitTime Instant.
+     * @return            JobRun.
+     */
     public static JobRun finishedCompactionRun(String taskId, JobRunSummary summary, Instant commitTime) {
         return jobRunOnTask(taskId,
                 compactionStartedStatus(summary.getStartTime()),
@@ -73,12 +113,30 @@ public class CompactionJobStatusTestData {
                 compactionCommittedStatus(commitTime));
     }
 
+    /**
+     * This method creates a number of job statuses and then a failed compaction jobRun from those statuses.
+     *
+     * @param  taskId         String.
+     * @param  runTime        Instant.
+     * @param  failureReasons List of String.
+     * @return                JobRun.
+     */
     public static JobRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
         return jobRunOnTask(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
                 compactionFailedStatus(runTime.getFinishTime(), failureReasons));
     }
 
+    /**
+     * This method creates a number of job statuses and then a failed compaction jobRun from those statuses.
+     *
+     * @param  taskId         String.
+     * @param  startTime      Instant.
+     * @param  finishTime     Instant.
+     * @param  failureTime    Instant.
+     * @param  failureReasons List of String.
+     * @return                JobRun.
+     */
     public static JobRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
         return jobRunOnTask(taskId,
                 compactionStartedStatus(startTime),
@@ -86,6 +144,14 @@ public class CompactionJobStatusTestData {
                 compactionFailedStatus(failureTime, failureReasons));
     }
 
+    /**
+     * This method builds a CompactionJobCreatedStatus based of given createdTime, partitionId and inputFilesCount.
+     *
+     * @param  createdTime     Instant.
+     * @param  partitionId     String.
+     * @param  inputFilesCount int.
+     * @return                 CompactionJobCreatedStatus.
+     */
     public static CompactionJobCreatedStatus compactionCreatedStatus(Instant createdTime, String partitionId, int inputFilesCount) {
         return CompactionJobCreatedStatus.builder()
                 .updateTime(createdTime)
@@ -94,14 +160,33 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    /**
+     * This method builds a CompactionJobStartedStatus based of a given startTime and default update time.
+     *
+     * @param  startTime Instant.
+     * @return           CompactionJobFinishedStatus.
+     */
     public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
+    /**
+     * This method builds a CompactionJobFinishedStatus based of a givem summary.
+     *
+     * @param  summary JobRunSummary.
+     * @return         CompactionJobFinishedStatus.
+     */
     public static CompactionJobFinishedStatus compactionFinishedStatus(JobRunSummary summary) {
         return compactionFinishedStatus(summary.getFinishTime(), summary.getRecordsProcessed());
     }
 
+    /**
+     * This method builds a CompactionJobFinishedStatus based of a given finishTime and recordsProcessed.
+     *
+     * @param  finishTime       Instant.
+     * @param  recordsProcessed RecordsProcessed.
+     * @return                  CompactionJobFinishedStatus.
+     */
     public static CompactionJobFinishedStatus compactionFinishedStatus(Instant finishTime, RecordsProcessed recordsProcessed) {
         return CompactionJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
@@ -110,10 +195,23 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    /**
+     * This method created a new CompactionJobCommittedStatus with the given committed time and a default update time.
+     *
+     * @param  committedTime Instant.
+     * @return               CompactionJobCommittedStatus.
+     */
     public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {
         return CompactionJobCommittedStatus.commitAndUpdateTime(committedTime, defaultUpdateTime(committedTime));
     }
 
+    /**
+     * This method builds a JobRunFailedStatus from the given failure time and failure reasons.
+     *
+     * @param  failureTime    Instant.
+     * @param  failureReasons List of Strings.
+     * @return                JobRunFailedStatus.
+     */
     public static JobRunFailedStatus compactionFailedStatus(Instant failureTime, List<String> failureReasons) {
         return JobRunFailedStatus.builder()
                 .updateTime(defaultUpdateTime(failureTime))
@@ -122,15 +220,35 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    /**
+     * This method returns a CompactionJobStatus for a single run update.
+     *
+     * @param  updates JobSatusUpdate.
+     * @return         CompactionJobStatus.
+     */
     public static CompactionJobStatus jobStatusFromSingleRunUpdates(JobStatusUpdate... updates) {
         return jobStatusFrom(records().singleRunUpdates(updates));
     }
 
+    /**
+     * This method returns a list of COmpactionJobStatuses from provided updates.
+     *
+     * @param  updates TestJobStatusUpdateRecords TaskUpdates.
+     * @return         List of CompactionJobStatus.
+     */
     public static List<CompactionJobStatus> jobStatusListFromUpdates(
             TestJobStatusUpdateRecords.TaskUpdates... updates) {
         return CompactionJobStatus.listFrom(records().fromUpdates(updates).stream());
     }
 
+    /**
+     * This method returns a CompactionJobStaus for a provided record.
+     * If more than one CompactionJobStatus is found it will throw an IllegalStateException.
+     *
+     * @param  records               TestJobStatusUpdateRecords to find the CompactionJobStatusFrom
+     * @return                       CompactionJobStatus if only one found.
+     * @throws IllegalStateException if more that one status found for record.
+     */
     public static CompactionJobStatus jobStatusFrom(TestJobStatusUpdateRecords records) {
         List<CompactionJobStatus> built = CompactionJobStatus.listFrom(records.stream());
         if (built.size() != 1) {

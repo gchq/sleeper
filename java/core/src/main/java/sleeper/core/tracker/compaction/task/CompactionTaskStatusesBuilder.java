@@ -24,9 +24,22 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This class is used to managed task status builders in a cache.
+ * Tasks can be started, finished or streamed.
+ */
 public class CompactionTaskStatusesBuilder {
     private final Map<String, CompactionTaskStatus.Builder> builderById = new HashMap<>();
 
+    /**
+     * This method checks for a cached CompactionTaskStatus Builder and returns it if found or creates a new one if not
+     * found.
+     *
+     * @param  taskId     The String task Id for the task to be started.
+     * @param  startTime  The Instant time the task should be started from.
+     * @param  expiryDate The Instant Date the task should expire on.
+     * @return            CompactionTaskSatusesBuilder with the started task.
+     */
     public CompactionTaskStatusesBuilder taskStarted(
             String taskId, Instant startTime, Instant expiryDate) {
         builderById.computeIfAbsent(taskId,
@@ -35,6 +48,13 @@ public class CompactionTaskStatusesBuilder {
         return this;
     }
 
+    /**
+     * This method finishes a task with the supplied status provided it exists in the cached map.
+     *
+     * @param  taskId         The String task Id of the task to be finished
+     * @param  finishedStatus The CompactionTaskFinishedStatus detailing the specific finishing status
+     * @return                CompactionTaskSatusesBuilder with the finished task.
+     */
     public CompactionTaskStatusesBuilder taskFinished(
             String taskId, CompactionTaskFinishedStatus finishedStatus) {
         Optional.ofNullable(builderById.get(taskId))
@@ -42,6 +62,11 @@ public class CompactionTaskStatusesBuilder {
         return this;
     }
 
+    /**
+     * This method returns a stream of the CompacionJobStatuses having been built and ordered by reversed start time.
+     *
+     * @return Stream of CompactionTRackStatus.
+     */
     public Stream<CompactionTaskStatus> stream() {
         return builderById.values().stream()
                 .map(CompactionTaskStatus.Builder::build)

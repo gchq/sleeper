@@ -77,6 +77,7 @@ public class CompactionJob {
         return inputFiles;
     }
 
+
     public CheckFileAssignmentsRequest createInputFileAssignmentsCheck() {
         return CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(jobId, inputFiles, partitionId);
     }

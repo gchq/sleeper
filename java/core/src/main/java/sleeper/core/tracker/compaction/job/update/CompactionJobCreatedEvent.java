@@ -17,6 +17,9 @@ package sleeper.core.tracker.compaction.job.update;
 
 import java.util.Objects;
 
+/**
+ * This class stores details about a compaction job created event.
+ */
 public class CompactionJobCreatedEvent {
 
     private final String jobId;
@@ -51,6 +54,9 @@ public class CompactionJobCreatedEvent {
         return inputFilesCount;
     }
 
+    /**
+     * Builder class for the CompactionJobCreatedEvent.
+     */
     public static final class Builder {
 
         private String jobId;
@@ -61,21 +67,45 @@ public class CompactionJobCreatedEvent {
         private Builder() {
         }
 
+        /**
+         * Sets the jobsId and returns the builder.
+         *
+         * @param  jobId String
+         * @return       Builder.
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the tableId and returns the builder.
+         *
+         * @param  tableId String.
+         * @return         Builder.
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the partitionId and returns the builder.
+         *
+         * @param  partitionId String.
+         * @return             Builder.
+         */
         public Builder partitionId(String partitionId) {
             this.partitionId = partitionId;
             return this;
         }
 
+        /**
+         * Sets the inputFilesCount and returns the builder.
+         *
+         * @param  inputFilesCount int.
+         * @return                 Builder.
+         */
         public Builder inputFilesCount(int inputFilesCount) {
             this.inputFilesCount = inputFilesCount;
             return this;

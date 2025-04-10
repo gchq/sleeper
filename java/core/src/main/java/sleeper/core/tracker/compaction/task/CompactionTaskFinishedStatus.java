@@ -25,6 +25,10 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+/**
+ * This class holds details about the finished status of a CompactionTask.
+ * This includes the finish time, the total job runs, time spent on jobs as well as other usefull summary items.
+ */
 public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
     private final int totalJobRuns;
@@ -76,6 +80,12 @@ public class CompactionTaskFinishedStatus {
         return recordsWrittenPerSecond;
     }
 
+    /**
+     * This method creates a new JobRubSummary using the provided startTime and the stored JobRun details.
+     *
+     * @param  startTime Instant - the start time for the job run summary.
+     * @return           JobRunSummary.
+     */
     public JobRunSummary asSummary(Instant startTime) {
         return new JobRunSummary(
                 new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
@@ -119,6 +129,9 @@ public class CompactionTaskFinishedStatus {
                 '}';
     }
 
+    /**
+     * Builder class for the CompactionTaskFinishedStatus.
+     */
     public static final class Builder {
         private Instant finishTime;
         private int totalJobRuns;
@@ -132,51 +145,113 @@ public class CompactionTaskFinishedStatus {
         private Builder() {
         }
 
+        /**
+         * Sets the finishTime and returns the builder.
+         *
+         * @param  finishTime Instant to be set.
+         * @return            Builder.
+         */
         public Builder finishTime(Instant finishTime) {
             this.finishTime = finishTime;
             return this;
         }
 
+        /**
+         * Sets the totalJobRuns and returns the builder.
+         *
+         * @param  totalJobRuns int to be set.
+         * @return              Builder.
+         */
         public Builder totalJobRuns(int totalJobRuns) {
             this.totalJobRuns = totalJobRuns;
             return this;
         }
 
+        /**
+         * Sets the timeSpentOnJobs and returns the builder.
+         *
+         * @param  timeSpentOnJobs Duration to be set.
+         * @return                 Builder.
+         */
         public Builder timeSpentOnJobs(Duration timeSpentOnJobs) {
             this.timeSpentOnJobs = timeSpentOnJobs;
             return this;
         }
 
+        /**
+         * Sets the totalRecordsRead and returns the builder.
+         *
+         * @param  totalRecordsRead long to be set.
+         * @return                  Builder.
+         */
         public Builder totalRecordsRead(long totalRecordsRead) {
             this.totalRecordsRead = totalRecordsRead;
             return this;
         }
 
+        /**
+         * Sets the totalRecordsWritten and returns the builder.
+         *
+         * @param  totalRecordsWritten long to be set.
+         * @return                     Builder.
+         */
         public Builder totalRecordsWritten(long totalRecordsWritten) {
             this.totalRecordsWritten = totalRecordsWritten;
             return this;
         }
 
+        /**
+         * Sets the recordsReadPerSecond and returns the builder.
+         *
+         * @param  recordsReadPerSecond double to be set.
+         * @return                      Builder.
+         */
         public Builder recordsReadPerSecond(double recordsReadPerSecond) {
             this.recordsReadPerSecond = recordsReadPerSecond;
             return this;
         }
 
+        /**
+         * Sets the recordsWrittenPerSecond and returns the builder.
+         *
+         * @param  recordsWrittenPerSecond double to be set.
+         * @return                         Builder.
+         */
         public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
             this.recordsWrittenPerSecond = recordsWrittenPerSecond;
             return this;
         }
 
+        /**
+         * Adds the summary to the maintained details in the AvergaeRecordRate class and returns the builder.
+         *
+         * @param  jobSummary JobRunSummary containing details to be added to status fields.
+         * @return            Builder.
+         */
         public Builder addJobSummary(JobRunSummary jobSummary) {
             rateBuilder.summary(jobSummary);
             return this;
         }
 
+        /**
+         * Takes in a stream of JobRunSummaries and adds all their details to the existing values in the
+         * AvergaeRecordRate class.
+         *
+         * @param  jobSummaries Stream of JobRunSummary.
+         * @return              Builder.
+         */
         public Builder jobSummaries(Stream<JobRunSummary> jobSummaries) {
             rateBuilder.summaries(jobSummaries);
             return this;
         }
 
+        /**
+         * This method finished the status by extracting the final values from the AvergaeRecordRate and storing them in
+         * this classes variables.
+         *
+         * @param  finishTime Instant of the finish time.
+         * @return            Builder.
+         */
         public Builder finish(Instant finishTime) {
             AverageRecordRate rate = rateBuilder.finishTime(finishTime).build();
             totalJobRuns = rate.getRunCount();
