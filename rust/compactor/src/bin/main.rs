@@ -17,7 +17,7 @@
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
-use compaction::{merge_sorted_files, ColRange, CompactionInput};
+use compaction::{ColRange, CompactionInput, merge_sorted_files};
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};

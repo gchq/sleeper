@@ -22,11 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor.WriteJobToBucket;
+import sleeper.bulkimport.starter.executor.persistent.PersistentEmrPlatformExecutor;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
@@ -35,6 +35,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -58,7 +59,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
 @WireMockTest
 class PersistentEmrPlatformExecutorWiremockIT {
@@ -67,6 +68,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    List<BulkImportJob> jobsReturnedToQueue = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -207,7 +209,8 @@ class PersistentEmrPlatformExecutorWiremockIT {
                         .withBody(exampleString("example/persistent-emr/listclusters-response.json"))));
         stubFor(post("/")
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
-                .willReturn(aResponse().withStatus(200))); // TODO fake cluster is full
+                .willReturn(aResponse().withStatus(400)
+                        .withBody(exampleString("example/persistent-emr/addjobflow-error-cluster-full.json"))));
 
         // When
         createExecutor(runtimeInfo).runJob(job, "test-run");
@@ -218,6 +221,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
                 .singleElement()
                 .satisfies(request -> assertThatJson(request.getBodyAsString())
                         .isEqualTo(exampleString("example/persistent-emr/addjobflow-request.json")));
+        assertThat(jobsReturnedToQueue).containsExactly(job);
     }
 
     private BulkImportExecutor createExecutor(WireMockRuntimeInfo runtimeInfo) {
@@ -230,12 +234,8 @@ class PersistentEmrPlatformExecutorWiremockIT {
 
     private PersistentEmrPlatformExecutor createPlatformExecutor(WireMockRuntimeInfo runtimeInfo) {
         return new PersistentEmrPlatformExecutor(
-                wiremockAwsV2Client(runtimeInfo, EmrClient.builder()
-                        .overrideConfiguration(config -> config
-                                .retryStrategy(retry -> retry
-                                        .maxAttempts(2)
-                                        .backoffStrategy(BackoffStrategy.retryImmediately())
-                                        .throttlingBackoffStrategy(BackoffStrategy.retryImmediately())))),
+                wiremockAwsV2ClientWithRetryAttempts(2, runtimeInfo, EmrClient.builder()),
+                jobsReturnedToQueue::add,
                 instanceProperties);
     }
 

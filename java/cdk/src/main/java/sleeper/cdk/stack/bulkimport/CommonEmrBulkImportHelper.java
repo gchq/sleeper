@@ -127,7 +127,10 @@ public class CommonEmrBulkImportHelper {
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .logGroup(coreStacks.getLogGroup(logGroupRef))
-                .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
+                .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue)
+                        .batchSize(1)
+                        .maxConcurrency(2)
+                        .build())));
 
         coreStacks.grantValidateBulkImport(function.getRole());
         importBucket.grantReadWrite(function);
