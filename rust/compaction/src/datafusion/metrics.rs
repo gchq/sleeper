@@ -20,10 +20,10 @@ use datafusion::{
     datasource::source::DataSourceExec,
     error::DataFusionError,
     physical_plan::{
+        ExecutionPlan, ExecutionPlanVisitor,
         filter::FilterExec,
         metrics::{MetricValue, MetricsSet},
         projection::ProjectionExec,
-        ExecutionPlan, ExecutionPlanVisitor,
     },
 };
 use log::info;

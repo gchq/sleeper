@@ -16,8 +16,8 @@
 */
 use bytes::Bytes;
 use futures::{
-    stream::{empty, BoxStream},
     Stream, StreamExt,
+    stream::{BoxStream, empty},
 };
 use log::debug;
 use num_format::{Locale, ToFormattedString};

@@ -19,6 +19,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 
 import java.net.URI;
 
@@ -31,11 +32,24 @@ public class WiremockAwsV2ClientHelper {
     }
 
     public static <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>, T> T wiremockAwsV2Client(WireMockRuntimeInfo runtimeInfo, B builder) {
+        return configure(runtimeInfo, builder).build();
+    }
+
+    public static <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>, T> T wiremockAwsV2ClientWithRetryAttempts(int attempts, WireMockRuntimeInfo runtimeInfo, B builder) {
+        return configure(runtimeInfo, builder)
+                .overrideConfiguration(config -> config
+                        .retryStrategy(retry -> retry
+                                .maxAttempts(attempts)
+                                .backoffStrategy(BackoffStrategy.retryImmediately())
+                                .throttlingBackoffStrategy(BackoffStrategy.retryImmediately())))
+                .build();
+    }
+
+    private static <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>, T> B configure(WireMockRuntimeInfo runtimeInfo, B builder) {
         return builder
                 .endpointOverride(URI.create(runtimeInfo.getHttpBaseUrl()))
                 .region(Region.AWS_GLOBAL)
                 .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY)))
-                .build();
+                        AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY)));
     }
 }

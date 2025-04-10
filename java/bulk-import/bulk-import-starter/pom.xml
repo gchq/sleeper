@@ -49,6 +49,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sfn</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
         <!-- Sleeper Dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
