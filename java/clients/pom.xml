@@ -87,7 +87,7 @@
             <artifactId>query-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-                <dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
