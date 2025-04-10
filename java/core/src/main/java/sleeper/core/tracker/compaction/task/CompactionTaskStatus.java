@@ -60,7 +60,7 @@ public class CompactionTaskStatus {
      *
      * @param  windowStartTime Instant for the start time of the period to check.
      * @param  windowEndTime   Instant for the end time of the period to check.
-     * @return                 boolean for if the task was rna in the time period.
+     * @return                 boolean for if the task was ran in the time period.
      */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
@@ -204,7 +204,7 @@ public class CompactionTaskStatus {
          * Sets the taskId and returns the Builder.
          *
          * @param  taskId String taskId to be set.
-         * @return        Builder.
+         * @return        Builder containing current set values.
          */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
@@ -215,7 +215,7 @@ public class CompactionTaskStatus {
          * Sets the startTime and retuns the Builder.
          *
          * @param  startTime Instant of the startTime to be set.
-         * @return           Builder.
+         * @return           Builder containing current set values.
          */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
@@ -226,7 +226,7 @@ public class CompactionTaskStatus {
          * Sets the finshed status and returns the builder.
          *
          * @param  finishedStatus CompactionTaskFinishedStatus - the specific finish status to be set.
-         * @return                Builder.
+         * @return                Builder containing current set values.
          */
         public Builder finishedStatus(CompactionTaskFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
@@ -237,7 +237,7 @@ public class CompactionTaskStatus {
          * Sets the expiryDate and retuns the Builder.
          *
          * @param  expiryDate Instant of the expiryDate to be set.
-         * @return            Builder.
+         * @return            Builder containing current set values.
          */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
@@ -249,7 +249,7 @@ public class CompactionTaskStatus {
          *
          * @param  finishTime          Instant of the time the task finished.
          * @param  taskFinishedBuilder CompactionTaskFinishedStatus Builder to be used to build the finished status.
-         * @return                     Builder.
+         * @return                     Builder containing current set values.
          */
         public Builder finished(Instant finishTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) {
             return finishedStatus(taskFinishedBuilder

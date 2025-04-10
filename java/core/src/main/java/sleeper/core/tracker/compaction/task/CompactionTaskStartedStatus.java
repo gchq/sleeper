@@ -36,7 +36,7 @@ public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
      * This method returns a new CompactionTaskStartedStatus with the provided startTime.
      *
      * @param  startTime Instant of the time the task started.
-     * @return           CompactionTaskStartedStatus.
+     * @return           CompactionTaskStartedStatus created with the given start time.
      */
     public static CompactionTaskStartedStatus startTime(Instant startTime) {
         return new CompactionTaskStartedStatus(startTime);

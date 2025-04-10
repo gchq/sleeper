@@ -83,8 +83,8 @@ public class CompactionTaskFinishedStatus {
     /**
      * This method creates a new JobRubSummary using the provided startTime and the stored JobRun details.
      *
-     * @param  startTime Instant - the start time for the job run summary.
-     * @return           JobRunSummary.
+     * @param  startTime Instant the start time for the job run summary.
+     * @return           JobRunSummary created using the provided start time.
      */
     public JobRunSummary asSummary(Instant startTime) {
         return new JobRunSummary(
@@ -149,7 +149,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the finishTime and returns the builder.
          *
          * @param  finishTime Instant to be set.
-         * @return            Builder.
+         * @return            Builder containing current set values.
          */
         public Builder finishTime(Instant finishTime) {
             this.finishTime = finishTime;
@@ -160,7 +160,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the totalJobRuns and returns the builder.
          *
          * @param  totalJobRuns int to be set.
-         * @return              Builder.
+         * @return              Builder containing current set values.
          */
         public Builder totalJobRuns(int totalJobRuns) {
             this.totalJobRuns = totalJobRuns;
@@ -171,7 +171,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the timeSpentOnJobs and returns the builder.
          *
          * @param  timeSpentOnJobs Duration to be set.
-         * @return                 Builder.
+         * @return                 Builder containing current set values.
          */
         public Builder timeSpentOnJobs(Duration timeSpentOnJobs) {
             this.timeSpentOnJobs = timeSpentOnJobs;
@@ -182,7 +182,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the totalRecordsRead and returns the builder.
          *
          * @param  totalRecordsRead long to be set.
-         * @return                  Builder.
+         * @return                  Builder containing current set values.
          */
         public Builder totalRecordsRead(long totalRecordsRead) {
             this.totalRecordsRead = totalRecordsRead;
@@ -193,7 +193,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the totalRecordsWritten and returns the builder.
          *
          * @param  totalRecordsWritten long to be set.
-         * @return                     Builder.
+         * @return                     Builder containing current set values.
          */
         public Builder totalRecordsWritten(long totalRecordsWritten) {
             this.totalRecordsWritten = totalRecordsWritten;
@@ -204,7 +204,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the recordsReadPerSecond and returns the builder.
          *
          * @param  recordsReadPerSecond double to be set.
-         * @return                      Builder.
+         * @return                      Builder containing current set values.
          */
         public Builder recordsReadPerSecond(double recordsReadPerSecond) {
             this.recordsReadPerSecond = recordsReadPerSecond;
@@ -215,7 +215,7 @@ public class CompactionTaskFinishedStatus {
          * Sets the recordsWrittenPerSecond and returns the builder.
          *
          * @param  recordsWrittenPerSecond double to be set.
-         * @return                         Builder.
+         * @return                         Builder containing current set values.
          */
         public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
             this.recordsWrittenPerSecond = recordsWrittenPerSecond;
@@ -225,8 +225,8 @@ public class CompactionTaskFinishedStatus {
         /**
          * Adds the summary to the maintained details in the AvergaeRecordRate class and returns the builder.
          *
-         * @param  jobSummary JobRunSummary containing details to be added to status fields.
-         * @return            Builder.
+         * @param  jobSummary JobRunSummary containing details to be added to AvergaeRecordRate fields.
+         * @return            Builder containing current set values.
          */
         public Builder addJobSummary(JobRunSummary jobSummary) {
             rateBuilder.summary(jobSummary);
@@ -237,8 +237,8 @@ public class CompactionTaskFinishedStatus {
          * Takes in a stream of JobRunSummaries and adds all their details to the existing values in the
          * AvergaeRecordRate class.
          *
-         * @param  jobSummaries Stream of JobRunSummary.
-         * @return              Builder.
+         * @param  jobSummaries Stream of JobRunSummary to added.
+         * @return              Builder containing current set values.
          */
         public Builder jobSummaries(Stream<JobRunSummary> jobSummaries) {
             rateBuilder.summaries(jobSummaries);
@@ -250,7 +250,7 @@ public class CompactionTaskFinishedStatus {
          * this classes variables.
          *
          * @param  finishTime Instant of the finish time.
-         * @return            Builder.
+         * @return            Builder containing current set values.
          */
         public Builder finish(Instant finishTime) {
             AverageRecordRate rate = rateBuilder.finishTime(finishTime).build();

@@ -65,7 +65,7 @@ public class CompactionTaskStatusesBuilder {
     /**
      * This method returns a stream of the CompacionJobStatuses having been built and ordered by reversed start time.
      *
-     * @return Stream of CompactionTRackStatus.
+     * @return Stream of CompactionTrackStatus having been built and ordered by reversed start time.
      */
     public Stream<CompactionTaskStatus> stream() {
         return builderById.values().stream()

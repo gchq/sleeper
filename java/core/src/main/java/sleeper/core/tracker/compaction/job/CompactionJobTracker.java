@@ -38,7 +38,7 @@ public interface CompactionJobTracker {
     /**
      * This method marks a job as created from a CompactionJobCreatedEvent.
      *
-     * @param event CompactionJobCreatedEvent.
+     * @param event CompactionJobCreatedEvent that is to be marked as created.
      */
     default void jobCreated(CompactionJobCreatedEvent event) {
     }
@@ -46,7 +46,7 @@ public interface CompactionJobTracker {
     /**
      * This method marks a job as started from a CompactionJobStartedEvent.
      *
-     * @param event CompactionJobStartedEvent.
+     * @param event CompactionJobStartedEvent that is to be marked as Started.
      */
     default void jobStarted(CompactionJobStartedEvent event) {
     }
@@ -54,7 +54,7 @@ public interface CompactionJobTracker {
     /**
      * This method marks a job as finished from a CompactionJobFinishedEvent.
      *
-     * @param event CompactionJobFinishedEvent.
+     * @param event CompactionJobFinishedEvent that is to be marked as Finished.
      */
     default void jobFinished(CompactionJobFinishedEvent event) {
     }
@@ -70,7 +70,7 @@ public interface CompactionJobTracker {
     /**
      * This method marks a job as failed from a CompactionJobFailedEvent.
      *
-     * @param event CompactionJobFailedEvent.
+     * @param event CompactionJobFailedEvent that is to be marked as Failed.
      */
     default void jobFailed(CompactionJobFailedEvent event) {
     }
@@ -78,8 +78,10 @@ public interface CompactionJobTracker {
     /**
      * This method takes in a jobId and returns the optional current status of it.
      *
-     * @param  jobId The jobId to get the status of.
-     * @return       Optional CompactionJobStatus.
+     * @param  jobId                         String the jobId to get the status of.
+     * @return                               Optional CompactionJobStatus containing the job CompactionJobStatus if
+     *                                       found.
+     * @throws UnsupportedOperationException unless overwritten.
      */
     default Optional<CompactionJobStatus> getJob(String jobId) {
         throw new UnsupportedOperationException("Instance has no compaction job tracker");
@@ -88,8 +90,9 @@ public interface CompactionJobTracker {
     /**
      * This method returns a stream of CompactionJobStatuses for a given tableId.
      *
-     * @param  tableId String.
-     * @return         Stream of CompactionJobStatuses.
+     * @param  tableId                       String of the table id to stream all the jobs from.
+     * @return                               Stream of CompactionJobStatuses that relation to given table id.
+     * @throws UnsupportedOperationException unless overwritten.
      */
     default Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no compaction job tracker");
@@ -98,8 +101,8 @@ public interface CompactionJobTracker {
     /**
      * This method returns a list of CompactionJobStatuses for a given tableId.
      *
-     * @param  tableId String.
-     * @return         List of CompactionJobStatuses.
+     * @param  tableId String the id of the table to get all jobs for.
+     * @return         List of CompactionJobStatuses that match the given table id.
      */
     default List<CompactionJobStatus> getAllJobs(String tableId) {
         return streamAllJobs(tableId).collect(Collectors.toList());
@@ -108,8 +111,8 @@ public interface CompactionJobTracker {
     /**
      * This method returns a list of CompactionJobStatuses for a given tableId that haven't finished.
      *
-     * @param  tableId String.
-     * @return         List of CompactionJobStatuses.
+     * @param  tableId String the id of the table to get all jobs for.
+     * @return         List of unfinished CompactionJobStatuses that match the given table id.
      */
     default List<CompactionJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
@@ -120,9 +123,9 @@ public interface CompactionJobTracker {
     /**
      * This method returns a list of CompactionJobStatus for a given tableId and taskId.
      *
-     * @param  tableId String
-     * @param  taskId  String
-     * @return         List of CompactionJobStatuses.
+     * @param  tableId String the id of the table to get all jobs for.
+     * @param  taskId  String the id of the task to get all jobs for.
+     * @return         List of CompactionJobStatuses that match the given table and task ids.
      */
     default List<CompactionJobStatus> getJobsByTaskId(String tableId, String taskId) {
         return streamAllJobs(tableId)
@@ -133,10 +136,11 @@ public interface CompactionJobTracker {
     /**
      * This method returns a list of CompactionJobStatuses for a given tableId in a provided timeframe.
      *
-     * @param  tableId   String.
-     * @param  startTime Instant.
-     * @param  endTime   Instant.
-     * @return           List of CompactionJobStatuses.
+     * @param  tableId   String the id of the table to get all jobs for.
+     * @param  startTime Instant the start time of the period to check.
+     * @param  endTime   Instant the end time of the period to check.
+     * @return           List of CompactionJobStatuseshat that match the given table id and are withing the given
+     *                   period.
      */
     default List<CompactionJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {
         return streamAllJobs(tableId)

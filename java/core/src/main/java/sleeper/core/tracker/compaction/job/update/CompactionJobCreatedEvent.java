@@ -70,8 +70,8 @@ public class CompactionJobCreatedEvent {
         /**
          * Sets the jobsId and returns the builder.
          *
-         * @param  jobId String
-         * @return       Builder.
+         * @param  jobId String the jobId to be set
+         * @return       Builder containing current set values.
          */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
@@ -81,8 +81,8 @@ public class CompactionJobCreatedEvent {
         /**
          * Sets the tableId and returns the builder.
          *
-         * @param  tableId String.
-         * @return         Builder.
+         * @param  tableId String the tableId to be set.
+         * @return         Builder containing current set values.
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
@@ -92,8 +92,8 @@ public class CompactionJobCreatedEvent {
         /**
          * Sets the partitionId and returns the builder.
          *
-         * @param  partitionId String.
-         * @return             Builder.
+         * @param  partitionId String the partitionId to be set.
+         * @return             Builder containing current set values.
          */
         public Builder partitionId(String partitionId) {
             this.partitionId = partitionId;
@@ -103,8 +103,8 @@ public class CompactionJobCreatedEvent {
         /**
          * Sets the inputFilesCount and returns the builder.
          *
-         * @param  inputFilesCount int.
-         * @return                 Builder.
+         * @param  inputFilesCount int the inputFilesCount to be set.
+         * @return                 Builder containing current set values.
          */
         public Builder inputFilesCount(int inputFilesCount) {
             this.inputFilesCount = inputFilesCount;
