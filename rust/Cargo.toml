@@ -43,7 +43,9 @@ git2 = { version = "0.20.1" } # Interact with version control
 human-panic = { version = "2.0.2" } # Readable panic messages
 libc = { version = "0.2.171" } # FFI type support
 log = { version = "0.4.27" } # Standard logging framework
+nohash = { version = "0.2.0" } # No-op hashing for integral types
 num-format = { version = "0.4.4" } # Nicely formatted numbers
+num-traits = { version = "0.2.19" } # Unified traits for integral types
 object_store = { version = "0.11.2" } # Remote cloud storage access
 openssl = { version = "0.10.72" } # Use vendored feature to build from source for cross compilation
 owo-colors = { version = "4.2.0" } # Colourised output
