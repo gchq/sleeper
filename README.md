@@ -17,9 +17,6 @@ The current codebase can only be deployed to AWS, but there is nothing in the de
 we would like to be able to deploy Sleeper to other public cloud environments such as Microsoft Azure
 or to a Kubernetes cluster.
 
-Note that Sleeper is currently a prototype. Further development and testing is needed before it can be considered
-to be ready for production use.
-
 ## Functionality
 
 Sleeper stores records in tables. A table is a collection of records that conform to a schema. A record is a map
