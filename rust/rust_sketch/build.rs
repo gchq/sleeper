@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use cargo_metadata::MetadataCommand;
+use serde_json::Value;
+
+pub const DEFAULT_TAG: &str = "5.2.0";
+
 fn main() {
     println!("cargo:rerun-if-changed=src/include");
     println!("cargo:rerun-if-changed=src/quantiles.rs");
@@ -26,8 +31,8 @@ fn main() {
     let url = std::env::var("RUST_SKETCH_DATASKETCH_URL")
         .unwrap_or(String::from("https://github.com/apache/datasketches-cpp"));
 
-    // look to see if the repo tag has been overridden
-    let tag = std::env::var("RUST_SKETCH_DATASKETCH_TAG").unwrap_or(String::from("5.2.0"));
+    // look up tag to use
+    let tag = get_repo_tag();
 
     // try to open repository in case it already exists
     if git2::Repository::open(path.join("datasketches-cpp")).is_err() {
@@ -54,4 +59,56 @@ fn main() {
             path.join("datasketches-cpp/quantiles/include"),
         ])
         .compile("rust_sketch");
+}
+
+/// Retrieve git repository tag for Apache `DataSketches` library to retrieve.
+///
+/// Attempt to determine the git repository tag to retrieve for the Apache `DataSketches`
+/// library. Checks in order:
+/// 1. `RUST_SKETCH_DATASKETCH_TAG` environment variable.
+/// 2. Cargo workspace metadata `workspace.metadata.dataketches` for a `git_repository_tag` key.
+/// 3. Default tag in [`DEFAULT_TAG`].
+fn get_repo_tag() -> String {
+    // 1. Check environment variable
+    if let Ok(env_tag) = std::env::var("RUST_SKETCH_DATASKETCH_TAG") {
+        println!(
+            "cargo:warning=DataSketches repository tag taken from environment variable {env_tag}"
+        );
+        return env_tag;
+    }
+
+    // 2. Check cargo metadata
+    let mut command = MetadataCommand::new();
+    let Ok(metadata) = command.no_deps().exec() else {
+        println!(
+            "cargo:warning=Couldn't execute cargo metadata command. Using default {DEFAULT_TAG} tag."
+        );
+        return String::from(DEFAULT_TAG);
+    };
+
+    let Value::Object(workspace_data) = metadata.workspace_metadata else {
+        println!(
+            "cargo:warning=Couldn't find workspace metadata. Using default {DEFAULT_TAG} tag."
+        );
+        return String::from(DEFAULT_TAG);
+    };
+
+    let Some(Value::Object(sketch_data)) = workspace_data.get("datasketches") else {
+        println!(
+            "cargo:warning=Couldn't find \"datasketches\" metadata section. Using default {DEFAULT_TAG} tag."
+        );
+        return String::from(DEFAULT_TAG);
+    };
+
+    if let Some(Value::String(repo_tag)) = sketch_data.get("git_repository_tag") {
+        println!(
+            "cargo:warning=DataSketches repository tag taken from cargo metadata variable {repo_tag}"
+        );
+        repo_tag.clone()
+    } else {
+        println!(
+            "cargo:warning=Couldn't find \"git_repository_tag\" metadata key. Using default {DEFAULT_TAG} tag."
+        );
+        String::from(DEFAULT_TAG)
+    }
 }
