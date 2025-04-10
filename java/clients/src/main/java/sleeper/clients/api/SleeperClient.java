@@ -48,7 +48,6 @@ import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -242,19 +241,17 @@ public class SleeperClient {
      * <p>
      * Files should be specified in the format 'bucketName/objectKey'.
      *
-     * @param  tableName    the table name to write to
-     * @param  platform     the platform the import should run on
-     * @param  files        list of the files containing the records to ingest
-     * @param  platformSpec overrides for table properties just for this job
-     * @return              the ID of the job for tracking
+     * @param  tableName the table name to write to
+     * @param  platform  the platform the import should run on
+     * @param  files     list of the files containing the records to ingest
+     * @return           the ID of the job for tracking
      */
-    public String bulkImportParquetFilesFromS3(String tableName, BulkImportPlatform platform, List<String> files, Map<String, String> platformSpec) {
+    public String bulkImportParquetFilesFromS3(String tableName, BulkImportPlatform platform, List<String> files) {
         String jobId = UUID.randomUUID().toString();
         bulkImportParquetFilesFromS3(platform, BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
                 .files(files)
-                .platformSpec(platformSpec)
                 .build());
         return jobId;
     }
