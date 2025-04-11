@@ -103,6 +103,7 @@ public class ECSBulkExportTaskRunner {
         s3Client.shutdown();
         LOGGER.info("Shut down s3Client");
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
+        System.exit(0);
     }
 
     /**
