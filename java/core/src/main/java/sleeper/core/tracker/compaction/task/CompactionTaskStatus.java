@@ -56,7 +56,7 @@ public class CompactionTaskStatus {
 
     /**
      * This method checks wether the task was ran between a start and end time.
-     * If the tass hasn't finished yet then it just checks he start time was in the period.
+     * If the tass hasn't finished yet then it just checks the start time was in the period.
      *
      * @param  windowStartTime Instant for the start time of the period to check.
      * @param  windowEndTime   Instant for the end time of the period to check.
@@ -89,7 +89,7 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * THis method returns the Duration the task ran for provided it's finished.
+     * This method returns the Duration the task ran for provided it's finished.
      *
      * @return Duration of time bettween task start and finish or null if unfinished.
      */

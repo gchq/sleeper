@@ -139,7 +139,7 @@ public interface CompactionJobTracker {
      * @param  tableId   String the id of the table to get all jobs for.
      * @param  startTime Instant the start time of the period to check.
      * @param  endTime   Instant the end time of the period to check.
-     * @return           List of CompactionJobStatuseshat that match the given table id and are withing the given
+     * @return           List of CompactionJobStatuses that match the given table id and are withing the given
      *                   period.
      */
     default List<CompactionJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {

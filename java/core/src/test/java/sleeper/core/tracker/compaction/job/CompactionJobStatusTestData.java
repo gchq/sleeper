@@ -231,7 +231,7 @@ public class CompactionJobStatusTestData {
     }
 
     /**
-     * This method returns a list of COmpactionJobStatuses from provided updates.
+     * This method returns a list of CompactionJobStatuses from provided updates.
      *
      * @param  updates Nullable array of TestJobStatusUpdateRecords TaskUpdates to be used to generate the status.
      * @return         List of CompactionJobStatus built with the given values.

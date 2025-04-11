@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * This cass is used to track compaction tasks that are being ran.
+ * This class is used to track compaction tasks that are being ran.
  */
 public class InMemoryCompactionTaskTracker implements CompactionTaskTracker {
     private final Map<String, CompactionTaskStatus> statusByTaskId = new LinkedHashMap<>();

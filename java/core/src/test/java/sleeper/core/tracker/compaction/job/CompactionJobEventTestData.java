@@ -43,7 +43,7 @@ public class CompactionJobEventTestData {
     }
 
     /**
-     * This method build a CompactionJobCreatedEvent using the provided tableId and default settings.
+     * This method builds a CompactionJobCreatedEvent using the provided tableId and default settings.
      *
      * @param  tableId String of the tableId to be used in the built event.
      * @return         CompactionJobCreatedEvent built using the provided tableId and default settings.

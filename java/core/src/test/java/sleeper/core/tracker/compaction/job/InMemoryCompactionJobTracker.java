@@ -48,9 +48,9 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     private Supplier<Instant> timeSupplier;
 
     /**
-     * This methos sets the time supplier to the input param.
+     * This method sets the time supplier to the input param.
      *
-     * @param now An Instant containing the current time
+     * @param now an Instant containing the current time
      */
     public void fixUpdateTime(Instant now) {
         setTimeSupplier(() -> now);
@@ -74,7 +74,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     }
 
     /**
-     * This method adds a job fron an event to the update table.
+     * This method adds a job from an event to the update table.
      *
      * @param event        This event contains information about the job to be created.
      * @param assignedTime Instant detailing to time the job should be assigned from.

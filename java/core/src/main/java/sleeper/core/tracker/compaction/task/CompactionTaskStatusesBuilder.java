@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This class is used to managed task status builders in a cache.
+ * This class is used to manage task status builders in a cache.
  * Tasks can be started, finished or streamed.
  */
 public class CompactionTaskStatusesBuilder {
