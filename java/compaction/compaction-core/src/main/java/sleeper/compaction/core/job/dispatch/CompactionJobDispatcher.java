@@ -127,9 +127,8 @@ public class CompactionJobDispatcher {
         try {
             deleteBatch.delete(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         } catch (RuntimeException e) {
-            LOGGER.error("Batch send to dead letter queue", e);
+            LOGGER.error("Error deleting batch - send to dead letter queue", e);
             sendDeadLetter.send(request);
-            LOGGER.error("Batch not deleted", e);
         }
     }
 
