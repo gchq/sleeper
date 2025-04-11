@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.api;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
@@ -36,6 +38,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
@@ -45,8 +48,11 @@ import sleeper.query.core.recordretrieval.QueryExecutor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +71,8 @@ class SleeperClientTest {
     Schema schema = createSchemaWithKey("key", new StringType());
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
+    Queue<IngestJob> ingestQueue = new LinkedList<>();
+    Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -72,6 +80,8 @@ class SleeperClientTest {
             .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
             .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
             .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
+            .ingestJobSender(ingestSender())
+            .bulkImportJobSender(bulkImportSender())
             .build();
 
     @Test
@@ -125,6 +135,45 @@ class SleeperClientTest {
                 new Record(Map.of("key", "B")));
     }
 
+    @Test
+    void shouldIngestParquetFilesFromS3() {
+        String tableName = "ingest-table";
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        // When
+        String jobId = sleeperClient.ingestParquetFilesFromS3(tableName, fileList);
+
+        // Then
+        assertThat(jobId).isNotBlank();
+        assertThat(ingestQueue).containsExactly(
+                IngestJob.builder()
+                        .tableName(tableName)
+                        .id(jobId)
+                        .files(fileList)
+                        .build());
+    }
+
+    @Test
+    void shouldBulkImportParquetFilesFromS3() {
+        // Given
+        String tableName = "import-table";
+        BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        // When
+        String jobId = sleeperClient.bulkImportParquetFilesFromS3(tableName, platform, fileList);
+
+        // Then
+        assertThat(jobId).isNotBlank();
+        assertThat(bulkImportQueues).isEqualTo(
+                Map.of(platform, List.of(
+                        BulkImportJob.builder()
+                                .id(jobId)
+                                .tableName(tableName)
+                                .files(fileList)
+                                .build())));
+    }
+
     private TableProperties createTableProperties(String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
@@ -154,4 +203,13 @@ class SleeperClientTest {
         return new RangeFactory(schema);
     }
 
+    private SleeperClientIngest ingestSender() {
+        return job -> ingestQueue.add(job);
+    }
+
+    private SleeperClientBulkImport bulkImportSender() {
+        return (platform, job) -> bulkImportQueues
+                .computeIfAbsent(platform, p -> new LinkedList<>())
+                .add(job);
+    }
 }
