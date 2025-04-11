@@ -30,6 +30,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
@@ -50,20 +51,20 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 public class CommonEmrBulkImportHelper {
 
     private final Construct scope;
-    private final String platform;
+    private final BulkImportPlatform platform;
     private final InstanceProperties instanceProperties;
     private final CoreStacks coreStacks;
     private final List<IMetric> errorMetrics;
 
     public CommonEmrBulkImportHelper(
-            Construct scope, String platform, InstanceProperties instanceProperties,
+            Construct scope, BulkImportPlatform platform, InstanceProperties instanceProperties,
             CoreStacks coreStacks, List<IMetric> errorMetrics) {
         this.scope = scope;
         this.platform = platform;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
         this.errorMetrics = errorMetrics;
-        if (platform.length() > 16) {
+        if (platform.toString().length() > 16) {
             throw new IllegalArgumentException("platform must be at most 16 characters to create short enough resource names");
         }
     }
@@ -103,22 +104,21 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
-            CommonEmrBulkImportStack commonEmrStack) {
-        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket, logGroupRef,
+            Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef, CommonEmrBulkImportStack commonEmrStack) {
+        return createJobStarterFunction(jobQueue, jars, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
+            Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
             List<IRole> passRoles) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
+        env.put("BULK_IMPORT_PLATFORM", platform.toString());
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-import", platform, "start");
+                Utils.cleanInstanceId(instanceProperties), "bulk-import", platform.toString(), "start");
 
         IFunction function = lambdaCode.buildFunction(scope, LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
@@ -127,7 +127,10 @@ public class CommonEmrBulkImportHelper {
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .logGroup(coreStacks.getLogGroup(logGroupRef))
-                .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
+                .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue)
+                        .batchSize(1)
+                        .maxConcurrency(2)
+                        .build())));
 
         coreStacks.grantValidateBulkImport(function.getRole());
         importBucket.grantReadWrite(function);

@@ -44,6 +44,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -103,12 +104,12 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, errorMetrics);
+                BulkImportPlatform.EMRServerless, instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopic);
 
-        IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
+        IFunction jobStarter = commonHelper.createJobStarterFunction(
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_SERVERLESS_START, List.of(emrRole));
         configureJobStarterFunction(instanceProperties, jobStarter);

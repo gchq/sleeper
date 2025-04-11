@@ -18,7 +18,11 @@ package sleeper.bulkimport.starter.executor;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.sfn.SfnClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
+import sleeper.bulkimport.starter.executor.persistent.PersistentEmrPlatformExecutor;
+import sleeper.bulkimport.starter.executor.persistent.ReturnBulkImportJobToQueue;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 
@@ -29,21 +33,22 @@ public interface PlatformExecutor {
 
     static PlatformExecutor fromEnvironment(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-        String platform = System.getenv(PLATFORM_ENV_VARIABLE);
+        BulkImportPlatform platform = BulkImportPlatform.fromString(System.getenv(PLATFORM_ENV_VARIABLE));
         switch (platform) {
-            case "NonPersistentEMR":
+            case NonPersistentEMR:
                 return new EmrPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
                         instanceProperties, tablePropertiesProvider);
-            case "EKS":
+            case EKS:
                 return new StateMachinePlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(SfnClient.builder()),
                         instanceProperties);
-            case "PersistentEMR":
+            case PersistentEMR:
                 return new PersistentEmrPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
+                        ReturnBulkImportJobToQueue.forFullPersistentEmrCluster(instanceProperties, SqsClient.create()),
                         instanceProperties);
-            case "EMRServerless":
+            case EMRServerless:
                 return new EmrServerlessPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrServerlessClient.builder()),
                         instanceProperties);

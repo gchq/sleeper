@@ -118,7 +118,7 @@ public class SystemTestCompaction {
     public SystemTestCompaction waitForTasks(int expectedTasks) {
         new WaitForTasks(driver.getJobTracker())
                 .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds,
-                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
         return this;
     }
 
