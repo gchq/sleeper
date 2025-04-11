@@ -423,8 +423,9 @@ to the ECR repository name, eg. `my-instance-id/ingest`.
 * `sleeper.bulk.import.eks.repo`
 * `sleeper.systemtest.repo`
 
-To include a table in your instance, your `table.properties` file can be next to your `instance.properties` file.
-You can add more than one by creating a `tables` directory, with a subfolder for each table.
+To include a table in your instance, your `table.properties` file can be in the same folder as
+your `instance.properties` file. You can add more than one by creating a `tables` directory in the same folder, with a
+subfolder for each table.
 
 See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
 
