@@ -95,6 +95,13 @@ public class ECSBulkExportTaskRunner {
                 dynamoDBClient);
 
         runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoDBClient, instanceProperties, tablePropertiesProvider);
+
+        sqsClient.shutdown();
+        LOGGER.info("Shut down sqsClient");
+        dynamoDBClient.shutdown();
+        LOGGER.info("Shut down dynamoDBClient");
+        s3Client.shutdown();
+        LOGGER.info("Shut down s3Client");
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
@@ -138,13 +145,6 @@ public class ECSBulkExportTaskRunner {
                 LOGGER.error("Unexpected error processing compaction job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
-            } finally {
-                sqsClient.shutdown();
-                LOGGER.info("Shut down sqsClient");
-                dynamoDBClient.shutdown();
-                LOGGER.info("Shut down dynamoDBClient");
-                s3Client.shutdown();
-                LOGGER.info("Shut down s3Client");
             }
         });
     }
