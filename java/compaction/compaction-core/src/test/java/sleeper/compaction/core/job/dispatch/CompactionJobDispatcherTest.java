@@ -311,6 +311,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(pendingDeadLetterQueue).containsExactly(request);
         assertThat(s3PathToCompactionJobBatch).isNotEmpty();
+        assertThat(compactionQueue).containsExactly(job1);
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {

@@ -92,7 +92,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
         // Then
         assertThat(receiveCompactionJobs()).containsExactly(job1, job2);
-        assertThatFilesAreNotInBucket();
+        assertThatBatchFileWasDeleted();
     }
 
     @Test
@@ -119,7 +119,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
         // Then
         assertThat(recievePendingBatches()).containsExactly(request);
-        assertThatFilesAreInBucket();
+        assertThatBatchFileWasNotDeleted();
     }
 
     @Test
@@ -147,7 +147,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
         // Then
         assertThat(recievePendingBatches()).isEmpty();
         assertThat(receiveDeadLetters()).containsExactly(request);
-        assertThatFilesAreInBucket();
+        assertThatBatchFileWasNotDeleted();
     }
 
     private InstanceProperties createInstance() {
@@ -238,12 +238,12 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
 
-    private void assertThatFilesAreInBucket() {
+    private void assertThatBatchFileWasNotDeleted() {
         Set<String> contents = listObjectKeys(instanceProperties.get(DATA_BUCKET));
         assertThat(contents).isNotEmpty();
     }
 
-    private void assertThatFilesAreNotInBucket() {
+    private void assertThatBatchFileWasDeleted() {
         Set<String> contents = listObjectKeys(instanceProperties.get(DATA_BUCKET));
         assertThat(contents).isEmpty();
     }
