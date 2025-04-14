@@ -394,11 +394,15 @@ Before we can use CDK to deploy Sleeper, we need to create some configuration fi
 * A `schema.json` file which describes the data stored in a Sleeper table.
 * A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
 
-There's an example of a basic instance properties file [here](../example/basic/instance.properties)
-and an example of a full instance properties file [here](../example/full/instance.properties).
-This latter file shows all the instance properties that you can set. Whichever of these two
-files you use as your starting point, you will need to set sensible values for the following
-properties:
+The `instance.properties` and `table.properties` files are Java properties files. You can find descriptions of all
+properties in the system [here](usage/property-master.md).
+
+There's an example of a basic instance properties file [here](../example/basic/instance.properties) and an example of a
+full instance properties file [here](../example/full/instance.properties). This latter file shows all the instance
+properties that you can set. You can use one of these as your starting point. Examples of the other files listed above
+can also be found alongside those.
+
+You will need to set sensible values for the following instance properties:
 
 * `sleeper.id`
 * `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
@@ -419,8 +423,9 @@ to the ECR repository name, eg. `my-instance-id/ingest`.
 * `sleeper.bulk.import.eks.repo`
 * `sleeper.systemtest.repo`
 
-To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
-You can add more than one by creating a `tables` directory, with a subfolder for each table.
+To include a table in your instance, your `table.properties` file can be in the same folder as
+your `instance.properties` file. You can add more than one by creating a `tables` directory in the same folder, with a
+subfolder for each table.
 
 See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
 
