@@ -17,11 +17,11 @@
 */
 use ageoff::AgeOff;
 use datafusion::{
-    common::{config_err, DFSchema, HashSet},
+    common::{DFSchema, HashSet, config_err},
     error::{DataFusionError, Result},
     execution::FunctionRegistry,
     functions_aggregate::expr_fn::{count, max, min, sum},
-    logical_expr::{col, AggregateUDF, Expr, ExprSchemable, ScalarUDF},
+    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
 };
 use map_agg::{MapAggregator, MapAggregatorOp};

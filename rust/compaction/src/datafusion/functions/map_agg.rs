@@ -32,27 +32,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use std::fmt::Debug;
-
 use crate::datafusion::functions::{
-    map_accumulator::ByteMapAccumulator,
-    map_group_accumulator::{ByteGroupMapAccumulator, StringGroupMapAccumulator},
+    map_accumulator::{ByteMapAccumulator, PrimMapAccumulator, StringMapAccumulator},
+    map_group_accumulator::{
+        ByteGroupMapAccumulator, PrimGroupMapAccumulator, StringGroupMapAccumulator,
+    },
 };
-
-use super::map_accumulator::StringMapAccumulator;
 use arrow::{
-    array::{downcast_integer, ArrowPrimitiveType, PrimitiveBuilder},
+    array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},
     datatypes::{DataType, Fields},
 };
 use datafusion::{
     common::{exec_err, internal_err, plan_err},
     error::Result,
     logical_expr::{
-        function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
-        GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, Volatility,
+        Accumulator, AggregateUDFImpl, GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature,
+        Volatility, function::AccumulatorArgs, utils::AggregateOrderSensitivity,
     },
 };
 use num_traits::NumAssign;
+use std::fmt::Debug;
 
 /// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
 pub trait PrimBuilderType: Default + Debug {
@@ -67,13 +66,6 @@ impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
     fn append_value(&mut self, v: &<Self::ArrowType as ArrowPrimitiveType>::Native) {
         self.append_value(*v);
     }
-}
-
-// This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
-macro_rules! helper {
-    ($t:ty, $acc:ident, $dt: expr, $op: expr) => {{
-        Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt, $op)?))
-    }};
 }
 
 /// Check that the struct type from a map type is compatible.
@@ -142,6 +134,48 @@ impl MapAggregator {
         }
     }
 }
+// This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
+macro_rules! value_only_helper {
+    ($t: ty, $acc: ident, $dt: expr, $op: expr) => {
+        Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt, $op)?))
+    };
+}
+
+macro_rules! value_type_helper {
+    ($value_type: ty, $key_type: ty, $dt: expr, $op: expr) => {{
+        Ok(Box::new(PrimMapAccumulator::<
+            PrimitiveBuilder<$key_type>,
+            PrimitiveBuilder<$value_type>,
+        >::try_new($dt, $op)?))
+    }};
+}
+
+macro_rules! key_type_helper {
+    ($key_type: ty, $value_datatype: expr, $dt: expr, $op: expr) => {{
+        downcast_integer! {
+            $value_datatype => (value_type_helper, $key_type, $dt, $op),
+            _ => unreachable!()
+        }
+    }};
+}
+
+macro_rules! value_type_group_helper {
+    ($value_type: ty, $key_type: ty, $dt: expr, $op: expr) => {{
+        Ok(Box::new(PrimGroupMapAccumulator::<
+            PrimitiveBuilder<$key_type>,
+            PrimitiveBuilder<$value_type>,
+        >::try_new($dt, $op)?))
+    }};
+}
+
+macro_rules! key_type_group_helper {
+    ($key_type: ty, $value_datatype: expr, $dt: expr, $op: expr) => {{
+        downcast_integer! {
+            $value_datatype => (value_type_group_helper, $key_type, $dt, $op),
+            _ => unreachable!()
+        }
+    }};
+}
 
 impl AggregateUDFImpl for MapAggregator {
     fn as_any(&self) -> &dyn std::any::Any {
@@ -167,20 +201,28 @@ impl AggregateUDFImpl for MapAggregator {
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
         let struct_fields = validate_map_struct_type(&acc_args)?;
 
+        let key_type = struct_fields[0].data_type();
         let value_type = struct_fields[1].data_type();
         let map_type = acc_args.return_type;
         let op_type = self.op.clone();
 
-        match struct_fields[0].data_type() {
-            DataType::Utf8 => downcast_integer! {
-                value_type => (helper, StringMapAccumulator, map_type, op_type),
+        if key_type.is_integer() {
+            downcast_integer! {
+                key_type => (key_type_helper, value_type, map_type, op_type),
                 _ => unreachable!()
-            },
-            DataType::Binary => downcast_integer! {
-                value_type => (helper, ByteMapAccumulator, map_type, op_type),
-                _ => unreachable!()
-            },
-            _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
+            }
+        } else {
+            match key_type {
+                DataType::Utf8 => downcast_integer! {
+                    value_type => (value_only_helper, StringMapAccumulator, map_type, op_type),
+                    _ => unreachable!()
+                },
+                DataType::Binary => downcast_integer! {
+                    value_type => (value_only_helper, ByteMapAccumulator, map_type, op_type),
+                    _ => unreachable!()
+                },
+                _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
+            }
         }
     }
 
@@ -198,20 +240,28 @@ impl AggregateUDFImpl for MapAggregator {
     ) -> Result<Box<dyn GroupsAccumulator>> {
         let struct_fields = validate_map_struct_type(&args)?;
 
+        let key_type = struct_fields[0].data_type();
         let value_type = struct_fields[1].data_type();
         let map_type = args.return_type;
         let op_type = self.op.clone();
 
-        match struct_fields[0].data_type() {
-            DataType::Utf8 => downcast_integer! {
-                value_type => (helper, StringGroupMapAccumulator, map_type, op_type),
+        if key_type.is_integer() {
+            downcast_integer! {
+                key_type => (key_type_group_helper, value_type, map_type, op_type),
                 _ => unreachable!()
-            },
-            DataType::Binary => downcast_integer! {
-                value_type => (helper, ByteGroupMapAccumulator, map_type, op_type),
-                _ => unreachable!()
-            },
-            _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
+            }
+        } else {
+            match key_type {
+                DataType::Utf8 => downcast_integer! {
+                    value_type => (value_only_helper, StringGroupMapAccumulator, map_type, op_type),
+                    _ => unreachable!()
+                },
+                DataType::Binary => downcast_integer! {
+                    value_type => (value_only_helper, ByteGroupMapAccumulator, map_type, op_type),
+                    _ => unreachable!()
+                },
+                _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
+            }
         }
     }
 
