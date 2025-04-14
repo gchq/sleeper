@@ -32,7 +32,7 @@ aws-credential-types = { version = "1.2.2" } # Credential provider types
 aws-types = { version = "1.3.5" } # for Region
 bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
 chrono = { version = "0.4.40" } # Log helper
-clap = { version = "4.5.35" } # Cmd line args processing
+clap = { version = "4.5.36" } # Cmd line args processing
 color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
 cxx = { version = "1.0.156" } # Exception handling for Rust
 cxx-build = { version = "1.0.156" }
