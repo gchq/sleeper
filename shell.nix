@@ -13,6 +13,7 @@ pkgs.mkShell {
     maven
     k9s
     cmake
+    clang
     gcc
     rustup
     cargo-cross # For Rust cross compiling
