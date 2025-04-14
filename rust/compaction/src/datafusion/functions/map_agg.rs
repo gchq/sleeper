@@ -134,44 +134,39 @@ impl MapAggregator {
         }
     }
 }
-// This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
+
+/// Used with [`downcast_integer`] to take an Arrow datatype and create the named map accumulator with a [`PrimitiveBuilder`]
+/// given value type provided as the `$t` argument.
 macro_rules! value_only_helper {
+    // This macros adapted from https://github.com/apache/datafusion/blob/main/datafusion/functions-aggregate/src/sum.rs
     ($t: ty, $acc: ident, $dt: expr, $op: expr) => {
         Ok(Box::new($acc::<PrimitiveBuilder<$t>>::try_new($dt, $op)?))
     };
 }
 
+/* The following is a two level `downcast_integer` macro expansion. Since `PrimitiveMapAccumulator` needs two generic arguments,
+ * one for the key and one for the value of the map. We can only expand one thing at once with `downcast_integer`, so the outer
+ * call is used with `key_type_helper` which contains a second downcast_integer call with `value_type_helper` which then
+ * has both the key and value types available so can expand into the final Rust code.
+ */
+
+/// Used by [`key_type_helper`], this expands into creating a class specified with `$acc` with key type `$key_type` and value
+/// type `$value_type`. `$acc` should be either [`PrimMapAccumulator`] or [`PrimGroupMapAccumulator`].
 macro_rules! value_type_helper {
-    ($value_type: ty, $key_type: ty, $dt: expr, $op: expr) => {{
-        Ok(Box::new(PrimMapAccumulator::<
+    ($value_type: ty, $key_type: ty, $acc: ident, $dt: expr, $op: expr) => {{
+        Ok(Box::new($acc::<
             PrimitiveBuilder<$key_type>,
             PrimitiveBuilder<$value_type>,
         >::try_new($dt, $op)?))
     }};
 }
 
+/// Used by [`downcast_integer`] to take a Arrow datatype and recursively call [`value_type_helper`] inside another
+/// [`downcast_integer`] to determine the value datatype of the map.
 macro_rules! key_type_helper {
-    ($key_type: ty, $value_datatype: expr, $dt: expr, $op: expr) => {{
+    ($key_type: ty, $value_datatype: expr, $acc: ident, $dt: expr, $op: expr) => {{
         downcast_integer! {
-            $value_datatype => (value_type_helper, $key_type, $dt, $op),
-            _ => unreachable!()
-        }
-    }};
-}
-
-macro_rules! value_type_group_helper {
-    ($value_type: ty, $key_type: ty, $dt: expr, $op: expr) => {{
-        Ok(Box::new(PrimGroupMapAccumulator::<
-            PrimitiveBuilder<$key_type>,
-            PrimitiveBuilder<$value_type>,
-        >::try_new($dt, $op)?))
-    }};
-}
-
-macro_rules! key_type_group_helper {
-    ($key_type: ty, $value_datatype: expr, $dt: expr, $op: expr) => {{
-        downcast_integer! {
-            $value_datatype => (value_type_group_helper, $key_type, $dt, $op),
+            $value_datatype => (value_type_helper, $key_type, $acc, $dt, $op),
             _ => unreachable!()
         }
     }};
@@ -208,7 +203,7 @@ impl AggregateUDFImpl for MapAggregator {
 
         if key_type.is_integer() {
             downcast_integer! {
-                key_type => (key_type_helper, value_type, map_type, op_type),
+                key_type => (key_type_helper, value_type, PrimMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             }
         } else {
@@ -247,7 +242,7 @@ impl AggregateUDFImpl for MapAggregator {
 
         if key_type.is_integer() {
             downcast_integer! {
-                key_type => (key_type_group_helper, value_type, map_type, op_type),
+                key_type => (key_type_helper, value_type, PrimGroupMapAccumulator, map_type, op_type),
                 _ => unreachable!()
             }
         } else {
