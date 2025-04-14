@@ -133,7 +133,7 @@
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.18.0</commons-codec.version>
-        <commons-io.version>2.18.0</commons-io.version>
+        <commons-io.version>2.19.0</commons-io.version>
         <commons-configuration.version>2.11.0</commons-configuration.version>
         <commons-compress.version>1.27.1</commons-compress.version>
         <commons-text.version>1.13.1</commons-text.version>
