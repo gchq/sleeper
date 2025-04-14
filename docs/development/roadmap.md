@@ -7,15 +7,12 @@ The following improvements are actively being worked on:
 
 - https://github.com/gchq/sleeper/issues/3446 Bulk export.
 - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
-- https://github.com/gchq/sleeper/issues/4155 Java API improvements.
-- https://github.com/gchq/sleeper/issues/3687 Update design documentation.
-- https://github.com/gchq/sleeper/issues/4401 Garbage collector batching.
+- https://github.com/gchq/sleeper/issues/1389 Upgrade to AWS SDK v2.
 
 The following are likely to be worked on in the near future:
 
 - https://github.com/gchq/sleeper/issues/4393 Batch up partition splitting commits.
-- https://github.com/gchq/sleeper/issues/3693 Declarative deployment for infrastructure as code.
-- https://github.com/gchq/sleeper/issues/1389 Upgrade to AWS SDK v2.
+- https://github.com/gchq/sleeper/issues/3693 Improvements to declarative deployment with infrastructure as code.
 - https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 - https://github.com/gchq/sleeper/issues/1388 Rust implementations for operations on data files.
 
