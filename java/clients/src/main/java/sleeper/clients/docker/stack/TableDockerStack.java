@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,9 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
+        dynamoDB.deleteTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME));

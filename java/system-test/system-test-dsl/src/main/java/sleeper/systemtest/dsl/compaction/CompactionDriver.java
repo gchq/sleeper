@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.util.List;
@@ -36,4 +37,8 @@ public interface CompactionDriver {
     List<CompactionJob> drainJobsQueueForWholeInstance();
 
     void sendCompactionCommits(Stream<CompactionCommitMessage> commits);
+
+    String sendCompactionBatchGetKey(List<CompactionJob> jobs);
+
+    List<CompactionJobDispatchRequest> drainPendingDeadLetterQueueForWholeInstance();
 }

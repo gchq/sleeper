@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
-use compaction::{merge_sorted_files, ColRange, CompactionInput};
+use compaction::{ColRange, CompactionInput, merge_sorted_files};
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -158,7 +158,7 @@ async fn main() -> color_eyre::Result<()> {
         Err(e) => {
             bail!(e);
         }
-    };
+    }
     Ok(())
 }
 

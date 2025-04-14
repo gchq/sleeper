@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,25 @@ package sleeper.systemtest.dsl.statestore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 
+import java.util.List;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
 public class SystemTestStateStoreFakeCommitsTest {
@@ -79,6 +87,31 @@ public class SystemTestStateStoreFakeCommitsTest {
         // When / Then
         assertThatCode(() -> commitsDsl.waitForCommitLogs())
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldFakeCompactFilesIntoOnePerPartition(SleeperSystemTest sleeper) {
+        // Given
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        FileReference fileL1 = fileFactory.partitionFile("L", "l1.parquet", 100);
+        FileReference fileL2 = fileFactory.partitionFile("L", "l2.parquet", 100);
+        FileReference fileR = fileFactory.partitionFile("R", "r.parquet", 100);
+        sleeper.stateStore().fakeCommits().setupStateStore(stateStore -> {
+            AddFilesTransaction.fromReferences(List.of(fileL1, fileL2, fileR)).synchronousCommit(stateStore);
+        });
+
+        // When
+        sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
+
+        // Then
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        assertThat(files.listFileReferences()).hasSize(2);
+        assertThat(files.getFilesWithNoReferences()).hasSize(3);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,10 +223,10 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
             new BulkExportStack(this,
-                "BulkExport",
-                instanceProperties,
-                jars,
-                coreStacks);
+                    "BulkExport",
+                    instanceProperties,
+                    jars,
+                    coreStacks);
         }
 
         // Stack to garbage collect old files

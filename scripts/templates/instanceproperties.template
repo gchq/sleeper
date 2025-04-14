@@ -36,6 +36,13 @@ sleeper.subnets=changeme
 sleeper.ingest.repo=changeme
 
 
+## The following properties relate to bulk export.
+
+# The name of the repository for the bulk export container. The Docker image should have been uploaded
+# to an ECR repository of this name in this account.
+sleeper.bulk.export.ecr.repo=changeme
+
+
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
 
@@ -455,6 +462,70 @@ sleeper.ingest.batcher.job.creation.timeout.seconds=900
 sleeper.ingest.batcher.job.creation.period.minutes=1
 
 
+## The following properties relate to bulk export.
+
+# The amount of memory in MB for lambda functions that start bulk export jobs.
+sleeper.bulk.export.memory.mb=4096
+
+# The default timeout in seconds for the bulk export lambda.
+sleeper.bulk.export.timeout.seconds=900
+
+# The visibility timeout in seconds for the bulk export queue.
+sleeper.bulk.export.queue.visibility.timeout.seconds=900
+
+# The CPU architecture to run bulk export tasks on. Valid values are X86_64 and ARM64.
+# See Task CPU architecture at
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+sleeper.bulk.export.task.cpu.architecture=X86_64
+
+# The CPU for a bulk. export task using an ARM64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.arm.cpu=1024
+
+# The amount of memory in MB for a bulk export task using an ARM64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.arm.memory.mb=4096
+
+# The CPU for a bulk export task using an x86_64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.x86.cpu=1024
+
+# The amount of memory in MB for a bulk export task using an x86_64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.x86.memory.mb=4096
+
+# The rate at which a check to see if bulk export ECS tasks need to be created is made (in minutes,
+# must be >= 1).
+sleeper.bulk.export.task.creation.period.minutes=1
+
+# The maximum number of concurrent bulk export tasks to run.
+sleeper.bulk.export.max.concurrent.tasks=300
+
+# The number of days the results of bulk export remain in the bulk export results bucket before being
+# deleted.
+sleeper.bulk.export.results.bucket.expiry.days=7
+
+# The delay in seconds until a failed bulk export job becomes visible on the bulk export queue and can
+# be processed again.
+sleeper.bulk.export.job.failed.visibility.timeout.seconds=60
+
+# The time in seconds for a bulk export task to wait for a bulk export job to appear on the SQS queue
+# (must be <= 20).
+# When a bulk export task waits for bulk export jobs to appear on the SQS queue, if the task receives
+# no messages in the time defined by this property, it will try to wait for a message again.
+sleeper.bulk.export.task.wait.time.seconds=20
+
+# The frequency, in seconds, with which change message visibility requests are sent to extend the
+# visibility of messages on the bulk export job queue so that they are not processed by other
+# processes.
+# This should be less than the value of sleeper.bulk.export.queue.visibility.timeout.seconds.
+sleeper.bulk.export.keepalive.period.seconds=300
+
+
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
 ## 
@@ -864,6 +935,10 @@ sleeper.bulk.import.persistent.emr.max.capacity=10
 # (Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
 
+# (Persistent EMR mode only) The number of seconds to wait before requeueing a bulk import job because
+# the persistent EMR cluster is full.
+sleeper.bulk.import.persistent.emr.cluster.full.requeue.delay=60
+
 # (EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.
 # sleeper.bulk.import.eks.cluster.admin.roles=
 
@@ -951,8 +1026,19 @@ sleeper.gc.table.batch.size=1
 # Whether to perform garbage collection for offline tables.
 sleeper.gc.offline.enabled=false
 
-# The size of the batch of files ready for garbage collection requested from the State Store.
-sleeper.gc.batch.size=2000
+# The number of deleted files recorded to the state store in a single commit.
+# The garbage collector keeps deleting files as long as there are files to delete in the state store,
+# and updates the state store whenever it has deleted this many files.
+sleeper.gc.batch.size=10000
+
+# The maximum number of files that can be deleted per invocation of the garbage collector.
+# If a batch of files exceeds this limit, the whole batch will be deleted before terminating.
+# This limit is applied separately for each Sleeper table.
+# This restriction is placed to avoid reaching the lambda timeout for the garbage collector. If this
+# timeout is met, it is most likely to happen whilst deleting a batch of files. This would result in
+# files being deleted, but the state store not being updated. Any files caught in such a state will be
+# found on the next garbage collector run and deleted again, updating the state store as expected.
+sleeper.gc.files.maximum=750000
 
 # A file will not be deleted until this number of minutes have passed after it has been marked as
 # ready for garbage collection. The reason for not deleting files immediately after they have been
@@ -1262,9 +1348,9 @@ sleeper.query.processor.results.batch.size=2000
 # The size of the thread pool for retrieving records in a query processing lambda.
 sleeper.query.processor.record.retrieval.threads=10
 
-# The default value for the amount of time in minutes the query executor cache is valid for before it
-# times out and needs refreshing.
-sleeper.query.processor.cache.timeout=60
+# The default amount of time in seconds the query executor's cache of partition and file reference
+# information is valid for. After this it will time out and need refreshing.
+sleeper.query.processor.cache.timeout.seconds=60
 
 # This value is used to set the time-to-live on the tracking of the queries in the DynamoDB-based
 # query tracker.

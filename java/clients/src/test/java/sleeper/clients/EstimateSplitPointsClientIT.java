@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class EstimateSplitPointsClientIT extends LocalStackTestBase {
 
@@ -46,7 +46,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     @Test
     void shouldEstimateSplitPointsFromFileInS3() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new LongType());
+        Schema schema = createSchemaWithKey("key", new LongType());
         Path dataFile = dataFilePath("file.parquet");
         List<Record> records = List.of(
                 new Record(Map.of("key", 1L)),

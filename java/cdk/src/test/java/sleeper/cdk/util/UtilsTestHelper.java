@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class UtilsTestHelper {
     private UtilsTestHelper() {
@@ -69,7 +69,7 @@ public class UtilsTestHelper {
         String id = UUID.randomUUID().toString();
         TableProperties properties = new TableProperties(instanceProperties);
         properties.set(TABLE_NAME, id);
-        properties.setSchema(schemaWithKey("key"));
+        properties.setSchema(createSchemaWithKey("key"));
         return properties;
     }
 }

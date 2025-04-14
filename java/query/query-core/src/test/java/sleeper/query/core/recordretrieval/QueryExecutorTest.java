@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -63,13 +64,13 @@ import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final InMemoryDataStore recordStore = new InMemoryDataStore();
-    private final Schema schema = schemaWithKey("key");
+    private final InMemoryRecordStore recordStore = new InMemoryRecordStore();
+    private final Schema schema = createSchemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
@@ -291,7 +292,7 @@ public class QueryExecutorTest {
         @Test
         public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
             // Given files are added after the executor is first initialised
-            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
 
@@ -306,7 +307,7 @@ public class QueryExecutorTest {
         @Test
         public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
             // Given files are added after the executor is first initialised
-            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+            tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
 
@@ -346,7 +347,8 @@ public class QueryExecutorTest {
     }
 
     private QueryExecutor uninitialisedExecutorAtTime(Instant time) {
-        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, recordStore, time);
+        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
+                new InMemoryLeafPartitionRecordRetriever(recordStore), time);
     }
 
     private List<Record> getRecords(Query query) throws Exception {

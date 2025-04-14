@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,9 +102,13 @@ public class LambdaHandler {
             .jar(LambdaJar.QUERY)
             .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")
             .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
-    public static final LambdaHandler BULK_EXPORT = builder()
-            .jar(LambdaJar.BULK_EXPORT)
-            .handler("sleeper.bulkexport.lambda.SqsBulkExportProcessorLambda::handleRequest")
+    public static final LambdaHandler BULK_EXPORT_PLANNER = builder()
+            .jar(LambdaJar.BULK_EXPORT_PLANNER)
+            .handler("sleeper.bulkexport.planner.SqsBulkExportProcessorLambda::handleRequest")
+            .optionalStack(BulkExportStack).add();
+    public static final LambdaHandler BULK_EXPORT_TASK_CREATOR = builder()
+            .jar(LambdaJar.BULK_EXPORT_TASK_CREATOR)
+            .handler("sleeper.bulkexport.taskcreator.SqsTriggeredBulkExportTaskRunnerLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
             .jar(LambdaJar.QUERY)

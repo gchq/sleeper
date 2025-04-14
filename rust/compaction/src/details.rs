@@ -1,7 +1,7 @@
 //! The `internal` module contains the internal functionality and error conditions
 //! to actually implement the compaction library.
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::s3::{config_for_s3_module, default_creds_store, ObjectStoreFactory};
+use crate::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use aws_config::Region;
 use aws_credential_types::Credentials;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use object_store::aws::AmazonS3Builder;
 
 use std::{collections::HashMap, path::PathBuf};

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.compaction;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -88,17 +89,18 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 
 /**
  * Deploys the resources needed to create and commit compaction jobs. Specifically, there are the following resources:
- * <p>
- * - A Cloudwatch Rule that periodically triggers a lambda named sleeper-id-compaction-job-creation-trigger. The
- * purpose of this lambda is to identify online tables and send the table ids to an SQS FIFO queue.
- * - This SQS FIFO queue triggers a lambda named sleeper-id-compaction-job-creation-handler. The purpose of this
+ * <ul>
+ * <li>A Cloudwatch Rule that periodically triggers a lambda named sleeper-id-compaction-job-creation-trigger. The
+ * purpose of this lambda is to identify online tables and send the table ids to an SQS FIFO queue.</li>
+ * <li>This SQS FIFO queue triggers a lambda named sleeper-id-compaction-job-creation-handler. The purpose of this
  * lambda is to split any file references that need splitting and to create batches of compaction jobs in leaf
  * partitions. The lambda sends updates to the state store and sends batches of compaction jobs to an SQS queue
- * named sleeper-id-PendingCompactionJobBatch Q.
- * - This queue triggers a lambda named sleeper-compaction-job-dispatcher that checks whether the state store
+ * named sleeper-id-PendingCompactionJobBatchQ.</li>
+ * <li>This queue triggers a lambda named sleeper-id-compaction-job-dispatcher that checks whether the state store
  * has been upated with these compaction jobs. If so then the jobs in the batch are sent to an SQS queue named
- * sleeper-compactionJobQ; if not then the batch is returned to the queue for processing later.
- * - Jobs will be processed from the compaction job queue by resources defined in CompactionTaskResources.
+ * sleeper-id-CompactionJobQ; if not then the batch is returned to the queue for processing later.</li>
+ * <li>Jobs will be processed from the compaction job queue by resources defined in CompactionTaskResources.</li>
+ * </ul>
  */
 public class CompactionJobResources {
     private static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
@@ -124,7 +126,7 @@ public class CompactionJobResources {
         compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
         IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket,
                 lambdaCode, compactionJobsQueue);
-        IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue, compactionJobsQueue);
+        IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue);
         lambdaToBatchUpCompactionCommits(coreStacks, lambdaCode, commitBatcherQueue);
 
         grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, creationFunction);
@@ -239,8 +241,9 @@ public class CompactionJobResources {
         pendingQueue.grantSendMessages(grantee);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // Queue.getDeadLetterQueue is marked as nullable but will always be set
     private IFunction lambdaToSendCompactionJobBatches(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue, Queue compactionJobsQueue) {
+            CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-dispatcher");
@@ -258,6 +261,8 @@ public class CompactionJobResources {
                 .batchSize(1)
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
+
+        pendingQueue.getDeadLetterQueue().getQueue().grantSendMessages(function);
         return function;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
-import com.amazonaws.services.stepfunctions.AWSStepFunctions;
-import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.google.gson.Gson;
+import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -51,7 +50,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String NATIVE_IMAGE_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
     private static final Map<String, String> DEFAULT_CONFIG;
 
-    private final AWSStepFunctions stepFunctions;
+    private final SfnClient stepFunctions;
     private final InstanceProperties instanceProperties;
 
     static {
@@ -73,7 +72,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         DEFAULT_CONFIG = Collections.unmodifiableMap(defaultConf);
     }
 
-    public StateMachinePlatformExecutor(AWSStepFunctions stepFunctions,
+    public StateMachinePlatformExecutor(SfnClient stepFunctions,
             InstanceProperties instanceProperties) {
         this.stepFunctions = stepFunctions;
         this.instanceProperties = instanceProperties;
@@ -88,12 +87,12 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         input.put("job", bulkImportJob);
         input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));
         input.put("args", args);
+        String inputJson = new Gson().toJson(input);
 
-        stepFunctions.startExecution(
-                new StartExecutionRequest()
-                        .withStateMachineArn(stateMachineArn)
-                        .withName(jobExecutionName(bulkImportJob))
-                        .withInput(new Gson().toJson(input)));
+        stepFunctions.startExecution(request -> request
+                .stateMachineArn(stateMachineArn)
+                .name(jobExecutionName(bulkImportJob))
+                .input(inputJson));
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob) {

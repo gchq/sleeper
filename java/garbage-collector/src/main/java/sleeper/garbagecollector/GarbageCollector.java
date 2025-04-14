@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  */
 package sleeper.garbagecollector;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +29,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -40,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -51,26 +48,26 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
 
-    private final DeleteFile deleteFile;
+    private final DeleteFiles deleteFiles;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final StateStoreCommitRequestSender sendAsyncCommit;
 
-    public GarbageCollector(DeleteFile deleteFile,
+    public GarbageCollector(DeleteFiles deleteFiles,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             StateStoreCommitRequestSender sendAsyncCommit) {
-        this.deleteFile = deleteFile;
+        this.deleteFiles = deleteFiles;
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
         this.sendAsyncCommit = sendAsyncCommit;
     }
 
-    public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
-        runAtTime(Instant.now(), tables);
+    public int run(List<TableProperties> tables) throws FailedGarbageCollectionException {
+        return runAtTime(Instant.now(), tables);
     }
 
-    public void runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
+    public int runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
         LOGGER.info("Obtained list of {} tables", tables.size());
         int totalDeleted = 0;
         List<TableFailures> failedTables = new ArrayList<>();
@@ -80,8 +77,8 @@ public class GarbageCollector {
             try {
                 LOGGER.info("Starting GC for table {}", table);
                 deleteInBatches(tableProperties, startTime, deleted);
-                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFilenames().size(), table);
-                totalDeleted += deleted.getDeletedFilenames().size();
+                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFileCount(), table);
+                totalDeleted += deleted.getDeletedFileCount();
                 deleted.buildTableFailures().ifPresent(failedTables::add);
             } catch (Exception e) {
                 LOGGER.info("Failed to collect garbage for table {}", table, e);
@@ -93,17 +90,20 @@ public class GarbageCollector {
         if (!failedTables.isEmpty()) {
             throw new FailedGarbageCollectionException(failedTables);
         }
+        return totalDeleted;
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) {
-        int garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
+        int batchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
+        int maxFiles = instanceProperties.getInt(GARBAGE_COLLECTOR_MAXIMUM_FILE_DELETION_PER_INVOCATION);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
         List<String> batch = new ArrayList<>();
-        while (readyForGC.hasNext()) {
+        while (readyForGC.hasNext() &&
+                deleted.getDeletedFileCount() < maxFiles) {
             String filename = readyForGC.next();
             batch.add(filename);
-            if (batch.size() == garbageCollectorBatchSize) {
+            if (batch.size() == batchSize) {
                 deleteBatch(batch, tableProperties, stateStore, deleted);
                 batch.clear();
             }
@@ -123,7 +123,9 @@ public class GarbageCollector {
     }
 
     private void deleteBatch(List<String> batch, TableProperties tableProperties, StateStore stateStore, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = deleteFiles(batch, deleted);
+        deleted.startBatch(batch);
+        deleteFiles.deleteFiles(batch, deleted);
+        List<String> deletedFilenames = deleted.getFilesDeletedInBatch();
         LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
@@ -141,45 +143,8 @@ public class GarbageCollector {
         }
     }
 
-    private List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = new ArrayList<>(filenames.size());
-        for (String filename : filenames) {
-            try {
-                deleteFile.deleteFileAndSketches(filename);
-                deleted.deleted(filename);
-                deletedFilenames.add(filename);
-            } catch (Exception e) {
-                LOGGER.error("Failed to delete file: {}", filename, e);
-                deleted.failed(filename, e);
-            }
-        }
-        return deletedFilenames;
-    }
-
     @FunctionalInterface
-    public interface DeleteFile {
-        void deleteFileAndSketches(String filename) throws IOException;
-    }
-
-    public static DeleteFile deleteFileAndSketches(Configuration conf) {
-        return filename -> {
-            deleteFile(filename, conf);
-            String sketchesFile = filename.replace(".parquet", ".sketches");
-            deleteFile(sketchesFile, conf);
-        };
-    }
-
-    private static void deleteFile(String filename, Configuration conf) throws IOException {
-        Path path = new Path(filename);
-        FileSystem fileSystem = path.getFileSystem(conf);
-        if (!fileSystem.exists(path)) {
-            LOGGER.warn("File did not exist: {}", filename);
-            return;
-        }
-        boolean success = path.getFileSystem(conf).delete(path, false);
-        if (!success) {
-            throw new IOException("File could not be deleted: " + filename);
-        }
-        LOGGER.info("Deleted file {}", filename);
+    public interface DeleteFiles {
+        void deleteFiles(List<String> filenames, TableFilesDeleted deleted);
     }
 }

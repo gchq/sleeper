@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class CompactionDockerStack implements DockerStack {
@@ -45,9 +46,12 @@ public class CompactionDockerStack implements DockerStack {
     public void deploy() {
         DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDB);
-        String queueName = "sleeper-" + instanceProperties.get(ID) + "-CompactionJobQ";
-        String queueUrl = sqsClient.createQueue(request -> request.queueName(queueName)).queueUrl();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClient.createQueue(request -> request
+                .queueName("sleeper-" + instanceProperties.get(ID) + "-CompactionJobQ"))
+                .queueUrl());
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqsClient.createQueue(request -> request
+                .queueName("sleeper-" + instanceProperties.get(ID) + "-PendingCompactionJobBatchQ"))
+                .queueUrl());
     }
 
     @Override

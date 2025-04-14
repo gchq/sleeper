@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,9 @@ public interface QueryProperty {
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
-    UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.query.processor.cache.timeout")
-            .description("The default value for the amount of time in minutes the query executor cache is valid for before it times out and needs refreshing.")
+    UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.query.processor.cache.timeout.seconds")
+            .description("The default amount of time in seconds the query executor's cache of partition and " +
+                    "file reference information is valid for. After this it will time out and need refreshing.")
             .defaultValue("60")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();

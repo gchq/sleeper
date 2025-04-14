@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,17 @@ public class ThreadSleepTestHelper {
      */
     public static ThreadSleep noWaits() {
         return millis -> {
+        };
+    }
+
+    /**
+     * Creates an implementation of a waiter that throws an exception if it waits.
+     *
+     * @return a {@link ThreadSleep} that throws an exception
+     */
+    public static ThreadSleep refuseWaits() {
+        return millis -> {
+            throw new IllegalStateException("Unexpected wait for " + millis + "ms");
         };
     }
 

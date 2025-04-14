@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESH
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class S3PropertiesReloaderIT extends LocalStackTestBase {
 
@@ -88,7 +88,7 @@ class S3PropertiesReloaderIT extends LocalStackTestBase {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        String tableName = createTestTable(schemaWithKey("key"),
+        String tableName = createTestTable(createSchemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
         updatePropertiesInS3(tableName,
@@ -111,7 +111,7 @@ class S3PropertiesReloaderIT extends LocalStackTestBase {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        String tableName = createTestTable(schemaWithKey("key"),
+        String tableName = createTestTable(createSchemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
         TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);

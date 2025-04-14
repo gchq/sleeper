@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,8 @@ public class BucketUtils {
         ListObjectsV2Request req = new ListObjectsV2Request()
                 .withBucketName(bucketName)
                 .withPrefix(prefix + "/")
-                .withMaxKeys(100);
+                //Keys set to 1000 as this is the maximum value permitted by S3 delete action
+                .withMaxKeys(1000);
         ListObjectsV2Result result;
 
         LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);

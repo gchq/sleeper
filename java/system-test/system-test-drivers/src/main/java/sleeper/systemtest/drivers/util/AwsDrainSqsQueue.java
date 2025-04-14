@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class AwsDrainSqsQueue {
         return withClient(sqsClient)
                 .numThreads(10)
                 .messagesPerBatchPerThread(10_000)
-                .waitTimeSeconds(10)
+                .waitTimeSeconds(20) // Note that this is the maximum wait time
                 .build();
     }
 

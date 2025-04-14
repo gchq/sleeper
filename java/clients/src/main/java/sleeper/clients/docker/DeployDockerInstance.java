@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
@@ -134,6 +138,10 @@ public class DeployDockerInstance {
         instanceProperties.set(REGION, "us-east-1");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + instanceId + "-query-results");
         instanceProperties.set(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED.toString());
+        instanceProperties.set(COMPACTION_TASK_WAIT_TIME_IN_SECONDS, "1");
+        instanceProperties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "1");
+        instanceProperties.set(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, "0");
+        instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "1");
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {

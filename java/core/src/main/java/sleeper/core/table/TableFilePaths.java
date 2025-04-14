@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,19 @@ public class TableFilePaths {
      * @return           the file path
      */
     public String constructQuantileSketchesFilePath(Partition partition, String fileName) {
-        return String.format("%s/data/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
+        return constructQuantileSketchesFilePath(partition.getId(), fileName);
+    }
+
+    /**
+     * Generates a path to a sketches file in the given partition. Will have `.sketches` appended at the end. The
+     * filename must match the filename used for the corresponding data file.
+     *
+     * @param  partitionId the partition ID
+     * @param  fileName    the filename without file type
+     * @return             the file path
+     */
+    public String constructQuantileSketchesFilePath(String partitionId, String fileName) {
+        return String.format("%s/data/partition_%s/%s.sketches", filePathPrefix, partitionId, fileName);
     }
 
     /**

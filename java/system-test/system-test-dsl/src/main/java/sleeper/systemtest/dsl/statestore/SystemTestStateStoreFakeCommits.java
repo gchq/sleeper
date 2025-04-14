@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,14 @@ package sleeper.systemtest.dsl.statestore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.util.LoggedDuration;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -33,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class SystemTestStateStoreFakeCommits {
@@ -97,6 +104,30 @@ public class SystemTestStateStoreFakeCommits {
     public SystemTestStateStoreFakeCommits resumeReceivingCommitMessages() {
         driver.resumeReceivingMessages();
         return this;
+    }
+
+    public void compactAllFilesToOnePerPartition() {
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
+        setupStateStore(stateStore -> {
+            List<FileReference> allReferences = stateStore.getFileReferences();
+            Map<String, List<FileReference>> partitionIdToReferences = allReferences
+                    .stream().collect(groupingBy(FileReference::getPartitionId));
+            Map<String, Long> partitionIdToRecords = allReferences
+                    .stream().collect(groupingBy(FileReference::getPartitionId, summingLong(FileReference::getNumberOfRecords)));
+            List<CompactionJob> jobs = partitionIdToReferences.entrySet().stream()
+                    .map(entry -> jobFactory.createCompactionJob(entry.getValue(), entry.getKey()))
+                    .toList();
+            new AssignJobIdsTransaction(jobs.stream()
+                    .map(CompactionJob::createAssignJobIdRequest)
+                    .toList())
+                    .synchronousCommit(stateStore);
+            new ReplaceFileReferencesTransaction(jobs.stream()
+                    .map(job -> job.replaceFileReferencesRequestBuilder(
+                            partitionIdToRecords.get(job.getPartitionId()))
+                            .build())
+                    .toList())
+                    .synchronousCommit(stateStore);
+        });
     }
 
     private void sendParallelBatches(Stream<StateStoreCommitRequest> messages) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class StandardFileStatusReporterRecordCountTest extends FilesStatusReportTestBase {
@@ -137,7 +137,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
     public void shouldAddSuffixIfRecordCountIncludesApproximates() throws Exception {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key1", new StringType()))
+        PartitionTree partitions = new PartitionsBuilder(createSchemaWithKey("key1", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "bbb")
                 .splitToNewChildren("L", "LL", "LR", "aaa")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,18 @@
 package sleeper.systemtest.suite.testutil;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.util.List;
 
 public class FileReferenceSystemTestHelper {
 
     private FileReferenceSystemTestHelper() {
+    }
+
+    public static FileReferenceFactory fileFactory(SleeperSystemTest sleeper) {
+        return FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), sleeper.partitioning().tree());
     }
 
     public static long numberOfRecordsIn(List<? extends FileReference> files) {

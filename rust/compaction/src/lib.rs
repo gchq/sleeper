@@ -6,7 +6,7 @@
 //! We have an internal "details" module that encapsulates the internal workings. All the
 //! public API should be in this module.
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,20 +30,20 @@ mod store;
 use chrono::Local;
 use color_eyre::eyre::eyre;
 use details::AwsConfig;
-use libc::{c_void, size_t, EFAULT, EINVAL, EIO};
-use log::{error, info, warn, LevelFilter};
+use libc::{EFAULT, EINVAL, EIO, c_void, size_t};
+use log::{LevelFilter, error, info, warn};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::io::Write;
 use std::str::Utf8Error;
 use std::sync::Once;
 use std::{
-    ffi::{c_char, c_int, CStr},
+    ffi::{CStr, c_char, c_int},
     slice,
 };
 use url::Url;
 
-pub use datafusion::sketch::{deserialise_sketches, DataSketchVariant};
+pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
 pub use details::merge_sorted_files;
 pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound};
 
@@ -241,14 +241,14 @@ pub struct FFICompactionResult {
 /// The result of this function can be safely passed to [`ffi_merge_sorted_files()`] and
 /// must be de-allocated by calling [`free_result()`].
 ///
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn allocate_result() -> *const FFICompactionResult {
     maybe_cfg_log();
     let p = Box::into_raw(Box::new(FFICompactionResult {
         rows_read: 0,
         rows_written: 0,
     }));
-    info!("Compaction result allocated at address {:p}", p);
+    info!("Compaction result allocated at address {p:p}");
     p
 }
 
@@ -282,7 +282,7 @@ pub extern "C" fn allocate_result() -> *const FFICompactionResult {
 /// | EIO    | if Rust tokio runtime couldn't be created |
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn ffi_merge_sorted_files(
     input_data: *mut FFICompactionParams,
     output_data: *mut FFICompactionResult,
@@ -472,11 +472,11 @@ fn unpack_variant_array<'a>(
 /// This function must only be called on pointers to objects allocated by Rust.
 ///
 #[allow(clippy::missing_panics_doc, clippy::not_unsafe_ptr_arg_deref)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
     maybe_cfg_log();
     if !ob.is_null() {
-        info!("Compaction result at address {:p} destructed", ob);
+        info!("Compaction result at address {ob:p} destructed");
         let _ = unsafe { Box::from_raw(ob) };
     }
 }

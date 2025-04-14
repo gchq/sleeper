@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,31 +27,41 @@ import java.util.Optional;
 /**
  * Tracks which files have been deleted from a table by the garbage collector. Used by {@link GarbageCollector}.
  */
-class TableFilesDeleted {
+public class TableFilesDeleted {
 
     private final TableStatus table;
-    private final List<String> deletedFilenames = new ArrayList<>();
     private final List<FileFailure> fileFailures = new ArrayList<>();
     private final List<StateStoreUpdateFailure> stateStoreUpdateFailures = new ArrayList<>();
+    private List<String> filesDeletedInBatch = null;
+    private int deletedFileCount = 0;
 
     TableFilesDeleted(TableStatus table) {
         this.table = table;
     }
 
-    void deleted(String filename) {
-        deletedFilenames.add(filename);
+    void startBatch(List<String> filenames) {
+        filesDeletedInBatch = new ArrayList<>(filenames.size());
     }
 
-    void failed(String filename, Exception failure) {
-        fileFailures.add(new FileFailure(filename, failure));
+    public void deleted(String filename) {
+        deletedFileCount++;
+        filesDeletedInBatch.add(filename);
+    }
+
+    public void failed(List<String> filenames, Exception failure) {
+        fileFailures.add(new FileFailure(filenames, failure));
     }
 
     void failedStateStoreUpdate(List<String> filenames, Exception failure) {
         stateStoreUpdateFailures.add(new StateStoreUpdateFailure(filenames, failure));
     }
 
-    List<String> getDeletedFilenames() {
-        return deletedFilenames;
+    List<String> getFilesDeletedInBatch() {
+        return filesDeletedInBatch;
+    }
+
+    int getDeletedFileCount() {
+        return deletedFileCount;
     }
 
     TableFailures buildTableFailures(Exception tableFailure) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@ package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.InitialiseWithFilesPresentException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
@@ -54,6 +56,18 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     /**
+     * Creates a transaction to initialise the table with a partition tree generated from the given split points. Uses
+     * {@link PartitionsFromSplitPoints}.
+     *
+     * @param  tableProperties the table properties
+     * @param  splitPoints     the split points
+     * @return                 the transaction
+     */
+    public static InitialisePartitionsTransaction fromSplitPoints(TableProperties tableProperties, List<Object> splitPoints) {
+        return new InitialisePartitionsTransaction(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
+    }
+
+    /**
      * Commits this transaction directly to the state store without going to the commit queue. This will throw any
      * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
      *
@@ -77,7 +91,7 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     @Override
     public void checkBefore(StateStore stateStore) throws StateStoreException {
         if (!stateStore.hasNoFiles()) {
-            throw new StateStoreException("Cannot initialise state store when files are present");
+            throw new InitialiseWithFilesPresentException();
         }
     }
 

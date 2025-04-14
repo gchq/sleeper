@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.splitter.core.find.FindPartitionsToSplit.JobSender;
 import sleeper.splitter.core.split.SplitPartition;

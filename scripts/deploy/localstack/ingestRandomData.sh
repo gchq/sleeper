@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2024 Crown Copyright
+# Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,4 +30,4 @@ java --add-opens=java.base/java.nio=ALL-UNNAMED \
   --add-opens=java.base/java.util=ALL-UNNAMED \
   --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
   -cp "${SCRIPTS_DIR}/jars/system-test-data-generation-${VERSION}.jar" \
-  sleeper.systemtest.datageneration.IngestRandomDataToDocker "$@"  
+  sleeper.systemtest.datageneration.IngestRandomDataToDocker "$@"

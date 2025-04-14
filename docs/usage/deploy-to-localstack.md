@@ -8,6 +8,9 @@ ingest, and run reports and scripts against the instance.
 These instructions will assume you start in the project root directory and Sleeper has been built
 (see [the developer guide](../developer-guide.md) for how to set that up).
 
+**Currently these scripts are only supported when run from the Docker host.** It may be possible to adjust these to run
+in a Docker container, e.g. in a dev container or a `sleeper builder` container.
+
 ## Launch LocalStack container
 
 To launch the LocalStack container, you can run the following command:
@@ -21,24 +24,7 @@ This will also output commands you can use to point Sleeper scripts to your Loca
 ## Deploy to LocalStack
 
 For Sleeper commands to interact with LocalStack, ensure that the `AWS_ENDPOINT_URL` environment variable
-is set. Commands to do this are provided by the `startContainer.sh` script, but you can also manually set this by
-running the following commands:
-
-- If you are inside a docker container:
-```shell
-export AWS_ENDPOINT_URL=http://host.docker.internal:4566
-```
-
-- If you are on your host machine:
-```shell
-export AWS_ENDPOINT_URL=http://localhost:4566
-```
-
-To go back to using the default AWS endpoint, you can unset this environment variable:
-
-```shell
-unset AWS_ENDPOINT_URL
-```
+is set. Commands to do this are provided by the `startContainer.sh` script.
 
 To deploy an instance of Sleeper to your LocalStack container, you can run the following command:
 
@@ -46,11 +32,8 @@ To deploy an instance of Sleeper to your LocalStack container, you can run the f
 ./scripts/deploy/localstack/deploy.sh <instance-id>
 ```
 
-Note that you will not be able to run this command unless you have the AWS_ENDPOINT_URL environment variable
-set as described in the previous section.
-
-This will create a config bucket and a table bucket in LocalStack, and upload the necessary properties files.
-A single table will be created with the name `system-test`.
+This will create a S3 buckets, DynamoDB tables and SQS queues in LocalStack, and upload a Sleeper instance
+configuration. A single Sleeper table will be created with the name `system-test`.
 
 Once the instance is deployed, you can launch the admin client to view the instance and table properties of the
 instance, as well as running partition and file status reports.
@@ -70,8 +53,7 @@ You can generate some random data for your instance by running the following com
 This will place randomly generated parquet files in the `scripts/deploy/localstack/output` directory. The number of files
 generated will depend on the number of records that you pass into the script. By default only 1 file is generated.
 
-You can then use these files to ingest some data into the `system-test` table in your instance by running the
-following command:
+You can then use these files to ingest some data by running the following command:
 
 ```shell
 ./scripts/deploy/localstack/ingestFiles.sh <instance-id> <table-name> <file1.parquet> <file2.parquet> <file3.parquet> ....
@@ -95,12 +77,9 @@ Note: If you do not provide a number of records in the data generation scripts, 
 
 ## Compaction
 
-**There's currently a known problem preventing compaction from running against LocalStack.** See the following
-issue: https://github.com/gchq/sleeper/issues/3856
-
 To create compaction jobs for files that you have ingested, you can run the following command:
 ```shell
-./scripts/deploy/localstack/createCompactionJobs.sh <instance-id> <optional-compact-all-flag>
+./scripts/deploy/localstack/createCompactionJobs.sh default <instance-id> <table-name>
 ```
 
 This script will run the `CreateJobs` class (which would normally run periodically in a lambda), and put the created
@@ -109,10 +88,10 @@ jobs on the compaction job SQS queue.
 Note that by default the `SizeRatioCompactionStrategy` will be used to determine whether a compaction job will be
 created for a collection of files in the same partition. You can either change this strategy to the
 `BasicCompactionStrategy`, which just uses the `COMPACTION_FILES_BATCH_SIZE` table property to batch files into jobs,
-or you can skip this strategy and force creation of compaction jobs, by using the `--all` flag when calling the script:
+or you can skip this strategy and force creation of compaction jobs, by using the `all` mode when calling the script:
 
 ```shell
-./scripts/deploy/localstack/createCompactionJobs.sh my-instance --all
+./scripts/deploy/localstack/createCompactionJobs.sh all <instance-id> <table-name>
 ```
 
 To run these compaction jobs, you need to launch a compaction task. These would normally be run in ECS tasks, launched
@@ -120,7 +99,7 @@ by a lambda periodically based on how many compaction jobs are waiting. The foll
 image that the ECS tasks use, and run a docker container using the built image.
 
 ```shell
-./scripts/deploy/localstack/runCompactionTask.sh my-instance --all
+./scripts/deploy/localstack/runCompactionTask.sh <instance-id>
 ```
 
 You can view the statistic for jobs and tasks by using the `compactionJobStatusReport.sh` and

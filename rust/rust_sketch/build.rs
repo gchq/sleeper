@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ fn main() {
         .unwrap_or(String::from("https://github.com/apache/datasketches-cpp"));
 
     // look to see if the repo tag has been overridden
-    let tag = std::env::var("RUST_SKETCH_DATASKETCH_TAG").unwrap_or(String::from("5.0.2"));
+    let tag = std::env::var("RUST_SKETCH_DATASKETCH_TAG").unwrap_or(String::from("5.2.0"));
 
     // try to open repository in case it already exists
     if git2::Repository::open(path.join("datasketches-cpp")).is_err() {

@@ -3,7 +3,7 @@
 ///
 /// This allows for multi-threaded compaction and optimised Parquet reading.
 /*
-* Copyright 2022-2024 Crown Copyright
+* Copyright 2022-2025 Crown Copyright
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@
 * limitations under the License.
 */
 use crate::{
+    ColRange, CompactionInput, CompactionResult, PartitionBound,
     datafusion::{sketch::serialise_sketches, udf::SketchUDF},
     details::create_sketch_path,
     s3::ObjectStoreFactory,
     store::SizeHintableStore,
-    ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
@@ -31,8 +31,8 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
-        config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
-        FunctionRegistry,
+        FunctionRegistry, config::SessionConfig, context::SessionContext,
+        options::ParquetReadOptions,
     },
     logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
@@ -166,7 +166,9 @@ fn output_sketch(
                 "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
                 func.get_invoke_count().to_formatted_string(&Locale::en),
                 stats.rows_written.to_formatted_string(&Locale::en),
-                first_sketch.get_num_retained().to_formatted_string(&Locale::en),
+                first_sketch
+                    .get_num_retained()
+                    .to_formatted_string(&Locale::en),
                 first_sketch.get_n().to_formatted_string(&Locale::en),
                 first_sketch.get_k().to_formatted_string(&Locale::en)
             );
@@ -368,8 +370,12 @@ fn get_compression(compression: &str) -> String {
         "brotli" => format!("brotli({})", BrotliLevel::default().compression_level()),
         "zstd" => format!("zstd({})", ZstdLevel::default().compression_level()),
         x => {
-            error!("Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd");
-            unimplemented!("Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd");
+            error!(
+                "Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd"
+            );
+            unimplemented!(
+                "Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd"
+            );
         }
     }
 }
@@ -406,6 +412,10 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .execution
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
+    sf.options_mut()
+        .execution
+        .parquet
+        .statistics_truncate_length = Some(input_data.stats_truncate_length);
     sf
 }
 

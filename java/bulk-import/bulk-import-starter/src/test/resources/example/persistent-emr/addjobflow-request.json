@@ -1,0 +1,25 @@
+{
+  "JobFlowId": "test-cluster-id",
+  "Steps": [
+    {
+      "Name": "Bulk Load (job id test-job)",
+      "ActionOnFailure": "CONTINUE",
+      "HadoopJarStep": {
+        "Jar": "command-runner.jar",
+        "Args": [
+          "spark-submit",
+          "--deploy-mode",
+          "cluster",
+          "--class",
+          "BulkImportClass",
+          "s3a://test-jars-bucket/bulk-import-runner-1.2.3.jar",
+          "test-config-bucket",
+          "test-job",
+          "test-cluster",
+          "test-run",
+          "EMR"
+        ]
+      }
+    }
+  ]
+}

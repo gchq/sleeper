@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public class QueryExecutor {
                 .collect(Collectors.toList());
         partitionTree = new PartitionTree(partitions);
         partitionToFiles = partitionToFileMapping;
-        nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
+        nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.SECONDS);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
                 tableProperties.getStatus(), partitions.size(), nextInitialiseTime);
     }

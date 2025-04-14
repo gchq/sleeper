@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionTreeTestHelperTest {
 
     @Test
     void shouldCreateSplitPointsFromRecordRangeAndRecordsPerPartition() {
         // Given
-        Schema schema = schemaWithKey("key", new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         List<Record> records = List.of(
                 new Record(Map.of("key", 10)),
                 new Record(Map.of("key", 20)),

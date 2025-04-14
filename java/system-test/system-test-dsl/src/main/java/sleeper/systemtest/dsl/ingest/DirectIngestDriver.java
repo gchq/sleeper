@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,16 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.record.Record;
+import sleeper.core.statestore.FileReference;
 
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
 
 public interface DirectIngestDriver {
 
     void ingest(Path tempDir, Iterator<Record> records);
+
+    void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles);
 }

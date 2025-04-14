@@ -232,6 +232,11 @@ The automated deployment creates an instance of Sleeper either from your own con
 This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
 necessary deployment artifacts to AWS.
 
+We have planned to improve this by adding support for deploying a published version of Sleeper. We also plan to extend
+support for declarative deployment with infrastructure as code, by simplifying the process of versioning an instance
+configuration, and by moving some steps into the CDK that are currently done separately. Please see the article
+on [potential deployment improvements](development/deployment-improvements.md).
+
 Please ensure Sleeper has been built successfully before using this. This guide assumes you are in a `sleeper builder`
 container in an EC2 deployed with `sleeper environment`.
 
@@ -389,11 +394,15 @@ Before we can use CDK to deploy Sleeper, we need to create some configuration fi
 * A `schema.json` file which describes the data stored in a Sleeper table.
 * A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
 
-There's an example of a basic instance properties file [here](../example/basic/instance.properties)
-and an example of a full instance properties file [here](../example/full/instance.properties).
-This latter file shows all the instance properties that you can set. Whichever of these two
-files you use as your starting point, you will need to set sensible values for the following
-properties:
+The `instance.properties` and `table.properties` files are Java properties files. You can find descriptions of all
+properties in the system [here](usage/property-master.md).
+
+There's an example of a basic instance properties file [here](../example/basic/instance.properties) and an example of a
+full instance properties file [here](../example/full/instance.properties). This latter file shows all the instance
+properties that you can set. You can use one of these as your starting point. Examples of the other files listed above
+can also be found alongside those.
+
+You will need to set sensible values for the following instance properties:
 
 * `sleeper.id`
 * `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
@@ -414,8 +423,9 @@ to the ECR repository name, eg. `my-instance-id/ingest`.
 * `sleeper.bulk.import.eks.repo`
 * `sleeper.systemtest.repo`
 
-To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
-You can add more than one by creating a `tables` directory, with a subfolder for each table.
+To include a table in your instance, your `table.properties` file can be in the same folder as
+your `instance.properties` file. You can add more than one by creating a `tables` directory in the same folder, with a
+subfolder for each table.
 
 See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
 

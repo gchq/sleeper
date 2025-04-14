@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,12 +50,12 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TI
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionJobDispatcherTest {
 
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 

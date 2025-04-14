@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class CompactionCommitThroughputST {
         // When
         sleeper.compaction()
                 .sendFakeCommits(compactions)
-                .waitForJobsToCommit(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                .waitForJobsToCommit(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
 
         // Then
         assertThat(sleeper.tableFiles().recordsByFilename())

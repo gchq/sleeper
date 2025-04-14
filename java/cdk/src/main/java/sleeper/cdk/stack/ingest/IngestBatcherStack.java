@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
@@ -124,7 +125,9 @@ public class IngestBatcherStack extends NestedStack {
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestRequestFormat.EXPIRY_TIME)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         // Lambdas to receive submitted files and create batches

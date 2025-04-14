@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import org.testcontainers.containers.localstack.LocalStackContainer;
-
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
@@ -24,13 +22,12 @@ import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
 public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
-    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
     private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
             SystemTestParametersTestHelper.parametersBuilder()
                     .shortTestId("localstack")
-                    .region(CONTAINER.getRegion())
+                    .region(SleeperLocalStackContainer.INSTANCE.getRegion())
                     .build(),
-            LocalStackSystemTestDrivers.fromContainer(CONTAINER));
+            LocalStackSystemTestDrivers.fromContainer());
 
     private LocalStackSystemTestExtension() {
         super(CONTEXT);

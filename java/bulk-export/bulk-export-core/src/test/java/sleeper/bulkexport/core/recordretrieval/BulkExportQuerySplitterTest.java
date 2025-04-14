@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.fixTime;
@@ -50,7 +50,7 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 public class BulkExportQuerySplitterTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
     private Supplier<String> idSupplier = fixIds("test-leaf-export");
@@ -126,7 +126,7 @@ public class BulkExportQuerySplitterTest {
     public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
         // Given the second initialisation occurs after the cache expires
         BulkExportQuery bulkExportQuery = bulkExportQuery();
-        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
         setTimeSupplier(supplyTimes(
                 Instant.parse("2023-11-27T09:30:00Z"),
                 Instant.parse("2023-11-27T09:35:00Z")));
@@ -144,7 +144,7 @@ public class BulkExportQuerySplitterTest {
     public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
         // Given the second initialisation occurs before the cache expires
         BulkExportQuery bulkExportQuery = bulkExportQuery();
-        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
         setTimeSupplier(supplyTimes(
                 Instant.parse("2023-11-27T09:30:00Z"),
                 Instant.parse("2023-11-27T09:31:00Z")));

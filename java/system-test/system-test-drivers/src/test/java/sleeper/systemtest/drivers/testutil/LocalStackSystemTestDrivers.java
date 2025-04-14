@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,10 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
@@ -38,8 +32,6 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.configureHadoop;
 
 public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
@@ -50,16 +42,16 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
         this.clients = clients;
     }
 
-    public static LocalStackSystemTestDrivers fromContainer(LocalStackContainer localStackContainer) {
+    public static LocalStackSystemTestDrivers fromContainer() {
         return new LocalStackSystemTestDrivers(SystemTestClients.builder()
-                .regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .s3(buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard()))
-                .s3V2(buildAwsV2Client(localStackContainer, Service.S3, S3Client.builder()))
-                .s3Async(buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder()))
-                .dynamoDB(buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard()))
-                .sqs(buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard()))
-                .sqsV2(buildAwsV2Client(localStackContainer, Service.SQS, SqsClient.builder()))
-                .configureHadoopSetter(conf -> configureHadoop(conf, localStackContainer))
+                .regionProvider(() -> Region.of(SleeperLocalStackContainer.INSTANCE.getRegion()))
+                .s3(SleeperLocalStackClients.S3_CLIENT)
+                .s3V2(SleeperLocalStackClients.S3_CLIENT_V2)
+                .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
+                .dynamoDB(SleeperLocalStackClients.DYNAMO_CLIENT)
+                .sqs(SleeperLocalStackClients.SQS_CLIENT)
+                .sqsV2(SleeperLocalStackClients.SQS_CLIENT_V2)
+                .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
                 .skipAssumeRole(true)
                 .build());
     }

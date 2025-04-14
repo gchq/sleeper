@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2024 Crown Copyright
+  ~ Copyright 2022-2025 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.29.0</version>
+        <version>0.30.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,17 +38,20 @@
             <version>${aws-lambda-java-events.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-stepfunctions</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emr</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emrserverless</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sfn</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
         <!-- Sleeper Dependencies -->
         <dependency>

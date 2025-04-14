@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2024 Crown Copyright
+# Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,3 +29,8 @@ echo "-------------------------------------------------------"
 echo "Running compaction job creation"
 echo "-------------------------------------------------------"
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.CreateCompactionJobsClient "$@"
+
+echo "-------------------------------------------------------"
+echo "Running compaction job dispatch"
+echo "-------------------------------------------------------"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.update.DispatchCompactionJobsClient "$2"

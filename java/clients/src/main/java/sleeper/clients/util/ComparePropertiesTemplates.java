@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package sleeper.clients.util;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.deploy.properties.GeneratePropertiesTemplates;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.core.deploy.GeneratePropertiesTemplates;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;

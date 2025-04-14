@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 /**
  * Runs the garbage collector in AWS Lambda. Builds and invokes {@link GarbageCollector} for a batch of tables.
@@ -83,7 +82,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        garbageCollector = new GarbageCollector(deleteFileAndSketches(conf),
+        garbageCollector = new GarbageCollector(new S3DeleteFiles(s3Client),
                 instanceProperties, stateStoreProvider,
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
@@ -103,7 +102,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         } catch (FailedGarbageCollectionException e) {
             LOGGER.error("Found {} tables with failures", e.getTableFailures().size(), e);
             e.getTableFailures().stream()
-                    .map(TableFailures::getTable)
+                    .map(TableFailures::table)
                     .map(TableStatus::getTableUniqueId)
                     .flatMap(tableId -> messagesByTableId.get(tableId).stream())
                     .map(SQSMessage::getMessageId)

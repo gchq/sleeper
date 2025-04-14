@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
 public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final DynamoDBTransactionLogSnapshotMetadataStore store = snapshotStore();
 
@@ -365,6 +366,52 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTes
             // When / Then
             assertThat(snapshotStore.getLatestSnapshotsBefore(Instant.parse("2024-04-24T15:40:00Z")))
                     .isEqualTo(new LatestSnapshots(filesSnapshot(1), partitionsSnapshot(1)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete all metadata for a Sleeper table")
+    class DeleteAll {
+        DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(
+                timePassesAMinuteAtATimeFrom(Instant.parse("2024-04-24T15:25:00Z")));
+
+        @Test
+        void shouldDeleteFilesSnapshots() throws Exception {
+            // Given
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+            snapshotStore.saveSnapshot(filesSnapshot(2));
+
+            // When
+            snapshotStore.deleteAllSnapshots();
+
+            // Then
+            assertThat(snapshotStore.getFilesSnapshots()).isEmpty();
+        }
+
+        @Test
+        void shouldDeletePartitionsSnapshots() throws Exception {
+            // Given
+            snapshotStore.saveSnapshot(partitionsSnapshot(1));
+            snapshotStore.saveSnapshot(partitionsSnapshot(2));
+
+            // When
+            snapshotStore.deleteAllSnapshots();
+
+            // Then
+            assertThat(snapshotStore.getPartitionsSnapshots()).isEmpty();
+        }
+
+        @Test
+        void shouldDeleteLatestSnapshots() throws Exception {
+            // Given
+            snapshotStore.saveSnapshot(filesSnapshot(1));
+            snapshotStore.saveSnapshot(partitionsSnapshot(1));
+
+            // When
+            snapshotStore.deleteAllSnapshots();
+
+            // Then
+            assertThat(snapshotStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
         }
     }
 

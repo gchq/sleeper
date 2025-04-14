@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,14 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class PartitionsStatusReportTest {
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key", new StringType()));
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
     StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     PartitionsBuilder partitions;
 
@@ -106,7 +106,7 @@ class PartitionsStatusReportTest {
     @Test
     void shouldReportRootPartitionSplitOnByteArray() throws Exception {
         // Given
-        tableProperties.setSchema(schemaWithKey("key", new ByteArrayType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new ByteArrayType()));
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
         update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", new byte[42])
@@ -121,7 +121,7 @@ class PartitionsStatusReportTest {
     @Test
     void shouldReportRootPartitionSplitOnLongStringHidingMiddle() throws Exception {
         // Given
-        tableProperties.setSchema(schemaWithKey("key", new StringType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
         update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -177,7 +177,7 @@ class PartitionsStatusReportTest {
     void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThreshold() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        tableProperties.setSchema(schemaWithKey("key", new StringType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         update(stateStore).initialise(partitionsBuilder().rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "abc")
                 .buildList());
@@ -191,7 +191,7 @@ class PartitionsStatusReportTest {
     @Test
     void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThresholdWithRecordsFurtherUpTree() throws Exception {
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 100);
-        tableProperties.setSchema(schemaWithKey("key", new StringType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         update(stateStore).initialise(partitionsBuilder().rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "abc")
                 .splitToNewChildren("R", "RL", "RR", "def")
@@ -209,7 +209,7 @@ class PartitionsStatusReportTest {
     @Test
     void shouldReportSomeFilesAssignedToAJob() throws Exception {
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        tableProperties.setSchema(schemaWithKey("key", new StringType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         update(stateStore).initialise(partitionsBuilder().singlePartition("root").buildList());
         update(stateStore).addFile(fileFactory().partitionFile("root", "1.parquet", 100L));
         update(stateStore).addFile(fileFactory().partitionFile("root", "2.parquet", 100L));

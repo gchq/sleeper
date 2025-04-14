@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,10 @@ public class LoggingStack extends NestedStack {
         METRICS_TRIGGER("metrics-trigger"),
         METRICS_PUBLISHER("metrics-publisher"),
         BULK_EXPORT("bulk-export"),
-        BULK_EXPORT_LEAF_PARTITION_EXPORT("bulk-export-leaf-partition-export"),
+        BULK_EXPORT_TASKS("FargateBulkExportTasks"),
+        BULK_EXPORT_TASKS_CREATOR("bulk-export-task-creator"),
+        BULK_EXPORT_AUTODELETE("bulk-export-results-autodelete"),
+        BULK_EXPORT_AUTODELETE_PROVIDER("bulk-export-results-autodelete-provider"),
         BULK_IMPORT_EMR_SERVERLESS_START("bulk-import-EMRServerless-start"),
         BULK_IMPORT_EMR_NON_PERSISTENT_START("bulk-import-NonPersistentEMR-start"),
         BULK_IMPORT_EMR_PERSISTENT_START("bulk-import-PersistentEMR-start"),

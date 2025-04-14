@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 /**
  * Test helpers to generate properties using PopulateInstanceProperties.
@@ -65,7 +65,7 @@ public class PopulatePropertiesTestHelper {
     public static TableProperties generateTestTableProperties() {
         TableProperties tableProperties = new TableProperties(generateTestInstanceProperties());
         tableProperties.set(TABLE_NAME, "test-table");
-        tableProperties.setSchema(schemaWithKey("key"));
+        tableProperties.setSchema(createSchemaWithKey("key"));
         return tableProperties;
     }
 }

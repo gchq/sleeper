@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
@@ -77,7 +77,7 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     void shouldRunCompactionJob() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
         Record record1 = new Record(Map.of("key", "record-1"));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE_NO_NAME;
@@ -63,8 +63,8 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldCreateTwoTablesWithDifferentPartitionsAndSchemas(SleeperSystemTest sleeper) {
             // Given
-            Schema schemaA = schemaWithKey("keyA", new StringType());
-            Schema schemaB = schemaWithKey("keyA", new LongType());
+            Schema schemaA = createSchemaWithKey("keyA", new StringType());
+            Schema schemaB = createSchemaWithKey("keyA", new LongType());
             PartitionTree partitionsA = new PartitionsBuilder(schemaA)
                     .rootFirst("A-root")
                     .splitToNewChildren("A-root", "AL", "AR", "aaa")
@@ -90,7 +90,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldSetPartitionsForMultipleTables(SleeperSystemTest sleeper) {
             // Given
-            Schema schema = schemaWithKey("key", new StringType());
+            Schema schema = createSchemaWithKey("key", new StringType());
             sleeper.tables().create(List.of("A", "B"), schema);
             PartitionTree partitions = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -118,7 +118,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldQueryRecordsForNamedTables(SleeperSystemTest sleeper) {
             // Given
-            sleeper.tables().create(List.of("A", "B"), schemaWithKey("key", new LongType()));
+            sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
             sleeper.table("A").ingest().direct(null).numberedRecords(LongStream.of(1, 2));
             sleeper.table("B").ingest().direct(null).numberedRecords(LongStream.of(3, 4));
 
@@ -137,7 +137,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldQueryNoRecordsForNamedTables(SleeperSystemTest sleeper) {
             // Given
-            sleeper.tables().create(List.of("A", "B"), schemaWithKey("key", new LongType()));
+            sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
 
             // When / Then
             Map<String, List<Record>> expectedRecords = Map.of(
@@ -151,7 +151,7 @@ public class SleeperInstanceTablesTest {
         void shouldNotIncludeTablesNotManagedByDsl(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestContext context) {
             // Given
             InstanceProperties instanceProperties = context.instance().getInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
 
             // When
             drivers.tables(context.parameters()).addTable(instanceProperties, tableProperties);
@@ -165,7 +165,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldIncludeUnnamedTables(SleeperSystemTest sleeper) {
             // When
-            sleeper.tables().createMany(2, schemaWithKey("key"));
+            sleeper.tables().createMany(2, createSchemaWithKey("key"));
 
             // Then
             assertThat(sleeper.tables().list()).hasSize(2);

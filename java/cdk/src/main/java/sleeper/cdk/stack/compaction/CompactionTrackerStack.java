@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
@@ -59,7 +60,9 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         jobsTable = Table.Builder
@@ -72,7 +75,9 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         tasksTable = Table.Builder
@@ -89,7 +94,9 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
                         .type(AttributeType.NUMBER)
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         grantWriteJobEvent(policiesStack.getInvokeCompactionPolicyForGrants());

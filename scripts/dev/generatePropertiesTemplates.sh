@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2024 Crown Copyright
+# Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn install -Pquick -q -pl core -am
+mvn install -Pquick -q -pl clients -am
 echo "Regenerating templates..."
-mvn exec:java -q -pl core \
-  -Dexec.mainClass="sleeper.core.deploy.GeneratePropertiesTemplates" \
+mvn exec:java -q -pl clients \
+  -Dexec.mainClass="sleeper.clients.deploy.properties.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
 popd

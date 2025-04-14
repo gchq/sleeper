@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class FailedGarbageCollectionException extends RuntimeException {
 
     private static String getMessage(List<TableFailures> tableFailures) {
         return "Found garbage collection failures for tables: " +
-                tableFailures.stream().map(TableFailures::getTable).collect(toUnmodifiableList());
+                tableFailures.stream().map(TableFailures::table).collect(toUnmodifiableList());
     }
 
     private static Exception getCause(List<TableFailures> tableFailures) {
@@ -51,80 +51,20 @@ public class FailedGarbageCollectionException extends RuntimeException {
         return tableFailures;
     }
 
-    public static class TableFailures {
-        private final TableStatus table;
-        private final Exception tableFailure;
-        private final List<FileFailure> fileFailures;
-        private final List<StateStoreUpdateFailure> stateStoreUpdateFailures;
-
-        public TableFailures(
-                TableStatus table, Exception tableFailure,
-                List<FileFailure> fileFailures,
-                List<StateStoreUpdateFailure> stateStoreUpdateFailures) {
-            this.table = table;
-            this.tableFailure = tableFailure;
-            this.fileFailures = fileFailures;
-            this.stateStoreUpdateFailures = stateStoreUpdateFailures;
-        }
-
-        public TableStatus getTable() {
-            return table;
-        }
-
-        public Exception getTableFailure() {
-            return tableFailure;
-        }
-
-        public List<StateStoreUpdateFailure> getStateStoreUpdateFailures() {
-            return stateStoreUpdateFailures;
-        }
-
-        public List<FileFailure> getFileFailures() {
-            return fileFailures;
-        }
+    public record TableFailures(TableStatus table, Exception tableFailure, List<FileFailure> fileFailures, List<StateStoreUpdateFailure> stateStoreUpdateFailures) {
 
         public Stream<Exception> streamFailures() {
             return Stream.of(
                     Stream.ofNullable(tableFailure),
-                    stateStoreUpdateFailures.stream().map(StateStoreUpdateFailure::getCause),
-                    fileFailures.stream().map(FileFailure::getCause))
+                    stateStoreUpdateFailures.stream().map(StateStoreUpdateFailure::cause),
+                    fileFailures.stream().map(FileFailure::cause))
                     .flatMap(s -> s);
         }
     }
 
-    public static class FileFailure {
-        private final String filename;
-        private final Exception cause;
-
-        public FileFailure(String filename, Exception cause) {
-            this.filename = filename;
-            this.cause = cause;
-        }
-
-        public String getFilename() {
-            return filename;
-        }
-
-        public Exception getCause() {
-            return cause;
-        }
+    public record FileFailure(List<String> filenames, Exception cause) {
     }
 
-    public static class StateStoreUpdateFailure {
-        private final List<String> filenames;
-        private final Exception cause;
-
-        public StateStoreUpdateFailure(List<String> filenames, Exception cause) {
-            this.filenames = filenames;
-            this.cause = cause;
-        }
-
-        public List<String> getFilenames() {
-            return filenames;
-        }
-
-        public Exception getCause() {
-            return cause;
-        }
+    public record StateStoreUpdateFailure(List<String> filenames, Exception cause) {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,13 @@ public class TablePropertiesProvider {
         return get(tableId, cacheById, () -> propertiesStore.loadById(tableId));
     }
 
-    private TableProperties get(TableStatus table) {
+    /**
+     * Retrieves properties by table status.
+     *
+     * @param  table the table status
+     * @return       the table properties
+     */
+    public TableProperties get(TableStatus table) {
         return get(table.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(table));
     }
 

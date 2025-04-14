@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
@@ -50,7 +50,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     private TransactionLogStateStore followerStore;
     private final AtomicInteger transactionLogReads = new AtomicInteger(0);
     private final List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
-    private final Schema schema = schemaWithKey("key", new LongType());
+    private final Schema schema = createSchemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
 
     @BeforeEach

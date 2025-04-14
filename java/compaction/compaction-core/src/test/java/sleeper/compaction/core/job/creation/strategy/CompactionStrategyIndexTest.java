@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ import sleeper.core.table.TableStatus;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 
 public class CompactionStrategyIndexTest {
     private final TableStatus tableStatus = TableStatus.uniqueIdAndName("test-table-id", "test-table", true);
-    private final Schema schema = schemaWithKey("test");
+    private final Schema schema = createSchemaWithKey("test");
 
     @Nested
     @DisplayName("Unassigned files")

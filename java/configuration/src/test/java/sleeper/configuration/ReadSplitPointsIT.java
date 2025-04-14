@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_EN
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class ReadSplitPointsIT {
 
@@ -47,7 +47,7 @@ public class ReadSplitPointsIT {
         // Given
         Path splitPointsFile = tempDir.resolve("splits.txt");
         Files.writeString(splitPointsFile, "1\n2\n3");
-        tableProperties.setSchema(schemaWithKey("key", new StringType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         tableProperties.set(SPLIT_POINTS_FILE, splitPointsFile.toString());
 
         // When / Then
@@ -60,7 +60,7 @@ public class ReadSplitPointsIT {
         // Given
         Path splitPointsFile = tempDir.resolve("splits.txt");
         Files.writeString(splitPointsFile, "MQ==\nMg==\nMw==");
-        tableProperties.setSchema(schemaWithKey("key", new StringType()));
+        tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         tableProperties.set(SPLIT_POINTS_FILE, splitPointsFile.toString());
         tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
 

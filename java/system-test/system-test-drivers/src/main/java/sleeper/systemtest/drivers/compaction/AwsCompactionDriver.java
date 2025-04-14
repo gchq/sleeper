@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,11 @@ import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
+import sleeper.compaction.job.creation.CompactionBatchJobsWriterToS3;
+import sleeper.compaction.job.creation.CompactionBatchMessageSenderToSqs;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
@@ -48,7 +52,9 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.task.common.EC2Scaler;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -59,6 +65,8 @@ import java.util.stream.Stream;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
@@ -173,5 +181,25 @@ public class AwsCompactionDriver implements CompactionDriver {
                     });
             LOGGER.info("Sent batch of {} commits", bigBatch.size());
         });
+    }
+
+    @Override
+    public String sendCompactionBatchGetKey(List<CompactionJob> jobs) {
+        CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
+                instance.getTableProperties(), UUID.randomUUID().toString(), Instant.now());
+        new CompactionBatchJobsWriterToS3(s3Client)
+                .writeJobs(instance.getInstanceProperties().get(DATA_BUCKET), request.getBatchKey(), jobs);
+        new CompactionBatchMessageSenderToSqs(instance.getInstanceProperties(), sqsClient)
+                .sendMessage(request);
+        return request.getBatchKey();
+    }
+
+    @Override
+    public List<CompactionJobDispatchRequest> drainPendingDeadLetterQueueForWholeInstance() {
+        CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
+        return drainQueue.drain(instance.getInstanceProperties().get(COMPACTION_PENDING_DLQ_URL))
+                .map(Message::body)
+                .map(serDe::fromJson)
+                .toList();
     }
 }

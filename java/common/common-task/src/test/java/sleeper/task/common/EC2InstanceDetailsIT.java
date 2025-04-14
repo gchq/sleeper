@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 public class EC2InstanceDetailsIT {
@@ -47,7 +47,7 @@ public class EC2InstanceDetailsIT {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        ecsClient = wiremockEcsClient(runtimeInfo);
+        ecsClient = wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
     }
 
     @Test

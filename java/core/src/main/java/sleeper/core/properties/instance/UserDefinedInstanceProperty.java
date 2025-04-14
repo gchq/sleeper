@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(AsyncIngestPartitionFileWriterProperty.getAll());
             index.addAll(BatcherProperty.getAll());
             index.addAll(BulkImportProperty.getAll());
+            index.addAll(BulkExportProperty.getAll());
             index.addAll(EMRProperty.getAll());
             index.addAll(EMRServerlessProperty.getAll());
             index.addAll(NonPersistentEMRProperty.getAll());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,10 @@ public class RecordNumbers {
         List<Long> records = longStream.boxed().collect(Collectors.toList());
         Collections.shuffle(records, new Random(0L));
         return new RecordNumbers(records);
+    }
+
+    public int numRecords() {
+        return records.size();
     }
 
     public LongStream stream() {

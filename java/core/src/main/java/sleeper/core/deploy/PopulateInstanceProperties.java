@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -115,6 +116,7 @@ public class PopulateInstanceProperties {
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
         properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
+        properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export-task-execution");
         properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
         properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");
         properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, ecrPrefix + "/bulk-import-runner-emr-serverless");

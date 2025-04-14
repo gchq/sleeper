@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
@@ -57,7 +58,9 @@ public final class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled((instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY)))
+                        .build())
                 .build();
         instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, indexByNameDynamoTable.getTableName());
 
@@ -70,7 +73,9 @@ public final class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_ID_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled((instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY)))
+                        .build())
                 .build();
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
 
@@ -87,7 +92,9 @@ public final class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled((instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY)))
+                        .build())
                 .build();
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, indexByOnlineDynamoTable.getTableName());
 

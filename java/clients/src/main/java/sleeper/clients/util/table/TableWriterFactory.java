@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,13 @@ public class TableWriterFactory {
             return this;
         }
 
+        public Builder addFields(List<String> fieldList) {
+            for (String fieldString : fieldList) {
+                addField(fieldString);
+            }
+            return this;
+        }
+
         TableField addField(TableField field) {
             fields.add(field);
             return field;
@@ -73,6 +80,10 @@ public class TableWriterFactory {
         public Builder structure(TableStructure structure) {
             this.structure = structure;
             return this;
+        }
+
+        public List<TableField> getFields() {
+            return this.fields;
         }
 
         public TableWriterFactory build() {

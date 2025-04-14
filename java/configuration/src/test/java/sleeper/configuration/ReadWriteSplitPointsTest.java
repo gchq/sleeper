@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,14 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class ReadWriteSplitPointsTest {
 
     @Test
     void shouldReadIntegerSplitPoints() {
         // Given
-        Schema schema = schemaWithKey("key", new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         List<Object> splitPoints = List.of(1, 2, 3);
 
         // When
@@ -50,7 +50,7 @@ public class ReadWriteSplitPointsTest {
     @Test
     void shouldReadLongSplitPoints() {
         // Given
-        Schema schema = schemaWithKey("key", new LongType());
+        Schema schema = createSchemaWithKey("key", new LongType());
         List<Object> splitPoints = List.of(1L, 2L, 3L);
 
         // When
@@ -65,7 +65,7 @@ public class ReadWriteSplitPointsTest {
     @Test
     void shouldReadStringSplitPoints() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<Object> splitPoints = List.of("1", "2", "3");
 
         // When
@@ -79,7 +79,7 @@ public class ReadWriteSplitPointsTest {
 
     @Test
     void shouldReadByteArraySplitPointsAsBase64() {
-        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         List<Object> splitPoints = List.of(new byte[]{1}, new byte[]{2}, new byte[]{3});
 
         // When
@@ -93,7 +93,7 @@ public class ReadWriteSplitPointsTest {
 
     @Test
     void shouldReadWrappedByteArraySplitPointsAsBase64() {
-        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         List<Object> splitPoints = List.of(new byte[]{1}, new byte[]{2}, new byte[]{3});
         List<Object> wrappedSplitPoints = List.of(ByteArray.wrap(new byte[]{1}), ByteArray.wrap(new byte[]{2}), ByteArray.wrap(new byte[]{3}));
 
@@ -109,7 +109,7 @@ public class ReadWriteSplitPointsTest {
     @Test
     void shouldReadStringSplitPointsBase64Encoded() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<Object> splitPoints = List.of("1", "2", "3");
 
         // When

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,6 +204,22 @@ public class StateStoreUpdatesWrapper {
      */
     public void assignJobId(String jobId, String partitionId, List<String> filenames) throws StateStoreException {
         assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+    }
+
+    /**
+     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+     * used for compaction job input files.
+     *
+     * @param  jobId                               the ID of the job
+     * @param  files                               the files in the state store
+     * @throws FileReferenceNotFoundException      if a reference does not exist
+     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
+     * @throws StateStoreException                 if the update fails for another reason
+     */
+    public void assignJobId(String jobId, List<FileReference> files) throws StateStoreException {
+        String partitionId = files.get(0).getPartitionId();
+        List<String> filenames = files.stream().map(FileReference::getFilename).toList();
+        assignJobId(jobId, partitionId, filenames);
     }
 
     /**

@@ -10,6 +10,11 @@ the [deployment guide](deployment-guide.md) for more information on deploying an
 If you just want to test locally, see the documentation on [deploying to localstack](usage/deploy-to-localstack.md).
 This has very limited functionality compared to a deployed instance.
 
+## Configuration
+
+Details of all Sleeper configuration properties are available here: [Properties](usage/property-master.md). These can be
+edited in the administration client detailed below, or set during deployment.
+
 ## Operations on data
 
 Data in Sleeper is held in a table. You can always add or remove Sleeper tables from an instance. See
@@ -63,6 +68,13 @@ skipped by the compaction strategy:
 ```bash
 ./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
+
+## Java API
+
+The clients module can be used as a dependency for an application to interact with Sleeper. This is not currently
+published but is built with Maven. We have a class `SleeperClient` that can be used as an entrypoint for direct access
+to an instance of Sleeper. This requires permissions to interact with the underlying AWS resources. We have an open
+issue to introduce a REST API that may simplify this in the future (https://github.com/gchq/sleeper/issues/1786).
 
 ## Python API
 

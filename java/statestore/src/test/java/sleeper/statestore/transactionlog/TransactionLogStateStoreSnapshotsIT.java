@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStoreOneTableTestBase {
 
-    private final Schema schema = schemaWithKey("key", new StringType());
+    private final Schema schema = createSchemaWithKey("key", new StringType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
 
     @BeforeEach

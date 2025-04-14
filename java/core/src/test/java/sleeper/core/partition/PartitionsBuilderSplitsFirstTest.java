@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionsBuilderSplitsFirstTest {
 
@@ -178,7 +178,7 @@ public class PartitionsBuilderSplitsFirstTest {
     void shouldFailWhenStartingFromSplitsThenFromRoot() {
         // Given
         PartitionsBuilder builder = PartitionsBuilderSplitsFirst.leavesWithSplits(
-                schemaWithKey("key", new StringType()),
+                createSchemaWithKey("key", new StringType()),
                 List.of("A", "B"), List.of("aaa"));
 
         // When / Then
@@ -189,7 +189,7 @@ public class PartitionsBuilderSplitsFirstTest {
     @Test
     void shouldFailSpecifyingSameParentTwice() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         PartitionsBuilderSplitsFirst builder = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
                 List.of("A", "B", "C"),
                 List.of("aaa", "bbb"))

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessor.class);
@@ -68,7 +68,6 @@ public class SqsQueryProcessor {
     private final ObjectFactory objectFactory;
     private final DynamoDBQueryTracker queryTracker;
     private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
-    private final Map<String, Configuration> configurationCache = new HashMap<>();
 
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
@@ -103,9 +102,9 @@ public class SqsQueryProcessor {
     }
 
     private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws QueryException {
-        QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
+        QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(tableProperties.get(TABLE_ID), tableID -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            Configuration conf = getConfiguration(tableProperties);
+            Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
             return new QueryExecutor(objectFactory, tableProperties, stateStore,
                     new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties));
         });
@@ -130,15 +129,6 @@ public class SqsQueryProcessor {
         }
         queryTrackers.subQueriesCreated(query, subQueries);
         LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
-    }
-
-    private Configuration getConfiguration(TableProperties tableProperties) {
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (!configurationCache.containsKey(tableName)) {
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
-            configurationCache.put(tableName, conf);
-        }
-        return configurationCache.get(tableName);
     }
 
     public static final class Builder {

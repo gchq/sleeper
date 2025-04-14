@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ public class LambdaJar {
 
     public static final LambdaJar ATHENA = withFormatAndImage("athena-%s.jar", "athena-lambda");
     public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
-    public static final LambdaJar BULK_EXPORT = withFormatAndImage("bulk-export-lambda-%s.jar", "bulk-export-lambda");
+    public static final LambdaJar BULK_EXPORT_PLANNER = withFormatAndImage("bulk-export-planner-%s.jar", "bulk-export-planner");
+    public static final LambdaJar BULK_EXPORT_TASK_CREATOR = withFormatAndImage("bulk-export-task-creator-%s.jar", "bulk-export-task-creator");
     public static final LambdaJar INGEST_TASK_CREATOR = withFormatAndImage("ingest-starter-%s.jar", "ingest-task-creator-lambda");
     public static final LambdaJar INGEST_BATCHER_SUBMITTER = withFormatAndImage("ingest-batcher-submitter-%s.jar", "ingest-batcher-submitter-lambda");
     public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = withFormatAndImage("ingest-batcher-job-creator-%s.jar", "ingest-batcher-job-creator-lambda");

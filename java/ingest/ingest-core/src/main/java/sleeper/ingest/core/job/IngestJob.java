@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,7 +213,8 @@ public class IngestJob {
         }
 
         /**
-         * Sets the ingest job ID. This must be unique across all jobs in the Sleeper table.
+         * Sets the ingest job ID. This must be unique across all jobs in the Sleeper table. If this is not set, an ID
+         * will be randomly generated.
          *
          * @param  id the ingest job ID
          * @return    the builder
@@ -235,8 +236,8 @@ public class IngestJob {
         }
 
         /**
-         * Sets the internal ID of the Sleeper table to write to. This should only ever be set internally by
-         * Sleeper.
+         * Sets the internal ID of the Sleeper table to write to. This is set internally by Sleeper. The table name
+         * should usually be set instead of this.
          *
          * @param  tableId the internal table ID
          * @return         the builder
@@ -247,7 +248,9 @@ public class IngestJob {
         }
 
         /**
-         * Sets the list of input files.
+         * Sets the list of files to ingest. These must be in S3. They can be either files or directories. If they are
+         * directories then all Parquet files under the directory will be ingested. Files should be specified in the
+         * format 'bucketName/objectKey'.
          *
          * @param  files the list of input files
          * @return       the builder

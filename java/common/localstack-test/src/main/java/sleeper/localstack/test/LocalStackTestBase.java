@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,13 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
+import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
 
 /**
  * A base class for tests to run against LocalStack.
@@ -59,29 +60,29 @@ public abstract class LocalStackTestBase {
     protected final StsClient stsClientV2 = SleeperLocalStackClients.STS_CLIENT_V2;
     protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
 
-    protected static void createBucket(String bucketName) {
+    public static void createBucket(String bucketName) {
         S3_CLIENT_V2.createBucket(builder -> builder.bucket(bucketName));
     }
 
-    protected static PutObjectResponse putObject(String bucketName, String key, String content) {
+    public static PutObjectResponse putObject(String bucketName, String key, String content) {
         return S3_CLIENT_V2.putObject(builder -> builder.bucket(bucketName).key(key),
                 RequestBody.fromString(content));
     }
 
-    protected static List<String> listObjectKeys(String bucketName) {
+    public static Set<String> listObjectKeys(String bucketName) {
         return S3_CLIENT_V2.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
                 .contents().stream().map(S3Object::key)
-                .collect(toUnmodifiableList());
+                .collect(toUnmodifiableSet());
     }
 
-    protected String createFifoQueueGetUrl() {
-        return sqsClient.createQueue(new CreateQueueRequest()
+    public static String createFifoQueueGetUrl() {
+        return SQS_CLIENT.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
-    protected String createSqsQueueGetUrl() {
-        return sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+    public static String createSqsQueueGetUrl() {
+        return SQS_CLIENT.createQueue(UUID.randomUUID().toString()).getQueueUrl();
     }
 
 }

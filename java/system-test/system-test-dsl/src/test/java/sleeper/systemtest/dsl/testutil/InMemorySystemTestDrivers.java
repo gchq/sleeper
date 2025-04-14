@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package sleeper.systemtest.dsl.testutil;
 
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
@@ -54,7 +55,6 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryPartitionSplittingDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryReports;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySketchesStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
@@ -71,8 +71,8 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
-    private final InMemoryDataStore data = new InMemoryDataStore();
+    private final InMemoryRecordStore sourceFiles = new InMemoryRecordStore();
+    private final InMemoryRecordStore data = new InMemoryRecordStore();
     private final InMemorySketchesStore sketches = new InMemorySketchesStore();
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(transactionLogs);
@@ -239,7 +239,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return reports;
     }
 
-    public InMemoryDataStore data() {
+    public InMemoryRecordStore data() {
         return data;
     }
 

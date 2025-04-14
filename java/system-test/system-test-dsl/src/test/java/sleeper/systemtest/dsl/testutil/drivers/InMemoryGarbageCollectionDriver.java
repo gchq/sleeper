@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.garbagecollector.GarbageCollector;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -25,9 +25,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver {
 
     private final SystemTestInstanceContext instance;
-    private final InMemoryDataStore data;
+    private final InMemoryRecordStore data;
 
-    public InMemoryGarbageCollectionDriver(SystemTestInstanceContext instance, InMemoryDataStore data) {
+    public InMemoryGarbageCollectionDriver(SystemTestInstanceContext instance, InMemoryRecordStore data) {
         this.instance = instance;
         this.data = data;
     }
@@ -35,7 +35,12 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
     @Override
     public void invokeGarbageCollection() {
         GarbageCollector collector = new GarbageCollector(
-                data::deleteFile,
+                (filenames, deletedTracker) -> {
+                    filenames.forEach(filename -> {
+                        data.deleteFile(filename);
+                        deletedTracker.deleted(filename);
+                    });
+                },
                 instance.getInstanceProperties(),
                 instance.getStateStoreProvider(),
                 request -> {

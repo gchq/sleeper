@@ -1,4 +1,4 @@
-# Copyright 2022-2023 Crown Copyright
+# Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
 FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update && apt-get install -y \
+    java-21-amazon-corretto-jdk \
     maven \
     git \
     python3 \
@@ -25,9 +26,13 @@ RUN apt-get update && apt-get install -y \
     jq \
     uuid-runtime \
     sudo \
+    clang \
     gcc g++ cmake make \
     pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
+RUN update-java-alternatives --set java-17-amazon-corretto
 
 # Install Rust
 # Change install location because the default is in the home directory, which is overwritten by Dev Containers.

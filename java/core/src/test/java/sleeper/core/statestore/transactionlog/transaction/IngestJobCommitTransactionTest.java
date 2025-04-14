@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
@@ -50,9 +50,9 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
 
     @BeforeEach
     void setUp() {
-        initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
+        initialiseWithPartitions(new PartitionsBuilder(createSchemaWithKey("key", new LongType())).singlePartition("root"));
         committerStore = (TransactionLogStateStore) super.store;
-        followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
+        followerStore = stateStoreBuilder(createSchemaWithKey("key", new LongType())).build();
     }
 
     @Test

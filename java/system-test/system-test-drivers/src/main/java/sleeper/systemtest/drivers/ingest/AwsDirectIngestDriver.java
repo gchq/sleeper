@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -30,6 +32,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class AwsDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
@@ -41,13 +45,29 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
     }
 
     public void ingest(Path tempDir, Iterator<Record> records) {
-        try {
-            factory(tempDir).ingestFromRecordIterator(instance.getTableProperties(), records);
+        ingest(records, ingestCoordinatorBuilder(tempDir));
+    }
+
+    @Override
+    public void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles) {
+        ingest(records, ingestCoordinatorBuilder(tempDir)
+                .addFilesToStateStore(addFiles::accept));
+    }
+
+    private void ingest(Iterator<Record> records, IngestCoordinator.Builder<Record> builder) {
+        try (IngestCoordinator<Record> coordinator = builder.build()) {
+            while (records.hasNext()) {
+                coordinator.write(records.next());
+            }
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(Path tempDir) {
+        return factory(tempDir).ingestCoordinatorBuilder(instance.getTableProperties());
     }
 
     private IngestFactory factory(Path tempDir) {

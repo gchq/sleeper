@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 
@@ -99,7 +99,7 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
         IngestJob job = jobWithFiles("file");
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
         Instant writtenTime = Instant.parse("2022-12-14T13:51:42.001Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree());
         List<FileReference> files = List.of(
                 fileFactory.rootFile("file1.parquet", 123),
                 fileFactory.rootFile("file2.parquet", 456));

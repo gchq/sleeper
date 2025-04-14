@@ -1,34 +1,38 @@
 Release Process
 ===============
 
-The following steps explain how to prepare and publish a release for Sleeper, by using the Maven system test suite:
+The following steps explain how to prepare and publish a release for Sleeper.
 
-1. Update CHANGELOG.md with a summary of the issues fixed and improvements made in this version.
+1. Create the following issues in GitHub:
+   - Update changelog for `<version>`
+     - Update [CHANGELOG.md](../../CHANGELOG.md) with a summary of the issues fixed and improvements made in this version.
+   - Update roadmap for `<version>`
+     - Update the [roadmap](roadmap.md) to remove any planned features that have been implemented in this release, and
+       give an up to date view of upcoming work.
+   - Prepare release `<version>`
+     - Set the version number using `scripts/dev/updateVersionNumber.sh <version>`.
+     - Update the performance figures in the [system tests guide](system-tests.md#performance-benchmarks).
+   - Update version number to `<next-version>-SNAPSHOT`
+     - This will be done immediately after the release.
 
-2. Update the [roadmap](roadmap.md) to remove any planned features that have been implemented in this release, and give
-   an up to date view of upcoming work.
+2. Read through the documentation to find anything that may need updating, and raise issues to document features or
+   design that has changed in this release.
 
-3. Make sure the [NOTICES](../../NOTICES) file is up to date, particularly from any version changes made by Dependabot.
+3. Make sure the [NOTICES](../../NOTICES) file is up to date.
 
-4. Create an issue for the release, and create a branch for that issue.
+4. Create pull requests for the changelog and roadmap update. These can stay on hold until the release is ready. The
+   changelog should be updated with any bug fixes or further changes.
 
-5. Set the new version number using `./scripts/dev/updateVersionNumber.sh`, e.g.
+5. Review the output of nightly system tests. If there are any failures, fix them. This should be done daily, regardless
+   of release.
 
-```bash
-VERSION=0.12.0
-./scripts/dev/updateVersionNumber.sh ${VERSION}
-```
+There should be a cron job configured to run the test suite nightly. This setup is documented in
+the [system tests guide](system-tests.md#nightly-test-scripts).
 
-6. Push the branch to GitHub and open a pull request so that the tests run. If there are any failures, fix them.
+At this point we can pause merging any pull requests that are not essential for the release. This includes version
+upgrades done by Dependabot.
 
-7. Get the performance figures from the nightly system tests.
-
-There should be a cron job configured to run these nightly. Running it manually and retrieving the results is documented
-in the [system tests guide](system-tests.md#nightly-test-scripts).
-
-Update the performance figures in the [system tests guide](system-tests.md#performance-benchmarks).
-
-8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
+6. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide a fresh instance ID that has not been used before:
 
 ```bash
@@ -45,7 +49,7 @@ The following tests can be used as a quick check that all is working correctly. 
 all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS
 if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
 
-9. Test a simple query:
+7. Test a simple query:
 
 ```bash
 ./scripts/utility/query.sh ${ID}
@@ -55,7 +59,7 @@ Choose a range query, choose 'y' for the first two questions and then choose a r
 As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it
 should be in the region of 900 results.
 
-10. Test a query that will be executed by lambda:
+8. Test a query that will be executed by lambda:
 
 ```bash
 ./scripts/utility/lambdaQuery.sh ${ID}
@@ -65,7 +69,7 @@ Choose the S3 results bucket option and then choose the same options as above. I
 The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query
 should be quicker.
 
-11. Test a query that will be executed by lambda with the results being returned over a websocket:
+9. Test a query that will be executed by lambda with the results being returned over a websocket:
 
 ```bash
 ./scripts/utility/webSocketQuery.sh ${ID}
@@ -73,5 +77,17 @@ should be quicker.
 
 Choose the same options as above, and results should be returned.
 
-12. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
-    set the tag to `v${VERSION}` and push the tag using `git push --tags`.
+10. Ensure you have an up to date run of the performance test suite run against the latest commit, and get the
+    performance figures from the test output. Ideally this can come from the nightly system tests, but it may be
+    necessary to re-run the tests manually. See the [system test guide](system-tests.md#acceptance-tests).
+
+11. Create a pull request for release preparation, with the performance figures and version number update.
+
+12. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
+    and release preparation.
+
+13. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
+    main. Then checkout the main branch, set the tag to `v${VERSION}` and push the tag using `git push --tags`.
+
+14. Create a pull request to update the version number for the next release as a snapshot version. Merge it when
+    everything passes.

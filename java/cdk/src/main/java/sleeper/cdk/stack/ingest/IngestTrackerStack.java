@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.GlobalSecondaryIndexProps;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.ProjectionType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
@@ -64,7 +65,9 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestJobTracker.EXPIRY_DATE)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         jobsTable = Table.Builder
@@ -77,7 +80,9 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
                         .type(AttributeType.STRING)
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestJobTracker.EXPIRY_DATE)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
@@ -104,7 +109,9 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
                         .type(AttributeType.NUMBER)
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestTaskStatusFormat.EXPIRY_DATE)
-                .pointInTimeRecovery(false)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(false)
+                        .build())
                 .build();
 
         grantWriteJobEvent(policiesStack.getDirectIngestPolicyForGrants());

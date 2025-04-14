@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -58,12 +59,12 @@ public class EmrBulkImportStack extends NestedStack {
         super(scope, id);
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "NonPersistentEMR", instanceProperties, coreStacks, errorMetrics);
+                this, BulkImportPlatform.NonPersistentEMR, instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
+                bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_NON_PERSISTENT_START, commonEmrStack);
 
         configureJobStarterFunction(instanceProperties, jobStarter);

@@ -106,14 +106,8 @@ You can run specific tests like this:
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceST,IngestPerformanceST
 ```
 
-You can run a specific test suite like this:
-
-```bash
-./scripts/build/buildForTest.sh # This is not necessary if you used buildDeployTest.sh or have already built the system
-./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> NightlyPerformanceSystemTestSuite
-```
-
-This can also be used with NightlyFunctionalSystemTestSuite.
+You can pass a single test class, a list of tests as above, or you can pass the name of a test suite as listed in the
+previous section.
 
 Note that some system tests are designed to run on at least 3 subnets in different availability zones. There is no
 guarantee that these tests will pass if you use fewer subnets than this, as there might not be enough capacity in
@@ -227,3 +221,4 @@ directs the operation. For standard ingest and compaction this is an ECS task. F
 | 0.27.0         | 12/12/2024 | 248,531         | 1,304,938             | 163,032         |                 |
 | 0.28.0         | 31/01/2025 | 257,867         | 1,315,716             | 156,950         | 4,922,522       |
 | 0.29.0         | 12/03/2025 | 266,045         | 1,387,072             | 167,182         | 4,365,265       |
+| 0.30.0         | 09/04/2025 | 237,290         | 1,459,119             | 171,448         | 4,291,455       |

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,15 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.record.Record;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 public class SystemTestDirectIngest {
@@ -33,6 +38,20 @@ public class SystemTestDirectIngest {
         this.instance = instance;
         this.driver = driver;
         this.tempDir = tempDir;
+    }
+
+    public SystemTestDirectIngest splitIngests(int numIngests, RecordNumbers numbers) {
+        if (numbers.numRecords() % numIngests != 0) {
+            throw new IllegalArgumentException("Number of ingests must split number of records exactly");
+        }
+        int recordsPerIngest = numbers.numRecords() / numIngests;
+        List<FileReference> fileReferences = new ArrayList<>();
+        IntStream.range(0, numIngests)
+                .mapToObj(i -> numbers.range(i * recordsPerIngest, i * recordsPerIngest + recordsPerIngest))
+                .map(range -> instance.numberedRecords().iteratorFrom(range))
+                .forEach(records -> driver.ingest(tempDir, records, fileReferences::addAll));
+        AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(instance.getStateStore());
+        return this;
     }
 
     public SystemTestDirectIngest numberedRecords(LongStream numbers) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.net.UnknownHostException;
  */
 public class SleeperLocalStackContainer {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalStackContainer.class);
-    public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.0.3";
+    public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.2";
 
     private SleeperLocalStackContainer() {
     }

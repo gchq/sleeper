@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import sleeper.core.schema.type.LongType;
 
 import java.util.Map;
 
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionsPrinterTest {
 
-    private final Schema schema = schemaWithKey("key", new LongType());
+    private final Schema schema = createSchemaWithKey("key", new LongType());
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
 
     @Test
