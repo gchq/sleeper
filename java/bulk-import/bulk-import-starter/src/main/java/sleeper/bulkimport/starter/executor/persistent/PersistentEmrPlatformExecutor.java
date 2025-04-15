@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.starter.executor;
+package sleeper.bulkimport.starter.executor.persistent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +22,16 @@ import software.amazon.awssdk.services.emr.model.ActionOnFailure;
 import software.amazon.awssdk.services.emr.model.AddJobFlowStepsRequest;
 import software.amazon.awssdk.services.emr.model.ClusterState;
 import software.amazon.awssdk.services.emr.model.ClusterSummary;
+import software.amazon.awssdk.services.emr.model.EmrException;
 import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emr.model.StepConfig;
 
+import sleeper.bulkimport.starter.executor.BulkImportArguments;
+import sleeper.bulkimport.starter.executor.EmrJarLocation;
+import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.core.properties.instance.InstanceProperties;
+
+import java.util.regex.Pattern;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
@@ -33,14 +39,17 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
 
     private final EmrClient emrClient;
+    private final ReturnBulkImportJobToQueue returnToQueueWhenClusterIsFull;
     private final InstanceProperties instanceProperties;
     private final String clusterId;
     private final String clusterName;
 
     public PersistentEmrPlatformExecutor(
             EmrClient emrClient,
+            ReturnBulkImportJobToQueue returnToQueueWhenClusterIsFull,
             InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
+        this.returnToQueueWhenClusterIsFull = returnToQueueWhenClusterIsFull;
         this.instanceProperties = instanceProperties;
         this.clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
@@ -62,7 +71,17 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
                 .build();
 
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest);
-        emrClient.addJobFlowSteps(addJobFlowStepsRequest);
+        try {
+            emrClient.addJobFlowSteps(addJobFlowStepsRequest);
+        } catch (EmrException e) {
+            String message = e.awsErrorDetails().errorMessage();
+            if (Pattern.matches("Maximum number of active steps.+ for cluster exceeded\\.", message)) {
+                LOGGER.info("Cluster is full, returning job {} to queue with a delay", arguments.getBulkImportJob().getId());
+                returnToQueueWhenClusterIsFull.send(arguments.getBulkImportJob());
+            } else {
+                throw e;
+            }
+        }
     }
 
     private static String getClusterIdFromName(EmrClient emrClient, String clusterName) {

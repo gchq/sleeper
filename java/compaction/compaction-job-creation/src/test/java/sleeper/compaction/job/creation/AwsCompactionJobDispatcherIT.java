@@ -45,6 +45,7 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,14 +58,14 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RE
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
     StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     TableProperties tableProperties = addTable(instanceProperties, schema, partitions);
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
@@ -91,6 +92,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
         // Then
         assertThat(receiveCompactionJobs()).containsExactly(job1, job2);
+        assertThatBatchFileWasDeleted();
     }
 
     @Test
@@ -117,6 +119,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
         // Then
         assertThat(recievePendingBatches()).containsExactly(request);
+        assertThatBatchFileWasNotDeleted();
     }
 
     @Test
@@ -144,6 +147,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
         // Then
         assertThat(recievePendingBatches()).isEmpty();
         assertThat(receiveDeadLetters()).containsExactly(request);
+        assertThatBatchFileWasNotDeleted();
     }
 
     private InstanceProperties createInstance() {
@@ -232,6 +236,16 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
         return result.getMessages().stream()
                 .map(Message::getBody)
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
+    }
+
+    private void assertThatBatchFileWasNotDeleted() {
+        Set<String> contents = listObjectKeys(instanceProperties.get(DATA_BUCKET));
+        assertThat(contents).isNotEmpty();
+    }
+
+    private void assertThatBatchFileWasDeleted() {
+        Set<String> contents = listObjectKeys(instanceProperties.get(DATA_BUCKET));
+        assertThat(contents).isEmpty();
     }
 
 }

@@ -16,7 +16,7 @@
  */
 use std::{
     cell::RefCell,
-    collections::{hash_map::Entry, HashMap},
+    collections::{HashMap, hash_map::Entry},
     future::ready,
     num::NonZero,
     pin::Pin,
@@ -29,9 +29,9 @@ use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::eyre;
 use futures::Future;
 use object_store::{
+    ClientOptions, CredentialProvider, Error, Result,
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
-    ClientOptions, CredentialProvider, Error, Result,
 };
 use url::Url;
 

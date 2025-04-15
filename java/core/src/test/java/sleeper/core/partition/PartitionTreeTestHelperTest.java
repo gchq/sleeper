@@ -27,14 +27,14 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionTreeTestHelperTest {
 
     @Test
     void shouldCreateSplitPointsFromRecordRangeAndRecordsPerPartition() {
         // Given
-        Schema schema = schemaWithKey("key", new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         List<Record> records = List.of(
                 new Record(Map.of("key", 10)),
                 new Record(Map.of("key", 20)),

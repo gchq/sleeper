@@ -50,18 +50,19 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TI
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionJobDispatcherTest {
 
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     StateStore stateStore = InMemoryTransactionLogStateStore
-            .createAndInitialiseWithPartitions(partitions.getAllPartitions(), tableProperties, new InMemoryTransactionLogs());
+            .createAndInitialiseWithPartitions(partitions.getAllPartitions(), tableProperties,
+                    new InMemoryTransactionLogs());
     InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
@@ -71,6 +72,7 @@ public class CompactionJobDispatcherTest {
     Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
     Queue<CompactionJobDispatchRequest> pendingDeadLetterQueue = new LinkedList<>();
     Map<String, RuntimeException> sendFailureByJobId = new HashMap<>();
+    CompactionJobDispatcher.DeleteBatch deleteBatch = deleteBatch();
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() {
@@ -83,8 +85,7 @@ public class CompactionJobDispatcherTest {
         update(stateStore).addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
 
-        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
-                "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
+        CompactionJobDispatchRequest request = generateBatchRequest("test-batch");
         putCompactionJobBatch(request, List.of(job1, job2));
         tracker.setTimeSupplier(List.of(
                 Instant.parse("2024-11-15T10:30:10Z"),
@@ -98,8 +99,8 @@ public class CompactionJobDispatcherTest {
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 compactionJobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
                 compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
-        assertThat(delayedPendingQueue).isEmpty();
-        assertThat(pendingDeadLetterQueue).isEmpty();
+        assertThatNoBatchesAreRequeued();
+        assertThatBatchFileIsDeleted();
     }
 
     @Test
@@ -125,9 +126,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
-        assertThat(delayedPendingQueue).containsExactly(
-                BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
-        assertThat(pendingDeadLetterQueue).isEmpty();
+        assertThatBatchIsPendingResendWithDelay(request, Duration.ofSeconds(12));
     }
 
     @Test
@@ -154,9 +153,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
-        assertThat(delayedPendingQueue).containsExactly(
-                BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
-        assertThat(pendingDeadLetterQueue).isEmpty();
+        assertThatBatchIsPendingResendWithDelay(request, Duration.ofSeconds(12));
     }
 
     @Test
@@ -167,7 +164,8 @@ public class CompactionJobDispatcherTest {
         FileReference assignedFile = fileFactory.rootFile("assigned-to-other-job.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(unassignedFile), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(assignedFile), "root");
-        CompactionJob tookFileJob = compactionFactory.createCompactionJob("took-file-job", List.of(assignedFile), "root");
+        CompactionJob tookFileJob = compactionFactory.createCompactionJob("took-file-job", List.of(assignedFile),
+                "root");
         update(stateStore).addFiles(List.of(unassignedFile, assignedFile));
         assignJobIds(List.of(tookFileJob));
 
@@ -184,8 +182,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
-        assertThat(delayedPendingQueue).isEmpty();
-        assertThat(pendingDeadLetterQueue).containsExactly(request);
+        assertThatBatchIsSentToDeadLetterQueue(request);
     }
 
     @Test
@@ -211,8 +208,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
-        assertThat(delayedPendingQueue).isEmpty();
-        assertThat(pendingDeadLetterQueue).containsExactly(request);
+        assertThatBatchIsSentToDeadLetterQueue(request);
     }
 
     @Test
@@ -237,8 +233,7 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
-        assertThat(delayedPendingQueue).isEmpty();
-        assertThat(pendingDeadLetterQueue).containsExactly(request);
+        assertThatBatchIsSentToDeadLetterQueue(request);
     }
 
     @Test
@@ -270,6 +265,53 @@ public class CompactionJobDispatcherTest {
                 compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).isEmpty();
+        assertThat(s3PathToCompactionJobBatch).isNotEmpty();
+    }
+
+    @Test
+    void shouldDeleteAllFilesAfterBatchIsSent() {
+
+        // Given
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        update(stateStore).addFiles(List.of(file1));
+        assignJobIds(List.of(job1));
+
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
+        putCompactionJobBatch(request, List.of(job1));
+
+        // When
+        dispatchWithNoRetry(request);
+
+        // Then
+        assertThat(compactionQueue).containsExactly(job1);
+        assertThat(s3PathToCompactionJobBatch).isEmpty();
+    }
+
+    @Test
+    void shouldSendBatchToDeadLetterQueueWhenDeleteThrowsException() {
+
+        // Given
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        update(stateStore).addFiles(List.of(file1));
+        assignJobIds(List.of(job1));
+
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
+        putCompactionJobBatch(request, List.of(job1));
+
+        // When
+        deleteBatch = (bucketName, key) -> {
+            throw new RuntimeException();
+        };
+        dispatchWithNoRetry(request);
+
+        // Then
+        assertThat(pendingDeadLetterQueue).containsExactly(request);
+        assertThat(s3PathToCompactionJobBatch).isNotEmpty();
+        assertThat(compactionQueue).containsExactly(job1);
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
@@ -287,8 +329,12 @@ public class CompactionJobDispatcherTest {
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), tracker,
-                readBatch(), sendJobs(), 1,
+                readBatch(), sendJobs(), 1, deleteBatch,
                 returnRequest(), pendingDeadLetterQueue::add, times.iterator()::next);
+    }
+
+    private CompactionJobDispatcher.DeleteBatch deleteBatch() {
+        return (bucketName, key) -> s3PathToCompactionJobBatch.remove(bucketName + "/" + key);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
@@ -324,9 +370,37 @@ public class CompactionJobDispatcherTest {
                 tableProperties, batchId, timeNow);
     }
 
+    private CompactionJobDispatchRequest generateBatchRequest(String batchId) {
+        return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
+                tableProperties, batchId, Instant.now());
+    }
+
     private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {
         static BatchRequestMessage requestAndDelay(CompactionJobDispatchRequest request, Duration duration) {
             return new BatchRequestMessage(request, (int) duration.toSeconds());
         }
     }
+
+    private void assertThatNoBatchesAreRequeued() {
+        assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).isEmpty();
+    }
+
+    private void assertThatBatchFileIsDeleted() {
+        assertThat(s3PathToCompactionJobBatch).isEmpty();
+    }
+
+    private void assertThatBatchIsPendingResendWithDelay(CompactionJobDispatchRequest request, Duration delayDuration) {
+        assertThat(delayedPendingQueue).containsExactly(
+                BatchRequestMessage.requestAndDelay(request, delayDuration));
+        assertThat(pendingDeadLetterQueue).isEmpty();
+        assertThat(s3PathToCompactionJobBatch).isNotEmpty();
+    }
+
+    private void assertThatBatchIsSentToDeadLetterQueue(CompactionJobDispatchRequest request) {
+        assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).containsExactly(request);
+        assertThat(s3PathToCompactionJobBatch).isNotEmpty();
+    }
+
 }

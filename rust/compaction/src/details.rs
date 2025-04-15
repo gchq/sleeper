@@ -15,10 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::s3::{config_for_s3_module, default_creds_store, ObjectStoreFactory};
+use crate::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use aws_config::Region;
 use aws_credential_types::Credentials;
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use object_store::aws::AmazonS3Builder;
 
 use std::{collections::HashMap, path::PathBuf};

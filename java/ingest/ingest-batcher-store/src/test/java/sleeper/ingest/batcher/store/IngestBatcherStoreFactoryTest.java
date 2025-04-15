@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class IngestBatcherStoreFactoryTest {
     @Test
@@ -62,7 +62,7 @@ public class IngestBatcherStoreFactoryTest {
     }
 
     private static TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
-        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
+        TableProperties tableProperties = createTestTableProperties(properties, createSchemaWithKey("key"));
         return new FixedTablePropertiesProvider(tableProperties);
     }
 }

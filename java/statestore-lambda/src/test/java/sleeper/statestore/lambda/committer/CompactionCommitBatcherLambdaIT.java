@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
 
@@ -95,7 +95,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     }
 
     private ReplaceFileReferencesRequest createFilesRequest() {
-        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+        PartitionTree partitions = new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree();
         return ReplaceFileReferencesRequest.builder()
                 .jobId("test-job")
                 .taskId("test-task")

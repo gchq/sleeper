@@ -10,6 +10,11 @@ the [deployment guide](deployment-guide.md) for more information on deploying an
 If you just want to test locally, see the documentation on [deploying to localstack](usage/deploy-to-localstack.md).
 This has very limited functionality compared to a deployed instance.
 
+## Configuration
+
+Details of all Sleeper configuration properties are available here: [Properties](usage/property-master.md). These can be
+edited in the administration client detailed below, or set during deployment.
+
 ## Operations on data
 
 Data in Sleeper is held in a table. You can always add or remove Sleeper tables from an instance. See
@@ -79,7 +84,3 @@ See the [Python API documentation](usage/python-api.md) for details of the Pytho
 
 Experimental integrations are available to interact with Sleeper
 via [Athena](usage/data-retrieval.md#use-athena-to-perform-sql-analytics-and-queries) and [Trino](usage/trino.md).
-
-## Properties
-
-The details for all of the properties used within Sleeper are available here: [Properties](usage/property-master.md).

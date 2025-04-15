@@ -33,7 +33,7 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{internal_err, DFSchema, Result},
+    common::{DFSchema, Result, internal_err},
     logical_expr::{
         ColumnarValue, ReturnInfo, ReturnTypeArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature,
         Volatility,
@@ -41,7 +41,7 @@ use datafusion::{
     scalar::ScalarValue,
 };
 
-use super::sketch::{update_sketch, DataSketchVariant, K};
+use super::sketch::{DataSketchVariant, K, update_sketch};
 
 /// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
 /// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
@@ -212,7 +212,7 @@ impl ScalarUDFImpl for SketchUDF {
                     return internal_err!(
                         "Row type {} not supported for Sleeper row key field",
                         x.data_type()
-                    )
+                    );
                 }
             }
         }

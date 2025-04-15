@@ -38,7 +38,7 @@ import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.com
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class JobQueryTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -83,7 +83,7 @@ public class JobQueryTestBase {
     }
 
     private TableProperties createTableProperties() {
-        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties properties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
         properties.set(TableProperty.TABLE_NAME, TABLE_NAME);
         return properties;
     }

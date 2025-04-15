@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class CompactionCommitBatcherTest {
 
@@ -160,7 +160,7 @@ public class CompactionCommitBatcherTest {
     }
 
     private TableProperties createTable(String tableId) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
         tableProperties.set(TABLE_ID, tableId);
         return tableProperties;
     }
