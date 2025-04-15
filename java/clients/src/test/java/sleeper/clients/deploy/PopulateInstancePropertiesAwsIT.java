@@ -34,7 +34,6 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
@@ -55,7 +54,6 @@ public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
         expected.set(ECR_REPOSITORY_PREFIX, "test-instance");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(ACCOUNT, stsClient.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
         expected.set(REGION, localStackContainer.getRegion());
 

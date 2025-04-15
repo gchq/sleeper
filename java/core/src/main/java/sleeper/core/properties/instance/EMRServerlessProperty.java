@@ -42,13 +42,6 @@ public interface EMRServerlessProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index
-            .propertyBuilder("sleeper.bulk.import.emr.serverless.repo")
-            .description("The name of the repository for the EMR serverless container. "
-                    + "The Docker image from the bulk-import module "
-                    + "should have been uploaded to an ECR repository of this name in this account.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_AUTOSTART = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.autostart.enabled")
             .description("Set to true to allow an EMR Serverless Application to start "
