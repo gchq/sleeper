@@ -56,10 +56,6 @@ sleeper.bulk.export.ecr.repo=changeme
 # module should have been uploaded to an ECR repository of this name in this account.
 sleeper.bulk.import.emr.serverless.repo=changeme
 
-# (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
-# is stored.
-sleeper.bulk.import.eks.repo=changeme
-
 
 ##################
 # Default Values #

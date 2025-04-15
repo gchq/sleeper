@@ -85,11 +85,11 @@ import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_ST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -230,7 +230,7 @@ public final class EksBulkImportStack extends NestedStack {
                 ".dkr.ecr." +
                 instanceProperties.get(REGION) +
                 ".amazonaws.com/" +
-                instanceProperties.get(BULK_IMPORT_REPO) +
+                instanceProperties.get(ECR_REPOSITORY_PREFIX) +
                 ":" +
                 instanceProperties.get(CdkDefinedInstanceProperty.VERSION);
 

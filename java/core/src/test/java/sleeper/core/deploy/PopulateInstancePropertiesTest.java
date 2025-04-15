@@ -48,7 +48,6 @@ import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
@@ -64,7 +63,6 @@ public class PopulateInstancePropertiesTest {
         expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_REPOSITORY_PREFIX, "test-instance");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(ACCOUNT, "test-account-id");
@@ -95,7 +93,6 @@ public class PopulateInstancePropertiesTest {
         expected.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
         expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
         expected.set(BULK_EXPORT_ECR_REPO, "test-ecr-prefix/bulk-export-task-execution");
-        expected.set(BULK_IMPORT_REPO, "test-ecr-prefix/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-ecr-prefix/bulk-import-runner-emr-serverless");
         assertThat(properties).isEqualTo(expected);
     }
@@ -150,7 +147,6 @@ public class PopulateInstancePropertiesTest {
         expected.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
         expected.set(ECR_REPOSITORY_PREFIX, "test-instance");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-BulkExportJobCreationRule");

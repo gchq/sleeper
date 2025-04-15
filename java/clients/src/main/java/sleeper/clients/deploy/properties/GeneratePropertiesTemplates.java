@@ -47,7 +47,6 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
@@ -81,7 +80,6 @@ public class GeneratePropertiesTemplates {
 
     private static final Map<InstanceProperty, String> EMR_REPOSITORY_EXAMPLE_VALUES = Map.of(
             ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest",
-            BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner",
             BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless",
             ECR_REPOSITORY_PREFIX, "<insert-unique-sleeper-id>",
             BULK_EXPORT_ECR_REPO, "<insert-unique-sleeper-id>/bulk-export-task-execution");
