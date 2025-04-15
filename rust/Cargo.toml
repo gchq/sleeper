@@ -16,7 +16,7 @@ members = ["compactor", "compaction", "rust_sketch"]
 resolver = "2"
 
 [workspace.package]
-version = "0.30.0-SNAPSHOT"
+version = "0.30.0"
 edition = "2024"
 rust-version = "1.86"
 publish = false
