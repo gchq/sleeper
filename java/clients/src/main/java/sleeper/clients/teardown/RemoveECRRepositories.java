@@ -33,7 +33,6 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_EC
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);
@@ -50,7 +49,7 @@ public class RemoveECRRepositories {
     }
 
     private static Stream<String> repositoryNamesFromProperties(InstanceProperties properties) {
-        return Stream.of(ECR_REPOSITORY_PREFIX, ECR_INGEST_REPO,
+        return Stream.of(ECR_REPOSITORY_PREFIX,
                 BULK_EXPORT_ECR_REPO)
                 .filter(properties::isSet)
                 .map(properties::get);

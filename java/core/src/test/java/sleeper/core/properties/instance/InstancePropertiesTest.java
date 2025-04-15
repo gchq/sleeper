@@ -81,7 +81,6 @@ import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -276,7 +275,6 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS, 800);
         instanceProperties.set(JARS_BUCKET, "bucket");
         instanceProperties.set(ECR_REPOSITORY_PREFIX, "sleeper-compaction");
-        instanceProperties.set(ECR_INGEST_REPO, "sleeper-ingest");
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, "url");
         instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, "url2");
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "url3");

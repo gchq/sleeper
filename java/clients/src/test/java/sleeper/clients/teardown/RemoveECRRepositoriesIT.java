@@ -39,7 +39,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
@@ -68,17 +67,14 @@ class RemoveECRRepositoriesIT {
     void shouldRemoveRepositoriesWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_REPOSITORY_PREFIX, "test-compaction-repo");
-        properties.set(ECR_INGEST_REPO, "test-ingest-repo");
+        properties.set(ECR_REPOSITORY_PREFIX, "test-repo");
 
         // When
         RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
 
         // Then
-        verify(1, deleteRequestedFor("test-compaction-repo"));
-        verify(1, deleteRequestedFor("test-ingest-repo"));
-        verify(1, deleteRequestedFor("test-bulk-import-repo"));
-        verify(3, postRequestedFor(urlEqualTo("/")));
+        verify(1, deleteRequestedFor("test-repo"));
+        verify(1, postRequestedFor(urlEqualTo("/")));
     }
 
     @Test

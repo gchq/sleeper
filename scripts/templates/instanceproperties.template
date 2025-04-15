@@ -35,13 +35,6 @@ sleeper.subnets=changeme
 sleeper.ecr.repository.prefix=changeme
 
 
-## The following properties relate to standard ingest.
-
-# The name of the ECR repository for the ingest container. The Docker image from the ingest module
-# should have been uploaded to an ECR repository of this name in this account.
-sleeper.ingest.repo=changeme
-
-
 ## The following properties relate to bulk export.
 
 # The name of the repository for the bulk export container. The Docker image should have been uploaded

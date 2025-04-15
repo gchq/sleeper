@@ -48,7 +48,6 @@ import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 
 public class PopulateInstancePropertiesTest {
@@ -61,7 +60,6 @@ public class PopulateInstancePropertiesTest {
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_REPOSITORY_PREFIX, "test-instance");
-        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "test-region");
@@ -89,7 +87,6 @@ public class PopulateInstancePropertiesTest {
         // Then
         InstanceProperties expected = expectedInstanceProperties();
         expected.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
-        expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
         expected.set(BULK_EXPORT_ECR_REPO, "test-ecr-prefix/bulk-export-task-execution");
         assertThat(properties).isEqualTo(expected);
     }
@@ -143,7 +140,6 @@ public class PopulateInstancePropertiesTest {
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
         expected.set(ECR_REPOSITORY_PREFIX, "test-instance");
-        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-BulkExportJobCreationRule");
         expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
