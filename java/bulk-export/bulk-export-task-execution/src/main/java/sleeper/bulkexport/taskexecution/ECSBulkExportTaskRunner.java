@@ -166,7 +166,7 @@ public class ECSBulkExportTaskRunner {
         String outputFile = String.format("s3a://%s/%s/%s/%s.parquet", exportBucket,
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getExportId(), bulkExportLeafPartitionQuery.getSubExportId());
         LOGGER.debug("Output file path: {}", outputFile);
- 
+
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
         DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
