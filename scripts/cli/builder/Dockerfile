@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     uuid-runtime \
     sudo \
+    clang \
     gcc g++ cmake make \
     pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*

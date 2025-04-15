@@ -39,7 +39,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
 import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAddedFilesEventBuilder;
@@ -520,7 +520,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(2).jobRunId(jobRunId).taskId(taskId).build();
             Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
-            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(fileFactory.rootFile("file.parquet", 123)));
 
             // When
@@ -545,7 +545,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1).jobRunId(jobRunId).taskId(taskId).build();
             Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
-            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key", new LongType()))
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(createSchemaWithKey("key", new LongType()))
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)
                     .buildTree());
@@ -575,7 +575,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1).jobRunId(jobRunId).taskId(taskId).build();
             Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
-            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
                     fileFactory.rootFile("file1.parquet", 123),
                     fileFactory.rootFile("file2.parquet", 456)));
@@ -601,7 +601,7 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1).jobRunId(jobRunId).taskId(taskId).build();
-            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
                     fileFactory.rootFile("file1.parquet", 123)));
             JobRunSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);

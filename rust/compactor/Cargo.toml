@@ -13,31 +13,27 @@
 # limitations under the License.
 [package]
 name = "compactor"
-authors = ["GCHQ"]
-rust-version = "1.79"
 description = "Binary crate for running the data compactor from the command line."
-version = "0.30.0-SNAPSHOT"
-edition = "2021"
-license = "Apache-2.0"
 keywords = ["sleeper", "compaction"]
 categories = ["science"]
-publish = false
-default-run = "main"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+authors = { workspace = true }
+rust-version = { workspace = true }
+publish = { workspace = true }
 
 [dependencies]
-thiserror = { version = "2.0.12" } # Derivable error enums
-log = { version = "0.4.27", features = [
-    "release_max_level_debug",
-] } # Standard logging framework
-env_logger = { version = "0.11.8" } # Standard logging to stderr
-human-panic = { version = "2.0.2" } # Readable panic messages
-clap = { version = "4.5.35", features = ["derive"] } # Cmd line args processing
-color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
-owo-colors = { version = "4.2.0" } # Colourised output
+chrono = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+color-eyre = { workspace = true }
 compaction = { path = "../compaction" }
-chrono = { version = "0.4.39" } # Log helper
-tokio = { version = "1.44.1", features = ["full"] } # Async runtime
-url = { version = "2.5.4" }
-num-format = { version = "0.4.4" } # Formatted numbers
+env_logger = { workspace = true }
+human-panic = { workspace = true }
+log = { workspace = true, features = ["release_max_level_debug"] }
+num-format = { workspace = true }
+owo-colors = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+url = { workspace = true }

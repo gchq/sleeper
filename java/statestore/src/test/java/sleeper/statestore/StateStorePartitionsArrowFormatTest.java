@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class StateStorePartitionsArrowFormatTest {
 
@@ -47,7 +47,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionsSplitOnOneStringField() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "mmm")
@@ -64,7 +64,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionsSplitOnOneLongField() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new LongType());
+        Schema schema = createSchemaWithKey("key", new LongType());
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 123L)
@@ -81,7 +81,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionsSplitOnOneIntField() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 123)
@@ -98,7 +98,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionsSplitOnOneByteArrayField() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", new byte[]{123})
@@ -153,7 +153,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionsSplitOnOneStringFieldOverMultipleLevels() throws Exception {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "mmm")
@@ -205,7 +205,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWriteMorePartitionsThanBatchSize() throws Exception {
         // Given
-        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+        List<Partition> partitions = new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "m")
                 .buildList();
@@ -223,7 +223,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionTreeInBatches() throws Exception {
         // Given
-        PartitionTree tree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+        PartitionTree tree = new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "c")
                 .buildTree();
@@ -242,7 +242,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWritePartitionTreeInBatchesWithRootLast() throws Exception {
         // Given
-        PartitionTree tree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+        PartitionTree tree = new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "c")
                 .buildTree();
@@ -261,7 +261,7 @@ public class StateStorePartitionsArrowFormatTest {
     @Test
     void shouldWriteLargerPartitionTreeInBatchesInTreeOrder() throws Exception {
         // Given
-        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+        List<Partition> partitions = new PartitionsBuilder(createSchemaWithKey("key", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "c")
                 .splitToNewChildren("L", "LL", "LR", "b")

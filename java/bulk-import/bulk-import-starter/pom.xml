@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-import</artifactId>
-        <version>0.30.0-SNAPSHOT</version>
+        <version>0.30.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -48,6 +48,10 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sfn</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
         <!-- Sleeper Dependencies -->
         <dependency>

@@ -5,6 +5,45 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.30.0
+
+This includes improvements to garbage collection to keep up with larger numbers of compaction jobs.
+
+Garbage collection:
+- Increased throughput and batch size when deleting files which are no longer needed after compaction
+- Added instance property for maximum number of files to delete per garbage collection invocation
+
+Bulk import:
+- Handling for cases where many bulk import jobs are submitted at once
+  - Increased retries with backoff when rate limited submitting Spark jobs
+  - Requeued jobs with a delay when persistent EMR cluster is full
+
+Compaction:
+- Applied Parquet statistics truncate length in compactions with DataFusion
+
+Clients:
+- Added Java API to directly interact with a Sleeper instance (see usage guide)
+
+Documentation:
+- Added descriptions of every instance and table property
+- Added design risks and mitigations document
+- Added potential deployment improvements document
+- Improved overview of ingest, added explanation of ingest job tracker
+- Added diagrams and details of transaction log state store design
+- Updated release process
+- Updated design diagrams with 2025 AWS icons
+
+Build:
+- Switched from GCC to Clang for C/C++ code used in Rust
+- Stopped building some unused jars
+
+Bugfixes:
+- Metadata of state store snapshots is now deleted when a Sleeper table is deleted
+- Granted permission for compaction dispatcher to send unretryable compaction batches to dead letter queue
+- Restored ability to run compactions in a LocalStack deployment
+- Avoided query executor cache invalidation when a Sleeper table is renamed
+
+
 ## Version 0.29.0
 
 State store:

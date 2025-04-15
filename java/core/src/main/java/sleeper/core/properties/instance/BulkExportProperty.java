@@ -35,13 +35,13 @@ public interface BulkExportProperty {
     UserDefinedInstanceProperty BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS = Index
             .propertyBuilder("sleeper.bulk.export.timeout.seconds")
             .description("The default timeout in seconds for the bulk export lambda.")
-            .defaultValue("800")
+            .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index
             .propertyBuilder("sleeper.bulk.export.queue.visibility.timeout.seconds")
             .description("The visibility timeout in seconds for the bulk export queue.")
-            .defaultValue("800")
+            .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_TASK_CPU_ARCHITECTURE = Index
@@ -103,6 +103,30 @@ public interface BulkExportProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.job.failed.visibility.timeout.seconds")
+            .description("The delay in seconds until a failed bulk export job becomes visible on the bulk export " +
+                    "queue and can be processed again.")
+            .defaultValue("60")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.task.wait.time.seconds")
+            .description("The time in seconds for a bulk export task to wait for a bulk export job to appear on the " +
+                    "SQS queue (must be <= 20).\n" +
+                    "When a bulk export task waits for bulk export jobs to appear on the SQS queue, if the task " +
+                    "receives no messages in the time defined by this property, it will try to wait for a message " +
+                    "again.")
+            .defaultValue("20")
+            .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 20))
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_KEEP_ALIVE_PERIOD_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.keepalive.period.seconds")
+            .description("The frequency, in seconds, with which change message visibility requests are sent to " +
+                    "extend the visibility of messages on the bulk export job queue so that they are not processed by " +
+                    "other processes.\n" +
+                    "This should be less than the value of sleeper.bulk.export.queue.visibility.timeout.seconds.")
+            .defaultValue("300")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

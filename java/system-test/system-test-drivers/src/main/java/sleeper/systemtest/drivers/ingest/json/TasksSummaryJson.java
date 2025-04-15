@@ -34,14 +34,22 @@ public class TasksSummaryJson {
     private final int numTasks;
     private final Map<String, Long> countByDesiredStatus = new TreeMap<>();
     private final Map<String, Long> countByLastStatus = new TreeMap<>();
+    private final Map<String, Long> countByStopCode = new TreeMap<>();
+    private final Map<String, Long> countByStoppedReason = new TreeMap<>();
 
     public TasksSummaryJson(List<Task> tasks) {
         numTasks = tasks.size();
         for (Task task : tasks) {
-            countByDesiredStatus.compute(task.desiredStatus(),
-                    (key, count) -> count == null ? 1 : count + 1);
-            countByLastStatus.compute(task.lastStatus(),
-                    (key, count) -> count == null ? 1 : count + 1);
+            incrementCount(countByDesiredStatus, task.desiredStatus());
+            incrementCount(countByLastStatus, task.lastStatus());
+            incrementCount(countByStopCode, task.stopCodeAsString());
+            incrementCount(countByStoppedReason, task.stoppedReason());
+        }
+    }
+
+    private static void incrementCount(Map<String, Long> stringToCount, String string) {
+        if (string != null) {
+            stringToCount.compute(string, (key, count) -> count == null ? 1 : count + 1);
         }
     }
 

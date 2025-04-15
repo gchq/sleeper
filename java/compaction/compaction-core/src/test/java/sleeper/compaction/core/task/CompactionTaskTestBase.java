@@ -67,7 +67,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionTaskTestBase {
@@ -77,7 +77,7 @@ public class CompactionTaskTestBase {
     protected static final Instant DEFAULT_CREATED_TIME = Instant.parse("2024-03-04T10:50:00Z");
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final Schema schema = schemaWithKey("key");
+    protected final Schema schema = createSchemaWithKey("key");
     private final List<TableProperties> tables = new ArrayList<>();
     protected final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);

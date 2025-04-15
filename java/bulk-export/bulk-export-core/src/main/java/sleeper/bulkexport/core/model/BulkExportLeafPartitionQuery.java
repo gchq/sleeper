@@ -18,6 +18,7 @@ package sleeper.bulkexport.core.model;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 
 import java.util.List;
@@ -119,6 +120,16 @@ public class BulkExportLeafPartitionQuery {
      */
     public String getSubExportId() {
         return subExportId;
+    }
+
+    /**
+     * Gets the table properties for this export.
+     *
+     * @param provider table properties provider
+     * @return table properties
+     */
+    public TableProperties getTableProperties(TablePropertiesProvider provider) {
+        return provider.getById(getTableId());
     }
 
     /**

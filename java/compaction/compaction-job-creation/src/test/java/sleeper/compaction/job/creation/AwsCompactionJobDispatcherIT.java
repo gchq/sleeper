@@ -58,14 +58,14 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RE
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
     StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
-    Schema schema = schemaWithKey("key");
+    Schema schema = createSchemaWithKey("key");
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     TableProperties tableProperties = addTable(instanceProperties, schema, partitions);
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);

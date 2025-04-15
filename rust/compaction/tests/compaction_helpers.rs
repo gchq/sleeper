@@ -4,13 +4,13 @@ use arrow::{
     array::{Array, ArrayRef, Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
 };
-use color_eyre::eyre::{eyre, Error, OptionExt};
-use compaction::{deserialise_sketches, DataSketchVariant};
+use color_eyre::eyre::{Error, OptionExt, eyre};
 use compaction::{ColRange, PartitionBound};
+use compaction::{DataSketchVariant, deserialise_sketches};
 use datafusion::parquet::{
     arrow::{
-        arrow_reader::{ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder},
         ArrowWriter,
+        arrow_reader::{ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder},
     },
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,

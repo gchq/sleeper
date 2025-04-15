@@ -23,7 +23,7 @@
 //! Assume the object `test_file` is 100 bytes long. This store may operate as follows.
 //!
 //! 1. Client makes a request via [`ObjectStore::get_opts`] or [`ObjectStore::get_range`] for byte range 20-30 of
-//!     `test_file`.
+//!    `test_file`.
 //!     1. [`ReadaheadStore`] will make a request to the underlying store for byte range 20-...
 //!     2. A [`PositionedStream`] is returned to the client for range 20-30.
 //! 2. Client reads some data then drops the stream at position 28.
@@ -31,7 +31,7 @@
 //! 3. Some time later...
 //! 4. Client makes a request for `test_file` byte range 35-45.
 //!     1. [`ReadaheadStore`] checks the cache entries for `test_file` and finds an entry with a stream at position 28.
-//!         This is within the readahead limit, so the stream is removed from the cache.
+//!        This is within the readahead limit, so the stream is removed from the cache.
 //!     2. The stream is skipped (35 - 28) = 7 bytes ahead.
 //!     3. A [`PositionedStream`] is returned to the client for range 35-45.
 //!     4. *We have avoided making a second GET request on the underlying [`ObjectStore`]!*
@@ -39,7 +39,7 @@
 //! 6. Some more time passes...
 //! 7. Client makes a request for `test_file` for the whole file.
 //!     1. As the request matches one of the trigger conditions above, [`ReadaheadStore`] simply passes the request
-//!         through to the underlying store.
+//!        through to the underlying store.
 //!
 /*
  * Copyright 2022-2025 Crown Copyright
@@ -60,14 +60,14 @@ mod stream;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use futures::stream::{empty, BoxStream};
+use futures::stream::{BoxStream, empty};
 use log::debug;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
-    path::Path, Attributes, GetOptions, GetRange, GetResult, GetResultPayload, ListResult,
-    MultipartUpload, ObjectMeta, ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult,
-    Result,
+    Attributes, GetOptions, GetRange, GetResult, GetResultPayload, ListResult, MultipartUpload,
+    ObjectMeta, ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result,
+    path::Path,
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -576,7 +576,7 @@ mod tests {
     use crate::store::LoggingObjectStore;
 
     use super::*;
-    use futures::{stream, StreamExt};
+    use futures::{StreamExt, stream};
     use object_store::{integration::*, local::LocalFileSystem, memory::InMemory};
     use tempfile::TempDir;
 
@@ -1836,13 +1836,15 @@ mod tests {
 
         // When
         // Check cache entry empty
-        assert!(cache_ptr
-            .lock()
-            .unwrap()
-            .get(&"test".into())
-            .unwrap()
-            .streams
-            .is_empty());
+        assert!(
+            cache_ptr
+                .lock()
+                .unwrap()
+                .get(&"test".into())
+                .unwrap()
+                .streams
+                .is_empty()
+        );
         inserter.cache_used_stream(&mut ps);
 
         // Then
