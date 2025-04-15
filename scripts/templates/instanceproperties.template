@@ -28,6 +28,12 @@ sleeper.vpc=changeme
 # clusters will be deployed in a subnet chosen when the cluster is created.
 sleeper.subnets=changeme
 
+# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
+# instance ID will be used to determine the names instead.
+# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
+# the ability to use this in the CDK in the future.
+sleeper.ecr.repository.prefix=changeme
+
 
 ## The following properties relate to standard ingest.
 
@@ -53,14 +59,6 @@ sleeper.bulk.import.emr.serverless.repo=changeme
 # (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
 # is stored.
 sleeper.bulk.import.eks.repo=changeme
-
-
-## The following properties relate to compactions.
-
-# The name of the repository for the compaction container. The Docker image from the
-# compaction-job-execution module should have been uploaded to an ECR repository of this name in this
-# account.
-sleeper.compaction.repo=changeme
 
 
 ##################
@@ -138,12 +136,6 @@ sleeper.task.runner.timeout.seconds=900
 # If true, properties will be reloaded every time a long running job is started or a lambda is run.
 # This will mainly be used in test scenarios to ensure properties are up to date.
 sleeper.properties.force.reload=false
-
-# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
-# instance ID will be used to determine the names instead.
-# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
-# the ability to use this in the CDK in the future.
-# sleeper.ecr.repository.prefix=
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
