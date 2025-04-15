@@ -85,6 +85,12 @@ class SleeperClientTest {
             .build();
 
     @Test
+    void validateThatClientCannotBeCreatedWithNulls() {
+        assertThatThrownBy(() -> SleeperClient.builder().build())
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
     void shouldAddTable() {
         // Given
         TableProperties tableProperties = createTableProperties("test-table");
