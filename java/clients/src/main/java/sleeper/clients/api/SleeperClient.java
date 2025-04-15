@@ -110,6 +110,7 @@ public class SleeperClient {
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client))
+                .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient))
                 .stateStoreProvider(
                         StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .objectFactory(ObjectFactory.noUserJars())
