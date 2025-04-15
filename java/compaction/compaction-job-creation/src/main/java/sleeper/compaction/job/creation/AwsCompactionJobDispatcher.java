@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.DeleteBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendDeadLetter;
@@ -59,7 +60,9 @@ public class AwsCompactionJobDispatcher {
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
                 CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
-                readBatch(s3, compactionJobSerDe), sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,
+                readBatch(s3, compactionJobSerDe),
+                sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,
+                deleteBatch(s3),
                 returnToQueue(instanceProperties, sqs), sendDeadLetter(instanceProperties, sqs), timeSupplier);
     }
 
@@ -79,6 +82,12 @@ public class AwsCompactionJobDispatcher {
 
     private static ReadBatch readBatch(AmazonS3 s3, CompactionJobSerDe compactionJobSerDe) {
         return (bucketName, key) -> compactionJobSerDe.batchFromJson(s3.getObjectAsString(bucketName, key));
+    }
+
+    private static DeleteBatch deleteBatch(AmazonS3 s3) {
+        return (bucketName, key) -> {
+            s3.deleteObject(bucketName, key);
+        };
     }
 
     private static ReturnRequestToPendingQueue returnToQueue(InstanceProperties instanceProperties, AmazonSQS sqs) {
