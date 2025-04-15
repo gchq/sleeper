@@ -49,6 +49,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -75,7 +76,6 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
@@ -275,7 +275,7 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 700);
         instanceProperties.setNumber(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS, 800);
         instanceProperties.set(JARS_BUCKET, "bucket");
-        instanceProperties.set(ECR_COMPACTION_REPO, "sleeper-compaction");
+        instanceProperties.set(ECR_REPOSITORY_PREFIX, "sleeper-compaction");
         instanceProperties.set(ECR_INGEST_REPO, "sleeper-ingest");
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, "url");
         instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, "url2");

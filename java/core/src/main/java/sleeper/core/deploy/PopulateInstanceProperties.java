@@ -39,7 +39,6 @@ import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
@@ -115,7 +114,7 @@ public class PopulateInstanceProperties {
         properties.set(ID, instanceId);
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
-        properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
+        properties.set(ECR_REPOSITORY_PREFIX, ecrPrefix);
         properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export-task-execution");
         properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
         properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");

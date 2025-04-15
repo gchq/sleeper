@@ -61,13 +61,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 
 /**
  * Deploys the resources to run compaction tasks that process compaction jobs. Specfically, there are the
@@ -120,7 +120,7 @@ public class CompactionTaskResources {
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(stack, "ECR1",
-                instanceProperties.get(ECR_COMPACTION_REPO));
+                instanceProperties.get(ECR_REPOSITORY_PREFIX));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);

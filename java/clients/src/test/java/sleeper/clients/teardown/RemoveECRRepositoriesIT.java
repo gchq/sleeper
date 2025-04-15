@@ -38,7 +38,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -55,7 +55,7 @@ class RemoveECRRepositoriesIT {
     void shouldRemoveRepositoryWhenPropertyIsSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
+        properties.set(ECR_REPOSITORY_PREFIX, "test-compaction-repo");
 
         // When
         RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
@@ -69,7 +69,7 @@ class RemoveECRRepositoriesIT {
     void shouldRemoveRepositoriesWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
+        properties.set(ECR_REPOSITORY_PREFIX, "test-compaction-repo");
         properties.set(ECR_INGEST_REPO, "test-ingest-repo");
         properties.set(BULK_IMPORT_REPO, "test-bulk-import-repo");
 
@@ -101,7 +101,7 @@ class RemoveECRRepositoriesIT {
         // Given
         stubFor(post("/").willReturn(repositoryNotFound("test-compaction-repo")));
         InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
+        properties.set(ECR_REPOSITORY_PREFIX, "test-compaction-repo");
 
         // When
         RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());

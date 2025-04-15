@@ -33,7 +33,6 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_EC
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
@@ -53,7 +52,7 @@ public class RemoveECRRepositories {
     }
 
     private static Stream<String> repositoryNamesFromProperties(InstanceProperties properties) {
-        return Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO,
+        return Stream.of(ECR_REPOSITORY_PREFIX, ECR_INGEST_REPO,
                 BULK_EXPORT_ECR_REPO, BULK_IMPORT_REPO, BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
                 .filter(properties::isSet)
                 .map(properties::get);
