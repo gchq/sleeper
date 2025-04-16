@@ -34,14 +34,14 @@ bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
 chrono = { version = "0.4.40" } # Log helper
 clap = { version = "4.5.36" } # Cmd line args processing
 color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
-cxx = { version = "1.0.156" } # Exception handling for Rust
-cxx-build = { version = "1.0.156" }
+cxx = { version = "1.0.157" } # Exception handling for Rust
+cxx-build = { version = "1.0.157" }
 datafusion = { version = "46.0.1" }
 env_logger = { version = "0.11.8" } # Standard logging to stderr
 futures = { version = "0.3.31" } # Async processing
 git2 = { version = "0.20.1" } # Interact with version control
 human-panic = { version = "2.0.2" } # Readable panic messages
-libc = { version = "0.2.171" } # FFI type support
+libc = { version = "0.2.172" } # FFI type support
 log = { version = "0.4.27" } # Standard logging framework
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 object_store = { version = "0.11.2" } # Remote cloud storage access

@@ -80,6 +80,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -372,6 +373,55 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                         ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
     }
 
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    void shouldDeleteJsonFileAfterImport(BulkImportJobRunner runner) throws IOException {
+        // Given
+        // - Write some data to be imported
+        List<Record> records = getRecords();
+        writeRecordsToFile(records, dataDir + "/import/a.parquet");
+        List<String> inputFiles = new ArrayList<>();
+        inputFiles.add(dataDir + "/import/a.parquet");
+        // - State store
+        StateStore stateStore = createTable(instanceProperties, tableProperties);
+
+        // When
+        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
+        runJob(runner, instanceProperties, job);
+
+        // Then
+        List<FileReference> fileReferences = stateStore.getFileReferences();
+        List<Record> readRecords = new ArrayList<>();
+        for (FileReference fileReference : fileReferences) {
+            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
+                List<Record> recordsInThisFile = new ArrayList<>();
+                Record record = reader.read();
+                while (null != record) {
+                    Record clonedRecord = new Record(record);
+                    readRecords.add(clonedRecord);
+                    recordsInThisFile.add(clonedRecord);
+                    record = reader.read();
+                }
+                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            }
+        }
+        assertThat(readRecords).hasSameSizeAs(records);
+
+        List<Record> expectedRecords = new ArrayList<>(records);
+        sortRecords(expectedRecords);
+        sortRecords(readRecords);
+        assertThat(readRecords).isEqualTo(expectedRecords);
+        IngestJob ingestJob = job.toIngestJob();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
+                        ingestAcceptedStatus(ingestJob, validationTime),
+                        validatedIngestStartedStatus(ingestJob, startTime),
+                        ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
+
+        // Check json file has been deleted
+        assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
+    }
+
     private static List<Record> readRecords(String filename, Schema schema) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> readRecords = new ArrayList<>();
@@ -395,8 +445,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(BULK_IMPORT_BUCKET, "bulkimport");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         return instanceProperties;
