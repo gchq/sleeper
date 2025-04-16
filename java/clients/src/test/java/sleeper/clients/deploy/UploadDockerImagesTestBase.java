@@ -17,12 +17,12 @@ package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 

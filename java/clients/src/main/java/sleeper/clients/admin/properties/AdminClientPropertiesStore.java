@@ -31,6 +31,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;

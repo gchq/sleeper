@@ -24,10 +24,10 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TableProperties;

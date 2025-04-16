@@ -26,6 +26,7 @@ import sleeper.clients.deploy.StackDockerImage;
 import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
