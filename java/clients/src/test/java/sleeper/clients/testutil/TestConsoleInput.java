@@ -16,7 +16,7 @@
 package sleeper.clients.testutil;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.core.util.ConsoleOutput;
 
 import java.util.Arrays;
 import java.util.LinkedList;

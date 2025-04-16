@@ -18,13 +18,13 @@ package sleeper.clients.admin;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.Chosen;
 import sleeper.clients.util.console.menu.ConsoleChoice;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.util.ConsoleOutput;
 
 import java.util.Optional;
 

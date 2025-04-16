@@ -16,9 +16,9 @@
 package sleeper.clients.admin;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.ConsoleOutput;
 
 import java.util.List;
 import java.util.stream.Collectors;

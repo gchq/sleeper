@@ -19,8 +19,8 @@ package sleeper.clients.admin;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
+import sleeper.core.util.ConsoleOutput;
 import sleeper.splitter.core.status.PartitionsStatus;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;

@@ -22,11 +22,11 @@ import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.status.report.ingest.batcher.StandardIngestBatcherReporter;
 import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusProvider;
+import sleeper.core.util.ConsoleOutput;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 
 import java.util.Optional;

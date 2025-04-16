@@ -41,11 +41,11 @@ import sleeper.clients.util.AwsV2ClientHelper;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.ConsoleOutput;
 import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
