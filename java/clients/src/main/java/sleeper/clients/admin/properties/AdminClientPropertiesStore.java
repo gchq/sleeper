@@ -22,7 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.DockerImageConfiguration;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.deploy.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
@@ -30,6 +29,7 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.deploy.DockerImageConfiguration;
 import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
