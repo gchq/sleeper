@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
+import static sleeper.core.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.core.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.systemtest.drivers.cdk.CleanUpDeletedSleeperInstances.instanceIdsByEcrRepositories;
 import static sleeper.systemtest.drivers.cdk.CleanUpDeletedSleeperInstances.instanceIdsByJarsBuckets;
 

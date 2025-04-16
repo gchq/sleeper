@@ -30,11 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
-import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.core.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.core.deploy.StackDockerImage.dockerBuildxImage;
+import static sleeper.core.deploy.StackDockerImage.emrServerlessImage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;

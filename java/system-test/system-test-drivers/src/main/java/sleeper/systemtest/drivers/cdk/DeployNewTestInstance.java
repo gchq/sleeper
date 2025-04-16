@@ -28,18 +28,18 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.PopulateInstancePropertiesAws;
-import sleeper.clients.deploy.StackDockerImage;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.StackDockerImage;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.core.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class DeployNewTestInstance {
