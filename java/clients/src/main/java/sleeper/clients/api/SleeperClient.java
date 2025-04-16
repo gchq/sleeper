@@ -77,11 +77,11 @@ public class SleeperClient {
     private SleeperClient(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
-        tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tableProperties must not be null");
+        tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
         tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
-        recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieveProvider must not be null");
+        recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
     }
