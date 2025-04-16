@@ -235,6 +235,8 @@ public class BulkImportJobDriver {
         } catch (JsonSyntaxException e) {
             LOGGER.error("Json job was malformed");
             throw e;
+        } finally {
+            s3Client.deleteObject(bulkImportBucket, jsonJobKey);
         }
     }
 
