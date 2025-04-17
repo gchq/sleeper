@@ -73,16 +73,41 @@ class SleeperClientTest {
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
     Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
-    SleeperClient sleeperClient = SleeperClient.builder()
-            .instanceProperties(instanceProperties)
-            .tableIndex(tableIndex)
-            .tablePropertiesStore(tablePropertiesStore)
-            .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
-            .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
-            .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
-            .ingestJobSender(ingestSender())
-            .bulkImportJobSender(bulkImportSender())
-            .build();
+    SleeperClient sleeperClient = createSleeperBuilder().build();
+
+    private SleeperClient.Builder createSleeperBuilder() {
+        return SleeperClient.builder()
+                .instanceProperties(instanceProperties)
+                .tableIndex(tableIndex)
+                .tablePropertiesStore(tablePropertiesStore)
+                .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
+                .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
+                .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
+                .ingestJobSender(ingestSender())
+                .bulkImportJobSender(bulkImportSender());
+    }
+
+    @Test
+    void validateThatClientCannotBeCreatedWithNulls() {
+        assertThatThrownBy(() -> createSleeperBuilder().instanceProperties(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("instanceProperties");
+        assertThatThrownBy(() -> createSleeperBuilder().tableIndex(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("tableIndex");
+        assertThatThrownBy(() -> createSleeperBuilder().tablePropertiesStore(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesStore");
+        assertThatThrownBy(() -> createSleeperBuilder().tablePropertiesProvider(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesProvider");
+        assertThatThrownBy(() -> createSleeperBuilder().stateStoreProvider(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("stateStoreProvider");
+        assertThatThrownBy(() -> createSleeperBuilder().objectFactory(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("objectFactory");
+        assertThatThrownBy(() -> createSleeperBuilder().recordRetrieverProvider(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("recordRetrieverProvider");
+        assertThatThrownBy(() -> createSleeperBuilder().ingestJobSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestJobSender");
+        assertThatThrownBy(() -> createSleeperBuilder().bulkImportJobSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkImportJobSender");
+    }
 
     @Test
     void shouldAddTable() {
