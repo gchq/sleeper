@@ -20,6 +20,7 @@ chunks:
     modules:
       - core
       - configuration
+      - configurationV2
       - sketches
       - parquet
       - common/common-job
