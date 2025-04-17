@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.core.deploy.DockerImageConfiguration.EMR_SERVERLESS_BULK_IMPORT_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
@@ -138,7 +139,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
         String region = instanceProperties.get(REGION);
         String accountId = instanceProperties.get(ACCOUNT);
-        String repo = instanceProperties.get(ECR_REPOSITORY_PREFIX);
+        String repo = instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + EMR_SERVERLESS_BULK_IMPORT_NAME;
         String version = instanceProperties.get(VERSION);
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 

@@ -61,6 +61,7 @@ import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.deploy.DockerImageConfiguration.INGEST_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
@@ -206,7 +207,7 @@ public class IngestStack extends NestedStack {
 
         IRepository repository = Repository.fromRepositoryName(this,
                 "ECR-ingest",
-                instanceProperties.get(ECR_REPOSITORY_PREFIX));
+                instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + INGEST_NAME);
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()

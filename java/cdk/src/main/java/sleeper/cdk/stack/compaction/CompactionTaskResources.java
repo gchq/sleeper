@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.deploy.DockerImageConfiguration.COMPACTION_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
@@ -120,7 +121,7 @@ public class CompactionTaskResources {
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(stack, "ECR1",
-                instanceProperties.get(ECR_REPOSITORY_PREFIX));
+                instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + COMPACTION_NAME);
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
