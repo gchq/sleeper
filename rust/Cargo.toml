@@ -47,7 +47,7 @@ num-format = { version = "0.4.4" } # Nicely formatted numbers
 object_store = { version = "0.11.2" } # Remote cloud storage access
 openssl = { version = "0.10.72" } # Use vendored feature to build from source for cross compilation
 owo-colors = { version = "4.2.0" } # Colourised output
-rand = { version = "0.9.0" }
+rand = { version = "0.9.1" }
 tempfile = { version = "3.19.1" } # Create temporary files
 test-log = { version = "0.2.17" }
 testing_logger = { version = "0.1.1" } # Assert on logger output in tests
