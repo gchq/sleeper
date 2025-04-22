@@ -18,6 +18,9 @@ package sleeper.core.deploy;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
@@ -32,28 +35,29 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
  */
 public class DockerDeployment {
 
+    private static final List<DockerDeployment> ALL = new ArrayList<>();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
             .optionalStack(OptionalStack.IngestStack)
-            .build();
+            .add();
     public static final DockerDeployment EKS_BULK_IMPORT = builder()
             .deploymentName("bulk-import-runner")
             .optionalStack(OptionalStack.EksBulkImportStack)
-            .build();
+            .add();
     public static final DockerDeployment COMPACTION = builder()
             .deploymentName("compaction-job-execution")
             .optionalStack(OptionalStack.CompactionStack)
             .multiplatform(true)
-            .build();
+            .add();
     public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT = builder()
             .deploymentName("bulk-import-runner-emr-serverless")
             .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
             .createEmrServerlessPolicy(true)
-            .build();
+            .add();
     public static final DockerDeployment BULK_EXPORT = builder()
             .deploymentName("bulk-export-task-execution")
             .optionalStack(OptionalStack.BulkExportStack)
-            .build();
+            .add();
 
     private final String deploymentName;
     private final OptionalStack optionalStack;
@@ -69,6 +73,15 @@ public class DockerDeployment {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Retrieves all Docker deployments.
+     *
+     * @return the deployments
+     */
+    public static List<DockerDeployment> all() {
+        return Collections.unmodifiableList(ALL);
     }
 
     /**
@@ -197,6 +210,12 @@ public class DockerDeployment {
 
         public DockerDeployment build() {
             return new DockerDeployment(this);
+        }
+
+        private DockerDeployment add() {
+            DockerDeployment deployment = build();
+            ALL.add(deployment);
+            return deployment;
         }
     }
 }

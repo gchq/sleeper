@@ -83,4 +83,9 @@ public class DockerDeploymentTest {
         assertThat(imageName).isEqualTo("1234.dkr.ecr.global.amazonaws.com/test/ingest:1.2.3");
     }
 
+    @Test
+    void shouldListAllDeployments() {
+        assertThat(DockerDeployment.all())
+                .hasSizeGreaterThan(1);
+    }
 }

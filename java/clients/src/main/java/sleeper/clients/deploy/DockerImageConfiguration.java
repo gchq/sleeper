@@ -35,9 +35,6 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
-import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
@@ -45,14 +42,8 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
  * This class is used to manage the Docker Images that need to be uploaded.
  */
 public class DockerImageConfiguration {
-    private static final Map<OptionalStack, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
-            OptionalStack.IngestStack, dockerBuildImage(DockerDeployment.INGEST.getDeploymentName()),
-            OptionalStack.EksBulkImportStack, dockerBuildImage(DockerDeployment.EKS_BULK_IMPORT.getDeploymentName()),
-            OptionalStack.CompactionStack, dockerBuildxImage(DockerDeployment.COMPACTION.getDeploymentName()),
-            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage(DockerDeployment.EMR_SERVERLESS_BULK_IMPORT.getDeploymentName()),
-            OptionalStack.BulkExportStack, dockerBuildImage(DockerDeployment.BULK_EXPORT.getDeploymentName()));
 
-    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaHandler.all());
+    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DockerDeployment.all(), LambdaHandler.all());
 
     private final Map<OptionalStack, StackDockerImage> imageByStack;
     private final List<LambdaHandler> lambdaHandlers;
@@ -69,11 +60,6 @@ public class DockerImageConfiguration {
                         .isBuildx(deployment.isMultiplatform())
                         .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
                         .build()));
-        this.lambdaHandlers = lambdaHandlers;
-    }
-
-    public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack, List<LambdaHandler> lambdaHandlers) {
-        this.imageByStack = imageByStack;
         this.lambdaHandlers = lambdaHandlers;
     }
 
