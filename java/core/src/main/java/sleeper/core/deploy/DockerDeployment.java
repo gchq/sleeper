@@ -26,7 +26,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
- * TODO.
+ * A deployment of a Docker image. Can be used to derive the Docker image names and ECR repositories used for an image
+ * in a given Sleeper instance.
  */
 public class DockerDeployment {
 
@@ -57,10 +58,10 @@ public class DockerDeployment {
     }
 
     /**
-     * Retrieves the Docker image name, including tag.
+     * Retrieves the Docker image name for this deployment. Includes the repository URL and the tag.
      *
      * @param  properties the instance properties
-     * @return            the ECR repository name
+     * @return            the Docker image name
      */
     public String getDockerImageName(InstanceProperties properties) {
         return properties.get(ACCOUNT) + ".dkr.ecr." +
@@ -94,7 +95,7 @@ public class DockerDeployment {
      * Retrieves the prefix of ECR repository names for a Sleeper instance.
      *
      * @param  properties the instance properties
-     * @return            the ECR repository name
+     * @return            the ECR repository name prefix
      */
     public static String getEcrRepositoryPrefix(InstanceProperties properties) {
         return Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID));
