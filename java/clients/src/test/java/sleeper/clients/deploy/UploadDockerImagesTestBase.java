@@ -29,7 +29,6 @@ import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
@@ -97,7 +96,7 @@ public abstract class UploadDockerImagesTestBase {
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {
-        return new DockerImageConfiguration(Map.of(), LAMBDA_HANDLERS);
+        return new DockerImageConfiguration(List.of(), LAMBDA_HANDLERS);
     }
 
     protected abstract UploadDockerImages uploader();
