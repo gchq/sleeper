@@ -23,7 +23,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -110,7 +109,7 @@ public class PopulateInstanceProperties {
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
         properties.set(ID, instanceId);
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
+        String ecrPrefix = DockerDeployment.getEcrRepositoryPrefix(properties);
         properties.set(ECR_REPOSITORY_PREFIX, ecrPrefix);
         properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export-task-execution");
         return properties;

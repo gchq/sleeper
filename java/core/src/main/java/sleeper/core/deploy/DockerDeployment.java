@@ -15,6 +15,13 @@
  */
 package sleeper.core.deploy;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
+import java.util.Optional;
+
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+
 /**
  * TODO.
  */
@@ -27,5 +34,15 @@ public class DockerDeployment {
     public static final String BULK_EXPORT_NAME = "bulk-export-task-execution";
 
     private DockerDeployment() {
+    }
+
+    /**
+     * Retrieves the prefix of ECR repository names for a Sleeper instance.
+     *
+     * @param  properties the instance properties
+     * @return            the ECR repository name
+     */
+    public static String getEcrRepositoryPrefix(InstanceProperties properties) {
+        return Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID));
     }
 }
