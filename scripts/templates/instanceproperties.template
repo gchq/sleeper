@@ -28,19 +28,6 @@ sleeper.vpc=changeme
 # clusters will be deployed in a subnet chosen when the cluster is created.
 sleeper.subnets=changeme
 
-# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
-# instance ID will be used to determine the names instead.
-# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
-# the ability to use this in the CDK in the future.
-sleeper.ecr.repository.prefix=changeme
-
-
-## The following properties relate to bulk export.
-
-# The name of the repository for the bulk export container. The Docker image should have been uploaded
-# to an ECR repository of this name in this account.
-sleeper.bulk.export.ecr.repo=changeme
-
 
 ##################
 # Default Values #
@@ -117,6 +104,12 @@ sleeper.task.runner.timeout.seconds=900
 # If true, properties will be reloaded every time a long running job is started or a lambda is run.
 # This will mainly be used in test scenarios to ensure properties are up to date.
 sleeper.properties.force.reload=false
+
+# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
+# instance ID will be used to determine the names instead.
+# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
+# the ability to use this in the CDK in the future.
+# sleeper.ecr.repository.prefix=
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
@@ -470,6 +463,10 @@ sleeper.bulk.export.task.x86.cpu=1024
 # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
 # options.
 sleeper.bulk.export.task.x86.memory.mb=4096
+
+# The name of the repository for the bulk export container. The Docker image should have been uploaded
+# to an ECR repository of this name in this account.
+# sleeper.bulk.export.ecr.repo=
 
 # The rate at which a check to see if bulk export ECS tasks need to be created is made (in minutes,
 # must be >= 1).

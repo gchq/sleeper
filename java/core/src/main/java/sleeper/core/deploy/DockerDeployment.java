@@ -15,6 +15,9 @@
  */
 package sleeper.core.deploy;
 
+/**
+ * TODO.
+ */
 public class DockerDeployment {
 
     public static final String INGEST_NAME = "ingest";
@@ -23,4 +26,6 @@ public class DockerDeployment {
     public static final String EMR_SERVERLESS_BULK_IMPORT_NAME = "bulk-import-runner-emr-serverless";
     public static final String BULK_EXPORT_NAME = "bulk-export-task-execution";
 
+    private DockerDeployment() {
+    }
 }
