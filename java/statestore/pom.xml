@@ -26,7 +26,7 @@
     <artifactId>statestore</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>statestorev2</module>
+        <module>statestore</module>
     </modules>
 
     <dependencies>
