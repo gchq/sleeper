@@ -30,26 +30,42 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
  */
 public class DockerDeployment {
 
-    public static final String INGEST_NAME = "ingest";
-    public static final String EKS_BULK_IMPORT_NAME = "bulk-import-runner";
-    public static final String COMPACTION_NAME = "compaction-job-execution";
-    public static final String EMR_SERVERLESS_BULK_IMPORT_NAME = "bulk-import-runner-emr-serverless";
-    public static final String BULK_EXPORT_NAME = "bulk-export-task-execution";
+    public static final DockerDeployment INGEST_NAME = new DockerDeployment("ingest");
+    public static final DockerDeployment EKS_BULK_IMPORT_NAME = new DockerDeployment("bulk-import-runner");
+    public static final DockerDeployment COMPACTION_NAME = new DockerDeployment("compaction-job-execution");
+    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT_NAME = new DockerDeployment("bulk-import-runner-emr-serverless");
+    public static final DockerDeployment BULK_EXPORT_NAME = new DockerDeployment("bulk-export-task-execution");
 
-    private DockerDeployment() {
+    private final String deploymentName;
+
+    private DockerDeployment(String deploymentName) {
+        this.deploymentName = deploymentName;
     }
 
     /**
      * Retrieves the Docker image name, including tag.
      *
-     * @param  properties     the instance properties
-     * @param  deploymentName the Docker deployment to retrieve
-     * @return                the ECR repository name
+     * @param  properties       the instance properties
+     * @param  dockerDeployment the Docker deployment to retrieve
+     * @return                  the ECR repository name
      */
-    public static String getDockerImageName(InstanceProperties properties, String deploymentName) {
+    public static String getDockerImageName(InstanceProperties properties, DockerDeployment dockerDeployment) {
         return properties.get(ACCOUNT) + ".dkr.ecr." +
                 properties.get(REGION) + ".amazonaws.com/" +
-                getEcrRepositoryName(properties, deploymentName) +
+                getEcrRepositoryName(properties, dockerDeployment) +
+                ":" + properties.get(VERSION);
+    }
+
+    /**
+     * Retrieves the Docker image name, including tag.
+     *
+     * @param  properties the instance properties
+     * @return            the ECR repository name
+     */
+    public String getDockerImageName(InstanceProperties properties) {
+        return properties.get(ACCOUNT) + ".dkr.ecr." +
+                properties.get(REGION) + ".amazonaws.com/" +
+                getEcrRepositoryName(properties) +
                 ":" + properties.get(VERSION);
     }
 
@@ -57,10 +73,20 @@ public class DockerDeployment {
      * Retrieves the name of an ECR repository.
      *
      * @param  instanceProperties the instance properties
-     * @param  deploymentName     the Docker deployment to retrieve
+     * @param  dockerDeployment   the Docker deployment to retrieve
      * @return                    the ECR repository name
      */
-    public static String getEcrRepositoryName(InstanceProperties instanceProperties, String deploymentName) {
+    public static String getEcrRepositoryName(InstanceProperties instanceProperties, DockerDeployment dockerDeployment) {
+        return getEcrRepositoryPrefix(instanceProperties) + "/" + dockerDeployment.deploymentName;
+    }
+
+    /**
+     * Retrieves the name of the ECR repository for this docker deployment.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the ECR repository name
+     */
+    public String getEcrRepositoryName(InstanceProperties instanceProperties) {
         return getEcrRepositoryPrefix(instanceProperties) + "/" + deploymentName;
     }
 
