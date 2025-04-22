@@ -23,9 +23,7 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.instance.InstanceProperties;
-
-import java.util.List;
+import java.util.stream.Stream;
 
 import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -38,8 +36,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
 class RemoveECRRepositoriesIT {
@@ -50,41 +46,23 @@ class RemoveECRRepositoriesIT {
     }
 
     @Test
-    void shouldRemoveAllRepositories(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_REPOSITORY_PREFIX, "test-repo");
-
+    void shouldRemoveRepositories(WireMockRuntimeInfo runtimeInfo) {
         // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), Stream.of("a-repo", "other-repo"));
 
         // Then
-        verify(1, deleteRequestedFor("test-repo"));
-        verify(1, postRequestedFor(urlEqualTo("/")));
-    }
-
-    @Test
-    void shouldRemoveExtraRepositoriesWhenSet(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-
-        // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of("test-extra-repo"));
-
-        // Then
-        verify(1, deleteRequestedFor("test-extra-repo"));
-        verify(1, postRequestedFor(urlEqualTo("/")));
+        verify(1, deleteRequestedFor("a-repo"));
+        verify(1, deleteRequestedFor("other-repo"));
+        verify(2, postRequestedFor(urlEqualTo("/")));
     }
 
     @Test
     void shouldNotThrowAnExceptionWhenRepositoryDoesNotExist(WireMockRuntimeInfo runtimeInfo) {
         // Given
         stubFor(post("/").willReturn(repositoryNotFound("test-compaction-repo")));
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_REPOSITORY_PREFIX, "test-compaction-repo");
 
         // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), Stream.of("test-compaction-repo"));
 
         // Then
         verify(1, deleteRequestedFor("test-compaction-repo"));

@@ -15,22 +15,14 @@
  */
 package sleeper.clients.teardown;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-
-public class RemoveECRRepositoriesTest {
+public class RemoveECRRepositoriesTestBase {
 
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
             DockerDeployment.builder()
@@ -51,23 +43,5 @@ public class RemoveECRRepositoriesTest {
             LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("ingest.jar", "ingest-task-creator-lambda"))
                     .handler("IngestTaskCreatorLambda")
                     .optionalStack(OptionalStack.IngestStack).build());
-
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @BeforeEach
-    void setUp() {
-        instanceProperties.set(ID, "test-instance");
-    }
-
-    @Test
-    void shouldGetRepositoryNamesForAllImages() {
-        assertThat(RemoveECRRepositories.streamAllRepositoryNames(
-                instanceProperties, DOCKER_DEPLOYMENTS, LAMBDA_HANDLERS,
-                List.of("extra-repository-1", "extra-repository-2")))
-                .containsExactly(
-                        "test-instance/ingest", "test-instance/compaction",
-                        "test-instance/statestore-lambda", "test-instance/ingest-task-creator-lambda",
-                        "extra-repository-1", "extra-repository-2");
-    }
 
 }
