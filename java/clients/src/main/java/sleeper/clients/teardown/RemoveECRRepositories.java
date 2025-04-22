@@ -21,16 +21,15 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 public class RemoveECRRepositories {
@@ -55,8 +54,7 @@ public class RemoveECRRepositories {
 
     private static Stream<String> lambdaRepositoryNames(InstanceProperties properties) {
         if (properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class) == LambdaDeployType.CONTAINER) {
-            String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX))
-                    .orElseGet(() -> properties.get(ID));
+            String ecrPrefix = DockerDeployment.getEcrRepositoryPrefix(properties);
             return LambdaHandler.all().stream()
                     .map(LambdaHandler::getJar).distinct()
                     .map(jar -> ecrPrefix + "/" + jar.getImageName());

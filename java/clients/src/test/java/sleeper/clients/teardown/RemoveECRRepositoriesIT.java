@@ -50,21 +50,7 @@ class RemoveECRRepositoriesIT {
     }
 
     @Test
-    void shouldRemoveRepositoryWhenPropertyIsSet(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ECR_REPOSITORY_PREFIX, "test-compaction-repo");
-
-        // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
-
-        // Then
-        verify(1, deleteRequestedFor("test-compaction-repo"));
-        verify(1, postRequestedFor(urlEqualTo("/")));
-    }
-
-    @Test
-    void shouldRemoveRepositoriesWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
+    void shouldRemoveAllRepositories(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(ECR_REPOSITORY_PREFIX, "test-repo");
