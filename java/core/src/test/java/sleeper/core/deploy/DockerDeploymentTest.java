@@ -20,8 +20,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class DockerDeploymentTest {
 
@@ -62,6 +65,22 @@ public class DockerDeploymentTest {
 
         // Then
         assertThat(repositoryName).isEqualTo("test/bulk-import-runner");
+    }
+
+    @Test
+    void shouldComputeDockerImageWithTag() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(ACCOUNT, "1234");
+        properties.set(REGION, "global");
+        properties.set(VERSION, "1.2.3");
+        properties.set(ECR_REPOSITORY_PREFIX, "test");
+
+        // When
+        String imageName = DockerDeployment.getDockerImageName(properties, DockerDeployment.INGEST_NAME);
+
+        // Then
+        assertThat(imageName).isEqualTo("1234.dkr.ecr.global.amazonaws.com/test/ingest:1.2.3");
     }
 
 }

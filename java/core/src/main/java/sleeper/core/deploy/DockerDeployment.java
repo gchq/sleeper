@@ -19,8 +19,11 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Optional;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
  * TODO.
@@ -37,6 +40,16 @@ public class DockerDeployment {
     }
 
     /**
+     * Retrieves the prefix of ECR repository names for a Sleeper instance.
+     *
+     * @param  properties the instance properties
+     * @return            the ECR repository name
+     */
+    public static String getEcrRepositoryPrefix(InstanceProperties properties) {
+        return Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID));
+    }
+
+    /**
      * Retrieves the name of an ECR repository.
      *
      * @param  instanceProperties the instance properties
@@ -48,12 +61,16 @@ public class DockerDeployment {
     }
 
     /**
-     * Retrieves the prefix of ECR repository names for a Sleeper instance.
+     * Retrieves the Docker image name, including tag.
      *
-     * @param  properties the instance properties
-     * @return            the ECR repository name
+     * @param  properties     the instance properties
+     * @param  deploymentName the Docker deployment to retrieve
+     * @return                the ECR repository name
      */
-    public static String getEcrRepositoryPrefix(InstanceProperties properties) {
-        return Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID));
+    public static String getDockerImageName(InstanceProperties properties, String deploymentName) {
+        return properties.get(ACCOUNT) + ".dkr.ecr." +
+                properties.get(REGION) + ".amazonaws.com/" +
+                getEcrRepositoryName(properties, deploymentName) +
+                ":" + properties.get(VERSION);
     }
 }
