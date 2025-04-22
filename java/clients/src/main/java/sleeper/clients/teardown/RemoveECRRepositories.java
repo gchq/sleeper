@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -49,8 +48,7 @@ public class RemoveECRRepositories {
     }
 
     private static Stream<String> repositoryNamesFromProperties(InstanceProperties properties) {
-        return Stream.of(ECR_REPOSITORY_PREFIX,
-                BULK_EXPORT_ECR_REPO)
+        return Stream.of(ECR_REPOSITORY_PREFIX)
                 .filter(properties::isSet)
                 .map(properties::get);
     }

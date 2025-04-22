@@ -53,13 +53,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
+import static sleeper.core.deploy.DockerImageConfiguration.BULK_EXPORT_NAME;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -144,7 +145,7 @@ public class BulkExportTaskResources {
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(stack, "BE- ECR1",
-                instanceProperties.get(BULK_EXPORT_ECR_REPO));
+                instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + BULK_EXPORT_NAME);
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
