@@ -40,6 +40,12 @@ public class StackDockerImage {
         lambdaJar = builder.lambdaJar;
     }
 
+    /**
+     * Maps from a Docker deployment definition.
+     *
+     * @param  deployment the Docker deployment
+     * @return            the Docker image
+     */
     public static StackDockerImage fromDockerDeployment(DockerDeployment deployment) {
         return StackDockerImage.builder()
                 .imageName(deployment.getDeploymentName())
@@ -58,30 +64,6 @@ public class StackDockerImage {
     public static StackDockerImage dockerBuildImage(String imageName) {
         return builder().imageName(imageName)
                 .directoryName(imageName).build();
-    }
-
-    /**
-     * This method builds a StackDockerImage using the provided string as imagename and directoryName with isBuildX set
-     * to true.
-     *
-     * @param  imageName String to be used for imageName and diectoryName.
-     * @return           The built StackDockerImage.
-     */
-    public static StackDockerImage dockerBuildxImage(String imageName) {
-        return builder().imageName(imageName)
-                .directoryName(imageName).isBuildx(true).build();
-    }
-
-    /**
-     * This method builds a StackDockerImage using the provided string as imagename and directoryName with
-     * createdEmrServerlessPolicy set to true.
-     *
-     * @param  imageName String to be used for imageName and diectoryName.
-     * @return           The built StackDockerImage.
-     */
-    public static StackDockerImage emrServerlessImage(String imageName) {
-        return builder().imageName(imageName)
-                .directoryName(imageName).createEmrServerlessPolicy(true).build();
     }
 
     /**
