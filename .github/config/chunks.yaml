@@ -31,7 +31,6 @@ chunks:
       - statestore
       - statestore-committer-core
       - statestore-lambda
-      - statestore
       - statestorev2
       - metrics
       - example-iterators
