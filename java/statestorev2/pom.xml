@@ -23,11 +23,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>statestore</artifactId>
+    <artifactId>statestorev2</artifactId>
     <packaging>pom</packaging>
-    <modules>
-        <module>statestorev2</module>
-    </modules>
 
     <dependencies>
         <dependency>
