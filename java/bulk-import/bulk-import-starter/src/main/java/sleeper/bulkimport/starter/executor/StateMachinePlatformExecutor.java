@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 
@@ -29,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.deploy.DockerImageConfiguration.EKS_BULK_IMPORT_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
@@ -100,7 +100,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, EmrInstanceArchitecture.X86_64));
         String imageName = instanceProperties.get(ACCOUNT) + ".dkr.ecr." +
                 instanceProperties.get(REGION) + ".amazonaws.com/" +
-                instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + EKS_BULK_IMPORT_NAME + ":" + instanceProperties.get(VERSION);
+                instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + DockerDeployment.EKS_BULK_IMPORT_NAME + ":" + instanceProperties.get(VERSION);
         defaultConfig.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         defaultConfig.put("spark.kubernetes.container.image", imageName);

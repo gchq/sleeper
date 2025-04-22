@@ -67,6 +67,7 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -81,7 +82,6 @@ import java.util.function.Function;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
-import static sleeper.core.deploy.DockerImageConfiguration.EKS_BULK_IMPORT_NAME;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
@@ -232,7 +232,7 @@ public final class EksBulkImportStack extends NestedStack {
                 instanceProperties.get(REGION) +
                 ".amazonaws.com/" +
                 instanceProperties.get(ECR_REPOSITORY_PREFIX) +
-                "/" + EKS_BULK_IMPORT_NAME +
+                "/" + DockerDeployment.EKS_BULK_IMPORT_NAME +
                 ":" +
                 instanceProperties.get(CdkDefinedInstanceProperty.VERSION);
 

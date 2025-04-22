@@ -42,18 +42,12 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
  * This class is used to manage the Docker Images that need to be uploaded.
  */
 public class DockerImageConfiguration {
-    public static final String INGEST_NAME = "ingest";
-    public static final String EKS_BULK_IMPORT_NAME = "bulk-import-runner";
-    public static final String COMPACTION_NAME = "compaction-job-execution";
-    public static final String EMR_SERVERLESS_BULK_IMPORT_NAME = "bulk-import-runner-emr-serverless";
-    public static final String BULK_EXPORT_NAME = "bulk-export-task-execution";
-
     private static final Map<OptionalStack, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
-            OptionalStack.IngestStack, dockerBuildImage(INGEST_NAME),
-            OptionalStack.EksBulkImportStack, dockerBuildImage(EKS_BULK_IMPORT_NAME),
-            OptionalStack.CompactionStack, dockerBuildxImage(COMPACTION_NAME),
-            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage(EMR_SERVERLESS_BULK_IMPORT_NAME),
-            OptionalStack.BulkExportStack, dockerBuildImage(BULK_EXPORT_NAME));
+            OptionalStack.IngestStack, dockerBuildImage(DockerDeployment.INGEST_NAME),
+            OptionalStack.EksBulkImportStack, dockerBuildImage(DockerDeployment.EKS_BULK_IMPORT_NAME),
+            OptionalStack.CompactionStack, dockerBuildxImage(DockerDeployment.COMPACTION_NAME),
+            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage(DockerDeployment.EMR_SERVERLESS_BULK_IMPORT_NAME),
+            OptionalStack.BulkExportStack, dockerBuildImage(DockerDeployment.BULK_EXPORT_NAME));
 
     private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaHandler.all());
 
