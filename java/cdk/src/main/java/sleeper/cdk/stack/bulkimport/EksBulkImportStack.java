@@ -85,8 +85,6 @@ import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -227,14 +225,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, CoreStacks coreStacks, Topic errorsTopic) {
-        String imageName = instanceProperties.get(ACCOUNT) +
-                ".dkr.ecr." +
-                instanceProperties.get(REGION) +
-                ".amazonaws.com/" +
-                instanceProperties.get(ECR_REPOSITORY_PREFIX) +
-                "/" + DockerDeployment.EKS_BULK_IMPORT_NAME +
-                ":" +
-                instanceProperties.get(CdkDefinedInstanceProperty.VERSION);
+        String imageName = DockerDeployment.getDockerImageName(instanceProperties, DockerDeployment.EKS_BULK_IMPORT_NAME);
 
         Map<String, Object> runJobState = parseEksStepDefinition(
                 "/step-functions/run-job.json", instanceProperties, cluster,

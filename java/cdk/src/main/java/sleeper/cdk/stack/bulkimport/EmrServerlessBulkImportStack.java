@@ -64,7 +64,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -139,7 +138,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
         String region = instanceProperties.get(REGION);
         String accountId = instanceProperties.get(ACCOUNT);
-        String repo = instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + DockerDeployment.EMR_SERVERLESS_BULK_IMPORT_NAME;
+        String repo = DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.EMR_SERVERLESS_BULK_IMPORT_NAME);
         String version = instanceProperties.get(VERSION);
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 
