@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
 import java.util.Objects;
@@ -37,6 +38,15 @@ public class StackDockerImage {
         isBuildx = builder.isBuildx;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
         lambdaJar = builder.lambdaJar;
+    }
+
+    public static StackDockerImage fromDockerDeployment(DockerDeployment deployment) {
+        return StackDockerImage.builder()
+                .imageName(deployment.getDeploymentName())
+                .directoryName(deployment.getDeploymentName())
+                .isBuildx(deployment.isMultiplatform())
+                .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
+                .build();
     }
 
     /**

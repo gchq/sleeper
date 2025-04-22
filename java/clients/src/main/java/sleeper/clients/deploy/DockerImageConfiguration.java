@@ -25,14 +25,12 @@ import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -45,7 +43,7 @@ public class DockerImageConfiguration {
 
     private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DockerDeployment.all(), LambdaHandler.all());
 
-    private final Map<OptionalStack, StackDockerImage> imageByStack;
+    private final List<DockerDeployment> dockerDeployments;
     private final List<LambdaHandler> lambdaHandlers;
 
     public static DockerImageConfiguration getDefault() {
@@ -53,13 +51,7 @@ public class DockerImageConfiguration {
     }
 
     public DockerImageConfiguration(List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
-        imageByStack = dockerDeployments.stream()
-                .collect(toMap(deployment -> deployment.getOptionalStack(), deployment -> StackDockerImage.builder()
-                        .imageName(deployment.getDeploymentName())
-                        .directoryName(deployment.getDeploymentName())
-                        .isBuildx(deployment.isMultiplatform())
-                        .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
-                        .build()));
+        this.dockerDeployments = dockerDeployments;
         this.lambdaHandlers = lambdaHandlers;
     }
 
@@ -101,11 +93,15 @@ public class DockerImageConfiguration {
     private List<StackDockerImage> getImagesToUpload(
             Collection<OptionalStack> stacks, LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
         return Stream.concat(
-                stacks.stream()
-                        .map(this::getStackImage)
-                        .flatMap(Optional::stream),
+                dockerDeploymentImages(stacks),
                 lambdaImages(lambdaDeployType, checkUploadLambda))
                 .collect(toUnmodifiableList());
+    }
+
+    private Stream<StackDockerImage> dockerDeploymentImages(Collection<OptionalStack> stacks) {
+        return dockerDeployments.stream()
+                .filter(deployment -> stacks.contains(deployment.getOptionalStack()))
+                .map(StackDockerImage::fromDockerDeployment);
     }
 
     private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
@@ -117,10 +113,6 @@ public class DockerImageConfiguration {
                 .map(StackDockerImage::lambdaImage);
     }
 
-    private Optional<StackDockerImage> getStackImage(OptionalStack stack) {
-        return Optional.ofNullable(imageByStack.get(stack));
-    }
-
     /**
      * This method uses the stored map and inputted repo name to find the instanceId of the image as it will be part of
      * the image name.
@@ -129,8 +121,8 @@ public class DockerImageConfiguration {
      * @return                Optional String of the InstanceId provided the repositoryName was found in the map.
      */
     public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
-        return imageByStack.values().stream()
-                .filter(image -> repositoryName.endsWith("/" + image.getImageName()))
+        return dockerDeployments.stream()
+                .filter(image -> repositoryName.endsWith("/" + image.getDeploymentName()))
                 .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
                 .findFirst();
     }
