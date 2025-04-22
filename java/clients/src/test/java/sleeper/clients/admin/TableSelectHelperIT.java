@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.util.ConsoleOutput.CLEAR_CONSOLE;
 
 class TableSelectHelperIT extends AdminClientITBase {
     @Test

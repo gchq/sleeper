@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
 
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,7 +39,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.core.util.ConsoleOutput;
 import sleeper.query.core.model.Query;
 
 import java.util.ArrayList;

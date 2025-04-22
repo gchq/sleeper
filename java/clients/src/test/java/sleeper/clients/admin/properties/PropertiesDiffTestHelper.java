@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.properties;
+package sleeper.clients.admin.properties;
+
+import sleeper.core.properties.SleeperProperty;
 
 /**
  * This class is a helper class for the PropertiesDiffTest provided moths to easily generate a PropertyDiff.

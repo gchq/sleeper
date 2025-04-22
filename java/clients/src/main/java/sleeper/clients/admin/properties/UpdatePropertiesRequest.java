@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin.properties;
 
-import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.SleeperProperty;

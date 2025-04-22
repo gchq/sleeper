@@ -15,7 +15,7 @@
  */
 package sleeper.clients.testutil;
 
-import sleeper.core.util.ConsoleOutput;
+import sleeper.clients.util.console.ConsoleOutput;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

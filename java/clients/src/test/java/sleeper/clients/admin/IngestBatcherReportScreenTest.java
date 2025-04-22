@@ -35,7 +35,7 @@ import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporter
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
-import static sleeper.core.util.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
 public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
     private final IngestBatcherStore ingestBatcherStore = new InMemoryIngestBatcherStore();

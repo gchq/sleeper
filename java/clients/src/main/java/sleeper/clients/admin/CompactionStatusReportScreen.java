@@ -25,11 +25,11 @@ import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatu
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
-import sleeper.core.util.ConsoleOutput;
 
 import java.util.Optional;
 

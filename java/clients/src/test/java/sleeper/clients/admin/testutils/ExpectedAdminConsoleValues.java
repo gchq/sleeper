@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.core.util.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
 public class ExpectedAdminConsoleValues {
 

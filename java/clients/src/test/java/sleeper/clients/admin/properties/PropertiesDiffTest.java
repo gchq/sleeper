@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.core.properties;
+package sleeper.clients.admin.properties;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
@@ -27,11 +29,11 @@ import sleeper.core.properties.table.TableProperties;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueDeleted;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
-import static sleeper.core.properties.PropertiesDiffTestHelper.newValue;
-import static sleeper.core.properties.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.core.properties.PropertiesDiffTestHelper.valueDeleted;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;

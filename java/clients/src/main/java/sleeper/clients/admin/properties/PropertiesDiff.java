@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.core.properties;
+package sleeper.clients.admin.properties;
 
-import sleeper.core.util.ConsoleOutput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.core.properties.SleeperProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.SleeperPropertyValues;
 
 import java.util.ArrayList;
 import java.util.Collections;

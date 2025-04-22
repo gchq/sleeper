@@ -18,7 +18,6 @@ package sleeper.clients.util.console;
 
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.MenuOption;
-import sleeper.core.util.ConsoleOutput;
 
 public class ConsoleHelper {
     private final ChooseOne chooseOne;

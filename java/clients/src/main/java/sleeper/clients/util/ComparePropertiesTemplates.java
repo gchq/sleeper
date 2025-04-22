@@ -15,8 +15,9 @@
  */
 package sleeper.clients.util;
 
+import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.deploy.properties.GeneratePropertiesTemplates;
-import sleeper.core.properties.PropertiesDiff;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -24,7 +25,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.util.ConsoleOutput;
 
 import java.io.IOException;
 import java.io.StringWriter;

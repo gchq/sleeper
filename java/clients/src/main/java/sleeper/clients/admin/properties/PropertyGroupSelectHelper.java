@@ -16,12 +16,12 @@
 package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.ConsoleChoice;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TablePropertyGroup;
-import sleeper.core.util.ConsoleOutput;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

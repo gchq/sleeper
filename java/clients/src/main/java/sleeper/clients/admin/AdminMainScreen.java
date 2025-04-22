@@ -17,11 +17,11 @@ package sleeper.clients.admin;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.Chosen;
 import sleeper.clients.util.console.menu.MenuOption;
-import sleeper.core.util.ConsoleOutput;
 
 import java.util.Arrays;
 import java.util.List;

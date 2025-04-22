@@ -16,9 +16,9 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;

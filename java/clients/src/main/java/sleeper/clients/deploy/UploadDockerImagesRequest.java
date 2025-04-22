@@ -16,7 +16,7 @@
 
 package sleeper.clients.deploy;
 
-import sleeper.core.properties.PropertiesDiff;
+import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.ArrayList;

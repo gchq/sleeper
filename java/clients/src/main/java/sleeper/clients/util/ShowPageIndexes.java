@@ -25,7 +25,7 @@ import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.internal.column.columnindex.ColumnIndex;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
 
-import sleeper.core.util.ConsoleOutput;
+import sleeper.clients.util.console.ConsoleOutput;
 
 import java.io.IOException;
 import java.io.PrintStream;

@@ -16,8 +16,8 @@
 package sleeper.clients.util.console.menu;
 
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
-import sleeper.core.util.ConsoleOutput;
 
 import java.util.Arrays;
 import java.util.List;
