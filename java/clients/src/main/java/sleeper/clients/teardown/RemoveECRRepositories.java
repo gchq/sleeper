@@ -46,6 +46,15 @@ public class RemoveECRRepositories {
                 .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
     }
 
+    public static Stream<String> streamAllRepositoryNames(
+            InstanceProperties properties, List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
+        return Stream.concat(
+                dockerDeployments.stream().map(deployment -> deployment.getEcrRepositoryName(properties)),
+                lambdaHandlers.stream()
+                        .map(LambdaHandler::getJar).distinct()
+                        .map(jar -> jar.getEcrRepositoryName(properties)));
+    }
+
     private static Stream<String> repositoryNamesFromProperties(InstanceProperties properties) {
         return Stream.of(ECR_REPOSITORY_PREFIX)
                 .filter(properties::isSet)
