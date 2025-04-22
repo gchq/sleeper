@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog;
+package sleeper.statestorev2.transactionlog;
 
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;

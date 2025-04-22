@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog.snapshots;
+package sleeper.statestorev2.transactionlog.snapshots;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
@@ -31,11 +31,11 @@ import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransacti
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
-import sleeper.statestoreV2.StateStoreArrowFileStore;
-import sleeper.statestoreV2.transactionlog.DuplicateSnapshotException;
-import sleeper.statestoreV2.transactionlog.DynamoDBTransactionLogStore;
-import sleeper.statestoreV2.transactionlog.S3TransactionBodyStore;
-import sleeper.statestoreV2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.SnapshotMetadataSaver;
+import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.SnapshotMetadataSaver;
 
 import java.io.IOException;
 import java.util.Optional;

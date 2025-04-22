@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog.snapshots;
+package sleeper.statestorev2.transactionlog.snapshots;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -34,7 +34,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.statestoreV2.transactionlog.DuplicateSnapshotException;
+import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;
 import java.util.List;

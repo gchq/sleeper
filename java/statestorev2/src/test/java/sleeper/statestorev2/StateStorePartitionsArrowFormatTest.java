@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2;
+package sleeper.statestorev2;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -28,8 +28,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestoreV2.StateStorePartitionsArrowFormat.ReadResult;
-import sleeper.statestoreV2.StateStorePartitionsArrowFormat.WriteResult;
+import sleeper.statestorev2.StateStorePartitionsArrowFormat.ReadResult;
+import sleeper.statestorev2.StateStorePartitionsArrowFormat.WriteResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

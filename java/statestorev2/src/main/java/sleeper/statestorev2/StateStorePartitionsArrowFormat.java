@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2;
+package sleeper.statestorev2;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.BitVector;
@@ -55,8 +55,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
-import static sleeper.statestoreV2.ArrowFormatUtils.writeVarBinary;
-import static sleeper.statestoreV2.ArrowFormatUtils.writeVarChar;
+import static sleeper.statestorev2.ArrowFormatUtils.writeVarBinary;
+import static sleeper.statestorev2.ArrowFormatUtils.writeVarChar;
 
 /**
  * Reads and writes the state of partitions in a state store to an Arrow file.

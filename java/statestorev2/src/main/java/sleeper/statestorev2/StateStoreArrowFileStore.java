@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2;
+package sleeper.statestorev2;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -27,7 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestoreV2.transactionlog.snapshots.TransactionLogSnapshotMetadata;
+import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

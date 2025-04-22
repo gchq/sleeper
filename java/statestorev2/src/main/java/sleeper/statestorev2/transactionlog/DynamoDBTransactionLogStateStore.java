@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog;
+package sleeper.statestorev2.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
@@ -24,10 +24,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestoreV2.StateStoreArrowFileStore;
-import sleeper.statestoreV2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
-import sleeper.statestoreV2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.statestoreV2.transactionlog.snapshots.SnapshotType;
+import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestorev2.transactionlog.snapshots.SnapshotType;
 
 /**
  * An implementation of the state store backed by a transaction log held in DynamoDB and S3.

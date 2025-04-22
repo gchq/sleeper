@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2;
+package sleeper.statestorev2;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.TimeStampMilliVector;
@@ -48,11 +48,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static sleeper.statestoreV2.ArrowFormatUtils.writeBit;
-import static sleeper.statestoreV2.ArrowFormatUtils.writeTimeStampMilli;
-import static sleeper.statestoreV2.ArrowFormatUtils.writeUInt8;
-import static sleeper.statestoreV2.ArrowFormatUtils.writeVarChar;
-import static sleeper.statestoreV2.ArrowFormatUtils.writeVarCharNullable;
+import static sleeper.statestorev2.ArrowFormatUtils.writeBit;
+import static sleeper.statestorev2.ArrowFormatUtils.writeTimeStampMilli;
+import static sleeper.statestorev2.ArrowFormatUtils.writeUInt8;
+import static sleeper.statestorev2.ArrowFormatUtils.writeVarChar;
+import static sleeper.statestorev2.ArrowFormatUtils.writeVarCharNullable;
 
 /**
  * Reads and writes the state of files in a state store to an Arrow file.

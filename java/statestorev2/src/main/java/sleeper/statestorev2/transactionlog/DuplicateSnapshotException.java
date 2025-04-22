@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog.snapshots;
+package sleeper.statestorev2.transactionlog;
 
 /**
- * The type of data held in a snapshot derived from a transaction log. Used when holding metadata about the snapshot in
- * an index, with {@link TransactionLogSnapshotMetadata}.
+ * Failure adding a snapshot when one already exists with that transaction number.
  */
-public enum SnapshotType {
-    FILES, PARTITIONS
+public class DuplicateSnapshotException extends Exception {
+    public DuplicateSnapshotException(String path, Exception cause) {
+        super("Snapshot already exists: " + path, cause);
+    }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog;
+package sleeper.statestorev2.transactionlog;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.table.TableProperties;
@@ -23,7 +23,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestoreV2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver;
 
 import java.util.function.Consumer;
 

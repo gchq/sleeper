@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog.snapshots;
+package sleeper.statestorev2.transactionlog.snapshots;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
-import sleeper.statestoreV2.StateStoreArrowFileStore;
+import sleeper.statestorev2.StateStoreArrowFileStore;
 
 import java.util.Optional;
 

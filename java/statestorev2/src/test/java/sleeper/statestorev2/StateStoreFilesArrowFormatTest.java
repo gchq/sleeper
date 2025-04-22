@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2;
+package sleeper.statestorev2;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -23,8 +23,8 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
-import sleeper.statestoreV2.StateStoreFilesArrowFormat.ReadResult;
-import sleeper.statestoreV2.StateStoreFilesArrowFormat.WriteResult;
+import sleeper.statestorev2.StateStoreFilesArrowFormat.ReadResult;
+import sleeper.statestorev2.StateStoreFilesArrowFormat.WriteResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

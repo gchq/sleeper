@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestoreV2.transactionlog;
+package sleeper.statestorev2.transactionlog;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -24,7 +24,7 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestoreV2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStoreCreator;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStoreCreator;
 
 import java.util.List;
 
