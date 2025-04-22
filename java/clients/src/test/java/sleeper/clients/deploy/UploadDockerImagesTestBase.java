@@ -21,6 +21,7 @@ import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -30,9 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
-import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
@@ -42,11 +40,25 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public abstract class UploadDockerImagesTestBase {
-    private static final Map<OptionalStack, StackDockerImage> STACK_DOCKER_IMAGES = Map.of(
-            OptionalStack.IngestStack, dockerBuildImage("ingest"),
-            OptionalStack.EksBulkImportStack, dockerBuildImage("bulk-import-runner"),
-            OptionalStack.CompactionStack, dockerBuildxImage("buildx"),
-            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage("bulk-import-runner-emr-serverless"));
+    private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
+            DockerDeployment.builder()
+                    .deploymentName("ingest")
+                    .optionalStack(OptionalStack.IngestStack)
+                    .build(),
+            DockerDeployment.builder()
+                    .deploymentName("bulk-import-runner")
+                    .optionalStack(OptionalStack.EksBulkImportStack)
+                    .build(),
+            DockerDeployment.builder()
+                    .deploymentName("buildx")
+                    .optionalStack(OptionalStack.CompactionStack)
+                    .multiplatform(true)
+                    .build(),
+            DockerDeployment.builder()
+                    .deploymentName("bulk-import-runner-emr-serverless")
+                    .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
+                    .createEmrServerlessPolicy(true)
+                    .build());
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
             LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("statestore.jar", "statestore-lambda"))
                     .handler("StateStoreCommitterLambda").core().build(),
@@ -81,7 +93,7 @@ public abstract class UploadDockerImagesTestBase {
     }
 
     protected DockerImageConfiguration ecsImageConfig() {
-        return new DockerImageConfiguration(STACK_DOCKER_IMAGES, List.of());
+        return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {

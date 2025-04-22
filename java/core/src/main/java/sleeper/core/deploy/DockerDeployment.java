@@ -67,7 +67,7 @@ public class DockerDeployment {
         this.createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
-    private static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -144,33 +144,58 @@ public class DockerDeployment {
     /**
      * Creates a Docker deployment.
      */
-    private static class Builder {
+    public static class Builder {
         private String deploymentName;
         private OptionalStack optionalStack;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
 
-        Builder deploymentName(String deploymentName) {
+        /**
+         * Sets the name of this deployment. Used as part of Docker image names and ECR repository names.
+         *
+         * @param  deploymentName the deployment name
+         * @return                this builder
+         */
+        public Builder deploymentName(String deploymentName) {
             this.deploymentName = deploymentName;
             return this;
         }
 
-        Builder optionalStack(OptionalStack optionalStack) {
+        /**
+         * Sets which optional stack uses this deployment. If the optional stack is not enabled, this Docker deployment
+         * will not be used.
+         *
+         * @param  optionalStack the optional stack
+         * @return               this builder
+         */
+        public Builder optionalStack(OptionalStack optionalStack) {
             this.optionalStack = optionalStack;
             return this;
         }
 
-        Builder multiplatform(boolean multiplatform) {
+        /**
+         * Sets whether the Docker image should be built for multiple platforms.
+         *
+         * @param  multiplatform true if the image is multiplatform
+         * @return               this builder
+         */
+        public Builder multiplatform(boolean multiplatform) {
             this.multiplatform = multiplatform;
             return this;
         }
 
-        Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
+        /**
+         * Sets whether the ECR repository needs a policy to let EMR Serverless pull the Docker image.
+         *
+         * @param  createEmrServerlessPolicy true if the EMR Serverless policy is needed
+         * @return                           this builder
+         */
+        public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
             return this;
         }
 
-        DockerDeployment build() {
+        public DockerDeployment build() {
             return new DockerDeployment(this);
         }
     }

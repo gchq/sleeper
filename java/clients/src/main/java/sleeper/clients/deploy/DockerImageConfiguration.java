@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
@@ -58,6 +59,17 @@ public class DockerImageConfiguration {
 
     public static DockerImageConfiguration getDefault() {
         return DEFAULT;
+    }
+
+    public DockerImageConfiguration(List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
+        imageByStack = dockerDeployments.stream()
+                .collect(toMap(deployment -> deployment.getOptionalStack(), deployment -> StackDockerImage.builder()
+                        .imageName(deployment.getDeploymentName())
+                        .directoryName(deployment.getDeploymentName())
+                        .isBuildx(deployment.isMultiplatform())
+                        .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
+                        .build()));
+        this.lambdaHandlers = lambdaHandlers;
     }
 
     public DockerImageConfiguration(Map<OptionalStack, StackDockerImage> imageByStack, List<LambdaHandler> lambdaHandlers) {
