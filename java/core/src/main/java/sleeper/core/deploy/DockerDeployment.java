@@ -16,6 +16,7 @@
 package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.Optional;
 
@@ -31,16 +32,43 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
  */
 public class DockerDeployment {
 
-    public static final DockerDeployment INGEST = new DockerDeployment("ingest");
-    public static final DockerDeployment EKS_BULK_IMPORT = new DockerDeployment("bulk-import-runner");
-    public static final DockerDeployment COMPACTION = new DockerDeployment("compaction-job-execution");
-    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT = new DockerDeployment("bulk-import-runner-emr-serverless");
-    public static final DockerDeployment BULK_EXPORT = new DockerDeployment("bulk-export-task-execution");
+    public static final DockerDeployment INGEST = builder()
+            .deploymentName("ingest")
+            .optionalStack(OptionalStack.IngestStack)
+            .build();
+    public static final DockerDeployment EKS_BULK_IMPORT = builder()
+            .deploymentName("bulk-import-runner")
+            .optionalStack(OptionalStack.EksBulkImportStack)
+            .build();
+    public static final DockerDeployment COMPACTION = builder()
+            .deploymentName("compaction-job-execution")
+            .optionalStack(OptionalStack.CompactionStack)
+            .multiplatform(true)
+            .build();
+    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT = builder()
+            .deploymentName("bulk-import-runner-emr-serverless")
+            .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
+            .createEmrServerlessPolicy(true)
+            .build();
+    public static final DockerDeployment BULK_EXPORT = builder()
+            .deploymentName("bulk-export-task-execution")
+            .optionalStack(OptionalStack.BulkExportStack)
+            .build();
 
     private final String deploymentName;
+    private final OptionalStack optionalStack;
+    private final boolean multiplatform;
+    private final boolean createEmrServerlessPolicy;
 
-    private DockerDeployment(String deploymentName) {
-        this.deploymentName = deploymentName;
+    private DockerDeployment(Builder builder) {
+        this.deploymentName = builder.deploymentName;
+        this.optionalStack = builder.optionalStack;
+        this.multiplatform = builder.multiplatform;
+        this.createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+    }
+
+    private static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -50,6 +78,34 @@ public class DockerDeployment {
      */
     public String getDeploymentName() {
         return deploymentName;
+    }
+
+    /**
+     * Retrieves which optional stack uses this deployment. If the optional stack is not enabled, this Docker image is
+     * not needed.
+     *
+     * @return the optional stack
+     */
+    public OptionalStack getOptionalStack() {
+        return optionalStack;
+    }
+
+    /**
+     * Checks whether the Docker image should be built for multiple platforms.
+     *
+     * @return true if the image is multiplatform
+     */
+    public boolean isMultiplatform() {
+        return multiplatform;
+    }
+
+    /**
+     * Checks whether the ECR repository needs a policy to let EMR Serverless pull the Docker image.
+     *
+     * @return true if the EMR Serverless policy is needed
+     */
+    public boolean isCreateEmrServerlessPolicy() {
+        return createEmrServerlessPolicy;
     }
 
     /**
@@ -83,5 +139,39 @@ public class DockerDeployment {
      */
     public static String getEcrRepositoryPrefix(InstanceProperties properties) {
         return Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID));
+    }
+
+    /**
+     * Creates a Docker deployment.
+     */
+    private static class Builder {
+        private String deploymentName;
+        private OptionalStack optionalStack;
+        private boolean multiplatform;
+        private boolean createEmrServerlessPolicy;
+
+        Builder deploymentName(String deploymentName) {
+            this.deploymentName = deploymentName;
+            return this;
+        }
+
+        Builder optionalStack(OptionalStack optionalStack) {
+            this.optionalStack = optionalStack;
+            return this;
+        }
+
+        Builder multiplatform(boolean multiplatform) {
+            this.multiplatform = multiplatform;
+            return this;
+        }
+
+        Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
+            this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        DockerDeployment build() {
+            return new DockerDeployment(this);
+        }
     }
 }
