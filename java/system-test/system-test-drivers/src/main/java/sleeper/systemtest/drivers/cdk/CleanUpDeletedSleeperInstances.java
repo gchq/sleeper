@@ -19,10 +19,10 @@ package sleeper.systemtest.drivers.cdk;
 import software.amazon.awssdk.services.ecr.model.Repository;
 import software.amazon.awssdk.services.s3.model.Bucket;
 
+import sleeper.clients.deploy.DockerImageConfiguration;
 import sleeper.clients.teardown.CloudFormationStacks;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
-import sleeper.core.deploy.DockerImageConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Path;

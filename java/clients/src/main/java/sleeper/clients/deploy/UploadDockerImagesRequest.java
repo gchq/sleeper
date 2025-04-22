@@ -16,8 +16,6 @@
 
 package sleeper.clients.deploy;
 
-import sleeper.core.deploy.DockerImageConfiguration;
-import sleeper.core.deploy.StackDockerImage;
 import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 

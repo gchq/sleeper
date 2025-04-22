@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.core.deploy;
+package sleeper.clients.deploy;
 
+import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.PropertiesDiff;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
@@ -32,9 +34,9 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.core.deploy.StackDockerImage.dockerBuildImage;
-import static sleeper.core.deploy.StackDockerImage.dockerBuildxImage;
-import static sleeper.core.deploy.StackDockerImage.emrServerlessImage;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
+import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 

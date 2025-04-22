@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.core.deploy;
+package sleeper.clients.deploy;
+
+import sleeper.core.deploy.LambdaJar;
 
 import java.util.Objects;
 import java.util.Optional;

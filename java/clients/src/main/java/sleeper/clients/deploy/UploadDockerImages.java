@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
-import sleeper.core.deploy.StackDockerImage;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
