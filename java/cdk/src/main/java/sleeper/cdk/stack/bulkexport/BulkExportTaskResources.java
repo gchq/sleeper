@@ -144,7 +144,7 @@ public class BulkExportTaskResources {
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(stack, "BE- ECR1",
-                DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.BULK_EXPORT_NAME));
+                DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.BULK_EXPORT));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);

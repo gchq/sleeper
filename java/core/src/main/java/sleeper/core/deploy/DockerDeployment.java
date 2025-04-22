@@ -31,11 +31,11 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
  */
 public class DockerDeployment {
 
-    public static final DockerDeployment INGEST_NAME = new DockerDeployment("ingest");
-    public static final DockerDeployment EKS_BULK_IMPORT_NAME = new DockerDeployment("bulk-import-runner");
-    public static final DockerDeployment COMPACTION_NAME = new DockerDeployment("compaction-job-execution");
-    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT_NAME = new DockerDeployment("bulk-import-runner-emr-serverless");
-    public static final DockerDeployment BULK_EXPORT_NAME = new DockerDeployment("bulk-export-task-execution");
+    public static final DockerDeployment INGEST = new DockerDeployment("ingest");
+    public static final DockerDeployment EKS_BULK_IMPORT = new DockerDeployment("bulk-import-runner");
+    public static final DockerDeployment COMPACTION = new DockerDeployment("compaction-job-execution");
+    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT = new DockerDeployment("bulk-import-runner-emr-serverless");
+    public static final DockerDeployment BULK_EXPORT = new DockerDeployment("bulk-export-task-execution");
 
     private final String deploymentName;
 
@@ -44,17 +44,12 @@ public class DockerDeployment {
     }
 
     /**
-     * Retrieves the Docker image name, including tag.
+     * Retrieves the name of this deployment. Used as part of Docker image names and ECR repository names.
      *
-     * @param  properties       the instance properties
-     * @param  dockerDeployment the Docker deployment to retrieve
-     * @return                  the ECR repository name
+     * @return the deployment name
      */
-    public static String getDockerImageName(InstanceProperties properties, DockerDeployment dockerDeployment) {
-        return properties.get(ACCOUNT) + ".dkr.ecr." +
-                properties.get(REGION) + ".amazonaws.com/" +
-                getEcrRepositoryName(properties, dockerDeployment) +
-                ":" + properties.get(VERSION);
+    public String getDeploymentName() {
+        return deploymentName;
     }
 
     /**

@@ -205,7 +205,7 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
 
         IRepository repository = Repository.fromRepositoryName(this,
-                "ECR-ingest", DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.INGEST_NAME));
+                "ECR-ingest", DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.INGEST));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()

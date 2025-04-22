@@ -94,7 +94,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob) {
         Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, EmrInstanceArchitecture.X86_64));
-        String imageName = DockerDeployment.getDockerImageName(instanceProperties, DockerDeployment.EKS_BULK_IMPORT_NAME);
+        String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
         defaultConfig.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         defaultConfig.put("spark.kubernetes.container.image", imageName);

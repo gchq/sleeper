@@ -225,7 +225,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, CoreStacks coreStacks, Topic errorsTopic) {
-        String imageName = DockerDeployment.getDockerImageName(instanceProperties, DockerDeployment.EKS_BULK_IMPORT_NAME);
+        String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
 
         Map<String, Object> runJobState = parseEksStepDefinition(
                 "/step-functions/run-job.json", instanceProperties, cluster,

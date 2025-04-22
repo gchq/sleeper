@@ -35,7 +35,7 @@ public class DockerDeploymentTest {
         properties.set(ECR_REPOSITORY_PREFIX, "test");
 
         // When
-        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.INGEST_NAME);
+        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.INGEST);
 
         // Then
         assertThat(repositoryName).isEqualTo("test/ingest");
@@ -48,7 +48,7 @@ public class DockerDeploymentTest {
         properties.set(ID, "test-instance");
 
         // When
-        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.INGEST_NAME);
+        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.INGEST);
 
         // Then
         assertThat(repositoryName).isEqualTo("test-instance/ingest");
@@ -61,7 +61,7 @@ public class DockerDeploymentTest {
         properties.set(ECR_REPOSITORY_PREFIX, "test");
 
         // When
-        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.EKS_BULK_IMPORT_NAME);
+        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.EKS_BULK_IMPORT);
 
         // Then
         assertThat(repositoryName).isEqualTo("test/bulk-import-runner");
@@ -77,7 +77,7 @@ public class DockerDeploymentTest {
         properties.set(ECR_REPOSITORY_PREFIX, "test");
 
         // When
-        String imageName = DockerDeployment.getDockerImageName(properties, DockerDeployment.INGEST_NAME);
+        String imageName = DockerDeployment.INGEST.getDockerImageName(properties);
 
         // Then
         assertThat(imageName).isEqualTo("1234.dkr.ecr.global.amazonaws.com/test/ingest:1.2.3");

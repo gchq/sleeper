@@ -120,7 +120,7 @@ public class CompactionTaskResources {
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(stack, "ECR1",
-                DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.COMPACTION_NAME));
+                DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.COMPACTION));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);

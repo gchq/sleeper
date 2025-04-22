@@ -45,11 +45,11 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
  */
 public class DockerImageConfiguration {
     private static final Map<OptionalStack, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Map.of(
-            OptionalStack.IngestStack, dockerBuildImage(DockerDeployment.INGEST_NAME),
-            OptionalStack.EksBulkImportStack, dockerBuildImage(DockerDeployment.EKS_BULK_IMPORT_NAME),
-            OptionalStack.CompactionStack, dockerBuildxImage(DockerDeployment.COMPACTION_NAME),
-            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage(DockerDeployment.EMR_SERVERLESS_BULK_IMPORT_NAME),
-            OptionalStack.BulkExportStack, dockerBuildImage(DockerDeployment.BULK_EXPORT_NAME));
+            OptionalStack.IngestStack, dockerBuildImage(DockerDeployment.INGEST.getDeploymentName()),
+            OptionalStack.EksBulkImportStack, dockerBuildImage(DockerDeployment.EKS_BULK_IMPORT.getDeploymentName()),
+            OptionalStack.CompactionStack, dockerBuildxImage(DockerDeployment.COMPACTION.getDeploymentName()),
+            OptionalStack.EmrServerlessBulkImportStack, emrServerlessImage(DockerDeployment.EMR_SERVERLESS_BULK_IMPORT.getDeploymentName()),
+            OptionalStack.BulkExportStack, dockerBuildImage(DockerDeployment.BULK_EXPORT.getDeploymentName()));
 
     private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DEFAULT_DOCKER_IMAGE_BY_STACK, LambdaHandler.all());
 
