@@ -138,7 +138,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
         String region = instanceProperties.get(REGION);
         String accountId = instanceProperties.get(ACCOUNT);
-        String repo = DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.EMR_SERVERLESS_BULK_IMPORT);
+        String repo = DockerDeployment.EMR_SERVERLESS_BULK_IMPORT.getEcrRepositoryName(instanceProperties);
         String version = instanceProperties.get(VERSION);
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 

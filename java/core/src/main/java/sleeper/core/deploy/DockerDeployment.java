@@ -66,17 +66,6 @@ public class DockerDeployment {
     }
 
     /**
-     * Retrieves the name of an ECR repository.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  dockerDeployment   the Docker deployment to retrieve
-     * @return                    the ECR repository name
-     */
-    public static String getEcrRepositoryName(InstanceProperties instanceProperties, DockerDeployment dockerDeployment) {
-        return getEcrRepositoryPrefix(instanceProperties) + "/" + dockerDeployment.deploymentName;
-    }
-
-    /**
      * Retrieves the name of the ECR repository for this docker deployment.
      *
      * @param  instanceProperties the instance properties

@@ -35,7 +35,7 @@ public class DockerDeploymentTest {
         properties.set(ECR_REPOSITORY_PREFIX, "test");
 
         // When
-        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.INGEST);
+        String repositoryName = DockerDeployment.INGEST.getEcrRepositoryName(properties);
 
         // Then
         assertThat(repositoryName).isEqualTo("test/ingest");
@@ -48,7 +48,7 @@ public class DockerDeploymentTest {
         properties.set(ID, "test-instance");
 
         // When
-        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.INGEST);
+        String repositoryName = DockerDeployment.INGEST.getEcrRepositoryName(properties);
 
         // Then
         assertThat(repositoryName).isEqualTo("test-instance/ingest");
@@ -61,7 +61,7 @@ public class DockerDeploymentTest {
         properties.set(ECR_REPOSITORY_PREFIX, "test");
 
         // When
-        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.EKS_BULK_IMPORT);
+        String repositoryName = DockerDeployment.EKS_BULK_IMPORT.getEcrRepositoryName(properties);
 
         // Then
         assertThat(repositoryName).isEqualTo("test/bulk-import-runner");
