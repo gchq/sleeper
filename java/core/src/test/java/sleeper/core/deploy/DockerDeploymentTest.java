@@ -51,4 +51,17 @@ public class DockerDeploymentTest {
         assertThat(repositoryName).isEqualTo("test-instance/ingest");
     }
 
+    @Test
+    void shouldComputeRepositoryNameForAnotherDeployment() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(ECR_REPOSITORY_PREFIX, "test");
+
+        // When
+        String repositoryName = DockerDeployment.getEcrRepositoryName(properties, DockerDeployment.EKS_BULK_IMPORT_NAME);
+
+        // Then
+        assertThat(repositoryName).isEqualTo("test/bulk-import-runner");
+    }
+
 }

@@ -71,7 +71,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -206,8 +205,7 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
 
         IRepository repository = Repository.fromRepositoryName(this,
-                "ECR-ingest",
-                instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + DockerDeployment.INGEST_NAME);
+                "ECR-ingest", DockerDeployment.getEcrRepositoryName(instanceProperties, DockerDeployment.INGEST_NAME));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()

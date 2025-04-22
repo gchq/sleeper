@@ -44,7 +44,7 @@ public class DockerDeployment {
      * @return                    the ECR repository name
      */
     public static String getEcrRepositoryName(InstanceProperties instanceProperties, String deploymentName) {
-        return getEcrRepositoryPrefix(instanceProperties) + "/" + DockerDeployment.INGEST_NAME;
+        return getEcrRepositoryPrefix(instanceProperties) + "/" + deploymentName;
     }
 
     /**
