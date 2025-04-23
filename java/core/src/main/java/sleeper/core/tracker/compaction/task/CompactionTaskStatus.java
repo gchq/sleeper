@@ -55,12 +55,11 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * This method checks wether the task was ran between a start and end time.
-     * If the tass hasn't finished yet then it just checks the start time was in the period.
+     * Checks if the task is contained in or overlaps with the given time period.
      *
-     * @param  windowStartTime Instant for the start time of the period to check.
-     * @param  windowEndTime   Instant for the end time of the period to check.
-     * @return                 boolean for if the task was ran in the time period.
+     * @param  windowStartTime the start time
+     * @param  windowEndTime   the end time
+     * @return                 true if the task is in the period
      */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
@@ -76,9 +75,9 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * This method gets the finsih time for a task provided it has finished.
+     * Retrieves the time the task finished, if it has finished.
      *
-     * @return Instant of the time task finished or null if unfinished.
+     * @return the time the task finished, or null if it is unfinished
      */
     public Instant getFinishTime() {
         if (isFinished()) {
@@ -89,9 +88,9 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * This method returns the Duration the task ran for provided it's finished.
+     * Retrieves the amount of time the task ran, if it has finished.
      *
-     * @return Duration of time bettween task start and finish or null if unfinished.
+     * @return the amount of time the task ran for, or null if it is unfinished
      */
     public Duration getDuration() {
         if (isFinished()) {
@@ -110,9 +109,9 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * This method checks if the task has finished and if so returns the total job runs for the task.
+     * Retrieves the number of job runs that occurred in the task, if it has finished.
      *
-     * @return Integer for the total job runs or null if unfinished.
+     * @return the number of job runs that occurred in the task, or null if it is unfinished
      */
     public Integer getJobRunsOrNull() {
         if (isFinished()) {
@@ -123,9 +122,9 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * This method checks if the task has finished and if so returns the total job runs for the task.
+     * Retrieves the number of job runs that occurred in the task, if it has finished.
      *
-     * @return Integer for the total job runs or 0 if unfinished.
+     * @return the number of job runs that occurred in the task, or 0 if it is unfinished
      */
     public int getJobRuns() {
         if (isFinished()) {
@@ -185,7 +184,7 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * Builder class for CompactionTaskStatus.
+     * Builder for compaction task statuses.
      */
     public static final class Builder {
         private String taskId;
@@ -201,10 +200,10 @@ public class CompactionTaskStatus {
         }
 
         /**
-         * Sets the taskId and returns the Builder.
+         * Sets the task ID.
          *
-         * @param  taskId String taskId to be set.
-         * @return        Builder containing current set values.
+         * @param  taskId the task ID
+         * @return        this builder
          */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
@@ -212,10 +211,10 @@ public class CompactionTaskStatus {
         }
 
         /**
-         * Sets the startTime and retuns the Builder.
+         * Sets the time the task started.
          *
-         * @param  startTime Instant of the startTime to be set.
-         * @return           Builder containing current set values.
+         * @param  startTime the start time
+         * @return           this builder
          */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
@@ -223,10 +222,10 @@ public class CompactionTaskStatus {
         }
 
         /**
-         * Sets the finshed status and returns the builder.
+         * Sets the status update when the task finished. This is also used by {@link #finished}.
          *
-         * @param  finishedStatus CompactionTaskFinishedStatus - the specific finish status to be set.
-         * @return                Builder containing current set values.
+         * @param  finishedStatus the status update
+         * @return                this builder
          */
         public Builder finishedStatus(CompactionTaskFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
@@ -234,10 +233,10 @@ public class CompactionTaskStatus {
         }
 
         /**
-         * Sets the expiryDate and retuns the Builder.
+         * Sets the expiry date, after which events for this task will no longer be held.
          *
-         * @param  expiryDate Instant of the expiryDate to be set.
-         * @return            Builder containing current set values.
+         * @param  expiryDate the expiry date
+         * @return            this builder
          */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
@@ -245,11 +244,11 @@ public class CompactionTaskStatus {
         }
 
         /**
-         * Sets the task to finished using a task finished status builder and finish time.
+         * Finishes the task and computes aggregated statistics. Sets the finished status update.
          *
-         * @param  finishTime          Instant of the time the task finished.
-         * @param  taskFinishedBuilder CompactionTaskFinishedStatus Builder to be used to build the finished status.
-         * @return                     Builder containing current set values.
+         * @param  finishTime          the time the task finished
+         * @param  taskFinishedBuilder the builder that was used to track job runs in the task
+         * @return                     this builder
          */
         public Builder finished(Instant finishTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) {
             return finishedStatus(taskFinishedBuilder
