@@ -201,7 +201,7 @@ public class SleeperClient {
      *
      * @param  tableName              the table name
      * @return                        the query executor
-     * @throws TableNotFoundException if the table withP the given name is not found
+     * @throws TableNotFoundException if the table with the given name is not found
      * @throws StateStoreException    if the state store can't be accessed
      */
     public QueryExecutor getQueryExecutor(String tableName) {
