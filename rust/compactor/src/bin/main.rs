@@ -109,17 +109,12 @@ async fn main() -> color_eyre::Result<()> {
     let output_url = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
-    assert_eq!(
-        args.row_keys.len(),
-        args.region_maxs.len(),
-        "# region maximums != # row key columns"
-    );
-    assert_eq!(
-        args.row_keys.len(),
-        args.region_mins.len(),
-        "# region minimums != # row key columns"
-    );
-
+    if args.row_keys.len() != args.region_maxs.len() {
+        bail!("quantity of region maximums != quantity of row key columns");
+    }
+    if args.row_keys.len() != args.region_mins.len() {
+        bail!("quantity of region minimums != quantity of row key columns");
+    }
     let mut map = HashMap::new();
     for (key, bounds) in args
         .row_keys

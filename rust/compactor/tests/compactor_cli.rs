@@ -37,7 +37,7 @@ fn invalid_region_maxs() -> Result<()> {
         "z",
     ]);
     cmd.assert().failure().stderr(predicate::str::contains(
-        "# region maximums != # row key columns",
+        "quantity of region maximums != quantity of row key columns",
     ));
     Ok(())
 }
@@ -60,7 +60,7 @@ fn invalid_region_mins() -> Result<()> {
         "z",
     ]);
     cmd.assert().failure().stderr(predicate::str::contains(
-        "# region minimums != # row key columns",
+        "quantity of region minimums != quantity of row key columns",
     ));
     Ok(())
 }
