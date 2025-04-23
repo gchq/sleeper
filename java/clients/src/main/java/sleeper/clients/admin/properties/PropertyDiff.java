@@ -105,7 +105,7 @@ public class PropertyDiff {
      * Combines this diff with another change that happens after this one. This should only be used with a diff to the
      * same property. This will discard information about the intermediate state.
      *
-     * @param  diff the diff to apply after this one
+     * @param  then the diff to apply after this one
      * @return      the combined diff, if the start and end values are different
      */
     public Optional<PropertyDiff> andThen(PropertyDiff then) {
