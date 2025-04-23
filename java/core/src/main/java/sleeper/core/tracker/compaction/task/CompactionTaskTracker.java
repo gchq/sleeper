@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * This interface is used to track and update the status of tasks.
+ * Tracks and reports on the status of compaction tasks. This stores events for each task. This is used for reporting.
  */
 public interface CompactionTaskTracker {
 
@@ -28,59 +28,61 @@ public interface CompactionTaskTracker {
     };
 
     /**
-     * This method marks a task as started with the provided status.
+     * Stores an event when a compaction task has started.
      *
-     * @param taskStatus The CompactionTaskStatus the task should be started with.
+     * @param taskStatus the status of the task
      */
     default void taskStarted(CompactionTaskStatus taskStatus) {
     }
 
     /**
-     * This method marks a task as finished with the provided status.
+     * Stores an event when a compaction task has finished.
      *
-     * @param taskStatus The CompactionTaskStatus the task should be finished with.
+     * @param taskStatus the status of the task
      */
     default void taskFinished(CompactionTaskStatus taskStatus) {
     }
 
     /**
-     * This method takes in a taskId and returns the current status of it.
+     * Retrieves the currently tracked status of a compaction task. This will be derived from events that have been
+     * tracked for the task.
      *
-     * @param  taskId                        The taskId to get the status of.
-     * @return                               The current CompactionTaskStatus of the task.
-     * @throws UnsupportedOperationException unless overwritten.
+     * @param  taskId                        the compaction task ID
+     * @return                               the status of the task
+     * @throws UnsupportedOperationException if the compaction task tracker is disabled for this Sleeper instance
      */
     default CompactionTaskStatus getTask(String taskId) {
         throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 
     /**
-     * This method gets all the tasks currently held.
+     * Retrieves the status of all currently tracked compaction tasks. This includes all tasks that have tracked events,
+     * unless those events have expired and are no longer held in the tracker.
      *
-     * @return                               List of CompactionTaskStatuses.
-     * @throws UnsupportedOperationException unless overwritten.
+     * @return                               the task statuses
+     * @throws UnsupportedOperationException if the compaction task tracker is disabled for this Sleeper instance
      */
     default List<CompactionTaskStatus> getAllTasks() {
         throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 
     /**
-     * This method gets all the tasks currently held bettween a start and end time.
+     * Retrieves the status of compaction tasks that have events in or overlap with a given time period.
      *
-     * @param  startTime                     The start time for the tasks to be returned from.
-     * @param  endTime                       The end time for the tasks to be returned from.
-     * @return                               List of CompactionTaskStatuses.
-     * @throws UnsupportedOperationException unless overwritten.
+     * @param  startTime                     the start of the period
+     * @param  endTime                       the end of the period
+     * @return                               the task statuses
+     * @throws UnsupportedOperationException if the compaction task tracker is disabled for this Sleeper instance
      */
     default List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 
     /**
-     * This method gets all the tasks that are currently in progress.
+     * Retrieves the status of compaction tasks that are currently in progress.
      *
-     * @return                               List of CompactionTaskStatuses.
-     * @throws UnsupportedOperationException unless overwritten.
+     * @return                               the task statuses
+     * @throws UnsupportedOperationException if the compaction task tracker is disabled for this Sleeper instance
      */
     default List<CompactionTaskStatus> getTasksInProgress() {
         throw new UnsupportedOperationException("Instance has no compaction task tracker");

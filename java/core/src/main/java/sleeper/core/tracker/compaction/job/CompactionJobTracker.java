@@ -143,7 +143,8 @@ public interface CompactionJobTracker {
     }
 
     /**
-     * Retrieves the status of compaction jobs that have events in a given time period, for a Sleeper table.
+     * Retrieves the status of compaction jobs that have events in or overlap with a given time period, for a Sleeper
+     * table.
      *
      * @param  tableId                       the internal Sleeper table ID
      * @param  startTime                     the start of the period
