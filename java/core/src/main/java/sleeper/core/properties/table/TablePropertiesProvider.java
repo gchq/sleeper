@@ -61,6 +61,7 @@ public class TablePropertiesProvider {
 
     /**
      * Retrieves properties by table name.
+     * Throws a TableNotFoundException if the table for the given name is not found.
      *
      * @param  tableName the name of the table
      * @return           the table properties

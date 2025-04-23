@@ -156,6 +156,7 @@ public class SleeperClient {
 
     /**
      * Reads properties of a Sleeper table.
+     * Throws a TableNotFoundException if the table for the given name is not found.
      *
      * @param  tableName the table name
      * @return           the table properties
