@@ -178,7 +178,8 @@ public class PropertiesDiff {
     }
 
     /**
-     * Creates a view of the values of properties as if the changes in this diff had been reverted.
+     * Creates a view of the values of properties as if the changes in this diff had been reverted. This is backed by
+     * the values you provide, and will read from that object.
      *
      * @param  <T>         the type of properties changed by this diff (e.g. instance property)
      * @param  valuesAfter the current values of properties, with these changes included
