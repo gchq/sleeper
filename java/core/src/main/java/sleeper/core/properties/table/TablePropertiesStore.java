@@ -48,8 +48,9 @@ public class TablePropertiesStore {
     /**
      * Loads properties for the given Sleeper table.
      *
-     * @param  table the table status
-     * @return       the table properties
+     * @param  table                  the table status
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table for the given name is not found.
      */
     TableProperties loadProperties(TableStatus table) {
         TableProperties tableProperties = client.loadProperties(table);
@@ -60,8 +61,9 @@ public class TablePropertiesStore {
     /**
      * Loads and validates properties for the Sleeper table with the given name.
      *
-     * @param  tableName the table name
-     * @return           the table properties
+     * @param  tableName              the table name
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table for the given name is not found.
      */
     public TableProperties loadByName(String tableName) {
         return tableIndex.getTableByName(tableName)
@@ -72,8 +74,9 @@ public class TablePropertiesStore {
     /**
      * Loads and validates properties for the Sleeper table with the given unique ID.
      *
-     * @param  tableId the unique table ID
-     * @return         the table properties
+     * @param  tableId                the unique table ID
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table for the given ID is not found.
      */
     public TableProperties loadById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
@@ -84,8 +87,9 @@ public class TablePropertiesStore {
     /**
      * Loads properties for the Sleeper table with the given name, with no validation.
      *
-     * @param  tableName the table name
-     * @return           the table properties
+     * @param  tableName              the table name
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table for the given name is not found.
      */
     public TableProperties loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
