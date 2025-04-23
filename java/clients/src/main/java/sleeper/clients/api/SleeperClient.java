@@ -94,19 +94,32 @@ public class SleeperClient {
      * @return            the client
      */
     public static SleeperClient createForInstanceId(String instanceId) {
+        return createForInstanceId(instanceId, Executors.newFixedThreadPool(10));
+    }
+
+    /**
+     * Creates a client to interact with the instance of Sleeper with the given ID.
+     * Will use the default AWS configuration.
+     *
+     * @param  instanceId      the instance ID
+     * @param  executorService an executor service
+     * @return                 the client
+     */
+    public static SleeperClient createForInstanceId(String instanceId, ExecutorService executorService) {
         return createForInstanceId(
                 buildAwsV1Client(AmazonS3ClientBuilder.standard()),
                 buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()),
                 buildAwsV1Client(AmazonSQSClientBuilder.standard()),
                 HadoopConfigurationProvider.getConfigurationForClient(),
+                executorService,
                 instanceId);
     }
 
     private static SleeperClient createForInstanceId(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId) {
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf,
+            ExecutorService queryExecutorService, String instanceId) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
         return builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
