@@ -62,11 +62,10 @@ public class TablePropertiesProvider {
 
     /**
      * Retrieves properties by table name.
-     * *
      *
      * @param  tableName              the name of the table
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given name is not found.
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getByName(String tableName) {
         return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName));

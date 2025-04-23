@@ -50,7 +50,7 @@ public class TablePropertiesStore {
      *
      * @param  table                  the table status
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given name is not found.
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     TableProperties loadProperties(TableStatus table) {
         TableProperties tableProperties = client.loadProperties(table);
@@ -63,7 +63,7 @@ public class TablePropertiesStore {
      *
      * @param  tableName              the table name
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given name is not found.
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties loadByName(String tableName) {
         return tableIndex.getTableByName(tableName)
@@ -76,7 +76,7 @@ public class TablePropertiesStore {
      *
      * @param  tableId                the unique table ID
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given ID is not found.
+     * @throws TableNotFoundException if the table with the given ID is not found
      */
     public TableProperties loadById(String tableId) {
         return tableIndex.getTableByUniqueId(tableId)
@@ -89,7 +89,7 @@ public class TablePropertiesStore {
      *
      * @param  tableName              the table name
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given name is not found.
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)

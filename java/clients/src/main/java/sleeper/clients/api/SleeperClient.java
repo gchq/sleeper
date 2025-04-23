@@ -153,7 +153,7 @@ public class SleeperClient {
      *
      * @param  tableStatus            the status of the table
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given name is not found.
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getTableProperties(TableStatus tableStatus) {
         return tablePropertiesProvider.get(tableStatus);
@@ -164,7 +164,7 @@ public class SleeperClient {
      *
      * @param  tableName              the table name
      * @return                        the table properties
-     * @throws TableNotFoundException if the table for the given name is not found.
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getTableProperties(String tableName) {
         return tablePropertiesProvider.getByName(tableName);
@@ -173,9 +173,8 @@ public class SleeperClient {
     /**
      * Retrieves the state store for a Sleeper table.
      *
-     * @param  tableName           the table name
-     * @return                     the state store
-     * @throws StateStoreException if the state store can't be accessed
+     * @param  tableName the table name
+     * @return           the state store
      */
     public StateStore getStateStore(String tableName) {
         return stateStoreProvider.getStateStore(getTableProperties(tableName));
@@ -185,10 +184,10 @@ public class SleeperClient {
      * Adds a Sleeper table to the instance.
      *
      * @param  tableProperties                   the table properties
-     * @param  splitPoints                       the split points to initialise the partition tree7
-     * @throws SleeperPropertiesInvalidException if tableProperties provided don't validate
-     * @throws TableAlreadyExistsException       if the table ID provided in properties already exists
-     * @throws StateStoreException               if the commit of the state store fails
+     * @param  splitPoints                       the split points to initialise the partition tree
+     * @throws SleeperPropertiesInvalidException if table properties provided don't validate
+     * @throws TableAlreadyExistsException       if the table already exists
+     * @throws StateStoreException               if the state store failed to initialise
      */
     public void addTable(TableProperties tableProperties, List<Object> splitPoints) {
         tableProperties.validate();
@@ -202,7 +201,7 @@ public class SleeperClient {
      *
      * @param  tableName              the table name
      * @return                        the query executor
-     * @throws TableNotFoundException if the table for the given name is not found
+     * @throws TableNotFoundException if the table withP the given name is not found
      * @throws StateStoreException    if the state store can't be accessed
      */
     public QueryExecutor getQueryExecutor(String tableName) {
