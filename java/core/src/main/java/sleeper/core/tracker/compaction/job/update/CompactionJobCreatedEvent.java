@@ -18,7 +18,7 @@ package sleeper.core.tracker.compaction.job.update;
 import java.util.Objects;
 
 /**
- * This class stores details about a compaction job created event.
+ * An event for when a compaction job was created, and is due to run. Used in the compaction job tracker.
  */
 public class CompactionJobCreatedEvent {
 
@@ -55,7 +55,7 @@ public class CompactionJobCreatedEvent {
     }
 
     /**
-     * Builder class for the CompactionJobCreatedEvent.
+     * Builder for compaction job created events.
      */
     public static final class Builder {
 
@@ -68,10 +68,10 @@ public class CompactionJobCreatedEvent {
         }
 
         /**
-         * Sets the jobsId and returns the builder.
+         * Sets the compaction job ID.
          *
-         * @param  jobId String the jobId to be set
-         * @return       Builder containing current set values.
+         * @param  jobId the compaction job ID
+         * @return       the builder
          */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
@@ -79,10 +79,10 @@ public class CompactionJobCreatedEvent {
         }
 
         /**
-         * Sets the tableId and returns the builder.
+         * Sets the table ID.
          *
-         * @param  tableId String the tableId to be set.
-         * @return         Builder containing current set values.
+         * @param  tableId the table ID
+         * @return         the builder
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
@@ -90,10 +90,10 @@ public class CompactionJobCreatedEvent {
         }
 
         /**
-         * Sets the partitionId and returns the builder.
+         * Records the ID of the Sleeper partition the compaction will run on.
          *
-         * @param  partitionId String the partitionId to be set.
-         * @return             Builder containing current set values.
+         * @param  partitionId the partition ID
+         * @return             the builder
          */
         public Builder partitionId(String partitionId) {
             this.partitionId = partitionId;
@@ -101,10 +101,10 @@ public class CompactionJobCreatedEvent {
         }
 
         /**
-         * Sets the inputFilesCount and returns the builder.
+         * Records the number of input files for the compaction.
          *
-         * @param  inputFilesCount int the inputFilesCount to be set.
-         * @return                 Builder containing current set values.
+         * @param  inputFilesCount the number of input files
+         * @return                 the builder
          */
         public Builder inputFilesCount(int inputFilesCount) {
             this.inputFilesCount = inputFilesCount;
