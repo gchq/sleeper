@@ -65,6 +65,11 @@ public class IngestJobRun implements JobRunReport {
         return filesWrittenAndAdded;
     }
 
+    /**
+     * Retrieves the number of input files in the ingest job.
+     *
+     * @return the number of input files, or 0 if this was not tracked
+     */
     public int getInputFileCount() {
         if (jobInfoStatus != null) {
             return jobInfoStatus.getInputFileCount();
