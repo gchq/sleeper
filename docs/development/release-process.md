@@ -13,6 +13,7 @@ The following steps explain how to prepare and publish a release for Sleeper.
      - Set the version number using `scripts/dev/updateVersionNumber.sh <version>`.
      - Update the performance figures in the [system tests guide](system-tests.md#performance-benchmarks).
    - Update version number to `<next-version>-SNAPSHOT`
+     - Set the version number using `scripts/dev/updateVersionNumber.sh <version>`.
      - This will be done immediately after the release.
 
 2. Read through the documentation to find anything that may need updating, and raise issues to document features or
@@ -81,7 +82,8 @@ Choose the same options as above, and results should be returned.
     performance figures from the test output. Ideally this can come from the nightly system tests, but it may be
     necessary to re-run the tests manually. See the [system test guide](system-tests.md#acceptance-tests).
 
-11. Create a pull request for release preparation, with the performance figures and version number update.
+11. Create a pull request for release preparation, with the performance figures and version number update. Set the
+    version number using `scripts/dev/updateVersionNumber.sh <version>`.
 
 12. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
     and release preparation.
@@ -89,5 +91,5 @@ Choose the same options as above, and results should be returned.
 13. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
     main. Then checkout the main branch, set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
-14. Create a pull request to update the version number for the next release as a snapshot version. Merge it when
-    everything passes.
+14. Create a pull request to update the version number for the next release as a snapshot version. Set the version
+    number using `scripts/dev/updateVersionNumber.sh <version>`. Merge it when everything passes.
