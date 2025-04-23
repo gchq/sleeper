@@ -115,8 +115,8 @@ public class DockerImageConfiguration {
     }
 
     /**
-     * Guesses the Sleeper instance ID that resulted in the creation of a given ECR repository. This assumes that the
-     * ECR repository name was prefixed with the instance ID.
+     * Finds the prefix of an ECR repository that may be a Sleeper instance ID. This assumes that the repository was
+     * created during the deployment of a Sleeper instance with no ECR repository prefix set.
      *
      * @param  repositoryName the ECR repository name
      * @return                the detected Sleeper instance ID, if one was found
