@@ -26,9 +26,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -50,8 +48,6 @@ public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
-        expected.set(ECR_REPOSITORY_PREFIX, "test-instance");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(ACCOUNT, stsClient.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
         expected.set(REGION, localStackContainer.getRegion());
 

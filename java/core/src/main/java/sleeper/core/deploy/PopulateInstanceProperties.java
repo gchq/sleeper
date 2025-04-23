@@ -27,11 +27,9 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -109,9 +107,6 @@ public class PopulateInstanceProperties {
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
         properties.set(ID, instanceId);
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        String ecrPrefix = DockerDeployment.getEcrRepositoryPrefix(properties);
-        properties.set(ECR_REPOSITORY_PREFIX, ecrPrefix);
-        properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export-task-execution");
         return properties;
     }
 
