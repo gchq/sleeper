@@ -37,7 +37,10 @@ import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 /**
- * This class is used to manage the Docker Images that need to be uploaded.
+ * Models which Docker images need to be built and uploaded to be able to deploy the system. This includes components
+ * that are always deployed based on a Docker image, e.g. ECS tasks, as well as lambdas that may or may not be deployed
+ * with Docker. This combines these different types of components to determine which Docker images need to be present
+ * during a certain deployment.
  */
 public class DockerImageConfiguration {
 
@@ -56,13 +59,13 @@ public class DockerImageConfiguration {
     }
 
     /**
-     * This method returns a List of images to upload that haven't been uploaded before.
-     * It does this by first getting a Set of Before values for Optional Stacks.
-     * Then builds a list of OptionalStacks who don't match their before value.
+     * Finds which images need to be uploaded when redeploying due to a change to an instance property. This is computed
+     * based on which optional stacks have been added to the instance. This is needed in a context where Docker images
+     * are only uploaded to AWS when we deploy the stack associated with it.
      *
-     * @param  properties The InstanceProperites to use to get the optional_stacks and the Lambda_deploy_type.
-     * @param  diff       The PropertiesDiff used to get the properties before value.
-     * @return            List of StackDockerImages that are new or have been updated to upload.
+     * @param  properties the instance properties
+     * @param  diff       the diff describing the change that caused the redeploy
+     * @return            the list of Docker images that need to be uploaded
      */
     public List<StackDockerImage> getImagesToUploadOnUpdate(InstanceProperties properties, PropertiesDiff diff) {
         Set<OptionalStack> stacksBefore = diff.getValuesBefore(properties)
@@ -76,13 +79,11 @@ public class DockerImageConfiguration {
     }
 
     /**
-     * This method checks the optional stacks and lambda deploy types from the input properties.
-     * It then concacts these lists together taking all of the Optional Stack and thos elambadas that are deployed on
-     * one of the optional stacks.
+     * Finds which images need to be uploaded when deploying an instance of Sleeper. This is computed based on which
+     * optional stacks will be deployed for the instance.
      *
-     * @param  properties The Instance Properties to check to get the Optional_Stacks and Lambda_deploy_Type.
-     * @return            List of StackDockerImage concattenated from the optionals tacks and the lambdas that are
-     *                    deployed on the optional stacks.
+     * @param  properties the instance properties
+     * @return            the list of Docker images that need to be uploaded
      */
     public List<StackDockerImage> getImagesToUpload(InstanceProperties properties) {
         Set<OptionalStack> optionalStacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
@@ -114,11 +115,11 @@ public class DockerImageConfiguration {
     }
 
     /**
-     * This method uses the stored map and inputted repo name to find the instanceId of the image as it will be part of
-     * the image name.
+     * Guesses the Sleeper instance ID that resulted in the creation of a given ECR repository. This assumes that the
+     * ECR repository name was prefixed with the instance ID.
      *
-     * @param  repositoryName The repositoryName to search the map for the first occurance of.
-     * @return                Optional String of the InstanceId provided the repositoryName was found in the map.
+     * @param  repositoryName the ECR repository name
+     * @return                the detected Sleeper instance ID, if one was found
      */
     public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
         return dockerDeployments.stream()
