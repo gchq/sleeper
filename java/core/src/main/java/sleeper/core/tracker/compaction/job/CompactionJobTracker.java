@@ -29,103 +29,112 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This interface is used to track and update the status of jobs.
+ * Tracks and reports on the status of compaction jobs. This stores a history of events for each job. This is used for
+ * reporting and to check the status of a job.
  */
 public interface CompactionJobTracker {
     CompactionJobTracker NONE = new CompactionJobTracker() {
     };
 
     /**
-     * This method marks a job as created from a CompactionJobCreatedEvent.
+     * Stores an event when a compaction job has been created, and is due to run.
      *
-     * @param event CompactionJobCreatedEvent that is to be marked as created.
+     * @param event the event
      */
     default void jobCreated(CompactionJobCreatedEvent event) {
     }
 
     /**
-     * This method marks a job as started from a CompactionJobStartedEvent.
+     * Stores an event when a compaction job has been picked up by a task and started.
      *
-     * @param event CompactionJobStartedEvent that is to be marked as Started.
+     * @param event the event
      */
     default void jobStarted(CompactionJobStartedEvent event) {
     }
 
     /**
-     * This method marks a job as finished from a CompactionJobFinishedEvent.
+     * Stores an event when a compaction job has been run to completion. The output file will have been written, but the
+     * job may not yet have been committed to the state store.
      *
-     * @param event CompactionJobFinishedEvent that is to be marked as Finished.
+     * @param event the event
      */
     default void jobFinished(CompactionJobFinishedEvent event) {
     }
 
     /**
-     * This method marks a job as committed from a CompactionJobCommittedEvent.
+     * Stores an event when a compaction job has been committed to the state store. This means future queries against
+     * the Sleeper table can read the file that was written as the output of the compaction, and will soon stop reading
+     * the input files.
      *
-     * @param event CompactionJobCommittedEvent.
+     * @param event the event
      */
     default void jobCommitted(CompactionJobCommittedEvent event) {
     }
 
     /**
-     * This method marks a job as failed from a CompactionJobFailedEvent.
+     * Stores an event when a compaction job has failed. It may or not be retried depending on the failure.
      *
-     * @param event CompactionJobFailedEvent that is to be marked as Failed.
+     * @param event the event
      */
     default void jobFailed(CompactionJobFailedEvent event) {
     }
 
     /**
-     * This method takes in a jobId and returns the optional current status of it.
+     * Retrieves the currently tracked status of a job. This will be derived from all events that have been tracked for
+     * that job.
      *
-     * @param  jobId                         String the jobId to get the status of.
-     * @return                               Optional CompactionJobStatus containing the job CompactionJobStatus if
-     *                                       found.
-     * @throws UnsupportedOperationException unless overwritten.
+     * @param  jobId                         the job ID
+     * @return                               the status of the job, if it has been tracked
+     * @throws UnsupportedOperationException if the compaction job tracker is disabled for this Sleeper instance
      */
     default Optional<CompactionJobStatus> getJob(String jobId) {
         throw new UnsupportedOperationException("Instance has no compaction job tracker");
     }
 
     /**
-     * This method returns a stream of CompactionJobStatuses for a given tableId.
+     * Retrieves the status of all currently tracked compaction jobs for a Sleeper table. This includes all jobs that
+     * have tracked events, unless those events have expired and are no longer held in the tracker.
      *
-     * @param  tableId                       String of the table id to stream all the jobs from.
-     * @return                               Stream of CompactionJobStatuses that relation to given table id.
-     * @throws UnsupportedOperationException unless overwritten.
+     * @param  tableId                       the internal Sleeper table ID
+     * @return                               a stream of job statuses
+     * @throws UnsupportedOperationException if the compaction job tracker is disabled for this Sleeper instance
      */
     default Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no compaction job tracker");
     }
 
     /**
-     * This method returns a list of CompactionJobStatuses for a given tableId.
+     * Retrieves the status of all currently tracked compaction jobs for a Sleeper table. This includes all jobs that
+     * have tracked events, unless those events have expired and are no longer held in the tracker.
      *
-     * @param  tableId String the id of the table to get all jobs for.
-     * @return         List of CompactionJobStatuses that match the given table id.
+     * @param  tableId                       the internal Sleeper table ID
+     * @return                               the job statuses
+     * @throws UnsupportedOperationException if the compaction job tracker is disabled for this Sleeper instance
      */
     default List<CompactionJobStatus> getAllJobs(String tableId) {
-        return streamAllJobs(tableId).collect(Collectors.toList());
+        return streamAllJobs(tableId).toList();
     }
 
     /**
-     * This method returns a list of CompactionJobStatuses for a given tableId that haven't finished.
+     * Retrieves the status of compaction jobs that are tracked but not finished, for a Sleeper table.
      *
-     * @param  tableId String the id of the table to get all jobs for.
-     * @return         List of unfinished CompactionJobStatuses that match the given table id.
+     * @param  tableId                       the internal Sleeper table ID
+     * @return                               the unfinished job statuses
+     * @throws UnsupportedOperationException if the compaction job tracker is disabled for this Sleeper instance
      */
     default List<CompactionJobStatus> getUnfinishedJobs(String tableId) {
         return streamAllJobs(tableId)
                 .filter(CompactionJobStatus::isUnstartedOrInProgress)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
-     * This method returns a list of CompactionJobStatus for a given tableId and taskId.
+     * Retrieves the status of compaction jobs that have been received by a given compaction task, for a Sleeper table.
      *
-     * @param  tableId String the id of the table to get all jobs for.
-     * @param  taskId  String the id of the task to get all jobs for.
-     * @return         List of CompactionJobStatuses that match the given table and task ids.
+     * @param  tableId                       the internal Sleeper table ID
+     * @param  taskId                        the compaction task ID
+     * @return                               the job statuses
+     * @throws UnsupportedOperationException if the compaction job tracker is disabled for this Sleeper instance
      */
     default List<CompactionJobStatus> getJobsByTaskId(String tableId, String taskId) {
         return streamAllJobs(tableId)
@@ -134,13 +143,13 @@ public interface CompactionJobTracker {
     }
 
     /**
-     * This method returns a list of CompactionJobStatuses for a given tableId in a provided timeframe.
+     * Retrieves the status of compaction jobs that have events in a given time period, for a Sleeper table.
      *
-     * @param  tableId   String the id of the table to get all jobs for.
-     * @param  startTime Instant the start time of the period to check.
-     * @param  endTime   Instant the end time of the period to check.
-     * @return           List of CompactionJobStatuses that match the given table id and are withing the given
-     *                   period.
+     * @param  tableId                       the internal Sleeper table ID
+     * @param  startTime                     the start of the period
+     * @param  endTime                       the end of the period
+     * @return                               the job statuses
+     * @throws UnsupportedOperationException if the compaction job tracker is disabled for this Sleeper instance
      */
     default List<CompactionJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {
         return streamAllJobs(tableId)
