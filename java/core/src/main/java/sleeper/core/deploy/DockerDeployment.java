@@ -30,8 +30,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
- * A deployment of a Docker image. Can be used to derive the Docker image names and ECR repositories used for an image
- * in a given Sleeper instance.
+ * A deployment of a Docker image used to deploy a Sleeper component. Can be used to derive the Docker image names and
+ * ECR repositories for a given Sleeper instance.
  */
 public class DockerDeployment {
 
