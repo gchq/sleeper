@@ -12,6 +12,7 @@ on:
 env:
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
+  RUSTC_WRAPPER: "sccache"
 
 jobs:
   build:
