@@ -26,8 +26,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * This class holds details about the finished status of a CompactionTask.
- * This includes the finish time, the total job runs, time spent on jobs as well as other usefull summary items.
+ * A status update for when a compaction task finished. Normally this will happen when there are no more compaction jobs
+ * on the queue and the task has been idle for a given period.
  */
 public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
@@ -81,10 +81,12 @@ public class CompactionTaskFinishedStatus {
     }
 
     /**
-     * This method creates a new JobRubSummary using the provided startTime and the stored JobRun details.
+     * Creates a representation of this status update as though the execution of the task was a run of a job. This
+     * combines the executions of all the jobs that ran in the task, and acts as a summary for the whole task, including
+     * jobs that were run by the task.
      *
-     * @param  startTime Instant the start time for the job run summary.
-     * @return           JobRunSummary created using the provided start time.
+     * @param  startTime the time the task started
+     * @return           the summary of the task and all jobs that ran on it
      */
     public JobRunSummary asSummary(Instant startTime) {
         return new JobRunSummary(
@@ -130,7 +132,7 @@ public class CompactionTaskFinishedStatus {
     }
 
     /**
-     * Builder class for the CompactionTaskFinishedStatus.
+     * Builder for compaction task finished status updates.
      */
     public static final class Builder {
         private Instant finishTime;
@@ -146,10 +148,10 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the finishTime and returns the builder.
+         * Sets the time the compaction task finished. This will usually be set with {@link #finish}.
          *
-         * @param  finishTime Instant to be set.
-         * @return            Builder containing current set values.
+         * @param  finishTime the finish time
+         * @return            this builder
          */
         public Builder finishTime(Instant finishTime) {
             this.finishTime = finishTime;
@@ -157,10 +159,13 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the totalJobRuns and returns the builder.
+         * Sets the total number of job runs that occurred in the task. Note that a job could be run more than once,
+         * usually if it was retried or its message was delivered multiple times. This will usually be set with
+         * {@link #addJobSummary} and
+         * {@link #finish}.
          *
-         * @param  totalJobRuns int to be set.
-         * @return              Builder containing current set values.
+         * @param  totalJobRuns the number of job runs
+         * @return              this builder
          */
         public Builder totalJobRuns(int totalJobRuns) {
             this.totalJobRuns = totalJobRuns;
@@ -168,10 +173,11 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the timeSpentOnJobs and returns the builder.
+         * Sets the total amount of time spent on jobs. This does not include idle time when the task was waiting
+         * to receive jobs from the queue. This will usually be set with {@link #addJobSummary} and {@link #finish}.
          *
-         * @param  timeSpentOnJobs Duration to be set.
-         * @return                 Builder containing current set values.
+         * @param  timeSpentOnJobs the amount of time spent on jobs
+         * @return                 this builder
          */
         public Builder timeSpentOnJobs(Duration timeSpentOnJobs) {
             this.timeSpentOnJobs = timeSpentOnJobs;
@@ -179,10 +185,12 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the totalRecordsRead and returns the builder.
+         * Sets the total number of records read during the task. This is the sum of the number of records read
+         * during all jobs that ran in the task. This will usually be set with {@link #addJobSummary} and
+         * {@link #finish}.
          *
-         * @param  totalRecordsRead long to be set.
-         * @return                  Builder containing current set values.
+         * @param  totalRecordsRead the total number of records read
+         * @return                  this builder
          */
         public Builder totalRecordsRead(long totalRecordsRead) {
             this.totalRecordsRead = totalRecordsRead;
@@ -190,10 +198,12 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the totalRecordsWritten and returns the builder.
+         * Sets the total number of records written during the task. This is the sum of the number of records written
+         * during all jobs that ran in the task. This will usually be set with {@link #addJobSummary} and
+         * {@link #finish}.
          *
-         * @param  totalRecordsWritten long to be set.
-         * @return                     Builder containing current set values.
+         * @param  totalRecordsWritten the total number of records written
+         * @return                     this builder
          */
         public Builder totalRecordsWritten(long totalRecordsWritten) {
             this.totalRecordsWritten = totalRecordsWritten;
@@ -201,10 +211,11 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the recordsReadPerSecond and returns the builder.
+         * Sets the average number of records read per second. This will usually be set with {@link #addJobSummary} and
+         * {@link #finish}.
          *
-         * @param  recordsReadPerSecond double to be set.
-         * @return                      Builder containing current set values.
+         * @param  recordsReadPerSecond the average number of records read per second
+         * @return                      this builder
          */
         public Builder recordsReadPerSecond(double recordsReadPerSecond) {
             this.recordsReadPerSecond = recordsReadPerSecond;
@@ -212,10 +223,11 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the recordsWrittenPerSecond and returns the builder.
+         * Sets the average number of records written per second. This will usually be set with {@link #addJobSummary}
+         * and {@link #finish}.
          *
-         * @param  recordsWrittenPerSecond double to be set.
-         * @return                         Builder containing current set values.
+         * @param  recordsWrittenPerSecond the average number of records written per second
+         * @return                         this builder
          */
         public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
             this.recordsWrittenPerSecond = recordsWrittenPerSecond;
@@ -223,10 +235,11 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Adds the summary to the maintained details in the AvergaeRecordRate class and returns the builder.
+         * Adds a summary of a job run that finished in the task. This is used to compute aggregated statistics for the
+         * task. That happens when you call {@link #finish}.
          *
-         * @param  jobSummary JobRunSummary containing details to be added to AvergaeRecordRate fields.
-         * @return            Builder containing current set values.
+         * @param  jobSummary the job run summary
+         * @return            this builder
          */
         public Builder addJobSummary(JobRunSummary jobSummary) {
             rateBuilder.summary(jobSummary);
@@ -234,11 +247,11 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Takes in a stream of JobRunSummaries and adds all their details to the existing values in the
-         * AvergaeRecordRate class.
+         * Adds summaries of job runs that finished in the task. This is used to compute aggregated statistics for the
+         * task. That happens when you call {@link #finish}.
          *
-         * @param  jobSummaries Stream of JobRunSummary to added.
-         * @return              Builder containing current set values.
+         * @param  jobSummaries the job run summaries
+         * @return              this builder
          */
         public Builder jobSummaries(Stream<JobRunSummary> jobSummaries) {
             rateBuilder.summaries(jobSummaries);
@@ -246,11 +259,10 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * This method finished the status by extracting the final values from the AvergaeRecordRate and storing them in
-         * this classes variables.
+         * Sets the finish time of the task, and computes aggregated statistics of jobs that ran in the task.
          *
-         * @param  finishTime Instant of the finish time.
-         * @return            Builder containing current set values.
+         * @param  finishTime the time the task finished
+         * @return            this builder
          */
         public Builder finish(Instant finishTime) {
             AverageRecordRate rate = rateBuilder.finishTime(finishTime).build();
