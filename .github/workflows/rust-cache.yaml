@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      - uses: mozilla-actions/sccache-action@v0.0.8
+      - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Install cargo cross
         run: cargo install cross
       - name: Build x86_64
