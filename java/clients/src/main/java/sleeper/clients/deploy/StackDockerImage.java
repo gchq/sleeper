@@ -23,25 +23,26 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * This class is used to store details about a DockerImage that will be deployed to the stack.
+ * Details of a Docker image that is needed to deploy a component of a Sleeper instance.
  */
 public class StackDockerImage {
     private final String imageName;
     private final String directoryName;
-    private final boolean isBuildx;
+    private final boolean multiplatform;
     private final boolean createEmrServerlessPolicy;
     private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
         imageName = builder.imageName;
         directoryName = builder.directoryName;
-        isBuildx = builder.isBuildx;
+        multiplatform = builder.multiplatform;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
         lambdaJar = builder.lambdaJar;
     }
 
     /**
-     * Maps from a Docker deployment definition.
+     * Creates an instance of this class for a component that is deployed based on a Docker image. Maps from the
+     * definition of its deployment.
      *
      * @param  deployment the Docker deployment
      * @return            the Docker image
@@ -50,28 +51,17 @@ public class StackDockerImage {
         return StackDockerImage.builder()
                 .imageName(deployment.getDeploymentName())
                 .directoryName(deployment.getDeploymentName())
-                .isBuildx(deployment.isMultiplatform())
+                .multiplatform(deployment.isMultiplatform())
                 .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
                 .build();
     }
 
     /**
-     * This method builds a StackDockerImage using the provided string as imagename and directoryName.
+     * Creates an instance of this class for deployment in AWS Lambda. Maps from the definition of a jar containing
+     * lambda handlers. Note that this will not be needed if the lambda is deployed as a jar.
      *
-     * @param  imageName String to be used for imageName and diectoryName.
-     * @return           The built StackDockerImage.
-     */
-    public static StackDockerImage dockerBuildImage(String imageName) {
-        return builder().imageName(imageName)
-                .directoryName(imageName).build();
-    }
-
-    /**
-     * This method builds a StackDockerImage from a LambdaJar.
-     *
-     * @param  lambdaJar The LambdarJar to be used to get the image name and lambdaJar values of the Image.
-     * @return           A built StackDockerImage using the lambdarJar as imageName, 'lambda' as directory name and
-     *                   lambdarJar value assigned.
+     * @param  lambdaJar the definition of the jar
+     * @return           the Docker image
      */
     public static StackDockerImage lambdaImage(LambdaJar lambdaJar) {
         return builder()
@@ -79,6 +69,17 @@ public class StackDockerImage {
                 .directoryName("lambda")
                 .lambdaJar(lambdaJar)
                 .build();
+    }
+
+    /**
+     * Defines a Docker image to be built from a directory matching its image name with default settings.
+     *
+     * @param  imageName the image name
+     * @return           the Docker image details
+     */
+    public static StackDockerImage dockerBuildImage(String imageName) {
+        return builder().imageName(imageName)
+                .directoryName(imageName).build();
     }
 
     public static Builder builder() {
@@ -93,8 +94,8 @@ public class StackDockerImage {
         return directoryName;
     }
 
-    public boolean isBuildx() {
-        return isBuildx;
+    public boolean isMultiplatform() {
+        return multiplatform;
     }
 
     public boolean isCreateEmrServerlessPolicy() {
@@ -107,7 +108,7 @@ public class StackDockerImage {
 
     @Override
     public int hashCode() {
-        return Objects.hash(imageName, directoryName, isBuildx, createEmrServerlessPolicy, lambdaJar);
+        return Objects.hash(imageName, directoryName, multiplatform, createEmrServerlessPolicy, lambdaJar);
     }
 
     @Override
@@ -119,24 +120,24 @@ public class StackDockerImage {
             return false;
         }
         StackDockerImage other = (StackDockerImage) obj;
-        return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && isBuildx == other.isBuildx
+        return Objects.equals(imageName, other.imageName) && Objects.equals(directoryName, other.directoryName) && multiplatform == other.multiplatform
                 && createEmrServerlessPolicy == other.createEmrServerlessPolicy && Objects.equals(lambdaJar, other.lambdaJar);
     }
 
     @Override
     public String toString() {
         return "StackDockerImage{imageName=" + imageName + ", directoryName=" + directoryName +
-                ", isBuildx=" + isBuildx + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
+                ", isBuildx=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
                 ", lambdaJar=" + lambdaJar + "}";
     }
 
     /**
-     * This is a builder class for the StackDockerImage class.
+     * Builds Docker image details.
      */
     public static final class Builder {
         private String imageName;
         private String directoryName;
-        private boolean isBuildx;
+        private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
         private LambdaJar lambdaJar;
 
@@ -144,10 +145,11 @@ public class StackDockerImage {
         }
 
         /**
-         * Sets the imageName in the builder.
+         * Sets the name of the Docker image. This is used as a part of the Docker repository name that this image will
+         * be uploaded to.
          *
-         * @param  imageName String image name to be set.
-         * @return           This builder class with the imageName set.
+         * @param  imageName the name
+         * @return           this builder
          */
         public Builder imageName(String imageName) {
             this.imageName = imageName;
@@ -155,10 +157,11 @@ public class StackDockerImage {
         }
 
         /**
-         * Sets the directoryName in the builder.
+         * Sets the name of the directory the Docker image will be held in. During a build of Sleeper a directory will
+         * be created with this name that contains the Dockerfile and any other files needed to build the image.
          *
-         * @param  directoryName String directory name to be set.
-         * @return               This builder class with the directoryName set.
+         * @param  directoryName the directory name
+         * @return               this builder
          */
         public Builder directoryName(String directoryName) {
             this.directoryName = directoryName;
@@ -166,21 +169,21 @@ public class StackDockerImage {
         }
 
         /**
-         * Sets the isBuildx in the builder.
+         * Sets whether this image should be built for multiple platforms.
          *
-         * @param  isBuildx boolean isBuildx to be set.
-         * @return          This builder class with the isBuildx set.
+         * @param  multiplatform true if the image should be multiplatform
+         * @return               this builder
          */
-        public Builder isBuildx(boolean isBuildx) {
-            this.isBuildx = isBuildx;
+        public Builder multiplatform(boolean multiplatform) {
+            this.multiplatform = multiplatform;
             return this;
         }
 
         /**
-         * Sets the createEmrServerlessPolicy in the builder.
+         * Sets whether the ECR repository needs a policy to let EMR Serverless pull the Docker image.
          *
-         * @param  createEmrServerlessPolicy boolean createEmrServerlessPolicy to be set.
-         * @return                           This builder class with the createEmrServerlessPolicy set.
+         * @param  createEmrServerlessPolicy true if the EMR Serverless policy is needed
+         * @return                           this builder
          */
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
@@ -188,10 +191,10 @@ public class StackDockerImage {
         }
 
         /**
-         * Sets the lambdaJar in the builder.
+         * Sets which lambda jar the Docker image should include, if any.
          *
-         * @param  lambdaJar boolean lambdaJar to be set.
-         * @return           This builder class with the lambdaJar set.
+         * @param  lambdaJar the lambda jar, or null if none
+         * @return           this builder
          */
         public Builder lambdaJar(LambdaJar lambdaJar) {
             this.lambdaJar = lambdaJar;
