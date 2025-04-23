@@ -20,7 +20,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 /**
- * This class is used to print out to the console.
+ * Writes to the console.
  */
 public class ConsoleOutput {
 
@@ -33,9 +33,9 @@ public class ConsoleOutput {
     }
 
     /**
-     * This method clears the console screen then prints the input on a new line.
+     * Clears the console screen and prints a message followed by a line delimiter.
      *
-     * @param message String message to be printed after screen is cleared.
+     * @param message the message to print after the screen is cleared
      */
     public void clearScreen(String message) {
         out.print(CLEAR_CONSOLE);
@@ -44,46 +44,44 @@ public class ConsoleOutput {
     }
 
     /**
-     * This method prints the input message on a new line.
+     * Prints a message followed by a line delimiter.
      *
-     * @param message String message to be printed on a new line.
+     * @param message the message
      */
     public void println(String message) {
         out.println(message);
     }
 
     /**
-     * This method prints a blank line.
+     * Prints a line delimiter and nothing else.
      */
     public void println() {
         out.println();
     }
 
     /**
-     * This method prints to the console using a formatter.
+     * Prints a message with a format string. Uses {@link java.util.Formatter}.
      *
-     * @param format String format to be used for the message.
-     * @param args   A number of args to be passed into the formatter.
+     * @param format the format string
+     * @param args   the arguments for the format string
      */
     public void printf(String format, Object... args) {
         out.printf(format, args);
     }
 
     /**
-     * This method returns a new PrintWriter with the PrintStream of this object, autoFlush set to true and
-     * StandardCharsets.UTF_8.
+     * Creates a print writer to write to the console. Sets autoFlush to true. Uses {@link StandardCharsets#UTF_8}.
      *
-     * @return A new PrintWriter with the PrintStream of this object, autoFlush set to true and
-     *         StandardCharsets.UTF_8.
+     * @return the print writer
      */
     public PrintWriter writer() {
         return new PrintWriter(out, true, StandardCharsets.UTF_8);
     }
 
     /**
-     * This method returns the PrintStream object assigned to the out variable.
+     * Returns the underlying print stream that writes to the console.
      *
-     * @return The PrintStream object assigned to the out variable.
+     * @return the print stream
      */
     public PrintStream printStream() {
         return out;
