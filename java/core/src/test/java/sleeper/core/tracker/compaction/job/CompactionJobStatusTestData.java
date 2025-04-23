@@ -25,13 +25,13 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
@@ -70,7 +70,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobStatus.builder()
                 .jobId(event.getJobId())
                 .createdStatus(CompactionJobCreatedStatus.from(event, createdTime))
-                .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
+                .jobRuns(JobRuns.latestFirst(List.of(runsLatestFirst)))
                 .build();
     }
 
