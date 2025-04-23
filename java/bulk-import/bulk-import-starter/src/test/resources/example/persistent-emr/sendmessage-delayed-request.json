@@ -1,0 +1,4 @@
+{
+  "MessageBody": "{\"id\":\"test-job\",\"tableName\":\"table-name\",\"tableId\":\"table-id\",\"files\":[\"file.parquet\"]}",
+  "DelaySeconds": 60
+}

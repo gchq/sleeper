@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.api;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -35,6 +39,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
@@ -43,6 +48,8 @@ import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -64,15 +71,19 @@ public class SleeperClient {
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+    private final SleeperClientIngest ingestJobSender;
+    private final SleeperClientBulkImport bulkImportJobSender;
 
     private SleeperClient(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        tableIndex = builder.tableIndex;
-        tablePropertiesStore = builder.tablePropertiesStore;
-        tablePropertiesProvider = builder.tablePropertiesProvider;
-        stateStoreProvider = builder.stateStoreProvider;
-        objectFactory = builder.objectFactory;
-        recordRetrieverProvider = builder.recordRetrieverProvider;
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
+        tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
+        tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
+        stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
+        objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
+        recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
+        ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
+        bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
     }
 
     /**
@@ -86,21 +97,13 @@ public class SleeperClient {
         return createForInstanceId(
                 buildAwsV1Client(AmazonS3ClientBuilder.standard()),
                 buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()),
+                buildAwsV1Client(AmazonSQSClientBuilder.standard()),
                 HadoopConfigurationProvider.getConfigurationForClient(),
                 instanceId);
     }
 
-    /**
-     * Creates a client to interact with the instance of Sleeper with the given ID.
-     *
-     * @param  s3Client     the AWS S3 client
-     * @param  dynamoClient the AWS DynamoDB client
-     * @param  hadoopConf   the Hadoop configuration
-     * @param  instanceId   the instance ID
-     * @return              the client
-     */
-    public static SleeperClient createForInstanceId(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) {
+    private static SleeperClient createForInstanceId(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
@@ -108,9 +111,14 @@ public class SleeperClient {
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client))
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
+                .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient))
+                .stateStoreProvider(
+                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
+                .recordRetrieverProvider(
+                        LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
+                .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
+                .bulkImportJobSender(SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
                 .build();
     }
 
@@ -194,6 +202,76 @@ public class SleeperClient {
         return executor;
     }
 
+    /**
+     * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
+     * containing a list of files. These files must be in S3. They can be either files or directories. If they are
+     * directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param  tableName the name of the Sleeper table to write to
+     * @param  files     list of files containing records to ingest
+     * @return           the ID of the job for tracking
+     */
+    public String ingestParquetFilesFromS3(String tableName, List<String> files) {
+        String jobId = UUID.randomUUID().toString();
+        ingestParquetFilesFromS3(IngestJob.builder()
+                .tableName(tableName)
+                .id(jobId)
+                .files(files)
+                .build());
+        return jobId;
+    }
+
+    /**
+     * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
+     * containing a list of files. These files must be in S3. They can be either files or directories. If they are
+     * directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param job the job listing files in S3 to ingest
+     */
+    public void ingestParquetFilesFromS3(IngestJob job) {
+        ingestJobSender.sendFilesToIngest(job);
+    }
+
+    /**
+     * Ingests the data in some given files to a Sleeper table with the bulk import method. This is done by sending a
+     * message to a bulk import queue containing a list of files. These files must be in S3. They can be either files or
+     * directories. If they are directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param  tableName the table name to write to
+     * @param  platform  the platform the import should run on
+     * @param  files     list of the files containing the records to ingest
+     * @return           the ID of the job for tracking
+     */
+    public String bulkImportParquetFilesFromS3(String tableName, BulkImportPlatform platform, List<String> files) {
+        String jobId = UUID.randomUUID().toString();
+        bulkImportParquetFilesFromS3(platform, BulkImportJob.builder()
+                .id(jobId)
+                .tableName(tableName)
+                .files(files)
+                .build());
+        return jobId;
+    }
+
+    /**
+     * Ingests the data in some given files to a Sleeper table with the bulk import method. This is done by sending a
+     * message to a bulk import queue containing a list of files. These files must be in S3. They can be either files or
+     * directories. If they are directories then all Parquet files under the directory will be ingested.
+     * <p>
+     * Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param platform the platform the import should run on
+     * @param job      the job listing files in S3 to ingest
+     */
+    public void bulkImportParquetFilesFromS3(BulkImportPlatform platform, BulkImportJob job) {
+        bulkImportJobSender.sendFilesToBulkImport(platform, job);
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
@@ -202,6 +280,8 @@ public class SleeperClient {
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+        private SleeperClientIngest ingestJobSender;
+        private SleeperClientBulkImport bulkImportJobSender;
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -277,6 +357,28 @@ public class SleeperClient {
          */
         public Builder recordRetrieverProvider(LeafPartitionRecordRetrieverProvider recordRetrieverProvider) {
             this.recordRetrieverProvider = recordRetrieverProvider;
+            return this;
+        }
+
+        /**
+         * Sets the client to send an ingest job.
+         *
+         * @param  ingestJobSender the client
+         * @return                 this builder for chaining
+         */
+        public Builder ingestJobSender(SleeperClientIngest ingestJobSender) {
+            this.ingestJobSender = ingestJobSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to send a bulk import job.
+         *
+         * @param  bulkImportJobSender the client
+         * @return                     this builder for chaining
+         */
+        public Builder bulkImportJobSender(SleeperClientBulkImport bulkImportJobSender) {
+            this.bulkImportJobSender = bulkImportJobSender;
             return this;
         }
 

@@ -44,10 +44,12 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Collections;
@@ -69,7 +71,6 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTART;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_COUNT;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_DISK;
@@ -103,12 +104,12 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, coreStacks, errorMetrics);
+                BulkImportPlatform.EMRServerless, instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopic);
 
-        IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
+        IFunction jobStarter = commonHelper.createJobStarterFunction(
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_SERVERLESS_START, List.of(emrRole));
         configureJobStarterFunction(instanceProperties, jobStarter);
@@ -137,7 +138,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
         String region = instanceProperties.get(REGION);
         String accountId = instanceProperties.get(ACCOUNT);
-        String repo = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO);
+        String repo = DockerDeployment.EMR_SERVERLESS_BULK_IMPORT.getEcrRepositoryName(instanceProperties);
         String version = instanceProperties.get(VERSION);
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 

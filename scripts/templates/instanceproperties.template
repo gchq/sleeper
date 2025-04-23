@@ -29,40 +29,6 @@ sleeper.vpc=changeme
 sleeper.subnets=changeme
 
 
-## The following properties relate to standard ingest.
-
-# The name of the ECR repository for the ingest container. The Docker image from the ingest module
-# should have been uploaded to an ECR repository of this name in this account.
-sleeper.ingest.repo=changeme
-
-
-## The following properties relate to bulk export.
-
-# The name of the repository for the bulk export container. The Docker image should have been uploaded
-# to an ECR repository of this name in this account.
-sleeper.bulk.export.ecr.repo=changeme
-
-
-## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
-## or EKS.
-
-# The name of the repository for the EMR serverless container. The Docker image from the bulk-import
-# module should have been uploaded to an ECR repository of this name in this account.
-sleeper.bulk.import.emr.serverless.repo=changeme
-
-# (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
-# is stored.
-sleeper.bulk.import.eks.repo=changeme
-
-
-## The following properties relate to compactions.
-
-# The name of the repository for the compaction container. The Docker image from the
-# compaction-job-execution module should have been uploaded to an ECR repository of this name in this
-# account.
-sleeper.compaction.repo=changeme
-
-
 ##################
 # Default Values #
 ##################
@@ -934,6 +900,10 @@ sleeper.bulk.import.persistent.emr.max.capacity=10
 
 # (Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
+
+# (Persistent EMR mode only) The number of seconds to wait before requeueing a bulk import job because
+# the persistent EMR cluster is full.
+sleeper.bulk.import.persistent.emr.cluster.full.requeue.delay=60
 
 # (EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.
 # sleeper.bulk.import.eks.cluster.admin.roles=

@@ -76,7 +76,7 @@ public class AwsDrainSqsQueue {
         return withClient(sqsClient)
                 .numThreads(10)
                 .messagesPerBatchPerThread(10_000)
-                .waitTimeSeconds(10)
+                .waitTimeSeconds(20) // Note that this is the maximum wait time
                 .build();
     }
 
