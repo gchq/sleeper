@@ -18,75 +18,75 @@ package sleeper.clients.admin.properties;
 import sleeper.core.properties.SleeperProperty;
 
 /**
- * This class is a helper class for the PropertiesDiffTest provided moths to easily generate a PropertyDiff.
+ * A test helper for creating Sleeper configuration property diffs.
  */
 public class PropertiesDiffTestHelper {
     private PropertiesDiffTestHelper() {
     }
 
     /**
-     * Returns a new PropertyDiff with the input values.
+     * Creates a diff for a property that changed value.
      *
-     * @param  property The SleeperProperty to get the property name from.
-     * @param  before   Value to be assigned to the before value of the property.
-     * @param  after    Value to be assigned to the after value of the property.
-     * @return          A new PropertyDiff with the input values.
+     * @param  property the property
+     * @param  before   the value before the change
+     * @param  after    the value after the change
+     * @return          the diff
      */
     public static PropertyDiff valueChanged(SleeperProperty property, String before, String after) {
         return valueChanged(property.getPropertyName(), before, after);
     }
 
     /**
-     * Returns a new PropertyDiff with no newValue and oldValue set to the input value.
+     * Creates a diff for a property whose value was removed from the configuration.
      *
-     * @param  property The SleeperProperty to get the property name from.
-     * @param  value    The old value to be set.
-     * @return          A PropertyDiff with the inputted values and no newValue.
+     * @param  property the property
+     * @param  value    the value before the change
+     * @return          the diff
      */
     public static PropertyDiff valueDeleted(SleeperProperty property, String value) {
         return valueDeleted(property.getPropertyName(), value);
     }
 
     /**
-     * Returns a new PropertyDiff with no oldValue and newValue set to the input value.
+     * Creates a diff for a property whose value was added to the configuration, and was not set before.
      *
-     * @param  property The SleeperProperty to get the property name from.
-     * @param  value    The new value to be set.
-     * @return          A PropertyDiff with the inputted values and no oldValue.
+     * @param  property the property
+     * @param  value    the value after the change
+     * @return          the diff
      */
     public static PropertyDiff newValue(SleeperProperty property, String value) {
         return newValue(property.getPropertyName(), value);
     }
 
     /**
-     * Returns a new PropertyDiff with the input values.
+     * Creates a diff for a property that changed value.
      *
-     * @param  property The String of the propertyName.
-     * @param  before   Value to be assigned to the before value of the property.
-     * @param  after    Value to be assigned to the after value of the property.
-     * @return          A new PropertyDiff with the input values.
+     * @param  property the property name
+     * @param  before   the value before the change
+     * @param  after    the value after the change
+     * @return          the diff
      */
     public static PropertyDiff valueChanged(String property, String before, String after) {
         return new PropertyDiff(property, before, after);
     }
 
     /**
-     * Returns a new PropertyDiff with no newValue and oldValue set to the input value.
+     * Creates a diff for a property whose value was removed from the configuration.
      *
-     * @param  property The String of the property name.
-     * @param  value    The old value to be set.
-     * @return          A PropertyDiff with the inputted values and no newValue.
+     * @param  property the property name
+     * @param  value    the value before the change
+     * @return          the diff
      */
     public static PropertyDiff valueDeleted(String property, String value) {
         return new PropertyDiff(property, value, null);
     }
 
     /**
-     * Returns a new PropertyDiff with no oldValue and newValue set to the input value.
+     * Creates a diff for a property whose value was added to the configuration, and was not set before.
      *
-     * @param  property The String of the property name.
-     * @param  value    The new value to be set.
-     * @return          A PropertyDiff with the inputted values and no oldValue.
+     * @param  property the property name
+     * @param  value    the value after the change
+     * @return          the diff
      */
     public static PropertyDiff newValue(String property, String value) {
         return new PropertyDiff(property, null, value);
