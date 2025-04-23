@@ -48,6 +48,7 @@ import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,15 +75,15 @@ public class SleeperClient {
     private final SleeperClientBulkImport bulkImportJobSender;
 
     private SleeperClient(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        tableIndex = builder.tableIndex;
-        tablePropertiesStore = builder.tablePropertiesStore;
-        tablePropertiesProvider = builder.tablePropertiesProvider;
-        stateStoreProvider = builder.stateStoreProvider;
-        objectFactory = builder.objectFactory;
-        recordRetrieverProvider = builder.recordRetrieverProvider;
-        ingestJobSender = builder.ingestJobSender;
-        bulkImportJobSender = builder.bulkImportJobSender;
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
+        tablePropertiesStore = Objects.requireNonNull(builder.tablePropertiesStore, "tablePropertiesStore must not be null");
+        tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
+        stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
+        objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
+        recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
+        ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
+        bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
     }
 
     /**
@@ -110,6 +111,7 @@ public class SleeperClient {
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client))
+                .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient))
                 .stateStoreProvider(
                         StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .objectFactory(ObjectFactory.noUserJars())
