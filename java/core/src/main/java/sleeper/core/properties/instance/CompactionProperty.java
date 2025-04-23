@@ -32,11 +32,6 @@ import static sleeper.core.properties.validation.SleeperPropertyValueUtils.descr
  * Definitions of instance properties relating to compaction.
  */
 public interface CompactionProperty {
-    UserDefinedInstanceProperty ECR_COMPACTION_REPO = Index.propertyBuilder("sleeper.compaction.repo")
-            .description("The name of the repository for the compaction container. The Docker image from the compaction-job-execution module " +
-                    "should have been uploaded to an ECR repository of this name in this account.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.creation.batch.size")
             .description("The number of tables to perform compaction job creation for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
