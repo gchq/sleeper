@@ -37,6 +37,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
@@ -156,10 +157,10 @@ public class SleeperClient {
 
     /**
      * Reads properties of a Sleeper table.
-     * Throws a TableNotFoundException if the table for the given name is not found.
      *
-     * @param  tableName the table name
-     * @return           the table properties
+     * @param  tableName              the table name
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table for the given name is not found.
      */
     public TableProperties getTableProperties(String tableName) {
         return tablePropertiesProvider.getByName(tableName);
