@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This class is used to store and manage a map of properties to their latest PropertyDiff.
+ * A diff describing a set of changes to Sleeper configuration properties.
  */
 public class PropertiesDiff {
     private final Map<String, PropertyDiff> changes;
@@ -57,20 +57,20 @@ public class PropertiesDiff {
     }
 
     /**
-     * This method returns a new PropertiesDiff with an empty map.
+     * Creates an empty diff with no changes.
      *
-     * @return A new PropertiesDiff with an empty map.
+     * @return the diff
      */
     public static PropertiesDiff noChanges() {
         return new PropertiesDiff(Collections.emptyMap());
     }
 
     /**
-     * This method prints the object out to the inputted ConsoleOutput in a nice format.
+     * Writes a description of the changes to the console.
      *
-     * @param out               The ConsoleOutput to be used to print to.
-     * @param propertyIndex     The PropertyIndex to be used to determine which properties should be printed.
-     * @param invalidProperties The Set of SleeperProperties that are to be printed as invalid.
+     * @param out               the console output
+     * @param propertyIndex     an index of all properties of the type being changed (e.g. instance properties)
+     * @param invalidProperties which properties have validation failures caused by this diff
      */
     public void print(
             ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, Set<SleeperProperty> invalidProperties) {
@@ -101,13 +101,12 @@ public class PropertiesDiff {
     }
 
     /**
-     * This method returns a List of T extends SleeperProperty containing changed properties that required the CDK
-     * deploy be ran when changed.
+     * Retrieves a list of properties changed in this diff that require a CDK deployment when they are changed. If the
+     * list is not empty, a CDK redeployment will be required.
      *
-     * @param  <T>           T extends SleeperProperty.
-     * @param  propertyIndex SleeperProperty T to check through for Properties that required the CDK deploy be ran when
-     *                       changed.
-     * @return               List of SleeperProperties that have been changed and have the CDK deploy boolean set.
+     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
+     * @param  propertyIndex an index of all properties of the type being changed
+     * @return               the list of changed properties requiring a CDK deployment
      */
     public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
         return changes.values().stream()
@@ -130,11 +129,11 @@ public class PropertiesDiff {
     }
 
     /**
-     * This method combines the current map of changes with the inputted one and returns a new PropertiesDiff with the
-     * combined map.
+     * Combines this diff with another set of changes that happen after these changes. If the same property was changed
+     * twice, this will discard information about the intermediate state.
      *
-     * @param  diff The PropertiesDiff to combine with this object.
-     * @return      A new PropertiesDiff with the combined map
+     * @param  diff the diff to apply after this one
+     * @return      the combined diff
      */
     public PropertiesDiff andThen(PropertiesDiff diff) {
         return new PropertiesDiff(combine(changes, diff.changes));
@@ -169,23 +168,21 @@ public class PropertiesDiff {
     }
 
     /**
-     * This method attempts to find the PropertyDiff ascociated with the inputted SleeperProperty in this objects
-     * changes map.
+     * Retrieves the diff of a specific property.
      *
-     * @param  property This SleeperProperty to find in the changes map.
-     * @return          An Optional PropertyDiff of the PropertyDiff for the property inputted if available or null if
-     *                  not.
+     * @param  property the property to check
+     * @return          the diff, if the property changed
      */
     public Optional<PropertyDiff> getDiff(SleeperProperty property) {
         return Optional.ofNullable(changes.get(property.getPropertyName()));
     }
 
     /**
-     * This method gets the old value of the sleeperProperty.
+     * Creates a view of the values of properties as if the changes in this diff had been reverted.
      *
-     * @param  <T>         T extends SleeperProperty.
-     * @param  valuesAfter SleeperPropertyValues T to used as a default return.
-     * @return             Returns the old value of the Property.
+     * @param  <T>         the type of properties changed by this diff (e.g. instance property)
+     * @param  valuesAfter the current values of properties, with these changes included
+     * @return             the view of the values with these changes reverted
      */
     public <T extends SleeperProperty> SleeperPropertyValues<T> getValuesBefore(SleeperPropertyValues<T> valuesAfter) {
         return property -> getDiff(property)
