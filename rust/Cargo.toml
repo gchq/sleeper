@@ -26,6 +26,7 @@ authors = ["GCHQ"]
 
 [workspace.dependencies]
 arrow = { version = "54.3.1" } # Batch of reading from Parquet files
+assert_cmd = { version = "2.0.17" } # CLI interface testing
 async-trait = { version = "0.1.88" }
 aws-config = { version = "1.6.1" } # Credential loading
 aws-credential-types = { version = "1.2.2" } # Credential provider types
@@ -47,6 +48,7 @@ num-format = { version = "0.4.4" } # Nicely formatted numbers
 object_store = { version = "0.11.2" } # Remote cloud storage access
 openssl = { version = "0.10.72" } # Use vendored feature to build from source for cross compilation
 owo-colors = { version = "4.2.0" } # Colourised output
+predicates = { version = "3.1.3" } # Test assertions
 rand = { version = "0.9.1" }
 tempfile = { version = "3.19.1" } # Create temporary files
 test-log = { version = "0.2.17" }
