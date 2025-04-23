@@ -28,15 +28,19 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
@@ -147,8 +151,9 @@ public class SleeperClient {
     /**
      * Reads properties of a Sleeper table.
      *
-     * @param  tableStatus the status of the table
-     * @return             the table properties
+     * @param  tableStatus            the status of the table
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getTableProperties(TableStatus tableStatus) {
         return tablePropertiesProvider.get(tableStatus);
@@ -157,8 +162,9 @@ public class SleeperClient {
     /**
      * Reads properties of a Sleeper table.
      *
-     * @param  tableName the table name
-     * @return           the table properties
+     * @param  tableName              the table name
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getTableProperties(String tableName) {
         return tablePropertiesProvider.getByName(tableName);
@@ -177,8 +183,11 @@ public class SleeperClient {
     /**
      * Adds a Sleeper table to the instance.
      *
-     * @param tableProperties the table properties
-     * @param splitPoints     the split points to initialise the partition tree
+     * @param  tableProperties                   the table properties
+     * @param  splitPoints                       the split points to initialise the partition tree
+     * @throws SleeperPropertiesInvalidException if table properties provided don't validate
+     * @throws TableAlreadyExistsException       if the table already exists
+     * @throws StateStoreException               if the state store failed to initialise
      */
     public void addTable(TableProperties tableProperties, List<Object> splitPoints) {
         tableProperties.validate();
@@ -190,8 +199,10 @@ public class SleeperClient {
     /**
      * Creates a query executor for a given Sleeper table.
      *
-     * @param  tableName the table name
-     * @return           the query executor
+     * @param  tableName              the table name
+     * @return                        the query executor
+     * @throws TableNotFoundException if the table with the given name is not found
+     * @throws StateStoreException    if the state store can't be accessed
      */
     public QueryExecutor getQueryExecutor(String tableName) {
         TableProperties tableProperties = getTableProperties(tableName);
