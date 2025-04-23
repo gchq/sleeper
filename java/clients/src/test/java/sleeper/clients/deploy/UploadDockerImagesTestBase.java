@@ -49,7 +49,7 @@ public abstract class UploadDockerImagesTestBase {
                     .optionalStack(OptionalStack.EksBulkImportStack)
                     .build(),
             DockerDeployment.builder()
-                    .deploymentName("buildx")
+                    .deploymentName("compaction")
                     .optionalStack(OptionalStack.CompactionStack)
                     .multiplatform(true)
                     .build(),
