@@ -22,7 +22,9 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * This class holds the start time of a CompactionTask.
+ * A status update for when a compaction task started. Normally this will happen when a background process finds there
+ * are jobs waiting to be run, and starts one or more compaction tasks to run them. This status update happens in the
+ * task once it's been provisioned and started execution.
  */
 public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
 
@@ -33,10 +35,10 @@ public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
     }
 
     /**
-     * This method returns a new CompactionTaskStartedStatus with the provided startTime.
+     * Creates a status update based on the time the task started.
      *
-     * @param  startTime Instant of the time the task started.
-     * @return           CompactionTaskStartedStatus created with the given start time.
+     * @param  startTime the time the compaction task started
+     * @return           the status update
      */
     public static CompactionTaskStartedStatus startTime(Instant startTime) {
         return new CompactionTaskStartedStatus(startTime);
