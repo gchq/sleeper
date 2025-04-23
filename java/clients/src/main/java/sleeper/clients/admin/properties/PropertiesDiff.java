@@ -69,7 +69,7 @@ public class PropertiesDiff {
      * Writes a description of the changes to the console.
      *
      * @param out               the console output
-     * @param propertyIndex     an index of all properties of the type being changed (e.g. instance properties)
+     * @param propertyIndex     the index of all properties of the type being changed (e.g. instance properties)
      * @param invalidProperties which properties have validation failures caused by this diff
      */
     public void print(
@@ -105,7 +105,7 @@ public class PropertiesDiff {
      * list is not empty, a CDK redeployment will be required.
      *
      * @param  <T>           the type of properties changed by this diff (e.g. instance property)
-     * @param  propertyIndex an index of all properties of the type being changed
+     * @param  propertyIndex the index of all properties of the type being changed
      * @return               the list of changed properties requiring a CDK deployment
      */
     public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {

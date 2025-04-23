@@ -28,7 +28,7 @@ import java.util.Set;
 import static sleeper.core.properties.SleeperPropertiesPrettyPrinter.formatDescription;
 
 /**
- * This class is used to map a property's old value to it's new value.
+ * A diff describing a single change to a Sleeper configuration property.
  */
 public class PropertyDiff {
     private final String propertyName;
@@ -42,15 +42,12 @@ public class PropertyDiff {
     }
 
     /**
-     * This method takes in a property name and two property maps.
-     * It compapres the value of the property in each map.
-     * It returns an Optional empty if they match and an Optional PropertyDiff if they don't.
+     * Creates a diff for a single property based on a set of all values before and after a change.
      *
-     * @param  propertyName String of the property to be searched for.
-     * @param  beforeMap    Map of String to String properties of the before state.
-     * @param  afterMap     Map of String to String properties of the after state.
-     * @return              Optional Empty if the value of the property matches in both maps, an Optinal PropertyDiff if
-     *                      they don't match.
+     * @param  propertyName the name of the property to diff
+     * @param  beforeMap    the values of all properties before the change
+     * @param  afterMap     the values of all properties after the change
+     * @return              the diff, if the property changed
      */
     public static Optional<PropertyDiff> forProperty(String propertyName, Map<String, String> beforeMap, Map<String, String> afterMap) {
         String oldValue = beforeMap.get(propertyName);
@@ -63,11 +60,11 @@ public class PropertyDiff {
     }
 
     /**
-     * This method prints this object to the console in a nice format.
+     * Writes a description of the change to the console.
      *
-     * @param out               This ConsoleOutput object to use to print with.
-     * @param propertyIndex     An Index of sleeperProperties used to get the property description and default value.
-     * @param invalidProperties A set of SleeperProperties that can't be changed.
+     * @param out               the console output
+     * @param propertyIndex     an index of all properties of the type being changed (e.g. instance properties)
+     * @param invalidProperties which properties have validation failures caused by the larger update to all values
      */
     public void print(ConsoleOutput out,
             SleeperPropertyIndex<?> propertyIndex,
@@ -105,11 +102,11 @@ public class PropertyDiff {
     }
 
     /**
-     * This method comapres the old value of this object to the new value of the input object 'then'.
-     * It returns an Optional Empty if they match and new Optional Property diff if they don't.
+     * Combines this diff with another change that happens after this one. This should only be used with a diff to the
+     * same property. This will discard information about the intermediate state.
      *
-     * @param  then PropertyDiff containing the newValue to compare to this object's old value.
-     * @return      an Optional Empty if they match and new Optional Property diff if they don't.
+     * @param  diff the diff to apply after this one
+     * @return      the combined diff, if the start and end values are different
      */
     public Optional<PropertyDiff> andThen(PropertyDiff then) {
         if (Objects.equals(oldValue, then.newValue)) {
@@ -132,11 +129,11 @@ public class PropertyDiff {
     }
 
     /**
-     * This method gets the property from the input propertyIndex that matches the propertyName of this object.
+     * Retrieves the declaration of the property changed in this diff from the index.
      *
-     * @param  <T>           A SleeperPropertyIndex of type T that should have the property in.
-     * @param  propertyIndex A SleeperPropertyIndex of type T that should have the property in.
-     * @return               A T that extends SleeperProperty taking from the inputted propertyIndex.
+     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
+     * @param  propertyIndex the index of all properties of the type being changed
+     * @return               the definition of the property changed by this diff, if it is in the index
      */
     public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
         return propertyIndex.getByName(propertyName);
