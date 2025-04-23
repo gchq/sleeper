@@ -1144,7 +1144,7 @@ dependencies = [
 
 [[package]]
 name = "compaction"
-version = "0.31.0-SNAPSHOT"
+version = "0.30.1-SNAPSHOT"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1174,7 +1174,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.31.0-SNAPSHOT"
+version = "0.30.1-SNAPSHOT"
 dependencies = [
  "chrono",
  "clap",
@@ -3647,7 +3647,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.31.0-SNAPSHOT"
+version = "0.30.1-SNAPSHOT"
 dependencies = [
  "cxx",
  "cxx-build",
