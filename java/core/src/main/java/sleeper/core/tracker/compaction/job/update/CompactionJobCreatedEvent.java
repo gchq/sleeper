@@ -55,7 +55,7 @@ public class CompactionJobCreatedEvent {
     }
 
     /**
-     * Builder for compaction job created events.
+     * A builder for compaction job created events.
      */
     public static final class Builder {
 
