@@ -201,16 +201,41 @@ mvn clean compile checkstyle:check spotbugs:check
 
 ### Javadoc
 
-We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Private methods, as well as
-getters and setters can be skipped unless there's something important to know.
+We try to ensure that all production classes have Javadoc. Most methods should also have Javadoc.
 
-See Oracle's standards for Javadoc:
+Private methods, as well as getters and setters can be skipped unless there's something important to know. Constructors
+should usually not have Javadoc. We tend to avoid having more than one constructor by using builders, so the class
+Javadoc should be enough.
+
+Many classes have a static method `builder` that takes no arguments and returns a builder, and this does not usually
+need Javadoc. Each builder has a method `build` that creates an instance of the class being built, and this does not
+usually need Javadoc.
+
+Test classes can be left with no Javadoc, to aid in focus on the tests themselves. Other utilities or helper classes in
+the test code should have Javadoc similar to production code.
+
+#### Style
+
+Please follow Oracle's standards for Javadoc:
 <https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html>
 
-Note that the first sentence in a Javadoc comment will be used as a summary fragment in generated documentation. This
-should not contain any links or formatting, to read normally as an item in a list.
+Please pay particular attention to the style guide section in that article.
 
-Checkstyle checks for most of our criteria.
+Javadoc should explain higher level structure and intention, and how to use the code. Please try to talk about the
+behaviour of the item being described, and avoid reference to implementation details. Try to avoid information that
+would become incorrect if we replaced the implementation but achieved the same behaviour for the consumer. We can make
+an exception if a subsystem is complicated enough to require detailed explanation, but it should be something that can
+be switched out.
+
+Please avoid using Sleeper class, variable or field names directly except in a link tag, like `{@link SleeperClient}`.
+Without a link tag those references would not be updated if they are renamed. Link tags should generally only be used
+for classes that are already imported or defined in the current file. Please use them sparingly, and prefer to talk
+about domain concepts instead, unless specifically discussing the structure of the code.
+
+The first sentence in a Javadoc comment will be used as a summary fragment in generated documentation. This should not
+contain any links or formatting, to read normally as an item in a list.
+
+Checkstyle checks for a lot of our criteria, and should be enabled as an IDE extension.
 
 A notable omission from the Checkstyle checks is capitalisation of descriptions under tags, eg. parameter tags for
 methods. Following the Oracle standards, these should be either a short phrase in all lower case, or a full sentence
