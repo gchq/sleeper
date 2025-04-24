@@ -21,12 +21,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A builder to load compaction task statuses based on events stored in the tracker. Events can be added one at a time.
+ * Once all events are in the builder, compaction task statuses can be retrieved.
+ */
 public class CompactionTaskStatusesBuilder {
     private final Map<String, CompactionTaskStatus.Builder> builderById = new HashMap<>();
 
+    /**
+     * Adds an event for when a compaction task started.
+     *
+     * @param  taskId     the ID of the task
+     * @param  startTime  the time that the task started
+     * @param  expiryDate the time the event will expire
+     * @return            this builder
+     */
     public CompactionTaskStatusesBuilder taskStarted(
             String taskId, Instant startTime, Instant expiryDate) {
         builderById.computeIfAbsent(taskId,
@@ -35,6 +46,13 @@ public class CompactionTaskStatusesBuilder {
         return this;
     }
 
+    /**
+     * Adds an event for when a compaction task finished.
+     *
+     * @param  taskId         the ID of the task
+     * @param  finishedStatus the status update
+     * @return                this builder
+     */
     public CompactionTaskStatusesBuilder taskFinished(
             String taskId, CompactionTaskFinishedStatus finishedStatus) {
         Optional.ofNullable(builderById.get(taskId))
@@ -42,14 +60,26 @@ public class CompactionTaskStatusesBuilder {
         return this;
     }
 
+    /**
+     * Builds compaction task statuses from the provided events, and sorts them with the most recently started task
+     * first.
+     *
+     * @return a stream of the compaction task statuses
+     */
     public Stream<CompactionTaskStatus> stream() {
         return builderById.values().stream()
                 .map(CompactionTaskStatus.Builder::build)
                 .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed());
     }
 
+    /**
+     * Builds compaction task statuses from the provided events, and sorts them with the most recently started task
+     * first.
+     *
+     * @return a list of the compaction task statuses
+     */
     public List<CompactionTaskStatus> build() {
-        return stream().collect(Collectors.toList());
+        return stream().toList();
     }
 
 }
