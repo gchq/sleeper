@@ -110,6 +110,24 @@ class SleeperClientTest {
     }
 
     @Test
+    void shouldVerifyThatTableExists() {
+        // Given
+        String tableName = "table-name";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        sleeperClient.addTable(tableProperties, null);
+
+        // When / Then
+        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
+    }
+
+    @Test
+    void shouldValidateThatTableDoesNotExist() {
+        // When / Then
+        assertThat(sleeperClient.doesTableExist("FAKENAME")).isFalse();
+    }
+
+    @Test
     void shouldAddTable() {
         // Given
         TableProperties tableProperties = createTableProperties("test-table");
@@ -222,23 +240,6 @@ class SleeperClientTest {
         } catch (IteratorCreationException | IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Test
-    void shouldVerifyThatTableExists() {
-        // Given
-        String tableName = "table-name";
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        sleeperClient.addTable(tableProperties, null);
-
-        // When / Then
-        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
-    }
-
-    @Test
-    void shouldValidateThatTableDoesNotExist() {
-        assertThat(sleeperClient.doesTableExist("FAKENAME")).isFalse();
     }
 
     private RangeFactory rangeFactory() {
