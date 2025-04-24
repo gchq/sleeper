@@ -76,7 +76,7 @@ class SleeperClientTest {
     SleeperClient sleeperClient = createSleeperBuilder().build();
 
     private SleeperClient.Builder createSleeperBuilder() {
-        return SleeperClient.builder()
+        return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesStore(tablePropertiesStore)
