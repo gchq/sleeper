@@ -194,6 +194,16 @@ public class SleeperClient {
     }
 
     /**
+     * Returns whether a sleeper table for the given name already exists.
+     *
+     * @param  tableName the table name
+     * @return           true if a table with the given name exists
+     */
+    public boolean doesTableExist(String tableName) {
+        return tableIndex.getTableByName(tableName).isPresent();
+    }
+
+    /**
      * Adds a Sleeper table to the instance.
      *
      * @param  tableProperties                   the table properties

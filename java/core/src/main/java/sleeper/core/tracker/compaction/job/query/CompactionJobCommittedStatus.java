@@ -20,6 +20,10 @@ import sleeper.core.tracker.job.status.JobRunStatusUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status update tracking when a compaction job was committed to the state store. This is the model for querying the
+ * event from the tracker.
+ */
 public class CompactionJobCommittedStatus implements JobRunStatusUpdate {
 
     private final Instant commitTime;
@@ -30,6 +34,13 @@ public class CompactionJobCommittedStatus implements JobRunStatusUpdate {
         this.updateTime = updateTime;
     }
 
+    /**
+     * Creates a status update based on the time of the commit and when it was tracked.
+     *
+     * @param  commitTime the time the compaction job was committed
+     * @param  updateTime the time the event was added to the tracker
+     * @return            the status update
+     */
     public static CompactionJobCommittedStatus commitAndUpdateTime(Instant commitTime, Instant updateTime) {
         return new CompactionJobCommittedStatus(commitTime, updateTime);
     }

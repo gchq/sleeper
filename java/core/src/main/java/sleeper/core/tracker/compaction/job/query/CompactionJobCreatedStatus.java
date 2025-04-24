@@ -22,6 +22,10 @@ import sleeper.core.tracker.job.status.JobStatusUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status update tracking when a compaction job was created. This is the model for querying the event from the
+ * tracker.
+ */
 public class CompactionJobCreatedStatus implements JobStatusUpdate {
 
     private final Instant updateTime;
@@ -38,6 +42,13 @@ public class CompactionJobCreatedStatus implements JobStatusUpdate {
         return new Builder();
     }
 
+    /**
+     * Creates a status update from a compaction job created event.
+     *
+     * @param  event      the event
+     * @param  updateTime the time the update was written to the tracker
+     * @return            the stats update
+     */
     public static CompactionJobCreatedStatus from(CompactionJobCreatedEvent event, Instant updateTime) {
         return builder()
                 .updateTime(updateTime)
@@ -46,6 +57,13 @@ public class CompactionJobCreatedStatus implements JobStatusUpdate {
                 .build();
     }
 
+    /**
+     * Creates a status update from a compaction job creation in a state store transaction.
+     *
+     * @param  request    the compaction job creation from the state store transaction
+     * @param  updateTime the time the update was written to the tracker
+     * @return            the stats update
+     */
     public static CompactionJobCreatedStatus from(AssignJobIdRequest request, Instant updateTime) {
         return builder()
                 .updateTime(updateTime)
@@ -89,6 +107,9 @@ public class CompactionJobCreatedStatus implements JobStatusUpdate {
         return "CompactionJobCreatedStatus{updateTime=" + updateTime + ", partitionId=" + partitionId + ", inputFilesCount=" + inputFilesCount + "}";
     }
 
+    /**
+     * A builder for compaction job created status updates.
+     */
     public static final class Builder {
         private Instant updateTime;
         private String partitionId;
@@ -97,16 +118,34 @@ public class CompactionJobCreatedStatus implements JobStatusUpdate {
         private Builder() {
         }
 
+        /**
+         * Sets the time the update was written to the tracker.
+         *
+         * @param  updateTime the update time
+         * @return            this builder
+         */
         public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }
 
+        /**
+         * Sets the partition ID that was recorded in the compaction job created event.
+         *
+         * @param  partitionId the partition ID
+         * @return             this builder
+         */
         public Builder partitionId(String partitionId) {
             this.partitionId = partitionId;
             return this;
         }
 
+        /**
+         * Sets the number of input files recorded in the compaction job created event.
+         *
+         * @param  inputFilesCount the number of input files
+         * @return                 this builder
+         */
         public Builder inputFilesCount(int inputFilesCount) {
             this.inputFilesCount = inputFilesCount;
             return this;

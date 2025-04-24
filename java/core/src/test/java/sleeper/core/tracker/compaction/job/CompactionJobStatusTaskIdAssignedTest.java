@@ -21,11 +21,10 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRuns;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +39,7 @@ public class CompactionJobStatusTaskIdAssignedTest {
     public void shouldHaveTaskWhenOneRunHasTask() {
         // Given
         CompactionJobStatus status = statusBuilder()
-                .jobRunsLatestFirst(runsWithTaskIds(
+                .jobRuns(runsWithTaskIds(
                         "task-id-1", "test-task-id", "task-id-3"))
                 .build();
 
@@ -52,7 +51,7 @@ public class CompactionJobStatusTaskIdAssignedTest {
     public void shouldNotHaveTaskWhenNoRunHasTask() {
         // Given
         CompactionJobStatus status = statusBuilder()
-                .jobRunsLatestFirst(runsWithTaskIds(
+                .jobRuns(runsWithTaskIds(
                         "task-id-1", "task-id-1", "task-id-3"))
                 .build();
 
@@ -64,7 +63,7 @@ public class CompactionJobStatusTaskIdAssignedTest {
     public void shouldNotHaveTaskWhenNoRunsSet() {
         // Given
         CompactionJobStatus status = statusBuilder()
-                .jobRunsLatestFirst(Collections.emptyList())
+                .jobRuns(JobRuns.latestFirst(List.of()))
                 .build();
 
         // When / Then
@@ -77,10 +76,10 @@ public class CompactionJobStatusTaskIdAssignedTest {
                         Instant.parse("2022-10-12T11:29:00.000Z")));
     }
 
-    private static List<JobRun> runsWithTaskIds(String... taskIds) {
-        return Stream.of(taskIds)
+    private static JobRuns runsWithTaskIds(String... taskIds) {
+        return JobRuns.latestFirst(Stream.of(taskIds)
                 .map(CompactionJobStatusTaskIdAssignedTest::runWithTaskId)
-                .collect(Collectors.toList());
+                .toList());
     }
 
     private static JobRun runWithTaskId(String taskId) {
