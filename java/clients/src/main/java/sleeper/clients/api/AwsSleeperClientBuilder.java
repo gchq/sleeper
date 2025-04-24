@@ -39,6 +39,9 @@ import java.util.concurrent.Executors;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
+/**
+ * Builds Sleeper clients to interact with AWS. This will usually be created from {@link SleeperClient#builder}.
+ */
 public class AwsSleeperClientBuilder {
 
     private String instanceId;
@@ -47,8 +50,13 @@ public class AwsSleeperClientBuilder {
     private AmazonDynamoDB dynamoClient;
     private AmazonSQS sqsClient;
     private Configuration hadoopConf;
-    private boolean shutdownClients;
+    private boolean shutdownClients = false;
 
+    /**
+     * Creates default clients to interact with AWS. This is done by default in {@link SleeperClient#builder}.
+     *
+     * @return this builder
+     */
     public AwsSleeperClientBuilder defaultClients() {
         return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
                 .dynamoClient(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
@@ -57,6 +65,11 @@ public class AwsSleeperClientBuilder {
                 .shutdownClients(true);
     }
 
+    /**
+     * Creates a Sleeper client.
+     *
+     * @return the client
+     */
     public SleeperClient build() {
         Objects.requireNonNull(instanceId, "instanceId must not be null");
         Objects.requireNonNull(s3Client, "s3Client must not be null");
@@ -82,36 +95,79 @@ public class AwsSleeperClientBuilder {
                 .build();
     }
 
+    /**
+     * Sets the ID of the Sleeper instance to interact with.
+     *
+     * @param  instanceId the instance ID
+     * @return            this builder
+     */
     public AwsSleeperClientBuilder instanceId(String instanceId) {
         this.instanceId = instanceId;
         return this;
     }
 
+    /**
+     * Sets the number of threads in the thread pool used to read data files in parallel during queries.
+     *
+     * @param  queryThreadPoolSize the number of threads
+     * @return                     this builder
+     */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
         this.queryThreadPoolSize = queryThreadPoolSize;
         return this;
     }
 
+    /**
+     * Sets the AWS client to interact with S3.
+     *
+     * @param  s3Client the client
+     * @return          this builder
+     */
     public AwsSleeperClientBuilder s3Client(AmazonS3 s3Client) {
         this.s3Client = s3Client;
         return this;
     }
 
+    /**
+     * Sets the AWS client to interact with DynamoDB.
+     *
+     * @param  dynamoClient the client
+     * @return              this builder
+     */
     public AwsSleeperClientBuilder dynamoClient(AmazonDynamoDB dynamoClient) {
         this.dynamoClient = dynamoClient;
         return this;
     }
 
+    /**
+     * Sets the AWS client to interact with SQS.
+     *
+     * @param  sqsClient the client
+     * @return           this builder
+     */
     public AwsSleeperClientBuilder sqsClient(AmazonSQS sqsClient) {
         this.sqsClient = sqsClient;
         return this;
     }
 
+    /**
+     * Sets the Hadoop configuration.
+     *
+     * @param  hadoopConf the configuration
+     * @return            this builder
+     */
     public AwsSleeperClientBuilder hadoopConf(Configuration hadoopConf) {
         this.hadoopConf = hadoopConf;
         return this;
     }
 
+    /**
+     * Sets whether to shut down the AWS clients when the Sleeper client is closed. Usually this will be set
+     * automatically in {@link #defaultClients()}. Defaults to false if the default AWS clients are not used.
+     *
+     * @param  shutdownClients true if the AWS clients should be shut down
+     * @return                 this builder
+     */
     public AwsSleeperClientBuilder shutdownClients(boolean shutdownClients) {
         this.shutdownClients = shutdownClients;
         return this;
