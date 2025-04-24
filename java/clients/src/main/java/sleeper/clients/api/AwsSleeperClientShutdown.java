@@ -15,34 +15,23 @@
  */
 package sleeper.clients.api;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
-
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public class AwsSleeperClientShutdown implements AutoCloseable {
     private final ExecutorService executorService;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private final AmazonSQS sqsClient;
-    private final boolean shutdownClients;
+    private final List<AwsClientShutdown<?>> awsClients;
 
-    public AwsSleeperClientShutdown(ExecutorService executorService, AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, boolean shutdownClients) {
+    public AwsSleeperClientShutdown(ExecutorService executorService, List<AwsClientShutdown<?>> awsClients) {
         this.executorService = executorService;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
-        this.sqsClient = sqsClient;
-        this.shutdownClients = shutdownClients;
+        this.awsClients = awsClients;
     }
 
     @Override
     public void close() throws Exception {
         executorService.shutdown();
-        if (shutdownClients) {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-            sqsClient.shutdown();
+        for (AwsClientShutdown<?> client : awsClients) {
+            client.shutdown();
         }
     }
 

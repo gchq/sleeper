@@ -33,6 +33,7 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,11 +47,10 @@ public class AwsSleeperClientBuilder {
 
     private String instanceId;
     private int queryThreadPoolSize = 10;
-    private AmazonS3 s3Client;
-    private AmazonDynamoDB dynamoClient;
-    private AmazonSQS sqsClient;
+    private AwsClientShutdown<AmazonS3> s3Client;
+    private AwsClientShutdown<AmazonDynamoDB> dynamoClient;
+    private AwsClientShutdown<AmazonSQS> sqsClient;
     private Configuration hadoopConf;
-    private boolean shutdownClients = false;
 
     /**
      * Creates default clients to interact with AWS. This is done by default in {@link SleeperClient#builder}.
@@ -58,11 +58,11 @@ public class AwsSleeperClientBuilder {
      * @return this builder
      */
     public AwsSleeperClientBuilder defaultClients() {
-        return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
-                .dynamoClient(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
-                .sqsClient(buildAwsV1Client(AmazonSQSClientBuilder.standard()))
-                .hadoopConf(HadoopConfigurationProvider.getConfigurationForClient())
-                .shutdownClients(true);
+        s3Client = AwsClientShutdown.shutdown(buildAwsV1Client(AmazonS3ClientBuilder.standard()), AmazonS3::shutdown);
+        dynamoClient = AwsClientShutdown.shutdown(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()), AmazonDynamoDB::shutdown);
+        sqsClient = AwsClientShutdown.shutdown(buildAwsV1Client(AmazonSQSClientBuilder.standard()), AmazonSQS::shutdown);
+        hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
+        return this;
     }
 
     /**
@@ -72,9 +72,9 @@ public class AwsSleeperClientBuilder {
      */
     public SleeperClient build() {
         Objects.requireNonNull(instanceId, "instanceId must not be null");
-        Objects.requireNonNull(s3Client, "s3Client must not be null");
-        Objects.requireNonNull(dynamoClient, "dynamoClient must not be null");
-        Objects.requireNonNull(sqsClient, "sqsClient must not be null");
+        AmazonS3 s3Client = Objects.requireNonNull(this.s3Client.getClient(), "s3Client must not be null");
+        AmazonDynamoDB dynamoClient = Objects.requireNonNull(this.dynamoClient.getClient(), "dynamoClient must not be null");
+        AmazonSQS sqsClient = Objects.requireNonNull(this.sqsClient.getClient(), "sqsClient must not be null");
         Objects.requireNonNull(hadoopConf, "hadoopConf must not be null");
 
         ExecutorService executorService = Executors.newFixedThreadPool(queryThreadPoolSize);
@@ -91,7 +91,7 @@ public class AwsSleeperClientBuilder {
                 .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf))
                 .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
                 .bulkImportJobSender(SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
-                .shutdown(new AwsSleeperClientShutdown(executorService, s3Client, dynamoClient, sqsClient, shutdownClients))
+                .shutdown(new AwsSleeperClientShutdown(executorService, List.of(this.s3Client, this.dynamoClient, this.sqsClient)))
                 .build();
     }
 
@@ -124,7 +124,7 @@ public class AwsSleeperClientBuilder {
      * @return          this builder
      */
     public AwsSleeperClientBuilder s3Client(AmazonS3 s3Client) {
-        this.s3Client = s3Client;
+        this.s3Client = AwsClientShutdown.noShutdown(s3Client);
         return this;
     }
 
@@ -135,7 +135,7 @@ public class AwsSleeperClientBuilder {
      * @return              this builder
      */
     public AwsSleeperClientBuilder dynamoClient(AmazonDynamoDB dynamoClient) {
-        this.dynamoClient = dynamoClient;
+        this.dynamoClient = AwsClientShutdown.noShutdown(dynamoClient);
         return this;
     }
 
@@ -146,7 +146,7 @@ public class AwsSleeperClientBuilder {
      * @return           this builder
      */
     public AwsSleeperClientBuilder sqsClient(AmazonSQS sqsClient) {
-        this.sqsClient = sqsClient;
+        this.sqsClient = AwsClientShutdown.noShutdown(sqsClient);
         return this;
     }
 
@@ -158,18 +158,6 @@ public class AwsSleeperClientBuilder {
      */
     public AwsSleeperClientBuilder hadoopConf(Configuration hadoopConf) {
         this.hadoopConf = hadoopConf;
-        return this;
-    }
-
-    /**
-     * Sets whether to shut down the AWS clients when the Sleeper client is closed. Usually this will be set
-     * automatically in {@link #defaultClients()}. Defaults to false if the default AWS clients are not used.
-     *
-     * @param  shutdownClients true if the AWS clients should be shut down
-     * @return                 this builder
-     */
-    public AwsSleeperClientBuilder shutdownClients(boolean shutdownClients) {
-        this.shutdownClients = shutdownClients;
         return this;
     }
 
