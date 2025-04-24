@@ -1,5 +1,4 @@
 name: Rust Nightly
-# Test cache
 on:
   workflow_dispatch: # Allow manual running to refresh/check cache
   schedule: # Planned execution once per day
