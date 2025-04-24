@@ -184,7 +184,7 @@ public class SleeperClient {
      * Returns whether a sleeper table for the given name already exists.
      *
      * @param  tableName the table name
-     * @return           if table exists
+     * @return           true if a table with the given name exists
      */
     public boolean doesTableExist(String tableName) {
         return tableIndex.getTableByName(tableName).isPresent();
