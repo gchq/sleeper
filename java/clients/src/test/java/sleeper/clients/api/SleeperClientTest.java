@@ -224,6 +224,23 @@ class SleeperClientTest {
         }
     }
 
+    @Test
+    void shouldVerifyThatTableExists() {
+        // Given
+        String tableName = "table-name";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        sleeperClient.addTable(tableProperties, null);
+
+        // When / Then
+        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
+    }
+
+    @Test
+    void shouldValidateThatTableDoesNotExist() {
+        assertThat(sleeperClient.doesTableExist("FAKENAME")).isFalse();
+    }
+
     private RangeFactory rangeFactory() {
         return new RangeFactory(schema);
     }
