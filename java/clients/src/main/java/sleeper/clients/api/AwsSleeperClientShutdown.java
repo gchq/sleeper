@@ -18,6 +18,9 @@ package sleeper.clients.api;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Handles shut down of a Sleeper client that interacts with AWS. Used in {@link AwsSleeperClientBuilder}.
+ */
 public class AwsSleeperClientShutdown implements Runnable {
     private final ExecutorService executorService;
     private final List<AwsClientShutdown<?>> awsClients;

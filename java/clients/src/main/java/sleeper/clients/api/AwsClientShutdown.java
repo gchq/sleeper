@@ -17,6 +17,10 @@ package sleeper.clients.api;
 
 import java.util.function.Consumer;
 
+/**
+ * A wrapper for an AWS client that tracks whether it should be shut down when used in a Sleeper client. Used in
+ * {@link AwsSleeperClientBuilder}.
+ */
 public class AwsClientShutdown<C> {
 
     private final C client;
@@ -27,21 +31,38 @@ public class AwsClientShutdown<C> {
         this.shutdown = shutdown;
     }
 
-    public C getClient() {
-        return client;
-    }
-
-    public void shutdown() {
-        shutdown.run();
-    }
-
+    /**
+     * Creates a wrapper that will not shut down the AWS client.
+     *
+     * @param  <C>    the type of the AWS client
+     * @param  client the AWS client
+     * @return        the wrapper
+     */
     public static <C> AwsClientShutdown<C> noShutdown(C client) {
         return new AwsClientShutdown<C>(client, () -> {
         });
     }
 
+    /**
+     * Creates a wrapper that will shut down the AWS client.
+     *
+     * @param  <C>    the type of the AWS client
+     * @param  client the AWS client
+     * @return        the wrapper
+     */
     public static <C> AwsClientShutdown<C> shutdown(C client, Consumer<C> shutdown) {
         return new AwsClientShutdown<C>(client, () -> shutdown.accept(client));
+    }
+
+    public C getClient() {
+        return client;
+    }
+
+    /**
+     * Shuts down the AWS client if it should be shut down when the Sleeper client is closed.
+     */
+    public void shutdown() {
+        shutdown.run();
     }
 
 }
