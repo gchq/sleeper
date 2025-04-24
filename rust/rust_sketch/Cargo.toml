@@ -30,6 +30,8 @@ cxx = { workspace = true }
 [build-dependencies]
 cxx-build = { workspace = true }
 git2 = { workspace = true }
+cargo_metadata = { workspace = true }
+serde_json = { workspace = true }
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
 # Mac often won't have openssl library installed in place easy discoverable, if at all
