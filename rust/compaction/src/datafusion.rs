@@ -42,7 +42,7 @@ use datafusion::{
 use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
-use std::{collections::HashMap, iter::once, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 mod metrics;
@@ -92,15 +92,24 @@ pub async fn compact(
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
-    let sketch_expr = once(
-        sketch_func
-            .call(row_key_exprs)
-            .alias(&input_data.row_key_cols[0]),
-    );
-    // Perform sort of row key and sort key columns and projection of all columns
-    let col_names_expr = sketch_expr
-        .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
+
+    // Iterate through column names, mapping each into an `Expr` of the name UNLESS
+    // we find the first row key column which should be mapped to the sketch function
+    let col_names_expr = col_names
+        .iter()
+        .map(|col_name| {
+            // Have we found the first row key column?
+            if *col_name == input_data.row_key_cols[0] {
+                // Map to the sketch function
+                sketch_func
+                    // Sketch function needs to be called with each row key column
+                    .call(input_data.row_key_cols.iter().map(col).collect())
+                    // Alias name to original schema column name
+                    .alias(col_name)
+            } else {
+                col(col_name)
+            }
+        })
         .collect::<Vec<_>>();
 
     // Apply sort to DataFrame, then project for DataSketch
