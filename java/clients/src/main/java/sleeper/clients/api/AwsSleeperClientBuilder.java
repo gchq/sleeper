@@ -72,9 +72,9 @@ public class AwsSleeperClientBuilder {
      */
     public SleeperClient build() {
         Objects.requireNonNull(instanceId, "instanceId must not be null");
-        Objects.requireNonNull(s3ClientWrapper, "s3Client must not be null");
-        Objects.requireNonNull(dynamoClientWrapper, "dynamoClient must not be null");
-        Objects.requireNonNull(sqsClientWrapper, "sqsClient must not be null");
+        AwsClientShutdown<AmazonS3> s3ClientWrapper = Objects.requireNonNull(this.s3ClientWrapper, "s3Client must not be null");
+        AwsClientShutdown<AmazonDynamoDB> dynamoClientWrapper = Objects.requireNonNull(this.dynamoClientWrapper, "dynamoClient must not be null");
+        AwsClientShutdown<AmazonSQS> sqsClientWrapper = Objects.requireNonNull(this.sqsClientWrapper, "sqsClient must not be null");
         AmazonS3 s3Client = Objects.requireNonNull(s3ClientWrapper.getClient(), "s3Client must not be null");
         AmazonDynamoDB dynamoClient = Objects.requireNonNull(dynamoClientWrapper.getClient(), "dynamoClient must not be null");
         AmazonSQS sqsClient = Objects.requireNonNull(sqsClientWrapper.getClient(), "sqsClient must not be null");
