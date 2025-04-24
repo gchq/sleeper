@@ -201,7 +201,8 @@ mvn clean compile checkstyle:check spotbugs:check
 
 ### Javadoc
 
-We try to ensure that all production classes have Javadoc. Most methods should also have Javadoc.
+We try to ensure that all production classes have Javadoc. Most methods should also have Javadoc. Javadoc should
+generally explain the public API and high level behaviour of a class, and avoid implementation details.
 
 Private methods, as well as getters and setters can be skipped unless there's something important to know. Constructors
 should usually not have Javadoc. We tend to avoid having more than one constructor by using builders, so the class
