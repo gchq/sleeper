@@ -201,19 +201,20 @@ mvn clean compile checkstyle:check spotbugs:check
 
 ### Javadoc
 
-We try to ensure that all production classes have Javadoc. Most methods should also have Javadoc. Javadoc should
-generally explain the public API and high level behaviour of a class, and avoid implementation details.
+We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Javadoc should generally explain
+the public API and high level behaviour of a class, and avoid implementation details.
+
+An exception to this is test classes, e.g. SomeFeatureTest, SomeFeatureIT, SomeFeatureST (unit, integration and system
+tests). These classes should not have Javadoc, to put focus on the tests themselves. Other test code should have
+Javadoc, e.g. test helpers, test fakes.
 
 Private methods, as well as getters and setters can be skipped unless there's something important to know. Constructors
-should usually not have Javadoc. We tend to avoid having more than one constructor by using builders, so the class
-Javadoc should be enough.
+should not usually have Javadoc. The class Javadoc usually covers this, as we tend to avoid having more than one
+constructor.
 
 Many classes have a static method `builder` that takes no arguments and returns a builder, and this does not usually
 need Javadoc. Each builder has a method `build` that creates an instance of the class being built, and this does not
 usually need Javadoc.
-
-Test classes can be left with no Javadoc, to aid in focus on the tests themselves. Other utilities or helper classes in
-the test code should have Javadoc similar to production code.
 
 #### Style
 
