@@ -48,7 +48,7 @@ import java.util.stream.Stream;
  * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
  */
-public class SleeperClient {
+public class SleeperClient implements AutoCloseable {
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
@@ -59,6 +59,7 @@ public class SleeperClient {
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest ingestJobSender;
     private final SleeperClientBulkImport bulkImportJobSender;
+    private final AutoCloseable shutdown;
 
     private SleeperClient(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
@@ -70,6 +71,7 @@ public class SleeperClient {
         recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
+        shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
     }
 
     /**
@@ -256,6 +258,11 @@ public class SleeperClient {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
+    @Override
+    public void close() throws Exception {
+        shutdown.close();
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
@@ -266,6 +273,8 @@ public class SleeperClient {
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest ingestJobSender;
         private SleeperClientBulkImport bulkImportJobSender;
+        private AutoCloseable shutdown = () -> {
+        };
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -363,6 +372,17 @@ public class SleeperClient {
          */
         public Builder bulkImportJobSender(SleeperClientBulkImport bulkImportJobSender) {
             this.bulkImportJobSender = bulkImportJobSender;
+            return this;
+        }
+
+        /**
+         * Sets how to shut down any resources associated with the client.
+         *
+         * @param  shutdown the shut down behaviour
+         * @return          this builder for chaining
+         */
+        public Builder shutdown(AutoCloseable shutdown) {
+            this.shutdown = shutdown;
             return this;
         }
 

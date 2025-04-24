@@ -47,12 +47,14 @@ public class AwsSleeperClientBuilder {
     private AmazonDynamoDB dynamoClient;
     private AmazonSQS sqsClient;
     private Configuration hadoopConf;
+    private boolean shutdownClients;
 
     public AwsSleeperClientBuilder defaultClients() {
         return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
                 .dynamoClient(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
                 .sqsClient(buildAwsV1Client(AmazonSQSClientBuilder.standard()))
-                .hadoopConf(HadoopConfigurationProvider.getConfigurationForClient());
+                .hadoopConf(HadoopConfigurationProvider.getConfigurationForClient())
+                .shutdownClients(true);
     }
 
     public SleeperClient build() {
@@ -76,6 +78,7 @@ public class AwsSleeperClientBuilder {
                 .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf))
                 .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
                 .bulkImportJobSender(SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
+                .shutdown(new AwsSleeperClientShutdown(executorService, s3Client, dynamoClient, sqsClient, shutdownClients))
                 .build();
     }
 
@@ -106,6 +109,11 @@ public class AwsSleeperClientBuilder {
 
     public AwsSleeperClientBuilder hadoopConf(Configuration hadoopConf) {
         this.hadoopConf = hadoopConf;
+        return this;
+    }
+
+    public AwsSleeperClientBuilder shutdownClients(boolean shutdownClients) {
+        this.shutdownClients = shutdownClients;
         return this;
     }
 
