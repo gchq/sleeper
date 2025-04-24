@@ -21,6 +21,7 @@ passthrough = [
     "ACTIONS_CACHE_URL",
     "ACTIONS_RESULTS_URL",
     "ACTIONS_RUNTIME_TOKEN",
+    "ACTIONS_CACHE_SERVICE_V2",
     "CC=sccache clang-18",
     "CXX=sccache clang++-18"
 ]
