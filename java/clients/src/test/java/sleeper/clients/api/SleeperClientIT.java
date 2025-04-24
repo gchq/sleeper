@@ -15,6 +15,7 @@
  */
 package sleeper.clients.api;
 
+import org.junit.jupiter.api.AutoClose;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +42,7 @@ public class SleeperClientIT extends LocalStackTestBase {
 
     Schema schema = createSchemaWithKey("key", new StringType());
     InstanceProperties instanceProperties = createTestInstanceProperties();
+    @AutoClose
     SleeperClient sleeperClient;
 
     @BeforeEach
