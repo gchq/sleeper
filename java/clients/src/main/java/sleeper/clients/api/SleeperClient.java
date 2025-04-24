@@ -83,6 +83,12 @@ public class SleeperClient {
         return builder().instanceId(instanceId).build();
     }
 
+    /**
+     * Creates a builder for a client with the default AWS configuration. The ID of the Sleeper instance to interact
+     * with must be set on the builder.
+     *
+     * @return the builder
+     */
     public static AwsSleeperClientBuilder builder() {
         return new AwsSleeperClientBuilder().defaultClients();
     }
