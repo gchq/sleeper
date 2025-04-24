@@ -48,9 +48,10 @@ public class AwsClientShutdown<C> {
     /**
      * Creates a wrapper that will shut down the AWS client.
      *
-     * @param  <C>    the type of the AWS client
-     * @param  client the AWS client
-     * @return        the wrapper
+     * @param  <C>      the type of the AWS client
+     * @param  client   the AWS client
+     * @param  shutdown the method to call on the client to shut it down
+     * @return          the wrapper
      */
     public static <C> AwsClientShutdown<C> shutdown(C client, Consumer<C> shutdown) {
         return new AwsClientShutdown<C>(client, () -> shutdown.accept(client));
