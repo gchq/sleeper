@@ -3686,8 +3686,8 @@ dependencies = [
  "cxx-build",
  "git2",
  "openssl",
- "serde_json",
  "rand 0.9.1",
+ "serde_json",
 ]
 
 [[package]]
