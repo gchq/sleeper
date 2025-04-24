@@ -76,7 +76,7 @@ class SleeperClientTest {
     SleeperClient sleeperClient = createSleeperBuilder().build();
 
     private SleeperClient.Builder createSleeperBuilder() {
-        return SleeperClient.builder()
+        return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesStore(tablePropertiesStore)
@@ -115,7 +115,7 @@ class SleeperClientTest {
         String tableName = "table-name";
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
-        sleeperClient.addTable(tableProperties, null);
+        sleeperClient.addTable(tableProperties, List.of());
 
         // When / Then
         assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
