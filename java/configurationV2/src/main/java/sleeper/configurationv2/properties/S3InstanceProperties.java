@@ -87,9 +87,8 @@ public class S3InstanceProperties {
         String bucket = properties.get(CONFIG_BUCKET);
         LOGGER.debug("Uploading config to bucket {}", bucket);
         s3Client.putObject(builder -> builder.bucket(bucket).key(S3_INSTANCE_PROPERTIES_FILE),
-                RequestBody.fromString(properties.toString()));
+                RequestBody.fromString(properties.saveAsString()));
 
-        //s3Client.putObject(bucket, S3_INSTANCE_PROPERTIES_FILE, properties.saveAsString());
         LOGGER.info("Saved instance properties to bucket {}, key {}", bucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 

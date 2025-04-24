@@ -27,9 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-/**
- * An integration test class for testing loading table properties.
- */
 class TablePropertiesProviderIT extends TablePropertiesITBase {
 
     private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClient);

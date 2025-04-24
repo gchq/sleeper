@@ -111,7 +111,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
         String key = getS3Key(tableProperties.getStatus());
         s3Client.putObject(builder -> builder.bucket(bucket).key(key),
-                RequestBody.fromString(tableProperties.toString()));
+                RequestBody.fromString(tableProperties.saveAsString()));
 
         LOGGER.info("Saved table properties to bucket {}, key {}", bucket, key);
     }

@@ -35,9 +35,6 @@ import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromIn
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-/**
- * An integration test class for loading instance properties.
- */
 class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     @TempDir
     private Path tempDir;

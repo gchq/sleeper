@@ -29,14 +29,8 @@ import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-/**
- * An integration test class for tests performing crud operations on table properties in S3.
- */
 class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
-    /**
-     * Nested class for creating and updating table properties.
-     */
     @Nested
     @DisplayName("Save table properties")
     class SaveProperties {
@@ -117,9 +111,6 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
         }
     }
 
-    /**
-     * Nested class for testing deleting table properties.
-     */
     @Nested
     @DisplayName("Delete properties")
     class DeleteProperties {
@@ -139,9 +130,6 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
         }
     }
 
-    /**
-     * Nested class for testing loading table properties.
-     */
     @Nested
     @DisplayName("Load table properties")
     class LoadProperties {

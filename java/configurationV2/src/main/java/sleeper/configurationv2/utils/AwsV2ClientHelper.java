@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.configurationv2.utils;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
+
+import java.net.URI;
 
 /**
  * Applies default configuration to AWS SDK v2 clients.
@@ -41,17 +43,18 @@ public class AwsV2ClientHelper {
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(B builder) {
         String endpoint = System.getenv(AWS_ENDPOINT_ENV_VAR);
         if (endpoint != null) {
-            if (builder instanceof AmazonS3ClientBuilder) {
-                ((AmazonS3ClientBuilder) builder).withPathStyleAccessEnabled(true);
+            if (builder instanceof S3BaseClientBuilder) {
+                ((S3BaseClientBuilder<?, ?>) builder).forcePathStyle(true);
             }
             return builder
-                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                            endpoint, "us-east-1"))
-                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                            "test-access-key", "test-secret-key")))
+                    .endpointOverride(URI.create(endpoint))
+                    .region(Region.US_EAST_1)
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create("test-access-key", "test-secret-key")))
                     .build();
         } else {
             return builder.build();
         }
     }
+
 }
