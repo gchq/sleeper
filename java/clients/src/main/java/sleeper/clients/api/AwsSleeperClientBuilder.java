@@ -33,6 +33,7 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,9 +56,16 @@ public class AwsSleeperClientBuilder {
     }
 
     public SleeperClient build() {
+        Objects.requireNonNull(instanceId, "instanceId must not be null");
+        Objects.requireNonNull(s3Client, "s3Client must not be null");
+        Objects.requireNonNull(dynamoClient, "dynamoClient must not be null");
+        Objects.requireNonNull(sqsClient, "sqsClient must not be null");
+        Objects.requireNonNull(hadoopConf, "hadoopConf must not be null");
+
         ExecutorService executorService = Executors.newFixedThreadPool(queryThreadPoolSize);
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+
         return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
