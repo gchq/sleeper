@@ -20,6 +20,8 @@ import java.util.function.Consumer;
 /**
  * A wrapper for an AWS client that tracks whether it should be shut down when used in a Sleeper client. Used in
  * {@link AwsSleeperClientBuilder}.
+ *
+ * @param <C> the type of the AWS client
  */
 public class AwsClientShutdown<C> {
 
