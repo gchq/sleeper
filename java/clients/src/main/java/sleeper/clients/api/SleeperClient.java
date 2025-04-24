@@ -15,10 +15,6 @@
  */
 package sleeper.clients.api;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
@@ -37,7 +33,6 @@ import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.QueryExecutor;
@@ -46,8 +41,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
@@ -91,11 +84,7 @@ public class SleeperClient {
     }
 
     public static AwsSleeperClientBuilder builder() {
-        return new AwsSleeperClientBuilder()
-                .s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
-                .dynamoClient(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
-                .sqsClient(buildAwsV1Client(AmazonSQSClientBuilder.standard()))
-                .hadoopConf(HadoopConfigurationProvider.getConfigurationForClient());
+        return new AwsSleeperClientBuilder().defaultClients();
     }
 
     /**
