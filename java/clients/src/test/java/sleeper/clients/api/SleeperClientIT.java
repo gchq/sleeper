@@ -15,14 +15,17 @@
  */
 package sleeper.clients.api;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.List;
 
@@ -37,29 +40,39 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 public class SleeperClientIT extends LocalStackTestBase {
 
     Schema schema = createSchemaWithKey("key", new StringType());
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    SleeperClient sleeperClient;
 
-    @Test
-    void shouldCreateAwsSleeperClient() {
-        // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
+    @BeforeEach
+    void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        sleeperClient = createClient();
+    }
 
-        AwsSleeperClientBuilder clientBuilder = new AwsSleeperClientBuilder();
-        SleeperClient sleeperClient = clientBuilder.instanceId(instanceProperties.get(ID))
+    @Test
+    void shouldCreateATable() {
+        // Given
+        String tableName = "table-name";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+
+        // When
+        sleeperClient.addTable(tableProperties, List.of());
+
+        // Then
+        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
+    }
+
+    private SleeperClient createClient() {
+        return new AwsSleeperClientBuilder()
+                .instanceId(instanceProperties.get(ID))
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient)
                 .sqsClient(sqsClient)
                 .hadoopConf(hadoopConf)
                 .build();
-
-        // When
-        String tableName = "table-name";
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        sleeperClient.addTable(tableProperties, List.of());
-
-        // Then
-        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
     }
 }
