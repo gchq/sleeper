@@ -23,26 +23,19 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 /**
  * Populates instance properties when deploying a new instance or when tearing down an instance without the properties.
@@ -114,12 +107,6 @@ public class PopulateInstanceProperties {
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
         properties.set(ID, instanceId);
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
-        properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
-        properties.set(BULK_EXPORT_ECR_REPO, ecrPrefix + "/bulk-export-task-execution");
-        properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
-        properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");
-        properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, ecrPrefix + "/bulk-import-runner-emr-serverless");
         return properties;
     }
 

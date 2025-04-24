@@ -25,7 +25,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.createTestPopulateInstanceProperties;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.testPopulateInstancePropertiesBuilder;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
@@ -41,17 +40,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_RULE;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 
 public class PopulateInstancePropertiesTest {
@@ -63,11 +57,6 @@ public class PopulateInstancePropertiesTest {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
-        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
-        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "test-region");
         return expected;
@@ -80,26 +69,6 @@ public class PopulateInstancePropertiesTest {
 
         // Then
         assertThat(properties).isEqualTo(expectedInstanceProperties());
-    }
-
-    @Test
-    void shouldApplyECRRepositoryPrefixFromInstancePropertiesTemplate() {
-        // Given
-        InstanceProperties properties = new InstanceProperties();
-        properties.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
-
-        // When
-        createTestPopulateInstanceProperties().populate(properties);
-
-        // Then
-        InstanceProperties expected = expectedInstanceProperties();
-        expected.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
-        expected.set(ECR_COMPACTION_REPO, "test-ecr-prefix/compaction-job-execution");
-        expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-ecr-prefix/bulk-export-task-execution");
-        expected.set(BULK_IMPORT_REPO, "test-ecr-prefix/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-ecr-prefix/bulk-import-runner-emr-serverless");
-        assertThat(properties).isEqualTo(expected);
     }
 
     @Test
@@ -150,11 +119,6 @@ public class PopulateInstancePropertiesTest {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
-        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
-        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-BulkExportJobCreationRule");
         expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
         expected.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionTasksCreationRule");
