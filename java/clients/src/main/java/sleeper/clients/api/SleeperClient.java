@@ -59,7 +59,7 @@ public class SleeperClient implements AutoCloseable {
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest ingestJobSender;
     private final SleeperClientBulkImport bulkImportJobSender;
-    private final AutoCloseable shutdown;
+    private final Runnable shutdown;
 
     private SleeperClient(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
@@ -259,8 +259,8 @@ public class SleeperClient implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        shutdown.close();
+    public void close() {
+        shutdown.run();
     }
 
     public static class Builder {
@@ -273,7 +273,7 @@ public class SleeperClient implements AutoCloseable {
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest ingestJobSender;
         private SleeperClientBulkImport bulkImportJobSender;
-        private AutoCloseable shutdown = () -> {
+        private Runnable shutdown = () -> {
         };
 
         /**
@@ -381,7 +381,7 @@ public class SleeperClient implements AutoCloseable {
          * @param  shutdown the shut down behaviour
          * @return          this builder for chaining
          */
-        public Builder shutdown(AutoCloseable shutdown) {
+        public Builder shutdown(Runnable shutdown) {
             this.shutdown = shutdown;
             return this;
         }

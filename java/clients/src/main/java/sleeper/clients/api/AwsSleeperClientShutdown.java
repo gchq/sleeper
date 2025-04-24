@@ -18,7 +18,7 @@ package sleeper.clients.api;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-public class AwsSleeperClientShutdown implements AutoCloseable {
+public class AwsSleeperClientShutdown implements Runnable {
     private final ExecutorService executorService;
     private final List<AwsClientShutdown<?>> awsClients;
 
@@ -28,7 +28,7 @@ public class AwsSleeperClientShutdown implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void run() {
         executorService.shutdown();
         for (AwsClientShutdown<?> client : awsClients) {
             client.shutdown();
