@@ -21,6 +21,11 @@ import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status update for when a compaction task started. Normally this will happen when a background process finds there
+ * are jobs waiting to be run, and starts one or more compaction tasks to run them. This status update happens in the
+ * task once it's been provisioned and started execution.
+ */
 public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
 
     private final Instant startTime;
@@ -29,6 +34,12 @@ public class CompactionTaskStartedStatus implements JobRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
+    /**
+     * Creates a status update based on the time the task started.
+     *
+     * @param  startTime the time the compaction task started
+     * @return           the status update
+     */
     public static CompactionTaskStartedStatus startTime(Instant startTime) {
         return new CompactionTaskStartedStatus(startTime);
     }

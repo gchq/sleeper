@@ -47,6 +47,7 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -67,7 +68,6 @@ import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 
 /**
  * Deploys the resources to run compaction tasks that process compaction jobs. Specfically, there are the
@@ -120,7 +120,7 @@ public class CompactionTaskResources {
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
         IRepository repository = Repository.fromRepositoryName(stack, "ECR1",
-                instanceProperties.get(ECR_COMPACTION_REPO));
+                DockerDeployment.COMPACTION.getEcrRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);

@@ -40,10 +40,18 @@ import java.util.stream.Stream;
 
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
+/**
+ * This classs is for tracking the in memory compaction jobs.
+ */
 public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
     private Supplier<Instant> timeSupplier;
 
+    /**
+     * This method sets the time supplier to the input param.
+     *
+     * @param now an Instant containing the current time
+     */
     public void fixUpdateTime(Instant now) {
         setTimeSupplier(() -> now);
     }
@@ -65,6 +73,12 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
         jobCreated(event, getUpdateTimeOrDefault(Instant::now));
     }
 
+    /**
+     * This method adds a job from an event to the update table.
+     *
+     * @param event        This event contains information about the job to be created.
+     * @param assignedTime Instant detailing to time the job should be assigned from.
+     */
     public void jobCreated(CompactionJobCreatedEvent event, Instant assignedTime) {
         add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId())
@@ -145,6 +159,10 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
         return Optional.ofNullable(tableIdToJobs.get(tableId));
     }
 
+    /**
+     * This private class contains a Map of tableId's to jobs.
+     * It has one method to stream all the records in the Map.
+     */
     private static class TableJobs {
         private final Map<String, List<JobStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 

@@ -26,7 +26,7 @@ jobs:
           distribution: 'corretto'
       - uses: dtolnay/rust-toolchain@stable
         if: ${{ ! inputs.skipRust }}
-      - uses: mozilla-actions/sccache-action@v0.0.8
+      - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ ! inputs.skipRust }}
       - name: Install cargo cross
         run: cargo install cross

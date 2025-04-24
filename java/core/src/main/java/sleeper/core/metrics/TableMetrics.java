@@ -33,6 +33,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Metrics on the state store for a Sleeper table.
+ */
 public class TableMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetrics.class);
 
@@ -58,6 +61,14 @@ public class TableMetrics {
         return new Builder();
     }
 
+    /**
+     * Creates metrics for a Sleeper table. Queries the state store and computes statistics.
+     *
+     * @param  instanceId the Sleeper instance ID
+     * @param  table      the Sleeper table status
+     * @param  stateStore the Sleeper table's state store
+     * @return            the metrics
+     */
     public static TableMetrics from(String instanceId, TableStatus table, StateStore stateStore) {
 
         LOGGER.info("Querying state store for table {} for files", table);
@@ -152,6 +163,9 @@ public class TableMetrics {
                 '}';
     }
 
+    /**
+     * A builder for table metrics.
+     */
     public static final class Builder {
         private String instanceId;
         private String tableName;
@@ -164,36 +178,83 @@ public class TableMetrics {
         private Builder() {
         }
 
+        /**
+         * Sets the Sleeper instance ID.
+         *
+         * @param  instanceId the instance ID
+         * @return            this builder
+         */
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
             return this;
         }
 
+        /**
+         * Sets the Sleeper table name.
+         *
+         * @param  tableName the table name
+         * @return           this builder
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
+        /**
+         * Sets the number of files in the Sleeper table. This does not include files with no references, that are
+         * waiting for garbage collection.
+         *
+         * @param  fileCount the number of files in the table
+         * @return           this builder
+         */
         public Builder fileCount(int fileCount) {
             this.fileCount = fileCount;
             return this;
         }
 
+        /**
+         * Sets the number of records in the Sleeper table. This may include estimated counts.
+         *
+         * @param  recordCount the number of records in the table
+         * @return             this builder
+         */
         public Builder recordCount(long recordCount) {
             this.recordCount = recordCount;
             return this;
         }
 
+        /**
+         * Sets the number of partitions in the Sleeper table. This includes all leaf partitions, and all joins in the
+         * partition tree, up to the root node.
+         *
+         * @param  partitionCount the number of partitions in the table
+         * @return                this builder
+         */
         public Builder partitionCount(int partitionCount) {
             this.partitionCount = partitionCount;
             return this;
         }
 
+        /**
+         * Sets the number of leaf partitions in the Sleeper table. This only includes partitions that have not been
+         * split. Note that not all files may be on leaf partitions.
+         *
+         * @param  leafPartitionCount the number of leaf partitions in the table
+         * @return                    this builder
+         */
         public Builder leafPartitionCount(int leafPartitionCount) {
             this.leafPartitionCount = leafPartitionCount;
             return this;
         }
 
+        /**
+         * Sets the average number of file references per partition. This excludes partitions with no references, but
+         * may include partitions higher in the partition tree, potentially with very few references as files are
+         * compacted down the tree.
+         *
+         * @param  averageFileReferencesPerPartition the average number of file references per partition
+         * @return                                   this builder
+         */
         public Builder averageFileReferencesPerPartition(double averageFileReferencesPerPartition) {
             this.averageFileReferencesPerPartition = averageFileReferencesPerPartition;
             return this;

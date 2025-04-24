@@ -8,6 +8,7 @@ on:
 env:
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
+  RUSTC_WRAPPER: "sccache"
 
 jobs:
   build:
@@ -16,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      - uses: mozilla-actions/sccache-action@v0.0.8
+      - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Rust tests
         run: cargo test
         working-directory: ./rust
