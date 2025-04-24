@@ -115,7 +115,7 @@ class SleeperClientTest {
         String tableName = "table-name";
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
-        sleeperClient.addTable(tableProperties, null);
+        sleeperClient.addTable(tableProperties, List.of());
 
         // When / Then
         assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
