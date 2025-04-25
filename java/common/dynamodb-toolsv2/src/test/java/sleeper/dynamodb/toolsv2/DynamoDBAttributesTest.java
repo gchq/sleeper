@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createListAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBAttributesTest {
     private static final String TEST_KEY = "test-key";

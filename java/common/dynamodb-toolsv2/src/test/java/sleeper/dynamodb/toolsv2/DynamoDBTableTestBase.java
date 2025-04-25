@@ -27,7 +27,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 
-import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBTableTestBase extends LocalStackTestBase {
     public static final String TEST_KEY = "test-key";

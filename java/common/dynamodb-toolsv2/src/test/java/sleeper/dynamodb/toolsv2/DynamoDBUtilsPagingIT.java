@@ -36,12 +36,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_KEY;
-import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_VALUE;
-import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBTableTestBase.TEST_KEY;
+import static sleeper.dynamodb.toolsv2.DynamoDBTableTestBase.TEST_VALUE;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedResults;
 
 public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
 

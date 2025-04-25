@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.dynamodb.tools;
+package sleeper.dynamodb.toolsv2;
 
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.DisplayName;
