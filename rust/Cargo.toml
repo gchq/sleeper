@@ -36,7 +36,7 @@ chrono = { version = "0.4.40" } # Log helper
 clap = { version = "4.5.37" } # Cmd line args processing
 color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
 cxx = { version = "1.0.157" } # Exception handling for Rust
-cxx-build = { version = "1.0.157" }
+cxx-build = { version = "1.0.158" }
 datafusion = { version = "46.0.1" }
 env_logger = { version = "0.11.8" } # Standard logging to stderr
 futures = { version = "0.3.31" } # Async processing
