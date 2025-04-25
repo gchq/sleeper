@@ -24,6 +24,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.NumberFormatUtils;
+import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.parquet.utils.HadoopPathUtils;
 
@@ -33,20 +34,27 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
-public class FileIngestRequestSizeChecker {
-    public static final Logger LOGGER = LoggerFactory.getLogger(FileIngestRequestSizeChecker.class);
+public class IngestBatcherSubmitter {
+    public static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitter.class);
 
     private final InstanceProperties properties;
     private final Configuration conf;
     private final TableIndex tableIndex;
+    private final IngestBatcherStore store;
 
-    public FileIngestRequestSizeChecker(InstanceProperties properties, Configuration conf, TableIndex tableIndex) {
+    public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store) {
         this.properties = properties;
         this.conf = conf;
         this.tableIndex = tableIndex;
+        this.store = store;
     }
 
-    public List<IngestBatcherTrackedFile> toFileIngestRequests(IngestBatcherSubmitRequest request, Instant receivedTime) {
+    public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
+        List<IngestBatcherTrackedFile> files = toTrackedFiles(request, receivedTime);
+        files.forEach(store::addFile);
+    }
+
+    private List<IngestBatcherTrackedFile> toTrackedFiles(IngestBatcherSubmitRequest request, Instant receivedTime) {
         TableStatus table = tableIndex.getTableByName(request.tableName())
                 .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName()));
         return HadoopPathUtils.streamFiles(request.files(), conf, properties.get(FILE_SYSTEM))
