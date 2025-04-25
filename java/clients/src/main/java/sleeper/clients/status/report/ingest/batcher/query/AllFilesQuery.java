@@ -17,15 +17,15 @@
 package sleeper.clients.status.report.ingest.batcher.query;
 
 import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
 
 public class AllFilesQuery implements BatcherQuery {
 
     @Override
-    public List<FileIngestRequest> run(IngestBatcherStore store) {
+    public List<IngestBatcherTrackedFile> run(IngestBatcherStore store) {
         return store.getAllFilesNewestFirst();
     }
 

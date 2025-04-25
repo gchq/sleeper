@@ -21,8 +21,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,7 +41,7 @@ class InMemoryIngestBatcherStoreTest {
         @Test
         void shouldTrackOneFile() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table").build();
 
@@ -58,11 +58,11 @@ class InMemoryIngestBatcherStoreTest {
         @Test
         void shouldOverwriteTrackingInformationWhenAddingTheSameFileTwice() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table")
                     .fileSizeBytes(1024).build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table")
                     .fileSizeBytes(2048).build();
@@ -81,10 +81,10 @@ class InMemoryIngestBatcherStoreTest {
         @Test
         void shouldTrackTheSameFileForMultipleTables() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table-1").build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table-2").build();
 
@@ -103,8 +103,8 @@ class InMemoryIngestBatcherStoreTest {
         void shouldAddMultipleFilesAtSameTime() {
             // Given
             Instant receivedTime = Instant.parse("2023-11-03T12:09:00Z");
-            FileIngestRequest fileIngestRequest1 = fileRequest().receivedTime(receivedTime).build();
-            FileIngestRequest fileIngestRequest2 = fileRequest().receivedTime(receivedTime).build();
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest().receivedTime(receivedTime).build();
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest().receivedTime(receivedTime).build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -125,10 +125,10 @@ class InMemoryIngestBatcherStoreTest {
         @Test
         void shouldTrackJobWasCreatedWithTwoFiles() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test-1.parquet")
                     .tableId("test-table-1").build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test-2.parquet")
                     .tableId("test-table-1").build();
 
@@ -147,10 +147,10 @@ class InMemoryIngestBatcherStoreTest {
         @Test
         void shouldSendSameFileTwiceIfFirstRequestAssignedToJob() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table-1").build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId("test-table-1").build();
 
@@ -169,7 +169,7 @@ class InMemoryIngestBatcherStoreTest {
         @Test
         void shouldRetainAllFileRequestParametersAfterAssigningToJob() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(1234L)
                     .tableId("test-table")
@@ -196,13 +196,13 @@ class InMemoryIngestBatcherStoreTest {
     @DisplayName("Order files returned from the store")
     class OrderFilesReturnedFromStore {
 
-        final FileIngestRequest fileIngestRequest1 = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                 .file("test-bucket/first.parquet")
                 .tableId("test-table").build();
-        final FileIngestRequest fileIngestRequest2 = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                 .file("test-bucket/another.parquet")
                 .tableId("test-table").build();
-        final FileIngestRequest fileIngestRequest3 = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest3 = fileRequest()
                 .file("test-bucket/last.parquet")
                 .tableId("test-table").build();
 
@@ -242,7 +242,7 @@ class InMemoryIngestBatcherStoreTest {
     @Nested
     @DisplayName("Delete all pending")
     class DeleteAllPending {
-        final FileIngestRequest fileIngestRequest = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                 .file("test-bucket/first.parquet")
                 .tableId("test-table").build();
 
@@ -274,7 +274,7 @@ class InMemoryIngestBatcherStoreTest {
         }
     }
 
-    private FileIngestRequest.Builder fileRequest() {
+    private IngestBatcherTrackedFile.Builder fileRequest() {
         return requests.fileRequest();
     }
 

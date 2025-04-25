@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.batcher.core.testutil;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.Objects;
 
@@ -25,13 +25,13 @@ public class IngestBatcherStoreKeyFields {
     private final String tableId;
     private final String jobId;
 
-    private IngestBatcherStoreKeyFields(FileIngestRequest request) {
+    private IngestBatcherStoreKeyFields(IngestBatcherTrackedFile request) {
         file = request.getFile();
         tableId = request.getTableId();
         jobId = request.getJobId();
     }
 
-    public static IngestBatcherStoreKeyFields keyFor(FileIngestRequest request) {
+    public static IngestBatcherStoreKeyFields keyFor(IngestBatcherTrackedFile request) {
         return new IngestBatcherStoreKeyFields(request);
     }
 

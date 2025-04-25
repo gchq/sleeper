@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.ingest.batcher.query;
+package sleeper.ingest.batcher.core;
 
-import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
-import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import java.util.List;
+public class IngestBatcherSubmitRequestSerDe {
+    private final Gson gson = new GsonBuilder().create();
 
-public class PendingFilesQuery implements BatcherQuery {
-    @Override
-    public List<IngestBatcherTrackedFile> run(IngestBatcherStore store) {
-        return store.getPendingFilesOldestFirst();
+    public IngestBatcherSubmitRequest fromJson(String json) {
+        return gson.fromJson(json, IngestBatcherSubmitRequest.class);
     }
 
-    @Override
-    public Type getType() {
-        return Type.PENDING;
+    public String toJson(IngestBatcherSubmitRequest request) {
+        return gson.toJson(request);
     }
 }

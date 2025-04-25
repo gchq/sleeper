@@ -71,18 +71,18 @@ public class IngestBatcher {
     public void batchFiles() {
         Instant time = timeSupplier.get();
         LOGGER.info("Requesting pending files from IngestBatcherStore");
-        List<FileIngestRequest> pendingFiles = store.getPendingFilesOldestFirst();
+        List<IngestBatcherTrackedFile> pendingFiles = store.getPendingFilesOldestFirst();
         if (pendingFiles.isEmpty()) {
             LOGGER.info("No pending files found");
         } else {
             LOGGER.info("Found {} pending files", pendingFiles.size());
             pendingFiles.stream()
-                    .collect(Collectors.groupingBy(FileIngestRequest::getTableId, LinkedHashMap::new, toList()))
+                    .collect(Collectors.groupingBy(IngestBatcherTrackedFile::getTableId, LinkedHashMap::new, toList()))
                     .forEach((tableId, inputFiles) -> batchTableFiles(tableId, inputFiles, time));
         }
     }
 
-    private void batchTableFiles(String tableId, List<FileIngestRequest> inputFiles, Instant time) {
+    private void batchTableFiles(String tableId, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
         long totalBytes = totalBytes(inputFiles);
         TableProperties properties = tablePropertiesProvider.getById(tableId);
         TableStatus table = properties.getStatus();
@@ -93,7 +93,7 @@ public class IngestBatcher {
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
                     inputFiles.size(), formatBytes(totalBytes), table);
             List<Instant> receivedTimes = inputFiles.stream()
-                    .map(FileIngestRequest::getReceivedTime)
+                    .map(IngestBatcherTrackedFile::getReceivedTime)
                     .sorted().collect(toList());
             LOGGER.info("Files to batch were received between {} and {}",
                     receivedTimes.get(0), receivedTimes.get(receivedTimes.size() - 1));
@@ -103,7 +103,7 @@ public class IngestBatcher {
     }
 
     private boolean shouldCreateBatches(
-            TableProperties properties, List<FileIngestRequest> inputFiles, Instant time) {
+            TableProperties properties, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
         int minFiles = properties.getInt(INGEST_BATCHER_MIN_JOB_FILES);
         long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
         int maxAgeInSeconds = properties.getInt(INGEST_BATCHER_MAX_FILE_AGE_SECONDS);
@@ -136,7 +136,7 @@ public class IngestBatcher {
         return meetsMinFiles;
     }
 
-    private void sendBatch(TableStatus table, IngestQueue ingestQueue, List<FileIngestRequest> batch) {
+    private void sendBatch(TableStatus table, IngestQueue ingestQueue, List<IngestBatcherTrackedFile> batch) {
         String jobId = jobIdSupplier.get();
         List<String> files = store.assignJobGetAssigned(jobId, batch);
         if (files.isEmpty()) {
@@ -163,8 +163,8 @@ public class IngestBatcher {
         }
     }
 
-    private static Stream<List<FileIngestRequest>> createBatches(
-            TableProperties properties, List<FileIngestRequest> inputFiles) {
+    private static Stream<List<IngestBatcherTrackedFile>> createBatches(
+            TableProperties properties, List<IngestBatcherTrackedFile> inputFiles) {
         BatchCreator batchCreator = new BatchCreator(properties);
         inputFiles.forEach(batchCreator::add);
         return batchCreator.streamBatches();
@@ -180,11 +180,11 @@ public class IngestBatcher {
             maxBytes = properties.getBytes(INGEST_BATCHER_MAX_JOB_SIZE);
         }
 
-        void add(FileIngestRequest file) {
+        void add(IngestBatcherTrackedFile file) {
             getBatchWithSpaceFor(file).add(file);
         }
 
-        Batch getBatchWithSpaceFor(FileIngestRequest file) {
+        Batch getBatchWithSpaceFor(IngestBatcherTrackedFile file) {
             return batches.stream()
                     .filter(batch -> batch.hasSpaceForFile(file))
                     .findFirst().orElseGet(() -> {
@@ -194,13 +194,13 @@ public class IngestBatcher {
                     });
         }
 
-        Stream<List<FileIngestRequest>> streamBatches() {
+        Stream<List<IngestBatcherTrackedFile>> streamBatches() {
             return batches.stream().map(Batch::getFiles);
         }
     }
 
     private static class Batch {
-        private final List<FileIngestRequest> files = new ArrayList<>();
+        private final List<IngestBatcherTrackedFile> files = new ArrayList<>();
         private final int maxBatchSizeInFiles;
         private long batchSpaceInBytes;
 
@@ -209,23 +209,23 @@ public class IngestBatcher {
             this.batchSpaceInBytes = maxBatchSizeInBytes;
         }
 
-        boolean hasSpaceForFile(FileIngestRequest file) {
+        boolean hasSpaceForFile(IngestBatcherTrackedFile file) {
             return file.getFileSizeBytes() <= batchSpaceInBytes
                     && files.size() < maxBatchSizeInFiles;
         }
 
-        void add(FileIngestRequest file) {
+        void add(IngestBatcherTrackedFile file) {
             files.add(file);
             batchSpaceInBytes -= file.getFileSizeBytes();
         }
 
-        List<FileIngestRequest> getFiles() {
+        List<IngestBatcherTrackedFile> getFiles() {
             return files;
         }
     }
 
-    private static long totalBytes(List<FileIngestRequest> files) {
-        return files.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum();
+    private static long totalBytes(List<IngestBatcherTrackedFile> files) {
+        return files.stream().mapToLong(IngestBatcherTrackedFile::getFileSizeBytes).sum();
     }
 
     public static final class Builder {

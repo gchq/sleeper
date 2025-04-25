@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.batcher.core.testutil;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,17 +26,17 @@ public class FileIngestRequestTestHelper {
     public static final Instant FIRST_REQUEST_TIME = Instant.parse("2023-05-19T15:33:42Z");
     private int requestCount = 0;
 
-    public FileIngestRequest.Builder fileRequest() {
+    public IngestBatcherTrackedFile.Builder fileRequest() {
         int requestIndex = requestCount++;
         int requestNum = requestIndex + 1;
-        return FileIngestRequest.builder()
+        return IngestBatcherTrackedFile.builder()
                 .fileSizeBytes(1024)
                 .tableId(DEFAULT_TABLE_ID)
                 .file("test-bucket/auto-named-file-" + requestNum + ".parquet")
                 .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestIndex)));
     }
 
-    public static FileIngestRequest onJob(String jobId, FileIngestRequest request) {
+    public static IngestBatcherTrackedFile onJob(String jobId, IngestBatcherTrackedFile request) {
         return request.toBuilder().jobId(jobId).build();
     }
 }
