@@ -260,6 +260,11 @@ public class SleeperClient implements AutoCloseable {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
+    public void sendFilesToIngestBatcher(String tableName, List<String> fileList) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'sendFilesToIngestBatcher'");
+    }
+
     @Override
     public void close() {
         shutdown.run();

@@ -15,6 +15,7 @@
  */
 package sleeper.clients.api;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
@@ -220,6 +221,20 @@ class SleeperClientTest {
                                 .tableName(tableName)
                                 .files(fileList)
                                 .build())));
+    }
+
+    @Disabled
+    @Test
+    void shouldSendParquetFilesToIngestBatcher() {
+        String tableName = "ingest-table";
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        // When
+        sleeperClient.sendFilesToIngestBatcher(tableName, fileList);
+
+        // Then
+        assertThat(ingestBatcherQueue).containsExactly(
+                new IngestBatcherSubmitRequest(tableName, fileList));
     }
 
     private TableProperties createTableProperties(String tableName) {
