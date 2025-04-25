@@ -20,16 +20,14 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
@@ -54,8 +52,7 @@ public class BuiltJars {
         return new BuiltJars(s3,
                 instanceProperties.get(JARS_BUCKET),
                 instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
-                Optional.ofNullable(instanceProperties.get(ECR_REPOSITORY_PREFIX))
-                        .orElseGet(() -> instanceProperties.get(ID)));
+                DockerDeployment.getEcrRepositoryPrefix(instanceProperties));
     }
 
     public String bucketName() {

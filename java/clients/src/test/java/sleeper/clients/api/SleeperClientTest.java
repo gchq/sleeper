@@ -76,7 +76,7 @@ class SleeperClientTest {
     SleeperClient sleeperClient = createSleeperBuilder().build();
 
     private SleeperClient.Builder createSleeperBuilder() {
-        return SleeperClient.builder()
+        return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
                 .tablePropertiesStore(tablePropertiesStore)
@@ -107,6 +107,24 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestJobSender");
         assertThatThrownBy(() -> createSleeperBuilder().bulkImportJobSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkImportJobSender");
+    }
+
+    @Test
+    void shouldVerifyThatTableExists() {
+        // Given
+        String tableName = "table-name";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        sleeperClient.addTable(tableProperties, List.of());
+
+        // When / Then
+        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
+    }
+
+    @Test
+    void shouldValidateThatTableDoesNotExist() {
+        // When / Then
+        assertThat(sleeperClient.doesTableExist("FAKENAME")).isFalse();
     }
 
     @Test

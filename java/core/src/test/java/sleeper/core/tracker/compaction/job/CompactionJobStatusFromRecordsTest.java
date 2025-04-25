@@ -21,6 +21,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.run.JobRuns;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -64,10 +65,10 @@ class CompactionJobStatusFromRecordsTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
-                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started2, finished2))
+                        .jobRuns(JobRuns.latestFirst(List.of(jobRunOnTask(DEFAULT_TASK_ID, started2, finished2))))
                         .expiryDate(DEFAULT_EXPIRY).build(),
                 CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
-                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started1, finished1))
+                        .jobRuns(JobRuns.latestFirst(List.of(jobRunOnTask(DEFAULT_TASK_ID, started1, finished1))))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
 
@@ -84,7 +85,7 @@ class CompactionJobStatusFromRecordsTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("test-job")
-                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started, finished))
+                        .jobRuns(JobRuns.latestFirst(List.of(jobRunOnTask(DEFAULT_TASK_ID, started, finished))))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
 
@@ -106,7 +107,7 @@ class CompactionJobStatusFromRecordsTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("test-job").createdStatus(created)
-                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started, finished))
+                        .jobRuns(JobRuns.latestFirst(List.of(jobRunOnTask(DEFAULT_TASK_ID, started, finished))))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
 }

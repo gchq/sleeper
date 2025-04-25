@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
@@ -24,13 +23,11 @@ import sleeper.core.util.DurationStatistics;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -80,10 +77,22 @@ public class CompactionJobStatus {
         return new Builder();
     }
 
+    /**
+     * Creates a list of compaction job statuses from a stream of status update records held in a tracker.
+     *
+     * @param  records the records held in the tracker
+     * @return         the compaction job statuses
+     */
     public static List<CompactionJobStatus> listFrom(Stream<JobStatusUpdateRecord> records) {
-        return streamFrom(records).collect(Collectors.toList());
+        return streamFrom(records).toList();
     }
 
+    /**
+     * Reads compaction job statuses from a stream of status update records held in a tracker.
+     *
+     * @param  records the records held in the tracker
+     * @return         the compaction job statuses
+     */
     public static Stream<CompactionJobStatus> streamFrom(Stream<JobStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
                 .map(CompactionJobStatus::from);
@@ -98,6 +107,12 @@ public class CompactionJobStatus {
                 .build();
     }
 
+    /**
+     * Computes statistics about how long it took to commit finished compaction jobs.
+     *
+     * @param  jobs the compaction job statuses
+     * @return      the statistics
+     */
     public static Optional<DurationStatistics> computeStatisticsOfDelayBetweenFinishAndCommit(List<CompactionJobStatus> jobs) {
         return DurationStatistics.fromIfAny(jobs.stream()
                 .flatMap(CompactionJobStatus::runDelaysBetweenFinishAndCommit));
@@ -155,7 +170,7 @@ public class CompactionJobStatus {
         return runsByStatusType.getOrDefault(UNCOMMITTED, 0);
     }
 
-    public Stream<Duration> runDelaysBetweenFinishAndCommit() {
+    private Stream<Duration> runDelaysBetweenFinishAndCommit() {
         return runsLatestFirst.stream()
                 .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
     }
@@ -188,10 +203,24 @@ public class CompactionJobStatus {
         return jobId;
     }
 
+    /**
+     * Checks if this job had any events that occurred on a given task. Examples would be when the task received and
+     * started running the job, or when it finished the job and wrote the output of the compaction.
+     *
+     * @param  taskId the task ID
+     * @return        true if the job had any events on the given task
+     */
     public boolean isTaskIdAssigned(String taskId) {
         return jobRuns.isTaskIdAssigned(taskId);
     }
 
+    /**
+     * Checks if the job is contained in or overlaps with the given time period.
+     *
+     * @param  windowStartTime the start time
+     * @param  windowEndTime   the end time
+     * @return                 true if the job is in the period
+     */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isUnstartedOrInProgress()) {
@@ -210,6 +239,13 @@ public class CompactionJobStatus {
         return furthestRunStatusType;
     }
 
+    /**
+     * A builder for compaction job statuses. Note that this will usually only be used internally in this class,
+     * mapping from {@link JobStatusUpdateRecord} objects.
+     *
+     * @see CompactionJobStatus#streamFrom
+     * @see CompactionJobStatus#listFrom
+     */
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
@@ -219,29 +255,45 @@ public class CompactionJobStatus {
         private Builder() {
         }
 
+        /**
+         * Sets the compaction job ID.
+         *
+         * @param  jobId the job ID
+         * @return       this builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the status update when the job was created.
+         *
+         * @param  createdStatus the status update
+         * @return               this builder
+         */
         public Builder createdStatus(CompactionJobCreatedStatus createdStatus) {
             this.createdStatus = createdStatus;
             return this;
         }
 
-        public Builder singleJobRun(JobRun jobRun) {
-            return jobRunsLatestFirst(Collections.singletonList(jobRun));
-        }
-
-        public Builder jobRunsLatestFirst(List<JobRun> jobRunList) {
-            return jobRuns(JobRuns.latestFirst(jobRunList));
-        }
-
+        /**
+         * Sets the runs of the job.
+         *
+         * @param  jobRuns the job runs
+         * @return         this builder
+         */
         public Builder jobRuns(JobRuns jobRuns) {
             this.jobRuns = jobRuns;
             return this;
         }
 
+        /**
+         * Sets the expiry date, after which events for this job will no longer be held.
+         *
+         * @param  expiryDate the expiry date
+         * @return            this builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
             return this;

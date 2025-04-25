@@ -15,46 +15,32 @@
  */
 package sleeper.clients.api;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
-
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Stream;
-
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A client to interact with an instance of Sleeper. This interacts directly with the underlying AWS resources, and
@@ -62,7 +48,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
  */
-public class SleeperClient {
+public class SleeperClient implements AutoCloseable {
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
@@ -73,6 +59,7 @@ public class SleeperClient {
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest ingestJobSender;
     private final SleeperClientBulkImport bulkImportJobSender;
+    private final Runnable shutdown;
 
     private SleeperClient(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
@@ -84,6 +71,7 @@ public class SleeperClient {
         recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
+        shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
     }
 
     /**
@@ -94,36 +82,17 @@ public class SleeperClient {
      * @return            the client
      */
     public static SleeperClient createForInstanceId(String instanceId) {
-        return createForInstanceId(
-                buildAwsV1Client(AmazonS3ClientBuilder.standard()),
-                buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()),
-                buildAwsV1Client(AmazonSQSClientBuilder.standard()),
-                HadoopConfigurationProvider.getConfigurationForClient(),
-                instanceId);
+        return builder().instanceId(instanceId).build();
     }
 
-    private static SleeperClient createForInstanceId(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, Configuration hadoopConf, String instanceId) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
-        return builder()
-                .instanceProperties(instanceProperties)
-                .tableIndex(tableIndex)
-                .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client))
-                .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient))
-                .stateStoreProvider(
-                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
-                .objectFactory(ObjectFactory.noUserJars())
-                .recordRetrieverProvider(
-                        LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
-                .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
-                .bulkImportJobSender(SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
-                .build();
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    /**
+     * Creates a builder for a client with the default AWS configuration. The ID of the Sleeper instance to interact
+     * with must be set on the builder.
+     *
+     * @return the builder
+     */
+    public static AwsSleeperClientBuilder builder() {
+        return new AwsSleeperClientBuilder().defaultClients();
     }
 
     /**
@@ -147,8 +116,9 @@ public class SleeperClient {
     /**
      * Reads properties of a Sleeper table.
      *
-     * @param  tableStatus the status of the table
-     * @return             the table properties
+     * @param  tableStatus            the status of the table
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getTableProperties(TableStatus tableStatus) {
         return tablePropertiesProvider.get(tableStatus);
@@ -157,8 +127,9 @@ public class SleeperClient {
     /**
      * Reads properties of a Sleeper table.
      *
-     * @param  tableName the table name
-     * @return           the table properties
+     * @param  tableName              the table name
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getTableProperties(String tableName) {
         return tablePropertiesProvider.getByName(tableName);
@@ -175,10 +146,23 @@ public class SleeperClient {
     }
 
     /**
+     * Returns whether a sleeper table for the given name already exists.
+     *
+     * @param  tableName the table name
+     * @return           true if a table with the given name exists
+     */
+    public boolean doesTableExist(String tableName) {
+        return tableIndex.getTableByName(tableName).isPresent();
+    }
+
+    /**
      * Adds a Sleeper table to the instance.
      *
-     * @param tableProperties the table properties
-     * @param splitPoints     the split points to initialise the partition tree
+     * @param  tableProperties                   the table properties
+     * @param  splitPoints                       the split points to initialise the partition tree
+     * @throws SleeperPropertiesInvalidException if table properties provided don't validate
+     * @throws TableAlreadyExistsException       if the table already exists
+     * @throws StateStoreException               if the state store failed to initialise
      */
     public void addTable(TableProperties tableProperties, List<Object> splitPoints) {
         tableProperties.validate();
@@ -190,8 +174,10 @@ public class SleeperClient {
     /**
      * Creates a query executor for a given Sleeper table.
      *
-     * @param  tableName the table name
-     * @return           the query executor
+     * @param  tableName              the table name
+     * @return                        the query executor
+     * @throws TableNotFoundException if the table with the given name is not found
+     * @throws StateStoreException    if the state store can't be accessed
      */
     public QueryExecutor getQueryExecutor(String tableName) {
         TableProperties tableProperties = getTableProperties(tableName);
@@ -272,6 +258,11 @@ public class SleeperClient {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
+    @Override
+    public void close() {
+        shutdown.run();
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
@@ -282,6 +273,8 @@ public class SleeperClient {
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest ingestJobSender;
         private SleeperClientBulkImport bulkImportJobSender;
+        private Runnable shutdown = () -> {
+        };
 
         /**
          * Sets the instance properties of the instance to interact with.
@@ -379,6 +372,17 @@ public class SleeperClient {
          */
         public Builder bulkImportJobSender(SleeperClientBulkImport bulkImportJobSender) {
             this.bulkImportJobSender = bulkImportJobSender;
+            return this;
+        }
+
+        /**
+         * Sets how to shut down any resources associated with the client.
+         *
+         * @param  shutdown the shut down behaviour
+         * @return          this builder for chaining
+         */
+        public Builder shutdown(Runnable shutdown) {
+            this.shutdown = shutdown;
             return this;
         }
 
