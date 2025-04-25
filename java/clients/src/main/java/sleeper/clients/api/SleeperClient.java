@@ -232,7 +232,7 @@ public class SleeperClient implements AutoCloseable {
      * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
      * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
      *
-     * @param  tableName the table name to write to
+     * @param  tableName the name of the Sleeper table to write to
      * @param  platform  the platform the import should run on
      * @param  files     a list of files containing the records to ingest
      * @return           the ID of the job for tracking
