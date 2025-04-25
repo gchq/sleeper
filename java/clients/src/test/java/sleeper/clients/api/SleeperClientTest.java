@@ -38,6 +38,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
@@ -73,6 +74,7 @@ class SleeperClientTest {
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
     Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
+    Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
     SleeperClient sleeperClient = createSleeperBuilder().build();
 
     private SleeperClient.Builder createSleeperBuilder() {
@@ -83,8 +85,9 @@ class SleeperClientTest {
                 .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
                 .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
                 .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
-                .ingestJobSender(ingestSender())
-                .bulkImportJobSender(bulkImportSender());
+                .ingestJobSender(ingestQueue::add)
+                .bulkImportJobSender(bulkImportSender())
+                .ingestBatcherSender(ingestBatcherQueue::add);
     }
 
     @Test
@@ -107,6 +110,8 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestJobSender");
         assertThatThrownBy(() -> createSleeperBuilder().bulkImportJobSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkImportJobSender");
+        assertThatThrownBy(() -> createSleeperBuilder().ingestBatcherSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestBatcherSender");
     }
 
     @Test
@@ -244,10 +249,6 @@ class SleeperClientTest {
 
     private RangeFactory rangeFactory() {
         return new RangeFactory(schema);
-    }
-
-    private SleeperClientIngest ingestSender() {
-        return job -> ingestQueue.add(job);
     }
 
     private SleeperClientBulkImport bulkImportSender() {

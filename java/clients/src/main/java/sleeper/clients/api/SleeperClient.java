@@ -59,6 +59,7 @@ public class SleeperClient implements AutoCloseable {
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final SleeperClientIngest ingestJobSender;
     private final SleeperClientBulkImport bulkImportJobSender;
+    private final SleeperClientIngestBatcherSubmit ingestBatcherSender;
     private final Runnable shutdown;
 
     private SleeperClient(Builder builder) {
@@ -71,6 +72,7 @@ public class SleeperClient implements AutoCloseable {
         recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
+        ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
     }
 
@@ -273,6 +275,7 @@ public class SleeperClient implements AutoCloseable {
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private SleeperClientIngest ingestJobSender;
         private SleeperClientBulkImport bulkImportJobSender;
+        private SleeperClientIngestBatcherSubmit ingestBatcherSender;
         private Runnable shutdown = () -> {
         };
 
@@ -372,6 +375,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder bulkImportJobSender(SleeperClientBulkImport bulkImportJobSender) {
             this.bulkImportJobSender = bulkImportJobSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to send files to the ingest batcher.
+         *
+         * @param  ingestBatcherSender the client
+         * @return                     this builder for chaining
+         */
+        public Builder ingestBatcherSender(SleeperClientIngestBatcherSubmit ingestBatcherSender) {
+            this.ingestBatcherSender = ingestBatcherSender;
             return this;
         }
 

@@ -94,6 +94,7 @@ public class AwsSleeperClientBuilder {
                 .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf))
                 .ingestJobSender(SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient))
                 .bulkImportJobSender(SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient))
+                .ingestBatcherSender(SleeperClientIngestBatcherSubmit.toSqs(instanceProperties, sqsClient))
                 .shutdown(new AwsSleeperClientShutdown(executorService, List.of(s3ClientWrapper, dynamoClientWrapper, sqsClientWrapper)))
                 .build();
     }
