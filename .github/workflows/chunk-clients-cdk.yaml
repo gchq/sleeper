@@ -45,7 +45,6 @@ on:
       - 'java/configuration/**'
       - 'java/ingest/ingest-core/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/common/dynamodb-toolsv2/**'
       - 'java/common/localstack-test/**'
       - 'java/core/**'
       - 'java/example-iterators/**'
