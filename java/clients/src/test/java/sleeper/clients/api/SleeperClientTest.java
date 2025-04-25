@@ -189,7 +189,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
         // When
-        String jobId = sleeperClient.ingestParquetFilesFromS3(tableName, fileList);
+        String jobId = sleeperClient.ingestFromFiles(tableName, fileList);
 
         // Then
         assertThat(jobId).isNotBlank();
@@ -209,7 +209,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
         // When
-        String jobId = sleeperClient.bulkImportParquetFilesFromS3(tableName, platform, fileList);
+        String jobId = sleeperClient.bulkImportFromFiles(tableName, platform, fileList);
 
         // Then
         assertThat(jobId).isNotBlank();

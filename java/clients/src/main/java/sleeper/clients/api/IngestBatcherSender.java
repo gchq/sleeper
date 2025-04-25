@@ -23,6 +23,7 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 
+@FunctionalInterface
 public interface IngestBatcherSender {
 
     void submit(IngestBatcherSubmitRequest request);

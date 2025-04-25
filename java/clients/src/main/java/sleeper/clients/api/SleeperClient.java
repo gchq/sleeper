@@ -202,9 +202,9 @@ public class SleeperClient implements AutoCloseable {
      * @param  files     a list of files containing the records to ingest
      * @return           the ID of the job for tracking
      */
-    public String ingestParquetFilesFromS3(String tableName, List<String> files) {
+    public String ingestFromFiles(String tableName, List<String> files) {
         String jobId = UUID.randomUUID().toString();
-        ingestParquetFilesFromS3(IngestJob.builder()
+        ingestFromFiles(IngestJob.builder()
                 .tableName(tableName)
                 .id(jobId)
                 .files(files)
@@ -221,7 +221,7 @@ public class SleeperClient implements AutoCloseable {
      *
      * @param job the job listing files in S3 to ingest
      */
-    public void ingestParquetFilesFromS3(IngestJob job) {
+    public void ingestFromFiles(IngestJob job) {
         ingestJobSender.sendFilesToIngest(job);
     }
 
@@ -237,9 +237,9 @@ public class SleeperClient implements AutoCloseable {
      * @param  files     a list of files containing the records to ingest
      * @return           the ID of the job for tracking
      */
-    public String bulkImportParquetFilesFromS3(String tableName, BulkImportPlatform platform, List<String> files) {
+    public String bulkImportFromFiles(String tableName, BulkImportPlatform platform, List<String> files) {
         String jobId = UUID.randomUUID().toString();
-        bulkImportParquetFilesFromS3(platform, BulkImportJob.builder()
+        bulkImportFromFiles(platform, BulkImportJob.builder()
                 .id(jobId)
                 .tableName(tableName)
                 .files(files)
@@ -257,7 +257,7 @@ public class SleeperClient implements AutoCloseable {
      * @param platform the platform the import should run on
      * @param job      the job listing files in S3 to ingest
      */
-    public void bulkImportParquetFilesFromS3(BulkImportPlatform platform, BulkImportJob job) {
+    public void bulkImportFromFiles(BulkImportPlatform platform, BulkImportJob job) {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 

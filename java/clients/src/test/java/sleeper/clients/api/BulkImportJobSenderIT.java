@@ -78,7 +78,7 @@ public class BulkImportJobSenderIT extends LocalStackTestBase {
                 .id(UUID.randomUUID().toString())
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
-        BulkImportJobSender.bulkImportParquetFilesFromS3(instanceProperties, sqsClient)
+        BulkImportJobSender.toSqs(instanceProperties, sqsClient)
                 .sendFilesToBulkImport(platform, job);
         return job;
     }

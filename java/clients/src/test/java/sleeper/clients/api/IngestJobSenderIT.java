@@ -49,7 +49,7 @@ public class IngestJobSenderIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        IngestJobSender.ingestParquetFilesFromS3(instanceProperties, sqsClient)
+        IngestJobSender.toSqs(instanceProperties, sqsClient)
                 .sendFilesToIngest(job);
         assertThat(recieveIngestJobs()).containsExactly(job);
     }
