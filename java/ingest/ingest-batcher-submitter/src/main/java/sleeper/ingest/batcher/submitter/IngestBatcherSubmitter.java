@@ -51,7 +51,13 @@ public class IngestBatcherSubmitter {
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
-        List<IngestBatcherTrackedFile> files = toTrackedFiles(request, receivedTime);
+        List<IngestBatcherTrackedFile> files;
+        try {
+            files = toTrackedFiles(request, receivedTime);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Received invalid ingest request: {}", request, e);
+            return;
+        }
         files.forEach(store::addFile);
     }
 
