@@ -55,6 +55,11 @@ public class FileIngestRequestSerDe {
         return request.toFileIngestRequests(properties, conf, receivedTime, tableIndex);
     }
 
+    public List<FileIngestRequest> fromJson(String json, Instant receivedTime, FileIngestRequestSizeChecker sizeChecker) {
+        Request request = GSON.fromJson(json, Request.class);
+        return sizeChecker.toFileIngestRequests(request.tableName, request.files, receivedTime);
+    }
+
     public static String toJson(String bucketName, List<String> keys, String tableName) {
         return GSON.toJson(new Request(bucketName, keys, tableName));
     }
