@@ -138,7 +138,7 @@ impl ObjectStoreFactory {
         match scheme {
             "s3" => {
                 // Amazon S3 object store implementation is bucket specific
-                let host = extract_bucket(&url)?;
+                let host = extract_bucket(url)?;
                 Ok(format!("s3://{host}"))
             }
             _ => Ok(scheme.to_owned()),
@@ -159,7 +159,7 @@ impl ObjectStoreFactory {
     pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
-        match borrow.entry(ObjectStoreFactory::make_cache_key_for(&src)?) {
+        match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
             // if entry found, then clone the shared pointer
             Entry::Occupied(occupied) => Ok(occupied.get().clone()),
             // otherwise, attempt to create the object store
