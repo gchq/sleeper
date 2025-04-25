@@ -17,11 +17,6 @@
 package sleeper.ingest.batcher.core;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public record IngestBatcherSubmitRequest(List<String> files, String tableName) {
-
-    public IngestBatcherSubmitRequest(String bucketName, List<String> keys, String tableName) {
-        this(keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList()), tableName);
-    }
+public record IngestBatcherSubmitRequest(String tableName, List<String> files) {
 }

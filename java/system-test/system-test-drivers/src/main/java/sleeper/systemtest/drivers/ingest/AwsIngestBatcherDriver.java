@@ -56,8 +56,9 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
         sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                serDe.toJson(new IngestBatcherSubmitRequest(files,
-                        instance.getTableProperties().get(TABLE_NAME))));
+                serDe.toJson(new IngestBatcherSubmitRequest(
+                        instance.getTableProperties().get(TABLE_NAME),
+                        files)));
     }
 
     @Override

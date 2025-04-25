@@ -37,7 +37,7 @@ public class IngestRandomDataViaBatcher {
     public static void sendRequest(String dir, InstanceIngestSession session) {
         String queueUrl = session.instanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
         String jsonRequest = new IngestBatcherSubmitRequestSerDe().toJson(
-                new IngestBatcherSubmitRequest(List.of(dir), session.tableProperties().get(TABLE_NAME)));
+                new IngestBatcherSubmitRequest(session.tableProperties().get(TABLE_NAME), List.of(dir)));
         LOGGER.debug("Sending message to ingest batcher queue {}: {}", queueUrl, jsonRequest);
         session.sqs().sendMessage(queueUrl, jsonRequest);
     }
