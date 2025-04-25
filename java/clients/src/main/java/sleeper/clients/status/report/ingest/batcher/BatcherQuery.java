@@ -20,13 +20,13 @@ import sleeper.clients.status.report.ingest.batcher.query.AllFilesQuery;
 import sleeper.clients.status.report.ingest.batcher.query.BatcherQueryPrompt;
 import sleeper.clients.status.report.ingest.batcher.query.PendingFilesQuery;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
 
 public interface BatcherQuery {
-    List<FileIngestRequest> run(IngestBatcherStore store);
+    List<IngestBatcherTrackedFile> run(IngestBatcherStore store);
 
     Type getType();
 

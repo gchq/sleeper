@@ -34,8 +34,8 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
@@ -84,7 +84,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     public void handleMessage(String json, Instant receivedTime) {
-        List<FileIngestRequest> requests;
+        List<IngestBatcherTrackedFile> requests;
         try {
             requests = fileIngestRequestSerDe.fromJson(json, receivedTime, fileIngestRequestSizeChecker);
         } catch (RuntimeException e) {

@@ -24,7 +24,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.NumberFormatUtils;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.time.Instant;
@@ -46,7 +46,7 @@ public class FileIngestRequestSizeChecker {
         this.tableIndex = tableIndex;
     }
 
-    public List<FileIngestRequest> toFileIngestRequests(String tableName, List<String> files, Instant receivedTime) {
+    public List<IngestBatcherTrackedFile> toFileIngestRequests(String tableName, List<String> files, Instant receivedTime) {
         TableStatus table = tableIndex.getTableByName(tableName)
                 .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
         return HadoopPathUtils.streamFiles(files, conf, properties.get(FILE_SYSTEM))
@@ -54,7 +54,7 @@ public class FileIngestRequestSizeChecker {
                     String filePath = HadoopPathUtils.getRequestPath(file);
                     LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",
                             filePath, NumberFormatUtils.formatBytes(file.getLen()), table);
-                    return FileIngestRequest.builder()
+                    return IngestBatcherTrackedFile.builder()
                             .file(filePath)
                             .fileSizeBytes(file.getLen())
                             .tableId(table.getTableUniqueId())

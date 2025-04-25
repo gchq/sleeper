@@ -19,7 +19,7 @@ package sleeper.ingest.batcher.submitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class FileIngestRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
 
-    public List<FileIngestRequest> fromJson(String json, Instant receivedTime, FileIngestRequestSizeChecker sizeChecker) {
+    public List<IngestBatcherTrackedFile> fromJson(String json, Instant receivedTime, FileIngestRequestSizeChecker sizeChecker) {
         Request request = GSON.fromJson(json, Request.class);
         return sizeChecker.toFileIngestRequests(request.tableName, request.files, receivedTime);
     }
