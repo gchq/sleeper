@@ -24,10 +24,6 @@ import java.util.List;
  * Definitions of instance properties relating to bulk import on AWS EKS.
  */
 public interface EKSProperty {
-    UserDefinedInstanceProperty BULK_IMPORT_REPO = Index.propertyBuilder("sleeper.bulk.import.eks.repo")
-            .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty EKS_CLUSTER_ADMIN_ROLES = Index.propertyBuilder("sleeper.bulk.import.eks.cluster.admin.roles")
             .description("(EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)

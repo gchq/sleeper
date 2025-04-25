@@ -33,6 +33,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A diff describing a set of changes to Sleeper configuration properties.
+ */
 public class PropertiesDiff {
     private final Map<String, PropertyDiff> changes;
 
@@ -53,10 +56,22 @@ public class PropertiesDiff {
         this.changes = changes;
     }
 
+    /**
+     * Creates an empty diff with no changes.
+     *
+     * @return the diff
+     */
     public static PropertiesDiff noChanges() {
         return new PropertiesDiff(Collections.emptyMap());
     }
 
+    /**
+     * Writes a description of the changes to the console.
+     *
+     * @param out               the console output
+     * @param propertyIndex     the index of all properties of the type being changed (e.g. instance properties)
+     * @param invalidProperties which properties have validation failures caused by this diff
+     */
     public void print(
             ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex, Set<SleeperProperty> invalidProperties) {
         out.println("Found changes to properties:");
@@ -85,6 +100,14 @@ public class PropertiesDiff {
         }
     }
 
+    /**
+     * Retrieves a list of properties changed in this diff that require a CDK deployment when they are changed. If the
+     * list is not empty, a CDK redeployment will be required.
+     *
+     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
+     * @param  propertyIndex the index of all properties of the type being changed
+     * @return               the list of changed properties requiring a CDK deployment
+     */
     public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
         return changes.values().stream()
                 .flatMap(diff -> diff.getProperty(propertyIndex).stream())
@@ -105,6 +128,13 @@ public class PropertiesDiff {
         return propertyNames.stream();
     }
 
+    /**
+     * Combines this diff with another set of changes that happen after these changes. If the same property was changed
+     * twice, this will discard information about the intermediate state.
+     *
+     * @param  diff the diff to apply after this one
+     * @return      the combined diff
+     */
     public PropertiesDiff andThen(PropertiesDiff diff) {
         return new PropertiesDiff(combine(changes, diff.changes));
     }
@@ -137,10 +167,24 @@ public class PropertiesDiff {
         return new ArrayList<>(changes.values());
     }
 
+    /**
+     * Retrieves the diff of a specific property.
+     *
+     * @param  property the property to check
+     * @return          the diff, if the property changed
+     */
     public Optional<PropertyDiff> getDiff(SleeperProperty property) {
         return Optional.ofNullable(changes.get(property.getPropertyName()));
     }
 
+    /**
+     * Creates a view of the values of properties as if the changes in this diff had been reverted. This is backed by
+     * the values you provide, and will read from that object.
+     *
+     * @param  <T>         the type of properties changed by this diff (e.g. instance property)
+     * @param  valuesAfter the current values of properties, with these changes included
+     * @return             the view of the values with these changes reverted
+     */
     public <T extends SleeperProperty> SleeperPropertyValues<T> getValuesBefore(SleeperPropertyValues<T> valuesAfter) {
         return property -> getDiff(property)
                 .map(diff -> diff.getOldValue())

@@ -18,10 +18,12 @@ passthrough = [
     "SCCACHE_LOG",
     "SSCACHE_CACHE_SIZE",
     "SCCACHE_GHA_ENABLED",
+    "ACTIONS_CACHE_URL",
     "ACTIONS_RESULTS_URL",
     "ACTIONS_RUNTIME_TOKEN",
-    "CC=clang-18",
-    "CXX=clang++-18"
+    "ACTIONS_CACHE_SERVICE_V2",
+    "CC=sccache clang-18",
+    "CXX=sccache clang++-18"
 ]
 
 [target.aarch64-unknown-linux-gnu]

@@ -19,15 +19,13 @@ package sleeper.systemtest.drivers.cdk;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.validation.OptionalStack;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.systemtest.drivers.cdk.CleanUpDeletedSleeperInstances.instanceIdsByEcrRepositories;
 import static sleeper.systemtest.drivers.cdk.CleanUpDeletedSleeperInstances.instanceIdsByJarsBuckets;
 
@@ -47,9 +45,16 @@ public class CleanUpDeletedSleeperInstancesTest {
     @Test
     void shouldGetInstanceIdsFromEcrRepositories() {
         assertThat(instanceIdsByEcrRepositories(
-                new DockerImageConfiguration(Map.of(
-                        OptionalStack.IngestStack, dockerBuildImage("ingest"),
-                        OptionalStack.CompactionStack, dockerBuildxImage("compaction-job-execution")),
+                new DockerImageConfiguration(List.of(
+                        DockerDeployment.builder()
+                                .deploymentName("ingest")
+                                .optionalStack(OptionalStack.IngestStack)
+                                .build(),
+                        DockerDeployment.builder()
+                                .deploymentName("compaction-job-execution")
+                                .optionalStack(OptionalStack.CompactionStack)
+                                .multiplatform(true)
+                                .build()),
                         List.of()),
                 Stream.of("an-instance/ingest",
                         "not-sleeper/something",

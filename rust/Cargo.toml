@@ -16,7 +16,7 @@ members = ["compactor", "compaction", "rust_sketch"]
 resolver = "2"
 
 [workspace.package]
-version = "0.31.0-SNAPSHOT"
+version = "0.30.1-SNAPSHOT"
 edition = "2024"
 rust-version = "1.86"
 publish = false
@@ -27,15 +27,16 @@ authors = ["GCHQ"]
 [workspace.dependencies]
 arrow = { version = "54.3.1" } # Batch of reading from Parquet files
 async-trait = { version = "0.1.88" }
-aws-config = { version = "1.6.1" } # Credential loading
+aws-config = { version = "1.6.2" } # Credential loading
 aws-credential-types = { version = "1.2.2" } # Credential provider types
 aws-types = { version = "1.3.5" } # for Region
 bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
+cargo_metadata = { version = "0.19.2" } # Access cargo metadata programmtically
 chrono = { version = "0.4.40" } # Log helper
-clap = { version = "4.5.36" } # Cmd line args processing
+clap = { version = "4.5.37" } # Cmd line args processing
 color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
-cxx = { version = "1.0.157" } # Exception handling for Rust
-cxx-build = { version = "1.0.157" }
+cxx = { version = "1.0.158" } # Exception handling for Rust
+cxx-build = { version = "1.0.158" }
 datafusion = { version = "46.0.1" }
 env_logger = { version = "0.11.8" } # Standard logging to stderr
 futures = { version = "0.3.31" } # Async processing
@@ -47,7 +48,8 @@ num-format = { version = "0.4.4" } # Nicely formatted numbers
 object_store = { version = "0.11.2" } # Remote cloud storage access
 openssl = { version = "0.10.72" } # Use vendored feature to build from source for cross compilation
 owo-colors = { version = "4.2.0" } # Colourised output
-rand = { version = "0.9.0" }
+rand = { version = "0.9.1" }
+serde_json = { version = "1.0.140" } # Process metadata JSON
 tempfile = { version = "3.19.1" } # Create temporary files
 test-log = { version = "0.2.17" }
 testing_logger = { version = "0.1.1" } # Assert on logger output in tests
@@ -55,6 +57,9 @@ thiserror = { version = "2.0.12" } # Derivable error enums
 tokio = { version = "1.44.2", features = ["full"] } # Async runtime
 tokio-test = { version = "0.4.4" } # Doc tests
 url = { version = "2.5.4" } # URL processing for S3
+
+[workspace.metadata.datasketches]
+git_repository_tag = "5.2.0"
 
 [profile.release]
 incremental = true
