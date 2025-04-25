@@ -32,6 +32,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
@@ -261,8 +262,7 @@ public class SleeperClient implements AutoCloseable {
     }
 
     public void sendFilesToIngestBatcher(String tableName, List<String> fileList) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'sendFilesToIngestBatcher'");
+        ingestBatcherSender.submit(new IngestBatcherSubmitRequest(tableName, fileList));
     }
 
     @Override

@@ -15,7 +15,6 @@
  */
 package sleeper.clients.api;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
@@ -223,7 +222,6 @@ class SleeperClientTest {
                                 .build())));
     }
 
-    @Disabled
     @Test
     void shouldSendParquetFilesToIngestBatcher() {
         String tableName = "ingest-table";
