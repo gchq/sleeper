@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
@@ -62,8 +63,9 @@ public class TablePropertiesProvider {
     /**
      * Retrieves properties by table name.
      *
-     * @param  tableName the name of the table
-     * @return           the table properties
+     * @param  tableName              the name of the table
+     * @return                        the table properties
+     * @throws TableNotFoundException if the table with the given name is not found
      */
     public TableProperties getByName(String tableName) {
         return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName));

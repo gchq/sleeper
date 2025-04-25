@@ -38,7 +38,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
@@ -46,11 +45,7 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
@@ -78,13 +73,6 @@ public class GeneratePropertiesTemplates {
             REGION, "eu-west-2",
             VPC_ID, "1234567890",
             SUBNETS, "subnet-abcdefgh");
-
-    private static final Map<InstanceProperty, String> EMR_REPOSITORY_EXAMPLE_VALUES = Map.of(
-            ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest",
-            BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner",
-            BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless",
-            ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution",
-            BULK_EXPORT_ECR_REPO, "<insert-unique-sleeper-id>/bulk-export-task-execution");
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
@@ -137,7 +125,6 @@ public class GeneratePropertiesTemplates {
         properties.set(ID, "full-example");
 
         // Non-mandatory properties
-        EMR_REPOSITORY_EXAMPLE_VALUES.forEach(properties::set);
         properties.set(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key");
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
         properties.set(LOGGING_LEVEL, "INFO");
@@ -152,7 +139,6 @@ public class GeneratePropertiesTemplates {
     private static InstanceProperties generateTemplateInstanceProperties() {
         InstanceProperties properties = new InstanceProperties();
         BASIC_INSTANCE_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
-        EMR_REPOSITORY_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
         return properties;
     }
 

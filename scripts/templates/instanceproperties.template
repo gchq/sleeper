@@ -29,40 +29,6 @@ sleeper.vpc=changeme
 sleeper.subnets=changeme
 
 
-## The following properties relate to standard ingest.
-
-# The name of the ECR repository for the ingest container. The Docker image from the ingest module
-# should have been uploaded to an ECR repository of this name in this account.
-sleeper.ingest.repo=changeme
-
-
-## The following properties relate to bulk export.
-
-# The name of the repository for the bulk export container. The Docker image should have been uploaded
-# to an ECR repository of this name in this account.
-sleeper.bulk.export.ecr.repo=changeme
-
-
-## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
-## or EKS.
-
-# The name of the repository for the EMR serverless container. The Docker image from the bulk-import
-# module should have been uploaded to an ECR repository of this name in this account.
-sleeper.bulk.import.emr.serverless.repo=changeme
-
-# (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
-# is stored.
-sleeper.bulk.import.eks.repo=changeme
-
-
-## The following properties relate to compactions.
-
-# The name of the repository for the compaction container. The Docker image from the
-# compaction-job-execution module should have been uploaded to an ECR repository of this name in this
-# account.
-sleeper.compaction.repo=changeme
-
-
 ##################
 # Default Values #
 ##################

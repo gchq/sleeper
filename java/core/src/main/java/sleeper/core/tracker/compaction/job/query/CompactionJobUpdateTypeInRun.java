@@ -52,6 +52,13 @@ public enum CompactionJobUpdateTypeInRun {
         return furthestUpdate.get();
     }
 
+    /**
+     * Gets the update type of a status update that occurred during a run.
+     *
+     * @param  update                   the status update
+     * @return                          the update type
+     * @throws IllegalArgumentException if the update is not of a type that occurs during a run
+     */
     public static CompactionJobUpdateTypeInRun typeOfUpdateInRun(JobStatusUpdate update) {
         if (update instanceof CompactionJobStartedStatus) {
             return STARTED;
