@@ -23,35 +23,20 @@ import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class FileIngestRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
 
     public List<IngestBatcherTrackedFile> fromJson(String json, Instant receivedTime, FileIngestRequestSizeChecker sizeChecker) {
-        Request request = GSON.fromJson(json, Request.class);
-        return sizeChecker.toFileIngestRequests(request.tableName, request.files, receivedTime);
+        IngestBatcherSubmitRequest request = GSON.fromJson(json, IngestBatcherSubmitRequest.class);
+        return sizeChecker.toFileIngestRequests(request.tableName(), request.files(), receivedTime);
     }
 
     public static String toJson(String bucketName, List<String> keys, String tableName) {
-        return GSON.toJson(new Request(bucketName, keys, tableName));
+        return GSON.toJson(new IngestBatcherSubmitRequest(bucketName, keys, tableName));
     }
 
     public static String toJson(List<String> files, String tableName) {
-        return GSON.toJson(new Request(files, tableName));
-    }
-
-    private static class Request {
-        private final List<String> files;
-        private final String tableName;
-
-        Request(String bucketName, List<String> keys, String tableName) {
-            this(keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList()), tableName);
-        }
-
-        Request(List<String> files, String tableName) {
-            this.files = files;
-            this.tableName = tableName;
-        }
+        return GSON.toJson(new IngestBatcherSubmitRequest(files, tableName));
     }
 }
