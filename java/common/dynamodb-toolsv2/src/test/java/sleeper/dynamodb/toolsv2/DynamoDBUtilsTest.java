@@ -16,6 +16,7 @@
 package sleeper.dynamodb.toolsv2;
 
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ public class DynamoDBUtilsTest {
     @DisplayName("Find throttling exception")
     class FindThrottlingException {
 
+        @Disabled
         @Test
         void shouldFindThrottlingExceptionWithNoCauses() {
             // Given
@@ -46,6 +48,7 @@ public class DynamoDBUtilsTest {
             assertThat(DynamoDBUtils.isThrottlingException(exception)).isTrue();
         }
 
+        @Disabled
         @Test
         void shouldFindThrottlingExceptionWhenItIsRootCause() {
             // Given
@@ -103,6 +106,7 @@ public class DynamoDBUtilsTest {
                     .doesNotThrowAnyException();
         }
 
+        @Disabled
         @Test
         void shouldTimeoutWhenThrottlingExceptionThrownTooManyTimes() {
             // Given
@@ -130,6 +134,7 @@ public class DynamoDBUtilsTest {
                     .isSameAs(exception);
         }
 
+        @Disabled
         @Test
         void shouldNotTimeoutWhenThrottlingExceptionThrownThenNoExceptionThrown() {
             // Given

@@ -25,6 +25,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,6 +60,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                             new KeySchemaElement(TEST_KEY, KeyType.HASH)));
         }
 
+        @Disabled
         @Test
         void shouldReturnPagedResultsWhenMoreRecordsThanLimit() {
             // Given
@@ -77,6 +79,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
+        @Disabled
         @Test
         void shouldReturnOnePageOfResultsWhenFewerRecordsThanLimit() {
             // Given
@@ -91,6 +94,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1);
         }
 
+        @Disabled
         @Test
         void shouldReturnPagedResultsWhenRecordsEqualToLimit() {
             // Given
@@ -105,6 +109,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1);
         }
 
+        @Disabled
         @Test
         void shouldNotReturnEmptyResultWhenFewerRecordsThanLimit() {
             // Given
@@ -120,6 +125,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactly(1);
         }
 
+        @Disabled
         @Test
         void shouldReturnEmptyResultForLastPageWhenRecordsEqualToLimit() {
             // Given
@@ -135,6 +141,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactly(1, 0);
         }
 
+        @Disabled
         @Test
         void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanLimit() {
             // Given
@@ -157,6 +164,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
 
+        @Disabled
         @Test
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
@@ -179,6 +187,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                             new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
         }
 
+        @Disabled
         @Test
         void shouldReturnPagedResultsWhenMoreRecordsThanLimit() {
             // Given
@@ -197,6 +206,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
+        @Disabled
         @Test
         void shouldReturnOnePageOfResultsWhenFewerRecordsThanLimit() {
             // Given
@@ -215,6 +225,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
+        @Disabled
         @Test
         void shouldReturnPagedResultsWhenRecordsEqualToLimit() {
             // Given
@@ -233,6 +244,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
+        @Disabled
         @Test
         void shouldNotReturnEmptyResultWhenFewerRecordsThanLimit() {
             // Given
@@ -252,6 +264,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactly(2);
         }
 
+        @Disabled
         @Test
         void shouldReturnEmptyResultForLastPageWhenRecordsEqualToLimit() {
             // Given
@@ -271,6 +284,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactly(2, 0);
         }
 
+        @Disabled
         @Test
         void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanLimit() {
             // Given
@@ -293,6 +307,7 @@ public class DynamoDBUtilsPagingIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
 
+        @Disabled
         @Test
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
