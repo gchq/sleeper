@@ -1,7 +1,7 @@
 
 ---
 
-# Performing a Bulk Export
+# Exporting Data
 
 ## Introduction
 
