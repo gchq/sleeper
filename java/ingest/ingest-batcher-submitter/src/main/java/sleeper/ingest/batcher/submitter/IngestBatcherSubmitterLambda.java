@@ -82,7 +82,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     public void handleMessage(String json, Instant receivedTime) {
         IngestBatcherSubmitRequest request;
         try {
-            request = serDe.requestFromJson(json);
+            request = serDe.fromJson(json);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;

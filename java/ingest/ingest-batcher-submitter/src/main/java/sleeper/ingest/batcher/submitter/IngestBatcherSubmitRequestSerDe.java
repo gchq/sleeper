@@ -22,7 +22,7 @@ import com.google.gson.GsonBuilder;
 public class IngestBatcherSubmitRequestSerDe {
     private final Gson gson = new GsonBuilder().create();
 
-    public IngestBatcherSubmitRequest requestFromJson(String json) {
+    public IngestBatcherSubmitRequest fromJson(String json) {
         return gson.fromJson(json, IngestBatcherSubmitRequest.class);
     }
 
