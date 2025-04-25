@@ -16,17 +16,23 @@
 
 package sleeper.dynamodb.toolsv2;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
+import java.util.Map;
 
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBTableTestBase extends LocalStackTestBase {
@@ -45,10 +51,41 @@ public class DynamoDBTableTestBase extends LocalStackTestBase {
     }
 
     public void createTable() {
-        initialiseTable(dynamoClient, TEST_TABLE_NAME,
+        initialiseTable(dynamoClientV2, TEST_TABLE_NAME,
                 List.of(
-                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
+                        AttributeDefinition.builder()
+                                .attributeName(TEST_KEY)
+                                .attributeType(ScalarAttributeType.S)
+                                .build()),
                 List.of(
-                        new KeySchemaElement(TEST_KEY, KeyType.HASH)));
+                        KeySchemaElement.builder()
+                                .attributeName(TEST_KEY)
+                                .keyType(KeyType.HASH)
+                                .build()));
     }
+
+    protected PutItemRequest buildPutItemRequest(String tableName, Map<String, AttributeValue> record) {
+        return PutItemRequest.builder()
+                .tableName(tableName)
+                .item(record)
+                .build();
+    }
+
+    protected ScanRequest scan(String tableName, int limit) {
+        return ScanRequest.builder()
+                .tableName(tableName)
+                .limit(limit)
+                .build();
+    }
+
+    protected QueryRequest queryForKey(String key, String tableName, int limit) {
+        return QueryRequest.builder()
+                .tableName(tableName)
+                .keyConditionExpression("#TestKey = :testkey")
+                .expressionAttributeNames(Map.of("#TestKey", TEST_KEY))
+                .expressionAttributeValues(Map.of(":testkey", createStringAttribute(key)))
+                .limit(limit)
+                .build();
+    }
+
 }
