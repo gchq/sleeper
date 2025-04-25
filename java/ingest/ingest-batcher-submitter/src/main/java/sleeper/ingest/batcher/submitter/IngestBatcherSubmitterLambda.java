@@ -48,7 +48,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
-    private final FileIngestRequestSerDe fileIngestRequestSerDe = new FileIngestRequestSerDe();
+    private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
     private final FileIngestRequestSizeChecker fileIngestRequestSizeChecker;
 
     public IngestBatcherSubmitterLambda() {
@@ -86,7 +86,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     public void handleMessage(String json, Instant receivedTime) {
         List<IngestBatcherTrackedFile> requests;
         try {
-            requests = fileIngestRequestSerDe.fromJson(json, receivedTime, fileIngestRequestSizeChecker);
+            requests = serDe.fromJson(json, receivedTime, fileIngestRequestSizeChecker);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;

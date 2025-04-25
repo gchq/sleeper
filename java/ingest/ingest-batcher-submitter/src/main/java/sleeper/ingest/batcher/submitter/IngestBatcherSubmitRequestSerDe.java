@@ -24,7 +24,7 @@ import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import java.time.Instant;
 import java.util.List;
 
-public class FileIngestRequestSerDe {
+public class IngestBatcherSubmitRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
 
     public List<IngestBatcherTrackedFile> fromJson(String json, Instant receivedTime, FileIngestRequestSizeChecker sizeChecker) {
