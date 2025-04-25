@@ -35,6 +35,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 

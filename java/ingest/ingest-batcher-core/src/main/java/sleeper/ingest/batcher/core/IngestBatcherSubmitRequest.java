@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.batcher.submitter;
+package sleeper.ingest.batcher.core;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class IngestBatcherSubmitRequestSerDe {
-    private final Gson gson = new GsonBuilder().create();
+public record IngestBatcherSubmitRequest(List<String> files, String tableName) {
 
-    public IngestBatcherSubmitRequest fromJson(String json) {
-        return gson.fromJson(json, IngestBatcherSubmitRequest.class);
-    }
-
-    public String toJson(IngestBatcherSubmitRequest request) {
-        return gson.toJson(request);
+    public IngestBatcherSubmitRequest(String bucketName, List<String> keys, String tableName) {
+        this(keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList()), tableName);
     }
 }

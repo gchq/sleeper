@@ -19,8 +19,8 @@ package sleeper.systemtest.datageneration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.ingest.batcher.submitter.IngestBatcherSubmitRequest;
-import sleeper.ingest.batcher.submitter.IngestBatcherSubmitRequestSerDe;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 
 import java.util.List;
 
