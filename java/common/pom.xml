@@ -32,5 +32,6 @@
         <module>common-invoke-tables</module>
         <module>dynamodb-tools</module>
         <module>localstack-test</module>
+        <module>demo</module>
     </modules>
 </project>

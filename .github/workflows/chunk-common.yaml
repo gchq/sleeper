@@ -19,6 +19,7 @@ on:
       - 'java/common/common-invoke-tables/**'
       - 'java/build/**'
       - 'java/common/dynamodb-tools/**'
+      - 'java/common/dynamodb-toolsv2/**'
       - 'java/common/localstack-test/**'
       - 'java/statestore/**'
       - 'java/statestore-committer-core/**'
