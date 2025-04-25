@@ -5,12 +5,12 @@
 
 ## Introduction
 
-The bulk export feature in Sleeper allows you to export data from a Sleeper table to an S3 bucket in Parquet format.
+The Bulk Export feature in Sleeper allows you to export data from a Sleeper table to an S3 bucket in a number of Parquet files.
 
 ---
 
 ## Prerequisites
-Before performing a bulk export, ensure that the `BulkExportStack` has been deployed. This stack is optional and is not included in a vanilla installation.
+Before performing a Bulk Export, ensure that the `BulkExportStack` has been deployed. This stack is optional and is not included in a vanilla installation.
 
 ---
 
@@ -18,9 +18,9 @@ Before performing a bulk export, ensure that the `BulkExportStack` has been depl
 
 ### Step 1: Submit a Bulk Export Query
 
-To initiate a bulk export, submit a **bulk export query** to the SQS queue specified in the `BULK_EXPORT_QUEUE_URL` property. The query should specify the Sleeper table name or table id to be exported. If wanted an `exportId` can also be provided, if one isn't then one is genetated.
+To initiate a Bulk Export, submit a **Bulk Export Query** to the SQS queue specified in the `BULK_EXPORT_QUEUE_URL` property. The query should specify the Sleeper table name or table id to be exported. If wanted an `exportId` can also be provided, if one isn't then one is genetated.
 
-The system will automatically split the query into smaller export tasks (leaf partition bulk export queries) and process them.
+The system will automatically split the query into smaller export tasks Leaf Partition Bulk Export Queries) and process them.
 
 #### Example Query Message (JSON):
 ```json
@@ -32,15 +32,15 @@ The system will automatically split the query into smaller export tasks (leaf pa
 
 ### Step 2: Monitor the Export Process
 
-Once the query is submitted, the system will:
-1. Automatically split the bulk export query into smaller export tasks for each leaf partition.
-2. Add the leaf partition bulk export queries to the SQS queue.
+Once the export query is submitted, the system will:
+1. Automatically split the Bulk Export Query into smaller export queries for each Leaf Partition.
+2. Add the Leaf Partition Bulk Export Queries to the SQS queue `LEAF_PARTITION_BULK_EXPORT_QUEUE_URL`.
 3. The ECS Bulk Export Task Runner will:
-   - Retrieve the leaf partition export tasks from the SQS queue.
-   - Process each task by compacting the data in the specified partition.
+   - Retrieve the Leaf Partition Export Queries from the SQS queue.
+   - Process each query using existing compaction code. This will use the compaction code dfined in the table properties. Either Java or Datafusion.
    - Save the results to the configured S3 bucket.
 
-Logs for the export process can be monitored in the Bulk Export ECS cluster task logs.
+Logs for the export process can be monitored in the ECS Bulk Export Cluster task logs.
 
 ---
 
