@@ -48,7 +48,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
-    private final FileIngestRequestSerDe fileIngestRequestSerDe;
+    private final FileIngestRequestSerDe fileIngestRequestSerDe = new FileIngestRequestSerDe();
+    private final FileIngestRequestSizeChecker fileIngestRequestSizeChecker;
 
     public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -62,7 +63,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties,
+        this.fileIngestRequestSizeChecker = new FileIngestRequestSizeChecker(instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
@@ -72,7 +73,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             TableIndex tableIndex, Configuration conf) {
         this.store = store;
         this.propertiesReloader = PropertiesReloader.neverReload();
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf, tableIndex);
+        this.fileIngestRequestSizeChecker = new FileIngestRequestSizeChecker(instanceProperties, conf, tableIndex);
     }
 
     @Override
@@ -85,7 +86,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     public void handleMessage(String json, Instant receivedTime) {
         List<FileIngestRequest> requests;
         try {
-            requests = fileIngestRequestSerDe.fromJson(json, receivedTime);
+            requests = fileIngestRequestSerDe.fromJson(json, receivedTime, fileIngestRequestSizeChecker);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
