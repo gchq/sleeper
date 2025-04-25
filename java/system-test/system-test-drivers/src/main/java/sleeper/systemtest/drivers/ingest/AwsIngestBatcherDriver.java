@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.submitter.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.submitter.IngestBatcherSubmitRequestSerDe;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -54,8 +55,9 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
         sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                IngestBatcherSubmitRequestSerDe.toJson(files,
-                        instance.getTableProperties().get(TABLE_NAME)));
+                IngestBatcherSubmitRequestSerDe.toJson(
+                        new IngestBatcherSubmitRequest(files,
+                                instance.getTableProperties().get(TABLE_NAME))));
     }
 
     @Override

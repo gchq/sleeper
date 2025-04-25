@@ -32,11 +32,7 @@ public class IngestBatcherSubmitRequestSerDe {
         return sizeChecker.toFileIngestRequests(request.tableName(), request.files(), receivedTime);
     }
 
-    public static String toJson(String bucketName, List<String> keys, String tableName) {
-        return GSON.toJson(new IngestBatcherSubmitRequest(bucketName, keys, tableName));
-    }
-
-    public static String toJson(List<String> files, String tableName) {
-        return GSON.toJson(new IngestBatcherSubmitRequest(files, tableName));
+    public static String toJson(IngestBatcherSubmitRequest request) {
+        return GSON.toJson(request);
     }
 }
