@@ -41,6 +41,7 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
+    private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
 
     public AwsIngestBatcherDriver(
             SystemTestInstanceContext instance,
@@ -55,9 +56,8 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
         sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                IngestBatcherSubmitRequestSerDe.toJson(
-                        new IngestBatcherSubmitRequest(files,
-                                instance.getTableProperties().get(TABLE_NAME))));
+                serDe.toJson(new IngestBatcherSubmitRequest(files,
+                        instance.getTableProperties().get(TABLE_NAME))));
     }
 
     @Override

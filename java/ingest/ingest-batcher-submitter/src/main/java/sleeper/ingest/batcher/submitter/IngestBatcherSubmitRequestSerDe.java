@@ -20,13 +20,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class IngestBatcherSubmitRequestSerDe {
-    private static final Gson GSON = new GsonBuilder().create();
+    private final Gson gson = new GsonBuilder().create();
 
     public IngestBatcherSubmitRequest requestFromJson(String json) {
-        return GSON.fromJson(json, IngestBatcherSubmitRequest.class);
+        return gson.fromJson(json, IngestBatcherSubmitRequest.class);
     }
 
-    public static String toJson(IngestBatcherSubmitRequest request) {
-        return GSON.toJson(request);
+    public String toJson(IngestBatcherSubmitRequest request) {
+        return gson.toJson(request);
     }
 }
