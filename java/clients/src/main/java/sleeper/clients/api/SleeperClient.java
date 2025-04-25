@@ -192,14 +192,14 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
-     * containing a list of files. These files must be in S3. They can be either files or directories. If they are
-     * directories then all Parquet files under the directory will be ingested.
+     * Ingests the data in some given files to a Sleeper table. This submits the files as a job in a queue. The job will
+     * be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
+     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
      *
      * @param  tableName the name of the Sleeper table to write to
-     * @param  files     list of files containing records to ingest
+     * @param  files     a list of files containing the records to ingest
      * @return           the ID of the job for tracking
      */
     public String ingestParquetFilesFromS3(String tableName, List<String> files) {
@@ -213,11 +213,11 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Ingests the data in some given files to a Sleeper table. This is done by sending a message to the ingest queue
-     * containing a list of files. These files must be in S3. They can be either files or directories. If they are
-     * directories then all Parquet files under the directory will be ingested.
+     * Ingests the data in some given files to a Sleeper table. This submits the files as a job in a queue. The job will
+     * be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
+     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
      *
      * @param job the job listing files in S3 to ingest
      */
@@ -226,15 +226,15 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Ingests the data in some given files to a Sleeper table with the bulk import method. This is done by sending a
-     * message to a bulk import queue containing a list of files. These files must be in S3. They can be either files or
-     * directories. If they are directories then all Parquet files under the directory will be ingested.
+     * Ingests the data in some given files to a Sleeper table with the bulk import method. This submits the files as a
+     * job in a queue. The job will be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
+     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
      *
      * @param  tableName the table name to write to
      * @param  platform  the platform the import should run on
-     * @param  files     list of the files containing the records to ingest
+     * @param  files     a list of files containing the records to ingest
      * @return           the ID of the job for tracking
      */
     public String bulkImportParquetFilesFromS3(String tableName, BulkImportPlatform platform, List<String> files) {
@@ -248,11 +248,11 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Ingests the data in some given files to a Sleeper table with the bulk import method. This is done by sending a
-     * message to a bulk import queue containing a list of files. These files must be in S3. They can be either files or
-     * directories. If they are directories then all Parquet files under the directory will be ingested.
+     * Ingests the data in some given files to a Sleeper table with the bulk import method. This submits the files as a
+     * job in a queue. The job will be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
+     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
      *
      * @param platform the platform the import should run on
      * @param job      the job listing files in S3 to ingest
@@ -261,8 +261,20 @@ public class SleeperClient implements AutoCloseable {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
-    public void sendFilesToIngestBatcher(String tableName, List<String> fileList) {
-        ingestBatcherSender.submit(new IngestBatcherSubmitRequest(tableName, fileList));
+    /**
+     * Submits files to the ingest batcher, to be ingested to a Sleeper table. Once the files are in the ingest batcher,
+     * they will be added to an ingest or bulk import job at some point in the future, depending on the configuration of
+     * the batcher. The files can be tracked individually by their filename in the ingest batcher store, which will
+     * track when they are assigned to a job. Any resulting jobs can then be tracked based on that entry.
+     * <p>
+     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
+     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
+     *
+     * @param tableName the name of the Sleeper table to write to
+     * @param files     a list of files containing the records to ingest
+     */
+    public void sendFilesToIngestBatcher(String tableName, List<String> files) {
+        ingestBatcherSender.submit(new IngestBatcherSubmitRequest(tableName, files));
     }
 
     @Override
