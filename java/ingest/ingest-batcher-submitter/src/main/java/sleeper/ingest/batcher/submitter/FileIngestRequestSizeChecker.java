@@ -46,10 +46,10 @@ public class FileIngestRequestSizeChecker {
         this.tableIndex = tableIndex;
     }
 
-    public List<IngestBatcherTrackedFile> toFileIngestRequests(String tableName, List<String> files, Instant receivedTime) {
-        TableStatus table = tableIndex.getTableByName(tableName)
-                .orElseThrow(() -> TableNotFoundException.withTableName(tableName));
-        return HadoopPathUtils.streamFiles(files, conf, properties.get(FILE_SYSTEM))
+    public List<IngestBatcherTrackedFile> toFileIngestRequests(IngestBatcherSubmitRequest request, Instant receivedTime) {
+        TableStatus table = tableIndex.getTableByName(request.tableName())
+                .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName()));
+        return HadoopPathUtils.streamFiles(request.files(), conf, properties.get(FILE_SYSTEM))
                 .map(file -> {
                     String filePath = HadoopPathUtils.getRequestPath(file);
                     LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",

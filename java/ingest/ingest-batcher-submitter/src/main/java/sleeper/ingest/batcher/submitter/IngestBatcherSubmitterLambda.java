@@ -49,7 +49,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
     private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
-    private final FileIngestRequestSizeChecker fileIngestRequestSizeChecker;
+    private final FileIngestRequestSizeChecker sizeChecker;
 
     public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -63,7 +63,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSizeChecker = new FileIngestRequestSizeChecker(instanceProperties,
+        this.sizeChecker = new FileIngestRequestSizeChecker(instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
     }
@@ -73,7 +73,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             TableIndex tableIndex, Configuration conf) {
         this.store = store;
         this.propertiesReloader = PropertiesReloader.neverReload();
-        this.fileIngestRequestSizeChecker = new FileIngestRequestSizeChecker(instanceProperties, conf, tableIndex);
+        this.sizeChecker = new FileIngestRequestSizeChecker(instanceProperties, conf, tableIndex);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     public void handleMessage(String json, Instant receivedTime) {
         List<IngestBatcherTrackedFile> requests;
         try {
-            requests = serDe.fromJson(json, receivedTime, fileIngestRequestSizeChecker);
+            requests = sizeChecker.toFileIngestRequests(serDe.requestFromJson(json), receivedTime);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
