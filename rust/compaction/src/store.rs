@@ -72,6 +72,7 @@ pub trait SizeHintableStore: ObjectStore {
 pub struct LoggingObjectStore<T: ObjectStore> {
     store: T,
     prefix: String,
+    path_prefix: String,
     internal: Mutex<LoggingData>,
 }
 
@@ -79,10 +80,11 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
     /// Create a new [`LoggingObjectStore`] by wrapping
     /// an inner store.
     #[must_use]
-    pub fn new(inner: T, prefix: impl Into<String>) -> Self {
+    pub fn new(inner: T, prefix: impl Into<String>, path_prefix: impl Into<String>) -> Self {
         Self {
             store: inner,
             prefix: prefix.into(),
+            path_prefix: path_prefix.into(),
             internal: Mutex::new(LoggingData::default()),
         }
     }
@@ -118,15 +120,20 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
 
 impl<T: ObjectStore> std::fmt::Display for LoggingObjectStore<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "LoggingObjectStore \"{}\" ({})", self.prefix, self.store)
+        write!(
+            f,
+            "LoggingObjectStore \"{}\" path prefix: \"{}\" ({})",
+            self.prefix, self.path_prefix, self.store
+        )
     }
 }
 
 impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     fn drop(&mut self) {
         info!(
-            "LoggingObjectStore \"{}\" made {} GET requests and requested a total of {} bytes (range bounded)",
+            "LoggingObjectStore \"{}\" to \"{}\" made {} GET requests and requested a total of {} bytes (range bounded)",
             self.prefix,
+            self.path_prefix,
             self.get_count().to_formatted_string(&Locale::en),
             self.get_bytes_read().to_formatted_string(&Locale::en)
         );
@@ -159,8 +166,9 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                 Some(GetRange::Bounded(get_range)) => {
                     stats.get_bytes_read += get_range.len();
                     info!(
-                        "{} GET request on {} byte range {} to {} = {} bytes",
+                        "{} GET request on {}/{} byte range {} to {} = {} bytes",
                         self.prefix,
+                        self.path_prefix,
                         location,
                         get_range.start.to_formatted_string(&Locale::en),
                         get_range.end.to_formatted_string(&Locale::en),
@@ -169,24 +177,26 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                 }
                 Some(GetRange::Offset(start_pos)) => {
                     info!(
-                        "{} GET request on {} for byte {} to EOF",
+                        "{} GET request on {}/{} for byte {} to EOF",
                         self.prefix,
+                        self.path_prefix,
                         location,
                         start_pos.to_formatted_string(&Locale::en)
                     );
                 }
                 Some(GetRange::Suffix(pos)) => {
                     info!(
-                        "{} GET request on {} for last {} bytes of object",
+                        "{} GET request on {}/{} for last {} bytes of object",
                         self.prefix,
+                        self.path_prefix,
                         location,
                         pos.to_formatted_string(&Locale::en)
                     );
                 }
                 None => {
                     info!(
-                        "{} GET request on {} for complete file range",
-                        self.prefix, location
+                        "{} GET request on {}/{} for complete file range",
+                        self.prefix, self.path_prefix, location
                     );
                 }
             }
@@ -195,7 +205,10 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {
-        info!("{} HEAD request {}", self.prefix, location);
+        info!(
+            "{} HEAD request {}/{}",
+            self.prefix, self.path_prefix, location
+        );
         self.store.head(location).await
     }
 
@@ -204,7 +217,10 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
-        info!("{} LIST request {:?}", self.prefix, prefix);
+        info!(
+            "{} LIST request {}/{:?}",
+            self.prefix, self.path_prefix, prefix
+        );
         self.store.list(prefix)
     }
 
@@ -227,8 +243,9 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         opts: PutOptions,
     ) -> Result<PutResult> {
         info!(
-            "{} PUT request to {} of {} bytes",
+            "{} PUT request to {}/{} of {} bytes",
             self.prefix,
+            self.path_prefix,
             location,
             payload.content_length().to_formatted_string(&Locale::en)
         );
@@ -248,11 +265,15 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                 .expect("LoggingObjectStore stats lock poisoned");
             capacity = stats.capacity;
         }
-        info!("{} PUT MULTIPART request to {}", self.prefix, location);
+        info!(
+            "{} PUT MULTIPART request to {}/{}",
+            self.prefix, self.path_prefix, location
+        );
         let part_upload = self.store.put_multipart_opts(location, opts).await?;
         Ok(Box::new(LoggingMultipartUpload::new_with_capacity(
             part_upload,
             &self.prefix,
+            format!("{}/{}", self.path_prefix, location),
             capacity,
         )) as Box<dyn MultipartUpload>)
     }
@@ -262,6 +283,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
 struct LoggingMultipartUpload {
     inner: Box<dyn MultipartUpload>,
     prefix: String,
+    path: String,
     buffer: BytesMut,
     capacity: usize,
 }
@@ -270,11 +292,13 @@ impl LoggingMultipartUpload {
     pub fn new_with_capacity(
         inner: Box<dyn MultipartUpload>,
         prefix: impl Into<String>,
+        path: impl Into<String>,
         capacity: usize,
     ) -> Self {
         Self {
             inner,
             prefix: prefix.into(),
+            path: path.into(),
             buffer: BytesMut::with_capacity(capacity),
             capacity,
         }
@@ -282,8 +306,9 @@ impl LoggingMultipartUpload {
 
     fn upload_buffer(&mut self) -> UploadPart {
         info!(
-            "{} Uploading {} bytes",
+            "{} Uploading to {} {} bytes",
             self.prefix,
+            self.path,
             self.buffer.len().to_formatted_string(&Locale::en)
         );
         let oldbuf = std::mem::replace(&mut self.buffer, BytesMut::with_capacity(self.capacity));
@@ -299,8 +324,9 @@ impl MultipartUpload for LoggingMultipartUpload {
             self.buffer.extend_from_slice(bytes);
         }
         info!(
-            "{} multipart PUT of {} bytes",
+            "{} multipart PUT to {} of {} bytes",
             self.prefix,
+            self.path,
             len.to_formatted_string(&Locale::en)
         );
         // Should we upload this?
@@ -324,7 +350,7 @@ impl MultipartUpload for LoggingMultipartUpload {
         Self: 'async_trait,
     {
         Box::pin(async move {
-            info!("multipart COMPLETE");
+            info!("multipart to {} COMPLETE", self.path);
             if !self.buffer.is_empty() {
                 self.upload_buffer().await?;
             }
@@ -368,7 +394,7 @@ mod tests {
 
     fn make_store() -> LoggingObjectStore<InMemory> {
         let inner = InMemory::new();
-        LoggingObjectStore::new(inner, "TEST")
+        LoggingObjectStore::new(inner, "TEST", "memory:/")
     }
 
     #[tokio::test]
@@ -469,12 +495,12 @@ mod tests {
             assert_eq!(captured_logs.len(), 3);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request on test_file byte range 1 to 5 = 4 bytes"
+                "TEST GET request on memory://test_file byte range 1 to 5 = 4 bytes"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
             assert_eq!(
                 captured_logs[2].body,
-                "LoggingObjectStore \"TEST\" made 1 GET requests and requested a total of 4 bytes (range bounded)"
+                "LoggingObjectStore \"TEST\" to \"memory:/\" made 1 GET requests and requested a total of 4 bytes (range bounded)"
             );
             assert_eq!(captured_logs[2].level, Level::Info);
         });
@@ -497,7 +523,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request on test_file byte range 1 to 5 = 4 bytes"
+                "TEST GET request on memory://test_file byte range 1 to 5 = 4 bytes"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -524,7 +550,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request on test_file for byte 3 to EOF"
+                "TEST GET request on memory://test_file for byte 3 to EOF"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -551,7 +577,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request on test_file for last 3 bytes of object"
+                "TEST GET request on memory://test_file for last 3 bytes of object"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -575,7 +601,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request on test_file for complete file range"
+                "TEST GET request on memory://test_file for complete file range"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -596,7 +622,10 @@ mod tests {
         // Then
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 2);
-            assert_eq!(captured_logs[1].body, "TEST HEAD request test_file");
+            assert_eq!(
+                captured_logs[1].body,
+                "TEST HEAD request memory://test_file"
+            );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
 
@@ -618,7 +647,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 1);
             assert_eq!(
                 captured_logs[0].body,
-                "TEST LIST request Some(Path { raw: \"foo\" })"
+                "TEST LIST request memory://Some(Path { raw: \"foo\" })"
             );
             assert_eq!(captured_logs[0].level, Level::Info);
         });
@@ -642,7 +671,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 1);
             assert_eq!(
                 captured_logs[0].body,
-                "TEST PUT request to test_file of 3 bytes"
+                "TEST PUT request to memory://test_file of 3 bytes"
             );
             assert_eq!(captured_logs[0].level, Level::Info);
         });
@@ -668,18 +697,33 @@ mod tests {
             assert_eq!(captured_logs.len(), 6);
             assert_eq!(
                 captured_logs[0].body,
-                "TEST PUT MULTIPART request to test_file"
+                "TEST PUT MULTIPART request to memory://test_file"
             );
             assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, "TEST multipart PUT of 3 bytes");
+            assert_eq!(
+                captured_logs[1].body,
+                "TEST multipart PUT to memory://test_file of 3 bytes"
+            );
             assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "TEST multipart PUT of 4 bytes");
+            assert_eq!(
+                captured_logs[2].body,
+                "TEST multipart PUT to memory://test_file of 4 bytes"
+            );
             assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(captured_logs[3].body, "TEST multipart PUT of 5 bytes");
+            assert_eq!(
+                captured_logs[3].body,
+                "TEST multipart PUT to memory://test_file of 5 bytes"
+            );
             assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(captured_logs[4].body, "multipart COMPLETE");
+            assert_eq!(
+                captured_logs[4].body,
+                "multipart to memory://test_file COMPLETE"
+            );
             assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(captured_logs[5].body, "TEST Uploading 12 bytes");
+            assert_eq!(
+                captured_logs[5].body,
+                "TEST Uploading to memory://test_file 12 bytes"
+            );
             assert_eq!(captured_logs[5].level, Level::Info);
         });
 
@@ -716,22 +760,43 @@ mod tests {
             assert_eq!(captured_logs.len(), 8);
             assert_eq!(
                 captured_logs[0].body,
-                "TEST PUT MULTIPART request to test_file"
+                "TEST PUT MULTIPART request to memory://test_file"
             );
             assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, "TEST multipart PUT of 3 bytes");
+            assert_eq!(
+                captured_logs[1].body,
+                "TEST multipart PUT to memory://test_file of 3 bytes"
+            );
             assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "TEST Uploading 3 bytes");
+            assert_eq!(
+                captured_logs[2].body,
+                "TEST Uploading to memory://test_file 3 bytes"
+            );
             assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(captured_logs[3].body, "TEST multipart PUT of 4 bytes");
+            assert_eq!(
+                captured_logs[3].body,
+                "TEST multipart PUT to memory://test_file of 4 bytes"
+            );
             assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(captured_logs[4].body, "TEST Uploading 4 bytes");
+            assert_eq!(
+                captured_logs[4].body,
+                "TEST Uploading to memory://test_file 4 bytes"
+            );
             assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(captured_logs[5].body, "TEST multipart PUT of 5 bytes");
+            assert_eq!(
+                captured_logs[5].body,
+                "TEST multipart PUT to memory://test_file of 5 bytes"
+            );
             assert_eq!(captured_logs[5].level, Level::Info);
-            assert_eq!(captured_logs[6].body, "TEST Uploading 5 bytes");
+            assert_eq!(
+                captured_logs[6].body,
+                "TEST Uploading to memory://test_file 5 bytes"
+            );
             assert_eq!(captured_logs[6].level, Level::Info);
-            assert_eq!(captured_logs[7].body, "multipart COMPLETE");
+            assert_eq!(
+                captured_logs[7].body,
+                "multipart to memory://test_file COMPLETE"
+            );
             assert_eq!(captured_logs[7].level, Level::Info);
         });
         let retrieved_data = String::from_utf8(
@@ -767,20 +832,38 @@ mod tests {
             assert_eq!(captured_logs.len(), 7);
             assert_eq!(
                 captured_logs[0].body,
-                "TEST PUT MULTIPART request to test_file"
+                "TEST PUT MULTIPART request to memory://test_file"
             );
             assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(captured_logs[1].body, "TEST multipart PUT of 8 bytes");
+            assert_eq!(
+                captured_logs[1].body,
+                "TEST multipart PUT to memory://test_file of 8 bytes"
+            );
             assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "TEST multipart PUT of 9 bytes");
+            assert_eq!(
+                captured_logs[2].body,
+                "TEST multipart PUT to memory://test_file of 9 bytes"
+            );
             assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(captured_logs[3].body, "TEST Uploading 17 bytes");
+            assert_eq!(
+                captured_logs[3].body,
+                "TEST Uploading to memory://test_file 17 bytes"
+            );
             assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(captured_logs[4].body, "TEST multipart PUT of 3 bytes");
+            assert_eq!(
+                captured_logs[4].body,
+                "TEST multipart PUT to memory://test_file of 3 bytes"
+            );
             assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(captured_logs[5].body, "multipart COMPLETE");
+            assert_eq!(
+                captured_logs[5].body,
+                "multipart to memory://test_file COMPLETE"
+            );
             assert_eq!(captured_logs[5].level, Level::Info);
-            assert_eq!(captured_logs[6].body, "TEST Uploading 3 bytes");
+            assert_eq!(
+                captured_logs[6].body,
+                "TEST Uploading to memory://test_file 3 bytes"
+            );
             assert_eq!(captured_logs[6].level, Level::Info);
         });
         let retrieved_data = String::from_utf8(

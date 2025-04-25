@@ -29,7 +29,7 @@ use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::eyre;
 use futures::Future;
 use object_store::{
-    ClientOptions, CredentialProvider, Error, Result,
+    ClientOptions, CredentialProvider, Error,
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
 };
@@ -102,6 +102,13 @@ pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
     Ok(config_for_s3_module(&creds, region))
 }
 
+/// Extract the S3 bucket name from a URL.
+fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
+    src.host_str()
+        .map(ToOwned::to_owned)
+        .ok_or(eyre!("invalid S3 bucket name"))
+}
+
 /// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
@@ -155,21 +162,26 @@ impl ObjectStoreFactory {
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
         match src.scheme() {
-            "s3" => Ok(self.connect_s3(src).map(|e| {
-                Arc::new(LoggingObjectStore::new(
-                    ReadaheadStore::new(e)
-                        .with_max_live_streams(
-                            std::thread::available_parallelism()
-                                .unwrap_or(NonZero::new(2usize).unwrap())
-                                .get(),
-                        )
-                        .with_max_stream_age(Duration::from_secs(60)),
-                    "DataFusion",
-                ))
-            })?),
+            "s3" => {
+                let bucket = format!("s3://{}", extract_bucket(src)?);
+                Ok(self.connect_s3(src).map(|e| {
+                    Arc::new(LoggingObjectStore::new(
+                        ReadaheadStore::new(e, bucket.clone())
+                            .with_max_live_streams(
+                                std::thread::available_parallelism()
+                                    .unwrap_or(NonZero::new(2usize).unwrap())
+                                    .get(),
+                            )
+                            .with_max_stream_age(Duration::from_secs(60)),
+                        "DataFusion",
+                        bucket,
+                    ))
+                })?)
+            }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
                 "Local",
+                "file:/",
             ))),
             _ => Err(eyre!("no object store for given schema")),
         }
@@ -185,5 +197,42 @@ impl ObjectStoreFactory {
                 "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
             )),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use color_eyre::eyre::Result;
+    use url::Url;
+
+    use super::extract_bucket;
+
+    #[test]
+    fn should_extract_bucket() -> Result<()> {
+        // Given
+        let url = Url::parse("s3://some_bucket/some/path/object.ext")?;
+
+        // When
+        let bucket = extract_bucket(&url)?;
+
+        // Then
+        assert_eq!(bucket, "some_bucket");
+        Ok(())
+    }
+
+    #[test]
+    fn should_be_invalid_bucket() -> Result<()> {
+        // Given
+        let url = Url::parse("s3:/path/something.ext")?;
+
+        // When
+        let bucket = extract_bucket(&url);
+
+        // Then
+        assert!(bucket.is_err());
+        let s = bucket.unwrap_err().to_string();
+        assert_eq!(s, "invalid S3 bucket name");
+
+        Ok(())
     }
 }
