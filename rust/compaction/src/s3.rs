@@ -125,6 +125,17 @@ impl ObjectStoreFactory {
         }
     }
 
+    fn make_cache_key_for(url: &Url) -> String {
+        let scheme = url.scheme();
+        match scheme {
+            "s3" => {
+                // Amazon S3 object store implementation is bucket specific
+                let host = ext
+            }
+            _ => scheme.to_owned(),
+        }
+    }
+
     /// Retrieves the appropriate [`object_store::ObjectStore`] for a given URL.
     ///
     /// The object returned will be the same for each subsequent call to this method for a given URL scheme.
