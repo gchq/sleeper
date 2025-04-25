@@ -23,11 +23,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createBinaryAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createBinaryAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createBooleanAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createListAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
 
 public class DynamoDBRecordBuilder {
 
