@@ -20,6 +20,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.PollWithRetries.TimedOutException;
@@ -37,12 +40,14 @@ public class DynamoDBUtilsTest {
     @DisplayName("Find throttling exception")
     class FindThrottlingException {
 
-        @Disabled
         @Test
         void shouldFindThrottlingExceptionWithNoCauses() {
             // Given
-            AmazonDynamoDBException exception = new AmazonDynamoDBException("Throttling exception");
-            exception.setErrorCode("ThrottlingException");
+            AwsServiceException exception = DynamoDbException.builder()
+                    .awsErrorDetails(AwsErrorDetails.builder()
+                            .errorCode("ThrottlingException")
+                            .build())
+                    .build();
 
             // When / Then
             assertThat(DynamoDBUtils.isThrottlingException(exception)).isTrue();
