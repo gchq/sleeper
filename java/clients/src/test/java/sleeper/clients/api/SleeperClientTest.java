@@ -264,7 +264,7 @@ class SleeperClientTest {
         return new RangeFactory(schema);
     }
 
-    private SleeperClientBulkImport bulkImportSender() {
+    private BulkImportJobSender bulkImportSender() {
         return (platform, job) -> bulkImportQueues
                 .computeIfAbsent(platform, p -> new LinkedList<>())
                 .add(job);

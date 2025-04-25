@@ -36,7 +36,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class SleeperClientImportIT extends LocalStackTestBase {
+public class BulkImportJobSenderIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 
@@ -78,7 +78,7 @@ public class SleeperClientImportIT extends LocalStackTestBase {
                 .id(UUID.randomUUID().toString())
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
-        SleeperClientBulkImport.bulkImportParquetFilesFromS3(instanceProperties, sqsClient)
+        BulkImportJobSender.bulkImportParquetFilesFromS3(instanceProperties, sqsClient)
                 .sendFilesToBulkImport(platform, job);
         return job;
     }

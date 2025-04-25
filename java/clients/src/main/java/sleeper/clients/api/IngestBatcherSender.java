@@ -17,19 +17,21 @@ package sleeper.clients.api;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
-import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 
-@FunctionalInterface
-public interface SleeperClientBulkImport {
-    void sendFilesToBulkImport(BulkImportPlatform platform, BulkImportJob job);
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 
-    static SleeperClientBulkImport bulkImportParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        BulkImportJobSerDe serDe = new BulkImportJobSerDe();
-        return (platform, job) -> {
-            sqsClient.sendMessage(platform.getBulkImportQueueUrl(instanceProperties), serDe.toJson(job));
-        };
+public interface IngestBatcherSender {
+
+    void submit(IngestBatcherSubmitRequest request);
+
+    static IngestBatcherSender toSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
+        return request -> sqsClient.sendMessage(
+                instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
+                serDe.toJson(request));
     }
+
 }

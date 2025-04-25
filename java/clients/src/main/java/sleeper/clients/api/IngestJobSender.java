@@ -24,10 +24,10 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 @FunctionalInterface
-public interface SleeperClientIngest {
+public interface IngestJobSender {
     void sendFilesToIngest(IngestJob job);
 
-    static SleeperClientIngest ingestParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    static IngestJobSender ingestParquetFilesFromS3(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         IngestJobSerDe serDe = new IngestJobSerDe();
         return (job) -> {
             sqsClient.sendMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL), serDe.toJson(job));

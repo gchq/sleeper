@@ -20,45 +20,44 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.IngestJobSerDe;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class SleeperClientIngestIT extends LocalStackTestBase {
+public class IngestBatcherSenderIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @BeforeEach
     void setUp() {
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_URL, createSqsQueueGetUrl());
     }
 
     @Test
-    void shouldIngestParquetFilesFromS3() {
-        String jobId = UUID.randomUUID().toString();
-        IngestJob job = IngestJob.builder()
-                .tableName("ingest-table")
-                .id(jobId)
-                .files(List.of("filename1.parquet", "filename2.parquet"))
-                .build();
+    void shouldSubmitFilesToBatcher() {
+        // Given
+        IngestBatcherSubmitRequest request = new IngestBatcherSubmitRequest("test-table", List.of());
 
-        SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient)
-                .sendFilesToIngest(job);
-        assertThat(recieveIngestJobs()).containsExactly(job);
+        // When
+        IngestBatcherSender.toSqs(instanceProperties, sqsClient)
+                .submit(request);
+
+        // Then
+        assertThat(receiveSubmitRequests()).containsExactly(request);
     }
 
-    private List<IngestJob> recieveIngestJobs() {
-        return sqsClient.receiveMessage(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+    private List<IngestBatcherSubmitRequest> receiveSubmitRequests() {
+        return sqsClient.receiveMessage(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL))
                 .getMessages().stream()
                 .map(Message::getBody)
-                .map(new IngestJobSerDe()::fromJson)
+                .map(new IngestBatcherSubmitRequestSerDe()::fromJson)
                 .toList();
     }
+
 }

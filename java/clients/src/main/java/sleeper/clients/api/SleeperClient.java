@@ -58,9 +58,9 @@ public class SleeperClient implements AutoCloseable {
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
-    private final SleeperClientIngest ingestJobSender;
-    private final SleeperClientBulkImport bulkImportJobSender;
-    private final SleeperClientIngestBatcherSubmit ingestBatcherSender;
+    private final IngestJobSender ingestJobSender;
+    private final BulkImportJobSender bulkImportJobSender;
+    private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
 
     private SleeperClient(Builder builder) {
@@ -290,9 +290,9 @@ public class SleeperClient implements AutoCloseable {
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
-        private SleeperClientIngest ingestJobSender;
-        private SleeperClientBulkImport bulkImportJobSender;
-        private SleeperClientIngestBatcherSubmit ingestBatcherSender;
+        private IngestJobSender ingestJobSender;
+        private BulkImportJobSender bulkImportJobSender;
+        private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
         };
 
@@ -379,7 +379,7 @@ public class SleeperClient implements AutoCloseable {
          * @param  ingestJobSender the client
          * @return                 this builder for chaining
          */
-        public Builder ingestJobSender(SleeperClientIngest ingestJobSender) {
+        public Builder ingestJobSender(IngestJobSender ingestJobSender) {
             this.ingestJobSender = ingestJobSender;
             return this;
         }
@@ -390,7 +390,7 @@ public class SleeperClient implements AutoCloseable {
          * @param  bulkImportJobSender the client
          * @return                     this builder for chaining
          */
-        public Builder bulkImportJobSender(SleeperClientBulkImport bulkImportJobSender) {
+        public Builder bulkImportJobSender(BulkImportJobSender bulkImportJobSender) {
             this.bulkImportJobSender = bulkImportJobSender;
             return this;
         }
@@ -401,7 +401,7 @@ public class SleeperClient implements AutoCloseable {
          * @param  ingestBatcherSender the client
          * @return                     this builder for chaining
          */
-        public Builder ingestBatcherSender(SleeperClientIngestBatcherSubmit ingestBatcherSender) {
+        public Builder ingestBatcherSender(IngestBatcherSender ingestBatcherSender) {
             this.ingestBatcherSender = ingestBatcherSender;
             return this;
         }
