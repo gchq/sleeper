@@ -35,7 +35,7 @@ import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedResults;
 
-public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
+public class DynamoDBUtilsPagingIT extends DynamoDBToolsTestBase {
 
     private final String tableName = UUID.randomUUID().toString();
 
