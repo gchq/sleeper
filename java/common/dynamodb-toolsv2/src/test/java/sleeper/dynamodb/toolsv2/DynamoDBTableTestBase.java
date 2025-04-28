@@ -71,14 +71,14 @@ public class DynamoDBTableTestBase extends LocalStackTestBase {
                 .build();
     }
 
-    protected ScanRequest scan(String tableName, int limit) {
+    protected ScanRequest scanWithLimit(String tableName, int limit) {
         return ScanRequest.builder()
                 .tableName(tableName)
                 .limit(limit)
                 .build();
     }
 
-    protected QueryRequest queryForKey(String key, String tableName, int limit) {
+    protected QueryRequest queryForKeyWithLimit(String tableName, String key, int limit) {
         return QueryRequest.builder()
                 .tableName(tableName)
                 .keyConditionExpression("#TestKey = :testkey")

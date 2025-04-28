@@ -69,7 +69,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 2, scan(tableName, 2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 2, scanWithLimit(tableName, 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -111,7 +111,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, scan(tableName, 10)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, scanWithLimit(tableName, 10)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -142,7 +142,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record4));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 3, scan(tableName, 2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 3, scanWithLimit(tableName, 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(3)
@@ -165,7 +165,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, scan(tableName, 1)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, scanWithLimit(tableName, 1)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -203,7 +203,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 2, queryForKey("test-key", tableName, 2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 2, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -224,7 +224,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 10, queryForKey("test-key", tableName, 2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 10, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -245,7 +245,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, queryForKey("test-key", tableName, 10)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, queryForKeyWithLimit(tableName, "test-key", 10)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -276,7 +276,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record4));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 3, queryForKey("test-key", tableName, 2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 3, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(3)
@@ -299,7 +299,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, queryForKey("test-key", tableName, 1)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, queryForKeyWithLimit(tableName, "test-key", 1)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)

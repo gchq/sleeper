@@ -41,13 +41,13 @@ public class DynamoDBUtilsTest {
         @Test
         void shouldFindThrottlingExceptionWithNoCauses() {
             // When / Then
-            assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbException("ThrottlingException"))).isTrue();
+            assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbExceptionWithErrorCode("ThrottlingException"))).isTrue();
         }
 
         @Test
         void shouldFindThrottlingExceptionWhenItIsRootCause() {
             // Given
-            AwsServiceException rootCause = buildDynamoDbException("ThrottlingException");
+            AwsServiceException rootCause = buildDynamoDbExceptionWithErrorCode("ThrottlingException");
             Exception cause = new Exception("First cause exception", rootCause);
             Exception exception = new Exception("Test exception", cause);
 
@@ -78,7 +78,7 @@ public class DynamoDBUtilsTest {
         @Test
         void shouldNotFindThrottlingExceptionWhenExceptionHasDifferentErrorCode() {
             // When / Then
-            assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbException("Conditional check exception"))).isFalse();
+            assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbExceptionWithErrorCode("ConditionalCheckFailedException"))).isFalse();
         }
 
     }
@@ -101,7 +101,7 @@ public class DynamoDBUtilsTest {
         void shouldTimeoutWhenThrottlingExceptionThrownTooManyTimes() {
             // Given
             Runnable runnable = () -> {
-                throw buildDynamoDbException("ThrottlingException");
+                throw buildDynamoDbExceptionWithErrorCode("ThrottlingException");
             };
 
             // When / Then
@@ -125,7 +125,7 @@ public class DynamoDBUtilsTest {
         @Test
         void shouldNotTimeoutWhenThrottlingExceptionThrownThenNoExceptionThrown() {
             // Given
-            AwsServiceException throttlingException = buildDynamoDbException("ThrottlingException");
+            AwsServiceException throttlingException = buildDynamoDbExceptionWithErrorCode("ThrottlingException");
             Iterator<RuntimeException> throwables = List.of((RuntimeException) throttlingException).iterator();
             Runnable runnable = () -> {
                 if (throwables.hasNext()) {
@@ -143,7 +143,7 @@ public class DynamoDBUtilsTest {
         }
     }
 
-    protected AwsServiceException buildDynamoDbException(String errorCode) {
+    protected AwsServiceException buildDynamoDbExceptionWithErrorCode(String errorCode) {
         return DynamoDbException.builder()
                 .awsErrorDetails(AwsErrorDetails.builder()
                         .errorCode(errorCode)
