@@ -254,6 +254,8 @@ The other EMR-based approach uses a persistent, i.e. long running, EMR cluster. 
 of the cluster monitors a queue and when a job appears submits it to YARN for execution. The EMR cluster can
 either be of fixed size or use EMR managed scaling.
 
+![Bulk import design diagram](design/bulk-import.png)
+
 ### Ingest batcher
 
 The ingest batcher groups ingest requests for individual files into ingest or bulk import jobs. File ingest requests are
