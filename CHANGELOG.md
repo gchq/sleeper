@@ -5,6 +5,28 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.30.1
+
+*Note: this may be a breaking change if you have deployed with your own custom-named ECR repositories, see below under Deployment.*
+
+This includes fixes for the new Java client API to directly interact with a Sleeper instance.
+
+Clients:
+- Added ability to check if a Sleeper table exists in `SleeperClient`
+- Added ability to submit files to the ingest batcher in `SleeperClient`
+
+Deployment:
+- Separate instance properties have been removed for the names of ECR repositories holding Docker images to be deployed.
+  These names are now derived from `sleeper.ecr.repository.prefix`.
+
+Bugfixes:
+- `SleeperClient` now has the table properties store set correctly by default
+- `SleeperClient` now extends `AutoCloseable`, and will shut down thread pools and AWS clients as necessary when closed
+- Files containing batches of compaction jobs are now deleted from the data bucket once the batch has been sent
+- Files containing bulk import jobs read by Spark are now deleted after they have been read
+- Compaction on DataFusion can now handle files where the first column is not a row key
+
+
 ## Version 0.30.0
 
 This includes improvements to garbage collection to keep up with larger numbers of compaction jobs.
