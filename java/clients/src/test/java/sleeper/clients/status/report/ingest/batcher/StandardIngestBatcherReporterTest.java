@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -51,7 +51,7 @@ public class StandardIngestBatcherReporterTest {
         @Test
         void shouldReportNoFiles() throws IOException {
             // Given
-            List<FileIngestRequest> noFiles = Collections.emptyList();
+            List<IngestBatcherTrackedFile> noFiles = Collections.emptyList();
 
             // When / Then
             assertThat(getStandardReport(BatcherQuery.Type.ALL, noFiles)).hasToString(
@@ -61,7 +61,7 @@ public class StandardIngestBatcherReporterTest {
         @Test
         void shouldReportOnePendingFileAndTwoBatchedFiles() throws IOException {
             // Given
-            List<FileIngestRequest> fileIngestRequestList = onePendingAndTwoBatchedFiles();
+            List<IngestBatcherTrackedFile> fileIngestRequestList = onePendingAndTwoBatchedFiles();
 
             // When / Then
             assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
@@ -71,7 +71,7 @@ public class StandardIngestBatcherReporterTest {
         @Test
         void shouldReportLargeAndDecimalFileSizes() throws IOException {
             // Given
-            List<FileIngestRequest> fileIngestRequestList = filesWithLargeAndDecimalSizes();
+            List<IngestBatcherTrackedFile> fileIngestRequestList = filesWithLargeAndDecimalSizes();
 
             // When / Then
             assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
@@ -85,7 +85,7 @@ public class StandardIngestBatcherReporterTest {
         @Test
         void shouldReportNoFiles() throws IOException {
             // Given
-            List<FileIngestRequest> noFiles = Collections.emptyList();
+            List<IngestBatcherTrackedFile> noFiles = Collections.emptyList();
 
             // When / Then
             assertThat(getStandardReport(BatcherQuery.Type.PENDING, noFiles)).hasToString(
@@ -95,7 +95,7 @@ public class StandardIngestBatcherReporterTest {
         @Test
         void shouldReportMultiplePendingFiles() throws IOException {
             // Given
-            List<FileIngestRequest> fileIngestRequestList = multiplePendingFiles();
+            List<IngestBatcherTrackedFile> fileIngestRequestList = multiplePendingFiles();
 
             // When / Then
             assertThat(getStandardReport(BatcherQuery.Type.PENDING, fileIngestRequestList)).hasToString(
@@ -103,7 +103,7 @@ public class StandardIngestBatcherReporterTest {
         }
     }
 
-    private String getStandardReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
+    private String getStandardReport(BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
         return IngestBatcherReporterTestHelper.getStandardReport(tableIndex, queryType, fileRequestList);
     }
 }

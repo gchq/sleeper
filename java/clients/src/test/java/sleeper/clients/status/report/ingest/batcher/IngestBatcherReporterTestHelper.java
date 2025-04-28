@@ -22,7 +22,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,68 +33,68 @@ public class IngestBatcherReporterTestHelper {
 
     public static final TableStatus TEST_TABLE = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
 
-    public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
+    public static List<IngestBatcherTrackedFile> onePendingAndTwoBatchedFiles() {
         return List.of(
-                FileIngestRequest.builder().file("file1.parquet")
+                IngestBatcherTrackedFile.builder().file("file1.parquet")
                         .fileSizeBytes(123L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
-                FileIngestRequest.builder().file("file2.parquet")
+                IngestBatcherTrackedFile.builder().file("file2.parquet")
                         .fileSizeBytes(456L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build(),
-                FileIngestRequest.builder().file("file3.parquet")
+                IngestBatcherTrackedFile.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build());
     }
 
-    public static List<FileIngestRequest> multiplePendingFiles() {
+    public static List<IngestBatcherTrackedFile> multiplePendingFiles() {
         return List.of(
-                FileIngestRequest.builder().file("file1.parquet")
+                IngestBatcherTrackedFile.builder().file("file1.parquet")
                         .fileSizeBytes(123L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z")).build(),
-                FileIngestRequest.builder().file("file2.parquet")
+                IngestBatcherTrackedFile.builder().file("file2.parquet")
                         .fileSizeBytes(456L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .build(),
-                FileIngestRequest.builder().file("file3.parquet")
+                IngestBatcherTrackedFile.builder().file("file3.parquet")
                         .fileSizeBytes(789L)
                         .tableId(TableIdGenerator.fromRandomSeed(0).generateString())
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
                         .build());
     }
 
-    public static List<FileIngestRequest> filesWithLargeAndDecimalSizes() {
+    public static List<IngestBatcherTrackedFile> filesWithLargeAndDecimalSizes() {
         return List.of(
-                FileIngestRequest.builder().file("file1.parquet")
+                IngestBatcherTrackedFile.builder().file("file1.parquet")
                         .fileSizeBytes(1_200L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
-                FileIngestRequest.builder().file("file2.parquet")
+                IngestBatcherTrackedFile.builder().file("file2.parquet")
                         .fileSizeBytes(12_300_000L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
                         .jobId("test-job-1").build(),
-                FileIngestRequest.builder().file("file3.parquet")
+                IngestBatcherTrackedFile.builder().file("file3.parquet")
                         .fileSizeBytes(123_400_000_000L)
                         .tableId("test-table-id")
                         .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
                         .jobId("test-job-1").build());
     }
 
-    public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
+    public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardIngestBatcherReporter(output.getPrintStream())
                 .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
         return output.toString();
     }
 
-    public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
+    public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonIngestBatcherReporter(output.getPrintStream())
                 .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));

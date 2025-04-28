@@ -26,8 +26,8 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 import sleeper.ingest.core.job.IngestJob;
@@ -71,7 +71,7 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     @Test
     void shouldSendOneFileFromStore() {
         // Given
-        batcherStore().addFile(FileIngestRequest.builder()
+        batcherStore().addFile(IngestBatcherTrackedFile.builder()
                 .file("some-bucket/some-file.parquet")
                 .tableId(tableProperties.get(TABLE_ID))
                 .fileSizeBytes(1024)

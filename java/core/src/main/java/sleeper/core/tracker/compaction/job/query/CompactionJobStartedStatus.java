@@ -21,6 +21,10 @@ import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A status update for when a compaction job has been picked up by a task and started. This is the model for querying
+ * the event from the tracker.
+ */
 public class CompactionJobStartedStatus implements JobRunStartedUpdate {
 
     private final Instant updateTime;
@@ -31,6 +35,13 @@ public class CompactionJobStartedStatus implements JobRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
+    /**
+     * Creates a status update based on the time the job was received and when it was tracked.
+     *
+     * @param  startTime  the time the compaction job was started in the task
+     * @param  updateTime the time the event was added to the tracker
+     * @return            the status update
+     */
     public static CompactionJobStartedStatus startAndUpdateTime(Instant startTime, Instant updateTime) {
         return new CompactionJobStartedStatus(updateTime, startTime);
     }

@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +86,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     }
 
     @Override
-    public void addFile(FileIngestRequest fileIngestRequest) {
+    public void addFile(IngestBatcherTrackedFile fileIngestRequest) {
         PutItemResult result = dynamoDB.putItem(new PutItemRequest()
                 .withTableName(requestsTableName)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -96,10 +96,10 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     }
 
     @Override
-    public List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
-        List<FileIngestRequest> assignedFiles = new ArrayList<>();
+    public List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob) {
+        List<IngestBatcherTrackedFile> assignedFiles = new ArrayList<>();
         for (int i = 0; i < filesInJob.size(); i += filesInAssignJobBatch) {
-            List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + filesInAssignJobBatch, filesInJob.size()));
+            List<IngestBatcherTrackedFile> filesInBatch = filesInJob.subList(i, Math.min(i + filesInAssignJobBatch, filesInJob.size()));
             try {
                 TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                         .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -133,21 +133,21 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
             }
         }
         return assignedFiles.stream()
-                .map(FileIngestRequest::getFile)
+                .map(IngestBatcherTrackedFile::getFile)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public List<FileIngestRequest> getAllFilesNewestFirst() {
+    public List<IngestBatcherTrackedFile> getAllFilesNewestFirst() {
         return streamPagedItems(dynamoDB, new ScanRequest()
                 .withTableName(requestsTableName))
                 .map(DynamoDBIngestRequestFormat::readRecord)
-                .sorted(comparing(FileIngestRequest::getReceivedTime).reversed())
+                .sorted(comparing(IngestBatcherTrackedFile::getReceivedTime).reversed())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<FileIngestRequest> getPendingFilesOldestFirst() {
+    public List<IngestBatcherTrackedFile> getPendingFilesOldestFirst() {
         return streamPagedItems(dynamoDB, new QueryRequest()
                 .withTableName(requestsTableName)
                 .withKeyConditionExpression("#JobId = :not_assigned")
@@ -156,13 +156,13 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                         .string(":not_assigned", NOT_ASSIGNED_TO_JOB)
                         .build()))
                 .map(DynamoDBIngestRequestFormat::readRecord)
-                .sorted(comparing(FileIngestRequest::getReceivedTime))
+                .sorted(comparing(IngestBatcherTrackedFile::getReceivedTime))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void deleteAllPending() {
-        List<FileIngestRequest> pendingFiles = getPendingFilesOldestFirst();
+        List<IngestBatcherTrackedFile> pendingFiles = getPendingFilesOldestFirst();
         if (!pendingFiles.isEmpty()) {
             dynamoDB.batchWriteItem(new BatchWriteItemRequest()
                     .addRequestItemsEntry(requestsTableName,

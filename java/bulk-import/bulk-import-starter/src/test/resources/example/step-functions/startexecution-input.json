@@ -58,7 +58,7 @@
     "--conf",
     "spark.shuffle.mapStatus.compression.codec=lz4",
     "--conf",
-    "spark.kubernetes.container.image=test-account.dkr.ecr.test-region.amazonaws.com/null:1.2.3",
+    "spark.kubernetes.container.image=test-account.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.2.3",
     "--conf",
     "spark.kubernetes.executor.podNamePrefix=job-test-job",
     "--conf",

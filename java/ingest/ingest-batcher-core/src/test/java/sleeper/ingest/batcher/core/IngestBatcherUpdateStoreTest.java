@@ -37,7 +37,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     void shouldReportFileAssignedToJobWhenJobIsSent() {
         // Given
         tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-        FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
+        IngestBatcherTrackedFile request = addFileToStore("test-bucket/test.parquet");
 
         // When
         batchFilesWithJobIds("test-job-id");
@@ -52,7 +52,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     void shouldReportFileNotAssignedToJobWhenNotSent() {
         // Given
         tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-        FileIngestRequest request = addFileToStore(builder -> builder.fileSizeBytes(512));
+        IngestBatcherTrackedFile request = addFileToStore(builder -> builder.fileSizeBytes(512));
 
         // When
         batchFilesWithJobIds("test-job-id");
@@ -65,7 +65,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     @Test
     void shouldNotSendFileIfFailedToAssignJob() {
         // Given
-        FileIngestRequest request = ingestRequest().build();
+        IngestBatcherTrackedFile request = ingestRequest().build();
         IngestBatcherStore store = mock(IngestBatcherStore.class);
         when(store.getPendingFilesOldestFirst()).thenReturn(List.of(request));
         when(store.assignJobGetAssigned("fail-job-id", List.of(request)))
@@ -82,8 +82,8 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     @Test
     void shouldSendPartialJobIfNotAllFilesWereAssigned() {
         // Given
-        FileIngestRequest request1 = ingestRequest().file("file-1.parquet").build();
-        FileIngestRequest request2 = ingestRequest().file("file-2.parquet").build();
+        IngestBatcherTrackedFile request1 = ingestRequest().file("file-1.parquet").build();
+        IngestBatcherTrackedFile request2 = ingestRequest().file("file-2.parquet").build();
         IngestBatcherStore store = mock(IngestBatcherStore.class);
         when(store.getPendingFilesOldestFirst()).thenReturn(List.of(request1, request2));
         when(store.assignJobGetAssigned("partial-job-id", List.of(request1, request2)))
@@ -103,7 +103,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     void shouldLeaveFileAssignedIfFailedToSendJob() {
         // Given
         tableProperties.set(TABLE_ID, "fail-table");
-        FileIngestRequest request = addFileToStore(builder -> builder
+        IngestBatcherTrackedFile request = addFileToStore(builder -> builder
                 .file("test-bucket/fail.parquet")
                 .tableId("fail-table"));
         IngestJob expectedJob = IngestJob.builder()

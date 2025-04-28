@@ -300,7 +300,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
     class BuildImagesWithBuildx {
 
         @Test
-        void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
+        void shouldCreateRepositoryAndPushImageWhenCompactionImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
@@ -308,15 +308,15 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
 
             // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
                     removeOldBuildxBuilderInstanceCommand(),
                     createNewBuildxBuilderInstanceCommand(),
-                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/buildx"));
+                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/buildx");
+                    .containsExactlyInAnyOrder("test-instance/compaction");
         }
 
         @Test
@@ -329,17 +329,17 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
                     removeOldBuildxBuilderInstanceCommand(),
                     createNewBuildxBuilderInstanceCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
-                    buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/buildx"));
+                    buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
+                    .containsExactlyInAnyOrder("test-instance/compaction", "test-instance/ingest");
         }
     }
 
@@ -392,7 +392,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
         }
 
         @Test
-        void shouldNotFailWhenRemoveBuildxBuilderFails() throws Exception {
+        void shouldNotFailWhenRemoveBuildxBuilderFailsForCompactionImage() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
@@ -401,15 +401,15 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
                     returningExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand()));
 
             // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
                     removeOldBuildxBuilderInstanceCommand(),
                     createNewBuildxBuilderInstanceCommand(),
-                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/buildx"));
+                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/buildx");
+                    .containsExactlyInAnyOrder("test-instance/compaction");
         }
 
         @Test
