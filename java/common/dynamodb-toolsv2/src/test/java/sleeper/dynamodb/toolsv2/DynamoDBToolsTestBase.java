@@ -16,53 +16,20 @@
 
 package sleeper.dynamodb.toolsv2;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
-import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
-import java.util.List;
 import java.util.Map;
 
 import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBTableTestBase extends LocalStackTestBase {
+public class DynamoDBToolsTestBase extends LocalStackTestBase {
     public static final String TEST_KEY = "test-key";
     public static final String TEST_VALUE = "test-value";
-    public static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
-
-    @BeforeEach
-    void setup() {
-        createTable();
-    }
-
-    @AfterEach
-    public void tearDown() {
-        dynamoClient.deleteTable(TEST_TABLE_NAME);
-    }
-
-    public void createTable() {
-        initialiseTable(dynamoClientV2, TEST_TABLE_NAME,
-                List.of(
-                        AttributeDefinition.builder()
-                                .attributeName(TEST_KEY)
-                                .attributeType(ScalarAttributeType.S)
-                                .build()),
-                List.of(
-                        KeySchemaElement.builder()
-                                .attributeName(TEST_KEY)
-                                .keyType(KeyType.HASH)
-                                .build()));
-    }
 
     protected PutItemRequest buildPutItemRequest(String tableName, Map<String, AttributeValue> record) {
         return PutItemRequest.builder()

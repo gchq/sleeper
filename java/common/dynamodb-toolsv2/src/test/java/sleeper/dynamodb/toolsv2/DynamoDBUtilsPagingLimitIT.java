@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.loadPagedItemsWithLimit;
 
-public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
+public class DynamoDBUtilsPagingLimitIT extends DynamoDBToolsTestBase {
 
     private final String tableName = UUID.randomUUID().toString();
 
