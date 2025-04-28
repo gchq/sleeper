@@ -29,8 +29,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 
 import java.util.List;
@@ -93,7 +93,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .whenScenarioStateIs("second batch")
                 .willReturn(aResponse().withStatus(500)));
 
-        List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 100)
+        List<IngestBatcherTrackedFile> fileIngestRequests = IntStream.range(0, 100)
                 .mapToObj(i -> fileRequest().tableId(tableId).build())
                 .collect(Collectors.toUnmodifiableList());
 
@@ -104,7 +104,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
         verify(2, writeItemsRequested());
         assertThat(assignedFiles)
                 .containsExactlyElementsOf(fileIngestRequests.subList(0, 50).stream()
-                        .map(FileIngestRequest::getFile)
+                        .map(IngestBatcherTrackedFile::getFile)
                         .collect(Collectors.toUnmodifiableList()));
     }
 
@@ -127,7 +127,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 instanceProperties, tablePropertiesProvider);
     }
 
-    private FileIngestRequest.Builder fileRequest() {
+    private IngestBatcherTrackedFile.Builder fileRequest() {
         return requests.fileRequest();
     }
 }

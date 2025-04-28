@@ -21,7 +21,7 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -55,7 +55,7 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+    public void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         out.println();
         out.println("Ingest Batcher Report");
         out.println("---------------------");
@@ -66,15 +66,15 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
                 .build().write(out);
     }
 
-    private void printSummary(List<FileIngestRequest> statusList, BatcherQuery.Type queryType) {
-        long batchedFiles = statusList.stream().filter(FileIngestRequest::isAssignedToJob).count();
+    private void printSummary(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType) {
+        long batchedFiles = statusList.stream().filter(IngestBatcherTrackedFile::isAssignedToJob).count();
         out.println("Total pending files: " + (statusList.size() - batchedFiles));
         if (queryType == BatcherQuery.Type.ALL) {
             out.println("Total batched files: " + (batchedFiles));
         }
     }
 
-    private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder, TableStatusProvider tableProvider) {
+    private void writeFileRequest(IngestBatcherTrackedFile fileIngestRequest, TableRow.Builder builder, TableStatusProvider tableProvider) {
         builder
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())

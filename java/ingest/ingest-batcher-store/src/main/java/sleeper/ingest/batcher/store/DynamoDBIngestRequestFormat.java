@@ -21,7 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Duration;
 import java.util.Map;
@@ -45,7 +45,7 @@ public class DynamoDBIngestRequestFormat {
     public static final String NOT_ASSIGNED_TO_JOB = "not_assigned_to_job";
 
     public static Map<String, AttributeValue> createRecord(
-            TablePropertiesProvider tablePropertiesProvider, FileIngestRequest fileIngestRequest) {
+            TablePropertiesProvider tablePropertiesProvider, IngestBatcherTrackedFile fileIngestRequest) {
         TableProperties properties = tablePropertiesProvider.getById(fileIngestRequest.getTableId());
         return new DynamoDBRecordBuilder()
                 .string(FILE_PATH, fileIngestRequest.getTableId() + "/" + fileIngestRequest.getFile())
@@ -56,12 +56,12 @@ public class DynamoDBIngestRequestFormat {
                 .build();
     }
 
-    public static FileIngestRequest readRecord(Map<String, AttributeValue> item) {
+    public static IngestBatcherTrackedFile readRecord(Map<String, AttributeValue> item) {
         String fullPath = getStringAttribute(item, FILE_PATH);
         int pathSeparatorIndex = fullPath.indexOf('/');
         String tableId = fullPath.substring(0, pathSeparatorIndex);
         String filePath = fullPath.substring(pathSeparatorIndex + 1);
-        return FileIngestRequest.builder()
+        return IngestBatcherTrackedFile.builder()
                 .file(filePath)
                 .fileSizeBytes(getLongAttribute(item, FILE_SIZE, 0L))
                 .tableId(tableId)
@@ -70,21 +70,21 @@ public class DynamoDBIngestRequestFormat {
                 .build();
     }
 
-    public static Map<String, AttributeValue> createUnassignedKey(FileIngestRequest fileIngestRequest) {
+    public static Map<String, AttributeValue> createUnassignedKey(IngestBatcherTrackedFile fileIngestRequest) {
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, NOT_ASSIGNED_TO_JOB)
                 .string(FILE_PATH, fileIngestRequest.getTableId() + "/" + fileIngestRequest.getFile())
                 .build();
     }
 
-    private static long getExpiryTimeEpochSeconds(TableProperties properties, FileIngestRequest fileIngestRequest) {
+    private static long getExpiryTimeEpochSeconds(TableProperties properties, IngestBatcherTrackedFile fileIngestRequest) {
         int ttlMinutes = properties.getInt(INGEST_BATCHER_TRACKING_TTL_MINUTES);
         return fileIngestRequest.getReceivedTime()
                 .plus(Duration.ofMinutes(ttlMinutes))
                 .getEpochSecond();
     }
 
-    private static String getJobIdOrUnassigned(FileIngestRequest fileIngestRequest) {
+    private static String getJobIdOrUnassigned(IngestBatcherTrackedFile fileIngestRequest) {
         if (fileIngestRequest.isAssignedToJob()) {
             return fileIngestRequest.getJobId();
         } else {

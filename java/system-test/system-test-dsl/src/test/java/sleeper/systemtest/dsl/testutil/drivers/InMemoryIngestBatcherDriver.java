@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcher;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
@@ -49,7 +49,7 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
     @Override
     public void sendFiles(List<String> files) {
         for (String file : files) {
-            store.addFile(FileIngestRequest.builder()
+            store.addFile(IngestBatcherTrackedFile.builder()
                     .file(file)
                     .fileSizeBytes(fileSizeBytes)
                     .tableId(instance.getTableProperties().get(TABLE_ID))
