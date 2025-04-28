@@ -135,7 +135,7 @@ public class DynamoDBUtils {
         return Stream.iterate(
                 dynamoDB.scan(scanRequest),
                 Objects::nonNull,
-                result -> Optional.ofNullable(result.lastEvaluatedKey())
+                response -> Optional.ofNullable(response.lastEvaluatedKey().isEmpty() ? null : response.lastEvaluatedKey())
                         .map(lastKey -> dynamoDB.scan(scanRequest.toBuilder().exclusiveStartKey(lastKey).build()))
                         .orElse(null));
     }
@@ -144,7 +144,7 @@ public class DynamoDBUtils {
         return Stream.iterate(
                 dynamoDB.query(queryRequest),
                 Objects::nonNull,
-                result -> Optional.ofNullable(result.lastEvaluatedKey())
+                response -> Optional.ofNullable(response.lastEvaluatedKey().isEmpty() ? null : response.lastEvaluatedKey())
                         .map(lastKey -> dynamoDB.query(queryRequest.toBuilder().exclusiveStartKey(lastKey).build()))
                         .orElse(null));
     }

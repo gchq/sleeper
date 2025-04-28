@@ -17,7 +17,6 @@
 package sleeper.dynamodb.toolsv2;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -58,7 +57,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                                     .build()));
         }
 
-        @Disabled
         @Test
         void shouldReturnPagedResultsWhenMoreRecordsThanLimit() {
             // Given
@@ -78,7 +76,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
-        @Disabled
         @Test
         void shouldReturnOnePageOfResultsWhenFewerRecordsThanLimit() {
             // Given
@@ -93,7 +90,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1);
         }
 
-        @Disabled
         @Test
         void shouldReturnPagedResultsWhenRecordsEqualToLimit() {
             // Given
@@ -108,7 +104,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1);
         }
 
-        @Disabled
         @Test
         void shouldNotReturnEmptyResultWhenFewerRecordsThanLimit() {
             // Given
@@ -124,7 +119,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactly(1);
         }
 
-        @Disabled
         @Test
         void shouldReturnEmptyResultForLastPageWhenRecordsEqualToLimit() {
             // Given
@@ -140,7 +134,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactly(1, 0);
         }
 
-        @Disabled
         @Test
         void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanLimit() {
             // Given
@@ -163,7 +156,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
 
-        @Disabled
         @Test
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
@@ -186,7 +178,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                             KeySchemaElement.builder().attributeName(TEST_VALUE).keyType(KeyType.RANGE).build()));
         }
 
-        @Disabled
         @Test
         void shouldReturnPagedResultsWhenMoreRecordsThanLimit() {
             // Given
@@ -205,7 +196,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
-        @Disabled
         @Test
         void shouldReturnOnePageOfResultsWhenFewerRecordsThanLimit() {
             // Given
@@ -224,7 +214,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
-        @Disabled
         @Test
         void shouldReturnPagedResultsWhenRecordsEqualToLimit() {
             // Given
@@ -243,7 +232,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
-        @Disabled
         @Test
         void shouldNotReturnEmptyResultWhenFewerRecordsThanLimit() {
             // Given
@@ -263,7 +251,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactly(2);
         }
 
-        @Disabled
         @Test
         void shouldReturnEmptyResultForLastPageWhenRecordsEqualToLimit() {
             // Given
@@ -283,7 +270,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactly(2, 0);
         }
 
-        @Disabled
         @Test
         void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanLimit() {
             // Given
@@ -306,7 +292,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
 
-        @Disabled
         @Test
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
