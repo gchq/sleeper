@@ -67,7 +67,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                     .string(TEST_KEY, UUID.randomUUID().toString())
                     .string(TEST_VALUE, "value2").build();
 
-            //PutItemRequest.builder().tableName(tableName).rec
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
