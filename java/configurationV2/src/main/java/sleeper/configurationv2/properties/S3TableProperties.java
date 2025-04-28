@@ -16,14 +16,14 @@
 
 package sleeper.configurationv2.properties;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -58,7 +58,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      * @return                    the store
      */
     public static TablePropertiesStore createStore(
-            InstanceProperties instanceProperties, S3Client s3Client, AmazonDynamoDB dynamoClient) {
+            InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return new TablePropertiesStore(
                 new DynamoDBTableIndex(instanceProperties, dynamoClient),
                 new S3TableProperties(instanceProperties, s3Client));
@@ -73,7 +73,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      * @return                    the store
      */
     public static TablePropertiesProvider createProvider(
-            InstanceProperties instanceProperties, S3Client s3Client, AmazonDynamoDB dynamoClient) {
+            InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return new TablePropertiesProvider(instanceProperties, createStore(instanceProperties, s3Client, dynamoClient));
     }
 

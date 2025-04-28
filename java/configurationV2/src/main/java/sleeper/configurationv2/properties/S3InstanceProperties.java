@@ -15,10 +15,10 @@
  */
 package sleeper.configurationv2.properties;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -126,7 +126,7 @@ public class S3InstanceProperties {
      * @throws IOException if the configuration could not be saved to the local file system
      */
     public static InstanceProperties saveToLocalWithTableProperties(
-            S3Client s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
+            S3Client s3, DynamoDbClient dynamoDB, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = loadGivenInstanceId(s3, instanceId);
         SaveLocalProperties.saveToDirectory(directory, instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
