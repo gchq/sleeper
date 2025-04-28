@@ -17,7 +17,6 @@
 package sleeper.dynamodb.toolsv2;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,6 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
@@ -34,7 +32,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.loadPagedItemsWithLimit;
 
@@ -79,7 +76,6 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
                     });
         }
 
-        @Disabled
         @Test
         void shouldLoadRecordsBelowLoadLimit() {
             // Given
@@ -94,7 +90,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 10, scan(tableName, 10)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 10, scan()))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -214,7 +210,6 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
                     });
         }
 
-        @Disabled
         @Test
         void shouldLoadRecordsBelowLoadLimit() {
             // Given
@@ -314,18 +309,9 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBTableTestBase {
         }
     }
 
-    private ScanRequest scan(String tableName) {
+    private ScanRequest scan() {
         return ScanRequest.builder()
                 .tableName(tableName)
-                .build();
-    }
-
-    private QueryRequest queryForKey(String key, String tableName) {
-        return QueryRequest.builder()
-                .tableName(tableName)
-                .keyConditionExpression("#TestKey = :testkey")
-                .expressionAttributeNames(Map.of("#TestKey", TEST_KEY))
-                .expressionAttributeValues(Map.of(":testkey", createStringAttribute(key)))
                 .build();
     }
 }
