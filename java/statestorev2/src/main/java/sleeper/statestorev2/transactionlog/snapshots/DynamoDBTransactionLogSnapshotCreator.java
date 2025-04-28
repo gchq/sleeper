@@ -15,11 +15,11 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -65,7 +65,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
      */
     public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+            S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration configuration) {
         TransactionLogStore fileTransactionStore = DynamoDBTransactionLogStore.forFiles(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         TransactionLogStore partitionTransactionStore = DynamoDBTransactionLogStore.forPartitions(

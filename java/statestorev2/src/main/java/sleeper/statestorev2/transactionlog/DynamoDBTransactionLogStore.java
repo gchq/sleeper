@@ -15,15 +15,16 @@
  */
 package sleeper.statestorev2.transactionlog;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -37,7 +38,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.table.TableStatus;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.Map;
@@ -45,11 +46,11 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
 
 /**
  * Stores a transaction log in DynamoDB and S3. If a transaction is too big to fit in a DynamoDB item, the body of the
@@ -68,7 +69,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private final String transactionDescription;
     private final String logTableName;
     private final TableStatus sleeperTable;
-    private final AmazonDynamoDB dynamoClient;
+    private final DynamoDbClient dynamoClient;
     private final S3TransactionBodyStore transactionBodyStore;
     private final TransactionSerDe serDe;
 
@@ -83,7 +84,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
      */
     public static DynamoDBTransactionLogStore forFiles(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoClient, AmazonS3 s3Client) {
+            DynamoDbClient dynamoClient, S3Client s3Client) {
         return new DynamoDBTransactionLogStore(
                 "file", instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
                 instanceProperties, tableProperties, dynamoClient, s3Client);
@@ -100,7 +101,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
      */
     public static DynamoDBTransactionLogStore forPartitions(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoClient, AmazonS3 s3Client) {
+            DynamoDbClient dynamoClient, S3Client s3Client) {
         return new DynamoDBTransactionLogStore(
                 "partition", instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 instanceProperties, tableProperties, dynamoClient, s3Client);
@@ -109,7 +110,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private DynamoDBTransactionLogStore(
             String transactionDescription, String logTableName,
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoClient, AmazonS3 s3Client) {
+            DynamoDbClient dynamoClient, S3Client s3Client) {
         this.transactionDescription = transactionDescription;
         this.logTableName = logTableName;
         this.sleeperTable = tableProperties.getStatus();
@@ -122,9 +123,9 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
         try {
-            dynamoClient.putItem(new PutItemRequest()
-                    .withTableName(logTableName)
-                    .withItem(new DynamoDBRecordBuilder()
+            dynamoClient.putItem(PutItemRequest.builder()
+                    .tableName(logTableName)
+                    .item(new DynamoDBRecordBuilder()
                             .string(TABLE_ID, sleeperTable.getTableUniqueId())
                             .number(TRANSACTION_NUMBER, transactionNumber)
                             .number(UPDATE_TIME, entry.getUpdateTime().toEpochMilli())
@@ -133,8 +134,9 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                                     serialisedTransaction -> builder.string(BODY, serialisedTransaction),
                                     key -> builder.string(BODY_S3_KEY, key)))
                             .build())
-                    .withConditionExpression("attribute_not_exists(#Number)")
-                    .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));
+                    .conditionExpression("attribute_not_exists(#Number)")
+                    .expressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER))
+                    .build());
         } catch (ConditionalCheckFailedException e) {
             throw new DuplicateTransactionNumberException(transactionNumber, e);
         }
@@ -142,27 +144,28 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
-        QueryRequest request = new QueryRequest()
-                .withTableName(logTableName)
-                .withConsistentRead(true)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        QueryRequest.Builder requestBuilder = QueryRequest.builder()
+                .tableName(logTableName)
+                .consistentRead(true)
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+
         if (range.isMaxTransactionBounded()) {
-            request.withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :startInclusive AND :endInclusive")
-                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+            requestBuilder.keyConditionExpression("#TableId = :table_id AND #Number BETWEEN :startInclusive AND :endInclusive")
+                    .expressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                    .expressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTable.getTableUniqueId())
                             .number(":startInclusive", range.startInclusive())
                             .number(":endInclusive", range.endExclusive() - 1)
                             .build());
         } else {
-            request.withKeyConditionExpression("#TableId = :table_id AND #Number >= :startInclusive")
-                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+            requestBuilder.keyConditionExpression("#TableId = :table_id AND #Number >= :startInclusive")
+                    .expressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                    .expressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTable.getTableUniqueId())
                             .number(":startInclusive", range.startInclusive())
                             .build());
         }
-        return streamPagedItems(dynamoClient, request)
+        return streamPagedItems(dynamoClient, requestBuilder.build())
                 .map(this::readTransaction);
     }
 
@@ -170,24 +173,27 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public void deleteTransactionsAtOrBefore(long maxTransactionNumber) {
         LOGGER.info("Deleting {} transactions from Sleeper table {}", transactionDescription, sleeperTable);
         TransactionLogDeletionTracker deletionTracker = new TransactionLogDeletionTracker(transactionDescription);
-        streamPagedItems(dynamoClient, new QueryRequest()
-                .withTableName(logTableName)
-                .withConsistentRead(true)
-                .withKeyConditionExpression("#TableId = :table_id AND #Number <= :number")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+        streamPagedItems(dynamoClient, QueryRequest.builder()
+                .tableName(logTableName)
+                .consistentRead(true)
+                .keyConditionExpression("#TableId = :table_id AND #Number <= :number")
+                .expressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTable.getTableUniqueId())
                         .number(":number", maxTransactionNumber)
                         .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
                 .forEach(item -> {
                     long transactionNumber = getLongAttribute(item, TRANSACTION_NUMBER, 0L);
                     AttributeValue s3Key = item.get(BODY_S3_KEY);
                     if (s3Key != null) {
-                        transactionBodyStore.delete(s3Key.getS());
+                        transactionBodyStore.delete(s3Key.s());
                         deletionTracker.deletedLargeTransactionBody(transactionNumber);
                     }
-                    dynamoClient.deleteItem(logTableName, getKey(item));
+                    dynamoClient.deleteItem(DeleteItemRequest.builder()
+                            .tableName(logTableName)
+                            .key(getKey(item))
+                            .build());
                     deletionTracker.deletedFromLog(transactionNumber);
                 });
         LOGGER.info("Finished deletion. {}", deletionTracker.summary());
@@ -196,6 +202,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private TransactionLogEntry readTransaction(Map<String, AttributeValue> item) {
         long number = getLongAttribute(item, TRANSACTION_NUMBER, -1);
         Instant updateTime = getInstantAttribute(item, UPDATE_TIME);
+        //getInstantAttribute(item, UPDATE_TIME);
         TransactionType type = readType(item);
         String bodyS3Key = getStringAttribute(item, BODY_S3_KEY);
         if (bodyS3Key != null) {

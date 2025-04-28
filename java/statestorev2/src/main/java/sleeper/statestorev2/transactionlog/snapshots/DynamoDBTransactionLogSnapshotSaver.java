@@ -15,12 +15,12 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -50,7 +50,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
     private final String basePath;
 
     public DynamoDBTransactionLogSnapshotSaver(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo, Configuration configuration) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
                 instanceProperties, tableProperties, configuration);
     }
