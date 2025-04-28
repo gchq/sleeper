@@ -72,7 +72,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, scan(tableName, 1)))
+            assertThat(streamPagedItems(dynamoClientV2, scanWithLimit(tableName, 1)))
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
@@ -86,7 +86,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, scan(tableName, 2)))
+            assertThat(streamPagedItems(dynamoClientV2, scanWithLimit(tableName, 2)))
                     .containsExactlyInAnyOrder(record1);
         }
 
@@ -100,7 +100,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, scan(tableName, 1)))
+            assertThat(streamPagedItems(dynamoClientV2, scanWithLimit(tableName, 1)))
                     .containsExactlyInAnyOrder(record1);
         }
 
@@ -114,7 +114,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
 
             // When/Then
-            assertThat(streamPagedResults(dynamoClientV2, scan(tableName, 2)))
+            assertThat(streamPagedResults(dynamoClientV2, scanWithLimit(tableName, 2)))
                     .extracting(result -> result.items().size())
                     .containsExactly(1);
         }
@@ -129,7 +129,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
 
             // When/Then
-            assertThat(streamPagedResults(dynamoClientV2, scan(tableName, 1)))
+            assertThat(streamPagedResults(dynamoClientV2, scanWithLimit(tableName, 1)))
                     .extracting(result -> result.items().size())
                     .containsExactly(1, 0);
         }
@@ -152,14 +152,14 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record3));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, scan(tableName, 2)))
+            assertThat(streamPagedItems(dynamoClientV2, scanWithLimit(tableName, 2)))
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
 
         @Test
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, scan(tableName, 1)))
+            assertThat(streamPagedItems(dynamoClientV2, scanWithLimit(tableName, 1)))
                     .isEmpty();
         }
     }
@@ -192,7 +192,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, queryForKey("test-key", tableName, 1)))
+            assertThat(streamPagedItems(dynamoClientV2, queryForKeyWithLimit(tableName, "test-key", 1)))
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
@@ -210,7 +210,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, queryForKey("test-key", tableName, 3)))
+            assertThat(streamPagedItems(dynamoClientV2, queryForKeyWithLimit(tableName, "test-key", 3)))
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
@@ -228,7 +228,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, queryForKey("test-key", tableName, 2)))
+            assertThat(streamPagedItems(dynamoClientV2, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .containsExactlyInAnyOrder(record1, record2);
         }
 
@@ -246,7 +246,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(streamPagedResults(dynamoClientV2, queryForKey("test-key", tableName, 3)))
+            assertThat(streamPagedResults(dynamoClientV2, queryForKeyWithLimit(tableName, "test-key", 3)))
                     .extracting(result -> result.items().size())
                     .containsExactly(2);
         }
@@ -265,7 +265,7 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(streamPagedResults(dynamoClientV2, queryForKey("test-key", tableName, 2)))
+            assertThat(streamPagedResults(dynamoClientV2, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .extracting(result -> result.items().size())
                     .containsExactly(2, 0);
         }
@@ -288,14 +288,14 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record3));
 
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, queryForKey("test-key", tableName, 4)))
+            assertThat(streamPagedItems(dynamoClientV2, queryForKeyWithLimit(tableName, "test-key", 4)))
                     .containsExactlyInAnyOrder(record1, record2, record3);
         }
 
         @Test
         void shouldReturnNoResultsWhenNoRecordsExist() {
             // When/Then
-            assertThat(streamPagedItems(dynamoClientV2, queryForKey("not-a-key", tableName, 1)))
+            assertThat(streamPagedItems(dynamoClientV2, queryForKeyWithLimit(tableName, "not-a-key", 1)))
                     .isEmpty();
         }
     }
