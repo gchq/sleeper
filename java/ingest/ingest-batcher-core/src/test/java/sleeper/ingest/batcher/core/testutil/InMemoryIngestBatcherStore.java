@@ -16,8 +16,8 @@
 
 package sleeper.ingest.batcher.core.testutil;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -29,37 +29,37 @@ import static sleeper.ingest.batcher.core.testutil.IngestBatcherStoreKeyFields.k
 
 public class InMemoryIngestBatcherStore implements IngestBatcherStore {
 
-    private final Map<IngestBatcherStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
+    private final Map<IngestBatcherStoreKeyFields, IngestBatcherTrackedFile> requests = new LinkedHashMap<>();
 
     @Override
-    public void addFile(FileIngestRequest fileIngestRequest) {
+    public void addFile(IngestBatcherTrackedFile fileIngestRequest) {
         requests.put(keyFor(fileIngestRequest), fileIngestRequest);
     }
 
     @Override
-    public List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
+    public List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob) {
         filesInJob.forEach(file -> {
             requests.remove(keyFor(file));
-            FileIngestRequest fileWithJob = file.toBuilder().jobId(jobId).build();
+            IngestBatcherTrackedFile fileWithJob = file.toBuilder().jobId(jobId).build();
             requests.put(keyFor(fileWithJob), fileWithJob);
         });
         return filesInJob.stream()
-                .map(FileIngestRequest::getFile)
+                .map(IngestBatcherTrackedFile::getFile)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
-    public List<FileIngestRequest> getAllFilesNewestFirst() {
+    public List<IngestBatcherTrackedFile> getAllFilesNewestFirst() {
         return requests.values().stream()
-                .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime).reversed())
+                .sorted(Comparator.comparing(IngestBatcherTrackedFile::getReceivedTime).reversed())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<FileIngestRequest> getPendingFilesOldestFirst() {
+    public List<IngestBatcherTrackedFile> getPendingFilesOldestFirst() {
         return requests.values().stream()
                 .filter(request -> !request.isAssignedToJob())
-                .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime))
+                .sorted(Comparator.comparing(IngestBatcherTrackedFile::getReceivedTime))
                 .collect(Collectors.toList());
     }
 

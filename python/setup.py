@@ -15,7 +15,7 @@ from setuptools import setup
 
 setup(
     name='sleeper',
-    version='0.30.0',
+    version='0.30.1',
     description='Python client for Sleeper',
     packages=['sleeper', 'pq'],
     install_requires=[

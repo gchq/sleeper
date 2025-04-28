@@ -17,7 +17,7 @@ package sleeper.ingest.batcher.core.testutil;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,7 +33,7 @@ class FileIngestRequestTestHelperTest {
     @Test
     void shouldGenerateDefaultValues() {
         assertThat(helper.fileRequest().build()).isEqualTo(
-                FileIngestRequest.builder()
+                IngestBatcherTrackedFile.builder()
                         .file("test-bucket/auto-named-file-1.parquet")
                         .fileSizeBytes(1024)
                         .tableId(DEFAULT_TABLE_ID)

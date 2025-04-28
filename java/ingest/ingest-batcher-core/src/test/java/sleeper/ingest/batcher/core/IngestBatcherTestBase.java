@@ -77,22 +77,22 @@ public class IngestBatcherTestBase {
                 .build();
     }
 
-    protected FileIngestRequest addFileToStore(String file) {
+    protected IngestBatcherTrackedFile addFileToStore(String file) {
         return addFileToStore(ingestRequest()
                 .file(file).build());
     }
 
-    protected FileIngestRequest.Builder ingestRequest() {
+    protected IngestBatcherTrackedFile.Builder ingestRequest() {
         return requests.fileRequest();
     }
 
-    protected FileIngestRequest addFileToStore(FileIngestRequest request) {
+    protected IngestBatcherTrackedFile addFileToStore(IngestBatcherTrackedFile request) {
         store.addFile(request);
         return request;
     }
 
-    protected FileIngestRequest addFileToStore(Consumer<FileIngestRequest.Builder> config) {
-        FileIngestRequest.Builder builder = ingestRequest();
+    protected IngestBatcherTrackedFile addFileToStore(Consumer<IngestBatcherTrackedFile.Builder> config) {
+        IngestBatcherTrackedFile.Builder builder = ingestRequest();
         config.accept(builder);
         return addFileToStore(builder.build());
     }

@@ -24,6 +24,7 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.JobRuns;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -167,7 +168,7 @@ public abstract class CompactionJobStatusReporterTestBase {
                         .updateTime(creationTime)
                         .partitionId("test-partition")
                         .build())
-                .jobRunsLatestFirst(List.of())
+                .jobRuns(JobRuns.latestFirst(List.of()))
                 .build());
     }
 

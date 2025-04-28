@@ -16,6 +16,7 @@
 package sleeper.core.deploy;
 
 import sleeper.core.SleeperVersion;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -67,6 +68,16 @@ public class LambdaJar {
 
     public String getImageName() {
         return imageName;
+    }
+
+    /**
+     * Retrieves the name of the ECR repository for deploying this jar as a Docker container.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the ECR repository name
+     */
+    public String getEcrRepositoryName(InstanceProperties instanceProperties) {
+        return DockerDeployment.getEcrRepositoryPrefix(instanceProperties) + "/" + imageName;
     }
 
     /**

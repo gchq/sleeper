@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -48,7 +48,7 @@ public class JsonIngestBatcherReporterTest {
         @Test
         void shouldReportNoFiles() throws IOException {
             // Given
-            List<FileIngestRequest> noFiles = Collections.emptyList();
+            List<IngestBatcherTrackedFile> noFiles = Collections.emptyList();
 
             // When / Then
             assertThat(getJsonReport(BatcherQuery.Type.ALL, noFiles)).hasToString(
@@ -58,7 +58,7 @@ public class JsonIngestBatcherReporterTest {
         @Test
         void shouldReportOnePendingFileAndTwoBatchedFiles() throws IOException {
             // Given
-            List<FileIngestRequest> onePendingAndTwoBatchedFiles = onePendingAndTwoBatchedFiles();
+            List<IngestBatcherTrackedFile> onePendingAndTwoBatchedFiles = onePendingAndTwoBatchedFiles();
 
             // When / Then
             assertThat(getJsonReport(BatcherQuery.Type.ALL, onePendingAndTwoBatchedFiles)).hasToString(
@@ -66,7 +66,7 @@ public class JsonIngestBatcherReporterTest {
         }
     }
 
-    private String getJsonReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
+    private String getJsonReport(BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
         return IngestBatcherReporterTestHelper.getJsonReport(tableIndex, queryType, fileRequestList);
     }
 }

@@ -11,6 +11,7 @@ env:
   CROSS_CONFIG: "Cross.sccache.toml"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
+  RUSTC_WRAPPER: "sccache"
 
 jobs:
   build:
@@ -19,9 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      - uses: mozilla-actions/sccache-action@v0.0.8
+      - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Install cargo cross
         run: cargo install cross
+      - name: Build without cross
+        working-directory: ./rust
+        run: SCCACHE_LOG=trace cargo build --verbose
       - name: Build x86_64
         working-directory: ./rust
         run: SCCACHE_LOG=trace cross build --release --target x86_64-unknown-linux-gnu --verbose

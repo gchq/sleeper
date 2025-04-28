@@ -17,11 +17,11 @@
 package sleeper.clients.status.report.ingest.batcher;
 
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
 
 public interface IngestBatcherReporter {
 
-    void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider);
+    void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider);
 }

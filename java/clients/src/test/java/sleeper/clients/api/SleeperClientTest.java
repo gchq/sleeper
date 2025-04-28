@@ -38,6 +38,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
@@ -73,16 +74,63 @@ class SleeperClientTest {
     InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     Queue<IngestJob> ingestQueue = new LinkedList<>();
     Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
-    SleeperClient sleeperClient = SleeperClient.builder()
-            .instanceProperties(instanceProperties)
-            .tableIndex(tableIndex)
-            .tablePropertiesStore(tablePropertiesStore)
-            .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
-            .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
-            .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
-            .ingestJobSender(ingestSender())
-            .bulkImportJobSender(bulkImportSender())
-            .build();
+    Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
+    SleeperClient sleeperClient = createSleeperBuilder().build();
+
+    private SleeperClient.Builder createSleeperBuilder() {
+        return new SleeperClient.Builder()
+                .instanceProperties(instanceProperties)
+                .tableIndex(tableIndex)
+                .tablePropertiesStore(tablePropertiesStore)
+                .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
+                .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
+                .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
+                .ingestJobSender(ingestQueue::add)
+                .bulkImportJobSender(bulkImportSender())
+                .ingestBatcherSender(ingestBatcherQueue::add);
+    }
+
+    @Test
+    void validateThatClientCannotBeCreatedWithNulls() {
+        assertThatThrownBy(() -> createSleeperBuilder().instanceProperties(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("instanceProperties");
+        assertThatThrownBy(() -> createSleeperBuilder().tableIndex(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("tableIndex");
+        assertThatThrownBy(() -> createSleeperBuilder().tablePropertiesStore(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesStore");
+        assertThatThrownBy(() -> createSleeperBuilder().tablePropertiesProvider(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesProvider");
+        assertThatThrownBy(() -> createSleeperBuilder().stateStoreProvider(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("stateStoreProvider");
+        assertThatThrownBy(() -> createSleeperBuilder().objectFactory(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("objectFactory");
+        assertThatThrownBy(() -> createSleeperBuilder().recordRetrieverProvider(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("recordRetrieverProvider");
+        assertThatThrownBy(() -> createSleeperBuilder().ingestJobSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestJobSender");
+        assertThatThrownBy(() -> createSleeperBuilder().bulkImportJobSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkImportJobSender");
+        assertThatThrownBy(() -> createSleeperBuilder().ingestBatcherSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestBatcherSender");
+    }
+
+    @Test
+    void shouldVerifyThatTableExists() {
+        // Given
+        String tableName = "table-name";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        sleeperClient.addTable(tableProperties, List.of());
+
+        // When / Then
+        assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
+    }
+
+    @Test
+    void shouldValidateThatTableDoesNotExist() {
+        // When / Then
+        assertThat(sleeperClient.doesTableExist("FAKENAME")).isFalse();
+    }
 
     @Test
     void shouldAddTable() {
@@ -141,7 +189,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
         // When
-        String jobId = sleeperClient.ingestParquetFilesFromS3(tableName, fileList);
+        String jobId = sleeperClient.ingestFromFiles(tableName, fileList);
 
         // Then
         assertThat(jobId).isNotBlank();
@@ -161,7 +209,7 @@ class SleeperClientTest {
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
 
         // When
-        String jobId = sleeperClient.bulkImportParquetFilesFromS3(tableName, platform, fileList);
+        String jobId = sleeperClient.bulkImportFromFiles(tableName, platform, fileList);
 
         // Then
         assertThat(jobId).isNotBlank();
@@ -172,6 +220,19 @@ class SleeperClientTest {
                                 .tableName(tableName)
                                 .files(fileList)
                                 .build())));
+    }
+
+    @Test
+    void shouldSendParquetFilesToIngestBatcher() {
+        String tableName = "ingest-table";
+        List<String> fileList = List.of("filename1.parquet", "filename2.parquet");
+
+        // When
+        sleeperClient.sendFilesToIngestBatcher(tableName, fileList);
+
+        // Then
+        assertThat(ingestBatcherQueue).containsExactly(
+                new IngestBatcherSubmitRequest(tableName, fileList));
     }
 
     private TableProperties createTableProperties(String tableName) {
@@ -203,11 +264,7 @@ class SleeperClientTest {
         return new RangeFactory(schema);
     }
 
-    private SleeperClientIngest ingestSender() {
-        return job -> ingestQueue.add(job);
-    }
-
-    private SleeperClientBulkImport bulkImportSender() {
+    private BulkImportJobSender bulkImportSender() {
         return (platform, job) -> bulkImportQueues
                 .computeIfAbsent(platform, p -> new LinkedList<>())
                 .add(job);

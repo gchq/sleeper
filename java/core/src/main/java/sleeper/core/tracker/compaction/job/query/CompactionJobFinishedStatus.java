@@ -22,7 +22,8 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A status update for when a compaction job has finished.
+ * A status update for when a compaction job has finished in a task. This is the model for querying the event from the
+ * tracker.
  */
 public class CompactionJobFinishedStatus implements JobRunEndUpdate {
 
@@ -77,6 +78,9 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
         return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + "}";
     }
 
+    /**
+     * A builder for compaction job finished status updates.
+     */
     public static class Builder {
         private Instant updateTime;
         private Instant finishTime;
@@ -85,16 +89,34 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
         private Builder() {
         }
 
+        /**
+         * Sets the time the update was written to the tracker.
+         *
+         * @param  updateTime the update time
+         * @return            this builder
+         */
         public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }
 
+        /**
+         * Sets the time the compaction job finished.
+         *
+         * @param  finishTime the time the job finished
+         * @return            this builder
+         */
         public Builder finishTime(Instant finishTime) {
             this.finishTime = finishTime;
             return this;
         }
 
+        /**
+         * Sets counts of records processed by the compaction job.
+         *
+         * @param  recordsProcessed the counts of records processed
+         * @return                  this builder
+         */
         public Builder recordsProcessed(RecordsProcessed recordsProcessed) {
             this.recordsProcessed = recordsProcessed;
             return this;
