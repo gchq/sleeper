@@ -19,7 +19,7 @@ package sleeper.configurationv2.properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -40,7 +40,7 @@ class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     private Path tempDir;
 
     private InstanceProperties saveFromS3(String instanceId) throws IOException {
-        return S3InstanceProperties.saveToLocalWithTableProperties(s3ClientV2, dynamoClient, instanceId, tempDir);
+        return S3InstanceProperties.saveToLocalWithTableProperties(s3ClientV2, dynamoClientV2, instanceId, tempDir);
     }
 
     @Test
@@ -98,13 +98,13 @@ class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     private InstanceProperties createTestInstance() {
         InstanceProperties instanceProperties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3ClientV2);
         S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
         return instanceProperties;
     }
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
         return tableProperties;
     }
 }

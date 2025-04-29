@@ -19,7 +19,7 @@ package sleeper.configurationv2.properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -43,12 +43,12 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 class S3PropertiesReloaderIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClient);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
 
     @BeforeEach
     void setUp() {
         s3ClientV2.createBucket(builder -> builder.bucket(instanceProperties.get(CONFIG_BUCKET)));
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
     }
 
     @Test
@@ -93,7 +93,7 @@ class S3PropertiesReloaderIT extends LocalStackTestBase {
                 .get(TABLE_NAME);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
-        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClient);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
         provider.getByName(tableName);
         PropertiesReloader reloader = S3PropertiesReloader.ifConfigured(s3ClientV2, instanceProperties, provider);
 
@@ -114,7 +114,7 @@ class S3PropertiesReloaderIT extends LocalStackTestBase {
         String tableName = createTestTable(createSchemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
-        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClient);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
         provider.getByName(tableName);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
