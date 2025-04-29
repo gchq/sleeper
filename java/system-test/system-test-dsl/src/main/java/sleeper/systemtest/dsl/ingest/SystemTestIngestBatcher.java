@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -94,7 +94,7 @@ public class SystemTestIngestBatcher {
         return driver.batcherStore().getAllFilesNewestFirst().stream()
                 .filter(request -> tableIds.contains(request.getTableId()))
                 .filter(request -> request.getJobId() != null)
-                .map(FileIngestRequest::getJobId)
+                .map(IngestBatcherTrackedFile::getJobId)
                 .distinct();
     }
 }
