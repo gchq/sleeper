@@ -88,19 +88,18 @@ class AwsDrainSqsQueueTest {
                 streamMessages("A", "B").collect(toSet()));
     }
 
-    //@Disabled("TODO")
     @Test
     void shouldStopRetryingAfterEmptyReceiveWithConfiguredLimit() {
         // Given we have two messages
         addMessages("A", "B");
         // And we fake the behaviour of SQS to receive one message, followed by multiple empty responses
-        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveNoMessages(), receiveNoMessages());
+        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveNoMessages());
 
         // When / Then
         Assertions.setMaxStackTraceElementsDisplayed(200);
         AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
-        assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 2, "queue").toList())
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").toList())
+                .isInstanceOf(RetriesLimitHitException.class);
     }
 
     // TODO test retry count is reset when we receive a message (one retry, then a message, then another retry, when only one retry is allowed)

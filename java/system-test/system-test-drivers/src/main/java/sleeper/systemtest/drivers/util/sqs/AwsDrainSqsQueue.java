@@ -113,7 +113,7 @@ public class AwsDrainSqsQueue {
 
     private static boolean keepCheckingQueue(ReceiveBatchResult lastResult, int expectedMessages, int retriesWhenEmpty) {
         if (lastResult.numEmptyReceives > retriesWhenEmpty) {
-            throw new IllegalStateException();
+            throw new RetriesLimitHitException("Found " + lastResult.numEmptyReceives + " empty receives with maximum of " + retriesWhenEmpty + "retries");
         }
         return lastResult.hasMessages() || lastResult.totalMessages() < expectedMessages;
     }
