@@ -33,8 +33,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 
 import java.time.Duration;
 import java.util.List;
