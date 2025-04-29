@@ -70,10 +70,10 @@ pub async fn compact(
     let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
-    let store = register_store(store_factory, input_paths, output_path, &ctx)?;
+    register_store(store_factory, input_paths, output_path, &ctx)?;
 
     // Set the upload size based upon size of input data
-    set_multipart_upload_hint(store_factory, input_paths, output_path, store).await?;
+    set_multipart_upload_hint(store_factory, input_paths, output_path).await?;
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -120,7 +120,6 @@ pub async fn compact(
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
     let mut pqo = ctx.copied_table_options().parquet;
-
     // Figure out which columns should be dictionary encoded
     set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
 
@@ -220,9 +219,11 @@ async fn set_multipart_upload_hint(
     store_factory: &ObjectStoreFactory,
     input_paths: &[Url],
     output_path: &Url,
-    store: Arc<dyn SizeHintableStore>,
 ) -> Result<(), DataFusionError> {
-    let input_size = calculate_input_size(input_paths, &store)
+    let input_store = store_factory
+        .get_object_store(&input_paths[0])
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    let input_size = calculate_input_size(input_paths, &input_store)
         .await
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
@@ -456,7 +457,7 @@ fn register_store(
     input_paths: &[Url],
     output_path: &Url,
     ctx: &SessionContext,
-) -> Result<Arc<dyn SizeHintableStore>, DataFusionError> {
+) -> Result<(), DataFusionError> {
     let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;
@@ -467,5 +468,5 @@ fn register_store(
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
         .register_object_store(output_path, out_store.as_object_store());
-    Ok(in_store)
+    Ok(())
 }
