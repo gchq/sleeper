@@ -27,7 +27,7 @@
           <mxGeometry x="70" y="600.66" width="60" height="40" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-4" value="Bulk import queue takes a job with a list of input files" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="170" y="480" width="100" height="60" as="geometry" />
+          <mxGeometry x="170" y="380" width="100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-6" value="Spark cluster in EMR receives job, sorts data and adds it to a Sleeper table" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="290" y="600" width="100" height="90" as="geometry" />
@@ -42,7 +42,7 @@
           <mxGeometry x="290" y="370" width="100" height="70" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-16" value="State store updates" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="440" y="565.5" width="70" height="30" as="geometry" />
+          <mxGeometry x="427.5" y="560" width="65.01" height="40" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3NLjgXGCndHzrWQDtMyP-17" target="3NLjgXGCndHzrWQDtMyP-34">
           <mxGeometry relative="1" as="geometry" />
@@ -54,10 +54,10 @@
           <mxGeometry x="160" y="600.66" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-21" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
-          <mxGeometry x="454.99" y="610" width="40" height="40" as="geometry" />
+          <mxGeometry x="440" y="610.66" width="40" height="40" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-23" value="Data bucket" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="435.37" y="650" width="79.25" height="40" as="geometry" />
+          <mxGeometry x="420.38" y="650" width="79.25" height="30" as="geometry" />
         </mxCell>
         <mxCell id="3NLjgXGCndHzrWQDtMyP-29" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#7AA116;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;" vertex="1" parent="1">
           <mxGeometry x="440" y="440" width="40" height="40" as="geometry" />
