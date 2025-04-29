@@ -98,6 +98,7 @@ pub async fn compact(
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
+    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
 
     // Iterate through column names, mapping each into an `Expr` of the name UNLESS
     // we find the first row key column which should be mapped to the sketch function
@@ -109,7 +110,7 @@ pub async fn compact(
                 // Map to the sketch function
                 sketch_func
                     // Sketch function needs to be called with each row key column
-                    .call(input_data.row_key_cols.iter().map(col).collect())
+                    .call(row_key_exprs.clone())
                     // Alias name to original schema column name
                     .alias(col_name)
             } else {
