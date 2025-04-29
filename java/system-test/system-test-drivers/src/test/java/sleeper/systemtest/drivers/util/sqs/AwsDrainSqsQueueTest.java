@@ -16,6 +16,8 @@
 package sleeper.systemtest.drivers.util.sqs;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;
 
@@ -36,75 +38,85 @@ class AwsDrainSqsQueueTest {
     PriorityBlockingQueue<Message> queue = new PriorityBlockingQueue<>(10, Comparator.comparing(Message::messageId));
     ReceiveMessages receiveMessages = receiveFromQueue();
 
-    @Test
-    void shouldReceiveMessagesOnOneThread() {
-        // Given
-        addMessages("A", "B", "C", "D", "E");
-        AwsDrainSqsQueue drainSqsQueue = drainSqsQueueBuilder()
-                .numThreads(1)
-                .messagesPerBatchPerThread(3)
-                .messagesPerReceive(2)
-                .build();
+    @Nested
+    @DisplayName("Drain queue")
+    class DrainQueue {
 
-        // When
-        Set<Message> messages = drainSqsQueue.drain("queue").collect(toSet());
+        @Test
+        void shouldReceiveMessagesOnOneThread() {
+            // Given
+            addMessages("A", "B", "C", "D", "E");
+            AwsDrainSqsQueue drainSqsQueue = drainSqsQueueBuilder()
+                    .numThreads(1)
+                    .messagesPerBatchPerThread(3)
+                    .messagesPerReceive(2)
+                    .build();
 
-        // Then
-        assertThat(messages).isEqualTo(
-                streamMessages("A", "B", "C", "D", "E").collect(toSet()));
+            // When
+            Set<Message> messages = drainSqsQueue.drain("queue").collect(toSet());
+
+            // Then
+            assertThat(messages).isEqualTo(
+                    streamMessages("A", "B", "C", "D", "E").collect(toSet()));
+        }
+
+        @Test
+        void shouldReceiveMessagesAcrossThreads() {
+            // Given
+            addMessages("A", "B", "C", "D", "E");
+            AwsDrainSqsQueue drainSqsQueue = drainSqsQueueBuilder()
+                    .numThreads(2)
+                    .messagesPerBatchPerThread(2)
+                    .messagesPerReceive(1)
+                    .build();
+
+            // When
+            Set<Message> messages = drainSqsQueue.drain("queue").collect(toSet());
+
+            // Then
+            assertThat(messages).isEqualTo(
+                    streamMessages("A", "B", "C", "D", "E").collect(toSet()));
+        }
     }
 
-    @Test
-    void shouldReceiveMessagesAcrossThreads() {
-        // Given
-        addMessages("A", "B", "C", "D", "E");
-        AwsDrainSqsQueue drainSqsQueue = drainSqsQueueBuilder()
-                .numThreads(2)
-                .messagesPerBatchPerThread(2)
-                .messagesPerReceive(1)
-                .build();
+    @Nested
+    @DisplayName("Drain queue with expected number of messages")
+    class DrainQueueWithExpectedNumberOfMessages {
 
-        // When
-        Set<Message> messages = drainSqsQueue.drain("queue").collect(toSet());
+        @Test
+        void shouldRetryAfterEmptyReceiveWhenExpectingANumberOfMessages() {
+            // Given we have two messages
+            addMessages("A", "B");
+            // And we fake the behaviour of SQS to receive a message, an empty response, another message
+            receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveFromQueue(), receiveNoMessages());
 
-        // Then
-        assertThat(messages).isEqualTo(
-                streamMessages("A", "B", "C", "D", "E").collect(toSet()));
+            // When
+            Set<Message> messages = drainQueueOneMessageAtATime()
+                    .drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").collect(toSet());
+
+            // Then
+            assertThat(messages).isEqualTo(
+                    streamMessages("A", "B").collect(toSet()));
+        }
+
+        @Test
+        void shouldStopRetryingAfterEmptyReceiveWithConfiguredLimit() {
+            // Given we have two messages
+            addMessages("A", "B");
+            // And we fake the behaviour of SQS to receive one message, followed by multiple empty responses
+            receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveNoMessages());
+
+            // When / Then
+            Assertions.setMaxStackTraceElementsDisplayed(200);
+            AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
+            assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").toList())
+                    .isInstanceOf(RetriesLimitHitException.class);
+        }
+
+        // TODO test retry count is reset when we receive a message (one retry, then a message, then another retry, when only one retry is allowed)
+
+        // TODO test when we have no messages in the first receive, the number of retries should still be accurate
     }
-
-    @Test
-    void shouldRetryAfterEmptyReceiveWhenExpectingANumberOfMessages() {
-        // Given we have two messages
-        addMessages("A", "B");
-        // And we fake the behaviour of SQS to receive a message, an empty response, another message
-        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveFromQueue(), receiveNoMessages());
-
-        // When
-        Set<Message> messages = drainQueueOneMessageAtATime()
-                .drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").collect(toSet());
-
-        // Then
-        assertThat(messages).isEqualTo(
-                streamMessages("A", "B").collect(toSet()));
-    }
-
-    @Test
-    void shouldStopRetryingAfterEmptyReceiveWithConfiguredLimit() {
-        // Given we have two messages
-        addMessages("A", "B");
-        // And we fake the behaviour of SQS to receive one message, followed by multiple empty responses
-        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveNoMessages());
-
-        // When / Then
-        Assertions.setMaxStackTraceElementsDisplayed(200);
-        AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
-        assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").toList())
-                .isInstanceOf(RetriesLimitHitException.class);
-    }
-
-    // TODO test retry count is reset when we receive a message (one retry, then a message, then another retry, when only one retry is allowed)
-
-    // TODO test when we have no messages in the first receive, the number of retries should still be accurate
 
     private void addMessages(String... ids) {
         queue.addAll(streamMessages(ids).toList());
