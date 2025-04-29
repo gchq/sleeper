@@ -103,7 +103,7 @@ public class AwsDrainSqsQueue {
                 .flatMap(List::stream);
     }
 
-    public Stream<Message> drainExpectingMessages(int expectedMessages, String queueUrl) {
+    public Stream<Message> drainExpectingMessagesWithRetriesWhenEmpty(int expectedMessages, int retriesWhenEmpty, String queueUrl) {
         LOGGER.info("Draining queue until empty, expecting {} messages: {}", queueUrl);
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
@@ -211,10 +211,10 @@ public class AwsDrainSqsQueue {
         return receiveMessages.receiveAndDeleteMessages(queueUrl, messagesPerReceive, waitTimeSeconds);
     }
 
-    private record ReceiveBatchResult(List<Message> messages, int totalMessages, int totalReceives) {
+    private record ReceiveBatchResult(List<Message> messages, int totalMessages, int numEmptyReceives) {
 
         static ReceiveBatchResult first(List<Message> messages) {
-            return new ReceiveBatchResult(messages, messages.size(), 1);
+            return new ReceiveBatchResult(messages, messages.size(), 0);
         }
 
         boolean hasMessages() {
@@ -225,11 +225,12 @@ public class AwsDrainSqsQueue {
             List<Message> receivedMessages = receiveMessages.get();
             int newTotal = totalMessages + receivedMessages.size();
             LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
-            return new ReceiveBatchResult(receivedMessages, newTotal, totalReceives + 1);
+            return new ReceiveBatchResult(receivedMessages, newTotal,
+                    receivedMessages.isEmpty() ? numEmptyReceives + 1 : 0);
         }
 
         ReceiveBatchResult noMessagesNext() {
-            return new ReceiveBatchResult(List.of(), totalMessages, totalReceives);
+            return new ReceiveBatchResult(List.of(), totalMessages, numEmptyReceives);
         }
 
         Stream<Message> stream() {

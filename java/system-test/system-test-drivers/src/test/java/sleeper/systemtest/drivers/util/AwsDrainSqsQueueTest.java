@@ -82,7 +82,7 @@ class AwsDrainSqsQueueTest {
 
         // When
         Set<Message> messages = drainQueueOneMessageAtATime()
-                .drainExpectingMessages(2, "queue").collect(toSet());
+                .drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").collect(toSet());
 
         // Then
         assertThat(messages).isEqualTo(
@@ -100,9 +100,13 @@ class AwsDrainSqsQueueTest {
         // When / Then
         Assertions.setMaxStackTraceElementsDisplayed(200);
         AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
-        assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessages(2, "queue").toList())
+        assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 2, "queue").toList())
                 .isInstanceOf(IllegalStateException.class);
     }
+
+    // TODO test when we have one retry, then a message, then another retry, when only one retry is allowed (i.e. retry count is reset)
+
+    // TODO test when we have no messages in the first receive, the number of retries should still be accurate
 
     private void addMessages(String... ids) {
         queue.addAll(streamMessages(ids).toList());
