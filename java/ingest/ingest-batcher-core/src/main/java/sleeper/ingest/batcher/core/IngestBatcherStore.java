@@ -19,13 +19,13 @@ package sleeper.ingest.batcher.core;
 import java.util.List;
 
 public interface IngestBatcherStore {
-    void addFile(FileIngestRequest fileIngestRequest);
+    void addFile(IngestBatcherTrackedFile fileIngestRequest);
 
-    List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob);
+    List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob);
 
-    List<FileIngestRequest> getAllFilesNewestFirst();
+    List<IngestBatcherTrackedFile> getAllFilesNewestFirst();
 
-    List<FileIngestRequest> getPendingFilesOldestFirst();
+    List<IngestBatcherTrackedFile> getPendingFilesOldestFirst();
 
     void deleteAllPending();
 }

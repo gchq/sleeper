@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class SleeperClientIngestIT extends LocalStackTestBase {
+public class IngestJobSenderIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 
@@ -49,7 +49,7 @@ public class SleeperClientIngestIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        SleeperClientIngest.ingestParquetFilesFromS3(instanceProperties, sqsClient)
+        IngestJobSender.toSqs(instanceProperties, sqsClient)
                 .sendFilesToIngest(job);
         assertThat(recieveIngestJobs()).containsExactly(job);
     }

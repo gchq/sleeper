@@ -21,7 +21,6 @@ on:
       - 'java/system-test/system-test-drivers/**'
       - 'java/system-test/system-test-suite/**'
       - 'java/bulk-import/bulk-import-starter/**'
-      - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/common/common-task/**'
       - 'java/query/query-runner/**'
