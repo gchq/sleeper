@@ -104,7 +104,7 @@ class AwsDrainSqsQueueTest {
                 .isInstanceOf(IllegalStateException.class);
     }
 
-    // TODO test when we have one retry, then a message, then another retry, when only one retry is allowed (i.e. retry count is reset)
+    // TODO test retry count is reset when we receive a message (one retry, then a message, then another retry, when only one retry is allowed)
 
     // TODO test when we have no messages in the first receive, the number of retries should still be accurate
 
