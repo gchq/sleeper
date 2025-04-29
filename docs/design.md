@@ -327,6 +327,8 @@ a Cloudwatch rule that periodically triggers a lambda. This lambda iterates thro
 it queries the state store to retrieve all the files that do not have any references and have been waiting for
 more than N minutes. These files are then deleted in batches.
 
+![Garbage collection design diagram](design/garbage-collection.png)
+
 ## Queries
 
 A Sleeper query is a request for all records where the key is in a range (or in one of a list of ranges). Queries
