@@ -32,7 +32,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -108,7 +107,7 @@ public class AwsDrainSqsQueue {
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
                 lastResult -> lastResult.hasMessages() || lastResult.totalMessages() < expectedMessages,
-                lastResult -> lastResult.receiveNext(() -> receiveMessageBatch(queueUrl)))
+                lastResult -> lastResult.receiveNext(receiveMessageBatch(queueUrl)))
                 .flatMap(ReceiveBatchResult::stream);
     }
 
@@ -201,7 +200,7 @@ public class AwsDrainSqsQueue {
                 ReceiveBatchResult.first(receiveMessages(queueUrl)),
                 lastResult -> lastResult.hasMessages(),
                 lastResult -> lastResult.totalMessages() < messagesPerBatchPerThread
-                        ? lastResult.receiveNext(() -> receiveMessages(queueUrl))
+                        ? lastResult.receiveNext(receiveMessages(queueUrl))
                         : lastResult.noMessagesNext())
                 .flatMap(ReceiveBatchResult::stream)
                 .collect(collector);
@@ -221,12 +220,11 @@ public class AwsDrainSqsQueue {
             return !messages.isEmpty();
         }
 
-        ReceiveBatchResult receiveNext(Supplier<List<Message>> receiveMessages) {
-            List<Message> receivedMessages = receiveMessages.get();
-            int newTotal = totalMessages + receivedMessages.size();
-            LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
-            return new ReceiveBatchResult(receivedMessages, newTotal,
-                    receivedMessages.isEmpty() ? numEmptyReceives + 1 : 0);
+        ReceiveBatchResult receiveNext(List<Message> messages) {
+            int newTotal = totalMessages + messages.size();
+            LOGGER.info("Recevied {} messages, total of {} for batch", messages.size(), newTotal);
+            return new ReceiveBatchResult(messages, newTotal,
+                    messages.isEmpty() ? numEmptyReceives + 1 : 0);
         }
 
         ReceiveBatchResult noMessagesNext() {
