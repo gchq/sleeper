@@ -120,7 +120,6 @@ pub async fn compact(
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
     let mut pqo = ctx.copied_table_options().parquet;
-
     // Figure out which columns should be dictionary encoded
     set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
 
