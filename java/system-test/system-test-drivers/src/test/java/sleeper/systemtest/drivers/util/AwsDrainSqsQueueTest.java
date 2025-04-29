@@ -72,9 +72,10 @@ class AwsDrainSqsQueueTest {
 
     @Test
     void shouldRetryAfterEmptyReceiveWhenExpectingANumberOfMessages() {
-        // Given
+        // Given we have two messages
         addMessages("A", "B");
-        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveFromQueue(), receiveFromQueue());
+        // And we fake the behaviour of SQS to receive a message, an empty response, another message
+        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveFromQueue(), receiveNoMessages());
 
         // When
         Set<Message> messages = drainQueueOneMessageAtATime()
