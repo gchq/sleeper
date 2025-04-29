@@ -16,7 +16,6 @@
 package sleeper.systemtest.drivers.util;
 
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;
 
@@ -89,7 +88,7 @@ class AwsDrainSqsQueueTest {
                 streamMessages("A", "B").collect(toSet()));
     }
 
-    @Disabled("TODO")
+    //@Disabled("TODO")
     @Test
     void shouldStopRetryingAfterEmptyReceiveWithConfiguredLimit() {
         // Given we have two messages

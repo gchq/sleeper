@@ -106,9 +106,16 @@ public class AwsDrainSqsQueue {
         LOGGER.info("Draining queue until empty, expecting {} messages: {}", queueUrl);
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
-                lastResult -> lastResult.hasMessages() || lastResult.totalMessages() < expectedMessages,
+                lastResult -> keepCheckingQueue(lastResult, expectedMessages, retriesWhenEmpty),
                 lastResult -> lastResult.receiveNext(receiveMessageBatch(queueUrl)))
                 .flatMap(ReceiveBatchResult::stream);
+    }
+
+    private static boolean keepCheckingQueue(ReceiveBatchResult lastResult, int expectedMessages, int retriesWhenEmpty) {
+        if (lastResult.numEmptyReceives > retriesWhenEmpty) {
+            throw new IllegalStateException();
+        }
+        return lastResult.hasMessages() || lastResult.totalMessages() < expectedMessages;
     }
 
     public EmptyQueueResults empty(List<String> queueUrls) {
