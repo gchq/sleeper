@@ -125,6 +125,26 @@ impl ObjectStoreFactory {
         }
     }
 
+    /// Create a cache key for the given URL.
+    ///
+    /// Most are based purely off the scheme for the URL,
+    /// but some implementations like [`AmazonS3`] are configured
+    /// per bucket, so that needs to be part of the cache key.
+    ///
+    /// # Errors
+    /// If the URL host can't be obtained
+    fn make_cache_key_for(url: &Url) -> color_eyre::Result<String> {
+        let scheme = url.scheme();
+        match scheme {
+            "s3" => {
+                // Amazon S3 object store implementation is bucket specific
+                let host = extract_bucket(url)?;
+                Ok(format!("s3://{host}"))
+            }
+            _ => Ok(scheme.to_owned()),
+        }
+    }
+
     /// Retrieves the appropriate [`object_store::ObjectStore`] for a given URL.
     ///
     /// The object returned will be the same for each subsequent call to this method for a given URL scheme.
@@ -137,10 +157,9 @@ impl ObjectStoreFactory {
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
-        let scheme = src.scheme();
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
-        match borrow.entry(scheme.to_owned()) {
+        match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
             // if entry found, then clone the shared pointer
             Entry::Occupied(occupied) => Ok(occupied.get().clone()),
             // otherwise, attempt to create the object store
@@ -205,7 +224,7 @@ mod tests {
     use color_eyre::eyre::Result;
     use url::Url;
 
-    use super::extract_bucket;
+    use super::{ObjectStoreFactory, extract_bucket};
 
     #[test]
     fn should_extract_bucket() -> Result<()> {
@@ -233,6 +252,32 @@ mod tests {
         let s = bucket.unwrap_err().to_string();
         assert_eq!(s, "invalid S3 bucket name");
 
+        Ok(())
+    }
+
+    #[test]
+    fn should_create_scheme_cache_key_for_local() -> Result<()> {
+        // Given
+        let url = Url::parse("file:///some/file")?;
+
+        // When
+        let cache_key = ObjectStoreFactory::make_cache_key_for(&url)?;
+
+        // Then
+        assert_eq!(cache_key, "file");
+        Ok(())
+    }
+
+    #[test]
+    fn should_create_bucket_cache_key_for_s3() -> Result<()> {
+        // Given
+        let url = Url::parse("s3://test-bucket/key")?;
+
+        // When
+        let cache_key = ObjectStoreFactory::make_cache_key_for(&url)?;
+
+        // Then
+        assert_eq!(cache_key, "s3://test-bucket");
         Ok(())
     }
 }
