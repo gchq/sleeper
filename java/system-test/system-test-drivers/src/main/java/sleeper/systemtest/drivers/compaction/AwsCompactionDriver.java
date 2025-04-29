@@ -140,10 +140,10 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public List<CompactionJob> drainJobsQueueForWholeInstance() {
+    public List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs) {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
         LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
-        List<CompactionJob> jobs = drainQueue.drain(queueUrl)
+        List<CompactionJob> jobs = drainQueue.drainExpectingMessagesWithRetriesWhenEmpty(expectedJobs, 5, queueUrl)
                 .map(Message::body)
                 .map(serDe::fromJson)
                 .toList();

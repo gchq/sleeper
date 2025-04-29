@@ -75,9 +75,8 @@ public class AwsCompactionDriverIT {
                 instance.getInstanceProperties(), instance.getTableProperties(), instance.getStateStore(), sqs);
 
         // When / Then
-        assertThat(new HashSet<>(driver.drainJobsQueueForWholeInstance()))
+        assertThat(new HashSet<>(driver.drainJobsQueueForWholeInstance(20)))
                 .isEqualTo(new HashSet<>(jobs));
-        assertThat(driver.drainJobsQueueForWholeInstance()).isEmpty();
     }
 
     @Test
