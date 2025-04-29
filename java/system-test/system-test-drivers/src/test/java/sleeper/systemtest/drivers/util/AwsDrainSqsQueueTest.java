@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.drivers.util;
 
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;
 
@@ -28,6 +30,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AwsDrainSqsQueueTest {
 
@@ -84,6 +87,21 @@ class AwsDrainSqsQueueTest {
         // Then
         assertThat(messages).isEqualTo(
                 streamMessages("A", "B").collect(toSet()));
+    }
+
+    @Disabled("TODO")
+    @Test
+    void shouldStopRetryingAfterEmptyReceiveWithConfiguredLimit() {
+        // Given we have two messages
+        addMessages("A", "B");
+        // And we fake the behaviour of SQS to receive one message, followed by multiple empty responses
+        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveNoMessages(), receiveNoMessages());
+
+        // When / Then
+        Assertions.setMaxStackTraceElementsDisplayed(200);
+        AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
+        assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessages(2, "queue").toList())
+                .isInstanceOf(IllegalStateException.class);
     }
 
     private void addMessages(String... ids) {
