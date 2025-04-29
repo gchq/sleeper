@@ -18,7 +18,7 @@
 use crate::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use aws_config::Region;
 use aws_credential_types::Credentials;
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::{Result, bail, eyre};
 use object_store::aws::AmazonS3Builder;
 
 use std::{collections::HashMap, path::PathBuf};
@@ -169,6 +169,14 @@ pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<Comp
         let mut output_file_path = input_data.output_file.clone();
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
+        }
+
+        if input_data.row_key_cols.len() != input_data.region.len() {
+            bail!(
+                "Length mismatch between row keys {} and partition region bounds {}",
+                input_data.row_key_cols.len(),
+                input_data.region.len()
+            );
         }
 
         let store_factory = create_object_store_factory(input_data.aws_config.as_ref()).await;

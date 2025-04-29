@@ -21,22 +21,12 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
 
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.LambdaDeployType;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
-
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
-import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);
@@ -45,30 +35,23 @@ public class RemoveECRRepositories {
     }
 
     public static void remove(EcrClient ecr, InstanceProperties properties, List<String> extraRepositories) {
-        Stream.of(repositoryNamesFromProperties(properties),
-                lambdaRepositoryNames(properties),
+        remove(ecr, streamAllRepositoryNames(properties, DockerDeployment.all(), LambdaHandler.all(), extraRepositories));
+    }
+
+    public static void remove(EcrClient ecr, Stream<String> repositoryNames) {
+        repositoryNames.parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
+    }
+
+    public static Stream<String> streamAllRepositoryNames(
+            InstanceProperties properties, List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers, List<String> extraRepositories) {
+        return Stream.of(
+                dockerDeployments.stream()
+                        .map(deployment -> deployment.getEcrRepositoryName(properties)),
+                lambdaHandlers.stream()
+                        .map(LambdaHandler::getJar).distinct()
+                        .map(jar -> jar.getEcrRepositoryName(properties)),
                 extraRepositories.stream())
-                .flatMap(s -> s)
-                .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
-    }
-
-    private static Stream<String> repositoryNamesFromProperties(InstanceProperties properties) {
-        return Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO,
-                BULK_EXPORT_ECR_REPO, BULK_IMPORT_REPO, BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
-                .filter(properties::isSet)
-                .map(properties::get);
-    }
-
-    private static Stream<String> lambdaRepositoryNames(InstanceProperties properties) {
-        if (properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class) == LambdaDeployType.CONTAINER) {
-            String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX))
-                    .orElseGet(() -> properties.get(ID));
-            return LambdaHandler.all().stream()
-                    .map(LambdaHandler::getJar).distinct()
-                    .map(jar -> ecrPrefix + "/" + jar.getImageName());
-        } else {
-            return Stream.of();
-        }
+                .flatMap(names -> names); // Combine all streams (concat only takes 2)
     }
 
     private static void deleteRepository(EcrClient ecr, String repositoryName) {

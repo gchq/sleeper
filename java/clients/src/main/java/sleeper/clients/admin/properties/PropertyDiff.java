@@ -27,6 +27,9 @@ import java.util.Set;
 
 import static sleeper.core.properties.SleeperPropertiesPrettyPrinter.formatDescription;
 
+/**
+ * A diff describing a single change to a Sleeper configuration property.
+ */
 public class PropertyDiff {
     private final String propertyName;
     private final String oldValue;
@@ -38,6 +41,14 @@ public class PropertyDiff {
         this.newValue = newValue;
     }
 
+    /**
+     * Creates a diff for a single property based on a set of all values before and after a change.
+     *
+     * @param  propertyName the name of the property to diff
+     * @param  beforeMap    the values of all properties before the change
+     * @param  afterMap     the values of all properties after the change
+     * @return              the diff, if the property changed
+     */
     public static Optional<PropertyDiff> forProperty(String propertyName, Map<String, String> beforeMap, Map<String, String> afterMap) {
         String oldValue = beforeMap.get(propertyName);
         String newValue = afterMap.get(propertyName);
@@ -48,6 +59,13 @@ public class PropertyDiff {
         }
     }
 
+    /**
+     * Writes a description of the change to the console.
+     *
+     * @param out               the console output
+     * @param propertyIndex     an index of all properties of the type being changed (e.g. instance properties)
+     * @param invalidProperties which properties have validation failures caused by the larger update to all values
+     */
     public void print(ConsoleOutput out,
             SleeperPropertyIndex<?> propertyIndex,
             Set<SleeperProperty> invalidProperties) {
@@ -83,6 +101,13 @@ public class PropertyDiff {
         return "";
     }
 
+    /**
+     * Combines this diff with another change that happens after this one. This should only be used with a diff to the
+     * same property. This will discard information about the intermediate state.
+     *
+     * @param  then the diff to apply after this one
+     * @return      the combined diff, if the start and end values are different
+     */
     public Optional<PropertyDiff> andThen(PropertyDiff then) {
         if (Objects.equals(oldValue, then.newValue)) {
             return Optional.empty();
@@ -103,6 +128,13 @@ public class PropertyDiff {
         return newValue;
     }
 
+    /**
+     * Retrieves the declaration of the property changed in this diff from the index.
+     *
+     * @param  <T>           the type of properties changed by this diff (e.g. instance property)
+     * @param  propertyIndex the index of all properties of the type being changed
+     * @return               the definition of the property changed by this diff, if it is in the index
+     */
     public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
         return propertyIndex.getByName(propertyName);
     }

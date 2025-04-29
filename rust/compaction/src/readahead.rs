@@ -169,6 +169,8 @@ impl CacheInserter {
 pub struct ReadaheadStore<T: ObjectStore> {
     /// Underlying `object_store` implementation.
     inner: T,
+    /// Path prefix for logging purposes
+    path_prefix: String,
     /// Cache for object meta-data and streams.
     cache: Arc<Mutex<HashMap<Path, CacheObject>>>,
     /// The amount of readahead we will tolerate before using a new stream.
@@ -184,9 +186,10 @@ pub struct ReadaheadStore<T: ObjectStore> {
 impl<T: ObjectStore> ReadaheadStore<T> {
     /// Creates a new store with the default settings.
     #[must_use]
-    pub fn new(inner: T) -> Self {
+    pub fn new(inner: T, path_prefix: impl Into<String>) -> Self {
         Self {
             inner,
+            path_prefix: path_prefix.into(),
             cache: Arc::new(Mutex::new(HashMap::new())),
             max_readahead: DEFAULT_READAHEAD,
             max_age: DEFAULT_MAX_STREAM_AGE,
@@ -255,7 +258,8 @@ impl<T: ObjectStore> ReadaheadStore<T> {
                     return Ok(None);
                 };
                 debug!(
-                    "Location {} cache hit found for position {} at cached position {}",
+                    "Location {}/{} cache hit found for position {} at cached position {}",
+                    self.path_prefix,
                     location,
                     start_pos.to_formatted_string(&Locale::en),
                     nearest_stream_pos.to_formatted_string(&Locale::en)
@@ -339,7 +343,10 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .underlying_gets
             .lock()
             .expect("ReadaheadStore lock poisoned") += 1;
-        info!("ReadaheadStore GET request to {location}");
+        info!(
+            "ReadaheadStore GET request to {}/{location}",
+            self.path_prefix
+        );
 
         let stop_pos = get_stop_pos(original_range.as_ref(), meta.size);
         let payload = match payload {
@@ -434,11 +441,12 @@ impl<T: ObjectStore> ReadaheadStore<T> {
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
     fn drop(&mut self) {
         info!(
-            "ReadaheadStore made {} GET requests to underlying object store",
+            "ReadaheadStore made {} GET requests to underlying location {}",
             self.underlying_gets
                 .lock()
                 .expect("ReadaheadStore lock poisoned")
-                .to_formatted_string(&Locale::en)
+                .to_formatted_string(&Locale::en),
+            self.path_prefix,
         );
     }
 }
@@ -494,7 +502,11 @@ pub fn should_skip_readahead(options: &GetOptions) -> bool {
 
 impl<T: ObjectStore> Display for ReadaheadStore<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ReadaheadStore({})", self.inner)
+        write!(
+            f,
+            "ReadaheadStore(inner: {}, path_prefix: {})",
+            self.inner, self.path_prefix
+        )
     }
 }
 
@@ -614,7 +626,7 @@ mod tests {
 
     fn make_store() -> ReadaheadStore<InMemory> {
         let inner = InMemory::new();
-        ReadaheadStore::new(inner)
+        ReadaheadStore::new(inner, "memory:/")
     }
 
     fn make_cache_map() -> BTreeMap<usize, Container> {
@@ -1179,7 +1191,7 @@ mod tests {
         // Given
         let temp = TempDir::new().unwrap();
         let inner = LocalFileSystem::new_with_prefix(temp.path()).unwrap();
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1199,8 +1211,9 @@ mod tests {
         let inner = LoggingObjectStore::new(
             LocalFileSystem::new_with_prefix(temp.path()).unwrap(),
             "TEST",
+            "file:/",
         );
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1218,7 +1231,7 @@ mod tests {
         // Given
         let temp = TempDir::new().unwrap();
         let inner = LocalFileSystem::new_with_prefix(temp.path()).unwrap();
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1245,7 +1258,7 @@ mod tests {
         // Given
         let temp = TempDir::new().unwrap();
         let inner = LocalFileSystem::new_with_prefix(temp.path()).unwrap();
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When

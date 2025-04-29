@@ -34,21 +34,21 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
-import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final PropertiesReloader propertiesReloader;
-    private final IngestBatcherStore store;
-    private final FileIngestRequestSerDe fileIngestRequestSerDe;
+    private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
+    private final IngestBatcherSubmitter submitter;
 
     public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -60,19 +60,18 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties,
+        this.submitter = new IngestBatcherSubmitter(instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient));
+                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider));
     }
 
     public IngestBatcherSubmitterLambda(
             IngestBatcherStore store, InstanceProperties instanceProperties,
             TableIndex tableIndex, Configuration conf) {
-        this.store = store;
         this.propertiesReloader = PropertiesReloader.neverReload();
-        this.fileIngestRequestSerDe = new FileIngestRequestSerDe(instanceProperties, conf, tableIndex);
+        this.submitter = new IngestBatcherSubmitter(instanceProperties, conf, tableIndex, store);
     }
 
     @Override
@@ -83,13 +82,13 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     public void handleMessage(String json, Instant receivedTime) {
-        List<FileIngestRequest> requests;
+        IngestBatcherSubmitRequest request;
         try {
-            requests = fileIngestRequestSerDe.fromJson(json, receivedTime);
+            request = serDe.fromJson(json);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
-        requests.forEach(store::addFile);
+        submitter.submit(request, receivedTime);
     }
 }

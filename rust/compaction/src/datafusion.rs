@@ -39,11 +39,11 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
-use functions::{validate_aggregations, FilterAggregationConfig};
+use functions::{FilterAggregationConfig, validate_aggregations};
 use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
-use std::{collections::HashMap, iter::once, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 mod functions;
@@ -72,10 +72,10 @@ pub async fn compact(
     let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
-    let store = register_store(store_factory, input_paths, output_path, &ctx)?;
+    register_store(store_factory, input_paths, output_path, &ctx)?;
 
     // Set the upload size based upon size of input data
-    set_multipart_upload_hint(store_factory, input_paths, output_path, store).await?;
+    set_multipart_upload_hint(store_factory, input_paths, output_path).await?;
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -98,15 +98,24 @@ pub async fn compact(
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
-    let sketch_expr = once(
-        sketch_func
-            .call(row_key_exprs.clone())
-            .alias(&input_data.row_key_cols[0]),
-    );
-    // Perform sort of row key and sort key columns and projection of all columns
-    let col_names_expr = sketch_expr
-        .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
+
+    // Iterate through column names, mapping each into an `Expr` of the name UNLESS
+    // we find the first row key column which should be mapped to the sketch function
+    let col_names_expr = col_names
+        .iter()
+        .map(|col_name| {
+            // Have we found the first row key column?
+            if *col_name == input_data.row_key_cols[0] {
+                // Map to the sketch function
+                sketch_func
+                    // Sketch function needs to be called with each row key column
+                    .call(input_data.row_key_cols.iter().map(col).collect())
+                    // Alias name to original schema column name
+                    .alias(col_name)
+            } else {
+                col(col_name)
+            }
+        })
         .collect::<Vec<_>>();
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
@@ -124,7 +133,6 @@ pub async fn compact(
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
     let mut pqo = ctx.copied_table_options().parquet;
-
     // Figure out which columns should be dictionary encoded
     set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
 
@@ -285,9 +293,11 @@ async fn set_multipart_upload_hint(
     store_factory: &ObjectStoreFactory,
     input_paths: &[Url],
     output_path: &Url,
-    store: Arc<dyn SizeHintableStore>,
 ) -> Result<(), DataFusionError> {
-    let input_size = calculate_input_size(input_paths, &store)
+    let input_store = store_factory
+        .get_object_store(&input_paths[0])
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    let input_size = calculate_input_size(input_paths, &input_store)
         .await
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
@@ -522,7 +532,7 @@ fn register_store(
     input_paths: &[Url],
     output_path: &Url,
     ctx: &SessionContext,
-) -> Result<Arc<dyn SizeHintableStore>, DataFusionError> {
+) -> Result<(), DataFusionError> {
     let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;
@@ -533,5 +543,5 @@ fn register_store(
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
         .register_object_store(output_path, out_store.as_object_store());
-    Ok(in_store)
+    Ok(())
 }

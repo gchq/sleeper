@@ -75,7 +75,7 @@ public class UploadDockerImages {
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
-        if (stacksToBuild.stream().anyMatch(StackDockerImage::isBuildx)) {
+        if (stacksToBuild.stream().anyMatch(StackDockerImage::isMultiplatform)) {
             runCommand.run("docker", "buildx", "rm", "sleeper");
             runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
         }
@@ -98,7 +98,7 @@ public class UploadDockerImages {
                 if (stackImage.isCreateEmrServerlessPolicy()) {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
                 }
-                if (stackImage.isBuildx()) {
+                if (stackImage.isMultiplatform()) {
                     runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
                     runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
