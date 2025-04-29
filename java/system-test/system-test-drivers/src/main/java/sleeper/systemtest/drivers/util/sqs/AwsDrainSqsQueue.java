@@ -220,7 +220,7 @@ public class AwsDrainSqsQueue {
     private record ReceiveBatchResult(List<Message> messages, int totalMessages, int numEmptyReceives) {
 
         static ReceiveBatchResult first(List<Message> messages) {
-            return new ReceiveBatchResult(messages, messages.size(), 0);
+            return new ReceiveBatchResult(messages, messages.size(), messages.isEmpty() ? 1 : 0);
         }
 
         boolean hasMessages() {

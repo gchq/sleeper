@@ -133,7 +133,33 @@ class AwsDrainSqsQueueTest {
                     streamMessages("A", "B", "C").collect(toSet()));
         }
 
-        // TODO test when we have no messages in the first receive, the number of retries should still be accurate
+        @Test
+        void shouldStopRetryingAfterOnlyEmptyReceives() {
+            // Given we fake the behaviour of SQS to only return empty responses
+            receiveMessages = receiveActions(receiveNoMessages(), receiveNoMessages());
+
+            // When / Then
+            Assertions.setMaxStackTraceElementsDisplayed(200);
+            AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
+            assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").toList())
+                    .isInstanceOf(RetriesLimitHitException.class)
+                    .hasMessage("Found 2 empty receives with maximum of 1 retries");
+        }
+
+        @Test
+        void shouldReceiveMessageAfterStartingWithEmptyReceive() {
+            // Given
+            receiveMessages = receiveActions(receiveNoMessages(), receiveFromQueue(), receiveNoMessages());
+            addMessages("A");
+
+            // When
+            Set<Message> messages = drainQueueOneMessageAtATime()
+                    .drainExpectingMessagesWithRetriesWhenEmpty(1, 1, "queue").collect(toSet());
+
+            // Then
+            assertThat(messages).isEqualTo(
+                    streamMessages("A").collect(toSet()));
+        }
     }
 
     private void addMessages(String... ids) {
