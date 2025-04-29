@@ -20,6 +20,7 @@ chunks:
     modules:
       - core
       - configuration
+      - configurationV2
       - sketches
       - parquet
       - common/common-job
@@ -27,6 +28,7 @@ chunks:
       - common/common-invoke-tables
       - build
       - common/dynamodb-tools
+      - common/dynamodb-toolsv2
       - common/localstack-test
       - statestore
       - statestore-committer-core

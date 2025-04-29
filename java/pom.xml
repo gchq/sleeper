@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.30.1</version>
+    <version>0.31.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -32,6 +32,7 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
+        <module>configurationV2</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
@@ -125,7 +126,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.30</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.31</aws-java-sdk-v2.version>
         <aws-crt.version>0.38.1</aws-crt.version>
         <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -134,7 +135,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.18.0</commons-codec.version>
         <commons-io.version>2.19.0</commons-io.version>
-        <commons-configuration.version>2.11.0</commons-configuration.version>
+        <commons-configuration.version>2.12.0</commons-configuration.version>
         <commons-compress.version>1.27.1</commons-compress.version>
         <commons-text.version>1.13.1</commons-text.version>
         <janino.version>3.1.12</janino.version>
