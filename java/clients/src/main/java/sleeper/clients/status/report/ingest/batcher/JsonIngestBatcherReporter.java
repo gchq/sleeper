@@ -23,7 +23,7 @@ import com.google.gson.JsonSerializer;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -41,7 +41,7 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<FileIngestRequest> fileList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+    public void report(List<IngestBatcherTrackedFile> fileList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
         Gson gson = createGson(tableProvider);
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("fileList", gson.toJsonTree(fileList));
@@ -50,11 +50,11 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
 
     private static Gson createGson(TableStatusProvider tableProvider) {
         return ClientsGsonConfig.standardBuilder()
-                .registerTypeAdapter(FileIngestRequest.class, fileSerializer(tableProvider))
+                .registerTypeAdapter(IngestBatcherTrackedFile.class, fileSerializer(tableProvider))
                 .create();
     }
 
-    private static JsonSerializer<FileIngestRequest> fileSerializer(TableStatusProvider tableProvider) {
+    private static JsonSerializer<IngestBatcherTrackedFile> fileSerializer(TableStatusProvider tableProvider) {
         return (request, type, context) -> {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("file", request.getFile());

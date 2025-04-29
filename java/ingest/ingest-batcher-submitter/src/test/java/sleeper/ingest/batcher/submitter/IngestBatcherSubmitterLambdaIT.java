@@ -25,8 +25,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -88,7 +88,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactly(FileIngestRequest.builder()
+                    .containsExactly(IngestBatcherTrackedFile.builder()
                             .file(testBucket + "/test-file-1.parquet")
                             .fileSizeBytes(123)
                             .tableId(TEST_TABLE_ID)
@@ -310,8 +310,8 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         s3Client.putObject(testBucket, filePath, "test");
     }
 
-    private static FileIngestRequest fileRequest(String filePath) {
-        return FileIngestRequest.builder()
+    private static IngestBatcherTrackedFile fileRequest(String filePath) {
+        return IngestBatcherTrackedFile.builder()
                 .file(filePath)
                 .fileSizeBytes(4)
                 .tableId(TEST_TABLE_ID)
