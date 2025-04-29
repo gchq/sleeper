@@ -110,10 +110,28 @@ class AwsDrainSqsQueueTest {
             Assertions.setMaxStackTraceElementsDisplayed(200);
             AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATime();
             assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithRetriesWhenEmpty(2, 1, "queue").toList())
-                    .isInstanceOf(RetriesLimitHitException.class);
+                    .isInstanceOf(RetriesLimitHitException.class)
+                    .hasMessage("Found 2 empty receives with maximum of 1 retries");
         }
 
-        // TODO test retry count is reset when we receive a message (one retry, then a message, then another retry, when only one retry is allowed)
+        @Test
+        void shouldResetEmptyReceiveRetriesWhenMessageIsReceived() {
+            // Given we have messages
+            addMessages("A", "B", "C");
+            // And we fake the behaviour of SQS to have two separate empty receive retries
+            receiveMessages = receiveActions(
+                    receiveFromQueue(), receiveNoMessages(),
+                    receiveFromQueue(), receiveNoMessages(),
+                    receiveFromQueue(), receiveNoMessages());
+
+            // When
+            Set<Message> messages = drainQueueOneMessageAtATime()
+                    .drainExpectingMessagesWithRetriesWhenEmpty(3, 1, "queue").collect(toSet());
+
+            // Then
+            assertThat(messages).isEqualTo(
+                    streamMessages("A", "B", "C").collect(toSet()));
+        }
 
         // TODO test when we have no messages in the first receive, the number of retries should still be accurate
     }
