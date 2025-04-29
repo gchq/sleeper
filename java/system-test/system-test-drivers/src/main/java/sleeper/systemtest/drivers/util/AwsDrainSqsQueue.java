@@ -103,6 +103,15 @@ public class AwsDrainSqsQueue {
                 .flatMap(List::stream);
     }
 
+    public Stream<Message> drainExpectingMessages(int expectedMessages, String queueUrl) {
+        LOGGER.info("Draining queue until empty, expecting {} messages: {}", queueUrl);
+        return Stream.iterate(
+                ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
+                lastResult -> lastResult.hasMessages() || lastResult.totalMessages() < expectedMessages,
+                lastResult -> lastResult.receiveNext(() -> receiveMessageBatch(queueUrl)))
+                .flatMap(ReceiveBatchResult::stream);
+    }
+
     public EmptyQueueResults empty(List<String> queueUrls) {
         LOGGER.info("Emptying queues: {}", queueUrls);
         EmptyQueueResults results = Stream.iterate(
@@ -191,7 +200,9 @@ public class AwsDrainSqsQueue {
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessages(queueUrl)),
                 lastResult -> lastResult.hasMessages(),
-                lastResult -> lastResult.receiveIfMaxNotMet(messagesPerBatchPerThread, () -> receiveMessages(queueUrl)))
+                lastResult -> lastResult.totalMessages() < messagesPerBatchPerThread
+                        ? lastResult.receiveNext(() -> receiveMessages(queueUrl))
+                        : lastResult.noMessagesNext())
                 .flatMap(ReceiveBatchResult::stream)
                 .collect(collector);
     }
@@ -200,25 +211,25 @@ public class AwsDrainSqsQueue {
         return receiveMessages.receiveAndDeleteMessages(queueUrl, messagesPerReceive, waitTimeSeconds);
     }
 
-    private record ReceiveBatchResult(List<Message> messages, int totalMessages) {
+    private record ReceiveBatchResult(List<Message> messages, int totalMessages, int totalReceives) {
 
         static ReceiveBatchResult first(List<Message> messages) {
-            return new ReceiveBatchResult(messages, messages.size());
-        }
-
-        ReceiveBatchResult receiveIfMaxNotMet(int maxMessages, Supplier<List<Message>> receiveMessages) {
-            if (totalMessages >= maxMessages) {
-                return new ReceiveBatchResult(List.of(), totalMessages);
-            } else {
-                List<Message> receivedMessages = receiveMessages.get();
-                int newTotal = totalMessages + receivedMessages.size();
-                LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
-                return new ReceiveBatchResult(receivedMessages, newTotal);
-            }
+            return new ReceiveBatchResult(messages, messages.size(), 1);
         }
 
         boolean hasMessages() {
             return !messages.isEmpty();
+        }
+
+        ReceiveBatchResult receiveNext(Supplier<List<Message>> receiveMessages) {
+            List<Message> receivedMessages = receiveMessages.get();
+            int newTotal = totalMessages + receivedMessages.size();
+            LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
+            return new ReceiveBatchResult(receivedMessages, newTotal, totalReceives + 1);
+        }
+
+        ReceiveBatchResult noMessagesNext() {
+            return new ReceiveBatchResult(List.of(), totalMessages, totalReceives);
         }
 
         Stream<Message> stream() {

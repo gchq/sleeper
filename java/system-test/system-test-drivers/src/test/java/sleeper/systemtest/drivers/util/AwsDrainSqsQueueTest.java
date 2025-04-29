@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.sqs.model.Message;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AwsDrainSqsQueueTest {
 
     PriorityBlockingQueue<Message> queue = new PriorityBlockingQueue<>(10, Comparator.comparing(Message::messageId));
+    ReceiveMessages receiveMessages = receiveFromQueue();
 
     @Test
     void shouldReceiveMessagesOnOneThread() {
@@ -68,6 +70,21 @@ class AwsDrainSqsQueueTest {
                 streamMessages("A", "B", "C", "D", "E").collect(toSet()));
     }
 
+    @Test
+    void shouldRetryAfterEmptyReceiveWhenExpectingANumberOfMessages() {
+        // Given
+        addMessages("A", "B");
+        receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages(), receiveFromQueue(), receiveFromQueue());
+
+        // When
+        Set<Message> messages = drainQueueOneMessageAtATime()
+                .drainExpectingMessages(2, "queue").collect(toSet());
+
+        // Then
+        assertThat(messages).isEqualTo(
+                streamMessages("A", "B").collect(toSet()));
+    }
+
     private void addMessages(String... ids) {
         queue.addAll(streamMessages(ids).toList());
     }
@@ -86,11 +103,35 @@ class AwsDrainSqsQueueTest {
 
     private AwsDrainSqsQueue.Builder drainSqsQueueBuilder() {
         return AwsDrainSqsQueue.builder()
-                .receiveMessages((queueUrl, maxNumberOfMessages, waitTimeSeconds) -> {
-                    List<Message> messages = new ArrayList<>(maxNumberOfMessages);
-                    queue.drainTo(messages, maxNumberOfMessages);
-                    return messages;
-                });
+                .receiveMessages(receiveMessages);
+    }
+
+    private AwsDrainSqsQueue drainQueueOneMessageAtATime() {
+        return drainSqsQueueBuilder()
+                .numThreads(1)
+                .messagesPerBatchPerThread(1)
+                .messagesPerReceive(1)
+                .build();
+    }
+
+    private ReceiveMessages receiveFromQueue() {
+        return (queueUrl, maxNumberOfMessages, waitTimeSeconds) -> {
+            List<Message> messages = new ArrayList<>(maxNumberOfMessages);
+            queue.drainTo(messages, maxNumberOfMessages);
+            return messages;
+        };
+    }
+
+    private ReceiveMessages receiveNoMessages() {
+        return (queueUrl, maxNumberOfMessages, waitTimeSeconds) -> List.of();
+    }
+
+    private ReceiveMessages receiveActions(ReceiveMessages... actions) {
+        Iterator<ReceiveMessages> iterator = List.of(actions).iterator();
+        return (queueUrl, maxNumberOfMessages, waitTimeSeconds) -> {
+            ReceiveMessages action = iterator.next();
+            return action.receiveAndDeleteMessages(queueUrl, maxNumberOfMessages, waitTimeSeconds);
+        };
     }
 
 }
