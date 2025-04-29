@@ -239,6 +239,8 @@ there are no more messages on the SQS queue. To scale up the number of tasks, a 
 periodically triggers a lambda. This lambda looks at the number of messages on the queue that are not being
 processed and if necessary creates more Fargate tasks. The maximum number of concurrent Fargate tasks is configurable.
 
+![Standard ingest design diagram](design/standard-ingest.png)
+
 ### Bulk import
 
 A bulk import is a process of ingesting data into a Sleeper table using Spark to perform the partitioning
@@ -252,6 +254,8 @@ The other EMR-based approach uses a persistent, i.e. long running, EMR cluster. 
 of the cluster monitors a queue and when a job appears submits it to YARN for execution. The EMR cluster can
 either be of fixed size or use EMR managed scaling.
 
+![Bulk import design diagram](design/bulk-import.png)
+
 ### Ingest batcher
 
 The ingest batcher groups ingest requests for individual files into ingest or bulk import jobs. File ingest requests are
@@ -262,7 +266,7 @@ The files need to be accessible to the relevant ingest system, but are not read 
 
 An outline of the design of this system is shown below:
 
-![Ingest Batcher design diagram](design/ingest-batcher.png)
+![Ingest batcher design diagram](design/ingest-batcher.png)
 
 ## Compactions
 
