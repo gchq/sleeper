@@ -58,7 +58,7 @@ public class IngestRandomData {
     private final StsClient stsClientV2;
     private final Configuration hadoopConf;
 
-    private IngestRandomData(
+    public IngestRandomData(
             InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName,
             AWSSecurityTokenService stsClientV1, StsClient stsClientV2, Configuration hadoopConf) {
         this.instanceProperties = instanceProperties;
