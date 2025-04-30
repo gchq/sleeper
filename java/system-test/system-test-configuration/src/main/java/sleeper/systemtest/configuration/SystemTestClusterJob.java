@@ -19,6 +19,7 @@ import sleeper.core.properties.validation.IngestQueue;
 
 public class SystemTestClusterJob {
 
+    private final String jobId;
     private final String configBucket;
     private final String roleArnToLoadConfig;
     private final SystemTestIngestMode ingestMode;
@@ -28,6 +29,7 @@ public class SystemTestClusterJob {
     private final SystemTestRandomDataSettings randomDataSettings;
 
     private SystemTestClusterJob(Builder builder) {
+        jobId = builder.jobId;
         configBucket = builder.configBucket;
         roleArnToLoadConfig = builder.roleArnToLoadConfig;
         ingestMode = builder.ingestMode;
@@ -70,6 +72,7 @@ public class SystemTestClusterJob {
     }
 
     public static class Builder {
+        private String jobId;
         private String configBucket;
         private String roleArnToLoadConfig;
         private SystemTestIngestMode ingestMode;
@@ -79,6 +82,11 @@ public class SystemTestClusterJob {
         private SystemTestRandomDataSettings randomDataSettings;
 
         private Builder() {
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
         }
 
         public Builder configBucket(String configBucket) {
