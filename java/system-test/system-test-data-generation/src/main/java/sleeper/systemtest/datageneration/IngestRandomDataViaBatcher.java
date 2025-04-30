@@ -19,7 +19,8 @@ package sleeper.systemtest.datageneration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 
 import java.util.List;
 
@@ -35,7 +36,8 @@ public class IngestRandomDataViaBatcher {
 
     public static void sendRequest(String dir, InstanceIngestSession session) {
         String queueUrl = session.instanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
-        String jsonRequest = FileIngestRequestSerDe.toJson(List.of(dir), session.tableProperties().get(TABLE_NAME));
+        String jsonRequest = new IngestBatcherSubmitRequestSerDe().toJson(
+                new IngestBatcherSubmitRequest(session.tableProperties().get(TABLE_NAME), List.of(dir)));
         LOGGER.debug("Sending message to ingest batcher queue {}: {}", queueUrl, jsonRequest);
         session.sqs().sendMessage(queueUrl, jsonRequest);
     }

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.batcher.core.FileIngestRequest;
+import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
@@ -45,7 +45,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldTrackOneFile() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet").build();
 
             // When
@@ -61,10 +61,10 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldOverwriteTrackingInformationWhenAddingTheSameFileTwice() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(1024).build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(2048).build();
 
@@ -82,10 +82,10 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldTrackTheSameFileForMultipleTables() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId(tableId1).build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet")
                     .tableId(tableId2).build();
 
@@ -108,9 +108,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldTrackJobWasCreatedWithTwoFiles() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test-1.parquet").build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test-2.parquet").build();
 
             // When
@@ -132,9 +132,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldSendSameFileTwiceIfFirstRequestAssignedToJob() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test.parquet").build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test.parquet").build();
 
             // When
@@ -152,7 +152,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldRetainAllFileRequestParametersAfterAssigningToJob() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet")
                     .fileSizeBytes(1234L)
                     .tableId(tableId)
@@ -177,13 +177,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldFailToReassignFileWhenItIsAlreadyAssigned() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet").build();
             store.addFile(fileIngestRequest);
             store.assignJobGetAssigned("test-job-1", List.of(fileIngestRequest));
 
             // When / Then
-            List<FileIngestRequest> job2 = List.of(fileIngestRequest);
+            List<IngestBatcherTrackedFile> job2 = List.of(fileIngestRequest);
             assertThat(store.assignJobGetAssigned("test-job-2", job2)).isEmpty();
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-1", fileIngestRequest));
@@ -192,9 +192,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldFailToAssignFilesWhenOneIsAlreadyAssigned() {
             // Given
-            FileIngestRequest fileIngestRequest1 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                     .file("test-bucket/test-1.parquet").build();
-            FileIngestRequest fileIngestRequest2 = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                     .file("test-bucket/test-2.parquet").build();
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
@@ -211,7 +211,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldFailToAssignFileWhenFileHasNotBeenTracked() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet").build();
 
             // When / Then
@@ -222,13 +222,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldFailToAssignFileWhenFileHasBeenDeleted() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet").build();
             store.addFile(fileIngestRequest);
             store.deleteAllPending();
 
             // When / Then
-            List<FileIngestRequest> job = List.of(fileIngestRequest);
+            List<IngestBatcherTrackedFile> job = List.of(fileIngestRequest);
             assertThat(store.assignJobGetAssigned("test-job", job)).isEmpty();
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
@@ -236,7 +236,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldFailToAssignFileToSameJobTwice() {
             // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .file("test-bucket/sendTwice.parquet").build();
             store.addFile(fileIngestRequest);
             store.assignJobGetAssigned("duplicate-job", List.of(fileIngestRequest));
@@ -252,8 +252,8 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldAssignFilesWhenNumberOfFilesMeetsTheBatchSize() {
             // Given
-            FileIngestRequest file1 = fileRequest().build();
-            FileIngestRequest file2 = fileRequest().build();
+            IngestBatcherTrackedFile file1 = fileRequest().build();
+            IngestBatcherTrackedFile file2 = fileRequest().build();
             store.addFile(file1);
             store.addFile(file2);
 
@@ -267,8 +267,8 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldAssignFilesWhenNumberOfFilesExceedsTheBatchSize() {
             // Given
-            FileIngestRequest file1 = fileRequest().build();
-            FileIngestRequest file2 = fileRequest().build();
+            IngestBatcherTrackedFile file1 = fileRequest().build();
+            IngestBatcherTrackedFile file2 = fileRequest().build();
             store.addFile(file1);
             store.addFile(file2);
 
@@ -284,11 +284,11 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
     @DisplayName("Order files returned from the store")
     class OrderFilesReturnedFromStore {
 
-        final FileIngestRequest fileIngestRequest1 = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
                 .file("test-bucket/first.parquet").build();
-        final FileIngestRequest fileIngestRequest2 = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
                 .file("test-bucket/another.parquet").build();
-        final FileIngestRequest fileIngestRequest3 = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest3 = fileRequest()
                 .file("test-bucket/last.parquet").build();
 
         @BeforeEach
@@ -331,7 +331,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldSetExpiryTime() {
             // Given
             table1.set(INGEST_BATCHER_TRACKING_TTL_MINUTES, "2");
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .receivedTime(Instant.parse("2023-05-24T11:06:42Z"))
                     .build();
             Instant expectedExpiryTime = Instant.parse("2023-05-24T11:08:42Z");
@@ -349,7 +349,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldSetExpiryTimeWhenAssigningJob() {
             // Given
             table1.set(INGEST_BATCHER_TRACKING_TTL_MINUTES, "2");
-            FileIngestRequest fileIngestRequest = fileRequest()
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                     .receivedTime(Instant.parse("2023-05-24T11:06:42Z"))
                     .build();
             Instant expectedExpiryTime = Instant.parse("2023-05-24T11:08:42Z");
@@ -368,7 +368,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
     @Nested
     @DisplayName("Delete all pending")
     class DeleteAllPending {
-        final FileIngestRequest fileIngestRequest = fileRequest()
+        final IngestBatcherTrackedFile fileIngestRequest = fileRequest()
                 .file("test-bucket/first.parquet")
                 .build();
 
@@ -400,7 +400,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
     }
 
-    private FileIngestRequest.Builder fileRequest() {
+    private IngestBatcherTrackedFile.Builder fileRequest() {
         return requests.fileRequest().tableId(tableId);
     }
 }

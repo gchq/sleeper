@@ -19,14 +19,14 @@ package sleeper.ingest.batcher.core;
 import java.time.Instant;
 import java.util.Objects;
 
-public class FileIngestRequest {
+public class IngestBatcherTrackedFile {
     private final String file;
     private final long fileSizeBytes;
     private final String tableId;
     private final Instant receivedTime;
     private final String jobId;
 
-    private FileIngestRequest(Builder builder) {
+    private IngestBatcherTrackedFile(Builder builder) {
         file = Objects.requireNonNull(builder.file, "file must not be null");
         fileSizeBytes = builder.fileSizeBytes;
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
@@ -78,7 +78,7 @@ public class FileIngestRequest {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        FileIngestRequest that = (FileIngestRequest) object;
+        IngestBatcherTrackedFile that = (IngestBatcherTrackedFile) object;
         return fileSizeBytes == that.fileSizeBytes
                 && Objects.equals(file, that.file)
                 && Objects.equals(tableId, that.tableId)
@@ -137,8 +137,8 @@ public class FileIngestRequest {
             return this;
         }
 
-        public FileIngestRequest build() {
-            return new FileIngestRequest(this);
+        public IngestBatcherTrackedFile build() {
+            return new IngestBatcherTrackedFile(this);
         }
     }
 }

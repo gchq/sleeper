@@ -54,6 +54,8 @@
     <suppress files="[\\/]sleeper[\\/]task[\\/]common[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocMethod"/>

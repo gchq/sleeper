@@ -45,8 +45,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.SplitIntoBatches;
 import sleeper.invoke.tables.InvokeForTables;
-import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.task.common.EC2Scaler;
@@ -140,10 +140,10 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public List<CompactionJob> drainJobsQueueForWholeInstance() {
+    public List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs) {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
         LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
-        List<CompactionJob> jobs = drainQueue.drain(queueUrl)
+        List<CompactionJob> jobs = drainQueue.drainExpectingMessagesWithRetriesWhenEmpty(expectedJobs, 5, queueUrl)
                 .map(Message::body)
                 .map(serDe::fromJson)
                 .toList();
