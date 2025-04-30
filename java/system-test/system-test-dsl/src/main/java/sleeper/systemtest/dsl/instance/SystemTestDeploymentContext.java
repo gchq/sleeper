@@ -24,13 +24,12 @@ public class SystemTestDeploymentContext {
     private final DeployedSystemTestResources deployedResources;
     private final DeployedSleeperInstances deployedInstances;
 
-    public SystemTestDeploymentContext(SystemTestParameters parameters, SystemTestDrivers drivers) throws InterruptedException {
+    public SystemTestDeploymentContext(SystemTestParameters parameters, SystemTestDrivers drivers) {
         this.parameters = parameters;
         this.drivers = drivers;
         this.deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
         this.deployedInstances = new DeployedSleeperInstances(
                 parameters, deployedResources, drivers.instance(parameters), drivers.assumeAdminRole(), drivers.schedules());
-        this.deployedResources.deployIfMissing();
     }
 
     public SystemTestParameters parameters() {
@@ -48,5 +47,4 @@ public class SystemTestDeploymentContext {
     public DeployedSleeperInstances deployedInstances() {
         return deployedInstances;
     }
-
 }

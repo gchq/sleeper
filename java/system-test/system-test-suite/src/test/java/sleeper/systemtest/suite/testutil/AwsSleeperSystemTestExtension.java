@@ -23,10 +23,22 @@ import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 
 public class AwsSleeperSystemTestExtension extends SleeperSystemTestExtension {
 
-    private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
-            AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+    private static final SystemTestDeploymentContext CONTEXT = createContext();
 
     public AwsSleeperSystemTestExtension() {
         super(CONTEXT);
+    }
+
+    private static SystemTestDeploymentContext createContext() {
+        SystemTestDeploymentContext context = new SystemTestDeploymentContext(
+                AwsSystemTestParameters.loadFromSystemProperties(), new AwsSystemTestDrivers());
+        try {
+            context.deployedResources().deployIfMissing();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+
+        return context;
     }
 }
