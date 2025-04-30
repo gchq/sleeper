@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.extension;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -39,7 +38,7 @@ import sleeper.systemtest.dsl.util.TestContext;
 import java.time.Instant;
 import java.util.Set;
 
-public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
+public class SleeperSystemTestExtension implements ParameterResolver, BeforeEachCallback, AfterEachCallback {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperSystemTestExtension.class);
     private static final Set<Class<?>> SUPPORTED_PARAMETER_TYPES = Set.of(
@@ -91,11 +90,6 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         } else {
             throw new IllegalStateException("Unsupported parameter type: " + type);
         }
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
-        deployedResources.deployIfMissing();
     }
 
     @Override
