@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.datageneration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -22,12 +23,20 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class SystemTestTaskIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
+    }
 
     @Disabled("TODO")
     @Test
