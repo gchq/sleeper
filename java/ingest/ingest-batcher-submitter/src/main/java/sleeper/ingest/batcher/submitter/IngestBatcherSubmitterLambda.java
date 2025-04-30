@@ -22,7 +22,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.google.gson.JsonSyntaxException;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
@@ -65,14 +67,15 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         this.submitter = new IngestBatcherSubmitter(instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider));
+                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider),
+                IngestBatcherSubmitDeadLetterQueue.sendDeadLetter(instanceProperties, sqsClient));
     }
 
     public IngestBatcherSubmitterLambda(
             IngestBatcherStore store, InstanceProperties instanceProperties,
-            TableIndex tableIndex, Configuration conf) {
+            TableIndex tableIndex, Configuration conf, IngestBatcherSubmitDeadLetterQueue dlQueue) {
         this.propertiesReloader = PropertiesReloader.neverReload();
-        this.submitter = new IngestBatcherSubmitter(instanceProperties, conf, tableIndex, store);
+        this.submitter = new IngestBatcherSubmitter(instanceProperties, conf, tableIndex, store, dlQueue);
     }
 
     @Override
@@ -86,12 +89,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         IngestBatcherSubmitRequest request;
         try {
             request = serDe.fromJson(json);
-        } catch (JsonSyntaxException jse) {
-            // TODO - JSON cannot be read - send to dead letter queue
-            LOGGER.info("JSON cannot be read, sending request: {} to dead letter queue", json, jse);
-            return;
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
+            // Send to dead letter
             return;
         }
         submitter.submit(request, receivedTime);

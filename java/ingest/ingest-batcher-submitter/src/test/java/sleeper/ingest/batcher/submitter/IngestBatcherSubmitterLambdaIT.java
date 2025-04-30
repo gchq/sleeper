@@ -44,8 +44,9 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final IngestBatcherSubmitDeadLetterQueue dlQueue = IngestBatcherSubmitDeadLetterQueue.sendDeadLetter(instanceProperties, sqsClient);
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tableIndex, hadoopConf);
+            store, instanceProperties, tableIndex, hadoopConf, dlQueue);
 
     @BeforeEach
     void setup() {
@@ -258,6 +259,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            // Check if DLQ is not empty
         }
 
         @Test

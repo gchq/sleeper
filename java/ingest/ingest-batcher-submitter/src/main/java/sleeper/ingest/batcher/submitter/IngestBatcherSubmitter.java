@@ -29,6 +29,7 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.parquet.utils.HadoopPathUtils;
 
+import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
@@ -43,28 +44,30 @@ public class IngestBatcherSubmitter {
     private final Configuration conf;
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
+    private final IngestBatcherSubmitDeadLetterQueue dlQueue;
 
-    public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store) {
+    public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store,
+            IngestBatcherSubmitDeadLetterQueue dlQueue) {
         this.properties = properties;
         this.conf = conf;
         this.tableIndex = tableIndex;
         this.store = store;
+        this.dlQueue = dlQueue;
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
-        } catch (TableNotFoundException tnfe) {
-            // TODO - Table not found - send to dead letter queue
-            LOGGER.info("Table not found sending request: {} to dead letter queue", request, tnfe);
-            return;
         } catch (UncheckedIOException uioe) {
-            // TODO - File not found - send to dead letter queue
-            LOGGER.info("File not found sending request: {} to dead letter queue", request, uioe);
+            if (uioe.getCause() instanceof FileNotFoundException) {
+                LOGGER.info("File not found, sending request: {} to dead letter queue", request, uioe);
+                dlQueue.submit(request);
+            }
             return;
-        } catch (RuntimeException e) {
-            LOGGER.warn("Error when processing request: {}", request, e);
+        } catch (TableNotFoundException tnfe) {
+            LOGGER.info("Table not found, sending request: {} to dead letter queue", request, tnfe);
+            dlQueue.submit(request);
             return;
         }
         files.forEach(store::addFile);

@@ -151,6 +151,7 @@ public class IngestBatcherStack extends NestedStack {
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
+        submitDLQ.grantSendMessages(coreStacks.getIngestByQueuePolicyForGrants());
         coreStacks.grantReadTablesConfig(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
