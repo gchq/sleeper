@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.configuration;
 
+import java.util.Objects;
+
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
@@ -80,6 +82,30 @@ public class SystemTestRandomDataSettings {
 
     public int getMaxListEntries() {
         return maxListEntries;
+    }
+
+    @Override
+    public String toString() {
+        return "SystemTestRandomDataSettings{minInt=" + minInt + ", maxInt=" + maxInt + ", minLong=" + minLong + ", maxLong=" + maxLong + ", stringLength=" + stringLength + ", byteArrayLength="
+                + byteArrayLength + ", maxMapEntries=" + maxMapEntries + ", maxListEntries=" + maxListEntries + "}";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(minInt, maxInt, minLong, maxLong, stringLength, byteArrayLength, maxMapEntries, maxListEntries);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof SystemTestRandomDataSettings)) {
+            return false;
+        }
+        SystemTestRandomDataSettings other = (SystemTestRandomDataSettings) obj;
+        return minInt == other.minInt && maxInt == other.maxInt && minLong == other.minLong && maxLong == other.maxLong && stringLength == other.stringLength
+                && byteArrayLength == other.byteArrayLength && maxMapEntries == other.maxMapEntries && maxListEntries == other.maxListEntries;
     }
 
     public static class Builder {

@@ -17,6 +17,8 @@ package sleeper.systemtest.configuration;
 
 import sleeper.core.properties.validation.IngestQueue;
 
+import java.util.Objects;
+
 public class SystemTestClusterJob {
 
     private final String jobId;
@@ -41,6 +43,10 @@ public class SystemTestClusterJob {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public String getJobId() {
+        return jobId;
     }
 
     public String getConfigBucket() {
@@ -69,6 +75,31 @@ public class SystemTestClusterJob {
 
     public SystemTestRandomDataSettings getRandomDataSettings() {
         return randomDataSettings;
+    }
+
+    @Override
+    public String toString() {
+        return "SystemTestClusterJob{jobId=" + jobId + ", configBucket=" + configBucket + ", roleArnToLoadConfig=" + roleArnToLoadConfig + ", ingestMode=" + ingestMode + ", ingestQueue=" + ingestQueue
+                + ", numberOfIngests=" + numberOfIngests + ", recordsPerIngest=" + recordsPerIngest + ", randomDataSettings=" + randomDataSettings + "}";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobId, configBucket, roleArnToLoadConfig, ingestMode, ingestQueue, numberOfIngests, recordsPerIngest, randomDataSettings);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof SystemTestClusterJob)) {
+            return false;
+        }
+        SystemTestClusterJob other = (SystemTestClusterJob) obj;
+        return Objects.equals(jobId, other.jobId) && Objects.equals(configBucket, other.configBucket) && Objects.equals(roleArnToLoadConfig, other.roleArnToLoadConfig)
+                && ingestMode == other.ingestMode && ingestQueue == other.ingestQueue && numberOfIngests == other.numberOfIngests && recordsPerIngest == other.recordsPerIngest
+                && Objects.equals(randomDataSettings, other.randomDataSettings);
     }
 
     public static class Builder {
