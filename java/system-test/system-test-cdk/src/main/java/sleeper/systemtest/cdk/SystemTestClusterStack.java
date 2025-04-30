@@ -75,7 +75,7 @@ public class SystemTestClusterStack extends NestedStack {
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack) {
         super(scope, id);
-        createSystemTestCluster(properties, properties, properties.toInstancePropertiesForCdkUtils(), bucketStack);
+        create(properties, properties, properties.toInstancePropertiesForCdkUtils(), bucketStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
@@ -83,13 +83,20 @@ public class SystemTestClusterStack extends NestedStack {
             Construct scope, String id, SystemTestProperties properties, SystemTestBucketStack bucketStack,
             CoreStacks coreStacks, IngestStacks ingestStacks, IngestBatcherStack ingestBatcherStack) {
         super(scope, id);
-        createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
+        create(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
         Utils.addStackTagIfSet(this, properties);
+    }
+
+    private void create(
+            SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
+            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
+        Queue jobsQueue = createQueueForSystemTestJobs(instanceProperties);
+        createSystemTestCluster(properties, propertySetter, instanceProperties, bucketStack, jobsQueue);
     }
 
     private void createSystemTestCluster(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
-            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
+            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack, Queue jobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -142,6 +149,7 @@ public class SystemTestClusterStack extends NestedStack {
 
         Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET)).grantRead(taskRole);
         bucketStack.getBucket().grantReadWrite(taskRole);
+        jobsQueue.grantConsumeMessages(taskRole);
         taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
@@ -149,7 +157,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build());
     }
 
-    private Queue sqsQueueForSystemTestJobs(InstanceProperties instanceProperties) {
+    private Queue createQueueForSystemTestJobs(InstanceProperties instanceProperties) {
         // Create queue for system test job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "SystemTestJobDLQ");
