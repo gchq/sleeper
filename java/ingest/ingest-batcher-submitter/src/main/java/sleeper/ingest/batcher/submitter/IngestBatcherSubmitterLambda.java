@@ -22,6 +22,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,6 +86,10 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         IngestBatcherSubmitRequest request;
         try {
             request = serDe.fromJson(json);
+        } catch (JsonSyntaxException jse) {
+            // TODO - JSON cannot be read - send to dead letter queue
+            LOGGER.info("JSON cannot be read, sending request: {} to dead letter queue", json, jse);
+            return;
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;

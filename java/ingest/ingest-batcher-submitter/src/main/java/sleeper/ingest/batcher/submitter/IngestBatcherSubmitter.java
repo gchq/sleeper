@@ -29,6 +29,7 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.parquet.utils.HadoopPathUtils;
 
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,6 +55,14 @@ public class IngestBatcherSubmitter {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
+        } catch (TableNotFoundException tnfe) {
+            // TODO - Table not found - send to dead letter queue
+            LOGGER.info("Table not found sending request: {} to dead letter queue", request, tnfe);
+            return;
+        } catch (UncheckedIOException uioe) {
+            // TODO - File not found - send to dead letter queue
+            LOGGER.info("File not found sending request: {} to dead letter queue", request, uioe);
+            return;
         } catch (RuntimeException e) {
             LOGGER.warn("Error when processing request: {}", request, e);
             return;
