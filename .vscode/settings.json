@@ -33,6 +33,7 @@
     "sleeper.core.properties.testutils.TablePropertiesTestHelper.*",
     "sleeper.core.properties.instance.*.*",
     "sleeper.core.properties.table.*.*",
+    "sleeper.systemtest.configuration.SystemTestProperty.*",
     "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*",
     "sleeper.core.testutils.SupplierTestHelper.*",
     "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*",
