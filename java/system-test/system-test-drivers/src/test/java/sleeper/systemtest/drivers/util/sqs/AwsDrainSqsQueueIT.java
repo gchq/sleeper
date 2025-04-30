@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.util;
+package sleeper.systemtest.drivers.util.sqs;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.systemtest.drivers.util.AwsDrainSqsQueue.EmptyQueueResults;
+import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue.EmptyQueueResults;
 
 import java.util.List;
 import java.util.stream.IntStream;

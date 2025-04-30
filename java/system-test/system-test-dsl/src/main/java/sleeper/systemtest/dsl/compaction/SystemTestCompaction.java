@@ -143,8 +143,8 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public FoundCompactionJobs drainJobsQueueForWholeInstance() {
-        return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance());
+    public FoundCompactionJobs drainJobsQueueForWholeInstance(int expectedJobs) {
+        return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance(expectedJobs));
     }
 
     public void scaleToZero() {
