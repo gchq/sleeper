@@ -26,7 +26,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 
-public class DataGenerationJob {
+public class SystemTestDataGenerationJob {
 
     private final String jobId;
     private final String configBucket;
@@ -38,7 +38,7 @@ public class DataGenerationJob {
     private final long recordsPerIngest;
     private final SystemTestRandomDataSettings randomDataSettings;
 
-    private DataGenerationJob(Builder builder) {
+    private SystemTestDataGenerationJob(Builder builder) {
         jobId = Optional.ofNullable(builder.jobId).orElseGet(() -> UUID.randomUUID().toString());
         configBucket = builder.configBucket;
         roleArnToLoadConfig = builder.roleArnToLoadConfig;
@@ -106,10 +106,10 @@ public class DataGenerationJob {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof DataGenerationJob)) {
+        if (!(obj instanceof SystemTestDataGenerationJob)) {
             return false;
         }
-        DataGenerationJob other = (DataGenerationJob) obj;
+        SystemTestDataGenerationJob other = (SystemTestDataGenerationJob) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(configBucket, other.configBucket) && Objects.equals(roleArnToLoadConfig, other.roleArnToLoadConfig)
                 && Objects.equals(tableName, other.tableName) && ingestMode == other.ingestMode && ingestQueue == other.ingestQueue && numberOfIngests == other.numberOfIngests
                 && recordsPerIngest == other.recordsPerIngest && Objects.equals(randomDataSettings, other.randomDataSettings);
@@ -182,8 +182,8 @@ public class DataGenerationJob {
             return this;
         }
 
-        public DataGenerationJob build() {
-            return new DataGenerationJob(this);
+        public SystemTestDataGenerationJob build() {
+            return new SystemTestDataGenerationJob(this);
         }
 
     }

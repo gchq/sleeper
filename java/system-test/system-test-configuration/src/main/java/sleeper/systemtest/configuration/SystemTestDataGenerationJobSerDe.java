@@ -21,11 +21,11 @@ import com.google.gson.GsonBuilder;
 /**
  * Serialises a data generation job to and from a JSON string.
  */
-public class DataGenerationJobSerDe {
+public class SystemTestDataGenerationJobSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
-    public DataGenerationJobSerDe() {
+    public SystemTestDataGenerationJobSerDe() {
         this.gson = new GsonBuilder().create();
         this.gsonPrettyPrinting = new GsonBuilder()
                 .setPrettyPrinting()
@@ -38,7 +38,7 @@ public class DataGenerationJobSerDe {
      * @param  job the data generation job
      * @return     a JSON representation of the job
      */
-    public String toJson(DataGenerationJob job) {
+    public String toJson(SystemTestDataGenerationJob job) {
         return gson.toJson(job);
     }
 
@@ -49,7 +49,7 @@ public class DataGenerationJobSerDe {
      * @param  prettyPrint true if the JSON should be formatted for readability
      * @return             a JSON representation of the job
      */
-    public String toJson(DataGenerationJob job, boolean prettyPrint) {
+    public String toJson(SystemTestDataGenerationJob job, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(job);
         }
@@ -62,7 +62,7 @@ public class DataGenerationJobSerDe {
      * @param  jsonString the JSON string
      * @return            the job
      */
-    public DataGenerationJob fromJson(String jsonString) {
-        return gson.fromJson(jsonString, DataGenerationJob.class);
+    public SystemTestDataGenerationJob fromJson(String jsonString) {
+        return gson.fromJson(jsonString, SystemTestDataGenerationJob.class);
     }
 }

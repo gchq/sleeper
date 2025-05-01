@@ -27,8 +27,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
-import sleeper.systemtest.configuration.DataGenerationJob;
-import sleeper.systemtest.configuration.DataGenerationJobSerDe;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
@@ -76,10 +76,10 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     @Disabled("TODO")
     void shouldIngestDirectly() throws Exception {
         // Given
-        DataGenerationJob job = DataGenerationJob.builder().tableName(tableName).properties(systemTestProperties).build();
+        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder().tableName(tableName).properties(systemTestProperties).build();
         sqsClientV2.sendMessage(builder -> builder
                 .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                .messageBody(new DataGenerationJobSerDe().toJson(job)));
+                .messageBody(new SystemTestDataGenerationJobSerDe().toJson(job)));
 
         // When
         createTask().run();

@@ -25,7 +25,7 @@ import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.systemtest.configuration.DataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -41,7 +41,7 @@ public class WriteRandomDataDirect {
     }
 
     public static void writeWithIngestFactory(
-            DataGenerationJob job, InstanceIngestSession session) throws IOException {
+            SystemTestDataGenerationJob job, InstanceIngestSession session) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
@@ -57,7 +57,7 @@ public class WriteRandomDataDirect {
 
     public static void writeWithIngestFactory(
             IngestFactory ingestFactory, AddFilesToStateStore addFilesToStateStore,
-            DataGenerationJob job, TableProperties tableProperties) throws IOException {
+            SystemTestDataGenerationJob job, TableProperties tableProperties) throws IOException {
         Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(job, tableProperties);
 
         try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)

@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.systemtest.configuration.DataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.util.List;
@@ -33,9 +33,9 @@ public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
     private final SystemTestPropertyValues properties;
     private final SqsClient sqsClient;
-    private final Consumer<DataGenerationJob> jobRunner;
+    private final Consumer<SystemTestDataGenerationJob> jobRunner;
 
-    public ECSSystemTestTask(SystemTestPropertyValues properties, SqsClient sqsClient, Consumer<DataGenerationJob> jobRunner) {
+    public ECSSystemTestTask(SystemTestPropertyValues properties, SqsClient sqsClient, Consumer<SystemTestDataGenerationJob> jobRunner) {
         this.properties = properties;
         this.sqsClient = sqsClient;
         this.jobRunner = jobRunner;
