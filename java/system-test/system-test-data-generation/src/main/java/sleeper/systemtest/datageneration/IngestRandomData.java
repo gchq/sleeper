@@ -112,7 +112,7 @@ public class IngestRandomData {
         if (ingestMode == DIRECT) {
             return () -> {
                 try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, job.getTableName(), localDir)) {
-                    WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, session);
+                    WriteRandomDataDirect.writeWithIngestFactory(job, session);
                 }
             };
         }

@@ -35,7 +35,7 @@ public class SystemTestClusterJob {
     private final SystemTestIngestMode ingestMode;
     private final IngestQueue ingestQueue;
     private final int numberOfIngests;
-    private final int recordsPerIngest;
+    private final long recordsPerIngest;
     private final SystemTestRandomDataSettings randomDataSettings;
 
     private SystemTestClusterJob(Builder builder) {
@@ -82,7 +82,7 @@ public class SystemTestClusterJob {
         return numberOfIngests;
     }
 
-    public int getRecordsPerIngest() {
+    public long getRecordsPerIngest() {
         return recordsPerIngest;
     }
 
@@ -123,7 +123,7 @@ public class SystemTestClusterJob {
         private SystemTestIngestMode ingestMode;
         private IngestQueue ingestQueue;
         private int numberOfIngests;
-        private int recordsPerIngest;
+        private long recordsPerIngest;
         private SystemTestRandomDataSettings randomDataSettings;
 
         private Builder() {
@@ -153,7 +153,7 @@ public class SystemTestClusterJob {
             return ingestMode(properties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class))
                     .ingestQueue(properties.getEnumValue(INGEST_QUEUE, IngestQueue.class))
                     .numberOfIngests(properties.getInt(NUMBER_OF_INGESTS_PER_WRITER))
-                    .recordsPerIngest(properties.getInt(NUMBER_OF_RECORDS_PER_INGEST))
+                    .recordsPerIngest(properties.getLong(NUMBER_OF_RECORDS_PER_INGEST))
                     .randomDataSettings(SystemTestRandomDataSettings.fromProperties(properties));
         }
 
@@ -172,7 +172,7 @@ public class SystemTestClusterJob {
             return this;
         }
 
-        public Builder recordsPerIngest(int recordsPerIngest) {
+        public Builder recordsPerIngest(long recordsPerIngest) {
             this.recordsPerIngest = recordsPerIngest;
             return this;
         }
