@@ -34,7 +34,7 @@ public interface CompactionDriver {
 
     void scaleToZero();
 
-    List<CompactionJob> drainJobsQueueForWholeInstance();
+    List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs);
 
     void sendCompactionCommits(Stream<CompactionCommitMessage> commits);
 
