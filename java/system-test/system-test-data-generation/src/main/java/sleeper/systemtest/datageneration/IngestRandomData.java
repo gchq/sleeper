@@ -28,6 +28,7 @@ import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.systemtest.configuration.SystemTestClusterJob;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -40,8 +41,6 @@ import static sleeper.systemtest.configuration.SystemTestIngestMode.BATCHER;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
 
 /**
  * Entrypoint for SystemTest image. Writes random data to Sleeper using the mechanism (ingestMode) defined in
@@ -72,9 +71,15 @@ public class IngestRandomData {
     }
 
     public void run() throws IOException {
-        Ingester ingester = ingester();
-        int numIngests = systemTestProperties.getInt(NUMBER_OF_INGESTS_PER_WRITER);
-        for (int i = 1; i <= numIngests; i++) {
+        run(SystemTestClusterJob.builder()
+                .tableName(tableName)
+                .properties(systemTestProperties)
+                .build());
+    }
+
+    public void run(SystemTestClusterJob job) throws IOException {
+        Ingester ingester = ingester(job);
+        for (int i = 1; i <= job.getNumberOfIngests(); i++) {
             LOGGER.info("Starting ingest {}", i);
             ingester.ingest();
             LOGGER.info("Completed ingest {}", i);
@@ -103,17 +108,17 @@ public class IngestRandomData {
         }
     }
 
-    private Ingester ingester() {
-        SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
+    private Ingester ingester(SystemTestClusterJob job) {
+        SystemTestIngestMode ingestMode = job.getIngestMode();
         if (ingestMode == DIRECT) {
             return () -> {
-                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, tableName, localDir)) {
+                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, job.getTableName(), localDir)) {
                     WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, session);
                 }
             };
         }
         return () -> {
-            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, tableName, localDir)) {
+            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, job.getTableName(), localDir)) {
                 String jobId = UUID.randomUUID().toString();
                 String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, jobId);
 

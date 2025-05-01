@@ -18,6 +18,8 @@ package sleeper.systemtest.configuration;
 import sleeper.core.properties.validation.IngestQueue;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
@@ -29,6 +31,7 @@ public class SystemTestClusterJob {
     private final String jobId;
     private final String configBucket;
     private final String roleArnToLoadConfig;
+    private final String tableName;
     private final SystemTestIngestMode ingestMode;
     private final IngestQueue ingestQueue;
     private final int numberOfIngests;
@@ -36,14 +39,15 @@ public class SystemTestClusterJob {
     private final SystemTestRandomDataSettings randomDataSettings;
 
     private SystemTestClusterJob(Builder builder) {
-        jobId = builder.jobId;
+        jobId = Optional.ofNullable(builder.jobId).orElseGet(() -> UUID.randomUUID().toString());
         configBucket = builder.configBucket;
         roleArnToLoadConfig = builder.roleArnToLoadConfig;
-        ingestMode = builder.ingestMode;
-        ingestQueue = builder.ingestQueue;
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        ingestMode = Optional.ofNullable(builder.ingestMode).orElse(SystemTestIngestMode.DIRECT);
+        ingestQueue = Optional.ofNullable(builder.ingestQueue).orElse(IngestQueue.STANDARD_INGEST);
         numberOfIngests = builder.numberOfIngests;
         recordsPerIngest = builder.recordsPerIngest;
-        randomDataSettings = builder.randomDataSettings;
+        randomDataSettings = Optional.ofNullable(builder.randomDataSettings).orElseGet(SystemTestRandomDataSettings::fromDefaults);
     }
 
     public static Builder builder() {
@@ -60,6 +64,10 @@ public class SystemTestClusterJob {
 
     public String getRoleArnToLoadConfig() {
         return roleArnToLoadConfig;
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     public SystemTestIngestMode getIngestMode() {
@@ -84,13 +92,13 @@ public class SystemTestClusterJob {
 
     @Override
     public String toString() {
-        return "SystemTestClusterJob{jobId=" + jobId + ", configBucket=" + configBucket + ", roleArnToLoadConfig=" + roleArnToLoadConfig + ", ingestMode=" + ingestMode + ", ingestQueue=" + ingestQueue
-                + ", numberOfIngests=" + numberOfIngests + ", recordsPerIngest=" + recordsPerIngest + ", randomDataSettings=" + randomDataSettings + "}";
+        return "SystemTestClusterJob{jobId=" + jobId + ", configBucket=" + configBucket + ", roleArnToLoadConfig=" + roleArnToLoadConfig + ", tableName=" + tableName + ", ingestMode=" + ingestMode
+                + ", ingestQueue=" + ingestQueue + ", numberOfIngests=" + numberOfIngests + ", recordsPerIngest=" + recordsPerIngest + ", randomDataSettings=" + randomDataSettings + "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, configBucket, roleArnToLoadConfig, ingestMode, ingestQueue, numberOfIngests, recordsPerIngest, randomDataSettings);
+        return Objects.hash(jobId, configBucket, roleArnToLoadConfig, tableName, ingestMode, ingestQueue, numberOfIngests, recordsPerIngest, randomDataSettings);
     }
 
     @Override
@@ -103,14 +111,15 @@ public class SystemTestClusterJob {
         }
         SystemTestClusterJob other = (SystemTestClusterJob) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(configBucket, other.configBucket) && Objects.equals(roleArnToLoadConfig, other.roleArnToLoadConfig)
-                && ingestMode == other.ingestMode && ingestQueue == other.ingestQueue && numberOfIngests == other.numberOfIngests && recordsPerIngest == other.recordsPerIngest
-                && Objects.equals(randomDataSettings, other.randomDataSettings);
+                && Objects.equals(tableName, other.tableName) && ingestMode == other.ingestMode && ingestQueue == other.ingestQueue && numberOfIngests == other.numberOfIngests
+                && recordsPerIngest == other.recordsPerIngest && Objects.equals(randomDataSettings, other.randomDataSettings);
     }
 
     public static class Builder {
         private String jobId;
         private String configBucket;
         private String roleArnToLoadConfig;
+        private String tableName;
         private SystemTestIngestMode ingestMode;
         private IngestQueue ingestQueue;
         private int numberOfIngests;
@@ -132,6 +141,11 @@ public class SystemTestClusterJob {
 
         public Builder roleArnToLoadConfig(String roleArnToLoadConfig) {
             this.roleArnToLoadConfig = roleArnToLoadConfig;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
             return this;
         }
 

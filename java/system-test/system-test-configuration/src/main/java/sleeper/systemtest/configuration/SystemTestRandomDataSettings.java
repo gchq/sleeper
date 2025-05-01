@@ -65,6 +65,10 @@ public class SystemTestRandomDataSettings {
                 .build();
     }
 
+    public static SystemTestRandomDataSettings fromDefaults() {
+        return builder().build();
+    }
+
     public int getMinInt() {
         return minInt;
     }
