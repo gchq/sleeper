@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialises an ingest job to and from a JSON string.
+ * Serialises a data generation job to and from a JSON string.
  */
 public class SystemTestJobSerDe {
     private final Gson gson;
@@ -33,34 +33,34 @@ public class SystemTestJobSerDe {
     }
 
     /**
-     * Serialise an ingest job to JSON.
+     * Serialise a data generation job to JSON.
      *
-     * @param  ingestJob the ingest job
-     * @return           a JSON representation of the ingest job
+     * @param  job the data generation job
+     * @return     a JSON representation of the job
      */
-    public String toJson(SystemTestClusterJob ingestJob) {
-        return gson.toJson(ingestJob);
+    public String toJson(SystemTestClusterJob job) {
+        return gson.toJson(job);
     }
 
     /**
-     * Serialise an ingest job to JSON.
+     * Serialise a data generation job job to JSON.
      *
-     * @param  ingestJob   the ingest job
+     * @param  job         the data generation job
      * @param  prettyPrint true if the JSON should be formatted for readability
-     * @return             a JSON representation of the ingest job
+     * @return             a JSON representation of the job
      */
-    public String toJson(SystemTestClusterJob ingestJob, boolean prettyPrint) {
+    public String toJson(SystemTestClusterJob job, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(ingestJob);
+            return gsonPrettyPrinting.toJson(job);
         }
-        return toJson(ingestJob);
+        return toJson(job);
     }
 
     /**
-     * Deserialises a JSON string to an ingest job.
+     * Deserialises a JSON string to a data generation job.
      *
      * @param  jsonString the JSON string
-     * @return            the ingest job
+     * @return            the job
      */
     public SystemTestClusterJob fromJson(String jsonString) {
         return gson.fromJson(jsonString, SystemTestClusterJob.class);
