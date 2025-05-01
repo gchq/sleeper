@@ -19,6 +19,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
 import java.util.Iterator;
 import java.util.stream.Stream;
@@ -37,9 +38,9 @@ public class WriteRandomData {
 
     public static Iterator<Record> createRecordIterator(
             SystemTestPropertyValues systemTestProperties, TableProperties tableProperties) {
-        RandomRecordSupplierConfig config = new RandomRecordSupplierConfig(systemTestProperties);
+        SystemTestRandomDataSettings settings = SystemTestRandomDataSettings.fromProperties(systemTestProperties);
         return Stream
-                .generate(new RandomRecordSupplier(tableProperties.getSchema(), config))
+                .generate(new RandomRecordSupplier(tableProperties.getSchema(), settings))
                 .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_INGEST))
                 .iterator();
     }

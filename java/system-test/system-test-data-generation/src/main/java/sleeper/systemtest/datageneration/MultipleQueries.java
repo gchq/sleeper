@@ -39,6 +39,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -85,7 +86,7 @@ public class MultipleQueries {
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Supplier<Key> keySupplier = RandomRecordSupplier.getSupplier(schema.getRowKeyTypes(),
-                new RandomRecordSupplierConfig(systemTestProperties));
+                SystemTestRandomDataSettings.fromProperties(systemTestProperties.testPropertiesOnly()));
         // Submit queries to queue
         Instant startTime = Instant.now();
         LOGGER.info("Starting run() at {}", startTime);
