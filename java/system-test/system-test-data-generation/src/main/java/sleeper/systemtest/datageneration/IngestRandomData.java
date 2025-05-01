@@ -28,7 +28,7 @@ import sleeper.clients.util.AssumeSleeperRole;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.systemtest.configuration.SystemTestClusterJob;
+import sleeper.systemtest.configuration.DataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -70,13 +70,13 @@ public class IngestRandomData {
     }
 
     public void run() throws IOException {
-        run(SystemTestClusterJob.builder()
+        run(DataGenerationJob.builder()
                 .tableName(tableName)
                 .properties(systemTestProperties)
                 .build());
     }
 
-    public void run(SystemTestClusterJob job) throws IOException {
+    public void run(DataGenerationJob job) throws IOException {
         Ingester ingester = ingester(job);
         for (int i = 1; i <= job.getNumberOfIngests(); i++) {
             LOGGER.info("Starting ingest {}", i);
@@ -107,7 +107,7 @@ public class IngestRandomData {
         }
     }
 
-    private Ingester ingester(SystemTestClusterJob job) {
+    private Ingester ingester(DataGenerationJob job) {
         SystemTestIngestMode ingestMode = job.getIngestMode();
         if (ingestMode == DIRECT) {
             return () -> {

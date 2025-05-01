@@ -36,7 +36,7 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.systemtest.configuration.SystemTestClusterJob;
+import sleeper.systemtest.configuration.DataGenerationJob;
 
 import java.io.IOException;
 import java.net.URI;
@@ -64,7 +64,7 @@ public class IngestRandomDataToDocker {
     private void run() throws IOException {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3,
                 dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        SystemTestClusterJob job = SystemTestClusterJob.builder()
+        DataGenerationJob job = DataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .recordsPerIngest(numberOfRecords)
                 .build();

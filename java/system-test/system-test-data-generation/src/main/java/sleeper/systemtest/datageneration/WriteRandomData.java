@@ -17,7 +17,7 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.systemtest.configuration.SystemTestClusterJob;
+import sleeper.systemtest.configuration.DataGenerationJob;
 
 import java.util.Iterator;
 import java.util.stream.Stream;
@@ -28,7 +28,7 @@ public class WriteRandomData {
     }
 
     public static Iterator<Record> createRecordIterator(
-            SystemTestClusterJob job, TableProperties tableProperties) {
+            DataGenerationJob job, TableProperties tableProperties) {
         return Stream
                 .generate(new RandomRecordSupplier(tableProperties.getSchema(), job.getRandomDataSettings()))
                 .limit(job.getRecordsPerIngest())

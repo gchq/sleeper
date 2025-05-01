@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.systemtest.configuration.SystemTestClusterJob;
+import sleeper.systemtest.configuration.DataGenerationJob;
 
 import java.util.Collections;
 
@@ -33,7 +33,7 @@ public class IngestRandomDataViaQueue {
     }
 
     public static void sendJob(
-            String jobId, String dir, SystemTestClusterJob job, InstanceIngestSession session) {
+            String jobId, String dir, DataGenerationJob job, InstanceIngestSession session) {
 
         IngestJob ingestJob = IngestJob.builder()
                 .tableName(session.tableProperties().get(TABLE_NAME))

@@ -25,7 +25,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.systemtest.configuration.SystemTestClusterJob;
+import sleeper.systemtest.configuration.DataGenerationJob;
 
 import java.io.IOException;
 
@@ -44,7 +44,7 @@ public class GenerateRandomDataFiles {
     }
 
     private void run() throws IOException {
-        SystemTestClusterJob job = SystemTestClusterJob.builder()
+        DataGenerationJob job = DataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .recordsPerIngest(numberOfRecords)
                 .build();
