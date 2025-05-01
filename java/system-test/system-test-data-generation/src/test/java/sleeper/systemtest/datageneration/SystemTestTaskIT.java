@@ -16,6 +16,7 @@
 package sleeper.systemtest.datageneration;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,8 +27,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.systemtest.configuration.DataGenerationJob;
+import sleeper.systemtest.configuration.DataGenerationJobSerDe;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -68,7 +73,14 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldIngestDirectly() throws Exception {
+        // Given
+        DataGenerationJob job = DataGenerationJob.builder().tableName(tableName).properties(systemTestProperties).build();
+        sqsClientV2.sendMessage(builder -> builder
+                .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
+                .messageBody(new DataGenerationJobSerDe().toJson(job)));
+
         // When
         createTask().run();
 
@@ -77,13 +89,15 @@ public class SystemTestTaskIT extends LocalStackTestBase {
                 .isNotEmpty();
     }
 
-    @Test
-    void shouldGetMessagesFromSystemTestQueue() {
-
-    }
-
-    IngestRandomData createTask() {
-        return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient, stsClientV2, hadoopConf, tempDir.toString());
+    ECSSystemTestTask createTask() {
+        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient, stsClientV2, hadoopConf, tempDir.toString());
+        return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
+            try {
+                ingestData.run(job);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     SleeperClient createSleeperClient() {

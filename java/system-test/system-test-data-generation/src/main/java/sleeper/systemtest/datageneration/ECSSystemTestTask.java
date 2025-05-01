@@ -21,18 +21,27 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
+import sleeper.systemtest.configuration.DataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
-    private SystemTestPropertyValues properties;
-    private SqsClient sqsClient;
+    private final SystemTestPropertyValues properties;
+    private final SqsClient sqsClient;
+    private final Consumer<DataGenerationJob> jobRunner;
 
-    public void receiveMessage() {
+    public ECSSystemTestTask(SystemTestPropertyValues properties, SqsClient sqsClient, Consumer<DataGenerationJob> jobRunner) {
+        this.properties = properties;
+        this.sqsClient = sqsClient;
+        this.jobRunner = jobRunner;
+    }
+
+    public void run() {
         ReceiveMessageResponse receiveMessageResponse = sqsClient.receiveMessage(builder -> builder
                 .queueUrl(properties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
                 .maxNumberOfMessages(1)
