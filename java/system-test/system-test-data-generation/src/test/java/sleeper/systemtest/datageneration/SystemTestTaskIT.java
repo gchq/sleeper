@@ -41,6 +41,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class SystemTestTaskIT extends LocalStackTestBase {
 
@@ -57,6 +58,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
+        systemTestProperties.set(SYSTEM_TEST_JOBS_QUEUE_URL, createSqsQueueGetUrl());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
@@ -73,6 +75,11 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         // Then
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
                 .isNotEmpty();
+    }
+
+    @Test
+    void shouldGetMessagesFromSystemTestQueue() {
+
     }
 
     IngestRandomData createTask() {
