@@ -16,33 +16,77 @@
 package sleeper.systemtest.datageneration;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.clients.api.AwsSleeperClientBuilder;
+import sleeper.clients.api.SleeperClient;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SystemTestTaskIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    String tableName = tableProperties.get(TABLE_NAME);
+    SleeperClient sleeperClient;
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void setUp() {
+        instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        sleeperClient = createSleeperClient();
+        sleeperClient.addTable(tableProperties, List.of());
     }
 
-    @Disabled("TODO")
     @Test
     void shouldIngestDirectly() throws Exception {
-        IngestRandomData ingest = new IngestRandomData(instanceProperties, systemTestProperties, "system-test", stsClient, stsClientV2, hadoopConf);
-        ingest.run();
+        // When
+        createTask().run();
+
+        // Then
+        assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
+                .isNotEmpty();
+    }
+
+    IngestRandomData createTask() {
+        return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient, stsClientV2, hadoopConf, tempDir.toString());
+    }
+
+    SleeperClient createSleeperClient() {
+        return new AwsSleeperClientBuilder()
+                .instanceProperties(instanceProperties)
+                .s3Client(s3Client)
+                .dynamoClient(dynamoClient)
+                .sqsClient(sqsClient)
+                .hadoopConf(hadoopConf)
+                .build();
     }
 
 }

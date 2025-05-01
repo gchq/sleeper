@@ -57,16 +57,18 @@ public class IngestRandomData {
     private final AWSSecurityTokenService stsClientV1;
     private final StsClient stsClientV2;
     private final Configuration hadoopConf;
+    private final String localDir;
 
     public IngestRandomData(
             InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName,
-            AWSSecurityTokenService stsClientV1, StsClient stsClientV2, Configuration hadoopConf) {
+            AWSSecurityTokenService stsClientV1, StsClient stsClientV2, Configuration hadoopConf, String localDir) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.tableName = tableName;
         this.stsClientV1 = stsClientV1;
         this.stsClientV2 = stsClientV2;
         this.hadoopConf = hadoopConf;
+        this.localDir = localDir;
     }
 
     public void run() throws IOException {
@@ -105,13 +107,13 @@ public class IngestRandomData {
         SystemTestIngestMode ingestMode = systemTestProperties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class);
         if (ingestMode == DIRECT) {
             return () -> {
-                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, tableName)) {
+                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, tableName, localDir)) {
                     WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, session);
                 }
             };
         }
         return () -> {
-            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, tableName)) {
+            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, tableName, localDir)) {
                 String jobId = UUID.randomUUID().toString();
                 String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, jobId);
 
@@ -179,7 +181,7 @@ public class IngestRandomData {
 
         IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName) {
             return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClientV1, stsClientV2,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties), "/mnt/scratch");
         }
     }
 }

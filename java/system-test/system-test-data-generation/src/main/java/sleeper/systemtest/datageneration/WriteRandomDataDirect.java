@@ -45,7 +45,7 @@ public class WriteRandomDataDirect {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
-                        .localDir("/mnt/scratch")
+                        .localDir(session.localDir())
                         .stateStoreProvider(session.stateStoreProvider())
                         .instanceProperties(session.instanceProperties())
                         .hadoopConfiguration(session.hadoopConfiguration())
