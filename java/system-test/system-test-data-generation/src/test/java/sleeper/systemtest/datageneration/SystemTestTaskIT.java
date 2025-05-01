@@ -16,7 +16,6 @@
 package sleeper.systemtest.datageneration;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,6 +24,7 @@ import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.FileReference;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
@@ -46,6 +46,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class SystemTestTaskIT extends LocalStackTestBase {
@@ -73,31 +74,40 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldIngestDirectly() throws Exception {
         // Given
-        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder().tableName(tableName).properties(systemTestProperties).build();
-        sqsClientV2.sendMessage(builder -> builder
-                .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                .messageBody(new SystemTestDataGenerationJobSerDe().toJson(job)));
+        sendJob(SystemTestDataGenerationJob.builder()
+                .jobId("test-job")
+                .tableName(tableName)
+                .numberOfIngests(1)
+                .recordsPerIngest(12)
+                .ingestMode(DIRECT)
+                .build());
 
         // When
         createTask().run();
 
         // Then
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
-                .isNotEmpty();
+                .extracting(FileReference::getNumberOfRecords)
+                .containsExactly(12L);
     }
 
     ECSSystemTestTask createTask() {
         IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient, stsClientV2, hadoopConf, tempDir.toString());
-        return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
+        return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
             try {
                 ingestData.run(job);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
+    }
+
+    void sendJob(SystemTestDataGenerationJob job) {
+        sqsClientV2.sendMessage(builder -> builder
+                .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
+                .messageBody(new SystemTestDataGenerationJobSerDe().toJson(job)));
     }
 
     SleeperClient createSleeperClient() {
