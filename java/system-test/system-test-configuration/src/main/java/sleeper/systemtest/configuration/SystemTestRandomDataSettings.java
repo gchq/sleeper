@@ -52,6 +52,19 @@ public class SystemTestRandomDataSettings {
         return new Builder();
     }
 
+    public static SystemTestRandomDataSettings fromProperties(SystemTestPropertyValues properties) {
+        return builder()
+                .minInt(properties.getInt(MIN_RANDOM_INT))
+                .maxInt(properties.getInt(MAX_RANDOM_INT))
+                .minLong(properties.getLong(MIN_RANDOM_LONG))
+                .maxLong(properties.getLong(MAX_RANDOM_LONG))
+                .stringLength(properties.getInt(RANDOM_STRING_LENGTH))
+                .byteArrayLength(properties.getInt(RANDOM_BYTE_ARRAY_LENGTH))
+                .maxMapEntries(properties.getInt(MAX_ENTRIES_RANDOM_MAP))
+                .maxListEntries(properties.getInt(MAX_ENTRIES_RANDOM_LIST))
+                .build();
+    }
+
     public int getMinInt() {
         return minInt;
     }

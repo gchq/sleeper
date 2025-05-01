@@ -19,6 +19,11 @@ import sleeper.core.properties.validation.IngestQueue;
 
 import java.util.Objects;
 
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+
 public class SystemTestClusterJob {
 
     private final String jobId;
@@ -128,6 +133,14 @@ public class SystemTestClusterJob {
         public Builder roleArnToLoadConfig(String roleArnToLoadConfig) {
             this.roleArnToLoadConfig = roleArnToLoadConfig;
             return this;
+        }
+
+        public Builder properties(SystemTestPropertyValues properties) {
+            return ingestMode(properties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class))
+                    .ingestQueue(properties.getEnumValue(INGEST_QUEUE, IngestQueue.class))
+                    .numberOfIngests(properties.getInt(NUMBER_OF_INGESTS_PER_WRITER))
+                    .recordsPerIngest(properties.getInt(NUMBER_OF_RECORDS_PER_INGEST))
+                    .randomDataSettings(SystemTestRandomDataSettings.fromProperties(properties));
         }
 
         public Builder ingestMode(SystemTestIngestMode ingestMode) {
