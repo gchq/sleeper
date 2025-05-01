@@ -17,6 +17,7 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.systemtest.configuration.SystemTestClusterJob;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
@@ -42,6 +43,14 @@ public class WriteRandomData {
         return Stream
                 .generate(new RandomRecordSupplier(tableProperties.getSchema(), settings))
                 .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_INGEST))
+                .iterator();
+    }
+
+    public static Iterator<Record> createRecordIterator(
+            SystemTestClusterJob job, TableProperties tableProperties) {
+        return Stream
+                .generate(new RandomRecordSupplier(tableProperties.getSchema(), job.getRandomDataSettings()))
+                .limit(job.getRecordsPerIngest())
                 .iterator();
     }
 }

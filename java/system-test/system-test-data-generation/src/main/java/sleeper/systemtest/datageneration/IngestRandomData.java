@@ -35,7 +35,6 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import static sleeper.systemtest.configuration.SystemTestIngestMode.BATCHER;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
@@ -119,11 +118,10 @@ public class IngestRandomData {
         }
         return () -> {
             try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, job.getTableName(), localDir)) {
-                String jobId = UUID.randomUUID().toString();
-                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, jobId);
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, job);
 
                 if (ingestMode == QUEUE) {
-                    IngestRandomDataViaQueue.sendJob(jobId, dir, systemTestProperties, session);
+                    IngestRandomDataViaQueue.sendJob(job.getJobId(), dir, systemTestProperties, session);
                 } else if (ingestMode == BATCHER) {
                     IngestRandomDataViaBatcher.sendRequest(dir, session);
                 } else if (ingestMode == GENERATE_ONLY) {
