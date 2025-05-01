@@ -67,15 +67,18 @@ public class ECSSystemTestTask {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         try (StsClient stsClientV2 = StsClient.create()) {
             CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2, sqsClient);
+            if (args.length > 3 || args.length < 2) {
+                throw new RuntimeException("Wrong number of arguments detected. Usage: ECSSystemTestTask <standalone-or-combined> <config bucket> <optional role ARN to load combined config as>");
+            }
+            String deployType = args[0];
+            String configBucket = args[1];
             ECSSystemTestTask ingestRandomData;
-            if (args.length == 4) {
-                ingestRandomData = factory.standalone(args[0], args[1], args[2], args[3]);
+            if ("standalone".equalsIgnoreCase(deployType)) {
+                ingestRandomData = factory.standalone(configBucket);
             } else if (args.length == 3) {
-                ingestRandomData = factory.withLoadConfigRole(args[0], args[1], args[2]);
-            } else if (args.length == 2) {
-                ingestRandomData = factory.noLoadConfigRole(args[0], args[1]);
+                ingestRandomData = factory.withLoadConfigRole(configBucket, args[2]);
             } else {
-                throw new RuntimeException("Wrong number of arguments detected. Usage: ECSSystemTestTask <S3 bucket> <Table name> <optional role ARN to load config as> <optional system test bucket>");
+                ingestRandomData = factory.noLoadConfigRole(configBucket);
             }
 
             ingestRandomData.run();
@@ -128,25 +131,25 @@ public class ECSSystemTestTask {
             this.sqsClient = sqsClient;
         }
 
-        ECSSystemTestTask noLoadConfigRole(String configBucket, String tableName) {
+        ECSSystemTestTask noLoadConfigRole(String configBucket) {
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
-                return combinedInstance(configBucket, tableName, s3Client);
+                return combinedInstance(configBucket, s3Client);
             } finally {
                 s3Client.shutdown();
             }
         }
 
-        ECSSystemTestTask withLoadConfigRole(String configBucket, String tableName, String loadConfigRoleArn) {
-            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
+        ECSSystemTestTask withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
+            AmazonS3 s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             try {
-                return combinedInstance(configBucket, tableName, instanceS3Client);
+                return combinedInstance(configBucket, s3Client);
             } finally {
-                instanceS3Client.shutdown();
+                s3Client.shutdown();
             }
         }
 
-        ECSSystemTestTask standalone(String configBucket, String tableName, String loadConfigRoleArn, String systemTestBucket) {
+        ECSSystemTestTask standalone(String systemTestBucket) {
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
@@ -154,7 +157,7 @@ public class ECSSystemTestTask {
                     AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
                     try {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
-                        IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties, tableName);
+                        IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
                         ingestData.run(job);
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
@@ -167,9 +170,9 @@ public class ECSSystemTestTask {
             }
         }
 
-        ECSSystemTestTask combinedInstance(String configBucket, String tableName, AmazonS3 s3Client) {
+        ECSSystemTestTask combinedInstance(String configBucket, AmazonS3 s3Client) {
             SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
-            IngestRandomData ingestData = ingestRandomData(properties, properties.testPropertiesOnly(), tableName);
+            IngestRandomData ingestData = ingestRandomData(properties, properties.testPropertiesOnly());
             return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClient, job -> {
                 try {
                     ingestData.run(job);
@@ -179,8 +182,8 @@ public class ECSSystemTestTask {
             });
         }
 
-        IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName) {
-            return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClientV1, stsClientV2,
+        IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties) {
+            return new IngestRandomData(instanceProperties, systemTestProperties, stsClientV1, stsClientV2,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties), "/mnt/scratch");
         }
     }

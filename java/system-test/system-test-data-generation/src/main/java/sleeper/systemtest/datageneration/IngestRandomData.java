@@ -51,25 +51,23 @@ public class IngestRandomData {
 
     private final InstanceProperties instanceProperties;
     private final SystemTestPropertyValues systemTestProperties;
-    private final String tableName;
     private final AWSSecurityTokenService stsClientV1;
     private final StsClient stsClientV2;
     private final Configuration hadoopConf;
     private final String localDir;
 
     public IngestRandomData(
-            InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName,
+            InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties,
             AWSSecurityTokenService stsClientV1, StsClient stsClientV2, Configuration hadoopConf, String localDir) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
-        this.tableName = tableName;
         this.stsClientV1 = stsClientV1;
         this.stsClientV2 = stsClientV2;
         this.hadoopConf = hadoopConf;
         this.localDir = localDir;
     }
 
-    public void run() throws IOException {
+    public void run(String tableName) throws IOException {
         run(SystemTestDataGenerationJob.builder()
                 .tableName(tableName)
                 .properties(systemTestProperties)
@@ -91,17 +89,19 @@ public class IngestRandomData {
         try (StsClient stsClientV2 = StsClient.create()) {
             CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2);
             IngestRandomData ingestRandomData;
+            String s3Bucket = args[0];
+            String tableName = args[1];
             if (args.length == 4) {
-                ingestRandomData = factory.standalone(args[0], args[1], args[2], args[3]);
+                ingestRandomData = factory.standalone(s3Bucket, args[2], args[3]);
             } else if (args.length == 3) {
-                ingestRandomData = factory.withLoadConfigRole(args[0], args[1], args[2]);
+                ingestRandomData = factory.withLoadConfigRole(s3Bucket, args[2]);
             } else if (args.length == 2) {
-                ingestRandomData = factory.noLoadConfigRole(args[0], args[1]);
+                ingestRandomData = factory.noLoadConfigRole(s3Bucket);
             } else {
                 throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional role ARN to load config as> <optional system test bucket>");
             }
 
-            ingestRandomData.run();
+            ingestRandomData.run(tableName);
         } finally {
             stsClientV1.shutdown();
         }
@@ -146,44 +146,44 @@ public class IngestRandomData {
             this.stsClientV2 = stsClientV2;
         }
 
-        IngestRandomData noLoadConfigRole(String configBucket, String tableName) {
+        IngestRandomData noLoadConfigRole(String configBucket) {
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
-                return combinedInstance(configBucket, tableName, s3Client);
+                return combinedInstance(configBucket, s3Client);
             } finally {
                 s3Client.shutdown();
             }
         }
 
-        IngestRandomData withLoadConfigRole(String configBucket, String tableName, String loadConfigRoleArn) {
+        IngestRandomData withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
             AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             try {
-                return combinedInstance(configBucket, tableName, instanceS3Client);
+                return combinedInstance(configBucket, instanceS3Client);
             } finally {
                 instanceS3Client.shutdown();
             }
         }
 
-        IngestRandomData standalone(String configBucket, String tableName, String loadConfigRoleArn, String systemTestBucket) {
+        IngestRandomData standalone(String configBucket, String loadConfigRoleArn, String systemTestBucket) {
             AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, configBucket);
-                return ingestRandomData(instanceProperties, systemTestProperties, tableName);
+                return ingestRandomData(instanceProperties, systemTestProperties);
             } finally {
                 s3Client.shutdown();
                 instanceS3Client.shutdown();
             }
         }
 
-        IngestRandomData combinedInstance(String configBucket, String tableName, AmazonS3 s3Client) {
+        IngestRandomData combinedInstance(String configBucket, AmazonS3 s3Client) {
             SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
-            return ingestRandomData(properties, properties.testPropertiesOnly(), tableName);
+            return ingestRandomData(properties, properties.testPropertiesOnly());
         }
 
-        IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties, String tableName) {
-            return new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClientV1, stsClientV2,
+        IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties) {
+            return new IngestRandomData(instanceProperties, systemTestProperties, stsClientV1, stsClientV2,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties), "/mnt/scratch");
         }
     }

@@ -79,7 +79,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         sendJob(SystemTestDataGenerationJob.builder()
                 .jobId("test-job")
                 .tableName(tableName)
-                .numberOfIngests(1)
+                .numberOfIngests(2)
                 .recordsPerIngest(12)
                 .ingestMode(DIRECT)
                 .build());
@@ -90,11 +90,11 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         // Then
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
                 .extracting(FileReference::getNumberOfRecords)
-                .containsExactly(12L);
+                .containsExactly(12L, 12L);
     }
 
     ECSSystemTestTask createTask() {
-        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, tableName, stsClient, stsClientV2, hadoopConf, tempDir.toString());
+        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, stsClientV2, hadoopConf, tempDir.toString());
         return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
             try {
                 ingestData.run(job);
