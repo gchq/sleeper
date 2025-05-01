@@ -100,7 +100,6 @@ public interface CommonProperty {
     UserDefinedInstanceProperty ENDPOINT_URL = Index.propertyBuilder("sleeper.endpoint.url")
             .description("The AWS endpoint URL. This should only be set for a non-standard service endpoint. Usually " +
                     "this is used to set the URL to LocalStack for a locally deployed instance.")
-            .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ID = Index.propertyBuilder("sleeper.vpc")
