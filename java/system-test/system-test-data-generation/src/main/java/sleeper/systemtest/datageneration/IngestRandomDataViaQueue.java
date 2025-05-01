@@ -18,15 +18,13 @@ package sleeper.systemtest.datageneration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.properties.validation.IngestQueue;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestClusterJob;
 
 import java.util.Collections;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 
 public class IngestRandomDataViaQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRandomDataViaQueue.class);
@@ -35,7 +33,7 @@ public class IngestRandomDataViaQueue {
     }
 
     public static void sendJob(
-            String jobId, String dir, SystemTestPropertyValues systemTestProperties, InstanceIngestSession session) {
+            String jobId, String dir, SystemTestClusterJob job, InstanceIngestSession session) {
 
         IngestJob ingestJob = IngestJob.builder()
                 .tableName(session.tableProperties().get(TABLE_NAME))
@@ -43,8 +41,7 @@ public class IngestRandomDataViaQueue {
                 .files(Collections.singletonList(dir))
                 .build();
         String jsonJob = new IngestJobSerDe().toJson(ingestJob);
-        IngestQueue ingestQueue = systemTestProperties.getEnumValue(INGEST_QUEUE, IngestQueue.class);
-        String queueUrl = ingestQueue.getJobQueueUrl(session.instanceProperties());
+        String queueUrl = job.getIngestQueue().getJobQueueUrl(session.instanceProperties());
         LOGGER.debug("Sending message to ingest queue {}: {}", queueUrl, jsonJob);
         session.sqs().sendMessage(queueUrl, jsonJob);
     }

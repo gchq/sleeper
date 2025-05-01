@@ -121,7 +121,7 @@ public class IngestRandomData {
                 String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, job);
 
                 if (ingestMode == QUEUE) {
-                    IngestRandomDataViaQueue.sendJob(job.getJobId(), dir, systemTestProperties, session);
+                    IngestRandomDataViaQueue.sendJob(job.getJobId(), dir, job, session);
                 } else if (ingestMode == BATCHER) {
                     IngestRandomDataViaBatcher.sendRequest(dir, session);
                 } else if (ingestMode == GENERATE_ONLY) {
