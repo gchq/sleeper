@@ -73,6 +73,7 @@ public class DynamoDBUtils {
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements,
             Map<String, String> tags) {
+
         initialiseTable(dynamoDB, tags, CreateTableRequest.builder()
                 .tableName(tableName)
                 .attributeDefinitions(attributeDefinitions)

@@ -219,6 +219,7 @@ public class DynamoDBUtilsPagingLimitIT extends DynamoDBToolsTestBase {
             Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "value2").build();
+
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
             dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
