@@ -86,6 +86,11 @@ public class SystemTestCluster {
         return this;
     }
 
+    public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config) {
+        return runDataGenerationJobs(numberOfJobs, config,
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
+    }
+
     public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config, PollWithRetries poll) {
         List<SystemTestDataGenerationJob> jobs = IntStream.range(0, numberOfJobs)
                 .mapToObj(i -> SystemTestDataGenerationJob.builder()
