@@ -65,7 +65,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.metadataSaver = metadataSaver;
-        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
+        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, configuration, null);
         this.configuration = configuration;
         this.basePath = getBasePath(instanceProperties, tableProperties);
     }

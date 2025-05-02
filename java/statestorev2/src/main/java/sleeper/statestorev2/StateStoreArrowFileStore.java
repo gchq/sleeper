@@ -21,8 +21,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
@@ -46,12 +49,18 @@ import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BA
 public class StateStoreArrowFileStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);
 
+    private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final Configuration configuration;
+    private final S3TransferManager s3TransferManager;
+    private final S3Client s3Client;
 
-    public StateStoreArrowFileStore(TableProperties tableProperties, Configuration configuration) {
+    public StateStoreArrowFileStore(InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration, S3Client s3) {
+        this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.configuration = configuration;
+        this.s3TransferManager = S3TransferManager.create();
+        this.s3Client = s3;
     }
 
     /**
@@ -101,6 +110,7 @@ public class StateStoreArrowFileStore {
      */
     public List<Partition> loadPartitions(String path) throws IOException {
         LOGGER.debug("Loading partitions from {}", path);
+
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
