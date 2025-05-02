@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.deploy.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;

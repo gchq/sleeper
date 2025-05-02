@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy;
+package sleeper.clients.deploy.container;
 
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
