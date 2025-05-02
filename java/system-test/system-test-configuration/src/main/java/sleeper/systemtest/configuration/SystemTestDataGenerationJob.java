@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -198,6 +199,11 @@ public class SystemTestDataGenerationJob {
 
         public Builder randomDataSettings(SystemTestRandomDataSettings randomDataSettings) {
             this.randomDataSettings = randomDataSettings;
+            return this;
+        }
+
+        public Builder applyMutation(Consumer<Builder> mutator) {
+            mutator.accept(this);
             return this;
         }
 
