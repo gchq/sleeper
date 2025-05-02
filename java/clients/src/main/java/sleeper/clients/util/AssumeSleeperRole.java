@@ -31,22 +31,25 @@ import java.util.UUID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
     public static final Logger LOGGER = LoggerFactory.getLogger(AssumeSleeperRole.class);
 
     private final String region;
+    private final String endpointUrl;
     private final String roleArn;
     private final String roleSessionName;
 
-    private AssumeSleeperRole(String region, String roleArn) {
-        this(region, roleArn, UUID.randomUUID().toString());
+    private AssumeSleeperRole(String region, String endpointUrl, String roleArn) {
+        this(region, endpointUrl, roleArn, UUID.randomUUID().toString());
     }
 
     private AssumeSleeperRole(
-            String region, String roleArn, String roleSessionName) {
+            String region, String endpointUrl, String roleArn, String roleSessionName) {
         this.region = region;
+        this.endpointUrl = endpointUrl;
         this.roleArn = roleArn;
         this.roleSessionName = roleSessionName;
         LOGGER.info("Assuming role: {}", roleArn);
@@ -67,13 +70,14 @@ public class AssumeSleeperRole {
     private static AssumeSleeperRole fromArnProperty(
             InstanceProperties instanceProperties, InstanceProperty roleArnProperty) {
         String region = instanceProperties.get(REGION);
+        String endpointUrl = instanceProperties.get(ENDPOINT_URL);
         String roleArn = instanceProperties.get(roleArnProperty);
-        return new AssumeSleeperRole(region, roleArn);
+        return new AssumeSleeperRole(region, endpointUrl, roleArn);
     }
 
     public static AssumeSleeperRole fromArn(String roleArn) {
         String region = new DefaultAwsRegionProviderChain().getRegion().id();
-        return new AssumeSleeperRole(region, roleArn);
+        return new AssumeSleeperRole(region, null, roleArn);
     }
 
     public AssumeSleeperRoleV1 forAwsV1(AWSSecurityTokenService sts) {
@@ -81,7 +85,7 @@ public class AssumeSleeperRole {
                 roleArn, roleSessionName)
                 .withStsClient(sts)
                 .build();
-        return new AssumeSleeperRoleV1(region, provider);
+        return new AssumeSleeperRoleV1(region, endpointUrl, provider);
     }
 
     public AssumeSleeperRoleV2 forAwsV2(StsClient sts) {
@@ -89,7 +93,7 @@ public class AssumeSleeperRole {
                 .refreshRequest(builder -> builder.roleArn(roleArn).roleSessionName(roleSessionName))
                 .stsClient(sts)
                 .build();
-        return new AssumeSleeperRoleV2(region, provider);
+        return new AssumeSleeperRoleV2(region, endpointUrl, provider);
     }
 
     public AssumeSleeperRoleHadoop forHadoop() {

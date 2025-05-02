@@ -15,10 +15,12 @@
  */
 package sleeper.dynamodb.toolsv2;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.PollWithRetries.TimedOutException;
@@ -38,19 +40,14 @@ public class DynamoDBUtilsTest {
 
         @Test
         void shouldFindThrottlingExceptionWithNoCauses() {
-            // Given
-            AmazonDynamoDBException exception = new AmazonDynamoDBException("Throttling exception");
-            exception.setErrorCode("ThrottlingException");
-
             // When / Then
-            assertThat(DynamoDBUtils.isThrottlingException(exception)).isTrue();
+            assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbExceptionWithErrorCode("ThrottlingException"))).isTrue();
         }
 
         @Test
         void shouldFindThrottlingExceptionWhenItIsRootCause() {
             // Given
-            AmazonDynamoDBException rootCause = new AmazonDynamoDBException("Throttling exception");
-            rootCause.setErrorCode("ThrottlingException");
+            AwsServiceException rootCause = buildDynamoDbExceptionWithErrorCode("ThrottlingException");
             Exception cause = new Exception("First cause exception", rootCause);
             Exception exception = new Exception("Test exception", cause);
 
@@ -80,12 +77,8 @@ public class DynamoDBUtilsTest {
 
         @Test
         void shouldNotFindThrottlingExceptionWhenExceptionHasDifferentErrorCode() {
-            // Given
-            AmazonDynamoDBException exception = new AmazonDynamoDBException("Conditional check exception");
-            exception.setErrorCode("ConditionalCheckFailedException");
-
             // When / Then
-            assertThat(DynamoDBUtils.isThrottlingException(exception)).isFalse();
+            assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbExceptionWithErrorCode("ConditionalCheckFailedException"))).isFalse();
         }
     }
 
@@ -107,9 +100,7 @@ public class DynamoDBUtilsTest {
         void shouldTimeoutWhenThrottlingExceptionThrownTooManyTimes() {
             // Given
             Runnable runnable = () -> {
-                AmazonDynamoDBException exception = new AmazonDynamoDBException("Throttling exception");
-                exception.setErrorCode("ThrottlingException");
-                throw exception;
+                throw buildDynamoDbExceptionWithErrorCode("ThrottlingException");
             };
 
             // When / Then
@@ -133,8 +124,7 @@ public class DynamoDBUtilsTest {
         @Test
         void shouldNotTimeoutWhenThrottlingExceptionThrownThenNoExceptionThrown() {
             // Given
-            AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
-            throttlingException.setErrorCode("ThrottlingException");
+            AwsServiceException throttlingException = buildDynamoDbExceptionWithErrorCode("ThrottlingException");
             Iterator<RuntimeException> throwables = List.of((RuntimeException) throttlingException).iterator();
             Runnable runnable = () -> {
                 if (throwables.hasNext()) {
@@ -150,5 +140,13 @@ public class DynamoDBUtilsTest {
         private void retryOnceOnThrottlingException(Runnable runnable) throws InterruptedException {
             DynamoDBUtils.retryOnThrottlingException(PollWithRetries.immediateRetries(1), runnable);
         }
+    }
+
+    protected AwsServiceException buildDynamoDbExceptionWithErrorCode(String errorCode) {
+        return DynamoDbException.builder()
+                .awsErrorDetails(AwsErrorDetails.builder()
+                        .errorCode(errorCode)
+                        .build())
+                .build();
     }
 }

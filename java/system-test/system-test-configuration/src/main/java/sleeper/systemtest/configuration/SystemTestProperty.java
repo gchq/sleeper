@@ -76,6 +76,30 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty SYSTEM_TEST_BUCKET_NAME = Index.propertyBuilder("sleeper.systemtest.bucket")
             .description("The name of the bucket where system test data will be stored")
             .setByCdk(true).build();
+    SystemTestProperty SYSTEM_TEST_JOBS_QUEUE_URL = Index.propertyBuilder("sleeper.systemtest.job.queue.url")
+            .description("The URL of the queue for the system test jobs")
+            .setByCdk(true).build();
+    SystemTestProperty SYSTEM_TEST_JOBS_QUEUE_ARN = Index.propertyBuilder("sleeper.systemtest.job.queue.arn")
+            .description("The ARN of the queue for the system test jobs")
+            .setByCdk(true).build();
+    SystemTestProperty SYSTEM_TEST_JOBS_DLQ_URL = Index.propertyBuilder("sleeper.systemtest.job.dlq.url")
+            .description("The URL of the dead letter queue for the system test jobs")
+            .setByCdk(true).build();
+    SystemTestProperty SYSTEM_TEST_JOBS_DLQ_ARN = Index.propertyBuilder("sleeper.systemtest.job.dlq.arn")
+            .description("The ARN of the dead letter queue for the system test jobs")
+            .setByCdk(true).build();
+    SystemTestProperty SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.systemtest.keepalive.period.seconds")
+            .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
+                    "visibility of messages on the system test queue so that they are not processed by other processes.\n" +
+                    "This should be less than the value of sleeper.systemtest.queue.visibility.timeout.seconds.")
+            .defaultValue("300").build();
+    SystemTestProperty SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.systemtest.queue.visibility.timeout.seconds")
+            .description("The visibility timeout in seconds for the system test job queue. " +
+                    "This should be greater than sleeper.systemtest.keepalive.period.seconds.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .runCdkDeployWhenChanged(true)
+            .build();
     SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task.definition")
             .description("The name of the family of task definitions used for writing data")
             .setByCdk(true).build();

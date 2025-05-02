@@ -144,7 +144,7 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public List<CompactionJob> drainJobsQueueForWholeInstance() {
+        public List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs) {
             List<CompactionJob> jobs = new ArrayList<>(queuedJobs);
             queuedJobs.clear();
             return jobs;
