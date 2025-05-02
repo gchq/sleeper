@@ -33,4 +33,4 @@ echo "Deleting table"
 echo "-------------------------------------------------------"
 java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
   --add-opens java.base/java.nio=ALL-UNNAMED \
-  sleeper.clients.status.update.DeleteTable "$@"
+  sleeper.clients.table.DeleteTable "$@"

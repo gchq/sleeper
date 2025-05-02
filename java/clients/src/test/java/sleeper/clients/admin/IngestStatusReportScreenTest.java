@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
-import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
+import sleeper.clients.report.ingest.task.IngestTaskStatusReportTestHelper;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

@@ -155,6 +155,7 @@ public class BulkExportTaskResources {
 
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
+        resultsBucket.grantPut(taskDefinition.getTaskRole());
         resultsBucket.grantReadWrite(taskDefinition.getTaskRole());
 
         String queueName = jobsQueue.getQueueName();

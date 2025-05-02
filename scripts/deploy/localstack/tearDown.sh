@@ -20,7 +20,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.TearDownDockerInstance "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.localstack.TearDownDockerInstance "$@"
 EXIT_CODE=$?
 if [[ $EXIT_CODE -eq 0 ]]; then
   echo "Successfully tore down instance"
