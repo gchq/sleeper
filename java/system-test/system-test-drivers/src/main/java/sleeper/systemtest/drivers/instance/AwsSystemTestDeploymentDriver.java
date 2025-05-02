@@ -24,10 +24,10 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandUtils;

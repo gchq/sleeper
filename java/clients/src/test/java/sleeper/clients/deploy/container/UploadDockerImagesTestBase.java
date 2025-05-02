@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
-import sleeper.clients.util.InMemoryEcrRepositories;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;

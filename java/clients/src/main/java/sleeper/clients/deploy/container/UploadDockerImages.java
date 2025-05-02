@@ -19,7 +19,6 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 

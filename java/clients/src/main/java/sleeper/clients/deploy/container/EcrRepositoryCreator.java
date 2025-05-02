@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.util;
+package sleeper.clients.deploy.container;
 
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecr.model.ListImagesResponse;
