@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
+import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;

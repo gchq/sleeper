@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy;
+package sleeper.clients.testutil;
 
 import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
+import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;

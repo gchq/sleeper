@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy;
+package sleeper.clients.deploy.jar;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
