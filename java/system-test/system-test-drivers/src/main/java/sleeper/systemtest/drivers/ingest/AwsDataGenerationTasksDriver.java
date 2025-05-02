@@ -49,7 +49,7 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
 
     @Override
     public void runDataGenerationTasks(PollWithRetries poll) {
-        List<Task> tasks = startTasks();
+        List<Task> tasks = null;
         waitForTasks(tasks, poll);
     }
 
@@ -57,11 +57,13 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
         jobSender().sendJobsToQueue(jobs);
 
-        //Create ecs tasks to read the jobs from the queue and write the data.
+        List<Task> tasks = startTasks(jobs.size());
+
+        waitForTasks(tasks, poll);
     }
 
-    private List<Task> startTasks() {
-        List<RunTaskResponse> responses = taskStarter().run();
+    private List<Task> startTasks(int numberOfTasks) {
+        List<RunTaskResponse> responses = taskStarter().runTasks(numberOfTasks);
         return responses.stream()
                 .flatMap(response -> response.tasks().stream())
                 .collect(Collectors.toUnmodifiableList());
