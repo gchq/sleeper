@@ -26,10 +26,10 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.util.AssumeSleeperRole;
-import sleeper.clients.util.AssumeSleeperRoleHadoop;
-import sleeper.clients.util.AssumeSleeperRoleV1;
-import sleeper.clients.util.AssumeSleeperRoleV2;
+import sleeper.clients.util.role.AssumeSleeperRole;
+import sleeper.clients.util.role.AssumeSleeperRoleHadoop;
+import sleeper.clients.util.role.AssumeSleeperRoleV1;
+import sleeper.clients.util.role.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
