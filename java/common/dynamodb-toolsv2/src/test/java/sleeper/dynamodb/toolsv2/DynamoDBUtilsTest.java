@@ -80,6 +80,7 @@ public class DynamoDBUtilsTest {
             // When / Then
             assertThat(DynamoDBUtils.isThrottlingException(buildDynamoDbExceptionWithErrorCode("ConditionalCheckFailedException"))).isFalse();
         }
+
     }
 
     @Nested

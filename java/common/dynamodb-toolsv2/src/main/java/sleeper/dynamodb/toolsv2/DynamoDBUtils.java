@@ -73,7 +73,6 @@ public class DynamoDBUtils {
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements,
             Map<String, String> tags) {
-     LOGGER.warn("Table {} already exists", request.getTableName());
         initialiseTable(dynamoDB, tags, CreateTableRequest.builder()
                 .tableName(tableName)
                 .attributeDefinitions(attributeDefinitions)

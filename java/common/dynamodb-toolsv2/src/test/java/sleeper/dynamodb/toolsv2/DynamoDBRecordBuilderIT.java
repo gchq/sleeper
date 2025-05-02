@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 
 class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
