@@ -39,6 +39,7 @@ import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -189,7 +190,7 @@ public class DeployNewInstance {
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
         private InvokeCdkForInstance.Type instanceType;
-        private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
+        private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
 
         private Builder() {

@@ -49,7 +49,7 @@ public class CommandUtils {
         CompletableFuture<Void> logOutput = CompletableFuture.allOf(processes.stream()
                 .map(CommandUtils::logOutput)
                 .toArray(CompletableFuture[]::new));
-        CommandPipelineResult result = ClientUtils.waitFor(processes);
+        CommandPipelineResult result = waitFor(processes);
         logOutput.join();
         LOGGER.info("Exit code: {}", result);
         return result;
@@ -72,6 +72,27 @@ public class CommandUtils {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {
+        return runCommandInheritIO(pipeline(command(command))).getLastExitCode();
+    }
+
+    public static CommandPipelineResult runCommandInheritIO(CommandPipeline pipeline) throws IOException, InterruptedException {
+        ClientUtils.LOGGER.info("Running command: {}", pipeline);
+        List<Process> processes = pipeline.startProcessesInheritIO();
+        CommandPipelineResult result = waitFor(processes);
+        ClientUtils.LOGGER.info("Exit code: {}", result);
+        return result;
+    }
+
+    private static CommandPipelineResult waitFor(List<Process> processes) throws InterruptedException {
+        int size = processes.size();
+        int[] exitCodes = new int[size];
+        for (int i = 0; i < size; i++) {
+            exitCodes[i] = processes.get(i).waitFor();
+        }
+        return new CommandPipelineResult(exitCodes);
     }
 
 }

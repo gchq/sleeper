@@ -19,9 +19,9 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -54,7 +54,7 @@ public class UploadDockerImages {
     }
 
     public void upload(UploadDockerImagesRequest request) throws IOException, InterruptedException {
-        upload(ClientUtils::runCommandInheritIO, request);
+        upload(CommandUtils::runCommandInheritIO, request);
     }
 
     public void upload(CommandPipelineRunner runCommand, UploadDockerImagesRequest request) throws IOException, InterruptedException {

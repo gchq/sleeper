@@ -34,6 +34,7 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.SleeperVersion;
@@ -147,7 +148,7 @@ public class DeployExistingInstance {
         private S3Client s3;
         private EcrClient ecr;
         private CdkDeploy deployCommand = CdkCommand.deployExisting();
-        private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
+        private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
 
         private Builder() {
         }

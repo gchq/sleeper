@@ -18,8 +18,6 @@ package sleeper.clients.util.command;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.clients.util.ClientUtils;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -113,7 +111,7 @@ public class CommandUtilsTest {
                 command("grep", "ab"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandInheritIO(command))
+        assertThat(CommandUtils.runCommandInheritIO(command))
                 .isEqualTo(new CommandPipelineResult(0, 0));
     }
 
@@ -126,7 +124,7 @@ public class CommandUtilsTest {
                 command("echo", "ab"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandInheritIO(command))
+        assertThat(CommandUtils.runCommandInheritIO(command))
                 .isEqualTo(new CommandPipelineResult(1, 0));
     }
 

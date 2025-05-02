@@ -18,19 +18,13 @@ package sleeper.clients.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.command.CommandPipeline;
-import sleeper.clients.util.command.CommandPipelineResult;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.clients.util.command.Command.command;
-import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 
 public class ClientUtils {
@@ -73,26 +67,5 @@ public class ClientUtils {
                 Files.delete(path);
             }
         }
-    }
-
-    public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {
-        return runCommandInheritIO(pipeline(command(command))).getLastExitCode();
-    }
-
-    public static CommandPipelineResult runCommandInheritIO(CommandPipeline pipeline) throws IOException, InterruptedException {
-        LOGGER.info("Running command: {}", pipeline);
-        List<Process> processes = pipeline.startProcessesInheritIO();
-        CommandPipelineResult result = waitFor(processes);
-        LOGGER.info("Exit code: {}", result);
-        return result;
-    }
-
-    public static CommandPipelineResult waitFor(List<Process> processes) throws InterruptedException {
-        int size = processes.size();
-        int[] exitCodes = new int[size];
-        for (int i = 0; i < size; i++) {
-            exitCodes[i] = processes.get(i).waitFor();
-        }
-        return new CommandPipelineResult(exitCodes);
     }
 }
