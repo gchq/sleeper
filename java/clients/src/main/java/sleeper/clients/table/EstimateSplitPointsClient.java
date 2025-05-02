@@ -17,7 +17,6 @@ package sleeper.clients.table;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.clients.util.EstimateSplitPoints;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.record.Record;
