@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.exception;
+package sleeper.clients.query.exception;
 
-public class WebSocketException extends Exception {
-    public WebSocketException(String message) {
-        this(message, null);
-    }
+public class UnknownMessageTypeException extends WebSocketException {
 
-    public WebSocketException(String message, Exception cause) {
-        super(message, cause);
+    public UnknownMessageTypeException(String messageType) {
+        super("Unknown message type received: " + messageType);
     }
 }

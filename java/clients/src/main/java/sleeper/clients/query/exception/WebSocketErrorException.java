@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.exception;
+package sleeper.clients.query.exception;
 
-public class WebSocketClosedException extends WebSocketException {
-
-    public WebSocketClosedException(String reason) {
-        super("WebSocket closed unexpectedly with reason: " + reason);
+public class WebSocketErrorException extends WebSocketException {
+    public WebSocketErrorException(String errorMessage) {
+        super("Error while running queries: " + errorMessage);
     }
 
+    public WebSocketErrorException(Exception error) {
+        super("Error while running queries", error);
+    }
 }

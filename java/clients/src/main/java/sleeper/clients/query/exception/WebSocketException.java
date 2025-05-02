@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.exception;
+package sleeper.clients.query.exception;
 
-public class WebSocketErrorException extends WebSocketException {
-    public WebSocketErrorException(String errorMessage) {
-        super("Error while running queries: " + errorMessage);
+public class WebSocketException extends Exception {
+    public WebSocketException(String message) {
+        this(message, null);
     }
 
-    public WebSocketErrorException(Exception error) {
-        super("Error while running queries", error);
+    public WebSocketException(String message, Exception cause) {
+        super(message, cause);
     }
 }

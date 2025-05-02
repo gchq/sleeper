@@ -20,13 +20,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.exception.MessageMalformedException;
-import sleeper.clients.exception.MessageMissingFieldException;
-import sleeper.clients.exception.UnknownMessageTypeException;
-import sleeper.clients.exception.WebSocketClosedException;
-import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
 import sleeper.clients.query.QueryWebSocketClient.Client;
+import sleeper.clients.query.exception.MessageMalformedException;
+import sleeper.clients.query.exception.MessageMissingFieldException;
+import sleeper.clients.query.exception.UnknownMessageTypeException;
+import sleeper.clients.query.exception.WebSocketClosedException;
+import sleeper.clients.query.exception.WebSocketErrorException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;

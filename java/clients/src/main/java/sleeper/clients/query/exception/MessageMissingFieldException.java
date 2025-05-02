@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.exception;
+package sleeper.clients.query.exception;
 
 public class MessageMissingFieldException extends WebSocketException {
     public MessageMissingFieldException(String field, String json) {

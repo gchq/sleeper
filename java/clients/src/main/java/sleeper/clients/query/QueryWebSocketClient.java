@@ -31,11 +31,11 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.exception.MessageMalformedException;
-import sleeper.clients.exception.MessageMissingFieldException;
-import sleeper.clients.exception.UnknownMessageTypeException;
-import sleeper.clients.exception.WebSocketClosedException;
-import sleeper.clients.exception.WebSocketErrorException;
+import sleeper.clients.query.exception.MessageMalformedException;
+import sleeper.clients.query.exception.MessageMissingFieldException;
+import sleeper.clients.query.exception.UnknownMessageTypeException;
+import sleeper.clients.query.exception.WebSocketClosedException;
+import sleeper.clients.query.exception.WebSocketErrorException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;

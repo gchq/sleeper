@@ -13,20 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.exception;
+package sleeper.clients.query.exception;
 
-import java.util.List;
+public class MessageMalformedException extends WebSocketException {
 
-public class QueryWebSocketClientException extends Exception {
-    private List<WebSocketException> exceptions;
-
-    public QueryWebSocketClientException(List<WebSocketException> exceptions) {
-        super("WebSocket client encountered " + exceptions.size() + " exceptions while running query",
-                exceptions.size() > 0 ? exceptions.get(0) : null);
-        this.exceptions = exceptions;
-    }
-
-    public List<WebSocketException> getExceptions() {
-        return exceptions;
+    public MessageMalformedException(String json) {
+        super("Received malformed message JSON: " + json);
     }
 }
