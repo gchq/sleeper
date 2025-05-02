@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.query;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
-import sleeper.clients.QueryWebSocketClient.Client;
+import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
+import sleeper.clients.query.QueryWebSocketClient.Client;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -42,26 +42,26 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
-import static sleeper.clients.QueryClientTestConstants.EXIT_OPTION;
-import static sleeper.clients.QueryClientTestConstants.NO_OPTION;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
-import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
-import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
-import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.QueryWebSocketClientTestHelper.close;
-import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
-import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
-import static sleeper.clients.QueryWebSocketClientTestHelper.error;
-import static sleeper.clients.QueryWebSocketClientTestHelper.errorMessage;
-import static sleeper.clients.QueryWebSocketClientTestHelper.message;
-import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
-import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
+import static sleeper.clients.query.QueryClientTestConstants.EXACT_QUERY_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.asJson;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.close;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.createdSubQueries;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.error;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.errorMessage;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.message;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.queryResult;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;

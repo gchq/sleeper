@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.query;
 
-import sleeper.clients.QueryWebSocketClient.Client;
-import sleeper.clients.QueryWebSocketClient.WebSocketMessageHandler;
+import sleeper.clients.query.QueryWebSocketClient.Client;
+import sleeper.clients.query.QueryWebSocketClient.WebSocketMessageHandler;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;

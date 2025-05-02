@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.query;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
-import sleeper.clients.QueryWebSocketClient.Client;
 import sleeper.clients.exception.MessageMalformedException;
 import sleeper.clients.exception.MessageMissingFieldException;
 import sleeper.clients.exception.UnknownMessageTypeException;
 import sleeper.clients.exception.WebSocketClosedException;
 import sleeper.clients.exception.WebSocketErrorException;
+import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
+import sleeper.clients.query.QueryWebSocketClient.Client;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
@@ -47,15 +47,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.QueryWebSocketClientTestHelper.close;
-import static sleeper.clients.QueryWebSocketClientTestHelper.completedQuery;
-import static sleeper.clients.QueryWebSocketClientTestHelper.createdSubQueries;
-import static sleeper.clients.QueryWebSocketClientTestHelper.error;
-import static sleeper.clients.QueryWebSocketClientTestHelper.errorMessage;
-import static sleeper.clients.QueryWebSocketClientTestHelper.message;
-import static sleeper.clients.QueryWebSocketClientTestHelper.queryResult;
-import static sleeper.clients.QueryWebSocketClientTestHelper.unknownMessage;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.asJson;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.close;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.completedQuery;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.createdSubQueries;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.error;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.errorMessage;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.message;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.queryResult;
+import static sleeper.clients.query.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;

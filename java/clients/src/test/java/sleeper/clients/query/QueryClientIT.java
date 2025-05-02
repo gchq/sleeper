@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients;
+package sleeper.clients.query;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,17 +53,17 @@ import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.QueryClientTestConstants.EXACT_QUERY_OPTION;
-import static sleeper.clients.QueryClientTestConstants.EXIT_OPTION;
-import static sleeper.clients.QueryClientTestConstants.NO_OPTION;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
-import static sleeper.clients.QueryClientTestConstants.PROMPT_QUERY_TYPE;
-import static sleeper.clients.QueryClientTestConstants.RANGE_QUERY_OPTION;
-import static sleeper.clients.QueryClientTestConstants.YES_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.EXACT_QUERY_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;

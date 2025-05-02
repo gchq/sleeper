@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients;
+package sleeper.clients.query;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.clients.FakeWebSocketClient.WebSocketResponse;
+import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.record.Record;
 
 import java.util.List;

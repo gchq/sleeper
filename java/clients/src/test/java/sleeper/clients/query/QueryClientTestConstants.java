@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients;
+package sleeper.clients.query;
 
 public class QueryClientTestConstants {
     private QueryClientTestConstants() {
