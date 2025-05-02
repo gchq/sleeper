@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.update;
+package sleeper.clients.update.table;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

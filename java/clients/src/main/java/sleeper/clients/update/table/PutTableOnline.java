@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.update;
+package sleeper.clients.update.table;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -30,37 +30,33 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
-public class RenameTable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
+public class PutTableOnline {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PutTableOnline.class);
 
     private final TablePropertiesStore tablePropertiesStore;
 
-    public RenameTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB));
+    public PutTableOnline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
-    public RenameTable(TablePropertiesStore tablePropertiesStore) {
-        this.tablePropertiesStore = tablePropertiesStore;
-    }
-
-    public void rename(String oldName, String newName) {
-        TableProperties tableProperties = tablePropertiesStore.loadByName(oldName);
-        tableProperties.set(TABLE_NAME, newName);
+    public void putOnline(String tableName) {
+        TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
+        tableProperties.set(TABLE_ONLINE, "true");
         tablePropertiesStore.save(tableProperties);
-        LOGGER.info("Successfully renamed table from {} to {}", oldName, newName);
+        LOGGER.info("Successfully put table online: {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {
-        if (args.length != 3) {
-            System.out.println("Usage: <instance-id> <old-table-name> <new-table-name>");
+        if (args.length != 2) {
+            System.out.println("Usage: <instance-id> <table-name>");
         }
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            new RenameTable(s3Client, dynamoDBClient, instanceProperties).rename(args[1], args[2]);
+            new PutTableOnline(s3Client, dynamoDBClient, instanceProperties).putOnline(args[1]);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();
