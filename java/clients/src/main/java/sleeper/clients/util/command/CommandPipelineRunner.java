@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.clients.util;
+package sleeper.clients.util.command;
 
 import java.io.IOException;
 
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 @FunctionalInterface
 public interface CommandPipelineRunner extends CommandRunner {

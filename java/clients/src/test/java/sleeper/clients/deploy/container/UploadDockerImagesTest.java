@@ -20,8 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.util.CommandFailedException;
-import sleeper.clients.util.CommandPipeline;
+import sleeper.clients.util.command.CommandFailedException;
+import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;

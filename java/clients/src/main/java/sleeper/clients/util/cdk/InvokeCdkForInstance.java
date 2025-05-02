@@ -16,7 +16,7 @@
 package sleeper.clients.util.cdk;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.CommandRunner;
+import sleeper.clients.util.command.CommandRunner;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;

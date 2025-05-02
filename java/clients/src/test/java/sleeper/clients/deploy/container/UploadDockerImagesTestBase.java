@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
-import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.InMemoryEcrRepositories;
+import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
@@ -30,8 +30,8 @@ import sleeper.core.properties.validation.OptionalStack;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;

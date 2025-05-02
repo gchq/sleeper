@@ -21,13 +21,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineResult;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 class ClientUtilsTest {
 

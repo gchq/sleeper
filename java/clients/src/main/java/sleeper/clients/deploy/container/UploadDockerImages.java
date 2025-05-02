@@ -20,8 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
+import sleeper.clients.util.command.CommandPipelineRunner;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);

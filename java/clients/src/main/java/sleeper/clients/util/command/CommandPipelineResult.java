@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.util;
+package sleeper.clients.util.command;
 
 import java.util.Arrays;
 

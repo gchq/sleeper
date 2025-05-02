@@ -18,6 +18,9 @@ package sleeper.clients.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineResult;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +36,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 
 public class ClientUtils {

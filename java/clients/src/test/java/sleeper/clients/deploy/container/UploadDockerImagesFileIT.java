@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.clients.util.CommandPipeline;
+import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.validation.LambdaDeployType;
 import sleeper.core.properties.validation.OptionalStack;
 
