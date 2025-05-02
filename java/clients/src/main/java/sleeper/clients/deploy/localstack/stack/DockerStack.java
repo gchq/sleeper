@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker.stack;
+package sleeper.clients.deploy.localstack.stack;
 
 public interface DockerStack {
     void deploy();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker.stack;
+package sleeper.clients.deploy.localstack.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import software.amazon.awssdk.services.sqs.SqsClient;

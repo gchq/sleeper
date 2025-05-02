@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker;
+package sleeper.clients.deploy.localstack;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;

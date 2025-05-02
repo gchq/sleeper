@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker;
+package sleeper.clients.deploy.localstack;
 
 import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.Test;

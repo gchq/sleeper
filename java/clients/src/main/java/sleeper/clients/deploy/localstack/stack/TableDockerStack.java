@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker.stack;
+package sleeper.clients.deploy.localstack.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
@@ -25,7 +25,7 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Locale;
 
-import static sleeper.clients.deploy.docker.Utils.tearDownBucket;
+import static sleeper.clients.deploy.localstack.Utils.tearDownBucket;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;

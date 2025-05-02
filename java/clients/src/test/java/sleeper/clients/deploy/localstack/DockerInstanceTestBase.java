@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker;
+package sleeper.clients.deploy.localstack;
 
 import software.amazon.awssdk.services.sqs.model.Message;
 

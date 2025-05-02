@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.docker;
+package sleeper.clients.deploy.localstack;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
