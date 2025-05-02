@@ -36,7 +36,7 @@ import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.deploy.UploadDockerImages;
-import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.util.AwsV2ClientHelper;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;

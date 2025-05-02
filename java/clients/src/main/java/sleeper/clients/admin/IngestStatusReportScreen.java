@@ -17,12 +17,12 @@
 package sleeper.clients.admin;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.status.report.IngestJobStatusReport;
-import sleeper.clients.status.report.IngestTaskStatusReport;
-import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
-import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
-import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
-import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.report.IngestJobStatusReport;
+import sleeper.clients.report.IngestTaskStatusReport;
+import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.report.ingest.task.IngestTaskQuery;
+import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
+import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
