@@ -24,4 +24,4 @@ INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 TABLE_NAME="system-test"
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
