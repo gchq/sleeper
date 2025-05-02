@@ -35,6 +35,7 @@ import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.util.AwsV2ClientHelper;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
