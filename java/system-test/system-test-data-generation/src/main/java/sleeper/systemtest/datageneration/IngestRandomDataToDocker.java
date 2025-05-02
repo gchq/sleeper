@@ -36,13 +36,13 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.net.URI;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRandomDataToDocker {
     private final InstanceProperties instanceProperties;
@@ -62,10 +62,12 @@ public class IngestRandomDataToDocker {
     }
 
     private void run() throws IOException {
-        SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
-        systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, numberOfRecords);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3,
                 dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
+                .tableName(tableProperties.get(TABLE_NAME))
+                .recordsPerIngest(numberOfRecords)
+                .build();
         WriteRandomDataDirect.writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
@@ -75,7 +77,7 @@ public class IngestRandomDataToDocker {
                         .instanceProperties(instanceProperties)
                         .build(),
                 AddFilesToStateStore.synchronousNoJob(stateStoreProvider.getStateStore(tableProperties)),
-                systemTestProperties, tableProperties);
+                job, tableProperties);
     }
 
     private static S3AsyncClient buildS3AsyncClient(S3AsyncClientBuilder builder) {

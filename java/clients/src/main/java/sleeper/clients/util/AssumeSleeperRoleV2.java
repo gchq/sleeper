@@ -20,19 +20,26 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
+import java.net.URI;
 import java.util.Map;
 
 public class AssumeSleeperRoleV2 {
     private final String region;
+    private final String endpointUrl;
     private final AwsCredentialsProvider provider;
 
-    AssumeSleeperRoleV2(String region, AwsCredentialsProvider provider) {
+    AssumeSleeperRoleV2(String region, String endpointUrl, AwsCredentialsProvider provider) {
         this.region = region;
+        this.endpointUrl = endpointUrl;
         this.provider = provider;
     }
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T buildClient(B builder) {
-        return builder.credentialsProvider(provider).region(Region.of(region)).build();
+        builder.credentialsProvider(provider).region(Region.of(region));
+        if (endpointUrl != null) {
+            builder.endpointOverride(URI.create(endpointUrl));
+        }
+        return builder.build();
     }
 
     public AwsRegionProvider regionProvider() {
