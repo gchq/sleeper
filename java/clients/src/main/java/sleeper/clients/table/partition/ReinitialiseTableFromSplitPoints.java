@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.table;
+package sleeper.clients.table.partition;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.table.TableProperties;

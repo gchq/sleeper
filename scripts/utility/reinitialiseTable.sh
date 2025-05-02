@@ -42,9 +42,9 @@ else
     if [[ -n $5 ]]; then
       SPLIT_POINTS_FILE_ENCODED=$5
       echo "Optional parameter for <split-points-file-base64-encoded> recognised and set to" "${SPLIT_POINTS_FILE_ENCODED}"
-      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}" "${SPLIT_POINTS_FILE_ENCODED}"
+      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}" "${SPLIT_POINTS_FILE_ENCODED}"
     else
-      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}"
+      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}"
     fi
   else
     java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}" "${DELETE_PARTITIONS}"
