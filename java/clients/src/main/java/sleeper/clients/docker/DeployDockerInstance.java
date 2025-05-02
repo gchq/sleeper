@@ -28,7 +28,7 @@ import sleeper.clients.docker.stack.CompactionDockerStack;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
-import sleeper.clients.update.table.AddTable;
+import sleeper.clients.table.AddTable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;

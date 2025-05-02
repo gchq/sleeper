@@ -31,4 +31,4 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "-------------------------------------------------------"
 echo "Renaming table"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.update.table.RenameTable "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.table.RenameTable "$@"

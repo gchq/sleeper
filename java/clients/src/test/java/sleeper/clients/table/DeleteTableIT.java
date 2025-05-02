@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.update.table;
+package sleeper.clients.table;
 
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
