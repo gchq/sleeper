@@ -18,6 +18,7 @@ package sleeper.clients.status.update;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.update.RenameTable;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;

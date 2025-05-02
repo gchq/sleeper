@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.update;
+package sleeper.clients.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -32,20 +32,20 @@ import sleeper.core.properties.table.TablePropertiesStore;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
-public class TakeTableOffline {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TakeTableOffline.class);
+public class PutTableOnline {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PutTableOnline.class);
 
     private final TablePropertiesStore tablePropertiesStore;
 
-    public TakeTableOffline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+    public PutTableOnline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
     }
 
-    public void takeOffline(String tableName) {
+    public void putOnline(String tableName) {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
-        tableProperties.set(TABLE_ONLINE, "false");
+        tableProperties.set(TABLE_ONLINE, "true");
         tablePropertiesStore.save(tableProperties);
-        LOGGER.info("Successfully took table offline: {}", tableProperties.getStatus());
+        LOGGER.info("Successfully put table online: {}", tableProperties.getStatus());
     }
 
     public static void main(String[] args) {
@@ -56,7 +56,7 @@ public class TakeTableOffline {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            new TakeTableOffline(s3Client, dynamoDBClient, instanceProperties).takeOffline(args[1]);
+            new PutTableOnline(s3Client, dynamoDBClient, instanceProperties).putOnline(args[1]);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();

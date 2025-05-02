@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.update;
+package sleeper.clients.update;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -24,30 +24,36 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-public class RestartSystem {
+public class PauseSystem {
 
-    private RestartSystem() {
+    private PauseSystem() {
     }
 
     public static void main(String[] args) {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         try (CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            SleeperScheduleRule.getDeployedRules(instanceProperties)
-                    .forEach(rule -> enableRule(cwClient, rule.getRuleName()));
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            pause(cwClient, instanceProperties);
         } finally {
             s3Client.shutdown();
         }
     }
 
-    private static void enableRule(CloudWatchEventsClient cwClient, String ruleName) {
+    public static void pause(CloudWatchEventsClient cwClient, InstanceProperties instanceProperties) {
+
+        SleeperScheduleRule.getDeployedRules(instanceProperties)
+                .forEach(rule -> disableRule(cwClient, rule.getRuleName()));
+    }
+
+    private static void disableRule(CloudWatchEventsClient cwClient, String ruleName) {
         try {
-            cwClient.enableRule(request -> request.name(ruleName));
-            System.out.println("Enabled rule: " + ruleName);
+            cwClient.disableRule(request -> request.name(ruleName));
+            System.out.println("Disabled rule: " + ruleName);
         } catch (ResourceNotFoundException e) {
             System.out.println("Rule not found: " + ruleName);
         }
