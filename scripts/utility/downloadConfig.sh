@@ -32,7 +32,7 @@ GENERATED_DIR=${SCRIPTS_DIR}/generated
 
 # Download to temporary directory
 TEMP_DIR=$(mktemp -d)
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.update.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.deploy.properties.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
 
 # Overwrite generated directory
 mkdir -p "$GENERATED_DIR"
