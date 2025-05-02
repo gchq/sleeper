@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.screen;
 
+import sleeper.clients.admin.AdminClientTrackerFactory;
+import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.CompactionJobStatusReport;
 import sleeper.clients.report.CompactionTaskStatusReport;
@@ -35,8 +37,8 @@ import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
-import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
-import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
+import static sleeper.clients.admin.screen.JobStatusScreenHelper.promptForJobId;
+import static sleeper.clients.admin.screen.JobStatusScreenHelper.promptForRange;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 public class CompactionStatusReportScreen {

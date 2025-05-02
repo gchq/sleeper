@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.screen;
 
+import sleeper.clients.admin.AdminCommonPrompts;
+import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.properties.PropertyGroupSelectHelper;

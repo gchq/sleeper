@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.screen;
 
+import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;

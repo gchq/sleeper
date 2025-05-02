@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.screen;
 
+import sleeper.clients.admin.AdminClientTrackerFactory;
+import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.IngestJobStatusReport;
 import sleeper.clients.report.IngestTaskStatusReport;
@@ -38,8 +40,8 @@ import java.util.function.Function;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
-import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
-import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
+import static sleeper.clients.admin.screen.JobStatusScreenHelper.promptForJobId;
+import static sleeper.clients.admin.screen.JobStatusScreenHelper.promptForRange;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
 public class IngestStatusReportScreen {

@@ -26,6 +26,13 @@ import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
+import sleeper.clients.admin.screen.AdminMainScreen;
+import sleeper.clients.admin.screen.CompactionStatusReportScreen;
+import sleeper.clients.admin.screen.FilesStatusReportScreen;
+import sleeper.clients.admin.screen.IngestBatcherReportScreen;
+import sleeper.clients.admin.screen.IngestStatusReportScreen;
+import sleeper.clients.admin.screen.InstanceConfigurationScreen;
+import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
