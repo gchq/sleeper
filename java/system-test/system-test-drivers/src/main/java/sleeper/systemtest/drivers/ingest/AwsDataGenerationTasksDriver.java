@@ -76,20 +76,22 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
 
     @Override
     public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs) {
-        SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
-        for (List<SystemTestDataGenerationJob> batch : SplitIntoBatches.splitListIntoBatchesOf(10, jobs)) {
-            List<SendMessageBatchRequestEntry> entries = batch.stream()
-                    .map(job -> SendMessageBatchRequestEntry.builder()
-                            .id(job.getJobId())
-                            .messageBody(serDe.toJson(job))
-                            .build())
-                    .toList();
-
-            sqsClient.sendMessageBatch(builder -> builder
-                    .queueUrl(systemTest.getProperties().get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                    .entries(entries));
-        }
+        sendJobsToQueue(jobs);
 
         //Create ecs tasks to read the jobs from the queue and write the data.
+    }
+
+    private void sendJobsToQueue(List<SystemTestDataGenerationJob> jobs) {
+        SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
+        for (List<SystemTestDataGenerationJob> batch : SplitIntoBatches.splitListIntoBatchesOf(10, jobs)) {
+            sqsClient.sendMessageBatch(builder -> builder
+                    .queueUrl(systemTest.getProperties().get(SYSTEM_TEST_JOBS_QUEUE_URL))
+                    .entries(batch.stream()
+                            .map(job -> SendMessageBatchRequestEntry.builder()
+                                    .id(job.getJobId())
+                                    .messageBody(serDe.toJson(job))
+                                    .build())
+                            .toList()));
+        }
     }
 }
