@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.clients.AdminClient;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
