@@ -59,7 +59,7 @@ public class StateStoreArrowFileStore {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.configuration = configuration;
-        this.s3TransferManager = S3TransferManager.create();
+        this.s3TransferManager = null;//S3TransferManager.create();
         this.s3Client = s3;
     }
 
