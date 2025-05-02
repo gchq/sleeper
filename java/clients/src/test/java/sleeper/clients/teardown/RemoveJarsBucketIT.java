@@ -18,7 +18,7 @@ package sleeper.clients.teardown;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.deploy.JarsBucketITBase;
+import sleeper.clients.testutil.JarsBucketITBase;
 
 import java.io.IOException;
 import java.nio.file.Files;

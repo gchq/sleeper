@@ -15,8 +15,8 @@
  */
 package sleeper.clients.admin.properties;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.CommandRunner;
+import sleeper.clients.util.command.CommandRunner;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
@@ -42,7 +42,7 @@ public class UpdatePropertiesWithTextEditor {
     private final UpdatePropertiesTextEditorCommand editorCommand = new UpdatePropertiesTextEditorCommand();
 
     public UpdatePropertiesWithTextEditor(Path tempDirectory) {
-        this(tempDirectory, ClientUtils::runCommandInheritIO);
+        this(tempDirectory, CommandUtils::runCommandInheritIO);
     }
 
     public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand) {

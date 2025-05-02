@@ -18,4 +18,4 @@ unset CDPATH
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.report.IngestBatcherReport "$@"
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.report.IngestBatcherReport "$@"

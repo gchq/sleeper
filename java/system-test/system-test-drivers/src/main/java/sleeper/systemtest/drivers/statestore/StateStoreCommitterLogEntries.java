@@ -15,11 +15,11 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
-import sleeper.clients.status.report.statestore.StateStoreCommitSummary;
-import sleeper.clients.status.report.statestore.StateStoreCommitterLogEntry;
-import sleeper.clients.status.report.statestore.StateStoreCommitterRequestsPerSecond;
-import sleeper.clients.status.report.statestore.StateStoreCommitterRun;
-import sleeper.clients.status.report.statestore.StateStoreCommitterRuns;
+import sleeper.clients.report.statestore.StateStoreCommitSummary;
+import sleeper.clients.report.statestore.StateStoreCommitterLogEntry;
+import sleeper.clients.report.statestore.StateStoreCommitterRequestsPerSecond;
+import sleeper.clients.report.statestore.StateStoreCommitterRun;
+import sleeper.clients.report.statestore.StateStoreCommitterRuns;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 
 import java.util.List;
