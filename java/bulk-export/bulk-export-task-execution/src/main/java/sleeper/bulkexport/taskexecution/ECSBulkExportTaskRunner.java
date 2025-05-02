@@ -93,17 +93,18 @@ public class ECSBulkExportTaskRunner {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
                 dynamoDBClient);
-
-        runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoDBClient, instanceProperties, tablePropertiesProvider);
-
-        sqsClient.shutdown();
-        LOGGER.info("Shut down sqsClient");
-        dynamoDBClient.shutdown();
-        LOGGER.info("Shut down dynamoDBClient");
-        s3Client.shutdown();
-        LOGGER.info("Shut down s3Client");
+        try {
+            runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoDBClient, instanceProperties, tablePropertiesProvider);
+        } finally {
+            // Shutdown the clients to release resources
+            sqsClient.shutdown();
+            LOGGER.info("Shut down sqsClient");
+            dynamoDBClient.shutdown();
+            LOGGER.info("Shut down dynamoDBClient");
+            s3Client.shutdown();
+            LOGGER.info("Shut down s3Client");
+        }
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
-        System.exit(0);
     }
 
     /**
@@ -129,7 +130,7 @@ public class ECSBulkExportTaskRunner {
             try {
                 BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
-                LOGGER.debug("Export task details: {}", exportTask);
+                LOGGER.debug("Bulk Export job details: {}", exportTask);
 
                 runCompaction(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient);
                 messageHandle.deleteFromQueue();
@@ -139,11 +140,11 @@ public class ECSBulkExportTaskRunner {
                 messageHandle.returnToQueue();
                 LOGGER.warn("Returned message to queue due to I/O error");
             } catch (ObjectFactoryException | IteratorCreationException e) {
-                LOGGER.error("Error creating objects or iterators for compaction job", e);
+                LOGGER.error("Error creating objects or iterators for bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to object/iterator creation error");
             } catch (Exception e) {
-                LOGGER.error("Unexpected error processing compaction job", e);
+                LOGGER.error("Unexpected error processing bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
             }
