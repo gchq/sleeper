@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.status.partitions.ExportPartitions;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.schema.Schema;
