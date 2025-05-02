@@ -73,5 +73,5 @@ Here's an example:
 ```bash
 # Retry up to 1000 messages on the ingest dead letter queue
 java -cp scripts/jars/clients-*-utility.jar \
-  sleeper.clients.report.RetryMessages ${INSTANCE_ID} ingest 1000
+  sleeper.clients.deploy.RetryMessages ${INSTANCE_ID} ingest 1000
 ```
