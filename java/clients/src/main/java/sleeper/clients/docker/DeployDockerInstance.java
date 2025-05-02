@@ -49,6 +49,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -142,6 +143,7 @@ public class DeployDockerInstance {
         instanceProperties.set(COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS, "1");
         instanceProperties.set(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, "0");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "1");
+        instanceProperties.set(ENDPOINT_URL, System.getenv("AWS_ENDPOINT_URL"));
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {

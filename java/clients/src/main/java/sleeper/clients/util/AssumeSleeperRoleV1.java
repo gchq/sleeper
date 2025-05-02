@@ -17,21 +17,30 @@ package sleeper.clients.util;
 
 import com.amazonaws.auth.AWSSessionCredentials;
 import com.amazonaws.auth.AWSSessionCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 
 import java.util.Map;
 
 public class AssumeSleeperRoleV1 {
 
     private final String region;
+    private final String endpointUrl;
     private final AWSSessionCredentialsProvider provider;
 
-    AssumeSleeperRoleV1(String region, AWSSessionCredentialsProvider provider) {
+    AssumeSleeperRoleV1(String region, String endpointUrl, AWSSessionCredentialsProvider provider) {
         this.region = region;
+        this.endpointUrl = endpointUrl;
         this.provider = provider;
     }
 
     public <T, B extends com.amazonaws.client.builder.AwsClientBuilder<B, T>> T buildClient(B builder) {
-        return builder.withCredentials(provider).withRegion(region).build();
+        builder.withCredentials(provider);
+        if (endpointUrl != null) {
+            builder.withEndpointConfiguration(new EndpointConfiguration(endpointUrl, region));
+        } else {
+            builder.withRegion(region);
+        }
+        return builder.build();
     }
 
     public Map<String, String> authEnvVars() {
