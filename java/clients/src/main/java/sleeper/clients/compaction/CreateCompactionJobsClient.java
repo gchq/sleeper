@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.update;
+package sleeper.clients.compaction;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
