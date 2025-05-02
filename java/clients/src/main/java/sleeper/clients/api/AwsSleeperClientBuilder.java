@@ -46,6 +46,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 public class AwsSleeperClientBuilder {
 
     private String instanceId;
+    private InstanceProperties instanceProperties;
     private int queryThreadPoolSize = 10;
     private AwsClientShutdown<AmazonS3> s3ClientWrapper;
     private AwsClientShutdown<AmazonDynamoDB> dynamoClientWrapper;
@@ -71,7 +72,6 @@ public class AwsSleeperClientBuilder {
      * @return the client
      */
     public SleeperClient build() {
-        Objects.requireNonNull(instanceId, "instanceId must not be null");
         AwsClientShutdown<AmazonS3> s3ClientWrapper = Objects.requireNonNull(this.s3ClientWrapper, "s3Client must not be null");
         AwsClientShutdown<AmazonDynamoDB> dynamoClientWrapper = Objects.requireNonNull(this.dynamoClientWrapper, "dynamoClient must not be null");
         AwsClientShutdown<AmazonSQS> sqsClientWrapper = Objects.requireNonNull(this.sqsClientWrapper, "sqsClient must not be null");
@@ -81,7 +81,7 @@ public class AwsSleeperClientBuilder {
         Objects.requireNonNull(hadoopConf, "hadoopConf must not be null");
 
         ExecutorService executorService = Executors.newFixedThreadPool(queryThreadPoolSize);
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = loadInstanceProperties(s3Client);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
 
         return new SleeperClient.Builder()
@@ -99,6 +99,14 @@ public class AwsSleeperClientBuilder {
                 .build();
     }
 
+    private InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
+        if (instanceProperties != null) {
+            return instanceProperties;
+        }
+        Objects.requireNonNull(instanceId, "instanceId must not be null");
+        return S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+    }
+
     /**
      * Sets the ID of the Sleeper instance to interact with.
      *
@@ -107,6 +115,18 @@ public class AwsSleeperClientBuilder {
      */
     public AwsSleeperClientBuilder instanceId(String instanceId) {
         this.instanceId = instanceId;
+        return this;
+    }
+
+    /**
+     * Sets the properties of the Sleeper instance to interact with. This may be set instead of the instance ID if the
+     * properties have already been loaded. Usually this is not necessary.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    this builder
+     */
+    public AwsSleeperClientBuilder instanceProperties(InstanceProperties instanceProperties) {
+        this.instanceProperties = instanceProperties;
         return this;
     }
 

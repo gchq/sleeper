@@ -61,6 +61,10 @@ sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportSt
 # Valid values: [jar, container]
 sleeper.lambda.deploy.type=jar
 
+# The AWS endpoint URL. This should only be set for a non-standard service endpoint. Usually this is
+# used to set the URL to LocalStack for a locally deployed instance.
+# sleeper.endpoint.url=
+
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
 sleeper.vpc.endpoint.check=true
