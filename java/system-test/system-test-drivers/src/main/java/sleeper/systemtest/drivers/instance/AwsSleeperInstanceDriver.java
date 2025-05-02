@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.PopulateInstancePropertiesAws;
+import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;

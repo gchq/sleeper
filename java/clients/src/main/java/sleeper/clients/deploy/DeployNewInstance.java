@@ -32,6 +32,7 @@ import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.deploy.jar.SyncJars;
+import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.table.AddTable;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;

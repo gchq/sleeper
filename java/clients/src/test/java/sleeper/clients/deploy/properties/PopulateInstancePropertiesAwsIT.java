@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy;
+package sleeper.clients.deploy.properties;
 
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.junit.jupiter.api.Test;
