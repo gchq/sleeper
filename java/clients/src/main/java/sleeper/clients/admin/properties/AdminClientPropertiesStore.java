@@ -22,9 +22,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.DockerImageConfiguration;
-import sleeper.clients.deploy.UploadDockerImages;
-import sleeper.clients.deploy.UploadDockerImagesRequest;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;

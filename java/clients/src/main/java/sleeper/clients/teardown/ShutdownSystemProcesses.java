@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
-import sleeper.clients.status.update.PauseSystem;
+import sleeper.clients.deploy.PauseSystem;
 import sleeper.clients.util.EmrUtils;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;

@@ -30,9 +30,9 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.BATCHER
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_BATCHER_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
-import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.TEST_TABLE;
-import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.multiplePendingFiles;
-import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.onePendingAndTwoBatchedFiles;
+import static sleeper.clients.report.ingest.batcher.IngestBatcherReporterTestHelper.TEST_TABLE;
+import static sleeper.clients.report.ingest.batcher.IngestBatcherReporterTestHelper.multiplePendingFiles;
+import static sleeper.clients.report.ingest.batcher.IngestBatcherReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;

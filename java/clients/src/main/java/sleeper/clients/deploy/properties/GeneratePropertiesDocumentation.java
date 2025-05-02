@@ -15,7 +15,7 @@
  */
 package sleeper.clients.deploy.properties;
 
-import sleeper.clients.util.table.TableWriter;
+import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.instance.InstanceProperties;

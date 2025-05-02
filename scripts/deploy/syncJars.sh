@@ -25,4 +25,4 @@ SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 JARS_DIR="${SCRIPTS_DIR}/jars"
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.SyncJars "${JARS_DIR}" "$@"
+java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.jar.SyncJars "${JARS_DIR}" "$@"

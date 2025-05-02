@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.cdk;
 import software.amazon.awssdk.services.ecr.model.Repository;
 import software.amazon.awssdk.services.s3.model.Bucket;
 
-import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.teardown.CloudFormationStacks;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
