@@ -38,7 +38,7 @@ public class CommandUtilsTest {
         Path path = Files.createFile(tempDir.resolve("test1.jar"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandLogOutput("cat", String.format("%s", path)))
+        assertThat(CommandUtils.runCommandLogOutput("cat", String.format("%s", path)))
                 .isZero();
     }
 
@@ -48,7 +48,7 @@ public class CommandUtilsTest {
         Path path = Files.createFile(tempDir.resolve("test1.jar"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandLogOutput("cat", String.format("\"%s\"", path)))
+        assertThat(CommandUtils.runCommandLogOutput("cat", String.format("\"%s\"", path)))
                 .isNotZero();
     }
 
@@ -60,7 +60,7 @@ public class CommandUtilsTest {
         Path path3 = Files.writeString(tempDir.resolve("test3.txt"), "Some content");
 
         // When/Then
-        assertThat(ClientUtils.runCommandLogOutput(
+        assertThat(CommandUtils.runCommandLogOutput(
                 "cat", path1.toString(), path2.toString(), path3.toString()))
                 .isNotZero();
     }

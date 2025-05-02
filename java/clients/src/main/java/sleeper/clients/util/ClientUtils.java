@@ -82,10 +82,6 @@ public class ClientUtils {
         }
     }
 
-    public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
-        return runCommandLogOutput(pipeline(command(commands))).getLastExitCode();
-    }
-
     public static CommandPipelineResult runCommandLogOutput(CommandPipeline pipeline) throws IOException, InterruptedException {
         LOGGER.info("Running command: {}", pipeline);
         List<Process> processes = pipeline.startProcesses();

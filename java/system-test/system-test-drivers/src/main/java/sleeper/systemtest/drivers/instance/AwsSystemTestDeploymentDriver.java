@@ -31,6 +31,7 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -98,7 +99,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                     .version(SleeperVersion.getVersion())
                     .build().invoke(SYSTEM_TEST_STANDALONE,
                             CdkCommand.deploySystemTestStandalone(),
-                            ClientUtils::runCommandLogOutput);
+                            CommandUtils::runCommandLogOutput);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
