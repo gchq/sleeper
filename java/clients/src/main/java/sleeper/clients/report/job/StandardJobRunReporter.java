@@ -16,9 +16,9 @@
 
 package sleeper.clients.report.job;
 
-import sleeper.clients.util.table.TableFieldDefinition;
-import sleeper.clients.util.table.TableRow;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableFieldDefinition;
+import sleeper.clients.util.tablewriter.TableRow;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;

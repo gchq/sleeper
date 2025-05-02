@@ -17,9 +17,9 @@
 package sleeper.clients.report.partitions;
 
 import sleeper.clients.report.job.StandardJobRunReporter;
-import sleeper.clients.util.table.TableField;
-import sleeper.clients.util.table.TableRow;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableField;
+import sleeper.clients.util.tablewriter.TableRow;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.splitter.core.status.PartitionStatus;

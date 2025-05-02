@@ -16,9 +16,9 @@
 
 package sleeper.clients.report.query;
 
-import sleeper.clients.util.table.TableField;
-import sleeper.clients.util.table.TableRow;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableField;
+import sleeper.clients.util.tablewriter.TableRow;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
 

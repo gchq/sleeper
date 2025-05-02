@@ -16,9 +16,9 @@
 
 package sleeper.clients.report.ingest.batcher;
 
-import sleeper.clients.util.table.TableField;
-import sleeper.clients.util.table.TableRow;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableField;
+import sleeper.clients.util.tablewriter.TableRow;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
