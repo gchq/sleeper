@@ -18,7 +18,6 @@ package sleeper.clients.deploy.docker;
 
 import software.amazon.awssdk.services.sqs.model.Message;
 
-import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;

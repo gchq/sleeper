@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.docker;
+package sleeper.clients.deploy.docker;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -24,10 +24,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.clients.docker.stack.CompactionDockerStack;
-import sleeper.clients.docker.stack.ConfigurationDockerStack;
-import sleeper.clients.docker.stack.IngestDockerStack;
-import sleeper.clients.docker.stack.TableDockerStack;
+import sleeper.clients.deploy.docker.stack.CompactionDockerStack;
+import sleeper.clients.deploy.docker.stack.ConfigurationDockerStack;
+import sleeper.clients.deploy.docker.stack.IngestDockerStack;
+import sleeper.clients.deploy.docker.stack.TableDockerStack;
 import sleeper.clients.table.AddTable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;

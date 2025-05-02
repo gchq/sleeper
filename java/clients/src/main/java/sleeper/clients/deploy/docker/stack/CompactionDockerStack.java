@@ -14,53 +14,55 @@
  * limitations under the License.
  */
 
-package sleeper.clients.docker.stack;
+package sleeper.clients.deploy.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
-import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class IngestDockerStack implements DockerStack {
+public class CompactionDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
     private final SqsClient sqsClient;
     private final AmazonDynamoDB dynamoDB;
 
-    private IngestDockerStack(Builder builder) {
+    private CompactionDockerStack(Builder builder) {
         instanceProperties = builder.instanceProperties;
         sqsClient = builder.sqsClient;
         dynamoDB = builder.dynamoDB;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static IngestDockerStack from(
-            InstanceProperties instanceProperties,
-            AmazonDynamoDB dynamoDB, SqsClient sqsClient) {
-        return builder().instanceProperties(instanceProperties)
-                .dynamoDB(dynamoDB).sqsClient(sqsClient)
+    public static CompactionDockerStack from(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB, SqsClient sqsClient) {
+        return builder().instanceProperties(instanceProperties).dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();
     }
 
     public void deploy() {
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDB);
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoDB);
-        String queueName = "sleeper-" + instanceProperties.get(ID) + "-IngestJobQ";
-        String queueUrl = sqsClient.createQueue(request -> request.queueName(queueName)).queueUrl();
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, queueUrl);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDB);
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClient.createQueue(request -> request
+                .queueName("sleeper-" + instanceProperties.get(ID) + "-CompactionJobQ"))
+                .queueUrl());
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqsClient.createQueue(request -> request
+                .queueName("sleeper-" + instanceProperties.get(ID) + "-PendingCompactionJobBatchQ"))
+                .queueUrl());
     }
 
+    @Override
     public void tearDown() {
-        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoDB);
-        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoDB);
-        sqsClient.deleteQueue(request -> request.queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL)));
+        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoDB);
+        DynamoDBCompactionTaskTrackerCreator.tearDown(instanceProperties, dynamoDB);
+        sqsClient.deleteQueue(request -> request.queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL)));
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static final class Builder {
@@ -68,7 +70,7 @@ public class IngestDockerStack implements DockerStack {
         private SqsClient sqsClient;
         private AmazonDynamoDB dynamoDB;
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
@@ -86,8 +88,8 @@ public class IngestDockerStack implements DockerStack {
             return this;
         }
 
-        public IngestDockerStack build() {
-            return new IngestDockerStack(this);
+        public CompactionDockerStack build() {
+            return new CompactionDockerStack(this);
         }
     }
 }

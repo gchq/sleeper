@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.clients.docker.stack;
+package sleeper.clients.deploy.docker.stack;
 
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.clients.docker.Utils.tearDownBucket;
+import static sleeper.clients.deploy.docker.Utils.tearDownBucket;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class ConfigurationDockerStack implements DockerStack {

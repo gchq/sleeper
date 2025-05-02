@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.clients.docker;
+package sleeper.clients.deploy.docker.stack;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
+public interface DockerStack {
+    void deploy();
 
-public class Utils {
-    private Utils() {
-    }
-
-    public static void tearDownBucket(AmazonS3 s3Client, String bucketName) {
-        S3Objects.inBucket(s3Client, bucketName)
-                .forEach(object -> s3Client.deleteObject(bucketName, object.getKey()));
-        s3Client.deleteBucket(bucketName);
-    }
+    void tearDown();
 }
