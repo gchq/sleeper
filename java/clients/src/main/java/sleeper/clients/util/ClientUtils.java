@@ -21,19 +21,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineResult;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static sleeper.clients.util.command.Command.command;
@@ -41,7 +34,7 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 
 public class ClientUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
 
     private ClientUtils() {
     }
@@ -82,37 +75,6 @@ public class ClientUtils {
         }
     }
 
-    public static CommandPipelineResult runCommandLogOutput(CommandPipeline pipeline) throws IOException, InterruptedException {
-        LOGGER.info("Running command: {}", pipeline);
-        List<Process> processes = pipeline.startProcesses();
-        CompletableFuture<Void> logOutput = CompletableFuture.allOf(processes.stream()
-                .map(ClientUtils::logOutput)
-                .toArray(CompletableFuture[]::new));
-        CommandPipelineResult result = waitFor(processes);
-        logOutput.join();
-        LOGGER.info("Exit code: {}", result);
-        return result;
-    }
-
-    private static CompletableFuture<Void> logOutput(Process process) {
-        return CompletableFuture.allOf(
-                CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
-                CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
-    }
-
-    private static void logTo(InputStream stream, Consumer<String> logLine) {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
-            String line = reader.readLine();
-            while (line != null) {
-                logLine.accept(line);
-                line = reader.readLine();
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {
         return runCommandInheritIO(pipeline(command(command))).getLastExitCode();
     }
@@ -125,7 +87,7 @@ public class ClientUtils {
         return result;
     }
 
-    private static CommandPipelineResult waitFor(List<Process> processes) throws InterruptedException {
+    public static CommandPipelineResult waitFor(List<Process> processes) throws InterruptedException {
         int size = processes.size();
         int[] exitCodes = new int[size];
         for (int i = 0; i < size; i++) {

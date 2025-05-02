@@ -74,7 +74,7 @@ public class CommandUtilsTest {
                 command("grep", "ab"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandLogOutput(command))
+        assertThat(CommandUtils.runCommandLogOutput(command))
                 .isEqualTo(new CommandPipelineResult(0, 0));
     }
 
@@ -87,7 +87,7 @@ public class CommandUtilsTest {
                 command("grep", "ef"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandLogOutput(command))
+        assertThat(CommandUtils.runCommandLogOutput(command))
                 .isEqualTo(new CommandPipelineResult(0, 1));
     }
 
@@ -100,7 +100,7 @@ public class CommandUtilsTest {
                 command("echo", "ab"));
 
         // When/Then
-        assertThat(ClientUtils.runCommandLogOutput(command))
+        assertThat(CommandUtils.runCommandLogOutput(command))
                 .isEqualTo(new CommandPipelineResult(1, 0));
     }
 

@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.drivers.python;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import static sleeper.clients.util.command.Command.envAndCommand;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class PythonRunner {
-    private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandLogOutput;
+    private final CommandPipelineRunner pipelineRunner = CommandUtils::runCommandLogOutput;
     private final Path pythonDir;
     private final SystemTestClients clients;
 

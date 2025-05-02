@@ -31,9 +31,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -99,7 +99,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                    .runCommand(ClientUtils::runCommandLogOutput)
+                    .runCommand(CommandUtils::runCommandLogOutput)
                     .deployWithClients(s3, s3v2, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -134,7 +134,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
                     .deployCommand(CdkCommand.deployExistingPaused())
-                    .runCommand(ClientUtils::runCommandLogOutput)
+                    .runCommand(CommandUtils::runCommandLogOutput)
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
