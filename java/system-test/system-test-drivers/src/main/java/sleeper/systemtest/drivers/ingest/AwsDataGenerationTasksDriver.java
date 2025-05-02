@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
@@ -39,11 +40,11 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final SqsClient sqsClient;
 
     public AwsDataGenerationTasksDriver(
-            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, EcsClient ecsClient) {
+            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, SystemTestClients clients) {
         this.systemTest = systemTest;
         this.instance = instance;
-        this.ecsClient = ecsClient;
-        this.sqsClient = null;
+        this.ecsClient = clients.getEcs();
+        this.sqsClient = clients.getSqsV2();
     }
 
     public void runDataGenerationTasks(PollWithRetries poll) {
@@ -58,7 +59,7 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
 
     private List<Task> startTasks() {
         List<RunTaskResponse> responses = new RunWriteRandomDataTaskOnECS(
-                instance.getInstanceProperties(), instance.getTableProperties(), systemTest.getProperties(), ecsClient)
+                instance.getInstanceProperties(), systemTest.getProperties(), ecsClient)
                 .run();
         return responses.stream()
                 .flatMap(response -> response.tasks().stream())
