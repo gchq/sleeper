@@ -20,12 +20,9 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.Task;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
@@ -33,7 +30,6 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatusFormat;
 
 public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
@@ -76,22 +72,12 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
 
     @Override
     public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs) {
-        sendJobsToQueue(jobs);
+        jobSender().sendJobsToQueue(jobs);
 
         //Create ecs tasks to read the jobs from the queue and write the data.
     }
 
-    private void sendJobsToQueue(List<SystemTestDataGenerationJob> jobs) {
-        SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
-        for (List<SystemTestDataGenerationJob> batch : SplitIntoBatches.splitListIntoBatchesOf(10, jobs)) {
-            sqsClient.sendMessageBatch(builder -> builder
-                    .queueUrl(systemTest.getProperties().get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                    .entries(batch.stream()
-                            .map(job -> SendMessageBatchRequestEntry.builder()
-                                    .id(job.getJobId())
-                                    .messageBody(serDe.toJson(job))
-                                    .build())
-                            .toList()));
-        }
+    private SystemTestDataGenerationJobSender jobSender() {
+        return new SystemTestDataGenerationJobSender(systemTest.getProperties(), sqsClient);
     }
 }

@@ -30,10 +30,12 @@ import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -134,10 +136,13 @@ public class RunWriteRandomDataTaskOnECS {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        try (EcsClient ecsClient = EcsClient.create()) {
+        try (EcsClient ecsClient = EcsClient.create(); SqsClient sqsClient = SqsClient.create()) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
+            SystemTestDataGenerationJobSender jobSender = new SystemTestDataGenerationJobSender(systemTestProperties.testPropertiesOnly(), sqsClient);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
+
+            jobSender.sendJobsToQueue(SystemTestDataGenerationJob.getDefaultJobs(systemTestProperties, tableProperties));
             List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.run();
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
