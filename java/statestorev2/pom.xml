@@ -26,16 +26,6 @@
     <artifactId>statestorev2</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>dynamodb</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sqs</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
-        </dependency>
         <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
@@ -50,16 +40,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
