@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.util;
 
-import sleeper.clients.util.role.AssumeSleeperRole;
+import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.gc.AwsGarbageCollectionDriver;
