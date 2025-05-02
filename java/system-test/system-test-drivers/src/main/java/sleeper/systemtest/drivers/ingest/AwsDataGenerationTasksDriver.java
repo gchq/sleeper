@@ -19,8 +19,13 @@ package sleeper.systemtest.drivers.ingest;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.Task;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.SplitIntoBatches;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
@@ -28,18 +33,21 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatusFormat;
 
 public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final DeployedSystemTestResources systemTest;
     private final SystemTestInstanceContext instance;
     private final EcsClient ecsClient;
+    private final SqsClient sqsClient;
 
     public AwsDataGenerationTasksDriver(
             DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, EcsClient ecsClient) {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = ecsClient;
+        this.sqsClient = null;
     }
 
     public void runDataGenerationTasks(PollWithRetries poll) {
@@ -64,5 +72,24 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
         new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
                 .pollUntilFinished(poll);
+    }
+
+    @Override
+    public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs) {
+        SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
+        for (List<SystemTestDataGenerationJob> batch : SplitIntoBatches.splitListIntoBatchesOf(10, jobs)) {
+            List<SendMessageBatchRequestEntry> entries = batch.stream()
+                    .map(job -> SendMessageBatchRequestEntry.builder()
+                            .id(job.getJobId())
+                            .messageBody(serDe.toJson(job))
+                            .build())
+                    .toList();
+
+            sqsClient.sendMessageBatch(builder -> builder
+                    .queueUrl(systemTest.getProperties().get(SYSTEM_TEST_JOBS_QUEUE_URL))
+                    .entries(entries));
+        }
+
+        //Create ecs tasks to read the jobs from the queue and write the data.
     }
 }

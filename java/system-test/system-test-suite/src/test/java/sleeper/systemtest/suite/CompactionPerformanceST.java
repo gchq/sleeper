@@ -59,6 +59,8 @@ public class CompactionPerformanceST {
     void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
+        //TODO Define some number of jobs, take a number of data generatrion jobs to run, consumer to configure builder on job
+        //Still need PollWithRetires
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.setEnum(INGEST_MODE, DIRECT);
             properties.setNumber(NUMBER_OF_WRITERS, 110);
