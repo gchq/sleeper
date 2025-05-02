@@ -32,4 +32,4 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "-------------------------------------------------------"
 echo "Taking table offline"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.TakeTableOffline "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.update.TakeTableOffline "$@"
