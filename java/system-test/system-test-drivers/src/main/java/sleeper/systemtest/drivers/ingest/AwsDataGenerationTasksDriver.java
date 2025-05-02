@@ -47,38 +47,41 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
         this.sqsClient = clients.getSqsV2();
     }
 
+    @Override
     public void runDataGenerationTasks(PollWithRetries poll) {
         List<Task> tasks = startTasks();
+        waitForTasks(tasks, poll);
+    }
+
+    @Override
+    public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
+        jobSender().sendJobsToQueue(jobs);
+
+        //Create ecs tasks to read the jobs from the queue and write the data.
+    }
+
+    private List<Task> startTasks() {
+        List<RunTaskResponse> responses = taskStarter().run();
+        return responses.stream()
+                .flatMap(response -> response.tasks().stream())
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private void waitForTasks(List<Task> tasks, PollWithRetries poll) {
         try {
-            waitForTasks(tasks, poll);
+            new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
+                    .pollUntilFinished(poll);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
 
-    private List<Task> startTasks() {
-        List<RunTaskResponse> responses = new RunWriteRandomDataTaskOnECS(
-                instance.getInstanceProperties(), systemTest.getProperties(), ecsClient)
-                .run();
-        return responses.stream()
-                .flatMap(response -> response.tasks().stream())
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    private void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
-        new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
-                .pollUntilFinished(poll);
-    }
-
-    @Override
-    public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs) {
-        jobSender().sendJobsToQueue(jobs);
-
-        //Create ecs tasks to read the jobs from the queue and write the data.
-    }
-
     private SystemTestDataGenerationJobSender jobSender() {
         return new SystemTestDataGenerationJobSender(systemTest.getProperties(), sqsClient);
+    }
+
+    private RunWriteRandomDataTaskOnECS taskStarter() {
+        return new RunWriteRandomDataTaskOnECS(instance.getInstanceProperties(), systemTest.getProperties(), ecsClient);
     }
 }

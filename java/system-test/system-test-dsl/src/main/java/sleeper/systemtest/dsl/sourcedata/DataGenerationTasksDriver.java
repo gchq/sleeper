@@ -25,5 +25,5 @@ public interface DataGenerationTasksDriver {
 
     void runDataGenerationTasks(PollWithRetries poll);
 
-    void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs);
+    void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll);
 }
