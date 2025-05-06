@@ -27,6 +27,7 @@ import software.amazon.awssdk.transfer.s3.model.Upload;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
@@ -36,6 +37,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BATCH_SIZE;
 
 /**
@@ -67,17 +69,34 @@ public class StateStoreArrowFileStoreV2 {
     public void savePartitions(String objectKey, Collection<Partition> partitions) throws IOException {
         LOGGER.info("Writing {} partitions to {}", partitions.size(), objectKey);
         BlockingOutputStreamAsyncRequestBody requestBody = BlockingOutputStreamAsyncRequestBody.builder().build();
-        Upload upload = s3TransferManager.upload(request -> request
-                .putObjectRequest(put -> put
-                        .bucket(instanceProperties.get(DATA_BUCKET))
-                        .key(objectKey))
-                .requestBody(requestBody));
+        Upload upload = startUpload(objectKey, requestBody);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(requestBody.outputStream())) {
             StateStorePartitionsArrowFormat.WriteResult result = StateStorePartitionsArrowFormat.write(
                     partitions, allocator, channel, tableProperties.getInt(PARTITIONS_SNAPSHOT_BATCH_SIZE));
             LOGGER.info("Wrote {} partitions in {} Arrow record batches, to {}",
                     partitions.size(), result.numBatches(), objectKey);
+        }
+        upload.completionFuture().join();
+    }
+
+    /**
+     * Saves the state of files in a Sleeper table to an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket to write the file to
+     * @param  files       the state
+     * @throws IOException if the file could not be written
+     */
+    public void saveFiles(String objectKey, StateStoreFiles files) throws IOException {
+        LOGGER.info("Writing {} files to {}", files.referencedAndUnreferenced().size(), objectKey);
+        BlockingOutputStreamAsyncRequestBody requestBody = BlockingOutputStreamAsyncRequestBody.builder().build();
+        Upload upload = startUpload(objectKey, requestBody);
+        try (BufferAllocator allocator = new RootAllocator();
+                WritableByteChannel channel = Channels.newChannel(requestBody.outputStream())) {
+            StateStoreFilesArrowFormat.WriteResult result = StateStoreFilesArrowFormat.write(
+                    files, allocator, channel, tableProperties.getInt(FILES_SNAPSHOT_BATCH_SIZE));
+            LOGGER.info("Wrote {} files with {} references in {} Arrow record batches, to {}",
+                    files.referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), objectKey);
         }
         upload.completionFuture().join();
     }
@@ -103,5 +122,13 @@ public class StateStoreArrowFileStoreV2 {
                         return result.partitions();
                     }
                 });
+    }
+
+    private Upload startUpload(String objectKey, BlockingOutputStreamAsyncRequestBody requestBody) {
+        return s3TransferManager.upload(request -> request
+                .putObjectRequest(put -> put
+                        .bucket(instanceProperties.get(DATA_BUCKET))
+                        .key(objectKey))
+                .requestBody(requestBody));
     }
 }
