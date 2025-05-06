@@ -21,6 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -29,6 +33,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
 public class DeployedSystemTestResources {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSystemTestResources.class);
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentDriver driver;
     private SystemTestStandaloneProperties properties;
@@ -48,19 +53,29 @@ public class DeployedSystemTestResources {
         return properties;
     }
 
-    public void deployIfMissing() throws InterruptedException {
-        if (properties != null) {
+    public void deployIfMissing() throws InterruptedException, ExecutionException {
+        if (isDeployed()) {
             return;
         }
+        Future<?> future = executor.submit(() -> {
+            if (isDeployed()) {
+                return;
+            }
+            try {
+                deployIfMissingNoFailureTracking();
+            } catch (RuntimeException | InterruptedException e) {
+                failure = new InstanceDidNotDeployException(parameters.getSystemTestShortId(), e);
+                throw failure;
+            }
+        });
+        future.get();
+    }
+
+    private boolean isDeployed() {
         if (failure != null) {
             throw failure;
         }
-        try {
-            deployIfMissingNoFailureTracking();
-        } catch (RuntimeException | InterruptedException e) {
-            failure = new InstanceDidNotDeployException(parameters.getSystemTestShortId(), e);
-            throw e;
-        }
+        return properties != null;
     }
 
     public void resetProperties() {
