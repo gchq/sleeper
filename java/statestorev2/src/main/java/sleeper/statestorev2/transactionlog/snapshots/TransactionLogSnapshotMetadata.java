@@ -120,7 +120,7 @@ public class TransactionLogSnapshotMetadata {
      */
     public String getObjectKey() {
         int schemeEnd = path.indexOf("://");
-        int objectKeyStart = path.indexOf("/", schemeEnd + 3);
+        int objectKeyStart = path.indexOf("/", schemeEnd + 3) + 1;
         return path.substring(objectKeyStart);
     }
 
