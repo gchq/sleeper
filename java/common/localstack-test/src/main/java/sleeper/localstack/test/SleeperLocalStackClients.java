@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -53,7 +54,8 @@ public class SleeperLocalStackClients {
     public static final AWSSecurityTokenService STS_CLIENT = buildAwsV1Client(CONTAINER, Service.STS, AWSSecurityTokenServiceClientBuilder.standard());
     public static final AmazonCloudWatch CLOUDWATCH_CLIENT = buildAwsV1Client(CONTAINER, Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
     public static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
-    public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3AsyncClient.builder());
+    public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3AsyncClient.crtBuilder());
+    public static final S3TransferManager S3_TRANSFER_MANAGER = S3TransferManager.builder().s3Client(S3_ASYNC_CLIENT).build();
     public static final DynamoDbClient DYNAMO_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
     public static final SqsClient SQS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
     public static final StsClient STS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.STS, StsClient.builder());

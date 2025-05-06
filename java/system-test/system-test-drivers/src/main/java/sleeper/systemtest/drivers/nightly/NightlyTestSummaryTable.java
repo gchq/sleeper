@@ -23,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.clients.util.table.TableField;
-import sleeper.clients.util.table.TableWriter;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableField;
+import sleeper.clients.util.tablewriter.TableWriter;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

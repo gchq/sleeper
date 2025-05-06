@@ -15,11 +15,11 @@
  */
 package sleeper.clients.deploy.properties;
 
-import sleeper.clients.util.table.TableField;
-import sleeper.clients.util.table.TableRow.Builder;
-import sleeper.clients.util.table.TableStructure;
-import sleeper.clients.util.table.TableWriter;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableField;
+import sleeper.clients.util.tablewriter.TableRow.Builder;
+import sleeper.clients.util.tablewriter.TableStructure;
+import sleeper.clients.util.tablewriter.TableWriter;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.properties.SleeperProperty;
 
 import java.util.List;

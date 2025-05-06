@@ -18,12 +18,12 @@ package sleeper.systemtest.drivers.compaction;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.clients.status.report.CompactionJobStatusReport;
-import sleeper.clients.status.report.CompactionTaskStatusReport;
-import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
-import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
-import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
-import sleeper.clients.status.report.job.query.RangeJobsQuery;
+import sleeper.clients.report.CompactionJobStatusReport;
+import sleeper.clients.report.CompactionTaskStatusReport;
+import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
+import sleeper.clients.report.compaction.task.CompactionTaskQuery;
+import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
+import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;

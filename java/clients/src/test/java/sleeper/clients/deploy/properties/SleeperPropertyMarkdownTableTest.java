@@ -18,7 +18,7 @@ package sleeper.clients.deploy.properties;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.clients.util.table.TableWriter;
+import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.CommonProperty;
 

@@ -42,7 +42,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>parquet</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>bulk-export-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>compaction-job-execution</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
