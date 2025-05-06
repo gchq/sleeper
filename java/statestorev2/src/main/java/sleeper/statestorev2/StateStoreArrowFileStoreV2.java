@@ -124,6 +124,29 @@ public class StateStoreArrowFileStoreV2 {
                 });
     }
 
+    /**
+     * Loads the state of files in a Sleeper table from an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             the files
+     * @throws IOException if the file could not be read
+     */
+    public StateStoreFiles loadFiles(String objectKey) throws IOException {
+        LOGGER.debug("Loading files from {}", objectKey);
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
+                        LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
+                                result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), objectKey);
+                        return result.files();
+                    }
+                });
+    }
+
     private Upload startUpload(String objectKey, BlockingOutputStreamAsyncRequestBody requestBody) {
         return s3TransferManager.upload(request -> request
                 .putObjectRequest(put -> put

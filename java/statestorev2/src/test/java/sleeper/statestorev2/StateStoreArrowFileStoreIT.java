@@ -78,7 +78,7 @@ public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
         store().saveFiles("test/file-references.arrow", files);
 
         // Then
-        //TODO write assertion
+        assertThat(store().loadFiles("test/file-references.arrow")).isEqualTo(files);
     }
 
     private StateStoreArrowFileStoreV2 store() {
