@@ -15,9 +15,9 @@
  */
 package sleeper.statestorev2;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -36,16 +36,16 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_U
  */
 public class StateStoreFactory implements StateStoreProvider.Factory {
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3;
-    private final AmazonDynamoDB dynamoDB;
+    private final S3Client s3;
+    private final DynamoDbClient dynamoDB;
     private final Configuration configuration;
     private final boolean committerProcess;
 
-    public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+    public StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, Configuration configuration) {
         this(instanceProperties, s3, dynamoDB, configuration, false);
     }
 
-    private StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration, boolean committerProcess) {
+    private StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, Configuration configuration, boolean committerProcess) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
@@ -69,7 +69,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  configuration      the Hadoop configuration
      * @return                    the factory
      */
-    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
+    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, Configuration configuration) {
         return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
     }
 
@@ -82,7 +82,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  configuration      the Hadoop configuration
      * @return                    the state store provider
      */
-    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration configuration) {
         return new StateStoreProvider(instanceProperties,
                 new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
     }

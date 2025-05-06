@@ -15,14 +15,12 @@
  */
 package sleeper.statestorev2;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -39,7 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Initialises a state store from a file of exported partitions. These can be created using ExportPartitions to export
@@ -65,8 +63,8 @@ public class InitialiseStateStoreFromExportedPartitions {
         String tableName = args[1];
         Path partitionsFile = Path.of(args[2]);
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        S3Client s3Client = buildAwsV2Client(S3Client.builder());
+        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
@@ -89,8 +87,8 @@ public class InitialiseStateStoreFromExportedPartitions {
 
             new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
         } finally {
-            dynamoDBClient.shutdown();
-            s3Client.shutdown();
+            dynamoDBClient.close();
+            s3Client.close();
         }
     }
 }

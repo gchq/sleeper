@@ -64,7 +64,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     public void setup() throws IOException {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         fs = FileSystem.get(hadoopConf);
     }
 
@@ -100,7 +100,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
 
     protected void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
-                instanceProperties, table, dynamoClient, () -> creationTime);
+                instanceProperties, table, dynamoClientV2, () -> creationTime);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
@@ -117,13 +117,13 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClient, hadoopConf)
+                instanceProperties, table, dynamoClientV2, hadoopConf)
                 .deleteSnapshots(deletionTime);
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClient, fileDeleter)
+                instanceProperties, table, dynamoClientV2, fileDeleter)
                 .deleteSnapshots(deletionTime);
     }
 
@@ -139,7 +139,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClient);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClientV2);
     }
 
     protected TableProperties createTable(String tableId, String tableName) {

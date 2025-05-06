@@ -15,14 +15,12 @@
  */
 package sleeper.statestorev2;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -34,8 +32,8 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.ReadSplitPoints.readSplitPoints;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Initialises a state store. If a file of split points is provided then these are used to create the initial
@@ -82,8 +80,8 @@ public class InitialiseStateStoreFromSplitPoints {
         String instanceId = args[0];
         String tableName = args[1];
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        S3Client s3Client = buildAwsV2Client(S3Client.builder());
+        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
@@ -100,8 +98,8 @@ public class InitialiseStateStoreFromSplitPoints {
 
             new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
         } finally {
-            dynamoDBClient.shutdown();
-            s3Client.shutdown();
+            dynamoDBClient.close();
+            s3Client.close();
         }
     }
 }
