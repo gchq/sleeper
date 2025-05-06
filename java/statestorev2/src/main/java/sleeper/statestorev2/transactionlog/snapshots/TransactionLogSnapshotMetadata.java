@@ -113,6 +113,17 @@ public class TransactionLogSnapshotMetadata {
         return path;
     }
 
+    /**
+     * Retrieves the S3 object key within the data bucket from the path.
+     *
+     * @return the object key
+     */
+    public String getObjectKey() {
+        int schemeEnd = path.indexOf("://");
+        int objectKeyStart = path.indexOf("/", schemeEnd + 3);
+        return path.substring(objectKeyStart);
+    }
+
     public SnapshotType getType() {
         return type;
     }

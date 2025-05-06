@@ -27,9 +27,13 @@ import software.amazon.awssdk.transfer.s3.model.Upload;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -145,6 +149,32 @@ public class StateStoreArrowFileStoreV2 {
                         return result.files();
                     }
                 });
+    }
+
+    /**
+     * Loads the state of a snapshot in a Sleeper table from an Arrow file.
+     *
+     * @param  metadata             metadata pointing to the file to read
+     * @return                      the snapshot
+     * @throws UncheckedIOException if the file could not be read
+     */
+    public TransactionLogSnapshot loadSnapshot(TransactionLogSnapshotMetadata metadata) {
+        try {
+            switch (metadata.getType()) {
+                case FILES:
+                    return new TransactionLogSnapshot(
+                            loadFiles(metadata.getObjectKey()),
+                            metadata.getTransactionNumber());
+                case PARTITIONS:
+                    return new TransactionLogSnapshot(
+                            StateStorePartitions.from(loadPartitions(metadata.getObjectKey())),
+                            metadata.getTransactionNumber());
+                default:
+                    throw new IllegalArgumentException("Unrecognised snapshot type: " + metadata.getType());
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed loading state for snapshot: " + metadata, e);
+        }
     }
 
     /**

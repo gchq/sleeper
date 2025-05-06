@@ -25,9 +25,12 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,8 +44,9 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOne
 
 public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
 
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
+    String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
 
     @BeforeEach
     void setUp() {
@@ -56,12 +60,14 @@ public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "aaa")
                 .buildList();
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(basePath, 1);
 
         // When
-        store().savePartitions("test/partitions.arrow", partitions);
+        store().savePartitions(metadata.getObjectKey(), partitions);
 
         // Then
-        assertThat(store().loadPartitions("test/partitions.arrow")).isEqualTo(partitions);
+        assertThat(store().loadSnapshot(metadata)).isEqualTo(
+                new TransactionLogSnapshot(StateStorePartitions.from(partitions), 1));
     }
 
     @Test
@@ -73,12 +79,13 @@ public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
 
         StateStoreFiles files = new StateStoreFiles();
         files.add(StateStoreFile.from(fileWithOneReference(fileRef, updateTime)));
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(basePath, 1);
 
         // When
-        store().saveFiles("test/file-references.arrow", files);
+        store().saveFiles(metadata.getObjectKey(), files);
 
         // Then
-        assertThat(store().loadFiles("test/file-references.arrow")).isEqualTo(files);
+        assertThat(store().loadSnapshot(metadata)).isEqualTo(new TransactionLogSnapshot(files, 1));
     }
 
     @Test
