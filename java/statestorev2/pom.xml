@@ -31,11 +31,11 @@
             <artifactId>aws-java-sdk-dynamodb</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
-        <!-- <dependency>
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sqs</artifactId>
             <version>${aws-java-sdk.version}</version>
-        </dependency> -->
+        </dependency>
         <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
