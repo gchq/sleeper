@@ -28,7 +28,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class DynamoDBTransactionLogSnapshotSaverBasePathTest {
+public class TransactionLogSnapshotMetadataBasePathTest {
 
     @Test
     void shouldCreateBasePathForTable() {
@@ -40,7 +40,7 @@ public class DynamoDBTransactionLogSnapshotSaverBasePathTest {
         tableProperties.set(TABLE_ID, "test-table-id");
 
         // When / Then
-        assertThat(DynamoDBTransactionLogSnapshotSaver.getBasePath(instanceProperties, tableProperties))
+        assertThat(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties))
                 .isEqualTo("file://test-bucket/test-table-id");
     }
 }

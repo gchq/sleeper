@@ -15,8 +15,15 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
+
 import java.time.Instant;
 import java.util.Objects;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 /**
  * Metadata about a snapshot derived from a transaction log, to be held in an index.
@@ -26,6 +33,20 @@ public class TransactionLogSnapshotMetadata {
     private final SnapshotType type;
     private final long transactionNumber;
     private final Instant createdTime;
+
+    /**
+     * Constructs the base path under which table data is held for a given Sleeper table. This should be passed into the
+     * other static constructors in this class.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @return                    the full path to the table data bucket (including the file system)
+     */
+    public static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return instanceProperties.get(FILE_SYSTEM)
+                + instanceProperties.get(DATA_BUCKET) + "/"
+                + tableProperties.get(TableProperty.TABLE_ID);
+    }
 
     /**
      * Creates metadata about a snapshot of files. Generates a path to the Arrow file in which the snapshot will be

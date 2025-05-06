@@ -51,7 +51,6 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.getBasePath;
 
 public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     @TempDir
@@ -152,11 +151,11 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forFiles(getBasePath(instanceProperties, table), transactionNumber);
+        return TransactionLogSnapshotMetadata.forFiles(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber);
     }
 
     protected TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forPartitions(getBasePath(instanceProperties, table), transactionNumber);
+        return TransactionLogSnapshotMetadata.forPartitions(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber);
     }
 
     protected String filesSnapshotPath(TableProperties table, long transactionNumber) {
@@ -184,7 +183,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected Stream<String> tableFiles(TableProperties tableProperties) throws Exception {
-        Path tableFilesPath = new Path(getBasePath(instanceProperties, tableProperties));
+        Path tableFilesPath = new Path(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties));
         if (!fs.exists(tableFilesPath)) {
             return Stream.empty();
         }
