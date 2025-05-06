@@ -16,7 +16,6 @@
 package sleeper.statestorev2;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -44,7 +43,6 @@ public class StateStoreArrowFilesStoreIT extends LocalStackTestBase {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldWritePartitionsToS3() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(tableProperties)

@@ -32,7 +32,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BATCH_SIZE;
 
 /**
@@ -64,7 +64,7 @@ public class StateStoreArrowFileStoreV2 {
         BlockingOutputStreamAsyncRequestBody requestBody = BlockingOutputStreamAsyncRequestBody.builder().build();
         Upload upload = s3TransferManager.upload(request -> request
                 .putObjectRequest(put -> put
-                        .bucket(instanceProperties.get(CONFIG_BUCKET))
+                        .bucket(instanceProperties.get(DATA_BUCKET))
                         .key(objectKey))
                 .requestBody(requestBody));
         try (BufferAllocator allocator = new RootAllocator();
