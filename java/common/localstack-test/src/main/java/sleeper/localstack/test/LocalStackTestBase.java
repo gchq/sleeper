@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +56,7 @@ public abstract class LocalStackTestBase {
     protected final AmazonCloudWatch cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
     protected final S3Client s3ClientV2 = SleeperLocalStackClients.S3_CLIENT_V2;
     protected final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
+    protected final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
     protected final DynamoDbClient dynamoClientV2 = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
     protected final SqsClient sqsClientV2 = SleeperLocalStackClients.SQS_CLIENT_V2;
     protected final StsClient stsClientV2 = SleeperLocalStackClients.STS_CLIENT_V2;

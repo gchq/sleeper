@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
@@ -33,9 +32,6 @@ import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
 import java.io.IOException;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 /**
  * Stores snapshots derived from a transaction log. Holds an index of snapshots in DynamoDB, and stores snapshot data in
@@ -67,7 +63,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         this.metadataSaver = metadataSaver;
         this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
         this.configuration = configuration;
-        this.basePath = getBasePath(instanceProperties, tableProperties);
+        this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
 
     /**
@@ -111,19 +107,6 @@ public class DynamoDBTransactionLogSnapshotSaver {
             fs.delete(path, false);
             throw e;
         }
-    }
-
-    /**
-     * Constructs the base path to a table data bucket.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  tableProperties    the table properties
-     * @return                    the full path to the table data bucket (including the file system)
-     */
-    public static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_ID);
     }
 
     /**
