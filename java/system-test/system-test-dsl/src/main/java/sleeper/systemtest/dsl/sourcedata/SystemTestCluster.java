@@ -76,16 +76,6 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster runDataGenerationTasks() {
-        return runDataGenerationTasks(pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
-    }
-
-    public SystemTestCluster runDataGenerationTasks(PollWithRetries poll) {
-        driver.runDataGenerationTasks(poll);
-        lastGeneratedFiles = sourceFiles.findGeneratedFiles();
-        return this;
-    }
-
     public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config) {
         return runDataGenerationJobs(numberOfJobs, config,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
