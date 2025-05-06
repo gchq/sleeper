@@ -24,13 +24,13 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.SyncJars;
-import sleeper.clients.deploy.UploadDockerImages;
-import sleeper.clients.deploy.UploadDockerImagesRequest;
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImagesRequest;
+import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -98,7 +98,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                     .version(SleeperVersion.getVersion())
                     .build().invoke(SYSTEM_TEST_STANDALONE,
                             CdkCommand.deploySystemTestStandalone(),
-                            ClientUtils::runCommandLogOutput);
+                            CommandUtils::runCommandLogOutput);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -121,7 +121,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                 .baseDockerDirectory(parameters.getDockerDirectory())
                 .jarsDirectory(parameters.getJarsDirectory())
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(ClientUtils::runCommandLogOutput,
+                .build().upload(CommandUtils::runCommandLogOutput,
                         UploadDockerImagesRequest.builder()
                                 .ecrPrefix(parameters.getSystemTestShortId())
                                 .account(parameters.getAccount())

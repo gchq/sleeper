@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.QueryWebSocketClient;
+import sleeper.clients.query.QueryWebSocketClient;
 import sleeper.core.record.Record;
 import sleeper.core.record.serialiser.RecordJSONSerDe;
 import sleeper.core.schema.Schema;

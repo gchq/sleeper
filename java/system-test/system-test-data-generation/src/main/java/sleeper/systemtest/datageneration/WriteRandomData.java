@@ -17,13 +17,10 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.util.Iterator;
 import java.util.stream.Stream;
-
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 
 public class WriteRandomData {
 
@@ -31,16 +28,10 @@ public class WriteRandomData {
     }
 
     public static Iterator<Record> createRecordIterator(
-            SystemTestProperties systemTestProperties, TableProperties tableProperties) {
-        return createRecordIterator(systemTestProperties.testPropertiesOnly(), tableProperties);
-    }
-
-    public static Iterator<Record> createRecordIterator(
-            SystemTestPropertyValues systemTestProperties, TableProperties tableProperties) {
-        RandomRecordSupplierConfig config = new RandomRecordSupplierConfig(systemTestProperties);
+            SystemTestDataGenerationJob job, TableProperties tableProperties) {
         return Stream
-                .generate(new RandomRecordSupplier(tableProperties.getSchema(), config))
-                .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_INGEST))
+                .generate(new RandomRecordSupplier(tableProperties.getSchema(), job.getRandomDataSettings()))
+                .limit(job.getRecordsPerIngest())
                 .iterator();
     }
 }

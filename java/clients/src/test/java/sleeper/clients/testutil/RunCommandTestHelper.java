@@ -15,11 +15,11 @@
  */
 package sleeper.clients.testutil;
 
-import sleeper.clients.util.Command;
-import sleeper.clients.util.CommandPipeline;
-import sleeper.clients.util.CommandPipelineResult;
-import sleeper.clients.util.CommandPipelineRunner;
-import sleeper.clients.util.CommandRunner;
+import sleeper.clients.util.command.Command;
+import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineResult;
+import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.clients.util.command.CommandRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;

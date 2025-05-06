@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 
-import sleeper.clients.status.report.statestore.QueryStateStoreCommitterLogs;
+import sleeper.clients.report.statestore.QueryStateStoreCommitterLogs;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;

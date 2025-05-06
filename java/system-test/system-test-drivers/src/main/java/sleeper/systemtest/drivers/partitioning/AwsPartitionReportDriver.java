@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.partitioning;
 
-import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
+import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.splitter.core.status.PartitionsStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;

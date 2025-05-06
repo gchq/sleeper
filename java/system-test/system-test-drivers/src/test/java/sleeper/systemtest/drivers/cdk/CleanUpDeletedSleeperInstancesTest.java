@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.cdk;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.validation.OptionalStack;
 
