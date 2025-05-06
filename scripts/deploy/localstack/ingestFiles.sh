@@ -32,7 +32,7 @@ echo "Building ingest-runner docker image"
 docker build -t "$INGEST_TASK_IMAGE" "$DOCKER_DIR/ingest"
 
 echo "Uploading files to source bucket and sending ingest job to queue"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.SendFilesToIngest "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.localstack.SendFilesToIngest "$@"
 
 CONTAINER_NAME="sleeper-$INSTANCE_ID-ingest"
 echo "Running ingest task in docker."

@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.clients.QueryLambdaClient;
+import sleeper.clients.query.QueryLambdaClient;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;

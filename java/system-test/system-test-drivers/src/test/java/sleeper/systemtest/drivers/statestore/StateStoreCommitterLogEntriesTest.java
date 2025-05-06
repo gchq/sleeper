@@ -17,8 +17,8 @@ package sleeper.systemtest.drivers.statestore;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.status.report.statestore.StateStoreCommitSummary;
-import sleeper.clients.status.report.statestore.StateStoreCommitterRunStarted;
+import sleeper.clients.report.statestore.StateStoreCommitSummary;
+import sleeper.clients.report.statestore.StateStoreCommitterRunStarted;
 
 import java.time.Instant;
 import java.util.List;

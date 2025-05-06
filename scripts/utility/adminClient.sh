@@ -26,4 +26,4 @@ VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" \
   --add-opens java.base/java.nio=ALL-UNNAMED \
-  sleeper.clients.AdminClient "${SCRIPTS_DIR}" "$@"
+  sleeper.clients.admin.AdminClient "${SCRIPTS_DIR}" "$@"
