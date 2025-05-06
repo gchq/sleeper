@@ -16,6 +16,9 @@
 
 package sleeper.ingest.batcher.submitter;
 
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,14 +29,18 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
+import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
@@ -52,6 +59,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     void setup() {
         tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         createBucket(testBucket);
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
     }
 
     @Nested
@@ -259,7 +267,6 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            // Check if DLQ is not empty
         }
 
         @Test
@@ -275,6 +282,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(receiveDeadLetters()).isNotEmpty();
         }
 
         @Test
@@ -290,6 +298,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(receiveDeadLetters()).isNotEmpty();
         }
 
         @Test
@@ -319,4 +328,14 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                 .tableId(TEST_TABLE_ID)
                 .receivedTime(RECEIVED_TIME).build();
     }
+
+    private List<IngestBatcherSubmitRequest> receiveDeadLetters() {
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
+                .withMaxNumberOfMessages(10));
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(new IngestBatcherSubmitRequestSerDe()::fromJson).toList();
+    }
+
 }
