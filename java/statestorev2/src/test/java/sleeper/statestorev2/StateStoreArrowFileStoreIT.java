@@ -39,7 +39,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOneReference;
 
-public class StateStoreArrowFilesStoreIT extends LocalStackTestBase {
+public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
@@ -69,9 +69,9 @@ public class StateStoreArrowFilesStoreIT extends LocalStackTestBase {
         // Given
         FileReferenceFactory fileFactory = FileReferenceFactory.forSinglePartition("test-partition", tableProperties);
         FileReference fileRef = fileFactory.rootFile("test-file", 10);
-        StateStoreFiles files = new StateStoreFiles();
         Instant updateTime = Instant.parse("2025-05-06T13:36:00Z");
 
+        StateStoreFiles files = new StateStoreFiles();
         files.add(StateStoreFile.from(fileWithOneReference(fileRef, updateTime)));
 
         // When
