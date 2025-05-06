@@ -81,6 +81,18 @@ public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
         assertThat(store().loadFiles("test/file-references.arrow")).isEqualTo(files);
     }
 
+    @Test
+    void shouldFindEmptyFile() throws Exception {
+        // Given
+        StateStoreFiles files = new StateStoreFiles();
+
+        // When
+        store().saveFiles("test/file-references.arrow", files);
+
+        // Then
+        assertThat(store().isEmpty("test/file-references.arrow")).isTrue();
+    }
+
     private StateStoreArrowFileStoreV2 store() {
         return new StateStoreArrowFileStoreV2(instanceProperties, tableProperties, s3ClientV2, s3TransferManager);
     }

@@ -147,6 +147,25 @@ public class StateStoreArrowFileStoreV2 {
                 });
     }
 
+    /**
+     * Checks if a file contains no Sleeper files or partitions. This checks if the file is empty.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             true if the file is empty
+     * @throws IOException if the file could not be read
+     */
+    public boolean isEmpty(String objectKey) throws IOException {
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        return ArrowFormatUtils.isEmpty(allocator, channel);
+                    }
+                });
+    }
+
     private Upload startUpload(String objectKey, BlockingOutputStreamAsyncRequestBody requestBody) {
         return s3TransferManager.upload(request -> request
                 .putObjectRequest(put -> put
