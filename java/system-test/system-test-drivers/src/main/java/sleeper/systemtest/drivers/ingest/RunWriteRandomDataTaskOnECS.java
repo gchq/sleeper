@@ -90,10 +90,6 @@ public class RunWriteRandomDataTaskOnECS {
                 systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 
-    public List<RunTaskResponse> run() {
-        return runTasks(systemTestProperties.getInt(NUMBER_OF_WRITERS));
-    }
-
     public List<RunTaskResponse> runTasks(int numberOfTasks) {
 
         ContainerOverride containerOverride = ContainerOverride.builder()
@@ -144,7 +140,7 @@ public class RunWriteRandomDataTaskOnECS {
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient);
 
             jobSender.sendJobsToQueue(SystemTestDataGenerationJob.getDefaultJobs(systemTestProperties, tableProperties));
-            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.run();
+            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.runTasks(systemTestProperties.getInt(NUMBER_OF_WRITERS));
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
             }
