@@ -26,6 +26,7 @@ on:
       - 'java/statestore-committer-core/**'
       - 'java/statestore-lambda/**'
       - 'java/statestore/**'
+      - 'java/statestorev2/**'
       - 'java/metrics/**'
       - 'java/compaction/compaction-tracker/**'
       - 'java/compaction/compaction-core/**'
