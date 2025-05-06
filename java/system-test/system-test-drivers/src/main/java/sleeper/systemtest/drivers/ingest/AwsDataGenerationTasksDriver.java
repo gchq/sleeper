@@ -48,12 +48,6 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     }
 
     @Override
-    public void runDataGenerationTasks(PollWithRetries poll) {
-        List<Task> tasks = null;
-        waitForTasks(tasks, poll);
-    }
-
-    @Override
     public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
         jobSender().sendJobsToQueue(jobs);
 

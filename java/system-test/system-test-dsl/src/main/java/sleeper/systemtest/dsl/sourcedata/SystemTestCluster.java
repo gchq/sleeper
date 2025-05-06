@@ -92,6 +92,7 @@ public class SystemTestCluster {
                 .toList();
 
         driver.runDataGenerationJobs(jobs, poll);
+        lastGeneratedFiles = sourceFiles.findGeneratedFiles();
         return this;
     }
 
