@@ -27,6 +27,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -52,10 +53,13 @@ public class StateStoreArrowFilesStoreIT extends LocalStackTestBase {
 
         // When
         store().savePartitions("test/partitions.arrow", partitions);
+
+        // Then
+        assertThat(store().loadPartitions("test/partitions.arrow")).isEqualTo(partitions);
     }
 
     private StateStoreArrowFileStoreV2 store() {
-        return new StateStoreArrowFileStoreV2(instanceProperties, tableProperties, s3TransferManager);
+        return new StateStoreArrowFileStoreV2(instanceProperties, tableProperties, s3ClientV2, s3TransferManager);
     }
 
 }

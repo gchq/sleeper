@@ -20,6 +20,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.async.BlockingOutputStreamAsyncRequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.Upload;
 
@@ -29,8 +30,10 @@ import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
+import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BATCH_SIZE;
@@ -43,12 +46,14 @@ public class StateStoreArrowFileStoreV2 {
 
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
+    private final S3Client s3Client;
     private final S3TransferManager s3TransferManager;
 
     public StateStoreArrowFileStoreV2(
-            InstanceProperties instanceProperties, TableProperties tableProperties, S3TransferManager s3TransferManager) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
+        this.s3Client = s3Client;
         this.s3TransferManager = s3TransferManager;
     }
 
@@ -75,5 +80,28 @@ public class StateStoreArrowFileStoreV2 {
                     partitions.size(), result.numBatches(), objectKey);
         }
         upload.completionFuture().join();
+    }
+
+    /**
+     * Loads the state of partitions in a Sleeper table from an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             the partitions
+     * @throws IOException if the file could not be read
+     */
+    public List<Partition> loadPartitions(String objectKey) throws IOException {
+        LOGGER.debug("Loading partitions from {}", objectKey);
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
+                        LOGGER.debug("Loaded {} partitions in {} Arrow record batches, from {}",
+                                result.partitions().size(), result.numBatches(), objectKey);
+                        return result.partitions();
+                    }
+                });
     }
 }
