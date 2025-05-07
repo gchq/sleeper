@@ -8,7 +8,7 @@ The Rust code includes unit tests and integration tests. We use the built-in tes
 We also have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
 the [system tests guide](system-tests.md#manual-testing).
 
-We'll establish definitions of types of test, and talk about when we use them.
+We'll establish definitions of the different types of test, and talk about when and how we use them.
 
 ### Definitions
 
@@ -45,8 +45,8 @@ and test properties such as performance and throughput.
 ### Design techniques
 
 We try to use test driven development (TDD) whenever possible. We use tests to define the behaviour of the system,
-writing all tests in the style of behaviour driven development (BDD). We use the following resources to define this
-process:
+writing all tests in the style of behaviour driven development (BDD). We use the definitions of this found in the
+following resources:
 
 - [Uncle Bob's Three Rules of TDD](http://www.butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd)
 - [Kent Beck's Canon TDD](https://tidyfirst.substack.com/p/canon-tdd)
