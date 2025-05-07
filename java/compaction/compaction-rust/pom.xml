@@ -83,7 +83,7 @@
         </dependency>
     </dependencies>
     <build>
-        <plugins>
+       <plugins>
             <!-- Resources plugin to copy all built native libs into JAR file -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -115,12 +115,12 @@
     </build>
     <profiles>
         <profile>
-            <activation>
-                <property>
-                    <name>skipRust</name>
-                    <value>!true</value>
-                </property>
-            </activation>
+        <activation>
+            <property>
+                <name>skipRust</name>
+                <value>!true</value>
+            </property>
+        </activation>
             <id>rust</id>
             <build>
                 <plugins>
@@ -129,8 +129,7 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${exec.plugin.version}</version>
                         <executions>
-                            <!-- You need one execution per cross target you are building. Make sure
-                            you add
+                            <!-- You need one execution per cross target you are building. Make sure you add
                             the appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux x86_64)</id>
@@ -139,8 +138,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
+                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
@@ -158,8 +156,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
+                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
