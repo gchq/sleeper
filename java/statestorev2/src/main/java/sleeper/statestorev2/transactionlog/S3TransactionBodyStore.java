@@ -18,9 +18,9 @@ package sleeper.statestorev2.transactionlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -31,8 +31,6 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.util.LoggedDuration;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -107,16 +105,11 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     public <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType) {
         LOGGER.debug("Reading large {} transaction from data bucket at {}", transactionType, key);
 
-        try {
-            String body = new String(s3Client.getObject(GetObjectRequest.builder()
-                    .bucket(instanceProperties.get(DATA_BUCKET))
-                    .key(key)
-                    .build())
-                    .readAllBytes(), StandardCharsets.UTF_8);
-            return (T) serDeProvider.getByTableId(tableId).toTransaction(transactionType, body);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to parse response from geObjectRequest for: " + instanceProperties.get(DATA_BUCKET) + ", " + key);
-        }
+        String body = s3Client.getObject(
+                builder -> builder.bucket(instanceProperties.get(DATA_BUCKET)).key(key),
+                ResponseTransformer.toBytes())
+                .asUtf8String();
+        return (T) serDeProvider.getByTableId(tableId).toTransaction(transactionType, body);
     }
 
     /**
