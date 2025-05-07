@@ -30,7 +30,8 @@
     <dependencies>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
+            <artifactId>aws-java-sdk-dynamodb</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
