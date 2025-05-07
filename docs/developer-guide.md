@@ -207,7 +207,7 @@ specific part of the code. We try to remain open to alternative approaches if th
 
 #### Ordering within a class
 
-We try to keep to this ordering of elements in a typical class declaration:
+We try to keep to this ordering of elements in a class declaration:
 
 1. Static fields
 2. Instance fields
