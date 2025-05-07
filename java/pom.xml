@@ -26,6 +26,7 @@
     <modules>
         <module>core</module>
         <module>ingest</module>
+        <module>ingestV2</module>
         <module>parquet</module>
         <module>clients</module>
         <module>statestore</module>
