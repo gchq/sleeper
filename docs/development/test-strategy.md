@@ -1,7 +1,9 @@
 Test Strategy
 =============
 
-The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+The Java code includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+
+The Rust code includes unit tests and integration tests. We use the built-in test framework.
 
 We also have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
 the [system tests guide](system-tests.md#manual-testing).
