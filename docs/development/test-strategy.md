@@ -12,9 +12,9 @@ We'll establish definitions of the different types of test, and talk about when 
 
 ### Definitions
 
-A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
+A unit test is any test that runs entirely in-memory without any I/O operations (e.g. file system or network calls).
 If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
-should be a particular behaviour or scenario, rather than eg. a specific method.
+should be a particular behaviour or scenario, rather than e.g. a specific method.
 
 A system test is a test that works with a deployed instance of Sleeper. These are JUnit tests found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
