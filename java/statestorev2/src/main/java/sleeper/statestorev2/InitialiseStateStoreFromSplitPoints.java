@@ -80,9 +80,8 @@ public class InitialiseStateStoreFromSplitPoints {
         String instanceId = args[0];
         String tableName = args[1];
 
-        S3Client s3Client = buildAwsV2Client(S3Client.builder());
-        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
@@ -97,9 +96,6 @@ public class InitialiseStateStoreFromSplitPoints {
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
 
             new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
-        } finally {
-            dynamoDBClient.close();
-            s3Client.close();
         }
     }
 }

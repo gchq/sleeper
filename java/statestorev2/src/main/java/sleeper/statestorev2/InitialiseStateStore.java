@@ -50,9 +50,8 @@ public class InitialiseStateStore {
         String instanceId = args[0];
         String tableName = args[1];
 
-        S3Client s3Client = buildAwsV2Client(S3Client.builder());
-        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
@@ -61,9 +60,6 @@ public class InitialiseStateStore {
             StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
 
             InitialisePartitionsTransaction.singlePartition(tableProperties.getSchema()).synchronousCommit(stateStore);
-        } finally {
-            dynamoDBClient.close();
-            s3Client.close();
         }
     }
 }

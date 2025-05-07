@@ -63,9 +63,8 @@ public class InitialiseStateStoreFromExportedPartitions {
         String tableName = args[1];
         Path partitionsFile = Path.of(args[2]);
 
-        S3Client s3Client = buildAwsV2Client(S3Client.builder());
-        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
@@ -86,9 +85,6 @@ public class InitialiseStateStoreFromExportedPartitions {
             System.out.println("Read " + partitions.size() + " partitions from file");
 
             new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
-        } finally {
-            dynamoDBClient.close();
-            s3Client.close();
         }
     }
 }
