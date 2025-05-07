@@ -72,7 +72,7 @@ public class DeployedSystemTestResources {
         return properties != null;
     }
 
-    public void resetProperties() {
+    private void resetProperties() {
         properties.getPropertiesIndex().getUserDefined().stream()
                 .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
                 .forEach(properties::unset);
@@ -90,6 +90,7 @@ public class DeployedSystemTestResources {
             driver.redeploy(properties);
             properties = driver.loadProperties();
         }
+        resetProperties();
     }
 
     private boolean isRedeployNeeded() {
