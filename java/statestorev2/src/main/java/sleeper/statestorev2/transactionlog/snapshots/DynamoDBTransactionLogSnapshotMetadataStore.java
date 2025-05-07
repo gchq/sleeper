@@ -294,8 +294,9 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         deleteAllSnapshots(SnapshotType.FILES);
         deleteAllSnapshots(SnapshotType.PARTITIONS);
         dynamo.deleteItem(
-                DeleteItemRequest.builder().tableName(latestSnapshotsTable)
-                        .expressionAttributeValues(new DynamoDBRecordBuilder()
+                DeleteItemRequest.builder()
+                        .tableName(latestSnapshotsTable)
+                        .key(new DynamoDBRecordBuilder()
                                 .string(TABLE_ID, sleeperTableId)
                                 .build())
                         .build());
