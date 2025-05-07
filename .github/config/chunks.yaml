@@ -73,14 +73,7 @@ chunks:
       - bulk-import/bulk-import-starter
       - bulk-import/bulk-import-runner
       - ingest/ingest-runner
-      - ingestV2/ingest-core
       - ingestV2/ingest-tracker
-      - ingestV2/ingest-starter
-      - ingestV2/ingest-batcher-core
-      - ingestV2/ingest-batcher-store
-      - ingestV2/ingest-batcher-submitter
-      - ingestV2/ingest-batcher-job-creator
-      - ingestV2/ingest-runner
   query:
     name: Query
     workflow: chunk-query.yaml
