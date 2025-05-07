@@ -20,6 +20,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
 public class LocalStackAwsV2ClientHelper {
 
@@ -27,6 +29,15 @@ public class LocalStackAwsV2ClientHelper {
     }
 
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
+        return builder
+                .endpointOverride(localStackContainer.getEndpointOverride(service))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
+                .region(Region.of(localStackContainer.getRegion()))
+                .build();
+    }
+
+    public static S3AsyncClient buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, S3CrtAsyncClientBuilder builder) {
         return builder
                 .endpointOverride(localStackContainer.getEndpointOverride(service))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(

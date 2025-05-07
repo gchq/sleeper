@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.bulkimport.starter.testutil.TestResources.exampleString;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
@@ -89,6 +90,7 @@ class EmrPlatformExecutorWiremockIT {
     void setUp() {
         instanceProperties.set(ID, "test-instance");
         instanceProperties.set(CONFIG_BUCKET, "config-bucket");
+        instanceProperties.set(JARS_BUCKET, "jars-bucket");
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY, "16g");
         instanceProperties.set(BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY, "16g");

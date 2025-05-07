@@ -39,7 +39,7 @@ public class RustBridge {
     private static final JniExtractor EXTRACTOR = NativeLoader.getJniExtractor();
 
     /** Paths in the JAR file where a native library may have been placed. */
-    private static final String[] LIB_PATHS = {"natives/release",
+    private static final String[] LIB_PATHS = {
         "natives/x86_64-unknown-linux-gnu/release", "natives/aarch64-unknown-linux-gnu/release",
         // Rust debug builds will place libraries in different locations
         "natives/x86_64-unknown-linux-gnu/debug", "natives/aarch64-unknown-linux-gnu/debug"};
