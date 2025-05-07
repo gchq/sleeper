@@ -44,19 +44,20 @@ and test properties such as performance and throughput.
 
 ### Design techniques
 
-We try to use test driven development (TDD) whenever possible. We use tests to define the behaviour of the system,
-writing all tests in the style of behaviour driven development (BDD). We use the definitions of this found in the
-following resources:
-
-- [Uncle Bob's Three Rules of TDD](http://www.butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd)
-- [Kent Beck's Canon TDD](https://tidyfirst.substack.com/p/canon-tdd)
-- [Dan North's BDD](https://dannorth.net/introducing-bdd/)
+We use tests to define the behaviour of the system, writing all tests in the style of behaviour driven development
+(BDD), as defined by Dan North in the following article: https://dannorth.net/introducing-bdd/
 
 We avoid mocking wherever possible, and prefer to use test fakes, e.g. implement an interface to a database with a
 wrapper around a HashMap.
 
 We use test helper methods to make tests as readable as possible, and as close as possible to a set of English
 given/when/then statements.
+
+We try to use test driven development (TDD) whenever possible, but we do not require this of all contributors. We use
+the definitions of this found in the following resources:
+
+- Uncle Bob's Three Rules of TDD: http://www.butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd
+- Kent Beck's Canon TDD: https://tidyfirst.substack.com/p/canon-tdd
 
 ### JUnit test classes
 
