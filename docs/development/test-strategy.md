@@ -19,8 +19,7 @@ should be a particular behaviour or scenario, rather than eg. a specific method.
 A system test is a test that works with a deployed instance of Sleeper. These are JUnit tests found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
 instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
-in the [system tests guide](system-tests.md#acceptance-tests). If you add a new feature, please add one or
-two simple cases to this test suite, as a complement to more detailed unit testing.
+in the [system tests guide](system-tests.md#acceptance-tests).
 
 An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
 external dependencies with Testcontainers, tests network calls with WireMock, or uses the local file system.
@@ -40,7 +39,8 @@ All code should be covered with unit tests or integration tests, with a few exce
 
 We also write system tests for all features that are not experimental. We keep the number of system tests per feature
 low, as these tests are relatively slow to run. They should verify that each feature is functional when deployed in AWS,
-and test properties such as performance and throughput.
+and test properties such as performance and throughput. When we add a new feature, we add one or two simple cases to
+this test suite, as a complement to more detailed unit testing.
 
 ### Design techniques
 
