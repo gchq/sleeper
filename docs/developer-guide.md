@@ -201,8 +201,8 @@ mvn clean compile checkstyle:check spotbugs:check
 
 ### Testing
 
-See the [test strategy](development/test-strategy.md) for information on the testing tools used in the project and how
-they are used.
+See the [test strategy](development/test-strategy.md) for how and when to write tests, as well as information on the
+testing tools used in the project.
 
 ### Coding conventions
 
