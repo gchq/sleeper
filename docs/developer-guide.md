@@ -9,12 +9,12 @@ Before you do any dev work on Sleeper it is worth reading the "Get your environm
 the [deployment guide](deployment-guide.md). Once you've built the system, exactly the same will apply here with a
 copy that you built yourself.
 
-### Install Prerequisite Software
+### Install prerequisite software
 
 There are a number of dependencies for building Sleeper, and a few options to set up a development environment with
 these available.
 
-#### Dev Containers
+#### Dev container
 
 The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
 the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
@@ -347,6 +347,6 @@ This is used during the release process to update the version number across the 
 See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
 the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
 
-## Release Process
+## Release process
 
 See the [release process guide](development/release-process.md) for instructions on how to publish a release of Sleeper.
