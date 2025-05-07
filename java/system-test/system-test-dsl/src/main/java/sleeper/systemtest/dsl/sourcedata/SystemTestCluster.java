@@ -23,7 +23,6 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -69,11 +68,6 @@ public class SystemTestCluster {
         waitForIngestJobs = instanceAdminDrivers.waitForIngest(context);
         waitForBulkImportJobs = instanceAdminDrivers.waitForBulkImport(context);
         pollDriver = instanceAdminDrivers.pollWithRetries();
-    }
-
-    public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
-        context.updateProperties(config);
-        return this;
     }
 
     public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config) {

@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
@@ -42,11 +41,6 @@ public class DeployedSystemTestResources {
     public DeployedSystemTestResources(SystemTestParameters parameters, SystemTestDeploymentDriver driver) {
         this.parameters = parameters;
         this.driver = driver;
-    }
-
-    public void updateProperties(Consumer<SystemTestStandaloneProperties> config) {
-        config.accept(properties);
-        driver.saveProperties(properties);
     }
 
     public SystemTestStandaloneProperties getProperties() {
@@ -79,9 +73,10 @@ public class DeployedSystemTestResources {
     }
 
     public void resetProperties() {
-        updateProperties(properties -> properties.getPropertiesIndex().getUserDefined().stream()
+        properties.getPropertiesIndex().getUserDefined().stream()
                 .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
-                .forEach(properties::unset));
+                .forEach(properties::unset);
+        driver.saveProperties(properties);
     }
 
     public boolean isSystemTestClusterEnabled() {
