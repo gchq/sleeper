@@ -47,6 +47,14 @@ public class DeployedSystemTestResources {
         return properties;
     }
 
+    public String getSystemTestBucketName() {
+        return properties.get(SYSTEM_TEST_BUCKET_NAME);
+    }
+
+    public boolean isSystemTestClusterEnabled() {
+        return parameters.isSystemTestClusterEnabled() && properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED);
+    }
+
     public void deployIfMissing() throws InterruptedException, ExecutionException {
         if (isDeployed()) {
             return;
@@ -70,17 +78,6 @@ public class DeployedSystemTestResources {
             throw failure;
         }
         return properties != null;
-    }
-
-    private void resetProperties() {
-        properties.getPropertiesIndex().getUserDefined().stream()
-                .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
-                .forEach(properties::unset);
-        driver.saveProperties(properties);
-    }
-
-    public boolean isSystemTestClusterEnabled() {
-        return parameters.isSystemTestClusterEnabled() && properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED);
     }
 
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
@@ -107,7 +104,10 @@ public class DeployedSystemTestResources {
         return redeployNeeded;
     }
 
-    public String getSystemTestBucketName() {
-        return properties.get(SYSTEM_TEST_BUCKET_NAME);
+    private void resetProperties() {
+        properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
+                .forEach(properties::unset);
+        driver.saveProperties(properties);
     }
 }
