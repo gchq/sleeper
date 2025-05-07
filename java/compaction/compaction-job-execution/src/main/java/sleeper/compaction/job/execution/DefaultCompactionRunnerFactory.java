@@ -55,6 +55,13 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
             runner = createJavaRunner();
         }
 
+        // Has an experimental DataFusion only iterator been specified? If so, make sure
+        // we are using the DataFusion compactor
+        if (job.getIteratorClassName().equals(CompactionJob.DATAFUSION_ITERATOR_NAME) && !(runner instanceof RustCompactionRunner)) {
+            throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
+                    + job.getId() + " table ID " + job.getTableId());
+        }
+
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
         return runner;
     }

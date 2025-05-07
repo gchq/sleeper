@@ -45,7 +45,9 @@ env_logger = { workspace = true }
 futures = { workspace = true }
 libc = { workspace = true }
 log = { workspace = true }
+nohash = { workspace = true }
 num-format = { workspace = true }
+num-traits = { workspace = true }
 object_store = { workspace = true, features = [ "aws" ] }
 rust_sketch = { path = "../rust_sketch" }
 thiserror = { workspace = true }
