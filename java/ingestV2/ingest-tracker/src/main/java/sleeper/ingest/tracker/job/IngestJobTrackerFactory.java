@@ -16,7 +16,7 @@
 
 package sleeper.ingest.tracker.job;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.AmazonDynamoDB;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;

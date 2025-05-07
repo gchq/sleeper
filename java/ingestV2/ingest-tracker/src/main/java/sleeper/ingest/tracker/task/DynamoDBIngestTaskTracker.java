@@ -16,18 +16,18 @@
 
 package sleeper.ingest.tracker.task;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResult;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResult;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
