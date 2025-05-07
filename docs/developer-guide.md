@@ -199,6 +199,31 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
+### Conventions
+
+There are a number of ways we tend to write and structure our code, where if we keep them consistent it might improve
+the readability of the codebase as a whole. We try to keep to these conventions unless there's a good reason within a
+specific part of the code. We try to remain open to alternative approaches if they improve maintainability.
+
+#### Ordering within a class
+
+We try to keep to this ordering of elements in a typical class declaration:
+
+1. Static fields
+2. Instance fields
+3. Constructors
+4. Static methods that return an instance of the class (static constructors)
+5. Static methods that return a builder of the class
+6. Other public static methods
+7. Public instance methods other than those mentioned below
+8. Private methods
+9. Public getter instance methods that return the value of a field with no other code
+10. In a builder, a build method that creates an instance of the class being built
+11. Implementations of equals, hashCode, toString when needed
+12. Nested classes/interfaces
+
+Within this ordering, methods should be in the order that they are expected to be used.
+
 ### Javadoc
 
 We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Javadoc should generally explain
