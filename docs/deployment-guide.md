@@ -508,7 +508,7 @@ That leaves the following stacks as optional:
 * `TableMetricsStack` - for creating CloudWatch metrics showing statistics such as the number of records in a table over
   time
 * `DashboardStack` - to create a CloudWatch dashboard showing recorded metrics
-* `BulkExportStack` - to export a whole table as parquete files
+* `BulkExportStack` - to export a whole table as parquet files
 
 The following stacks are optional and experimental:
 

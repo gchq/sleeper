@@ -12,7 +12,7 @@ Before performing a Bulk Export, ensure that the `BulkExportStack` has been depl
 
 ### Step 1: Submit a Bulk Export Query
 
-To initiate a Bulk Export, submit a **Bulk Export Query** to the SQS queue specified in the `BULK_EXPORT_QUEUE_URL` property. The query should specify the Sleeper table name or table id to be exported. If wanted an `exportId` can also be provided, if one isn't then one is genetated.
+To initiate a Bulk Export, submit a **Bulk Export Query** to the SQS queue specified in the `BULK_EXPORT_QUEUE_URL` property. The query should specify the Sleeper table name or table id to be exported. If wanted an `exportId` can also be provided, if one isn't then one is generated.
 
 The system will automatically split the query into smaller export tasks (Leaf Partition Bulk Export Queries) and process them.
 
@@ -34,7 +34,7 @@ Once the export query is submitted, the system will:
    - Process each export query using the existing compaction code. This will use the compaction code defined in the table properties. Either Java or Datafusion.
    - Save the results to the configured S3 bucket.
 
-Logs for the export process can be monitored in the ECS Bulk Export Cluster task logs or Cloud Watch.
+Logs for the export process can be monitored in the ECS Bulk Export Cluster task logs or CloudWatch.
 
 ## Where the Results Are Saved
 
