@@ -49,6 +49,6 @@ public class TransactionLogStateStoreTestBase extends LocalStackTestBase {
     }
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2, hadoopConf);
+        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2, s3TransferManager);
     }
 }

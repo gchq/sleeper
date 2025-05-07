@@ -111,7 +111,8 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
-                hadoopConf, latestSnapshotsLoader, snapshotSaver)
+                hadoopConf, s3ClientV2, s3TransferManager,
+                latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 

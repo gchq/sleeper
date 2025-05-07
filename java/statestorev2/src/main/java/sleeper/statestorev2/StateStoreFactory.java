@@ -15,9 +15,9 @@
  */
 package sleeper.statestorev2;
 
-import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -38,19 +38,19 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     private final InstanceProperties instanceProperties;
     private final S3Client s3;
     private final DynamoDbClient dynamoDB;
-    private final Configuration configuration;
     private final boolean committerProcess;
+    private final S3TransferManager s3TransferManager;
 
-    public StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, Configuration configuration) {
-        this(instanceProperties, s3, dynamoDB, configuration, false);
+    public StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, S3TransferManager s3TransferManager) {
+        this(instanceProperties, s3, dynamoDB, s3TransferManager, false);
     }
 
-    private StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, Configuration configuration, boolean committerProcess) {
+    private StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, S3TransferManager s3TransferManager, boolean committerProcess) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.configuration = configuration;
         this.committerProcess = committerProcess;
+        this.s3TransferManager = null;
     }
 
     /**
@@ -66,11 +66,11 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3                 the S3 client
      * @param  dynamoDB           the DynamoDB client
-     * @param  configuration      the Hadoop configuration
+     * @param  s3TransferManager  the S3 transfer manager
      * @return                    the factory
      */
-    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, Configuration configuration) {
-        return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
+    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, S3TransferManager s3TransferManager) {
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, s3TransferManager, true);
     }
 
     /**
@@ -79,12 +79,12 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3Client           the S3 client
      * @param  dynamoDBClient     the DynamoDB client
-     * @param  configuration      the Hadoop configuration
+     * @param  s3TransferManager  the s3 transfer manager
      * @return                    the state store provider
      */
-    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration configuration) {
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient, S3TransferManager s3TransferManager) {
         return new StateStoreProvider(instanceProperties,
-                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
+                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, s3TransferManager));
     }
 
     /**
@@ -98,7 +98,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
             return forCommitterProcess(committerProcess, tableProperties,
-                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)).build();
+                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, s3TransferManager)).build();
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
             return forCommitterProcess(committerProcess, tableProperties,

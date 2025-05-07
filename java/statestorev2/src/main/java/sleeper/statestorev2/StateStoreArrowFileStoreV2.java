@@ -48,7 +48,7 @@ import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BA
  * Saves and loads the state of a Sleeper table in Arrow files.
  */
 public class StateStoreArrowFileStoreV2 {
-    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStoreV2.class);
 
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;

@@ -21,13 +21,15 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.StateStoreArrowFileStoreV2;
 import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
@@ -41,27 +43,29 @@ public class DynamoDBTransactionLogSnapshotSaver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotSaver.class);
 
     private final SnapshotMetadataSaver metadataSaver;
-    private final StateStoreArrowFileStore fileStore;
+    private final StateStoreArrowFileStoreV2 fileStore;
     private final Configuration configuration;
     private final String basePath;
 
     public DynamoDBTransactionLogSnapshotSaver(
-            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo,
+            Configuration configuration, S3Client s3Client, S3TransferManager s3TransferManager) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
-                instanceProperties, tableProperties, configuration);
+                instanceProperties, tableProperties, configuration, s3Client, s3TransferManager);
     }
 
     private DynamoDBTransactionLogSnapshotSaver(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
+            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration, S3Client s3Client, S3TransferManager s3TransferManager) {
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration, s3Client, s3TransferManager);
     }
 
     DynamoDBTransactionLogSnapshotSaver(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration,
+            S3Client s3Client, S3TransferManager s3TransferManager) {
         this.metadataSaver = metadataSaver;
-        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
+        this.fileStore = new StateStoreArrowFileStoreV2(instanceProperties, tableProperties, s3Client, s3TransferManager);
         this.configuration = configuration;
         this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
