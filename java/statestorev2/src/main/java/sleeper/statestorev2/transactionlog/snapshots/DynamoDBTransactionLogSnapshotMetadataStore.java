@@ -328,14 +328,14 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     private Optional<TransactionLogSnapshotMetadata> getLatestSnapshotBefore(SnapshotType type, Instant time) {
-        return getSnapshotsBefore(type, time, request -> request.toBuilder()
+        return getSnapshotsBefore(type, time, request -> request
                 .scanIndexForward(false)
-                .limit(1).build())
+                .limit(1))
                 .findFirst();
     }
 
-    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, Instant time, Consumer<QueryRequest> config) {
-        QueryRequest request = QueryRequest.builder()
+    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, Instant time, Consumer<QueryRequest.Builder> config) {
+        QueryRequest.Builder request = QueryRequest.builder()
                 .tableName(allSnapshotsTable)
                 .keyConditionExpression("#TableIdAndType = :table_id_and_type")
                 .filterExpression("#UpdateTime < :expiry_time")
@@ -345,10 +345,9 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                 .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id_and_type", tableAndType(sleeperTableId, type))
                         .number(":expiry_time", time.toEpochMilli())
-                        .build())
-                .build();
+                        .build());
         config.accept(request);
-        return streamPagedItems(dynamo, request)
+        return streamPagedItems(dynamo, request.build())
                 .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem);
     }
 
