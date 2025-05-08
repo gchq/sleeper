@@ -7,7 +7,8 @@ allow you to deploy an instance, ingest some files, and run reports and scripts 
 
 In either case, currently you'll need to start by building the system. If you want to deploy locally, you'll need to
 build Sleeper locally. If you want to deploy to AWS you'll build Sleeper on a machine in AWS. The Sleeper CLI contains
-tools for either of these, built into Docker images.
+tools for either of these, built into Docker images. In the future we may publish pre-built artefacts that will make
+manual building unnecessary.
 
 ## Install Sleeper CLI
 
@@ -32,7 +33,8 @@ The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper 
 `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set AWS environment variables or
 configuration on the host machine, that will be propagated to the Docker container when you use `sleeper`.
 
-If you already have the CLI installed, you can upgrade to the latest version of the CLI using `sleeper cli upgrade`.
+You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
+build and deployment tools up to date.
 
 ## Deploy locally
 
