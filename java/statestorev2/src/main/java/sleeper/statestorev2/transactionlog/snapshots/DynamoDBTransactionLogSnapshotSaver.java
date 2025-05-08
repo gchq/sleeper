@@ -81,7 +81,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
                 basePath, snapshot.getTransactionNumber());
         StateStoreFiles state = snapshot.getState();
-        fileStore.saveFiles(metadata.getPath(), state);
+        fileStore.saveFiles(metadata.getObjectKey(), state);
         saveMetadata(metadata);
     }
 
@@ -97,7 +97,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
                 basePath, snapshot.getTransactionNumber());
         StateStorePartitions state = snapshot.getState();
-        fileStore.savePartitions(metadata.getPath(), state.all());
+        fileStore.savePartitions(metadata.getObjectKey(), state.all());
         saveMetadata(metadata);
     }
 

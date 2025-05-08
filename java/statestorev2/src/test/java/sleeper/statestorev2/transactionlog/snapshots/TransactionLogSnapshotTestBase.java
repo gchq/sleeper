@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -62,8 +61,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
 
     @BeforeEach
     public void setup() throws IOException {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
+        createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         fs = FileSystem.get(hadoopConf);
     }
