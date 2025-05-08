@@ -9,12 +9,12 @@ Before you do any dev work on Sleeper it is worth reading the "Get your environm
 the [deployment guide](deployment-guide.md). Once you've built the system, exactly the same will apply here with a
 copy that you built yourself.
 
-### Install Prerequisite Software
+### Install prerequisite software
 
 There are a number of dependencies for building Sleeper, and a few options to set up a development environment with
 these available.
 
-#### Dev Containers
+#### Dev container
 
 The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
 the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
@@ -199,6 +199,60 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
+### Testing
+
+The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+We also have a setup for manual testing against a deployed instance of Sleeper, documented in
+the [system tests guide](development/system-tests.md#manual-testing).
+
+A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
+If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
+should be a particular behaviour or scenario, rather than eg. a specific method.
+
+A system test is a test that works with a deployed instance of Sleeper. These can be found in the
+module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
+instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
+in the [system tests guide](development/system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
+cases to this test suite, as a complement to more detailed unit testing.
+
+An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
+external dependencies with TestContainers, tests network calls with WireMock, or uses the local file system.
+
+Unit tests should be in a class ending with Test, like MyFeatureTest. Integration tests should be in a class ending with
+IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
+for integration tests. System tests should be in a class ending with ST, like CompactionPerformanceST, and must be
+tagged with the annotation `SystemTest`. This means they will only be run as part of a system test suite, or directly.
+See the [system tests guide](development/system-tests.md#acceptance-tests).
+
+We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
+wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
+set of English given/when/then statements.
+
+## Conventions
+
+There are a number of ways we tend to write and structure our code, where if we keep them consistent it might improve
+the readability of the codebase as a whole. We try to keep to these conventions unless there's a good reason within a
+specific part of the code. We try to remain open to alternative approaches if they improve maintainability.
+
+### Ordering within a Java class
+
+We try to keep to this ordering of elements in a class declaration:
+
+1. Static fields
+2. Instance fields
+3. Constructors
+4. Static methods that return an instance of the class (static constructors)
+5. Static methods that return a builder of the class
+6. Other public static methods
+7. Public instance methods other than those mentioned below
+8. Private methods
+9. Public getter instance methods that return the value of a field with no other code
+10. In a builder, a build method that creates an instance of the class being built
+11. Implementations of equals, hashCode, toString when needed
+12. Nested classes/interfaces
+
+Within this ordering, methods should be in the order that they are expected to be used.
+
 ### Javadoc
 
 We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Javadoc should generally explain
@@ -254,36 +308,7 @@ public void process(String foo, String bar) {
 }
 ```
 
-### Testing
-
-The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
-We also have a setup for manual testing against a deployed instance of Sleeper, documented in
-the [system tests guide](development/system-tests.md#manual-testing).
-
-A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
-If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
-should be a particular behaviour or scenario, rather than eg. a specific method.
-
-A system test is a test that works with a deployed instance of Sleeper. These can be found in the
-module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
-instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
-in the [system tests guide](development/system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
-cases to this test suite, as a complement to more detailed unit testing.
-
-An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
-external dependencies with TestContainers, tests network calls with WireMock, or uses the local file system.
-
-Unit tests should be in a class ending with Test, like MyFeatureTest. Integration tests should be in a class ending with
-IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
-for integration tests. System tests should be in a class ending with ST, like CompactionPerformanceST, and must be
-tagged with the annotation `SystemTest`. This means they will only be run as part of a system test suite, or directly.
-See the [system tests guide](development/system-tests.md#acceptance-tests).
-
-We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
-wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
-set of English given/when/then statements.
-
-### Development scripts
+## Development scripts
 
 In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
 
@@ -322,6 +347,6 @@ This is used during the release process to update the version number across the 
 See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
 the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
 
-## Release Process
+## Release process
 
 See the [release process guide](development/release-process.md) for instructions on how to publish a release of Sleeper.
