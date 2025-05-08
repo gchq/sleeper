@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,15 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-[target.aarch64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:edge"
-
-[target.x86_64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge"
-
-[build]
-pre-build =  "./cross-prebuild.sh"
-
-[build.env]
-passthrough = ["CC=clang-20", "CXX=clang++-20"]
+apt-get update
+apt-get --assume-yes install libssl-dev wget lsb-release software-properties-common gnupg
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+./llvm.sh 20
