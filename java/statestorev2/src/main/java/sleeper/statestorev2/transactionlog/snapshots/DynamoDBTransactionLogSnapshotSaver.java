@@ -16,8 +16,6 @@
 package sleeper.statestorev2.transactionlog.snapshots;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -106,9 +104,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
             metadataSaver.save(metadata);
         } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot metadata to DynamoDB. Deleting snapshot file.");
-            Path path = new Path(metadata.getPath());
-            FileSystem fs = path.getFileSystem(configuration);
-            fs.delete(path, false);
+            fileStore.deleteSnapshotFile(metadata);
             throw e;
         }
     }
