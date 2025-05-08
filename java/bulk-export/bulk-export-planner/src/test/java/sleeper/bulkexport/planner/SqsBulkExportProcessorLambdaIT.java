@@ -15,11 +15,7 @@
  */
 package sleeper.bulkexport.planner;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,16 +33,12 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
 
     private InstanceProperties instanceProperties;
-    private AmazonS3 s3Client;
     private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
 
     @BeforeEach
     public void setUp() throws ObjectFactoryException {
-        s3Client = AmazonS3ClientBuilder.defaultClient();
-        instanceProperties = createInstance();
-        sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(AmazonSQSClientBuilder.defaultClient(),
-                s3Client,
-                AmazonDynamoDBClientBuilder.defaultClient(), instanceProperties.get(CONFIG_BUCKET));
+        creatInstanceProperties();
+        sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(sqsClient, s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test
@@ -68,10 +60,9 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
         return event;
     }
 
-    private InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
+    private void creatInstanceProperties() {
+        instanceProperties = createTestInstanceProperties();
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        return instanceProperties;
     }
 }
