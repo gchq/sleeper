@@ -27,7 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestorev2.StateStoreArrowFileStoreV2;
+import sleeper.statestorev2.StateStoreArrowFileStore;
 import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
@@ -41,7 +41,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotSaver.class);
 
     private final SnapshotMetadataSaver metadataSaver;
-    private final StateStoreArrowFileStoreV2 fileStore;
+    private final StateStoreArrowFileStore fileStore;
     private final Configuration configuration;
     private final String basePath;
 
@@ -63,7 +63,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration,
             S3Client s3Client, S3TransferManager s3TransferManager) {
         this.metadataSaver = metadataSaver;
-        this.fileStore = new StateStoreArrowFileStoreV2(instanceProperties, tableProperties, s3Client, s3TransferManager);
+        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
         this.configuration = configuration;
         this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
