@@ -106,52 +106,6 @@ public class StateStoreArrowFileStoreV2 {
     }
 
     /**
-     * Loads the state of partitions in a Sleeper table from an Arrow file.
-     *
-     * @param  objectKey   object key in the data bucket of the file to read
-     * @return             the partitions
-     * @throws IOException if the file could not be read
-     */
-    public List<Partition> loadPartitions(String objectKey) throws IOException {
-        LOGGER.debug("Loading partitions from {}", objectKey);
-        return s3Client.getObject(get -> get
-                .bucket(instanceProperties.get(DATA_BUCKET))
-                .key(objectKey),
-                (response, inputStream) -> {
-                    try (BufferAllocator allocator = new RootAllocator();
-                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
-                        StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
-                        LOGGER.debug("Loaded {} partitions in {} Arrow record batches, from {}",
-                                result.partitions().size(), result.numBatches(), objectKey);
-                        return result.partitions();
-                    }
-                });
-    }
-
-    /**
-     * Loads the state of files in a Sleeper table from an Arrow file.
-     *
-     * @param  objectKey   object key in the data bucket of the file to read
-     * @return             the files
-     * @throws IOException if the file could not be read
-     */
-    public StateStoreFiles loadFiles(String objectKey) throws IOException {
-        LOGGER.debug("Loading files from {}", objectKey);
-        return s3Client.getObject(get -> get
-                .bucket(instanceProperties.get(DATA_BUCKET))
-                .key(objectKey),
-                (response, inputStream) -> {
-                    try (BufferAllocator allocator = new RootAllocator();
-                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
-                        StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
-                        LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
-                                result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), objectKey);
-                        return result.files();
-                    }
-                });
-    }
-
-    /**
      * Loads the state of a snapshot in a Sleeper table from an Arrow file.
      *
      * @param  metadata             metadata pointing to the file to read
@@ -202,5 +156,51 @@ public class StateStoreArrowFileStoreV2 {
                         .bucket(instanceProperties.get(DATA_BUCKET))
                         .key(objectKey))
                 .requestBody(requestBody));
+    }
+
+    /**
+     * Loads the state of partitions in a Sleeper table from an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             the partitions
+     * @throws IOException if the file could not be read
+     */
+    private List<Partition> loadPartitions(String objectKey) throws IOException {
+        LOGGER.debug("Loading partitions from {}", objectKey);
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
+                        LOGGER.debug("Loaded {} partitions in {} Arrow record batches, from {}",
+                                result.partitions().size(), result.numBatches(), objectKey);
+                        return result.partitions();
+                    }
+                });
+    }
+
+    /**
+     * Loads the state of files in a Sleeper table from an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             the files
+     * @throws IOException if the file could not be read
+     */
+    private StateStoreFiles loadFiles(String objectKey) throws IOException {
+        LOGGER.debug("Loading files from {}", objectKey);
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
+                        LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
+                                result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), objectKey);
+                        return result.files();
+                    }
+                });
     }
 }
