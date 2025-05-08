@@ -52,7 +52,6 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     @TempDir
     private java.nio.file.Path tempDir;
-    private FileSystem fs;
     protected final Schema schema = createSchemaWithKey("key", new LongType());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -61,7 +60,6 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     public void setup() throws IOException {
         createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
-        fs = FileSystem.get(hadoopConf);
     }
 
     protected TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
