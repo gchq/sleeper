@@ -5,21 +5,17 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-## Deploy to Docker
+In either case, currently you'll need to start by building the system. The easiest way to do that reliably is with the
+Sleeper builder image, which you can access with the Sleeper CLI, or as a Dev Container.
 
-The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
-LocalStack version has very limited functionality in comparison to the AWS version, and can only handle small volumes of
-data. See the documentation on [deploying to localstack](usage/deploy-to-localstack.md) for more information.
+In the future we may publish pre-built installable artefacts. Currently the Sleeper CLI consists of Docker images with
+Sleeper's build dependencies, and tools to create a suitable environment for deployment in AWS. If you prefer to use a
+Dev Container, see the [developer guide](developer-guide.md).
 
-## Deploy to AWS
+If you want to deploy locally, you'll need to build Sleeper locally in a builder image. If you want to deploy to AWS
+you'll build Sleeper on a machine in AWS, and the Sleeper CLI contains tools to set that up.
 
-The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
-This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
-then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
-understand what the system is doing. It is best to do this from an EC2 instance as a significant amount of code needs to
-be uploaded to AWS.
-
-We'll use the Sleeper CLI to deploy an EC2 instance in an environment suitable for working with Sleeper.
+## Install Sleeper CLI
 
 ### Dependencies
 
@@ -28,10 +24,9 @@ The Sleeper CLI has the following dependencies:
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
 
-### Install Sleeper CLI
+Please ensure these are installed.
 
-**Due to a bug in GitHub, only one version of the CLI is available.** See the following
-issue: https://github.com/gchq/sleeper/issues/2494
+### Install script
 
 You can run the following commands to install the latest version of the CLI from GitHub:
 
@@ -47,6 +42,22 @@ AWS environment variables or configuration on the host machine, that will be pro
 you use `sleeper`.
 
 If you already have the CLI installed, you can upgrade to the latest version of the CLI using `sleeper cli upgrade`.
+
+## Deploy locally
+
+The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
+LocalStack version has very limited functionality in comparison to the AWS version, and can only handle small volumes of
+data. See the documentation on [deploying to localstack](usage/deploy-to-localstack.md) for more information.
+
+## Deploy to AWS
+
+The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
+This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
+then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
+understand what the system is doing. It is best to do this from an EC2 instance as a significant amount of code needs to
+be uploaded to AWS.
+
+We'll use the Sleeper CLI to deploy an EC2 instance in an environment suitable for working with Sleeper.
 
 ### Authentication
 
