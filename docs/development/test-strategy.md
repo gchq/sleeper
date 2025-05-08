@@ -16,7 +16,7 @@ A unit test is any test that runs entirely in-memory without any I/O operations 
 If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
 should be a particular behaviour or scenario, rather than e.g. a specific method.
 
-A system test is a test that works with a deployed instance of Sleeper. These are JUnit tests found in the
+A system test is a test that works with an instance of Sleeper deployed on AWS. These are JUnit tests found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
 instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
 in the [system tests guide](system-tests.md#acceptance-tests).
