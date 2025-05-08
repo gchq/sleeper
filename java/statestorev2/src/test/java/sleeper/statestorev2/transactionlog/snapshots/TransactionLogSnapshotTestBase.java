@@ -19,6 +19,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -170,11 +171,17 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected void deleteFilesSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        fs.delete(new Path(filesSnapshot(table, transactionNumber).getPath()), false);
+        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(filesSnapshot(table, transactionNumber).getObjectKey())
+                .build());
     }
 
     protected void deletePartitionsSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
+        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(partitionsSnapshot(table, transactionNumber).getObjectKey())
+                .build());
     }
 
     protected Stream<String> filesInDataBucket() throws Exception {
