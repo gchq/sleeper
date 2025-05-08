@@ -50,7 +50,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.committerProcess = committerProcess;
-        this.s3TransferManager = null;
+        this.s3TransferManager = s3TransferManager;
     }
 
     /**
