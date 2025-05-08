@@ -38,8 +38,8 @@ fields in a constructor, we use this in all the field assignments.
 For example:
 
 ```java
-public Partition(String partitionId, Range range) {
-    this.partitionId = partitionId;
+public Partition(String id, Range range) {
+    this.id = id;
     this.region = new Region(List.of(range));
 }
 ```
@@ -48,7 +48,7 @@ With a builder, the this keyword can be omitted:
 
 ```java
 public Partition(Builder builder) {
-    partitionId = builder.partitionId;
+    id = builder.id;
     region = builder.region;
 }
 ```
