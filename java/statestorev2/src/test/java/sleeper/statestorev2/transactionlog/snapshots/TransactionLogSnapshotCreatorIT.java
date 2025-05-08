@@ -67,10 +67,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -114,10 +114,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table1, 1));
         assertThat(snapshotStore(table1).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table1, 1));
-        assertThat(tableFiles(table1))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table1, 1),
-                        partitionsSnapshotPath(table1, 1));
+                        filesSnapshotObjectKey(table1, 1),
+                        partitionsSnapshotObjectKey(table1, 1));
 
         StateStore stateStore2 = createStateStore(table2);
         assertThat(stateStore2.getAllPartitions()).isEqualTo(partitions2.getAllPartitions());
@@ -130,10 +130,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table2, 1));
         assertThat(snapshotStore(table2).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table2, 1));
-        assertThat(tableFiles(table2))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table2, 1),
-                        partitionsSnapshotPath(table2, 1));
+                        filesSnapshotObjectKey(table2, 1),
+                        partitionsSnapshotObjectKey(table2, 1));
     }
 
     @Test
@@ -169,12 +169,12 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .containsExactly(
                         partitionsSnapshot(table, 1),
                         partitionsSnapshot(table, 2));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 2),
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 2),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 2),
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 2),
+                        partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -195,10 +195,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isEqualTo(new LatestSnapshots(
                         filesSnapshot(table, 1),
                         partitionsSnapshot(table, 1)));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -214,7 +214,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isEqualTo(LatestSnapshots.empty());
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
-        assertThat(tableFiles(table)).isEmpty();
+        assertThat(filesInDataBucket()).isEmpty();
     }
 
     @Test
@@ -232,7 +232,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isEqualTo(new LatestSnapshots(null, partitionsSnapshot(table, 1)));
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table)).containsExactly(partitionsSnapshotPath(table, 1));
+        assertThat(filesInDataBucket()).containsExactly(partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -251,7 +251,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).isEmpty();
         assertThat(filesSnapshotFileExists(table, 1)).isFalse();
-        assertThat(tableFiles(table)).containsExactly(partitionsSnapshotPath(table, 1));
+        assertThat(filesInDataBucket()).containsExactly(partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -266,7 +266,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         assertThatThrownBy(() -> createSnapshots(table, failedUpdate(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).isEmpty();
-        assertThat(tableFiles(table)).isEmpty();
+        assertThat(filesInDataBucket()).isEmpty();
     }
 
     @Test
@@ -286,7 +286,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         assertThatThrownBy(() -> createSnapshots(table, failedLoad(exception)))
                 .isInstanceOf(RuntimeException.class);
         assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table)).containsExactly(partitionsSnapshotPath(table, 1));
+        assertThat(filesInDataBucket()).containsExactly(partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -305,10 +305,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         assertThatThrownBy(() -> createSnapshots(table, failedLoad(exception)))
                 .isSameAs(exception);
         assertThat(snapshotStore(table).getFilesSnapshots()).containsExactly(filesSnapshot(table, 1));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 1));
     }
 
     @Test
@@ -329,9 +329,9 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
 
         // Then
         assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        partitionsSnapshotPath(table, 1));
+                        partitionsSnapshotObjectKey(table, 1));
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {

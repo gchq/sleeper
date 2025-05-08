@@ -64,10 +64,10 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 3),
-                        partitionsSnapshotPath(table, 2));
+                        filesSnapshotObjectKey(table, 3),
+                        partitionsSnapshotObjectKey(table, 2));
         assertThat(snapshotDeleteTracker.getLastTransactionNumber()).isEqualTo(1);
         assertThat(snapshotDeleteTracker.getDeletedCount()).isEqualTo(2);
     }
@@ -106,12 +106,12 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactlyInAnyOrder(
                         partitionsSnapshot(table, 2),
                         partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 3),
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 2),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 3),
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 2),
+                        partitionsSnapshotObjectKey(table, 1));
         assertThat(snapshotDeleteTracker.getLastTransactionNumber()).isNull();
         assertThat(snapshotDeleteTracker.getDeletedCount()).isEqualTo(0);
     }
@@ -139,10 +139,10 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 1));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 1));
 
         assertThat(snapshotDeleteTracker.getLastTransactionNumber()).isNull();
         assertThat(snapshotDeleteTracker.getDeletedCount()).isEqualTo(0);
@@ -182,12 +182,12 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactlyInAnyOrder(
                         partitionsSnapshot(table, 2),
                         partitionsSnapshot(table, 1));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 3),
-                        filesSnapshotPath(table, 1),
-                        partitionsSnapshotPath(table, 2),
-                        partitionsSnapshotPath(table, 1));
+                        filesSnapshotObjectKey(table, 3),
+                        filesSnapshotObjectKey(table, 1),
+                        partitionsSnapshotObjectKey(table, 2),
+                        partitionsSnapshotObjectKey(table, 1));
 
     }
 
@@ -223,10 +223,10 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactly(filesSnapshot(table, 3));
         assertThat(snapshotStore(table).getPartitionsSnapshots())
                 .containsExactly(partitionsSnapshot(table, 2));
-        assertThat(tableFiles(table))
+        assertThat(filesInDataBucket())
                 .containsExactlyInAnyOrder(
-                        filesSnapshotPath(table, 3),
-                        partitionsSnapshotPath(table, 2));
+                        filesSnapshotObjectKey(table, 3),
+                        partitionsSnapshotObjectKey(table, 2));
 
         assertThat(snapshotDeleteTracker.getLastTransactionNumber()).isEqualTo(1);
         assertThat(snapshotDeleteTracker.getDeletedCount()).isEqualTo(2);

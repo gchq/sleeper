@@ -16,9 +16,7 @@
 package sleeper.statestorev2.transactionlog.snapshots;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -38,8 +36,6 @@ import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotDelet
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -157,12 +153,12 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         return TransactionLogSnapshotMetadata.forPartitions(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    protected String filesSnapshotPath(TableProperties table, long transactionNumber) {
-        return filesSnapshot(table, transactionNumber).getPath();
+    protected String filesSnapshotObjectKey(TableProperties table, long transactionNumber) {
+        return filesSnapshot(table, transactionNumber).getObjectKey();
     }
 
-    protected String partitionsSnapshotPath(TableProperties table, long transactionNumber) {
-        return partitionsSnapshot(table, transactionNumber).getPath();
+    protected String partitionsSnapshotObjectKey(TableProperties table, long transactionNumber) {
+        return partitionsSnapshot(table, transactionNumber).getObjectKey();
     }
 
     protected boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
@@ -181,16 +177,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
     }
 
-    protected Stream<String> tableFiles(TableProperties tableProperties) throws Exception {
-        Path tableFilesPath = new Path(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties));
-        if (!fs.exists(tableFilesPath)) {
-            return Stream.empty();
-        }
-        RemoteIterator<LocatedFileStatus> iterator = fs.listFiles(tableFilesPath, true);
-        List<String> files = new ArrayList<>();
-        while (iterator.hasNext()) {
-            files.add(iterator.next().getPath().toUri().toString());
-        }
-        return files.stream();
+    protected Stream<String> filesInDataBucket() throws Exception {
+        return listObjectKeys(instanceProperties.get(DATA_BUCKET)).stream();
     }
 }
