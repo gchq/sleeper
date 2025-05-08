@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,26 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-[build.env]
-passthrough = [
-    "SCCACHE_ERROR_LOG",
-    "SCCACHE_LOG",
-    "SSCACHE_CACHE_SIZE",
-    "SCCACHE_GHA_ENABLED",
-    "ACTIONS_CACHE_URL",
-    "ACTIONS_RESULTS_URL",
-    "ACTIONS_RUNTIME_TOKEN",
-    "ACTIONS_CACHE_SERVICE_V2",
-    "CC=sccache clang-20",
-    "CXX=sccache clang++-20"
-]
-
-[target.aarch64-unknown-linux-gnu]
-dockerfile = "Dockerfile.sccache.aarch64-unknown-linux-gnu"
-
-[target.x86_64-unknown-linux-gnu]
-dockerfile = "Dockerfile.sccache.x86_64-unknown-linux-gnu"
-
-[build]
-pre-build = "./cross-prebuild.sh"
+apt-get update
+apt-get --assume-yes install libssl-dev wget lsb-release software-properties-common gnupg
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+./llvm.sh 20
