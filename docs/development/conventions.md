@@ -19,10 +19,12 @@ We try to keep to this ordering of elements in a class declaration:
 8. Private methods
 9. Public getter instance methods that return the value of a field with no other code
 10. In a builder, a build method that creates an instance of the class being built
-11. Implementations of equals, hashCode, toString when needed
+11. Implementations of equals, hashCode, toString when needed (on data classes, not on builders)
 12. Nested classes/interfaces
 
 Within this ordering, methods should be in the order that they are expected to be used.
+
+Note that many classes will not contain many of these elements.
 
 ## Javadoc
 
