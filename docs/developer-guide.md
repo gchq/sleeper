@@ -98,14 +98,14 @@ sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc 
 
 You will need the following software:
 
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 11/17](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
-* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
-* [Rust](https://rustup.rs/): Tested with Rust v1.77
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
+* [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/)
+* [Java](https://openjdk.java.net/install/): Requires version 17, to match the version used by AWS EMR
+* [Maven](https://maven.apache.org/)
+* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
+* [Rust](https://rustup.rs/)
 * [Cross-rs](https://github.com/cross-rs/cross)
 
 ## Building

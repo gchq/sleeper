@@ -25,8 +25,8 @@ We'll use the Sleeper CLI to deploy an EC2 instance in an environment suitable f
 
 The Sleeper CLI has the following dependencies:
 
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2 to v5.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v24.0.2
+* [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/)
 
 ### Install Sleeper CLI
 
