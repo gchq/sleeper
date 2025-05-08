@@ -29,8 +29,8 @@ import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotMetadata;
+import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -42,7 +42,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOneReference;
 
-public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
+public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
@@ -98,6 +98,25 @@ public class StateStoreArrowFileStoreIT extends LocalStackTestBase {
 
         // Then
         assertThat(store().isEmpty("test/file-references.arrow")).isTrue();
+    }
+
+    @Test
+    void shouldDeleteObjectWhenRequested() throws Exception {
+        // Given
+        FileReferenceFactory fileFactory = FileReferenceFactory.forSinglePartition("test-partition", tableProperties);
+        FileReference fileRef = fileFactory.rootFile("test-file", 10);
+        Instant updateTime = Instant.parse("2025-05-06T13:36:00Z");
+
+        StateStoreFiles files = new StateStoreFiles();
+        files.add(StateStoreFile.from(fileWithOneReference(fileRef, updateTime)));
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(basePath, 1);
+        store().saveFiles(metadata.getObjectKey(), files);
+
+        // When
+        store().deleteSnapshotFile(metadata);
+
+        // Then
+        assertThat(filesInDataBucket()).isEmpty();
     }
 
     private StateStoreArrowFileStoreV2 store() {
