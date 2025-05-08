@@ -40,9 +40,9 @@ import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
-import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
-import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker;
+import sleeper.ingest.trackerv2.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
@@ -65,9 +65,9 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobSt
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
-import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createInstanceProperties;
-import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createSchema;
-import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createTableProperties;
+import static sleeper.ingest.trackerv2.testutils.IngestTrackerTestUtils.createInstanceProperties;
+import static sleeper.ingest.trackerv2.testutils.IngestTrackerTestUtils.createSchema;
+import static sleeper.ingest.trackerv2.testutils.IngestTrackerTestUtils.createTableProperties;
 
 public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
 

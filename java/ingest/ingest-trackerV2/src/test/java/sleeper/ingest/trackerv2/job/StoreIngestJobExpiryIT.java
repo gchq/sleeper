@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
+import sleeper.ingest.trackerv2.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;

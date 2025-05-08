@@ -38,7 +38,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.tracker.IngestTrackerException;
+import sleeper.ingest.trackerv2.IngestTrackerException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -56,15 +56,15 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.VALIDATION_RESULT;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.createJobAddedFilesUpdate;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.createJobFailedUpdate;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.createJobFinishedUpdate;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.createJobStartedUpdate;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.createJobValidatedUpdate;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.VALIDATION_RESULT;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.createJobAddedFilesUpdate;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.createJobFailedUpdate;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.createJobFinishedUpdate;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.createJobStartedUpdate;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.createJobValidatedUpdate;
 
 public class DynamoDBIngestJobTracker implements IngestJobTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobTracker.class);

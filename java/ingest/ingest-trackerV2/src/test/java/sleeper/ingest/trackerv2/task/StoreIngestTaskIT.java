@@ -19,7 +19,7 @@ package sleeper.ingest.trackerv2.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.ingest.tracker.testutils.DynamoDBIngestTaskTrackerTestBase;
+import sleeper.ingest.trackerv2.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

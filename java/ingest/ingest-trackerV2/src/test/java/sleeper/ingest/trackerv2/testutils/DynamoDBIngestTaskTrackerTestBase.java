@@ -25,9 +25,9 @@ import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
-import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
-import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
+import sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTracker;
+import sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTrackerCreator;
+import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
@@ -38,7 +38,7 @@ import java.util.UUID;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker.taskStatusTableName;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTracker.taskStatusTableName;
 
 public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
 

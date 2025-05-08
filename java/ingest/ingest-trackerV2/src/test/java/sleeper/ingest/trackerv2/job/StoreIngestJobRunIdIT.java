@@ -25,7 +25,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
+import sleeper.ingest.trackerv2.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -25,7 +25,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createInstanceProperties;
+import static sleeper.ingest.trackerv2.testutils.IngestTrackerTestUtils.createInstanceProperties;
 
 public class DynamoDBIngestTaskTrackerCreatorIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();

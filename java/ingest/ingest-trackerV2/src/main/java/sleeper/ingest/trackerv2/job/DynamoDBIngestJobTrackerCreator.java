@@ -33,14 +33,14 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.EXPIRY_DATE;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.JOB_ID;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.JOB_ID_AND_UPDATE;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.JOB_LAST_VALIDATION_RESULT;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.TABLE_ID;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.VALIDATION_INDEX;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.jobLookupTableName;
-import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.jobUpdatesTableName;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.EXPIRY_DATE;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.JOB_ID;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.JOB_ID_AND_UPDATE;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.JOB_LAST_VALIDATION_RESULT;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.TABLE_ID;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.VALIDATION_INDEX;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.jobLookupTableName;
+import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobTracker.jobUpdatesTableName;
 
 public class DynamoDBIngestJobTrackerCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobTrackerCreator.class);

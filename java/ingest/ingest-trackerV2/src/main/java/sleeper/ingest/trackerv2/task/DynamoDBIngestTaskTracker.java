@@ -33,7 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.tracker.IngestTrackerException;
+import sleeper.ingest.trackerv2.IngestTrackerException;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,8 +46,8 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.UPDATE_TYPE;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskStatusFormat.UPDATE_TYPE;
 
 public class DynamoDBIngestTaskTracker implements IngestTaskTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskTracker.class);

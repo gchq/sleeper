@@ -31,10 +31,10 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker.taskStatusTableName;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTracker.taskStatusTableName;
 
 public class DynamoDBIngestTaskTrackerCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskTrackerCreator.class);

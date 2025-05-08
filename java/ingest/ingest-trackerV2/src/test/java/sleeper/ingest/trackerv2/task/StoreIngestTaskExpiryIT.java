@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
-import sleeper.ingest.tracker.testutils.DynamoDBIngestTaskTrackerTestBase;
+import sleeper.ingest.trackerv2.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
