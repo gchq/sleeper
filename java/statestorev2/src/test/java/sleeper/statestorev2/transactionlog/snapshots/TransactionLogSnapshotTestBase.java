@@ -16,10 +16,11 @@
 package sleeper.statestorev2.transactionlog.snapshots;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -163,11 +164,31 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
-        return fs.exists(new Path(filesSnapshot(table, transactionNumber).getPath()));
+        // Will only return object if it exists, otherwise throws an exception.
+        // HeadObjectRequest used as light weight request for just metadata
+        try {
+            s3ClientV2.headObject(HeadObjectRequest.builder()
+                    .bucket(instanceProperties.get(DATA_BUCKET))
+                    .key(filesSnapshot(table, transactionNumber).getObjectKey())
+                    .build());
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
     }
 
     protected boolean partitionsSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
-        return fs.exists(new Path(partitionsSnapshot(table, transactionNumber).getPath()));
+        // Will only return object if it exists, otherwise throws an exception.
+        // HeadObjectRequest used as light weight request for just metadata
+        try {
+            s3ClientV2.headObject(HeadObjectRequest.builder()
+                    .bucket(instanceProperties.get(DATA_BUCKET))
+                    .key(partitionsSnapshot(table, transactionNumber).getObjectKey())
+                    .build());
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
     }
 
     protected void deleteFilesSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
