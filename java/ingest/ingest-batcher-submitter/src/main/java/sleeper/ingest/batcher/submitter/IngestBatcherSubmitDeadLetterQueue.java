@@ -26,8 +26,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 
 public class IngestBatcherSubmitDeadLetterQueue {
 
-    InstanceProperties instanceProperties;
-    AmazonSQS sqsClient;
+    private final InstanceProperties instanceProperties;
+    private final AmazonSQS sqsClient;
+    private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
 
     public IngestBatcherSubmitDeadLetterQueue(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         this.instanceProperties = instanceProperties;
@@ -35,12 +36,7 @@ public class IngestBatcherSubmitDeadLetterQueue {
     }
 
     void submit(IngestBatcherSubmitRequest request) {
-        IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
-                .withMessageBody(serDe.toJson(request));
-        sqsClient.sendMessage(sendMessageRequest);
-
+        submit(serDe.toJson(request));
     }
 
     void submit(String json) {

@@ -19,6 +19,8 @@ package sleeper.ingest.batcher.submitter;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +39,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -45,6 +48,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
     private static final String TEST_TABLE_ID = "test-table-id";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
+    private final ObjectMapper mapper = new ObjectMapper();
     private final String testBucket = UUID.randomUUID().toString();
     private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -79,6 +83,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"));
+            assertThat(receiveDeadLetters()).isEmpty();
         }
 
         @Test
@@ -256,7 +261,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     class HandleErrorsInMessage {
 
         @Test
-        void shouldIgnoreAndLogMessageWithInvalidJson() {
+        void shouldLogMessageWithInvalidJsonAndSendToDeadLetterQueue() {
             // Given
             String json = "{";
 
@@ -265,11 +270,11 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThat(receiveDeadLetters()).isNotEmpty();
+            assertThat(json).isEqualTo(receiveDeadLetters().get(0));
         }
 
         @Test
-        void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
+        void shouldLogMessageIfTableDoesNotExistAndSendToDeadLetterQueue() {
             // Given
             String json = "{" +
                     "\"files\":[\"" + testBucket + "/test-file-1.parquet\"]," +
@@ -281,11 +286,13 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThat(receiveDeadLetters()).isNotEmpty();
+            assertThatJson(json)
+                    .when(Option.IGNORING_ARRAY_ORDER)
+                    .isEqualTo(receiveDeadLetters().get(0));
         }
 
         @Test
-        void shouldIgnoreMessageIfFileDoesNotExist() {
+        void shouldLogMessageIfFileDoesNotExistAndSendToDeadLetterQueue() {
             // Given
             String json = "{" +
                     "\"files\":[\"" + testBucket + "/not-exists.parquet\"]," +
@@ -297,7 +304,9 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThat(receiveDeadLetters()).isNotEmpty();
+            assertThatJson(json)
+                    .when(Option.IGNORING_ARRAY_ORDER)
+                    .isEqualTo(receiveDeadLetters().get(0));
         }
 
         @Test
@@ -313,6 +322,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(receiveDeadLetters()).isEmpty();
         }
     }
 
@@ -331,7 +341,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private List<String> receiveDeadLetters() {
         ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
-                .withMaxNumberOfMessages(10));
+                .withMaxNumberOfMessages(1));
         return result.getMessages().stream()
                 .map(Message::getBody)
                 .toList();

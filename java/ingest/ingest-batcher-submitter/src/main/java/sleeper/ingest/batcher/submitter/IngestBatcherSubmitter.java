@@ -44,15 +44,15 @@ public class IngestBatcherSubmitter {
     private final Configuration conf;
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
-    private final IngestBatcherSubmitDeadLetterQueue dlQueue;
+    private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
 
     public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store,
-            IngestBatcherSubmitDeadLetterQueue dlQueue) {
+            IngestBatcherSubmitDeadLetterQueue deadLetterQueue) {
         this.properties = properties;
         this.conf = conf;
         this.tableIndex = tableIndex;
         this.store = store;
-        this.dlQueue = dlQueue;
+        this.deadLetterQueue = deadLetterQueue;
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
@@ -62,12 +62,13 @@ public class IngestBatcherSubmitter {
         } catch (UncheckedIOException uioe) {
             if (uioe.getCause() instanceof FileNotFoundException) {
                 LOGGER.info("File not found, sending request: {} to dead letter queue", request, uioe);
-                dlQueue.submit(request);
+                deadLetterQueue.submit(request);
+                return;
             }
-            return;
+            throw new UncheckedIOException(uioe.getCause());
         } catch (TableNotFoundException tnfe) {
             LOGGER.info("Table not found, sending request: {} to dead letter queue", request, tnfe);
-            dlQueue.submit(request);
+            deadLetterQueue.submit(request);
             return;
         }
         files.forEach(store::addFile);
