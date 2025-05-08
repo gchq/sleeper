@@ -5,26 +5,18 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-In either case, currently you'll need to start by building the system. The easiest way to do that reliably is with the
-Sleeper builder image, which you can access with the Sleeper CLI, or as a Dev Container.
-
-In the future we may publish pre-built installable artefacts. Currently the Sleeper CLI consists of Docker images with
-Sleeper's build dependencies, and tools to create a suitable environment for deployment in AWS. If you prefer to use a
-Dev Container, see the [developer guide](developer-guide.md).
-
-If you want to deploy locally, you'll need to build Sleeper locally in a builder image. If you want to deploy to AWS
-you'll build Sleeper on a machine in AWS, and the Sleeper CLI contains tools to set that up.
+In either case, currently you'll need to start by building the system. If you want to deploy locally, you'll need to
+build Sleeper locally. If you want to deploy to AWS you'll build Sleeper on a machine in AWS. The Sleeper CLI contains
+tools for either of these, built into Docker images.
 
 ## Install Sleeper CLI
 
 ### Dependencies
 
-The Sleeper CLI has the following dependencies:
+The Sleeper CLI has the following dependencies, please install these first:
 
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
-
-Please ensure these are installed.
 
 ### Install script
 
@@ -36,10 +28,9 @@ chmod +x ./sleeper-install.sh
 ./sleeper-install.sh
 ```
 
-The CLI consists of a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
-`sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
-AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
-you use `sleeper`.
+The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
+`cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set AWS environment variables or
+configuration on the host machine, that will be propagated to the Docker container when you use `sleeper`.
 
 If you already have the CLI installed, you can upgrade to the latest version of the CLI using `sleeper cli upgrade`.
 
