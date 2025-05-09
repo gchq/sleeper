@@ -52,7 +52,8 @@ public class InitialiseStateStore {
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(buildAwsV2Client(S3AsyncClient.builder())).build()) {
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.builder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
