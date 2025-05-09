@@ -65,7 +65,7 @@ public class IngestBatcherSubmitter {
                 deadLetterQueue.submit(request);
                 return;
             }
-            throw new UncheckedIOException(uioe.getCause());
+            throw uioe;
         } catch (TableNotFoundException tnfe) {
             LOGGER.info("Table not found, sending request: {} to dead letter queue", request, tnfe);
             deadLetterQueue.submit(request);

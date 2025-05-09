@@ -20,7 +20,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -270,7 +269,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThat(json).isEqualTo(receiveDeadLetters().get(0));
+            assertThat(receiveDeadLetters()).singleElement().isEqualTo(json);
         }
 
         @Test
@@ -286,9 +285,9 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThatJson(json)
-                    .when(Option.IGNORING_ARRAY_ORDER)
-                    .isEqualTo(receiveDeadLetters().get(0));
+            assertThat(receiveDeadLetters())
+                    .singleElement()
+                    .satisfies(deadLetter -> assertThatJson(deadLetter).isEqualTo(json));
         }
 
         @Test
@@ -304,9 +303,9 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThatJson(json)
-                    .when(Option.IGNORING_ARRAY_ORDER)
-                    .isEqualTo(receiveDeadLetters().get(0));
+            assertThat(receiveDeadLetters())
+                    .singleElement()
+                    .satisfies(deadLetter -> assertThatJson(deadLetter).isEqualTo(json));
         }
 
         @Test
@@ -341,7 +340,8 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private List<String> receiveDeadLetters() {
         ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
-                .withMaxNumberOfMessages(1));
+                .withMaxNumberOfMessages(10)
+                .withWaitTimeSeconds(1));
         return result.getMessages().stream()
                 .map(Message::getBody)
                 .toList();
