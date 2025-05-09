@@ -62,6 +62,21 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
                 AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
+    public SqsBulkExportProcessorLambda(
+            SqsBulkExportProcessor processor,
+            BulkExportQuerySerDe bulkExportQuerySerDe,
+            InstanceProperties instanceProperties,
+            AmazonSQS sqsClient,
+            AmazonS3 s3Client,
+            AmazonDynamoDB dynamoClient) {
+        this.processor = processor;
+        this.bulkExportQuerySerDe = bulkExportQuerySerDe;
+        this.instanceProperties = instanceProperties;
+        this.sqsClient = sqsClient;
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+    }
+
     public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String configBucket)
             throws ObjectFactoryException {
         this(sqsClient, s3Client, dynamoClient, configBucket, S3TableProperties.createProvider(
@@ -74,9 +89,9 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
         this.sqsClient = sqsClient;
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
+        this.bulkExportQuerySerDe = new BulkExportQuerySerDe();
 
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        bulkExportQuerySerDe = new BulkExportQuerySerDe();
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
                 .s3Client(s3Client)
