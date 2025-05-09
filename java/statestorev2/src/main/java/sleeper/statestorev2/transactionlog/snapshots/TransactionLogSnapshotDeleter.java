@@ -15,12 +15,12 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -43,13 +43,13 @@ public class TransactionLogSnapshotDeleter {
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, Configuration configuration) {
+            DynamoDbClient dynamoDB, Configuration configuration) {
         this(instanceProperties, tableProperties, dynamoDB, hadoopFileDeleter(configuration));
     }
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, SnapshotFileDeleter fileDeleter) {
+            DynamoDbClient dynamoDB, SnapshotFileDeleter fileDeleter) {
         this.metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
         this.expiryInDays = Duration.ofDays(tableProperties.getInt(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS));
         this.snapshotFileDeleter = fileDeleter;

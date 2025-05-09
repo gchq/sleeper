@@ -16,11 +16,11 @@
 package sleeper.statestorev2.transactionlog.snapshots;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -38,12 +38,9 @@ import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotDelet
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -55,17 +52,14 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     @TempDir
     private java.nio.file.Path tempDir;
-    private FileSystem fs;
     protected final Schema schema = createSchemaWithKey("key", new LongType());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @BeforeEach
     public void setup() throws IOException {
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        fs = FileSystem.get(hadoopConf);
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
     }
 
     protected TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
@@ -100,7 +94,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
 
     protected void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
-                instanceProperties, table, dynamoClient, () -> creationTime);
+                instanceProperties, table, dynamoClientV2, () -> creationTime);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
@@ -111,19 +105,20 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
-                hadoopConf, latestSnapshotsLoader, snapshotSaver)
+                hadoopConf, s3ClientV2, s3TransferManager,
+                latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClient, hadoopConf)
+                instanceProperties, table, dynamoClientV2, hadoopConf)
                 .deleteSnapshots(deletionTime);
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClient, fileDeleter)
+                instanceProperties, table, dynamoClientV2, fileDeleter)
                 .deleteSnapshots(deletionTime);
     }
 
@@ -139,7 +134,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClient);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClientV2);
     }
 
     protected TableProperties createTable(String tableId, String tableName) {
@@ -158,40 +153,57 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         return TransactionLogSnapshotMetadata.forPartitions(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber);
     }
 
-    protected String filesSnapshotPath(TableProperties table, long transactionNumber) {
-        return filesSnapshot(table, transactionNumber).getPath();
+    protected String filesSnapshotObjectKey(TableProperties table, long transactionNumber) {
+        return filesSnapshot(table, transactionNumber).getObjectKey();
     }
 
-    protected String partitionsSnapshotPath(TableProperties table, long transactionNumber) {
-        return partitionsSnapshot(table, transactionNumber).getPath();
+    protected String partitionsSnapshotObjectKey(TableProperties table, long transactionNumber) {
+        return partitionsSnapshot(table, transactionNumber).getObjectKey();
     }
 
     protected boolean filesSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
-        return fs.exists(new Path(filesSnapshot(table, transactionNumber).getPath()));
+        // Will only return object if it exists, otherwise throws an exception.
+        // HeadObjectRequest used as light weight request for just metadata
+        try {
+            s3ClientV2.headObject(HeadObjectRequest.builder()
+                    .bucket(instanceProperties.get(DATA_BUCKET))
+                    .key(filesSnapshot(table, transactionNumber).getObjectKey())
+                    .build());
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
     }
 
     protected boolean partitionsSnapshotFileExists(TableProperties table, long transactionNumber) throws IOException {
-        return fs.exists(new Path(partitionsSnapshot(table, transactionNumber).getPath()));
+        // Will only return object if it exists, otherwise throws an exception.
+        // HeadObjectRequest used as light weight request for just metadata
+        try {
+            s3ClientV2.headObject(HeadObjectRequest.builder()
+                    .bucket(instanceProperties.get(DATA_BUCKET))
+                    .key(partitionsSnapshot(table, transactionNumber).getObjectKey())
+                    .build());
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
     }
 
     protected void deleteFilesSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        fs.delete(new Path(filesSnapshot(table, transactionNumber).getPath()), false);
+        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(filesSnapshot(table, transactionNumber).getObjectKey())
+                .build());
     }
 
     protected void deletePartitionsSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        fs.delete(new org.apache.hadoop.fs.Path(partitionsSnapshot(table, transactionNumber).getPath()), false);
+        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(partitionsSnapshot(table, transactionNumber).getObjectKey())
+                .build());
     }
 
-    protected Stream<String> tableFiles(TableProperties tableProperties) throws Exception {
-        Path tableFilesPath = new Path(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties));
-        if (!fs.exists(tableFilesPath)) {
-            return Stream.empty();
-        }
-        RemoteIterator<LocatedFileStatus> iterator = fs.listFiles(tableFilesPath, true);
-        List<String> files = new ArrayList<>();
-        while (iterator.hasNext()) {
-            files.add(iterator.next().getPath().toUri().toString());
-        }
-        return files.stream();
+    protected Stream<String> filesInDataBucket() throws Exception {
+        return listObjectKeys(instanceProperties.get(DATA_BUCKET)).stream();
     }
 }

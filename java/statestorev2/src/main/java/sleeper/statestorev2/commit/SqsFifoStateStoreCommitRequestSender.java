@@ -15,11 +15,11 @@
  */
 package sleeper.statestorev2.commit;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -40,10 +40,10 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
 
     private final InstanceProperties instanceProperties;
     private final StateStoreCommitRequestUploader requestUploader;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
 
     public SqsFifoStateStoreCommitRequestSender(
-            InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client,
+            InstanceProperties instanceProperties, SqsClient sqsClient, S3Client s3Client,
             TransactionSerDeProvider transactionSerDeProvider) {
         this(instanceProperties, new S3TransactionBodyStore(instanceProperties, s3Client, transactionSerDeProvider), transactionSerDeProvider, sqsClient);
     }
@@ -52,7 +52,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
             InstanceProperties instanceProperties,
             TransactionBodyStore transactionBodyStore,
             TransactionSerDeProvider transactionSerDeProvider,
-            AmazonSQS sqsClient) {
+            SqsClient sqsClient) {
         this.instanceProperties = instanceProperties;
         this.requestUploader = new StateStoreCommitRequestUploader(transactionBodyStore, transactionSerDeProvider);
         this.sqsClient = sqsClient;
@@ -61,11 +61,12 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
     @Override
     public void send(StateStoreCommitRequest request) {
         LOGGER.debug("Sending asynchronous request to state store committer of type: {}", request.getTransactionType());
-        sqsClient.sendMessage(new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(requestUploader.serialiseAndUploadIfTooBig(request))
-                .withMessageGroupId(request.getTableId())
-                .withMessageDeduplicationId(UUID.randomUUID().toString()));
+        sqsClient.sendMessage(SendMessageRequest.builder()
+                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .messageBody(requestUploader.serialiseAndUploadIfTooBig(request))
+                .messageGroupId(request.getTableId())
+                .messageDeduplicationId(UUID.randomUUID().toString())
+                .build());
         LOGGER.debug("Submitted asynchronous request of type {} via state store committer queue", request.getTransactionType());
     }
 

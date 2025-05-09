@@ -17,12 +17,16 @@ package sleeper.statestorev2;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.async.BlockingOutputStreamAsyncRequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+import software.amazon.awssdk.transfer.s3.model.Upload;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
@@ -37,6 +41,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BATCH_SIZE;
 
@@ -46,88 +51,59 @@ import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BA
 public class StateStoreArrowFileStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);
 
+    private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
-    private final Configuration configuration;
+    private final S3Client s3Client;
+    private final S3TransferManager s3TransferManager;
 
-    public StateStoreArrowFileStore(TableProperties tableProperties, Configuration configuration) {
+    public StateStoreArrowFileStore(
+            InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
+        this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
-        this.configuration = configuration;
+        this.s3Client = s3Client;
+        this.s3TransferManager = s3TransferManager;
     }
 
     /**
      * Saves the state of partitions in a Sleeper table to an Arrow file.
      *
-     * @param  path        path to write the file to
+     * @param  objectKey   object key in the data bucket to write the file to
      * @param  partitions  the state
      * @throws IOException if the file could not be written
      */
-    public void savePartitions(String path, Collection<Partition> partitions) throws IOException {
-        LOGGER.info("Writing {} partitions to {}", partitions.size(), path);
-        Path hadoopPath = new Path(path);
+    public void savePartitions(String objectKey, Collection<Partition> partitions) throws IOException {
+        LOGGER.info("Writing {} partitions to {}", partitions.size(), objectKey);
+        BlockingOutputStreamAsyncRequestBody requestBody = BlockingOutputStreamAsyncRequestBody.builder().build();
+        Upload upload = startUpload(objectKey, requestBody);
         try (BufferAllocator allocator = new RootAllocator();
-                WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
+                WritableByteChannel channel = Channels.newChannel(requestBody.outputStream())) {
             StateStorePartitionsArrowFormat.WriteResult result = StateStorePartitionsArrowFormat.write(
                     partitions, allocator, channel, tableProperties.getInt(PARTITIONS_SNAPSHOT_BATCH_SIZE));
             LOGGER.info("Wrote {} partitions in {} Arrow record batches, to {}",
-                    partitions.size(), result.numBatches(), path);
+                    partitions.size(), result.numBatches(), objectKey);
         }
+        upload.completionFuture().join();
     }
 
     /**
      * Saves the state of files in a Sleeper table to an Arrow file.
      *
-     * @param  path        path to write the file to
+     * @param  objectKey   object key in the data bucket to write the file to
      * @param  files       the state
      * @throws IOException if the file could not be written
      */
-    public void saveFiles(String path, StateStoreFiles files) throws IOException {
-        LOGGER.info("Writing {} files to {}", files.referencedAndUnreferenced().size(), path);
-        Path hadoopPath = new Path(path);
+    public void saveFiles(String objectKey, StateStoreFiles files) throws IOException {
+        LOGGER.info("Writing {} files to {}", files.referencedAndUnreferenced().size(), objectKey);
+        BlockingOutputStreamAsyncRequestBody requestBody = BlockingOutputStreamAsyncRequestBody.builder().build();
+        Upload upload = startUpload(objectKey, requestBody);
         try (BufferAllocator allocator = new RootAllocator();
-                WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
+                WritableByteChannel channel = Channels.newChannel(requestBody.outputStream())) {
             StateStoreFilesArrowFormat.WriteResult result = StateStoreFilesArrowFormat.write(
                     files, allocator, channel, tableProperties.getInt(FILES_SNAPSHOT_BATCH_SIZE));
             LOGGER.info("Wrote {} files with {} references in {} Arrow record batches, to {}",
-                    files.referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
+                    files.referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), objectKey);
         }
-    }
-
-    /**
-     * Loads the state of partitions in a Sleeper table from an Arrow file.
-     *
-     * @param  path        path to the file to read
-     * @return             the partitions
-     * @throws IOException if the file could not be read
-     */
-    public List<Partition> loadPartitions(String path) throws IOException {
-        LOGGER.debug("Loading partitions from {}", path);
-        Path hadoopPath = new Path(path);
-        try (BufferAllocator allocator = new RootAllocator();
-                ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} partitions in {} Arrow record batches, from {}",
-                    result.partitions().size(), result.numBatches(), path);
-            return result.partitions();
-        }
-    }
-
-    /**
-     * Loads the state of files in a Sleeper table from an Arrow file.
-     *
-     * @param  path        path to the file to read
-     * @return             the files
-     * @throws IOException if the file could not be read
-     */
-    public StateStoreFiles loadFiles(String path) throws IOException {
-        LOGGER.debug("Loading files from {}", path);
-        Path hadoopPath = new Path(path);
-        try (BufferAllocator allocator = new RootAllocator();
-                ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
-                    result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
-            return result.files();
-        }
+        upload.completionFuture().join();
     }
 
     /**
@@ -142,11 +118,11 @@ public class StateStoreArrowFileStore {
             switch (metadata.getType()) {
                 case FILES:
                     return new TransactionLogSnapshot(
-                            loadFiles(metadata.getPath()),
+                            loadFiles(metadata.getObjectKey()),
                             metadata.getTransactionNumber());
                 case PARTITIONS:
                     return new TransactionLogSnapshot(
-                            StateStorePartitions.from(loadPartitions(metadata.getPath())),
+                            StateStorePartitions.from(loadPartitions(metadata.getObjectKey())),
                             metadata.getTransactionNumber());
                 default:
                     throw new IllegalArgumentException("Unrecognised snapshot type: " + metadata.getType());
@@ -157,17 +133,87 @@ public class StateStoreArrowFileStore {
     }
 
     /**
+     * Deletes the snapshot file within the bucket.
+     *
+     * @param metadata metadata for the snapshot
+     */
+    public void deleteSnapshotFile(TransactionLogSnapshotMetadata metadata) {
+        s3Client.deleteObject(DeleteObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(metadata.getObjectKey())
+                .build());
+    }
+
+    /**
      * Checks if a file contains no Sleeper files or partitions. This checks if the file is empty.
      *
-     * @param  path        path to the file to read
+     * @param  objectKey   object key in the data bucket of the file to read
      * @return             true if the file is empty
      * @throws IOException if the file could not be read
      */
-    public boolean isEmpty(String path) throws IOException {
-        Path hadoopPath = new Path(path);
-        try (BufferAllocator allocator = new RootAllocator();
-                ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            return ArrowFormatUtils.isEmpty(allocator, channel);
-        }
+    public boolean isEmpty(String objectKey) throws IOException {
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        return ArrowFormatUtils.isEmpty(allocator, channel);
+                    }
+                });
+    }
+
+    private Upload startUpload(String objectKey, BlockingOutputStreamAsyncRequestBody requestBody) {
+        return s3TransferManager.upload(request -> request
+                .putObjectRequest(put -> put
+                        .bucket(instanceProperties.get(DATA_BUCKET))
+                        .key(objectKey))
+                .requestBody(requestBody));
+    }
+
+    /**
+     * Loads the state of partitions in a Sleeper table from an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             the partitions
+     * @throws IOException if the file could not be read
+     */
+    private List<Partition> loadPartitions(String objectKey) throws IOException {
+        LOGGER.debug("Loading partitions from {}", objectKey);
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
+                        LOGGER.debug("Loaded {} partitions in {} Arrow record batches, from {}",
+                                result.partitions().size(), result.numBatches(), objectKey);
+                        return result.partitions();
+                    }
+                });
+    }
+
+    /**
+     * Loads the state of files in a Sleeper table from an Arrow file.
+     *
+     * @param  objectKey   object key in the data bucket of the file to read
+     * @return             the files
+     * @throws IOException if the file could not be read
+     */
+    private StateStoreFiles loadFiles(String objectKey) throws IOException {
+        LOGGER.debug("Loading files from {}", objectKey);
+        return s3Client.getObject(get -> get
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(objectKey),
+                (response, inputStream) -> {
+                    try (BufferAllocator allocator = new RootAllocator();
+                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
+                        StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
+                        LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
+                                result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), objectKey);
+                        return result.files();
+                    }
+                });
     }
 }

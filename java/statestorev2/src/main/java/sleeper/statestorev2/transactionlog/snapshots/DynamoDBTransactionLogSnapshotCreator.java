@@ -15,11 +15,12 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -65,7 +66,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
      */
     public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+            S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoDBClient, Configuration configuration) {
         TransactionLogStore fileTransactionStore = DynamoDBTransactionLogStore.forFiles(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         TransactionLogStore partitionTransactionStore = DynamoDBTransactionLogStore.forPartitions(
@@ -74,22 +75,23 @@ public class DynamoDBTransactionLogSnapshotCreator {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
         return new DynamoDBTransactionLogSnapshotCreator(instanceProperties, tableProperties,
-                fileTransactionStore, partitionTransactionStore, transactionBodyStore, configuration,
+                fileTransactionStore, partitionTransactionStore, transactionBodyStore, configuration, s3Client, s3TransferManager,
                 snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
     public DynamoDBTransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, TransactionBodyStore transactionBodyStore,
-            Configuration configuration, LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver) {
+            Configuration configuration, S3Client s3Client, S3TransferManager s3TransferManager,
+            LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver) {
         this.tableStatus = tableProperties.getStatus();
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.transactionBodyStore = transactionBodyStore;
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(
-                latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, configuration);
-        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
+                latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, configuration, s3Client, s3TransferManager);
+        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     /**

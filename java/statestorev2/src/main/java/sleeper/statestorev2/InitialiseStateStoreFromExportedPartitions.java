@@ -15,21 +15,19 @@
  */
 package sleeper.statestorev2;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,7 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Initialises a state store from a file of exported partitions. These can be created using ExportPartitions to export
@@ -65,14 +63,14 @@ public class InitialiseStateStoreFromExportedPartitions {
         String tableName = args[1];
         Path partitionsFile = Path.of(args[2]);
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.builder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
+            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, s3TransferManager).getStateStore(tableProperties);
 
             PartitionSerDe partitionSerDe = new PartitionSerDe(tableProperties.getSchema());
             List<Partition> partitions = new ArrayList<>();
@@ -88,9 +86,6 @@ public class InitialiseStateStoreFromExportedPartitions {
             System.out.println("Read " + partitions.size() + " partitions from file");
 
             new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
-        } finally {
-            dynamoDBClient.shutdown();
-            s3Client.shutdown();
         }
     }
 }

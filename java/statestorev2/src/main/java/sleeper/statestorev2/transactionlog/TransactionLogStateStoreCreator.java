@@ -15,13 +15,13 @@
  */
 package sleeper.statestorev2.transactionlog;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStoreCreator;
@@ -36,10 +36,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
  * as the creation of the tables in real deployments is normally done using CDK.
  */
 public class TransactionLogStateStoreCreator {
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final InstanceProperties instanceProperties;
 
-    public TransactionLogStateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+    public TransactionLogStateStoreCreator(InstanceProperties instanceProperties, DynamoDbClient dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.instanceProperties = instanceProperties;
     }
@@ -55,16 +55,28 @@ public class TransactionLogStateStoreCreator {
 
     private void createTransactionLogTable(String tableName) {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(DynamoDBTransactionLogStateStore.TABLE_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
+                AttributeDefinition.builder()
+                        .attributeName(DynamoDBTransactionLogStateStore.TABLE_ID)
+                        .attributeType(ScalarAttributeType.S)
+                        .build(),
+                AttributeDefinition.builder()
+                        .attributeName(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER)
+                        .attributeType(ScalarAttributeType.N)
+                        .build());
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(DynamoDBTransactionLogStateStore.TABLE_ID, KeyType.HASH),
-                new KeySchemaElement(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER, KeyType.RANGE));
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(tableName)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                KeySchemaElement.builder()
+                        .attributeName(DynamoDBTransactionLogStateStore.TABLE_ID)
+                        .keyType(KeyType.HASH)
+                        .build(),
+                KeySchemaElement.builder()
+                        .attributeName(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER)
+                        .keyType(KeyType.RANGE)
+                        .build());
+        CreateTableRequest request = CreateTableRequest.builder()
+                .tableName(tableName)
+                .attributeDefinitions(attributeDefinitions)
+                .keySchema(keySchemaElements)
+                .billingMode(BillingMode.PAY_PER_REQUEST).build();
         dynamoDB.createTable(request);
     }
 }
