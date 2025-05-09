@@ -8,8 +8,11 @@ ingest, and run reports and scripts against the instance.
 These instructions will assume you start in the project root directory and Sleeper has been built
 (see [the developer guide](../developer-guide.md) for how to set that up).
 
-**Currently these scripts are only supported when run from the Docker host.** It may be possible to adjust these to run
-in a Docker container, e.g. in a dev container or a `sleeper builder` container.
+**Currently these scripts are only supported when run from the Docker host.** This also means it's necessary to build
+Sleeper in the host machine, rather than using a dev container or a `sleeper builder` container. It may be possible to
+adjust these to run in a Docker container for those use cases. The easiest option may be to use the Nix package manager,
+which avoids the need to install all the build dependencies in the host machine. This is documented
+in [the developer guide](../developer-guide.md#nix-shell).
 
 ## Launch LocalStack container
 
