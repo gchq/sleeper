@@ -60,15 +60,19 @@
             <artifactId>arrow-memory-unsafe</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Hadoop dependencies (added to pass build to be removed in seperate issue) -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aws</artifactId>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
