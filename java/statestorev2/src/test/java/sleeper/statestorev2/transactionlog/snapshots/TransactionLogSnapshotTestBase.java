@@ -15,7 +15,6 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -71,9 +70,10 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
-        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
-        FileSystem fs = path.getFileSystem(hadoopConf);
-        fs.delete(path, false);
+        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(snapshot.getObjectKey())
+                .build());
     }
 
     protected void createSnapshots(TableProperties table) {
