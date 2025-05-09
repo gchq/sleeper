@@ -28,7 +28,7 @@ once in a given AWS account.
 sleeper cdk bootstrap
 ```
 
-### Sleeper CLI environment
+### Deploy/connect to an environment
 
 The Sleeper CLI can create a machine in AWS to deploy Sleeper from (an EC2 instance) and a networking context that is
 suitable for deploying Sleeper. The machine in AWS avoids the need for lengthy uploads of build artefacts from outside
@@ -83,7 +83,7 @@ The cloud-init process will install the Sleeper CLI and clone the Sleeper Git re
 will restart. If you added an existing environment, adding a user will clone your own copy of the repository, but
 cloud-init will already have been done, and the EC2 will not restart.
 
-#### Using the environment EC2
+### Using the environment EC2
 
 Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository mounted into it:
 
@@ -94,10 +94,14 @@ cd sleeper                       # Change directory to the root of the Git repos
 git checkout --track origin/main # Check out the latest release version
 ```
 
-This Docker container includes the dependencies for building Sleeper. The rest of the guide assumes you're in the root
-of the Sleeper repository after using these commands. The directory with the Git repository will be persisted between
-executions of `sleeper builder`, and re-mounted to a fresh container each time you run it.
+The connection to the EC2 is a standard SSH connection, persisting for the current terminal until you use `exit` to end
+the session. By default, `sleeper environment connect` will also start a `screen` session in the EC2. If you lose
+connection to the EC2, the `screen` session will persist, and next time you connect you will be where you left off.
 
-If you run `sleeper builder` outside of the EC2, you'll get the same thing but in your local Docker host. Please ensure
-you connect to the EC2 first via `sleeper environment connect`, to avoid the deployment being slow uploading jars and
-Docker images.
+When connected to the EC2, if you use Sleeper CLI commands that start Docker containers, these containers will run in
+the Docker host that's installed in the EC2. Your `sleeper builder` container there will mount its working directory
+from your home directory in the EC2, rather than in your local machine. This will persist the copy of the Git repository
+in the EC2 between executions of `sleeper builder`.
+
+Before building Sleeper for deployment, or deploying Sleeper from artefacts built there, please ensure you connect to
+the EC2 first via `sleeper environment connect`, to avoid lengthy uploads of jars and Docker images.
