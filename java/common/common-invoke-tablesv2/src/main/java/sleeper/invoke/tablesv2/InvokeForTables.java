@@ -15,17 +15,18 @@
  */
 package sleeper.invoke.tablesv2;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.SplitIntoBatches;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -48,7 +49,7 @@ public class InvokeForTables {
      * @param queueUrl  the queue url
      * @param tables    stream of table to send messages for
      */
-    public static void sendOneMessagePerTable(AmazonSQS sqsClient, String queueUrl, Stream<TableStatus> tables) {
+    public static void sendOneMessagePerTable(SqsClient sqsClient, String queueUrl, Stream<TableStatus> tables) {
         // Limit to stay under the maximum size for an SQS sendMessageBatch call.
         SplitIntoBatches.reusingListOfSize(10, tables,
                 batch -> sendMessageBatch(sqsClient, queueUrl, batch));
@@ -63,23 +64,27 @@ public class InvokeForTables {
      * @param tableNames list of table names
      */
     public static void sendOneMessagePerTableByName(
-            AmazonSQS sqsClient, String queueUrl, TableIndex tableIndex, List<String> tableNames) {
+            SqsClient sqsClient, String queueUrl, TableIndex tableIndex, List<String> tableNames) {
         List<TableStatus> tables = tableNames.stream().map(name -> tableIndex.getTableByName(name)
                 .orElseThrow(() -> TableNotFoundException.withTableName(name)))
                 .collect(toUnmodifiableList());
         sendOneMessagePerTable(sqsClient, queueUrl, tables.stream());
     }
 
-    private static void sendMessageBatch(AmazonSQS sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
+    private static void sendMessageBatch(SqsClient sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
         LOGGER.info("Sending table batch of size {} to SQS queue {}: {}", tablesBatch.size(), queueUrl, tablesBatch);
-        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
-                .withQueueUrl(queueUrl)
-                .withEntries(tablesBatch.stream()
-                        .map(table -> new SendMessageBatchRequestEntry()
-                                .withMessageDeduplicationId(UUID.randomUUID().toString())
-                                .withId(table.getTableUniqueId())
-                                .withMessageGroupId(table.getTableUniqueId())
-                                .withMessageBody(table.getTableUniqueId()))
-                        .collect(toUnmodifiableList())));
+        List<SendMessageBatchRequestEntry> list = new ArrayList<SendMessageBatchRequestEntry>();
+        tablesBatch.stream().forEach(table -> {
+            list.add(SendMessageBatchRequestEntry.builder()
+                    .messageDeduplicationId(UUID.randomUUID().toString())
+                    .id(table.getTableUniqueId())
+                    .messageGroupId(table.getTableUniqueId())
+                    .messageBody(table.getTableUniqueId())
+                    .build());
+        });
+        sqsClient.sendMessageBatch(SendMessageBatchRequest.builder()
+                .queueUrl(queueUrl)
+                .entries(list)
+                .build());
     }
 }
