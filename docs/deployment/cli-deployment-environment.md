@@ -54,7 +54,8 @@ You can deploy a fresh environment like this:
 sleeper environment deploy <environment-id>
 ```
 
-[See below](#managing-environments) for options for this command. By default this will deploy a fresh VPC and EC2.
+[See below](#managing-environments) for options for this command. By default this will deploy a fresh VPC and EC2,
+either of which may be omitted.
 
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
