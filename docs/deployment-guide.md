@@ -13,9 +13,10 @@ You will need to get your environment set up correctly so that you can deploy a 
 interact with it. See [getting started](getting-started.md) for how to install the Sleeper CLI. The information below
 provides more detail on how to create an environment to deploy Sleeper into, and how to get set up to deploy into AWS.
 
-Currently it's necessary to build Sleeper before any deployment. With the `sleeper environment` setup described in the
-getting started guide, you get an EC2 with the Sleeper CLI installed, and the Git repository checked out. Once this is
-deployed, you can connect to it and build Sleeper like this:
+Currently it's necessary to build Sleeper before any deployment. There's a separate guide for
+the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md), which deploys an EC2 with the
+Sleeper CLI installed, and the Git repository checked out. Once this is deployed, you can connect to it and build
+Sleeper like this:
 
 ```bash
 sleeper environment connect # Get a shell in the EC2 you deployed
