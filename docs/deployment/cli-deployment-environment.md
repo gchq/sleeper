@@ -64,6 +64,8 @@ You can then SSH to it with EC2 Instance Connect and SSM Session Manager, using 
 sleeper environment connect
 ```
 
+#### Cloud Init
+
 Immediately after it's deployed, commands will run on this instance to install the Sleeper CLI. Once you're connected,
 you can check the progress of those commands like this:
 
@@ -77,9 +79,11 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-This process will install the Sleeper CLI and clone the Sleeper Git repository. Once it has finished the EC2 will
-restart. If you added an existing environment, adding a user will clone your own copy of the repository, but cloud-init
-will already have been done, and the EC2 will not restart.
+The cloud-init process will install the Sleeper CLI and clone the Sleeper Git repository. Once it has finished the EC2
+will restart. If you added an existing environment, adding a user will clone your own copy of the repository, but
+cloud-init will already have been done, and the EC2 will not restart.
+
+#### Using the environment EC2
 
 Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository mounted into it:
 
