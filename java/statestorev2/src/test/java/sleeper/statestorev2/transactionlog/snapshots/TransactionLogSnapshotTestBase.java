@@ -15,7 +15,6 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -62,20 +61,6 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
     }
 
-    protected TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
-        return snapshotStore(table).getLatestSnapshots().getPartitionsSnapshot().orElseThrow();
-    }
-
-    protected TransactionLogSnapshotMetadata getLatestFilesSnapshot(TableProperties table) {
-        return snapshotStore(table).getLatestSnapshots().getFilesSnapshot().orElseThrow();
-    }
-
-    protected void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
-        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
-        FileSystem fs = path.getFileSystem(hadoopConf);
-        fs.delete(path, false);
-    }
-
     protected void createSnapshots(TableProperties table) {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
@@ -105,14 +90,14 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
-                hadoopConf, s3ClientV2, s3TransferManager,
+                s3ClientV2, s3TransferManager,
                 latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClientV2, hadoopConf)
+                instanceProperties, table, dynamoClientV2, s3ClientV2)
                 .deleteSnapshots(deletionTime);
     }
 
