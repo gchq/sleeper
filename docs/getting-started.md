@@ -47,8 +47,7 @@ data. See the documentation on [deploying to localstack](deployment/deploy-to-lo
 The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
 This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
 then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
-understand what the system is doing. It is best to do this from an EC2 instance as a significant amount of code needs to
-be uploaded to AWS.
+understand what the system is doing.
 
 ### Environment setup
 
@@ -62,7 +61,8 @@ resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPU
 
 If you prefer to use your own VPC, you'll need to ensure it meets Sleeper's requirements. It should ideally have
 multiple private subnets in different availability zones. Those subnets should have egress, e.g. via a NAT gateway. The
-VPC should have gateway endpoints for S3 and DynamoDB.
+VPC should have gateway endpoints for S3 and DynamoDB. If there is no gateway endpoint for S3, deployment of a Sleeper
+instance will fail in the CDK.
 
 The [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md) includes options to deploy an EC2 to
 an existing VPC, or a VPC on its own.
@@ -70,46 +70,47 @@ an existing VPC, or a VPC on its own.
 Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you should be able to run the manual system
 test deployment script from there.
 
-### System test
+### Deployment
 
-The easiest way to deploy an instance of Sleeper is to use the scripts for manual system testing. First, set the
-environment variable `ID` to be a globally unique string. This is the instance id. It will be used as part of the name
-of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should conform to the naming requirements
-of those services. In general stick to lowercase letters, numbers, and hyphens. We use the instance id as part of the
-name of all the resources that are deployed. This makes it easy to find the resources that Sleeper has deployed within
-each service (go to the service in the AWS console and type the instance id into the search box).
+The Git repository includes a combined script that builds and deploys Sleeper, and starts random data generation in a
+separate "system test" ECS cluster, 40 million records per ECS task. This takes a globally unique Sleeper instance ID,
+and IDs of the VPC and subnets you want to deploy the instance to.
+
+The instance ID must be 20 characters or less, and should consist of lower case letters, numbers, and hyphens. We use
+the instance ID as part of the name of all AWS resources that are deployed.
 
 Avoid reusing the same instance id, as log groups from a deleted instance will still be present unless you delete them.
 An instance will fail to deploy if it would replace log groups from a deleted instance.
 
-Create an environment variable called `VPC` which is the id of the VPC you want to deploy Sleeper to, and create an
-environment variable called `SUBNETS` with the ids of subnets you wish to deploy Sleeper to (note that this is only
-relevant to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability
-zones). Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
+Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
 
-The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
+Start a builder container by running `sleeper builder` in a terminal. This will connect to a Docker container that will
+be deleted after you exit. This contains a workspace mounted from a folder in the host home directory, which will
+persist after the container exits, and will be reused by future calls to `sleeper builder`. It also inherits the AWS
+and Docker configuration from the host.
 
-Before you can run any scripts, you need to build the project. From the root of the Git repository, run:
-
-```bash
-./scripts/build/buildForTest.sh
-```
-
-Then you can deploy the system test instance by running the following command:
+From inside a builder container, if you set environment variables for the instance `ID`, `VPC` and `SUBNETS`, you can
+run the script like this:
 
 ```bash
-./scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
+git clone --branch main https://github.com/gchq/sleeper.git # If you haven't checked out the Git repository yet
+cd sleeper
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
-Note that this script currently needs to be run from an x86_64 machine as we do not yet have cross-architecture Docker
-builds. Then CDK will be used to deploy a Sleeper instance. This will take around 20 minutes. Once that is complete,
-some tasks are started on an ECS cluster. These tasks generate some random data and write it to Sleeper. 11 ECS tasks
-will be created. Each of these will write 40 million records. As all writes to Sleeper are asynchronous, it will take a
-while before the data appears (around 8 minutes).
+You can also run this script in the background and redirect output to a file:
 
-You can watch what the ECS tasks that are writing data are doing by going to the ECS cluster named
-sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
+```bash
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS} &> test.log &
+less -R test.log # Press shift+F to follow the output in less
+```
+
+This should take around 20 minutes to build the code, and another 20 minutes to deploy the instance with the CDK. Once
+it finishes, you can watch the random data generation tasks in the AWS console by finding the ECS cluster
+named `sleeper-${ID}-system-test-cluster`. You can view logs for tasks in the cluster. It takes around 10 minutes to
+generate data. The data will appear in Sleeper in large batches as the tasks finish.
+
+### Interacting with Sleeper
 
 Run the following command to see how many records are currently in the system:
 
@@ -157,7 +158,7 @@ To tear all the infrastructure down, run
 ./scripts/test/tearDown.sh
 ```
 
-It is possible to run variations on this system-test by editing the system test properties, like this:
+It is possible to run variations on this system test by editing the system test properties, like this:
 
 ```bash
 cd ./scripts/test/deployAll
