@@ -98,7 +98,7 @@ cd sleeper
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-You can also run this script in the background and redirect output to a file:
+You may prefer to run this script in the background and redirect output to a file:
 
 ```bash
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS} &> test.log &
