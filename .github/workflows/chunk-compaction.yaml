@@ -33,7 +33,6 @@ on:
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/common/common-invoke-tables/**'
-      - 'java/common/common-invoke-tablesv2/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/parquet/**'
