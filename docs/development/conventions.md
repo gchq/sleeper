@@ -5,6 +5,54 @@ There are a number of ways we tend to write and structure our code, where if we 
 the maintainability of the codebase as a whole. We try to keep to these conventions unless there's a good reason within
 a specific part of the code. We try to remain open to alternative approaches if they improve maintainability.
 
+## Java keyword usage
+
+### Access level modifiers
+
+Within a class we try to declare the minimum access level for all elements. Instance fields are almost always private,
+with getters added only when necessary. Methods should only be public when they are intended to be called from outside
+the class. Usually if a method has no usages from outside a class it can either be private or be deleted. Nested classes
+can be private, but builders are usually public.
+
+Classes are usually public, but may be at a lower access level for implementation details.
+
+In a class defining JUnit tests, access level modifiers may be omitted based on preference. Other test helper or test
+base classes should follow the same style as non-test code.
+
+### Use of final
+
+We usually only use the final keyword in field declarations. Fields should be declared final in all cases unless they
+need to be reassigned. In practice, most fields should be final, as we usually create a new object if a field would
+otherwise need to be reassigned.
+
+We don't use final for parameters or local variables. We don't usually declare final classes.
+
+In a class defining JUnit tests, the final keyword may be omitted based on preference. Other test helper or test base
+classes should follow the same style as non-test code.
+
+### Use of this
+
+We usually only use the this keyword in a constructor or a setter. If the this keyword is needed to assign any of the
+fields in a constructor, we use this in all the field assignments.
+
+For example:
+
+```java
+public Partition(String id, Range range) {
+    this.id = id;
+    this.region = new Region(List.of(range));
+}
+```
+
+With a builder, the this keyword can be omitted:
+
+```java
+public Partition(Builder builder) {
+    id = builder.id;
+    region = builder.region;
+}
+```
+
 ## Ordering within a Java class
 
 We try to keep to this ordering of elements in a class declaration:
@@ -19,10 +67,12 @@ We try to keep to this ordering of elements in a class declaration:
 8. Private methods
 9. Public getter instance methods that return the value of a field with no other code
 10. In a builder, a build method that creates an instance of the class being built
-11. Implementations of equals, hashCode, toString when needed
+11. Implementations of equals, hashCode, toString when needed (on data classes, not on builders)
 12. Nested classes/interfaces
 
 Within this ordering, methods should be in the order that they are expected to be used.
+
+Note that many classes will not contain many of these elements.
 
 ## Javadoc
 
