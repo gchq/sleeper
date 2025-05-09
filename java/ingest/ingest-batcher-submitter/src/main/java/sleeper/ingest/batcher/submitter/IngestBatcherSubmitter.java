@@ -29,6 +29,8 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.parquet.utils.HadoopPathUtils;
 
+import java.io.FileNotFoundException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,20 +44,31 @@ public class IngestBatcherSubmitter {
     private final Configuration conf;
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
+    private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
 
-    public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store) {
+    public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store,
+            IngestBatcherSubmitDeadLetterQueue deadLetterQueue) {
         this.properties = properties;
         this.conf = conf;
         this.tableIndex = tableIndex;
         this.store = store;
+        this.deadLetterQueue = deadLetterQueue;
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
-        } catch (RuntimeException e) {
-            LOGGER.warn("Error when processing request: {}", request, e);
+        } catch (UncheckedIOException uioe) {
+            if (uioe.getCause() instanceof FileNotFoundException) {
+                LOGGER.info("File not found, sending request: {} to dead letter queue", request, uioe);
+                deadLetterQueue.submit(request);
+                return;
+            }
+            throw uioe;
+        } catch (TableNotFoundException tnfe) {
+            LOGGER.info("Table not found, sending request: {} to dead letter queue", request, tnfe);
+            deadLetterQueue.submit(request);
             return;
         }
         files.forEach(store::addFile);
