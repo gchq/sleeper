@@ -26,7 +26,6 @@ import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.SplitIntoBatches;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -73,18 +72,16 @@ public class InvokeForTables {
 
     private static void sendMessageBatch(SqsClient sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
         LOGGER.info("Sending table batch of size {} to SQS queue {}: {}", tablesBatch.size(), queueUrl, tablesBatch);
-        List<SendMessageBatchRequestEntry> list = new ArrayList<SendMessageBatchRequestEntry>();
-        tablesBatch.stream().forEach(table -> {
-            list.add(SendMessageBatchRequestEntry.builder()
-                    .messageDeduplicationId(UUID.randomUUID().toString())
-                    .id(table.getTableUniqueId())
-                    .messageGroupId(table.getTableUniqueId())
-                    .messageBody(table.getTableUniqueId())
-                    .build());
-        });
         sqsClient.sendMessageBatch(SendMessageBatchRequest.builder()
                 .queueUrl(queueUrl)
-                .entries(list)
+                .entries(tablesBatch.stream().map(table -> {
+                    return SendMessageBatchRequestEntry.builder()
+                            .messageDeduplicationId(UUID.randomUUID().toString())
+                            .id(table.getTableUniqueId())
+                            .messageGroupId(table.getTableUniqueId())
+                            .messageBody(table.getTableUniqueId())
+                            .build();
+                }).toList())
                 .build());
     }
 }
