@@ -31,10 +31,6 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create128StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
@@ -53,13 +49,11 @@ public class IngestPerformanceST {
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
         sleeper.systemTestCluster()
-                .updateProperties(properties -> {
-                    properties.setEnum(INGEST_MODE, QUEUE);
-                    properties.setEnum(INGEST_QUEUE, STANDARD_INGEST);
-                    properties.setNumber(NUMBER_OF_WRITERS, 11);
-                    properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
-                })
-                .runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .runDataGenerationJobs(11,
+                        builder -> builder.ingestMode(QUEUE)
+                                .ingestQueue(STANDARD_INGEST)
+                                .recordsPerIngest(40_000_000),
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));

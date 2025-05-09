@@ -17,8 +17,11 @@
 package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+
+import java.util.List;
 
 public interface DataGenerationTasksDriver {
 
-    void runDataGenerationTasks(PollWithRetries poll);
+    void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll);
 }

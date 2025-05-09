@@ -27,14 +27,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-dynamodb</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sqs</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -63,17 +68,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>dynamodb-tools</artifactId>
+            <artifactId>dynamodb-toolsv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
