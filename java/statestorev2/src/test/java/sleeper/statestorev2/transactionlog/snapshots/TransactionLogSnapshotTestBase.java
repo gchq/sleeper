@@ -61,21 +61,6 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
     }
 
-    protected TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
-        return snapshotStore(table).getLatestSnapshots().getPartitionsSnapshot().orElseThrow();
-    }
-
-    protected TransactionLogSnapshotMetadata getLatestFilesSnapshot(TableProperties table) {
-        return snapshotStore(table).getLatestSnapshots().getFilesSnapshot().orElseThrow();
-    }
-
-    protected void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
-        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
-                .bucket(instanceProperties.get(DATA_BUCKET))
-                .key(snapshot.getObjectKey())
-                .build());
-    }
-
     protected void createSnapshots(TableProperties table) {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = snapshotStore(table);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
