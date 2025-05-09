@@ -5,10 +5,10 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-In either case, currently you'll need to start by building the system. If you want to deploy locally, you'll need to
-build Sleeper locally. If you want to deploy to AWS you'll build Sleeper on a machine in AWS. The Sleeper CLI contains
-tools for either of these, built into Docker images. In the future we may publish pre-built artefacts that will make
-manual building unnecessary.
+The Sleeper CLI contains tools to deploy into AWS, and to build the system. This runs commands inside a Docker
+container. This way you can avoid needing to install any dependencies other than Docker on your machine. In the future
+we may also publish pre-built artefacts that will make it unnecessary to build Sleeper yourself. When using the Sleeper
+CLI, the build and deployment can be invoked from a single script to minimise setup for testing.
 
 ## Install Sleeper CLI
 

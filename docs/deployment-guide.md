@@ -27,31 +27,16 @@ cd sleeper                  # Change directory to the root of the Git repository
 
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
-### Sleeper CLI Docker environment
+The `sleeper builder` command gets you a shell inside a Docker container with all the dependencies required to build and
+deploy an instance of Sleeper.  The container will be deleted after you exit. You will start in a directory mounted into
+the container from a folder in the host home directory under `~/.sleeper`. This workspace will persist after the
+container exits, and will be reused by future calls to `sleeper builder`. It also inherits the AWS and Docker
+configuration from the host.
 
-The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install anything other than
-Docker on your machine.
-
-The `sleeper builder` command gets you a shell inside a container with all the dependencies required to build and deploy
-an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper Git repository will have been
-cloned into the working directory of the container. If you are not using an environment EC2, you will need to manually
-clone the repository. If you deploy from outside of AWS this will involve lengthy uploads of build artifacts, which you
-can avoid with the environment EC2.
-
-If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
-the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
-to the container as well.
-
-The host Docker environment will be propagated to the container via the Docker socket.
-
-The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
-if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
-
-If you add a command on the end, you can run a specific script like this:
-
-```shell
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
-```
+Note that when you run this inside an environment EC2, the Sleeper Git repository will have been cloned into the working
+directory. If you are not using an EC2 deployed by the CLI, you will need to manually clone the repository. If you
+deploy from outside of AWS this will involve lengthy uploads of build artefacts, which you can avoid with the
+environment EC2, or your own EC2 instance.
 
 ### Configure AWS
 
