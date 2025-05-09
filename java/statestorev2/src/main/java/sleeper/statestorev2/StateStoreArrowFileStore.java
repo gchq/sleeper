@@ -135,7 +135,7 @@ public class StateStoreArrowFileStore {
     /**
      * Deletes the snapshot file within the bucket.
      *
-     * @param metadata metadate for the snapshot
+     * @param metadata metadata for the snapshot
      */
     public void deleteSnapshotFile(TransactionLogSnapshotMetadata metadata) {
         s3Client.deleteObject(DeleteObjectRequest.builder()
