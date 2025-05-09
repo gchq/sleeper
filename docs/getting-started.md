@@ -72,14 +72,14 @@ test deployment script from there.
 
 ### Deployment
 
-The Git repository includes a combined script that builds and deploys Sleeper, and starts random data generation in a
-separate "system test" ECS cluster, 40 million records per ECS task. This takes a globally unique Sleeper instance ID,
-and IDs of the VPC and subnets you want to deploy the instance to.
+The Git repository includes a manual system test deployment script that builds and deploys Sleeper, and starts random
+data generation in a separate "system test" ECS cluster. By default this generates 40 million records per ECS task. This
+script takes a globally unique Sleeper instance ID, and IDs of the VPC and subnets you want to deploy the instance to.
 
 The instance ID must be 20 characters or less, and should consist of lower case letters, numbers, and hyphens. We use
 the instance ID as part of the name of all AWS resources that are deployed.
 
-Avoid reusing the same instance id, as log groups from a deleted instance will still be present unless you delete them.
+Avoid reusing the same instance ID, as log groups from a deleted instance will still be present unless you delete them.
 An instance will fail to deploy if it would replace log groups from a deleted instance.
 
 Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
