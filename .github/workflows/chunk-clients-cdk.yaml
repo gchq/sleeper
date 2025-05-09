@@ -35,7 +35,6 @@ on:
       - 'java/compaction/compaction-rust/**'
       - 'java/compaction/compaction-tracker/**'
       - 'java/common/common-invoke-tables/**'
-      - 'java/common/common-invoke-tablev2/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/compaction/compaction-core/**'
       - 'java/statestore/**'
