@@ -2,8 +2,11 @@ Getting started
 ===============
 
 There are 2 ways of deploying Sleeper and interacting with an instance. You can deploy to AWS, or to Docker on your
-local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
-allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
+local machine.
+
+The Docker version has limited functionality and will only work with small volumes of data, but will allow you to deploy
+an instance, ingest some files, and run reports and scripts against the instance. See the documentation
+on [deploying to localstack](deployment/deploy-to-localstack.md) for more information.
 
 The Sleeper CLI contains tools to deploy into AWS, and to build the system. This runs commands inside a Docker
 container. This way you can avoid needing to install any dependencies other than Docker on your machine. In the future
@@ -44,11 +47,6 @@ data. See the documentation on [deploying to localstack](deployment/deploy-to-lo
 
 ## Deploy to AWS
 
-The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
-This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
-then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
-understand what the system is doing.
-
 ### Environment setup
 
 You'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance to deploy from, to avoid
@@ -65,12 +63,20 @@ VPC should have gateway endpoints for S3 and DynamoDB. If there is no gateway en
 instance will fail in the CDK.
 
 The [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md) includes options to deploy an EC2 to
-an existing VPC, or a VPC on its own.
+an existing VPC, or a VPC on its own. If you don't use that, you will need to have bootstrapped CDK in your AWS account.
+See [the deployment guide](deployment-guide.md) for how to do that.
 
-Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you should be able to run the manual system
-test deployment script from there.
+Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you can either use our deployment scripts,
+or invoke the CDK yourself as described in [the deployment guide](deployment-guide.md).
 
 ### Deployment
+
+The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
+This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
+then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
+understand what the system is doing.
+
+If you'd prefer to match how you would deploy to production, see [the deployment guide](deployment-guide.md).
 
 The Git repository includes a manual system test deployment script that builds and deploys Sleeper, and starts random
 data generation in a separate "system test" ECS cluster. By default this generates 40 million records per ECS task. This

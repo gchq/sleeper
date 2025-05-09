@@ -10,13 +10,11 @@ deployed instance.
 ## Get your environment set up
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
-interact with it. See [getting started](getting-started.md) for how to install the Sleeper CLI. The information below
-provides more detail on how to create an environment to deploy Sleeper into, and how to get set up to deploy into AWS.
+interact with it. See [environment setup](deployment/environment-setup.md) for how to install the Sleeper CLI and create
+an environment suitable for deploying Sleeper.
 
-Currently it's necessary to build Sleeper before any deployment. There's a separate guide for
-the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md), which deploys an EC2 with the
-Sleeper CLI installed, and the Git repository checked out. Once this is deployed, you can connect to it and build
-Sleeper like this:
+If you set up the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md), you can connect to it
+and build Sleeper like this:
 
 ```bash
 sleeper environment connect # Get a shell in the EC2 you deployed
@@ -25,78 +23,16 @@ cd sleeper                  # Change directory to the root of the Git repository
 ./scripts/build/build.sh
 ```
 
-If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
+If you used the system test deployment described in the getting started guide, you will have already built Sleeper from
+the Git repository in a `sleeper builder` container. If you deploy from outside of AWS this will involve lengthy uploads
+of build artefacts, which you can avoid with the environment EC2, or your own EC2 instance. If you deploy from your own
+EC2, you will need to check out the Git repository inside a `sleeper builder` container yourself.
 
 The `sleeper builder` command gets you a shell inside a Docker container with all the dependencies required to build and
 deploy an instance of Sleeper.  The container will be deleted after you exit. You will start in a directory mounted into
 the container from a folder in the host home directory under `~/.sleeper`. This workspace will persist after the
 container exits, and will be reused by future calls to `sleeper builder`. It also inherits the AWS and Docker
 configuration from the host.
-
-Note that when you run this inside an environment EC2, the Sleeper Git repository will have been cloned into the working
-directory. If you are not using an EC2 deployed by the CLI, you will need to manually clone the repository. If you
-deploy from outside of AWS this will involve lengthy uploads of build artefacts, which you can avoid with the
-environment EC2, or your own EC2 instance.
-
-### Configure AWS
-
-When you configure AWS on your machine or in the environment EC2, if you do it outside the Sleeper CLI, the
-configuration will be passed on to any Sleeper CLI commands.
-
-The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
-
-~/.aws/credentials:
-
-```ini
-[named-profile-123456789]
-aws_access_key_id = abcd12345
-aws_secret_access_key = defg12345
-aws_session_token = hijK12345
-```
-
-~/.aws/config
-
-```ini
-[profile named-profile-123456789]
-region = eu-west-2
-```
-
-~/.bashrc:
-
-```bash
-export AWS_PROFILE=named-profile-123456789
-export AWS_REGION=eu-west-2
-```
-
-Also see
-the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
-
-### Bootstrapping CDK
-
-To deploy Sleeper into your AWS account you will need to have bootstrapped CDK in the
-account. Bootstrapping installs all the resources that CDK needs to do deployments. Note
-that bootstrapping CDK is a one-time action for the account that is nothing to do with
-Sleeper itself. See
-[this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
-on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
-not be run from inside the sleeper directory. You can run `cdk bootstrap` in a Sleeper CLI
-Docker container, as described in [getting started](getting-started.md#deployment-environment).
-
-### Lambda Reserved Concurrency
-
-When deploying Sleeper, depending on the stacks you need, it will deploy a few Lambda
-functions into your account. Some of these Lambda functions are configured to run
-with reserved concurrency of 1. In order to allow this you will need to make
-sure you have enough free reserved concurrency in your account.
-
-You will need a reserved account concurrency of at most 6 for all the Sleeper stacks
-to be deployed. In order to check how many you have, go to the Lambda section in your
-AWS Console and check the dashboard. It should say at the top "full account concurrency = X"
-(usually 1000) and "unreserved account concurrency = Y". You can't use the last 100 of your
-limit. So if Y is greater than or equal to X-100 you won't be able to deploy Sleeper
-and you will have to see if you can adjust your existing lambdas to free some up.
-
-You're now ready to build and deploy Sleeper.
 
 ## Deployment
 
