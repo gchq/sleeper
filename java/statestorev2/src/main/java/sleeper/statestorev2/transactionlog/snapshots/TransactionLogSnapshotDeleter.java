@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -28,6 +29,7 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 
 /**
@@ -67,10 +69,10 @@ public class TransactionLogSnapshotDeleter {
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
-                        snapshotFileDeleter.delete(snapshot.getPath());
+                        snapshotFileDeleter.delete(snapshot.getObjectKey());
                         deletedSnapshotTracker.deleteSuccess(snapshot.getTransactionNumber());
                     } catch (IOException e) {
-                        LOGGER.error("Failed to delete snapshot file: {}", snapshot.getPath(), e);
+                        LOGGER.error("Failed to delete snapshot file: {}", snapshot.getObjectKey(), e);
                         throw new UncheckedIOException(e);
                     }
                     metadataStore.deleteSnapshot(snapshot);
@@ -80,7 +82,11 @@ public class TransactionLogSnapshotDeleter {
     }
 
     private static SnapshotFileDeleter fileDeleter(InstanceProperties instanceProperties, S3Client s3Client) {
-        return null;
+        return file -> {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(instanceProperties.get(DATA_BUCKET))
+                    .key(file).build());
+        };
     }
 
     /**
@@ -90,9 +96,9 @@ public class TransactionLogSnapshotDeleter {
         /**
          * Deletes a snapshot file.
          *
-         * @param  path        the path to the snapshot file
+         * @param  objectKey   the object key for the snapshot file
          * @throws IOException if the file fails to delete
          */
-        void delete(String path) throws IOException;
+        void delete(String objectKey) throws IOException;
     }
 }

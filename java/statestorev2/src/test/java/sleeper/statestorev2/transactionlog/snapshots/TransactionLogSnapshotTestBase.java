@@ -112,7 +112,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClientV2)
+                instanceProperties, table, dynamoClientV2, s3ClientV2)
                 .deleteSnapshots(deletionTime);
     }
 
