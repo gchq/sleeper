@@ -15,12 +15,10 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -43,8 +41,8 @@ public class TransactionLogSnapshotDeleter {
 
     public TransactionLogSnapshotDeleter(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            DynamoDbClient dynamoDB, Configuration configuration) {
-        this(instanceProperties, tableProperties, dynamoDB, hadoopFileDeleter(configuration));
+            DynamoDbClient dynamoDB, S3Client s3Client) {
+        this(instanceProperties, tableProperties, dynamoDB, fileDeleter(instanceProperties, s3Client));
     }
 
     public TransactionLogSnapshotDeleter(
@@ -81,16 +79,8 @@ public class TransactionLogSnapshotDeleter {
         return deletedSnapshotTracker;
     }
 
-    private static SnapshotFileDeleter hadoopFileDeleter(Configuration configuration) {
-        return file -> {
-            Path path = new Path(file);
-            FileSystem fs = path.getFileSystem(configuration);
-            if (!fs.exists(path)) {
-                LOGGER.warn("Snapshot file has already been deleted: {}", file);
-            } else {
-                fs.delete(path, false);
-            }
-        };
+    private static SnapshotFileDeleter fileDeleter(InstanceProperties instanceProperties, S3Client s3Client) {
+        return null;
     }
 
     /**

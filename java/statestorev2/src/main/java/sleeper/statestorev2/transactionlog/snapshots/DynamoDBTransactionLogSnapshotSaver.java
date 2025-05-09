@@ -15,7 +15,6 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -42,29 +41,27 @@ public class DynamoDBTransactionLogSnapshotSaver {
 
     private final SnapshotMetadataSaver metadataSaver;
     private final StateStoreArrowFileStore fileStore;
-    private final Configuration configuration;
     private final String basePath;
 
     public DynamoDBTransactionLogSnapshotSaver(
             InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo,
-            Configuration configuration, S3Client s3Client, S3TransferManager s3TransferManager) {
+            S3Client s3Client, S3TransferManager s3TransferManager) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
-                instanceProperties, tableProperties, configuration, s3Client, s3TransferManager);
+                instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     private DynamoDBTransactionLogSnapshotSaver(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration, S3Client s3Client, S3TransferManager s3TransferManager) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration, s3Client, s3TransferManager);
+            InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     DynamoDBTransactionLogSnapshotSaver(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration,
+            InstanceProperties instanceProperties, TableProperties tableProperties,
             S3Client s3Client, S3TransferManager s3TransferManager) {
         this.metadataSaver = metadataSaver;
         this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
-        this.configuration = configuration;
         this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
 

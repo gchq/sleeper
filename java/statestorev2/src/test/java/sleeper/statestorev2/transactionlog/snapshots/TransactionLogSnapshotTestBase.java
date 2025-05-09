@@ -105,14 +105,14 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
-                hadoopConf, s3ClientV2, s3TransferManager,
+                s3ClientV2, s3TransferManager,
                 latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClientV2, hadoopConf)
+                instanceProperties, table, dynamoClientV2)
                 .deleteSnapshots(deletionTime);
     }
 
