@@ -77,8 +77,8 @@ resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPU
 The [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md) includes options to deploy an EC2 to
 an existing VPC, or a VPC on its own. If you don't use that, you will need to have bootstrapped CDK in your AWS account.
 
-You can refer to [environment setup](deployment/environment-setup.md) for how to authenticate with AWS, how to bootstrap
-CDK, and how to verify you have sufficient AWS Lambda concurrency quota in your account.
+You can also refer to [environment setup](deployment/environment-setup.md) for how to authenticate with AWS, how to
+bootstrap CDK, and how to verify you have sufficient AWS Lambda concurrency quota in your account.
 
 Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you can either use our deployment scripts,
 or invoke the CDK yourself as described in the [deployment guide](deployment-guide.md).
