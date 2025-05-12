@@ -1211,6 +1211,7 @@ dependencies = [
  "num-format",
  "num-traits",
  "object_store",
+ "regex",
  "rust_sketch",
  "tempfile",
  "test-log",

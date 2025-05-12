@@ -25,6 +25,7 @@ use datafusion::{
     prelude::DataFrame,
 };
 use map_agg::{MapAggregator, MapAggregatorOp};
+use regex::Regex;
 use std::sync::Arc;
 
 pub mod ageoff;
@@ -32,6 +33,8 @@ mod map_accumulator;
 pub mod map_agg;
 mod map_group_accumulator;
 mod state;
+
+pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 
 /// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
 #[derive(Debug, Default)]
@@ -137,9 +140,11 @@ impl TryFrom<&str> for FilterAggregationConfig {
             values.iter().skip(1)
         };
         let mut aggregation = Vec::new();
+        let matcher =
+            Regex::new(AGGREGATE_REGEX).map_err(|e| DataFusionError::External(Box::new(e)))?;
         for agg in iter {
-            if let Some((col, op)) = agg.split_once('=') {
-                aggregation.push(Aggregate(col.replace('\'', ""), op.try_into()?));
+            if let Some(captures) = matcher.captures(agg) {
+                aggregation.push(Aggregate(captures[2].to_owned(), captures[1].try_into()?));
             }
         }
         let aggregation = if aggregation.is_empty() {

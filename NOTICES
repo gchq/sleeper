@@ -477,6 +477,9 @@ serde_json (https://github.com/serde-rs/json)
 
 - Apache 2 License
 
+regex (https://github.com/serde-rs/json)
+
+- Apache 2 License
 
 The build pipeline uses the following GitHub Actions from the marketplace.
 
