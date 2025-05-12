@@ -16,8 +16,8 @@
 
 package sleeper.ingest.trackerv2.job;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 
