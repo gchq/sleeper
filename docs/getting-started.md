@@ -44,9 +44,15 @@ chmod +x ./sleeper-install.sh
 ./sleeper-install.sh
 ```
 
+### Commands
+
 The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
 `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set AWS environment variables or
 configuration on the host machine, that will be propagated to the Docker container when you use `sleeper`.
+
+The `sleeper builder` command gives you a command line in a Docker container with all the necessary tools to build
+Sleeper, and a workspace folder persisted in the host at `~/.sleeper/builder`. We will use this to deploy and interact
+with Sleeper.
 
 You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
 build and deployment tools up to date.
