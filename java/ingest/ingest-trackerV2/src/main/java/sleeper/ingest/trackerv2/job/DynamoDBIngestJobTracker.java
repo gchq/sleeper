@@ -16,17 +16,17 @@
 
 package sleeper.ingest.trackerv2.job;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -37,7 +37,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.util.LoggedDuration;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 import sleeper.ingest.trackerv2.IngestTrackerException;
 
 import java.time.Instant;
@@ -52,10 +52,10 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
 import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
 import static sleeper.ingest.trackerv2.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;
@@ -78,13 +78,13 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
     public static final String JOB_LAST_VALIDATION_RESULT = "LastValidationResult";
     public static final String VALIDATION_INDEX = "by-validation";
 
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final String updatesTableName;
     private final String jobsTableName;
     private final int timeToLiveInSeconds;
     private final Supplier<Instant> getTimeNow;
 
-    DynamoDBIngestJobTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+    DynamoDBIngestJobTracker(DynamoDbClient dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.updatesTableName = jobUpdatesTableName(properties.get(ID));
         this.jobsTableName = jobLookupTableName(properties.get(ID));
@@ -152,13 +152,14 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
 
     private void addStatusUpdate(Map<String, AttributeValue> statusUpdate) {
         Instant startTime = Instant.now();
-        PutItemResult result = dynamoDB.putItem(new PutItemRequest()
-                .withTableName(updatesTableName)
-                .withItem(statusUpdate)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        PutItemResponse response = dynamoDB.putItem(PutItemRequest.builder()
+                .tableName(updatesTableName)
+                .item(statusUpdate)
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .build());
         LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
                 getStringAttribute(statusUpdate, UPDATE_TYPE), getStringAttribute(statusUpdate, JOB_ID),
-                result.getConsumedCapacity().getCapacityUnits(),
+                response.consumedCapacity().capacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
@@ -189,16 +190,17 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
             expressionAttributeValues = new HashMap<>(expressionAttributeValues);
             expressionAttributeValues.put(":validation_result", validationResult);
         }
-        UpdateItemResult result = dynamoDB.updateItem(new UpdateItemRequest()
-                .withTableName(jobsTableName)
-                .withKey(Map.of(JOB_ID, statusUpdate.get(JOB_ID)))
-                .withUpdateExpression(updateExpression)
-                .withExpressionAttributeNames(expressionAttributeNames)
-                .withExpressionAttributeValues(expressionAttributeValues)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        UpdateItemResponse response = dynamoDB.updateItem(UpdateItemRequest.builder()
+                .tableName(jobsTableName)
+                .key(Map.of(JOB_ID, statusUpdate.get(JOB_ID)))
+                .updateExpression(updateExpression)
+                .expressionAttributeNames(expressionAttributeNames)
+                .expressionAttributeValues(expressionAttributeValues)
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .build());
         LOGGER.debug("Updated status for job {}, capacity consumed = {}, took {}",
                 getStringAttribute(statusUpdate, JOB_ID),
-                result.getConsumedCapacity().getCapacityUnits(),
+                response.consumedCapacity().capacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
@@ -211,12 +213,13 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
     @Override
     public Stream<IngestJobStatus> streamAllJobs(String tableId) {
         return DynamoDBIngestJobStatusFormat.streamJobStatuses(
-                streamPagedItems(dynamoDB, new QueryRequest()
-                        .withTableName(updatesTableName)
-                        .withKeyConditionExpression("#TableId = :table_id")
-                        .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                        .withExpressionAttributeValues(
-                                Map.of(":table_id", createStringAttribute(tableId)))));
+                streamPagedItems(dynamoDB, QueryRequest.builder()
+                        .tableName(updatesTableName)
+                        .keyConditionExpression("#TableId = :table_id")
+                        .expressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                        .expressionAttributeValues(
+                                Map.of(":table_id", createStringAttribute(tableId)))
+                        .build()));
     }
 
     @Override
@@ -232,31 +235,35 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
     }
 
     private Optional<Map<String, AttributeValue>> lookupJobById(String jobId) {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(jobsTableName)
-                .withKeyConditionExpression("#JobId = :job_id")
-                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId))));
-        return result.getItems().stream().findFirst();
+        QueryResponse response = dynamoDB.query(QueryRequest.builder()
+                .tableName(jobsTableName)
+                .keyConditionExpression("#JobId = :job_id")
+                .expressionAttributeNames(Map.of("#JobId", JOB_ID))
+                .expressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))
+                .build());
+        return response.items().stream().findFirst();
     }
 
     private Stream<Map<String, AttributeValue>> lookupInvalidJobs() {
-        return streamPagedItems(dynamoDB, new QueryRequest()
-                .withTableName(jobsTableName).withIndexName(VALIDATION_INDEX)
-                .withKeyConditionExpression("#Result = :rejected")
-                .withExpressionAttributeNames(Map.of("#Result", JOB_LAST_VALIDATION_RESULT))
-                .withExpressionAttributeValues(Map.of(":rejected", createStringAttribute(VALIDATION_REJECTED_VALUE))));
+        return streamPagedItems(dynamoDB, QueryRequest.builder()
+                .tableName(jobsTableName)
+                .indexName(VALIDATION_INDEX)
+                .keyConditionExpression("#Result = :rejected")
+                .expressionAttributeNames(Map.of("#Result", JOB_LAST_VALIDATION_RESULT))
+                .expressionAttributeValues(Map.of(":rejected", createStringAttribute(VALIDATION_REJECTED_VALUE)))
+                .build());
     }
 
     private Stream<Map<String, AttributeValue>> loadStatusItems(Map<String, AttributeValue> jobLookupItem) {
-        return streamPagedItems(dynamoDB, new QueryRequest()
-                .withTableName(updatesTableName)
-                .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
-                .withExpressionAttributeNames(Map.of(
+        return streamPagedItems(dynamoDB, QueryRequest.builder()
+                .tableName(updatesTableName)
+                .keyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
+                .expressionAttributeNames(Map.of(
                         "#TableId", TABLE_ID,
                         "#JobAndUpdate", JOB_ID_AND_UPDATE))
-                .withExpressionAttributeValues(Map.of(
+                .expressionAttributeValues(Map.of(
                         ":table_id", jobLookupItem.get(TABLE_ID),
-                        ":job_id", createStringAttribute(getStringAttribute(jobLookupItem, JOB_ID) + "|"))));
+                        ":job_id", createStringAttribute(getStringAttribute(jobLookupItem, JOB_ID) + "|")))
+                .build());
     }
 }
