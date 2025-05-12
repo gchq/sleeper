@@ -34,7 +34,7 @@ aws-types = { version = "1.3.5" } # for Region
 bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.19.2" } # Access cargo metadata programmtically
 chrono = { version = "0.4.41" } # Log helper
-clap = { version = "4.5.37" } # Cmd line args processing
+clap = { version = "4.5.38" } # Cmd line args processing
 color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
 cxx = { version = "1.0.158" } # Exception handling for Rust
 cxx-build = { version = "1.0.158" }
@@ -52,7 +52,7 @@ owo-colors = { version = "4.2.0" } # Colourised output
 predicates = { version = "3.1.3" } # Test assertions
 rand = { version = "0.9.1" }
 serde_json = { version = "1.0.140" } # Process metadata JSON
-tempfile = { version = "3.19.1" } # Create temporary files
+tempfile = { version = "3.20.0" } # Create temporary files
 test-log = { version = "0.2.17" }
 testing_logger = { version = "0.1.1" } # Assert on logger output in tests
 thiserror = { version = "2.0.12" } # Derivable error enums

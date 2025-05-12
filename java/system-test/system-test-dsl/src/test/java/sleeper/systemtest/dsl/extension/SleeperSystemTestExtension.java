@@ -103,7 +103,6 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         testStartTime = Instant.now();
         TestContext testContext = TestContextFactory.testContext(context);
         LOGGER.info("Beginning system test: {}", testContext.getTestClassAndMethod());
-        deployedResources.resetProperties();
         drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
         systemTestContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances, testContext);
         dsl = new SleeperSystemTest(parameters, drivers, systemTestContext);

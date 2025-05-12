@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
@@ -36,6 +36,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 
 public class SystemTestCluster {
     public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestCluster.class);
@@ -66,17 +70,22 @@ public class SystemTestCluster {
         pollDriver = instanceAdminDrivers.pollWithRetries();
     }
 
-    public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
-        context.updateProperties(config);
-        return this;
+    public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config) {
+        return runDataGenerationJobs(numberOfJobs, config,
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
-    public SystemTestCluster runDataGenerationTasks() {
-        return runDataGenerationTasks(pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
-    }
+    public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config, PollWithRetries poll) {
+        List<SystemTestDataGenerationJob> jobs = IntStream.range(0, numberOfJobs)
+                .mapToObj(i -> SystemTestDataGenerationJob.builder()
+                        .applyMutation(config)
+                        .configBucket(instance.getInstanceProperties().get(CONFIG_BUCKET))
+                        .roleArnToLoadConfig(instance.getInstanceProperties().get(INGEST_BY_QUEUE_ROLE_ARN))
+                        .tableName(instance.getTableName())
+                        .build())
+                .toList();
 
-    public SystemTestCluster runDataGenerationTasks(PollWithRetries poll) {
-        driver.runDataGenerationTasks(poll);
+        driver.runDataGenerationJobs(jobs, poll);
         lastGeneratedFiles = sourceFiles.findGeneratedFiles();
         return this;
     }

@@ -218,7 +218,7 @@
     <suppress>
         <notes><![CDATA[
         Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
-        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.56 at time of
+        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.57 at time of
         writing.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
@@ -231,6 +231,15 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty(/.*$|\.http2/http2.*$|\.websocket/websocket.*$)</packageUrl>
         <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This dependency is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
+        the version we're using. It's listed as having arised in version 12.0.0, and we're using 9.4.57 at time of
+        writing.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-common@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-1948</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
