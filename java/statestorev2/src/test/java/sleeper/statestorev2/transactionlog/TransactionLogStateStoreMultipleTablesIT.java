@@ -15,7 +15,6 @@
  */
 package sleeper.statestorev2.transactionlog;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -36,7 +35,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStateStoreTestBase {
     private final Schema schema = createSchemaWithKey("key", new LongType());
-    private final StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, new Configuration());
+    private final StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
     private final FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     @Test

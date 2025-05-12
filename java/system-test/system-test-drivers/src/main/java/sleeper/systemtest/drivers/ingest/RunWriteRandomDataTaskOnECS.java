@@ -30,10 +30,12 @@ import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -50,7 +52,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestConstants.SYSTEM_TEST_CONTAINER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -68,30 +69,28 @@ public class RunWriteRandomDataTaskOnECS {
     private final EcsClient ecsClient;
     private final List<String> args;
 
-    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, TableProperties tableProperties, EcsClient ecsClient) {
+    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, EcsClient ecsClient) {
         this.instanceProperties = systemTestProperties;
         this.systemTestProperties = systemTestProperties.testPropertiesOnly();
         this.ecsClient = ecsClient;
         this.args = List.of(
-                instanceProperties.get(CONFIG_BUCKET),
-                tableProperties.get(TABLE_NAME),
-                instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN));
+                "combined",
+                systemTestProperties.get(CONFIG_BUCKET),
+                systemTestProperties.get(INGEST_BY_QUEUE_ROLE_ARN));
     }
 
     public RunWriteRandomDataTaskOnECS(
-            InstanceProperties instanceProperties, TableProperties tableProperties,
-            SystemTestStandaloneProperties systemTestProperties, EcsClient ecsClient) {
+            InstanceProperties instanceProperties, SystemTestStandaloneProperties systemTestProperties,
+            EcsClient ecsClient) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.ecsClient = ecsClient;
         this.args = List.of(
-                instanceProperties.get(CONFIG_BUCKET),
-                tableProperties.get(TABLE_NAME),
-                instanceProperties.get(INGEST_BY_QUEUE_ROLE_ARN),
+                "standalone",
                 systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 
-    public List<RunTaskResponse> run() {
+    public List<RunTaskResponse> runTasks(int numberOfTasks) {
 
         ContainerOverride containerOverride = ContainerOverride.builder()
                 .name(SYSTEM_TEST_CONTAINER)
@@ -120,9 +119,9 @@ public class RunWriteRandomDataTaskOnECS {
         RunECSTasks.runTasksOrThrow(builder -> builder
                 .ecsClient(ecsClient)
                 .runTaskRequest(runTaskRequest)
-                .numberOfTasksToCreate(systemTestProperties.getInt(NUMBER_OF_WRITERS))
+                .numberOfTasksToCreate(numberOfTasks)
                 .responseConsumer(responses::add));
-        LOGGER.debug("Ran {} tasks", systemTestProperties.getInt(NUMBER_OF_WRITERS));
+        LOGGER.debug("Ran {} tasks", numberOfTasks);
         return responses;
     }
 
@@ -134,11 +133,14 @@ public class RunWriteRandomDataTaskOnECS {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        try (EcsClient ecsClient = EcsClient.create()) {
+        try (EcsClient ecsClient = EcsClient.create(); SqsClient sqsClient = SqsClient.create()) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
-            RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
-            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.run();
+            SystemTestDataGenerationJobSender jobSender = new SystemTestDataGenerationJobSender(systemTestProperties.testPropertiesOnly(), sqsClient);
+            RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient);
+
+            jobSender.sendJobsToQueue(SystemTestDataGenerationJob.getDefaultJobs(systemTestProperties, tableProperties));
+            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.runTasks(systemTestProperties.getInt(NUMBER_OF_WRITERS));
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
             }

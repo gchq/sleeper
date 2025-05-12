@@ -15,12 +15,13 @@
  */
 package sleeper.statestorev2.commit;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -66,10 +67,10 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")))
-                .getQueueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
+                .queueName(UUID.randomUUID().toString() + ".fifo")
+                .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
+                .queueUrl());
     }
 
     @Test
@@ -132,24 +133,24 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private StateStoreCommitRequestSender sender() {
         return new SqsFifoStateStoreCommitRequestSender(
-                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClient);
+                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClientV2);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
-        return receiveCommitMessage().getMessages().stream()
+        return receiveCommitMessage().messages().stream()
                 .map(this::readCommitRequest)
                 .collect(Collectors.toList());
     }
 
-    private ReceiveMessageResult receiveCommitMessage() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest);
+    private ReceiveMessageResponse receiveCommitMessage() {
+        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .maxNumberOfMessages(10).build();
+        return sqsClientV2.receiveMessage(receiveMessageRequest);
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
-        return serDe.fromJson(message.getBody());
+        return serDe.fromJson(message.body());
     }
 
     private StateStoreTransaction<?> readTransaction(String key, TransactionType transactionType) {

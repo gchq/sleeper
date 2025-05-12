@@ -22,7 +22,6 @@ use crate::{
     datafusion::{sketch::serialise_sketches, udf::SketchUDF},
     details::create_sketch_path,
     s3::ObjectStoreFactory,
-    store::SizeHintableStore,
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
@@ -71,7 +70,7 @@ pub async fn compact(
     let sf = create_session_cfg(input_data, input_paths);
     let ctx = SessionContext::new_with_config(sf);
 
-    // Register some object store from first input file and output file
+    // Register object stores for input files and output file
     register_store(store_factory, input_paths, output_path, &ctx)?;
 
     // Set the upload size based upon size of input data
@@ -84,6 +83,7 @@ pub async fn compact(
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
+
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
@@ -131,8 +131,10 @@ pub async fn compact(
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
+
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
+
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
     set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
@@ -295,10 +297,7 @@ async fn set_multipart_upload_hint(
     input_paths: &[Url],
     output_path: &Url,
 ) -> Result<(), DataFusionError> {
-    let input_store = store_factory
-        .get_object_store(&input_paths[0])
-        .map_err(|e| DataFusionError::External(e.into()))?;
-    let input_size = calculate_input_size(input_paths, &input_store)
+    let input_size = calculate_input_size(input_paths, store_factory)
         .await
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
@@ -318,14 +317,16 @@ async fn set_multipart_upload_hint(
 
 /// Calculate the total size of all `input_paths` objects.
 ///
-/// The given store is queried for the size of each object.
 async fn calculate_input_size(
     input_paths: &[Url],
-    store: &Arc<dyn SizeHintableStore>,
+    store_factory: &ObjectStoreFactory,
 ) -> Result<usize, DataFusionError> {
     let mut total_input = 0usize;
-    for path in input_paths {
-        let p = path.path();
+    for input_path in input_paths {
+        let store = store_factory
+            .get_object_store(input_path)
+            .map_err(|e| DataFusionError::External(e.into()))?;
+        let p = input_path.path();
         total_input += store.head(&p.into()).await?.size;
     }
     Ok(total_input)
@@ -519,7 +520,7 @@ fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
     sort_order
 }
 
-/// Takes the first Url in `input_paths` list and `output_path`
+/// Takes the urls in `input_paths` list and `output_path`
 /// and registers the appropriate [`object_store::ObjectStore`] for it.
 ///
 /// `DataFusion` doesn't seem to like loading a single file set from different object stores
@@ -534,11 +535,14 @@ fn register_store(
     output_path: &Url,
     ctx: &SessionContext,
 ) -> Result<(), DataFusionError> {
-    let in_store = store_factory
-        .get_object_store(&input_paths[0])
-        .map_err(|e| DataFusionError::External(e.into()))?;
-    ctx.runtime_env()
-        .register_object_store(&input_paths[0], in_store.clone().as_object_store());
+    for input_path in input_paths {
+        let in_store = store_factory
+            .get_object_store(input_path)
+            .map_err(|e| DataFusionError::External(e.into()))?;
+        ctx.runtime_env()
+            .register_object_store(input_path, in_store.clone().as_object_store());
+    }
+
     let out_store = store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?;
