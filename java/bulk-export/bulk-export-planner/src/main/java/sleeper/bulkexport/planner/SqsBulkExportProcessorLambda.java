@@ -38,7 +38,6 @@ import sleeper.core.util.ObjectFactoryException;
 
 import java.util.Optional;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
@@ -49,48 +48,43 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 @SuppressWarnings("unused")
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsBulkExportProcessorLambda.class);
-
-    private InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private SqsBulkExportProcessor processor;
-    private BulkExportQuerySerDe bulkExportQuerySerDe;
+    private final InstanceProperties instanceProperties;
+    private final SqsBulkExportProcessor processor;
+    private final BulkExportQuerySerDe bulkExportQuerySerDe;
 
     public SqsBulkExportProcessorLambda() throws ObjectFactoryException {
-        this(AmazonSQSClientBuilder.defaultClient(), AmazonS3ClientBuilder.defaultClient(),
+        this(AmazonSQSClientBuilder.defaultClient(),
+                AmazonS3ClientBuilder.defaultClient(),
                 AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
     public SqsBulkExportProcessorLambda(
             SqsBulkExportProcessor processor,
             BulkExportQuerySerDe bulkExportQuerySerDe,
-            InstanceProperties instanceProperties,
-            AmazonSQS sqsClient,
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoClient) {
+            InstanceProperties instanceProperties) {
         this.processor = processor;
         this.bulkExportQuerySerDe = bulkExportQuerySerDe;
         this.instanceProperties = instanceProperties;
-        this.sqsClient = sqsClient;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
     }
 
     public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String configBucket)
             throws ObjectFactoryException {
-        this(sqsClient, s3Client, dynamoClient, configBucket, S3TableProperties.createProvider(
-                S3InstanceProperties.loadFromBucket(s3Client, configBucket), s3Client, dynamoClient));
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        this.bulkExportQuerySerDe = new BulkExportQuerySerDe();
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(
+                S3InstanceProperties.loadFromBucket(s3Client, configBucket), s3Client, dynamoClient);
+        processor = SqsBulkExportProcessor.builder()
+                .sqsClient(sqsClient)
+                .s3Client(s3Client)
+                .dynamoClient(dynamoClient)
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .build();
     }
 
     public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient, String configBucket, TablePropertiesProvider tablePropertiesProvider)
             throws ObjectFactoryException {
-        this.sqsClient = sqsClient;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
-        this.bulkExportQuerySerDe = new BulkExportQuerySerDe();
-
+        bulkExportQuerySerDe = new BulkExportQuerySerDe();
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
@@ -107,52 +101,30 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
                 .map(SQSEvent.SQSMessage::getBody)
                 .peek(body -> LOGGER.debug("Received message with body {}", body))
                 .flatMap(body -> {
-                    try {
-                        return deserialiseAndValidate(body).stream();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    return deserialiseAndValidate(body).stream();
                 })
                 .forEach(query -> {
                     try {
                         processor.processExport(query);
                     } catch (ObjectFactoryException e) {
                         LOGGER.error("Failed to process export query", e);
-                        sendToDeadLetterQueue(query.toString());
                         throw new RuntimeException(e);
                     }
                 });
         return null;
     }
 
-    private Optional<BulkExportQuery> deserialiseAndValidate(String message) throws Exception {
+    private Optional<BulkExportQuery> deserialiseAndValidate(String message) {
         try {
             BulkExportQuery exportQuery = bulkExportQuerySerDe.fromJson(message);
             LOGGER.debug("Deserialised message to export query {}", exportQuery);
             return Optional.of(exportQuery);
         } catch (BulkExportQueryValidationException e) {
             LOGGER.error("QueryValidationException validating export query from JSON {}", message, e);
-            sendToDeadLetterQueue(message);
             throw e;
         } catch (RuntimeException e) {
             LOGGER.error("Failed deserialising export query from JSON {}", message, e);
-            sendToDeadLetterQueue(message);
             throw e;
         }
-    }
-
-    /**
-     * Sends the given message to the Dead Letter Queue (DLQ).
-     *
-     * @param message The message to send to the DLQ.
-     */
-    public void sendToDeadLetterQueue(String message) {
-        String dlqUrl = instanceProperties.get(BULK_EXPORT_QUEUE_DLQ_URL);
-        if (dlqUrl == null || dlqUrl.isEmpty()) {
-            LOGGER.warn("No DLQ URL found in instance properties");
-            return;
-        }
-        LOGGER.warn("Sending message to DLQ: {}", message);
-        sqsClient.sendMessage(dlqUrl, message);
     }
 }

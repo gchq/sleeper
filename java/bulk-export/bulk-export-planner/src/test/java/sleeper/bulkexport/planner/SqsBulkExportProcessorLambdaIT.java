@@ -19,6 +19,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactoryException;
@@ -48,7 +49,7 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
 
         // When Then
         assertThatThrownBy(() -> sqsBulkExportProcessorLambda.handleRequest(event, null))
-                .isInstanceOf(RuntimeException.class)
+                .isInstanceOf(BulkExportQueryValidationException.class)
                 .hasMessageContaining("Query validation failed: tableId or tableName field must be provided");
     }
 
