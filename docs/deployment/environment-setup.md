@@ -99,20 +99,20 @@ To deploy Sleeper, you'll need a VPC that meets certain requirements. You'll als
 to avoid lengthy uploads of large jar files and Docker images from outside AWS. You can use the Sleeper CLI to create
 both of these, see the documentation for the [Sleeper CLI deployment environment](cli-deployment-environment.md).
 
-If you prefer to use your own EC2, it should run on an x86_64 architecture, with Bash and Docker, and have enough
-resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPUs, with `t3.large`. We recommend 4 vCPUs
-(`t3.xlarge`), as that takes the build from over 40 minutes with 2 vCPUs, to around 20 minutes for the first build.
-
 If you prefer to use your own VPC, you'll need to ensure it meets Sleeper's requirements. It should ideally have
 multiple private subnets in different availability zones. Those subnets should have egress, e.g. via a NAT gateway. The
 VPC should have gateway endpoints for S3 and DynamoDB. If there is no gateway endpoint for S3, deployment of a Sleeper
 instance will fail in the CDK.
 
+If you prefer to use your own EC2, it should run on an x86_64 architecture, with Bash and Docker, and have enough
+resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPUs, with `t3.large`. We recommend 4 vCPUs
+(`t3.xlarge`), as that takes the build from over 40 minutes with 2 vCPUs, to around 20 minutes for the first build.
+
 The [Sleeper CLI deployment environment](cli-deployment-environment.md) includes options to deploy an EC2 to
 an existing VPC, or a VPC on its own.
 
 Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you can either move on
-to [the deployment guide](../deployment-guide.md), or [the getting started guide deployment section](../getting-started.md#deployment)
+to the [deployment guide](../deployment-guide.md), or the [getting started guide deployment section](../getting-started.md#deployment)
 to use a testing setup.
 
 You're now ready to build and deploy Sleeper.
