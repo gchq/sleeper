@@ -46,8 +46,8 @@ chunks:
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
       - compaction/compaction-core
-      - splitter/splitter-core
-      - splitter/splitter-lambda
+      - partitions/splitter
+      - partitions/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
       - bulk-export/bulk-export-planner
