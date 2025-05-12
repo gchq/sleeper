@@ -52,7 +52,7 @@ owo-colors = { version = "4.2.0" } # Colourised output
 predicates = { version = "3.1.3" } # Test assertions
 rand = { version = "0.9.1" }
 serde_json = { version = "1.0.140" } # Process metadata JSON
-tempfile = { version = "3.19.1" } # Create temporary files
+tempfile = { version = "3.20.0" } # Create temporary files
 test-log = { version = "0.2.17" }
 testing_logger = { version = "0.1.1" } # Assert on logger output in tests
 thiserror = { version = "2.0.12" } # Derivable error enums
