@@ -33,7 +33,11 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * Class used for controlling sqs messages sent for table to keep within aws design constraints.
+ * Invokes a lambda that is triggered by a FIFO SQS queue where each message is a Sleeper table ID. The Sleeper table ID
+ * is also the message group ID. This setup means the lambda can be invoked in parallel for a number of Sleeper tables
+ * at the same time, without ever having two invocations for the same Sleeper table at once.
+ *
+ * @see https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/
  */
 public class InvokeForTables {
     public static final Logger LOGGER = LoggerFactory.getLogger(InvokeForTables.class);
@@ -42,25 +46,25 @@ public class InvokeForTables {
     }
 
     /**
-     * Splits steam of tables into batchs to allow messages to be within maximum size for an SQS message.
+     * Invokes a lambda to run for a given set of Sleeper tables.
      *
-     * @param sqsClient the sqs client
-     * @param queueUrl  the queue url
-     * @param tables    stream of table to send messages for
+     * @param sqsClient an SQS client
+     * @param queueUrl  the URL of the FIFO queue that triggers the lambda
+     * @param tables    the Sleeper tables to invoke the lambda for
      */
     public static void sendOneMessagePerTable(SqsClient sqsClient, String queueUrl, Stream<TableStatus> tables) {
-        // Limit to stay under the maximum size for an SQS sendMessageBatch call.
+        // Limit to stay under the maximum number of messages for an SQS sendMessageBatch call.
         SplitIntoBatches.reusingListOfSize(10, tables,
                 batch -> sendMessageBatch(sqsClient, queueUrl, batch));
     }
 
     /**
-     * Generates a stream of tables from index to allow for batching.
+     * Invokes a lambda to run for a given set of Sleeper tables by their names.
      *
-     * @param sqsClient  the sqs client
-     * @param queueUrl   the queue url
-     * @param tableIndex index containing table details
-     * @param tableNames list of table names
+     * @param sqsClient  an SQS client
+     * @param queueUrl   the URL of the FIFO queue that triggers the lambda
+     * @param tableIndex the index of Sleeper tables
+     * @param tableNames the names of Sleeper tables to invoke the lambda for
      */
     public static void sendOneMessagePerTableByName(
             SqsClient sqsClient, String queueUrl, TableIndex tableIndex, List<String> tableNames) {
@@ -74,14 +78,14 @@ public class InvokeForTables {
         LOGGER.info("Sending table batch of size {} to SQS queue {}: {}", tablesBatch.size(), queueUrl, tablesBatch);
         sqsClient.sendMessageBatch(SendMessageBatchRequest.builder()
                 .queueUrl(queueUrl)
-                .entries(tablesBatch.stream().map(table -> {
-                    return SendMessageBatchRequestEntry.builder()
-                            .messageDeduplicationId(UUID.randomUUID().toString())
-                            .id(table.getTableUniqueId())
-                            .messageGroupId(table.getTableUniqueId())
-                            .messageBody(table.getTableUniqueId())
-                            .build();
-                }).toList())
+                .entries(tablesBatch.stream()
+                        .map(table -> SendMessageBatchRequestEntry.builder()
+                                .messageDeduplicationId(UUID.randomUUID().toString())
+                                .id(table.getTableUniqueId())
+                                .messageGroupId(table.getTableUniqueId())
+                                .messageBody(table.getTableUniqueId())
+                                .build())
+                        .toList())
                 .build());
     }
 }
