@@ -21,7 +21,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
+import sleeper.ingest.trackerv2.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 import java.util.List;
