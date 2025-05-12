@@ -31,7 +31,7 @@
         <module>ingest-starter</module>
         <module>ingest-runner</module>
         <module>ingest-tracker</module>
-        <module>ingest-trackerv2</module>
+        <module>ingest-trackerV2</module>
         <module>ingest-batcher-core</module>
         <module>ingest-batcher-store</module>
         <module>ingest-batcher-submitter</module>
