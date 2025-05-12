@@ -16,14 +16,14 @@
 
 package sleeper.ingest.trackerv2.job;
 
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.ingest.trackerv2.testutils.IngestTrackerTestUtils.createInstanceProperties;
 
@@ -34,15 +34,18 @@ public class DynamoDBIngestJobTrackerCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
 
         // Then
-        assertThat(dynamoClient.describeTable(tableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
+        try {
+            dynamoClientV2.describeTable(DescribeTableRequest.builder().tableName(tableName).build());
+        } catch (Exception e) {
+            Assertions.fail("Test failed due to exception: " + e.getMessage());
+        }
     }
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClientV2);
     }
 }
