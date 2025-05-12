@@ -15,12 +15,12 @@
  */
 package sleeper.statestorev2.transactionlog;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonSyntaxException;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -39,7 +39,7 @@ import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.List;
@@ -100,14 +100,15 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
-        dynamoClient.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
-                .withItem(new DynamoDBRecordBuilder()
+        dynamoClientV2.putItem(PutItemRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
+                .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, 1)
                         .string("TYPE", "UNRECOGNISED_TRANSACTION")
                         .string("BODY", "{}")
-                        .build()));
+                        .build())
+                .build());
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateAt(0)).findAny())
@@ -117,14 +118,15 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
-        dynamoClient.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
-                .withItem(new DynamoDBRecordBuilder()
+        dynamoClientV2.putItem(PutItemRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
+                .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, 1)
                         .string("TYPE", TransactionType.ADD_FILES.name())
                         .string("BODY", "{")
-                        .build()));
+                        .build())
+                .build());
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateAt(0)).findAny())
@@ -292,7 +294,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateToApply(2, 2)))
-                .isInstanceOf(AmazonDynamoDBException.class);
+                .isInstanceOf(DynamoDbException.class);
     }
 
     @Test
@@ -307,7 +309,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateToApply(3, 2)))
-                .isInstanceOf(AmazonDynamoDBException.class);
+                .isInstanceOf(DynamoDbException.class);
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
@@ -315,11 +317,11 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2);
     }
 
     private String singleFileInDataBucket() {

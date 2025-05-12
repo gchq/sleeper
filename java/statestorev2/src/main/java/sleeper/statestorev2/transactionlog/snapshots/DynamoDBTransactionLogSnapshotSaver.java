@@ -15,12 +15,11 @@
  */
 package sleeper.statestorev2.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -42,27 +41,27 @@ public class DynamoDBTransactionLogSnapshotSaver {
 
     private final SnapshotMetadataSaver metadataSaver;
     private final StateStoreArrowFileStore fileStore;
-    private final Configuration configuration;
     private final String basePath;
 
     public DynamoDBTransactionLogSnapshotSaver(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo,
+            S3Client s3Client, S3TransferManager s3TransferManager) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
-                instanceProperties, tableProperties, configuration);
+                instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     private DynamoDBTransactionLogSnapshotSaver(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
+            InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     DynamoDBTransactionLogSnapshotSaver(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            S3Client s3Client, S3TransferManager s3TransferManager) {
         this.metadataSaver = metadataSaver;
-        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
-        this.configuration = configuration;
+        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
         this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
 
@@ -77,7 +76,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
                 basePath, snapshot.getTransactionNumber());
         StateStoreFiles state = snapshot.getState();
-        fileStore.saveFiles(metadata.getPath(), state);
+        fileStore.saveFiles(metadata.getObjectKey(), state);
         saveMetadata(metadata);
     }
 
@@ -93,7 +92,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
                 basePath, snapshot.getTransactionNumber());
         StateStorePartitions state = snapshot.getState();
-        fileStore.savePartitions(metadata.getPath(), state.all());
+        fileStore.savePartitions(metadata.getObjectKey(), state.all());
         saveMetadata(metadata);
     }
 
@@ -102,9 +101,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
             metadataSaver.save(metadata);
         } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot metadata to DynamoDB. Deleting snapshot file.");
-            Path path = new Path(metadata.getPath());
-            FileSystem fs = path.getFileSystem(configuration);
-            fs.delete(path, false);
+            fileStore.deleteSnapshotFile(metadata);
             throw e;
         }
     }

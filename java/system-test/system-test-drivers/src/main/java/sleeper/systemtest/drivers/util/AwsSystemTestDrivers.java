@@ -218,7 +218,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
-        return new AwsDataGenerationTasksDriver(context.systemTest(), context.instance(), clients.getEcs());
+        return new AwsDataGenerationTasksDriver(context.systemTest(), context.instance(), clients);
     }
 
     @Override

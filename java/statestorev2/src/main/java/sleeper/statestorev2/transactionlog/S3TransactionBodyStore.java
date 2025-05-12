@@ -15,9 +15,13 @@
  */
 package sleeper.statestorev2.transactionlog;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
@@ -52,15 +56,15 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final int DEFAULT_JSON_LENGTH_TO_STORE = 1024 * 200;
 
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final TransactionSerDeProvider serDeProvider;
     private final int jsonLengthToStore;
 
-    public S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider) {
+    public S3TransactionBodyStore(InstanceProperties instanceProperties, S3Client s3Client, TransactionSerDeProvider serDeProvider) {
         this(instanceProperties, s3Client, serDeProvider, DEFAULT_JSON_LENGTH_TO_STORE);
     }
 
-    public S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider, int jsonLengthToStore) {
+    public S3TransactionBodyStore(InstanceProperties instanceProperties, S3Client s3Client, TransactionSerDeProvider serDeProvider, int jsonLengthToStore) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDeProvider = serDeProvider;
@@ -88,7 +92,11 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         TransactionType transactionType = TransactionType.getType(transaction);
         LOGGER.debug("Uploading large transaction of type {} to S3 at: {}", transactionType, key);
         Instant startTime = Instant.now();
-        s3Client.putObject(instanceProperties.get(DATA_BUCKET), key, body);
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .key(key)
+                .build(),
+                RequestBody.fromString(body));
         LOGGER.debug("Uploaded large transaction of type {} to S3 at: {}", transactionType, key);
         LOGGER.info("Saved to S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
@@ -96,7 +104,11 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     @Override
     public <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType) {
         LOGGER.debug("Reading large {} transaction from data bucket at {}", transactionType, key);
-        String body = s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key);
+
+        String body = s3Client.getObject(
+                builder -> builder.bucket(instanceProperties.get(DATA_BUCKET)).key(key),
+                ResponseTransformer.toBytes())
+                .asUtf8String();
         return (T) serDeProvider.getByTableId(tableId).toTransaction(transactionType, body);
     }
 
@@ -106,6 +118,6 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @param key the S3 object key
      */
     public void delete(String key) {
-        s3Client.deleteObject(instanceProperties.get(DATA_BUCKET), key);
+        s3Client.deleteObject(DeleteObjectRequest.builder().bucket(instanceProperties.get(DATA_BUCKET)).key(key).build());
     }
 }
