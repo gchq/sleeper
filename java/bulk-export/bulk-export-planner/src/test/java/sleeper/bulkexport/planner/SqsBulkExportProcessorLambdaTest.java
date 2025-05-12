@@ -37,7 +37,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class SqsBulkExportProcessorLambdaTest {
@@ -46,15 +48,16 @@ public class SqsBulkExportProcessorLambdaTest {
 
     private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
     private BulkExportQuerySerDe bulkExportQuerySerDe = mock(BulkExportQuerySerDe.class);
-    private AmazonS3Client s3Client;
-    private AmazonSQSClient sqsClient;
-    private AmazonDynamoDB dbClient;
+    private AmazonS3Client s3Client = mock(AmazonS3Client.class);
+    private AmazonSQSClient sqsClient = mock(AmazonSQSClient.class);
+    private AmazonDynamoDB dbClient = mock(AmazonDynamoDB.class);
 
     private InstanceProperties instanceProperties;
 
     @BeforeEach
     public void setUp() throws ObjectFactoryException {
         instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(BULK_EXPORT_QUEUE_DLQ_URL, "http://testing.sqs");
         SendMessageResult result = new SendMessageResult();
         result.setMessageId("1234");
 
@@ -78,7 +81,7 @@ public class SqsBulkExportProcessorLambdaTest {
                 .thenReturn(createBulkExportQuery());
 
         // Mock the processor to throw an exception
-        doThrow(new RuntimeException("Simulated processing failure"))
+        doThrow(new ObjectFactoryException("Simulated processing failure"))
                 .when(sqsBulkExportProcessor).processExport(any(BulkExportQuery.class));
 
         // When: The handleRequest method is called
@@ -88,7 +91,7 @@ public class SqsBulkExportProcessorLambdaTest {
                 .hasMessageContaining("Simulated processing failure");
 
         // Then: Verify the message was sent to the Dead Letter Queue
-        //verify(sqsClient).sendMessage(any(SendMessageRequest.class));
+        verify(sqsClient).sendMessage(anyString(), anyString());
     }
 
     @Test
@@ -107,7 +110,7 @@ public class SqsBulkExportProcessorLambdaTest {
                 .hasMessageContaining("Simulated invalid export query");
 
         // Then: Verify the message was sent to the Dead Letter Queue
-        //verify(sqsClient).sendMessage(any(SendMessageRequest.class));
+        verify(sqsClient).sendMessage(anyString(), anyString());
     }
 
     @Test
@@ -122,10 +125,10 @@ public class SqsBulkExportProcessorLambdaTest {
         assertThatThrownBy(() -> sqsBulkExportProcessorLambda.handleRequest(event, null))
                 .isInstanceOf(RuntimeException.class)
                 .hasRootCauseInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Deserialization error");
+                .hasMessageContaining("Simulated deserialization error");
 
         // Then: Verify the message was sent to the Dead Letter Queue
-        //verify(sqsClient).sendMessage(any(SendMessageRequest.class));
+        verify(sqsClient).sendMessage(anyString(), anyString());
     }
 
     @Test
@@ -146,7 +149,7 @@ public class SqsBulkExportProcessorLambdaTest {
                 .hasMessageContaining("Simulated Object Factory Exception");
 
         // Then: Verify the message was sent to the Dead Letter Queue
-        //verify(sqsClient).sendMessage(any(SendMessageRequest.class));
+        verify(sqsClient).sendMessage(anyString(), anyString());
     }
 
     private BulkExportQuery createBulkExportQuery() {
