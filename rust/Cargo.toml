@@ -34,7 +34,7 @@ aws-types = { version = "1.3.5" } # for Region
 bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.19.2" } # Access cargo metadata programmtically
 chrono = { version = "0.4.41" } # Log helper
-clap = { version = "4.5.37" } # Cmd line args processing
+clap = { version = "4.5.38" } # Cmd line args processing
 color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
 cxx = { version = "1.0.158" } # Exception handling for Rust
 cxx-build = { version = "1.0.158" }
