@@ -90,7 +90,6 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
 #[derive(Debug, Clone)]
 pub enum MapAggregatorOp {
     Sum,
-    Count,
     Min,
     Max,
 }
@@ -102,7 +101,6 @@ impl MapAggregatorOp {
     {
         match self {
             Self::Sum => acc + value,
-            Self::Count => acc.add(T::one()),
             Self::Min => std::cmp::min(acc, value),
             Self::Max => std::cmp::max(acc, value),
         }

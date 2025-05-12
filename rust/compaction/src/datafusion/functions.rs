@@ -102,7 +102,6 @@ impl TryFrom<&str> for AggOp {
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
             "map_sum" => Ok(Self::MapSum(MapAggregatorOp::Sum)),
-            "map_count" => Ok(Self::MapSum(MapAggregatorOp::Count)),
             "map_min" => Ok(Self::MapSum(MapAggregatorOp::Min)),
             "map_max" => Ok(Self::MapSum(MapAggregatorOp::Max)),
             _ => Err(Self::Error::NotImplemented(format!(
