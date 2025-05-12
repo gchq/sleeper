@@ -36,8 +36,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * Invokes a lambda that is triggered by a FIFO SQS queue where each message is a Sleeper table ID. The Sleeper table ID
  * is also the message group ID. This setup means the lambda can be invoked in parallel for a number of Sleeper tables
  * at the same time, without ever having two invocations for the same Sleeper table at once.
- *
- * @see https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/
+ * <p>
+ * Also see this AWS blog: https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/
  */
 public class InvokeForTables {
     public static final Logger LOGGER = LoggerFactory.getLogger(InvokeForTables.class);
