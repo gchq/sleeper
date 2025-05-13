@@ -15,12 +15,12 @@
  */
 package sleeper.common.jobv2.action;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.AmazonSQSException;
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
-import com.amazonaws.services.sqs.model.DeleteMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse;
+import software.amazon.awssdk.services.sqs.model.SqsException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class DeleteMessageAction implements Action {
     private static final long[] MILLISECONDS_TO_SLEEP = new long[]{2000L, 8000L, 16000L, 64000L};
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final String sqsJobQueueUrl;
     private final String messageReceiptHandle;
     private final String description;
@@ -46,18 +46,19 @@ public class DeleteMessageAction implements Action {
 
     @Override
     public void call() throws ActionException {
-        DeleteMessageRequest deleteMessageRequest = new DeleteMessageRequest()
-                .withQueueUrl(sqsJobQueueUrl)
-                .withReceiptHandle(messageReceiptHandle);
+        DeleteMessageRequest deleteMessageRequest = DeleteMessageRequest.builder()
+                .queueUrl(sqsJobQueueUrl)
+                .receiptHandle(messageReceiptHandle)
+                .build();
         int count = 0;
-        AmazonSQSException exception = null;
+        SqsException exception = null;
         while (count < 3) {
             try {
-                DeleteMessageResult result = sqsClient.deleteMessage(deleteMessageRequest);
+                DeleteMessageResponse response = sqsClient.deleteMessage(deleteMessageRequest);
                 LOGGER.info("{}: Deleted message with receipt handle {} with result {}",
-                        description, messageReceiptHandle, result);
+                        description, messageReceiptHandle, response);
                 return;
-            } catch (AmazonSQSException e) {
+            } catch (SqsException e) {
                 count++;
                 exception = e;
                 String stackTrace = Arrays

@@ -15,11 +15,11 @@
  */
 package sleeper.common.jobv2.action;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.AmazonSQSException;
-import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
+import software.amazon.awssdk.services.sqs.model.SqsException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -31,7 +31,7 @@ public class ChangeMessageVisibilityTimeoutAction implements Action {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChangeMessageVisibilityTimeoutAction.class);
     private static final long[] MILLISECONDS_TO_SLEEP = new long[]{2000L, 8000L, 16000L, 64000L};
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final String sqsJobQueueUrl;
     private final String description;
     private final String messageReceiptHandle;
@@ -47,19 +47,20 @@ public class ChangeMessageVisibilityTimeoutAction implements Action {
 
     @Override
     public void call() throws ActionException {
-        ChangeMessageVisibilityRequest changeMessageVisibilityRequest = new ChangeMessageVisibilityRequest()
-                .withQueueUrl(sqsJobQueueUrl)
-                .withVisibilityTimeout(messageVisibilityTimeout)
-                .withReceiptHandle(messageReceiptHandle);
+        ChangeMessageVisibilityRequest changeMessageVisibilityRequest = ChangeMessageVisibilityRequest.builder()
+                .queueUrl(sqsJobQueueUrl)
+                .visibilityTimeout(messageVisibilityTimeout)
+                .receiptHandle(messageReceiptHandle)
+                .build();
         int count = 0;
-        AmazonSQSException exception = null;
+        SqsException exception = null;
         while (count < 4) {
             try {
                 sqsClient.changeMessageVisibility(changeMessageVisibilityRequest);
                 LOGGER.info("{}: Changed message visibility timeout to {} for message with receipt handle {}",
                         description, messageVisibilityTimeout, messageReceiptHandle);
                 return;
-            } catch (AmazonSQSException e) {
+            } catch (SqsException e) {
                 count++;
                 exception = e;
                 String stackTrace = Arrays
