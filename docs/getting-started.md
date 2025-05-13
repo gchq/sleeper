@@ -114,7 +114,7 @@ you can run the script like this:
 
 ```bash
 sleeper builder # Create a Docker container with a workspace mounted in from the host directory ~/.sleeper/builder
-git clone --branch main https://github.com/gchq/sleeper.git # If you haven't checked out the Git repository yet
+git clone --branch main https://github.com/gchq/sleeper.git # Get the latest release version of Sleeper
 cd sleeper
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
