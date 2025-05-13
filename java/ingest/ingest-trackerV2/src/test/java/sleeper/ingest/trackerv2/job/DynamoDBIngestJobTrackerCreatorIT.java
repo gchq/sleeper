@@ -16,7 +16,6 @@
 
 package sleeper.ingest.trackerv2.job;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
@@ -24,6 +23,7 @@ import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.ingest.trackerv2.testutils.IngestTrackerTestUtils.createInstanceProperties;
 
@@ -37,11 +37,11 @@ public class DynamoDBIngestJobTrackerCreatorIT extends LocalStackTestBase {
         DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
 
         // Then
-        try {
-            dynamoClientV2.describeTable(DescribeTableRequest.builder().tableName(tableName).build());
-        } catch (Exception e) {
-            Assertions.fail("Test failed due to exception: " + e.getMessage());
-        }
+        assertThat(tableName.equals(
+                dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                        .tableName(tableName)
+                        .build())
+                        .table().toString()));
     }
 
     @AfterEach
