@@ -25,6 +25,7 @@ chunks:
       - parquet
       - common/common-job
       - common/common-task
+      - common/common-taskv2
       - common/common-invoke-tables
       - common/common-invoke-tablesv2
       - build
