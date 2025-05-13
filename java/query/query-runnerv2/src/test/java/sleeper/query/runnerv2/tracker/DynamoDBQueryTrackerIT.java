@@ -66,11 +66,8 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldReturnQueriesFromDynamoIfTheyExist() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryCompleted(createQueryWithId("my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+        queryTracker().queryCompleted(createQueryWithId("my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
 
         // Then
         TrackedQuery status = queryTracker().getStatus("my-id");
@@ -80,11 +77,8 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldCreateEntryInTableIfIdDoesNotExist() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryInProgress(createQueryWithId("my-id"));
+        queryTracker().queryInProgress(createQueryWithId("my-id"));
 
         // Then
         assertThat(queryTracker().getStatus("my-id").getLastKnownState()).isEqualTo(IN_PROGRESS);
@@ -94,10 +88,9 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     public void shouldSetAgeOffTimeAccordingToInstanceProperty() throws QueryTrackerException {
         // Given
         instanceProperties.setNumber(QUERY_TRACKER_ITEM_TTL_IN_DAYS, 3);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
-        queryTracker.queryInProgress(createQueryWithId("my-id"));
+        queryTracker().queryInProgress(createQueryWithId("my-id"));
         TrackedQuery status = queryTracker().getStatus("my-id");
 
         // Then
@@ -106,12 +99,9 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldUpdateStateInTableIfIdDoesExist() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryQueued(createQueryWithId("my-id"));
-        queryTracker.queryFailed(createQueryWithId("my-id"), new Exception("fail"));
+        queryTracker().queryQueued(createQueryWithId("my-id"));
+        queryTracker().queryFailed(createQueryWithId("my-id"), new Exception("fail"));
 
         // Then
         assertThat(queryTracker().getStatus("my-id").getLastKnownState()).isEqualTo(FAILED);
@@ -119,12 +109,9 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldUpdateParentStateInTableWhenTheChildIsTheLastOneToComplete() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryInProgress(createQueryWithId("parent"));
-        queryTracker.queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
 
         // Then
         TrackedQuery parent = queryTracker().getStatus("parent");
@@ -137,13 +124,10 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldNotUpdateParentStateInTableWhenMoreChildrenAreYetToComplete() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryInProgress(createQueryWithId("parent"));
-        queryTracker.queryInProgress(createSubQueryWithId("parent", "my-id"));
-        queryTracker.queryCompleted(createSubQueryWithId("parent", "my-other-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryInProgress(createSubQueryWithId("parent", "my-id"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-other-id"), new ResultsOutputInfo(10, Collections.emptyList()));
 
         // Then
         assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
@@ -153,13 +137,10 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldUpdateParentStateToFailedInTableWhenAllChildrenFail() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryInProgress(createQueryWithId("parent"));
-        queryTracker.queryFailed(createSubQueryWithId("parent", "my-id"), new Exception("Fail"));
-        queryTracker.queryFailed(createSubQueryWithId("parent", "my-other-id"), new Exception("Fail"));
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryFailed(createSubQueryWithId("parent", "my-id"), new Exception("Fail"));
+        queryTracker().queryFailed(createSubQueryWithId("parent", "my-other-id"), new Exception("Fail"));
 
         // Then
         assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(FAILED);
@@ -169,13 +150,10 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldUpdateParentStateToPartiallyFailedInTableWhenSomeChildrenFail() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryInProgress(createQueryWithId("parent"));
-        queryTracker.queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
-        queryTracker.queryFailed(createSubQueryWithId("parent", "my-other-id"), new Exception("Fail"));
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+        queryTracker().queryFailed(createSubQueryWithId("parent", "my-other-id"), new Exception("Fail"));
 
         // Then
         assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
@@ -185,13 +163,10 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     public void shouldUpdateParentStateWithTotalRecordsReturnedByAllChildren() throws QueryTrackerException {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryInProgress(createQueryWithId("parent"));
-        queryTracker.queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
-        queryTracker.queryCompleted(createSubQueryWithId("parent", "my-other-id"), new ResultsOutputInfo(25, Collections.emptyList()));
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-other-id"), new ResultsOutputInfo(25, Collections.emptyList()));
 
         // Then
         assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
@@ -204,11 +179,8 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     void shouldStoreErrorMessageWhenQueryFailed() {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryFailed(createQueryWithId("failed-query"), new Exception("Query has failed"));
+        queryTracker().queryFailed(createQueryWithId("failed-query"), new Exception("Query has failed"));
 
         // Then
         assertThat(queryTracker().getAllQueries())
@@ -221,11 +193,8 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @Test
     void shouldStoreErrorMessageWhenQueryCompletedWithError() {
-        // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-
         // When
-        queryTracker.queryCompleted(createQueryWithId("completed-query-that-errored"),
+        queryTracker().queryCompleted(createQueryWithId("completed-query-that-errored"),
                 new ResultsOutputInfo(100L, List.of(), new Exception("Query has failed")));
 
         // Then
@@ -241,7 +210,6 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     @Nested
     @DisplayName("Get tracked queries")
     class GetTrackedQueries {
-        DynamoDBQueryTracker queryTracker;
         Query query1 = createQueryWithId("test-query-1");
         Query query2 = createQueryWithId("test-query-2");
         Query query3 = createQueryWithId("test-query-3");
@@ -250,12 +218,11 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
         @BeforeEach
         void setUp() {
-            queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-            queryTracker.queryQueued(query1);
-            queryTracker.queryInProgress(query2);
-            queryTracker.queryCompleted(query3, new ResultsOutputInfo(456L, List.of()));
-            queryTracker.queryFailed(query4, new Exception("Failed"));
-            queryTracker.queryCompleted(query5, new ResultsOutputInfo(123L, List.of(), new Exception("Partially failed")));
+            queryTracker().queryQueued(query1);
+            queryTracker().queryInProgress(query2);
+            queryTracker().queryCompleted(query3, new ResultsOutputInfo(456L, List.of()));
+            queryTracker().queryFailed(query4, new Exception("Failed"));
+            queryTracker().queryCompleted(query5, new ResultsOutputInfo(123L, List.of(), new Exception("Partially failed")));
         }
 
         @Test

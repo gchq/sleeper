@@ -36,8 +36,11 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 
 /**
  * The query tracker updates and keeps track of the status of queries so that clients
@@ -54,18 +57,18 @@ public class DynamoDBQueryTrackerV2 implements QueryStatusReportListener, QueryT
 
     private final DynamoDbClient dynamoClient;
     private final String trackerTableName;
-    // private final long queryTrackerTTL;
+    private final long queryTrackerTTL;
 
     public DynamoDBQueryTrackerV2(InstanceProperties instanceProperties, DynamoDbClient dynamoClient) {
         this.trackerTableName = instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
-        // this.queryTrackerTTL = instanceProperties.getLong(QUERY_TRACKER_ITEM_TTL_IN_DAYS);
+        this.queryTrackerTTL = instanceProperties.getLong(QUERY_TRACKER_ITEM_TTL_IN_DAYS);
         this.dynamoClient = dynamoClient;
     }
 
     public DynamoDBQueryTrackerV2(Map<String, String> destinationConfig) {
         this.trackerTableName = destinationConfig.get(QUERY_TRACKER_TABLE_NAME.getPropertyName());
-        // String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.getPropertyName());
-        // this.queryTrackerTTL = Long.parseLong(ttl != null ? ttl : QUERY_TRACKER_ITEM_TTL_IN_DAYS.getDefaultValue());
+        String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.getPropertyName());
+        this.queryTrackerTTL = Long.parseLong(ttl != null ? ttl : QUERY_TRACKER_ITEM_TTL_IN_DAYS.getDefaultValue());
         this.dynamoClient = DynamoDbClient.create();
     }
 
@@ -135,56 +138,95 @@ public class DynamoDBQueryTrackerV2 implements QueryStatusReportListener, QueryT
 
     @Override
     public void queryQueued(Query query) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryQueued'");
+        updateState(DynamoDBQueryTrackerEntryV2.withQuery(query).state(QueryState.QUEUED).build());
     }
 
     @Override
     public void queryInProgress(Query query) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryInProgress'");
+        updateState(DynamoDBQueryTrackerEntryV2.withQuery(query).state(QueryState.IN_PROGRESS).build());
     }
 
     @Override
     public void queryInProgress(LeafPartitionQuery leafQuery) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryInProgress'");
+        updateState(DynamoDBQueryTrackerEntryV2.withLeafQuery(leafQuery).state(QueryState.IN_PROGRESS).build());
     }
 
     @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'subQueriesCreated'");
+        subQueries.forEach(subQuery -> updateState(
+                DynamoDBQueryTrackerEntryV2.withLeafQuery(subQuery).state(QueryState.QUEUED).build()));
     }
 
     @Override
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryCompleted'");
+        updateState(DynamoDBQueryTrackerEntryV2.withQuery(query)
+                .completed(outputInfo)
+                .build());
     }
 
     @Override
     public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryCompleted'");
+        updateState(DynamoDBQueryTrackerEntryV2.withLeafQuery(leafQuery)
+                .completed(outputInfo)
+                .build());
     }
 
     @Override
     public void queryFailed(Query query, Exception e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryFailed'");
+        updateState(DynamoDBQueryTrackerEntryV2.withQuery(query)
+                .failed(e)
+                .build());
     }
 
     @Override
     public void queryFailed(String queryId, Exception e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryFailed'");
+        updateState(DynamoDBQueryTrackerEntryV2.builder()
+                .queryId(queryId)
+                .failed(e)
+                .build());
     }
 
     @Override
     public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'queryFailed'");
+        updateState(DynamoDBQueryTrackerEntryV2.withLeafQuery(leafQuery)
+                .failed(e)
+                .build());
+    }
+
+    private void updateState(DynamoDBQueryTrackerEntryV2 entry) {
+        dynamoClient.updateItem(request -> request
+                .tableName(trackerTableName)
+                .key(entry.getKey())
+                .attributeUpdates(entry.getValueUpdate(queryTrackerTTL)));
+        if (entry.isUpdateParent()) {
+            updateStateOfParent(entry);
+        }
+    }
+
+    private void updateStateOfParent(DynamoDBQueryTrackerEntryV2 leafQueryEntry) {
+        List<Map<String, AttributeValue>> trackedQueries = dynamoClient.query(request -> request
+                .tableName(trackerTableName)
+                .consistentRead(true)
+                .keyConditions(Map.of(
+                        QUERY_ID, Condition.builder()
+                                .attributeValueList(AttributeValue.fromS(leafQueryEntry.getQueryId()))
+                                .comparisonOperator(ComparisonOperator.EQ)
+                                .build())))
+                .items();
+
+        List<TrackedQuery> children = trackedQueries.stream()
+                .map(DynamoDBQueryTrackerEntryV2::toTrackedQuery)
+                .filter(trackedQuery -> !trackedQuery.getSubQueryId().equals(NON_NESTED_QUERY_PLACEHOLDER))
+                .collect(Collectors.toList());
+
+        Optional<QueryState> parentState = QueryState.getParentStateIfFinished(leafQueryEntry.getQueryId(), children);
+
+        if (parentState.isPresent()) {
+            long totalRecordCount = children.stream()
+                    .mapToLong(query -> query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
+            LOGGER.info("Updating state of parent to {}", parentState.get());
+            updateState(leafQueryEntry.updateParent(parentState.get(), totalRecordCount));
+        }
     }
 
 }
