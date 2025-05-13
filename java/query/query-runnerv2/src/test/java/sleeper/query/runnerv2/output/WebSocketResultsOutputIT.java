@@ -70,7 +70,7 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
         config.put(WebSocketOutput.REGION, "eu-west-1");
         config.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        config.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
+        config.put(WebSocketOutput.MAX_BATCH_SIZE, "1");
         config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
@@ -104,7 +104,7 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
         config.put(WebSocketOutput.REGION, "eu-west-1");
         config.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        config.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
+        config.put(WebSocketOutput.MAX_BATCH_SIZE, "1");
         config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);

@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class WebSocketResultsOutput implements ResultsOutput {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketResultsOutput.class);
-    public static final String MAX_BATCH_SIZE = "maxBatchSize";
+    public static final int MAX_PAYLOAD_SIZE = 128 * 1024;
 
     private final Gson serde;
     private final ApiGatewayWebSocketOutput output;
@@ -53,7 +53,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
                 .registerTypeAdapter(Record.class, new RecordJSONSerDe.RecordGsonSerialiser(schema))
                 .create();
         this.output = ApiGatewayWebSocketOutput.fromConfig(config);
-        String maxBatchSize = config.get(MAX_BATCH_SIZE);
+        String maxBatchSize = config.get(WebSocketOutput.MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
         this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(WebSocketOutput.ENDPOINT)));
         this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(WebSocketOutput.CONNECTION_ID)));
@@ -71,7 +71,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
 
         List<Record> batch = new ArrayList<>();
         long count = 0;
-        int remainingMessageLength = WebSocketOutput.MAX_PAYLOAD_SIZE - baseMessageLength;
+        int remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength;
 
         try {
             while (results.hasNext()) {
@@ -85,7 +85,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
                     int recordJsonLength = recordJson.length() + 1; // +1 for comma that seperates records
                     if (recordJsonLength >= remainingMessageLength) {
                         batchReady = true;
-                        remainingMessageLength = WebSocketOutput.MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
+                        remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
                     } else {
                         remainingMessageLength -= recordJsonLength;
                     }
