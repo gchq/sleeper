@@ -16,7 +16,7 @@ on:
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-job-creation-lambda/**'
       - 'java/compaction/compaction-tracker/**'
-      - 'java/compaction/compaction-trackerv2/**'
+      - 'java/compaction/compaction-trackerV2/**'
       - 'java/compaction/compaction-core/**'
       - 'java/splitter/splitter-core/**'
       - 'java/splitter/splitter-lambda/**'
