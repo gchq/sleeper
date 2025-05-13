@@ -48,6 +48,9 @@ import java.util.stream.Stream;
  * requires permissions against those resources, e.g. the configuration and data buckets in S3, the transaction logs and
  * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
+ * <p>
+ * Note that this class is not thread safe. {@link TablePropertiesProvider} and {@link StateStoreProvider} both cache
+ * data in ways that are not thread safe, so this client should be owned by a single thread.
  */
 public class SleeperClient implements AutoCloseable {
 
