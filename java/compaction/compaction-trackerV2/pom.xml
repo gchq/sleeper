@@ -23,7 +23,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>compaction-trackerv2</artifactId>
+    <artifactId>compaction-trackerV2</artifactId>
 
     <dependencies>
         <dependency>
