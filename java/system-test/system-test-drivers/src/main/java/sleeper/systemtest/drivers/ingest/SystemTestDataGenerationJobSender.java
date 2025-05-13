@@ -42,7 +42,7 @@ public class SystemTestDataGenerationJobSender {
             sqsClient.sendMessageBatch(builder -> builder
                     .queueUrl(properties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
                     .entries(batch.stream()
-                            .map(job -> SendMessageBatchRequestEntry.builder().applyMutation(null)
+                            .map(job -> SendMessageBatchRequestEntry.builder()
                                     .id(job.getJobId())
                                     .messageBody(serDe.toJson(job))
                                     .build())
