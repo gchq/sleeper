@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.emr.model.JobFlowInstancesConfig;
 import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.model.EmrInstanceTypeConfig.readInstanceTypes;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -44,7 +45,6 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_INSTAN
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
-import static sleeper.core.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 

@@ -34,7 +34,7 @@ import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.CompactionECSLaunchType;
+import sleeper.core.properties.model.CompactionECSLaunchType;
 
 import java.util.List;
 import java.util.Objects;

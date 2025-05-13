@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.core.properties.validation;
+package sleeper.core.properties.model;
 
 import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Valid values for AWS EMR instance architecture.
+ * Valid values for compression codecs of files containing data in a Sleeper table.
  */
-public enum EmrInstanceArchitecture {
-    X86_64, ARM64;
+public enum CompressionCodec {
+    UNCOMPRESSED,
+    SNAPPY,
+    GZIP,
+    LZO,
+    BROTLI,
+    LZ4,
+    ZSTD;
 
     /**
-     * Checks if the value is a valid AWS EMR instance architecture.
+     * Checks if the value is a valid compression codec.
      *
-     * @param  input the value
+     * @param  codec the value
      * @return       true if it is valid
      */
-    public static boolean isValid(String input) {
-        if (input == null) {
-            return false;
-        }
-        return SleeperPropertyValueUtils.readList(input).stream()
-                .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
+    public static boolean isValid(String codec) {
+        return EnumUtils.isValidEnumIgnoreCase(CompressionCodec.class, codec);
     }
 }

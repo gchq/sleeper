@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.configuration;
 
+import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Objects;

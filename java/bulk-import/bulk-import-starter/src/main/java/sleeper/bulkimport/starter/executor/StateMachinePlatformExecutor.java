@@ -23,7 +23,7 @@ import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.Collections;
 import java.util.HashMap;

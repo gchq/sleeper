@@ -17,9 +17,9 @@
 package sleeper.systemtest.dsl;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.properties.validation.OptionalStack;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;

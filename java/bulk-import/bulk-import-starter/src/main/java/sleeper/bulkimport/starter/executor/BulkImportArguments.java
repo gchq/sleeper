@@ -19,7 +19,7 @@ package sleeper.bulkimport.starter.executor;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.List;
 import java.util.Map;

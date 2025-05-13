@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration;
+package sleeper.core.properties.model;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
