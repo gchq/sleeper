@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 

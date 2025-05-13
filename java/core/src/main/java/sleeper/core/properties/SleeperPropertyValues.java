@@ -18,7 +18,7 @@ package sleeper.core.properties;
 
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Optional;

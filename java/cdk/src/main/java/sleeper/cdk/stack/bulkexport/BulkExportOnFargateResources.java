@@ -27,9 +27,9 @@ import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
-import sleeper.configuration.BulkExportTaskRequirements;
 import sleeper.core.ContainerConstants;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.BulkExportTaskRequirements;
 
 import java.util.Locale;
 import java.util.Map;

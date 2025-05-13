@@ -20,13 +20,13 @@ import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperty;
-import sleeper.core.properties.validation.IngestQueue;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.IngestQueue;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
+import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")

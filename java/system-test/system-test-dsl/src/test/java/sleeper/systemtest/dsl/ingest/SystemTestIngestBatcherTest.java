@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest

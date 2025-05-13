@@ -16,7 +16,7 @@
 package sleeper.core.properties.testutils;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 
 import java.io.IOException;
 import java.io.StringWriter;

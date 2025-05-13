@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.LambdaDeployType;
+import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.Objects;
 import java.util.Properties;

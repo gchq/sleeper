@@ -29,7 +29,7 @@ import software.constructs.Construct;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.validation.LambdaDeployType;
+import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.List;
 import java.util.function.Consumer;

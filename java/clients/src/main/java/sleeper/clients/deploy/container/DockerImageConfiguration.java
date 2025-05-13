@@ -20,8 +20,8 @@ import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.LambdaDeployType;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.LambdaDeployType;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.Collection;
 import java.util.List;

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,9 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.model.OptionalStack.CompactionStack;
+import static sleeper.core.properties.model.OptionalStack.GarbageCollectorStack;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.validation.OptionalStack.CompactionStack;
-import static sleeper.core.properties.validation.OptionalStack.GarbageCollectorStack;
 
 public class OptionalStackTest {
 

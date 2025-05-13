@@ -24,7 +24,7 @@ import java.util.function.BiFunction;
 /**
  * Behaviour to post-process the value of a table property. This is used to set a default value for the property, to
  * default the property to the value of another property, or to apply some behaviour based on the values of other
- * properties. See {@link sleeper.core.properties.validation.DefaultAsyncCommitBehaviour} for examples.
+ * properties. See {@link sleeper.core.properties.model.DefaultAsyncCommitBehaviour} for examples.
  */
 @FunctionalInterface
 public interface TablePropertyComputeValue {

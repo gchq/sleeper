@@ -119,7 +119,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitter-core</artifactId>
+            <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
