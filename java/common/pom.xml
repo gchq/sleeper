@@ -34,5 +34,6 @@
         <module>localstack-test</module>
         <module>dynamodb-toolsv2</module>
         <module>common-invoke-tablesv2</module>
+        <module>common-taskv2</module>
     </modules>
 </project>
