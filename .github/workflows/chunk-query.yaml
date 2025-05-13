@@ -11,6 +11,7 @@ on:
       - 'java/query/pom.xml'
       - 'java/query/query-core/**'
       - 'java/query/query-runner/**'
+      - 'java/query/query-runnerv2/**'
       - 'java/query/query-lambda/**'
       - 'java/athena/**'
       - 'java/trino/**'
