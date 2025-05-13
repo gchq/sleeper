@@ -22,7 +22,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.List;
 

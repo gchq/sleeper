@@ -29,7 +29,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create128StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;

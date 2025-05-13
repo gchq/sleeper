@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.CompactionTaskRequirements;
+import sleeper.core.properties.model.CompactionTaskRequirements;
 
 import java.util.HashMap;
 import java.util.Locale;

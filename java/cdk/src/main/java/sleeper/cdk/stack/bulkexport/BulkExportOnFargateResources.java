@@ -29,7 +29,7 @@ import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.ContainerConstants;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.BulkExportTaskRequirements;
+import sleeper.core.properties.model.BulkExportTaskRequirements;
 
 import java.util.Locale;
 import java.util.Map;

@@ -59,7 +59,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.ContainerConstants;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.CompactionTaskRequirements;
+import sleeper.core.properties.model.CompactionTaskRequirements;
 
 import java.util.Arrays;
 import java.util.Collections;

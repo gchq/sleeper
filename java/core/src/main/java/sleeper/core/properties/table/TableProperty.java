@@ -19,12 +19,12 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.validation.CompactionMethod;
-import sleeper.core.properties.validation.CompressionCodec;
-import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
-import sleeper.core.properties.validation.IngestFileWritingStrategy;
-import sleeper.core.properties.validation.IngestQueue;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.CompressionCodec;
+import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.model.IngestFileWritingStrategy;
+import sleeper.core.properties.model.IngestQueue;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -92,7 +92,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TIME
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
-import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
+import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of the table properties which are stored separately to the instance properties. Each Sleeper table has

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.properties.validation;
+package sleeper.core.properties.model;
 
 import org.apache.commons.lang3.EnumUtils;
 

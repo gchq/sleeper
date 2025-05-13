@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.properties.validation;
+package sleeper.core.properties.model;
 
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
@@ -24,8 +24,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.ARM64;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.ARM64;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
 
 /**
  * Reads and validates EMR instance types set in Sleeper configuration properties.

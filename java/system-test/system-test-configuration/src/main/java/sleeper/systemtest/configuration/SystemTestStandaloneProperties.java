@@ -26,7 +26,7 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
-import sleeper.core.properties.validation.LambdaDeployType;
+import sleeper.core.properties.model.LambdaDeployType;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;

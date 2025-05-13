@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;

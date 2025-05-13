@@ -13,46 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.properties.validation;
+package sleeper.core.properties.model;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_ARM_CPU;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_ARM_MEMORY;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_X86_CPU;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_X86_MEMORY;
 
 /**
- * Resource requirements for a compaction task. This determines the resources to request from AWS Fargate or EC2.
+ * Resource requirements for a bulk export task. This determines the resources to request from AWS Fargate or EC2.
  */
-public final class CompactionTaskRequirements {
+public final class BulkExportTaskRequirements {
 
     private final int cpu;
     private final int memoryLimitMiB;
 
-    public CompactionTaskRequirements(int cpu, int memoryLimitMiB) {
+    public BulkExportTaskRequirements(int cpu, int memoryLimitMiB) {
         this.cpu = cpu;
         this.memoryLimitMiB = memoryLimitMiB;
     }
 
     /**
-     * Retrieves architecture specific CPU and memory requirements for a compaction task.
+     * Retrieves architecture specific CPU and memory requirements for a bulk export task.
      *
      * @param  architecture       CPU architecture
      * @param  instanceProperties Sleeper instance properties
      * @return                    CPU and memory requirements as per the CPU architecture
      */
-    public static CompactionTaskRequirements getArchRequirements(String architecture, InstanceProperties instanceProperties) {
+    public static BulkExportTaskRequirements getArchRequirements(String architecture, InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
         if (architecture.startsWith("ARM")) {
-            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
-            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+            cpu = instanceProperties.getInt(BULK_EXPORT_TASK_ARM_CPU);
+            memoryLimitMiB = instanceProperties.getInt(BULK_EXPORT_TASK_ARM_MEMORY);
         } else {
-            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
-            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+            cpu = instanceProperties.getInt(BULK_EXPORT_TASK_X86_CPU);
+            memoryLimitMiB = instanceProperties.getInt(BULK_EXPORT_TASK_X86_MEMORY);
         }
-        return new CompactionTaskRequirements(cpu, memoryLimitMiB);
+        return new BulkExportTaskRequirements(cpu, memoryLimitMiB);
     }
 
     public int getCpu() {
