@@ -16,8 +16,8 @@
 
 package sleeper.common.taskv2;
 
-import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -32,7 +32,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
         String queueUrl = createSqsQueueGetUrl();
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -48,7 +48,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
         }
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -67,7 +67,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
         }
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -77,7 +77,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
     @Test
     void shouldFailWhenQueueDoesNotExist() {
         // Given
-        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClient);
+        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClientV2);
 
         // When / Then
         assertThatThrownBy(() -> queueClient.getQueueMessageCount("non-existent-queue"))

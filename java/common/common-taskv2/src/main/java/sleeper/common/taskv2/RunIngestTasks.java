@@ -15,7 +15,6 @@
  */
 package sleeper.common.taskv2;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
@@ -23,6 +22,7 @@ import software.amazon.awssdk.services.ecs.model.ContainerOverride;
 import software.amazon.awssdk.services.ecs.model.LaunchType;
 import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -44,13 +44,13 @@ import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT
 public class RunIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunIngestTasks.class);
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final EcsClient ecsClient;
     private final InstanceProperties properties;
     private final PropertiesReloader propertiesReloader;
     private final String containerName;
 
-    public RunIngestTasks(AmazonSQS sqsClient,
+    public RunIngestTasks(SqsClient sqsClient,
             EcsClient ecsClient,
             InstanceProperties properties,
             PropertiesReloader propertiesReloader,

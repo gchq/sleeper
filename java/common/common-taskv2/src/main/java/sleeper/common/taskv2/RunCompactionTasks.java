@@ -17,8 +17,6 @@ package sleeper.common.taskv2;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
@@ -241,7 +239,6 @@ public class RunCompactionTasks {
         }
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         try (EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
@@ -250,7 +247,6 @@ public class RunCompactionTasks {
             new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {
-            sqsClient.shutdown();
             s3Client.shutdown();
         }
     }
