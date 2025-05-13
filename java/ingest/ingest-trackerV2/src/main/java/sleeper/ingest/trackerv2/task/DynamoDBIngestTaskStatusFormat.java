@@ -16,14 +16,14 @@
 
 package sleeper.ingest.trackerv2.task;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatusesBuilder;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -31,11 +31,11 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getDoubleAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getDoubleAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBIngestTaskStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusFormat.class);

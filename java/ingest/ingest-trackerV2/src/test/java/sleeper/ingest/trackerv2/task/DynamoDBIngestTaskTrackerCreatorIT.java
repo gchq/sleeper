@@ -34,7 +34,7 @@ public class DynamoDBIngestTaskTrackerCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
 
         // Then
         assertThat(dynamoClient.describeTable(tableName))
@@ -43,6 +43,6 @@ public class DynamoDBIngestTaskTrackerCreatorIT extends LocalStackTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoClient);
+        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoClientV2);
     }
 }
