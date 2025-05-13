@@ -39,29 +39,29 @@ import java.util.Map;
 /**
  * A query results output to write results to a client connected via a WebSocket API Gateway.
  */
-public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOutput {
+public class WebSocketResultsOutput implements ResultsOutput {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketResultsOutput.class);
     public static final String MAX_BATCH_SIZE = "maxBatchSize";
 
+    private final Gson serde;
+    private final ApiGatewayWebSocketOutput output;
     private final List<ResultsOutputLocation> outputLocations = new ArrayList<>();
     private final Long maxBatchSize;
-    private final Gson serde;
 
     public WebSocketResultsOutput(Schema schema, Map<String, String> config) {
-        super(config);
-
         this.serde = new GsonBuilder()
                 .registerTypeAdapter(Record.class, new RecordJSONSerDe.RecordGsonSerialiser(schema))
                 .create();
+        this.output = ApiGatewayWebSocketOutput.fromConfig(config);
         String maxBatchSize = config.get(MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
-        this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(ENDPOINT)));
-        this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(CONNECTION_ID)));
+        this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(WebSocketOutput.ENDPOINT)));
+        this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(WebSocketOutput.CONNECTION_ID)));
     }
 
     @Override
     public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
-        String queryId = getQueryId(query);
+        String queryId = query.getQueryId();
 
         Map<String, Object> message = new HashMap<>();
         message.put("message", "records");
@@ -71,7 +71,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
         List<Record> batch = new ArrayList<>();
         long count = 0;
-        int remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength;
+        int remainingMessageLength = WebSocketOutput.MAX_PAYLOAD_SIZE - baseMessageLength;
 
         try {
             while (results.hasNext()) {
@@ -85,7 +85,7 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
                     int recordJsonLength = recordJson.length() + 1; // +1 for comma that seperates records
                     if (recordJsonLength >= remainingMessageLength) {
                         batchReady = true;
-                        remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
+                        remainingMessageLength = WebSocketOutput.MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
                     } else {
                         remainingMessageLength -= recordJsonLength;
                     }
@@ -122,6 +122,6 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
     private void publishBatch(Map<String, Object> message, List<Record> records) throws IOException {
         LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
         message.put("records", records);
-        this.sendString(serde.toJson(message));
+        output.sendString(serde.toJson(message));
     }
 }

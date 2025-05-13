@@ -67,12 +67,12 @@ public class WebSocketResultsOutputIT {
                 .withHeader("x-amzn-ErrorType", "GoneException")));
 
         Map<String, String> config = new HashMap<>();
-        config.put(WebSocketResultsOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
-        config.put(WebSocketResultsOutput.REGION, "eu-west-1");
-        config.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
+        config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
+        config.put(WebSocketOutput.REGION, "eu-west-1");
+        config.put(WebSocketOutput.CONNECTION_ID, connectionId);
         config.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
-        config.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
-        config.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
+        config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
+        config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
         List<Record> records = new ArrayList<>();
@@ -101,12 +101,12 @@ public class WebSocketResultsOutputIT {
         stubFor(post(url).willReturn(aResponse().withStatus(200)));
 
         Map<String, String> config = new HashMap<>();
-        config.put(WebSocketResultsOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
-        config.put(WebSocketResultsOutput.REGION, "eu-west-1");
-        config.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
+        config.put(WebSocketOutput.ENDPOINT, wmRuntimeInfo.getHttpBaseUrl());
+        config.put(WebSocketOutput.REGION, "eu-west-1");
+        config.put(WebSocketOutput.CONNECTION_ID, connectionId);
         config.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
-        config.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
-        config.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
+        config.put(WebSocketOutput.ACCESS_KEY, "accessKey");
+        config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
         List<Record> records = new ArrayList<>();
