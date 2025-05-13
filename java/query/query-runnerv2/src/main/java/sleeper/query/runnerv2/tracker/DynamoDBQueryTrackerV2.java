@@ -36,7 +36,6 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 
@@ -105,7 +104,7 @@ public class DynamoDBQueryTrackerV2 implements QueryStatusReportListener, QueryT
         ScanResponse response = dynamoClient.scan(request -> request.tableName(trackerTableName));
         return response.items().stream()
                 .map(DynamoDBQueryTrackerEntryV2::toTrackedQuery)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -117,13 +116,21 @@ public class DynamoDBQueryTrackerV2 implements QueryStatusReportListener, QueryT
                 .expressionAttributeValues(Map.of(":state", AttributeValue.fromS(state.toString()))));
         return response.items().stream()
                 .map(DynamoDBQueryTrackerEntryV2::toTrackedQuery)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<TrackedQuery> getFailedQueries() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getFailedQueries'");
+        ScanResponse response = dynamoClient.scan(request -> request
+                .tableName(trackerTableName)
+                .filterExpression("#LastState = :failed or #LastState = :partiallyFailed")
+                .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
+                .expressionAttributeValues(Map.of(
+                        ":failed", AttributeValue.fromS(QueryState.FAILED.toString()),
+                        ":partiallyFailed", AttributeValue.fromS(QueryState.PARTIALLY_FAILED.toString()))));
+        return response.items().stream()
+                .map(DynamoDBQueryTrackerEntryV2::toTrackedQuery)
+                .toList();
     }
 
     @Override

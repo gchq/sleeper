@@ -298,7 +298,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         @Test
         void shouldGetFailedQueries() {
             // When / Then
-            assertThat(queryTracker.getFailedQueries())
+            assertThat(queryTracker().getFailedQueries())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
                     .containsExactlyInAnyOrder(
                             queryFailed(query4, "Failed"),
