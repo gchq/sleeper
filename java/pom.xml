@@ -38,7 +38,7 @@
         <module>query</module>
         <module>system-test</module>
         <module>garbage-collector</module>
-        <module>splitter</module>
+        <module>partitions</module>
         <module>cdk</module>
         <module>sketches</module>
         <module>athena</module>
