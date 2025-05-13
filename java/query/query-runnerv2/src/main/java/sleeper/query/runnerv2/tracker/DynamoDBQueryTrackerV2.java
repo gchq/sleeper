@@ -110,8 +110,14 @@ public class DynamoDBQueryTrackerV2 implements QueryStatusReportListener, QueryT
 
     @Override
     public List<TrackedQuery> getQueriesWithState(QueryState state) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getQueriesWithState'");
+        ScanResponse response = dynamoClient.scan(request -> request
+                .tableName(trackerTableName)
+                .filterExpression("#LastState = :state")
+                .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
+                .expressionAttributeValues(Map.of(":state", AttributeValue.fromS(state.toString()))));
+        return response.items().stream()
+                .map(DynamoDBQueryTrackerEntryV2::toTrackedQuery)
+                .collect(Collectors.toList());
     }
 
     @Override

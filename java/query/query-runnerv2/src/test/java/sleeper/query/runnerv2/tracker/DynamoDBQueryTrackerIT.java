@@ -274,7 +274,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         @Test
         void shouldGetPendingQueries() {
             // When / Then
-            assertThat(queryTracker.getQueriesWithState(QUEUED))
+            assertThat(queryTracker().getQueriesWithState(QUEUED))
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
                     .containsExactly(queryQueued(query1));
         }
@@ -282,7 +282,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         @Test
         void shouldGetInProgressQueries() {
             // When / Then
-            assertThat(queryTracker.getQueriesWithState(IN_PROGRESS))
+            assertThat(queryTracker().getQueriesWithState(IN_PROGRESS))
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
                     .containsExactlyInAnyOrder(queryInProgress(query2));
         }
@@ -290,7 +290,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         @Test
         void shouldGetCompletedQueries() {
             // When / Then
-            assertThat(queryTracker.getQueriesWithState(COMPLETED))
+            assertThat(queryTracker().getQueriesWithState(COMPLETED))
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
                     .containsExactlyInAnyOrder(queryCompleted(query3, 456L));
         }
