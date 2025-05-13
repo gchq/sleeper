@@ -55,7 +55,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @BeforeEach
     public void createDynamoTable() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
     }
 
     @Test
