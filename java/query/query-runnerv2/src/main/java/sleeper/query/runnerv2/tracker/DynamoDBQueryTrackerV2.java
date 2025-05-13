@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -35,6 +36,7 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 
@@ -100,8 +102,10 @@ public class DynamoDBQueryTrackerV2 implements QueryStatusReportListener, QueryT
 
     @Override
     public List<TrackedQuery> getAllQueries() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAllQueries'");
+        ScanResponse response = dynamoClient.scan(request -> request.tableName(trackerTableName));
+        return response.items().stream()
+                .map(DynamoDBQueryTrackerEntryV2::toTrackedQuery)
+                .collect(Collectors.toList());
     }
 
     @Override
