@@ -18,8 +18,8 @@ package sleeper.task.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.validation.CompactionTaskRequirements;
 
 import java.util.HashMap;
 import java.util.Locale;
