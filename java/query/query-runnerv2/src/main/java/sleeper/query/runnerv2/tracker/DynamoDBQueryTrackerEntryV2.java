@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.query.runnerv2.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
-
 /**
  * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
  */
@@ -44,6 +42,7 @@ class DynamoDBQueryTrackerEntryV2 {
     static final String SUB_QUERY_ID = "subQueryId";
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
+    static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
 
     private final String queryId;
     private final String subQueryId;
@@ -75,8 +74,8 @@ class DynamoDBQueryTrackerEntryV2 {
 
     public Map<String, AttributeValue> getKey() {
         Map<String, AttributeValue> key = new HashMap<>();
-        key.put(QUERY_ID, AttributeValue.builder().s(queryId).build());
-        key.put(SUB_QUERY_ID, AttributeValue.builder().s(subQueryId).build());
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(subQueryId));
         return key;
     }
 
@@ -85,24 +84,24 @@ class DynamoDBQueryTrackerEntryV2 {
         long now = System.currentTimeMillis() / 1000;
         long expiryDate = now + (3600 * 24 * queryTrackerTTL);
         valueUpdate.put(LAST_UPDATE_TIME, AttributeValueUpdate.builder()
-                .value(value -> value.n(String.valueOf(now)))
+                .value(AttributeValue.fromN(String.valueOf(now)))
                 .action(AttributeAction.PUT)
                 .build());
         valueUpdate.put(EXPIRY_DATE, AttributeValueUpdate.builder()
-                .value(value -> value.n(String.valueOf(expiryDate)))
+                .value(AttributeValue.fromN(String.valueOf(expiryDate)))
                 .action(AttributeAction.PUT)
                 .build());
         valueUpdate.put(RECORD_COUNT, AttributeValueUpdate.builder()
-                .value(value -> value.n(String.valueOf(recordCount)))
+                .value(AttributeValue.fromN(String.valueOf(recordCount)))
                 .action(AttributeAction.PUT)
                 .build());
         valueUpdate.put(LAST_KNOWN_STATE, AttributeValueUpdate.builder()
-                .value(value -> value.s(state.name()))
+                .value(AttributeValue.fromS(state.name()))
                 .action(AttributeAction.PUT)
                 .build());
         if (Objects.nonNull(errorMessage)) {
             valueUpdate.put(ERROR_MESSAGE, AttributeValueUpdate.builder()
-                    .value(value -> value.s(errorMessage))
+                    .value(AttributeValue.fromS(errorMessage))
                     .action(AttributeAction.PUT)
                     .build());
         }
