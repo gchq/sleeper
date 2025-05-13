@@ -273,8 +273,8 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         }
     }
 
-    private DynamoDBQueryTrackerV2 queryTracker() {
-        return new DynamoDBQueryTrackerV2(instanceProperties, dynamoClientV2);
+    private DynamoDBQueryTracker queryTracker() {
+        return new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
     }
 
     private TrackedQuery queryQueued(Query query) {

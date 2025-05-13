@@ -15,18 +15,14 @@
  */
 package sleeper.query.runnerv2.tracker;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -40,11 +36,11 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
-import static sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE;
 
 /**
  * The query tracker updates and keeps track of the status of queries so that clients
@@ -54,25 +50,26 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBQueryTracker.class);
 
     public static final String DESTINATION = "DYNAMODB";
-    public static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
+    public static final String NON_NESTED_QUERY_PLACEHOLDER = DynamoDBQueryTrackerEntry.NON_NESTED_QUERY_PLACEHOLDER;
     public static final String QUERY_ID = DynamoDBQueryTrackerEntry.QUERY_ID;
     public static final String SUB_QUERY_ID = DynamoDBQueryTrackerEntry.SUB_QUERY_ID;
+    public static final String LAST_KNOWN_STATE = DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE;
 
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoClient;
     private final String trackerTableName;
     private final long queryTrackerTTL;
 
-    public DynamoDBQueryTracker(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+    public DynamoDBQueryTracker(InstanceProperties instanceProperties, DynamoDbClient dynamoClient) {
         this.trackerTableName = instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
         this.queryTrackerTTL = instanceProperties.getLong(QUERY_TRACKER_ITEM_TTL_IN_DAYS);
-        this.dynamoDB = dynamoDB;
+        this.dynamoClient = dynamoClient;
     }
 
     public DynamoDBQueryTracker(Map<String, String> destinationConfig) {
         this.trackerTableName = destinationConfig.get(QUERY_TRACKER_TABLE_NAME.getPropertyName());
         String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.getPropertyName());
         this.queryTrackerTTL = Long.parseLong(ttl != null ? ttl : QUERY_TRACKER_ITEM_TTL_IN_DAYS.getDefaultValue());
-        this.dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        this.dynamoClient = DynamoDbClient.create();
     }
 
     @Override
@@ -82,56 +79,61 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(trackerTableName)
-                .addKeyConditionsEntry(QUERY_ID, new Condition()
-                        .withAttributeValueList(new AttributeValue(queryId))
-                        .withComparisonOperator(ComparisonOperator.EQ))
-                .addKeyConditionsEntry(SUB_QUERY_ID, new Condition()
-                        .withAttributeValueList(new AttributeValue(subQueryId))
-                        .withComparisonOperator(ComparisonOperator.EQ)));
+        QueryResponse response = dynamoClient.query(request -> request
+                .tableName(trackerTableName)
+                .keyConditions(Map.of(
+                        QUERY_ID, Condition.builder()
+                                .attributeValueList(AttributeValue.fromS(queryId))
+                                .comparisonOperator(ComparisonOperator.EQ)
+                                .build(),
+                        SUB_QUERY_ID, Condition.builder()
+                                .attributeValueList(AttributeValue.fromS(subQueryId))
+                                .comparisonOperator(ComparisonOperator.EQ)
+                                .build())));
 
-        if (result.getCount() == 0) {
+        if (response.count() == 0) {
             return null;
-        } else if (result.getCount() > 1) {
-            LOGGER.error("Multiple tracked queries returned: {}", result.getItems());
+        } else if (response.count() > 1) {
+            LOGGER.error("Multiple tracked queries returned: {}", response.items());
             throw new QueryTrackerException("More than one query with id " + queryId + " and subquery id "
                     + subQueryId + " was found.");
         }
 
-        return DynamoDBQueryTrackerEntry.toTrackedQuery(result.getItems().get(0));
+        return DynamoDBQueryTrackerEntry.toTrackedQuery(response.items().get(0));
     }
 
     @Override
     public List<TrackedQuery> getAllQueries() {
-        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(trackerTableName));
-        return result.getItems().stream()
+        ScanResponse response = dynamoClient.scan(request -> request.tableName(trackerTableName));
+        return response.items().stream()
                 .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
-    public List<TrackedQuery> getQueriesWithState(QueryState queryState) {
-        ScanResult result = dynamoDB.scan(new ScanRequest()
-                .withTableName(trackerTableName)
-                .withExpressionAttributeValues(Map.of(":state", new AttributeValue().withS(queryState.toString())))
-                .withFilterExpression(LAST_KNOWN_STATE + " = :state"));
-        return result.getItems().stream()
+    public List<TrackedQuery> getQueriesWithState(QueryState state) {
+        ScanResponse response = dynamoClient.scan(request -> request
+                .tableName(trackerTableName)
+                .filterExpression("#LastState = :state")
+                .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
+                .expressionAttributeValues(Map.of(":state", AttributeValue.fromS(state.toString()))));
+        return response.items().stream()
                 .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<TrackedQuery> getFailedQueries() {
-        ScanResult result = dynamoDB.scan(new ScanRequest()
-                .withTableName(trackerTableName)
-                .withExpressionAttributeValues(Map.of(
-                        ":failed", new AttributeValue().withS(QueryState.FAILED.toString()),
-                        ":partiallyFailed", new AttributeValue().withS(QueryState.PARTIALLY_FAILED.toString())))
-                .withFilterExpression(LAST_KNOWN_STATE + " = :failed or " + LAST_KNOWN_STATE + " = :partiallyFailed"));
-        return result.getItems().stream()
+        ScanResponse response = dynamoClient.scan(request -> request
+                .tableName(trackerTableName)
+                .filterExpression("#LastState = :failed or #LastState = :partiallyFailed")
+                .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
+                .expressionAttributeValues(Map.of(
+                        ":failed", AttributeValue.fromS(QueryState.FAILED.toString()),
+                        ":partiallyFailed", AttributeValue.fromS(QueryState.PARTIALLY_FAILED.toString()))));
+        return response.items().stream()
                 .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -192,67 +194,39 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     private void updateState(DynamoDBQueryTrackerEntry entry) {
-        dynamoDB.updateItem(new UpdateItemRequest(trackerTableName,
-                entry.getKey(), entry.getValueUpdate(queryTrackerTTL)));
+        dynamoClient.updateItem(request -> request
+                .tableName(trackerTableName)
+                .key(entry.getKey())
+                .attributeUpdates(entry.getValueUpdate(queryTrackerTTL)));
         if (entry.isUpdateParent()) {
             updateStateOfParent(entry);
         }
     }
 
     private void updateStateOfParent(DynamoDBQueryTrackerEntry leafQueryEntry) {
-        List<Map<String, AttributeValue>> trackedQueries = dynamoDB.query(new QueryRequest()
-                .withTableName(trackerTableName)
-                .withConsistentRead(true)
-                .addKeyConditionsEntry(QUERY_ID, new Condition()
-                        .withAttributeValueList(new AttributeValue(leafQueryEntry.getQueryId()))
-                        .withComparisonOperator(ComparisonOperator.EQ)))
-                .getItems();
+        List<Map<String, AttributeValue>> trackedQueries = dynamoClient.query(request -> request
+                .tableName(trackerTableName)
+                .consistentRead(true)
+                .keyConditions(Map.of(
+                        QUERY_ID, Condition.builder()
+                                .attributeValueList(AttributeValue.fromS(leafQueryEntry.getQueryId()))
+                                .comparisonOperator(ComparisonOperator.EQ)
+                                .build())))
+                .items();
 
         List<TrackedQuery> children = trackedQueries.stream()
                 .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
                 .filter(trackedQuery -> !trackedQuery.getSubQueryId().equals(NON_NESTED_QUERY_PLACEHOLDER))
                 .collect(Collectors.toList());
 
-        QueryState parentState = getParentState(children);
+        Optional<QueryState> parentState = QueryState.getParentStateIfFinished(leafQueryEntry.getQueryId(), children);
 
-        if (parentState != null) {
+        if (parentState.isPresent()) {
             long totalRecordCount = children.stream()
                     .mapToLong(query -> query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
-            LOGGER.info("Updating state of parent to {}", parentState);
-            updateState(leafQueryEntry.updateParent(parentState, totalRecordCount));
+            LOGGER.info("Updating state of parent to {}", parentState.get());
+            updateState(leafQueryEntry.updateParent(parentState.get(), totalRecordCount));
         }
     }
 
-    private QueryState getParentState(List<TrackedQuery> children) {
-        boolean allCompleted = true;
-        boolean allSucceeded = true;
-        boolean allFailed = true;
-        long activeCount = 0;
-        for (TrackedQuery child : children) {
-            switch (child.getLastKnownState()) {
-                case FAILED:
-                case PARTIALLY_FAILED:
-                    allSucceeded = false;
-                    break;
-                case COMPLETED:
-                    allFailed = false;
-                    break;
-                default:
-                    activeCount++;
-                    allCompleted = false;
-            }
-        }
-
-        if (allCompleted && allSucceeded) {
-            return QueryState.COMPLETED;
-        } else if (allCompleted && allFailed) {
-            return QueryState.FAILED;
-        } else if (allCompleted) {
-            return QueryState.PARTIALLY_FAILED;
-        } else {
-            LOGGER.info("Not updating state of parent query, {} leaf queries are still either in progress or queued",
-                    activeCount);
-            return null;
-        }
-    }
 }
