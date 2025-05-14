@@ -16,29 +16,23 @@
 
 package sleeper.common.taskv2;
 
-import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
 import sleeper.localstack.test.LocalStackTestBase;
-
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class QueueMessageCountIT extends LocalStackTestBase {
 
-    private String createQueue() {
-        return sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
-    }
-
     @Test
     void shouldReportNoMessagesWhenQueueIsEmpty() {
         // Given
-        String queueUrl = createQueue();
+        String queueUrl = createSqsQueueGetUrl();
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -48,13 +42,13 @@ class QueueMessageCountIT extends LocalStackTestBase {
     @Test
     void shouldReportNumberOfMessagesWhenQueueIsNotEmpty() {
         // Given
-        String queueUrl = createQueue();
+        String queueUrl = createSqsQueueGetUrl();
         for (int i = 1; i <= 10; i++) {
             sqsClient.sendMessage(queueUrl, "{testMessageId:" + i + "}");
         }
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -64,7 +58,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
     @Test
     void shouldReportNumberOfMessagesWhenSomeMessagesHaveBeenProcessed() {
         // Given
-        String queueUrl = createQueue();
+        String queueUrl = createSqsQueueGetUrl();
         for (int i = 1; i <= 10; i++) {
             sqsClient.sendMessage(queueUrl, "{testMessageId:" + i + "}");
         }
@@ -73,7 +67,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
         }
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -83,7 +77,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
     @Test
     void shouldFailWhenQueueDoesNotExist() {
         // Given
-        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClient);
+        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClientV2);
 
         // When / Then
         assertThatThrownBy(() -> queueClient.getQueueMessageCount("non-existent-queue"))

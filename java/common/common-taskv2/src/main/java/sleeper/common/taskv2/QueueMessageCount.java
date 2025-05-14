@@ -16,16 +16,11 @@
 
 package sleeper.common.taskv2;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import java.util.Map;
 import java.util.Objects;
-
-import static com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessages;
-import static com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessagesNotVisible;
 
 public class QueueMessageCount {
     private final int approximateNumberOfMessages;
@@ -40,7 +35,7 @@ public class QueueMessageCount {
         return new QueueMessageCount(visible, notVisible);
     }
 
-    public static Client withSqsClient(AmazonSQS sqsClient) {
+    public static Client withSqsClient(SqsClient sqsClient) {
         return sqsQueueUrl -> getQueueMessageCountFromSqs(sqsQueueUrl, sqsClient);
     }
 
@@ -49,16 +44,14 @@ public class QueueMessageCount {
         QueueMessageCount getQueueMessageCount(String queueUrl);
     }
 
-    private static QueueMessageCount getQueueMessageCountFromSqs(String sqsJobQueueUrl, AmazonSQS sqsClient) {
-        GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
-                .withQueueUrl(sqsJobQueueUrl)
-                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
-                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
-        GetQueueAttributesResult sizeResult = sqsClient.getQueueAttributes(getQueueAttributesRequest);
-        // See
-        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
-        int approximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
-        int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
+    private static QueueMessageCount getQueueMessageCountFromSqs(String sqsJobQueueUrl, SqsClient sqsClient) {
+        Map<QueueAttributeName, String> attributes = sqsClient.getQueueAttributes(request -> request.queueUrl(sqsJobQueueUrl)
+                .attributeNames(
+                        QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES,
+                        QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE))
+                .attributes();
+        int approximateNumberOfMessages = Integer.parseInt(attributes.get(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES));
+        int approximateNumberOfMessagesNotVisible = Integer.parseInt(attributes.get(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE));
         return approximateNumberVisibleAndNotVisible(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
     }
 
@@ -90,7 +83,7 @@ public class QueueMessageCount {
     @Override
     public String toString() {
         return Map.of(
-                ApproximateNumberOfMessages.toString(), getApproximateNumberOfMessages(),
-                ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible()).toString();
+                QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES.toString(), getApproximateNumberOfMessages(),
+                QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE.toString(), getApproximateNumberOfMessagesNotVisible()).toString();
     }
 }

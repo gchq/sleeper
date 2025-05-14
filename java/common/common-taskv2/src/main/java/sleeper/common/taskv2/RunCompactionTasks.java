@@ -15,10 +15,6 @@
  */
 package sleeper.common.taskv2;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
@@ -31,8 +27,9 @@ import software.amazon.awssdk.services.ecs.model.NetworkConfiguration;
 import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionECSLaunchType;
 
@@ -241,17 +238,13 @@ public class RunCompactionTasks {
         }
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try (EcsClient ecsClient = EcsClient.create();
+        try (S3Client s3Client = S3Client.create();
+                EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
                 Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);
-        } finally {
-            sqsClient.shutdown();
-            s3Client.shutdown();
         }
     }
 }
