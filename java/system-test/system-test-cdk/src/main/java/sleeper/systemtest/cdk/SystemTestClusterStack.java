@@ -90,7 +90,7 @@ public class SystemTestClusterStack extends NestedStack {
     private void create(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
             InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
-        Queue jobsQueue = createQueueForSystemTestJobs(instanceProperties);
+        Queue jobsQueue = createQueueForSystemTestJobs(properties, propertySetter, instanceProperties);
         createSystemTestCluster(properties, propertySetter, instanceProperties, bucketStack, jobsQueue);
     }
 
@@ -157,7 +157,8 @@ public class SystemTestClusterStack extends NestedStack {
                 .build());
     }
 
-    private Queue createQueueForSystemTestJobs(InstanceProperties instanceProperties) {
+    private Queue createQueueForSystemTestJobs(
+            SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter, InstanceProperties instanceProperties) {
         // Create queue for system test job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "SystemTestJobDLQ");
@@ -175,12 +176,12 @@ public class SystemTestClusterStack extends NestedStack {
                 .create(this, "SystemTestJobQueue")
                 .queueName(queueName)
                 .deadLetterQueue(systemTestJobDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .visibilityTimeout(Duration.seconds(properties.getInt(SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(SYSTEM_TEST_JOBS_QUEUE_URL, systemTestJobQueue.getQueueUrl());
-        instanceProperties.set(SYSTEM_TEST_JOBS_QUEUE_ARN, systemTestJobQueue.getQueueArn());
-        instanceProperties.set(SYSTEM_TEST_JOBS_DLQ_URL, systemTestJobDeadLetterQueue.getQueue().getQueueUrl());
-        instanceProperties.set(SYSTEM_TEST_JOBS_DLQ_ARN, systemTestJobDeadLetterQueue.getQueue().getQueueArn());
+        propertySetter.set(SYSTEM_TEST_JOBS_QUEUE_URL, systemTestJobQueue.getQueueUrl());
+        propertySetter.set(SYSTEM_TEST_JOBS_QUEUE_ARN, systemTestJobQueue.getQueueArn());
+        propertySetter.set(SYSTEM_TEST_JOBS_DLQ_URL, systemTestJobDeadLetterQueue.getQueue().getQueueUrl());
+        propertySetter.set(SYSTEM_TEST_JOBS_DLQ_ARN, systemTestJobDeadLetterQueue.getQueue().getQueueArn());
 
         return systemTestJobQueue;
     }
