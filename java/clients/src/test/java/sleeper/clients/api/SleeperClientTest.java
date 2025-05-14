@@ -19,41 +19,29 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.clients.api.testutils.InMemorySleeperClientProvider;
+import sleeper.clients.api.testutils.InMemorySleeperInstance;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
-import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.ingest.runner.testutils.InMemoryIngest;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.QueryExecutor;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,50 +55,32 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 class SleeperClientTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableIndex tableIndex = new InMemoryTableIndex();
-    TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance(tableIndex);
     Schema schema = createSchemaWithKey("key", new StringType());
-    InMemoryRecordStore dataStore = new InMemoryRecordStore();
-    InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
-    Queue<IngestJob> ingestQueue = new LinkedList<>();
-    Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
-    Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
-    SleeperClient sleeperClient = createSleeperBuilder().build();
-
-    private SleeperClient.Builder createSleeperBuilder() {
-        return new SleeperClient.Builder()
-                .instanceProperties(instanceProperties)
-                .tableIndex(tableIndex)
-                .tablePropertiesStore(tablePropertiesStore)
-                .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
-                .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
-                .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
-                .ingestJobSender(ingestQueue::add)
-                .bulkImportJobSender(bulkImportSender())
-                .ingestBatcherSender(ingestBatcherQueue::add);
-    }
+    InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties);
+    InMemorySleeperClientProvider clientProvider = new InMemorySleeperClientProvider(instance);
+    SleeperClient sleeperClient = clientProvider.createClientForInstance(instanceProperties);
 
     @Test
     void validateThatClientCannotBeCreatedWithNulls() {
-        assertThatThrownBy(() -> createSleeperBuilder().instanceProperties(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().instanceProperties(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("instanceProperties");
-        assertThatThrownBy(() -> createSleeperBuilder().tableIndex(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().tableIndex(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("tableIndex");
-        assertThatThrownBy(() -> createSleeperBuilder().tablePropertiesStore(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().tablePropertiesStore(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesStore");
-        assertThatThrownBy(() -> createSleeperBuilder().tablePropertiesProvider(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().tablePropertiesProvider(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("tablePropertiesProvider");
-        assertThatThrownBy(() -> createSleeperBuilder().stateStoreProvider(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().stateStoreProvider(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("stateStoreProvider");
-        assertThatThrownBy(() -> createSleeperBuilder().objectFactory(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().objectFactory(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("objectFactory");
-        assertThatThrownBy(() -> createSleeperBuilder().recordRetrieverProvider(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().recordRetrieverProvider(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("recordRetrieverProvider");
-        assertThatThrownBy(() -> createSleeperBuilder().ingestJobSender(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().ingestJobSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestJobSender");
-        assertThatThrownBy(() -> createSleeperBuilder().bulkImportJobSender(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().bulkImportJobSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkImportJobSender");
-        assertThatThrownBy(() -> createSleeperBuilder().ingestBatcherSender(null).build())
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().ingestBatcherSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestBatcherSender");
     }
 
@@ -193,7 +163,7 @@ class SleeperClientTest {
 
         // Then
         assertThat(jobId).isNotBlank();
-        assertThat(ingestQueue).containsExactly(
+        assertThat(instance.ingestQueue()).containsExactly(
                 IngestJob.builder()
                         .tableName(tableName)
                         .id(jobId)
@@ -213,7 +183,7 @@ class SleeperClientTest {
 
         // Then
         assertThat(jobId).isNotBlank();
-        assertThat(bulkImportQueues).isEqualTo(
+        assertThat(instance.bulkImportQueues()).isEqualTo(
                 Map.of(platform, List.of(
                         BulkImportJob.builder()
                                 .id(jobId)
@@ -231,7 +201,7 @@ class SleeperClientTest {
         sleeperClient.sendFilesToIngestBatcher(tableName, fileList);
 
         // Then
-        assertThat(ingestBatcherQueue).containsExactly(
+        assertThat(instance.ingestBatcherQueue()).containsExactly(
                 new IngestBatcherSubmitRequest(tableName, fileList));
     }
 
@@ -247,11 +217,7 @@ class SleeperClientTest {
     }
 
     private void ingest(String tableName, List<Record> records) {
-        InMemoryIngest ingest = new InMemoryIngest(instanceProperties,
-                sleeperClient.getTableProperties(tableName),
-                sleeperClient.getStateStore(tableName),
-                dataStore, sketchesStore);
-        try (IngestCoordinator<Record> coordinator = ingest.createCoordinator()) {
+        try (IngestCoordinator<Record> coordinator = instance.ingestByTableName(tableName).createCoordinator()) {
             for (Record record : records) {
                 coordinator.write(record);
             }
@@ -262,11 +228,5 @@ class SleeperClientTest {
 
     private RangeFactory rangeFactory() {
         return new RangeFactory(schema);
-    }
-
-    private BulkImportJobSender bulkImportSender() {
-        return (platform, job) -> bulkImportQueues
-                .computeIfAbsent(platform, p -> new LinkedList<>())
-                .add(job);
     }
 }
