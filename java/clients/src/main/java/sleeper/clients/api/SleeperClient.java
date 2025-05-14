@@ -89,17 +89,17 @@ public class SleeperClient implements AutoCloseable {
      * @return            the client
      */
     public static SleeperClient createForInstanceId(String instanceId) {
-        return builder().instanceId(instanceId).build();
+        return builder().instanceId(instanceId).defaultClients().build();
     }
 
     /**
-     * Creates a builder for a client with the default AWS configuration. The ID of the Sleeper instance to interact
-     * with must be set on the builder.
+     * Creates a builder for a client to interact with AWS. The ID of the Sleeper instance to interact with must be set
+     * on the builder. You must either provide AWS clients, or call the defaultClients method on the builder.
      *
      * @return the builder
      */
     public static AwsSleeperClientBuilder builder() {
-        return new AwsSleeperClientBuilder().defaultClients();
+        return new AwsSleeperClientBuilder();
     }
 
     /**

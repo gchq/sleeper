@@ -58,7 +58,8 @@ public class AwsSleeperClientBuilder {
     private Configuration hadoopConf;
 
     /**
-     * Creates default clients to interact with AWS. This is done by default in {@link SleeperClient#builder}.
+     * Creates default clients to interact with AWS. These clients will be shut down automatically when the Sleeper
+     * client is closed.
      *
      * @return this builder
      */
