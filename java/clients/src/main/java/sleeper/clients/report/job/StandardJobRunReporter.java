@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
-import static sleeper.core.util.NumberFormatUtils.decimalWithCommas;
+import static sleeper.core.util.NumberFormatUtils.formatDecimal2dp;
 
 public class StandardJobRunReporter {
 
@@ -170,15 +170,11 @@ public class StandardJobRunReporter {
     }
 
     private static String getRecordsReadPerSecond(JobRunSummary summary) {
-        return formatDecimal(summary.getRecordsReadPerSecond());
+        return formatDecimal2dp(summary.getRecordsReadPerSecond());
     }
 
     private static String getRecordsWrittenPerSecond(JobRunSummary summary) {
-        return formatDecimal(summary.getRecordsWrittenPerSecond());
-    }
-
-    public static String formatDecimal(double value) {
-        return decimalWithCommas("%.2f", value);
+        return formatDecimal2dp(summary.getRecordsWrittenPerSecond());
     }
 
     public static String formatDurationString(Duration duration) {

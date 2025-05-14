@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.util.NumberFormatUtils.formatBytes;
 import static sleeper.core.util.NumberFormatUtils.formatBytesAsHumanReadableString;
+import static sleeper.core.util.NumberFormatUtils.formatDecimal2dp;
 
 public class NumberFormatUtilsTest {
     @Nested
@@ -120,6 +121,35 @@ public class NumberFormatUtilsTest {
         void shouldFormatNumberOfBytesAsGB() {
             assertThat(formatBytesAsHumanReadableString(1_234_000_000L))
                     .isEqualTo("1.2GB");
+        }
+    }
+
+    @Nested
+    @DisplayName("Format decimals")
+    class FormatDecimals {
+
+        @Test
+        void shouldFormatBigNumber() {
+            assertThat(formatDecimal2dp(123456789.12345))
+                    .isEqualTo("123,456,789.12");
+        }
+
+        @Test
+        void shouldFormatBigNegativeNumber() {
+            assertThat(formatDecimal2dp(-123456789.12345))
+                    .isEqualTo("-123,456,789.12");
+        }
+
+        @Test
+        void shouldFormatDivideByZero() {
+            assertThat(formatDecimal2dp(1.0 / 0.0))
+                    .isEqualTo("Infinity");
+        }
+
+        @Test
+        void shouldFormatNaN() {
+            assertThat(formatDecimal2dp(Double.NaN))
+                    .isEqualTo("NaN");
         }
     }
 }
