@@ -22,6 +22,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.tracker.QueryStatusReportListener;
+import sleeper.query.runnerv2.output.WebSocketOutput;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +60,7 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
         }
 
         String destination = destinationConfig.get(QueryStatusReportListener.DESTINATION);
-        if (destination.equals(WebSocketQueryStatusReportDestination.DESTINATION_NAME)) {
+        if (destination.equals(WebSocketOutput.DESTINATION_NAME)) {
             return new WebSocketQueryStatusReportDestination(destinationConfig);
         } else if (destination.equals(DynamoDBQueryTracker.DESTINATION)) {
             return new DynamoDBQueryTracker(destinationConfig);

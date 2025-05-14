@@ -15,10 +15,9 @@
  */
 package sleeper.query.runnerv2.output;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -48,14 +47,14 @@ public class SQSResultsOutput implements ResultsOutput {
     public static final String SQS = "SQS";
     public static final String SQS_RESULTS_URL = "sqsResultsUrl";
     public static final String BATCH_SIZE = "batchSize";
-    private final AmazonSQS amazonSQS;
+    private final SqsClient sqsClient;
     private final Schema schema;
     private String sqsUrl;
     private final int batchSize;
     private final ResultsOutputLocation outputLocation;
 
-    public SQSResultsOutput(InstanceProperties instanceProperties, AmazonSQS amazonSQS, Schema schema, Map<String, String> config) {
-        this.amazonSQS = amazonSQS;
+    public SQSResultsOutput(InstanceProperties instanceProperties, SqsClient sqsClient, Schema schema, Map<String, String> config) {
+        this.sqsClient = sqsClient;
         this.schema = schema;
         this.sqsUrl = config.get(SQS_RESULTS_URL);
         if (null == this.sqsUrl) {
@@ -116,9 +115,6 @@ public class SQSResultsOutput implements ResultsOutput {
 
     private void sendResultsToSQS(ResultsBatch resultsBatch, String sqsUrl) {
         String serialisedResults = new JSONResultsBatchSerialiser().serialise(resultsBatch);
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(sqsUrl)
-                .withMessageBody(serialisedResults);
-        amazonSQS.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(request -> request.queueUrl(sqsUrl).messageBody(serialisedResults));
     }
 }
