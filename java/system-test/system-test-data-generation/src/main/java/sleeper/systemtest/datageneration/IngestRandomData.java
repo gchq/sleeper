@@ -69,8 +69,9 @@ public class IngestRandomData {
 
     public void run(String tableName) throws IOException {
         run(SystemTestDataGenerationJob.builder()
+                .instanceProperties(instanceProperties)
+                .testProperties(systemTestProperties)
                 .tableName(tableName)
-                .properties(systemTestProperties)
                 .build());
     }
 

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.core.deploy.DockerDeployment;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.List;
 import java.util.stream.Stream;

@@ -16,7 +16,7 @@
 package sleeper.bulkimport.core.configuration;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,8 +65,8 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION_QUANTILE;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SQL_SHUFFLE_PARTITIONS;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.ARM64;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.ARM64;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
 
 /**
  * Properties in this class are based on AWS recommended values. See this blog for details:

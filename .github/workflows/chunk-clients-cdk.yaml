@@ -26,7 +26,7 @@ on:
       - 'java/query/query-runner/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/bulk-import/bulk-import-core/**'
-      - 'java/splitter/splitter-core/**'
+      - 'java/partitions/splitter/**'
       - 'java/compaction/compaction-job-execution/**'
       - 'java/statestore-committer-core/**'
       - 'java/garbage-collector/**'

@@ -56,10 +56,10 @@ import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
-import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.CompactionTaskRequirements;
 
 import java.util.Arrays;
 import java.util.Collections;

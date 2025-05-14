@@ -38,7 +38,7 @@
         <module>query</module>
         <module>system-test</module>
         <module>garbage-collector</module>
-        <module>splitter</module>
+        <module>partitions</module>
         <module>cdk</module>
         <module>sketches</module>
         <module>athena</module>
@@ -100,7 +100,7 @@
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
         <protobuf.version>4.30.2</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
-        <nimbus-jose-jwt.version>10.2</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
@@ -117,7 +117,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
         -->
-        <kotlin.version>2.1.20</kotlin.version>
+        <kotlin.version>2.1.21</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
@@ -127,7 +127,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.39</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.42</aws-java-sdk-v2.version>
         <aws-crt.version>0.38.2</aws-crt.version>
         <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -186,10 +186,10 @@
         <testcontainers.version>1.21.0</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
-        <approvaltests.version>24.21.0</approvaltests.version>
+        <approvaltests.version>24.21.1</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.0</xmlunit.version>
-        <jsonunit.version>4.1.0</jsonunit.version>
+        <jsonunit.version>4.1.1</jsonunit.version>
         <checkstyle.version>10.23.1</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
@@ -358,6 +358,11 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>sfn</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>apigatewaymanagementapi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <!-- Data processing -->

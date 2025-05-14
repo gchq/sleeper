@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceTypeConfig;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
@@ -30,11 +32,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.ARM64;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.ARM64;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
 
 public class EmrInstanceTypeConfigTest {
 
