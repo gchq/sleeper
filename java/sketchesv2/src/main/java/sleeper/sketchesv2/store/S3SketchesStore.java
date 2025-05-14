@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.sketchesv2.s3;
+package sleeper.sketchesv2.store;
 
 import org.apache.commons.io.FilenameUtils;
 import software.amazon.awssdk.core.async.BlockingOutputStreamAsyncRequestBody;
@@ -25,7 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.S3Filename;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.SketchesSerDe;
-import sleeper.sketchesv2.SketchesStore;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
