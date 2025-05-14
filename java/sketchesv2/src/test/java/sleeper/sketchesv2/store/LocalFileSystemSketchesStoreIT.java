@@ -17,35 +17,42 @@ package sleeper.sketchesv2.store;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableFilePaths;
-import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.testutils.SketchesDeciles;
 import sleeper.sketchesv2.testutils.SketchesTestData;
 
+import java.nio.file.Path;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
-public class S3SketchesStoreIT extends LocalStackTestBase {
+public class LocalFileSystemSketchesStoreIT {
+
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = SketchesTestData.SCHEMA;
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    SketchesStore store = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    SketchesStore store = new LocalFileSystemSketchesStore();
+
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void setUp() {
-        createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, tempDir.toString());
     }
 
     @Test
-    void shouldWriteSketchesToS3() {
-        // Given
+    void shouldWriteSketchesToFile() {
         Sketches sketches = SketchesTestData.createExampleSketches();
         String filename = filePaths().constructPartitionParquetFilePath("test-partition", "test-file");
 
