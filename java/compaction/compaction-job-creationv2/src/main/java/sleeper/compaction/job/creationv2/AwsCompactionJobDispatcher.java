@@ -36,7 +36,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendDeadLetter;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJobs;
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestorev2.StateStoreFactory;
