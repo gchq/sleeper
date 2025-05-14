@@ -127,7 +127,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
         // split aggregation columns out
         let (agg_cols, filter_agg) = value
             .split_once(";")
-            .ok_or(config_datafusion_err!("No ; in aggregation config"))?;
+            .ok_or(config_datafusion_err!("No ; in aggregation configuration"))?;
         // Convert to a vector of columns
         let agg_cols = if agg_cols.len() > 0 {
             Some(
@@ -194,18 +194,24 @@ pub fn validate_aggregations(
     agg_conf: &[Aggregate],
 ) -> Result<()> {
     if !agg_conf.is_empty() {
+        // List of columns
+        let all_cols = schema.clone().strip_qualifiers().field_names();
         // Check for duplicate aggregation columns
         let mut dup_check = HashSet::new();
         for col in query_agg_cols {
+            // Is this column duplicated or a row key column?
             if !dup_check.insert(col) {
                 return config_err!(
-                    "Aggregation grouping column {col} is already a row key column or is duplicated"
+                    "Aggregation grouping column \"{col}\" is already a row key column or is duplicated"
                 );
             }
+            // Is this column valid?
+            if !all_cols.contains(col) {
+                return config_err!("Aggregation grouping column \"{col}\" doesn't exist");
+            }
         }
-        // List of columns
-        let mut non_row_key_cols = schema.clone().strip_qualifiers().field_names();
         // Remove query aggregation columns
+        let mut non_row_key_cols = all_cols.clone();
         non_row_key_cols.retain(|col| !query_agg_cols.contains(col));
         // Columns with aggregators
         let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
