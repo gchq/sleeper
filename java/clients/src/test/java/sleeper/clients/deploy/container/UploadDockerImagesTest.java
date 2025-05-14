@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.LambdaDeployType;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.LambdaDeployType;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;

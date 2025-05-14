@@ -15,8 +15,9 @@
  */
 package sleeper.systemtest.configuration;
 
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.validation.IngestQueue;
 
 import java.util.List;
 import java.util.Objects;
@@ -66,10 +67,9 @@ public class SystemTestDataGenerationJob {
             SystemTestProperties properties, TableProperties tableProperties) {
         return IntStream.range(0, properties.getInt(NUMBER_OF_WRITERS))
                 .mapToObj(i -> builder()
-                        .configBucket(properties.get(CONFIG_BUCKET))
-                        .roleArnToLoadConfig(properties.get(INGEST_BY_QUEUE_ROLE_ARN))
+                        .instanceProperties(properties)
+                        .testProperties(properties.testPropertiesOnly())
                         .tableName(tableProperties.get(TABLE_NAME))
-                        .properties(properties.testPropertiesOnly())
                         .build())
                 .toList();
     }
@@ -169,7 +169,12 @@ public class SystemTestDataGenerationJob {
             return this;
         }
 
-        public Builder properties(SystemTestPropertyValues properties) {
+        public Builder instanceProperties(InstanceProperties properties) {
+            return configBucket(properties.get(CONFIG_BUCKET))
+                    .roleArnToLoadConfig(properties.get(INGEST_BY_QUEUE_ROLE_ARN));
+        }
+
+        public Builder testProperties(SystemTestPropertyValues properties) {
             return ingestMode(properties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class))
                     .ingestQueue(properties.getEnumValue(INGEST_QUEUE, IngestQueue.class))
                     .numberOfIngests(properties.getInt(NUMBER_OF_INGESTS_PER_WRITER))

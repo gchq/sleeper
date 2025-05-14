@@ -153,7 +153,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../splitter/splitter-lambda/target/splitter-lambda-${project.version}-utility.jar
+                ${project.basedir}/../partitions/splitter-lambda/target/splitter-lambda-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-splitter-${project.version}.jar</destName>

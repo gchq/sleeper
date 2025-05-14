@@ -67,7 +67,7 @@ import sleeper.cdk.stack.query.QueryStack;
 import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;

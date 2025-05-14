@@ -18,7 +18,7 @@ package sleeper.core.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;

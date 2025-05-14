@@ -15,10 +15,50 @@
  */
 package sleeper.query.core.tracker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Optional;
+
 public enum QueryState {
     COMPLETED,
     FAILED,
     QUEUED,
     IN_PROGRESS,
-    PARTIALLY_FAILED
+    PARTIALLY_FAILED;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueryState.class);
+
+    public static Optional<QueryState> getParentStateIfFinished(String queryId, List<TrackedQuery> children) {
+        boolean allCompleted = true;
+        boolean allSucceeded = true;
+        boolean allFailed = true;
+        long activeCount = 0;
+        for (TrackedQuery child : children) {
+            switch (child.getLastKnownState()) {
+                case FAILED:
+                case PARTIALLY_FAILED:
+                    allSucceeded = false;
+                    break;
+                case COMPLETED:
+                    allFailed = false;
+                    break;
+                default:
+                    activeCount++;
+                    allCompleted = false;
+            }
+        }
+
+        if (allCompleted && allSucceeded) {
+            return Optional.of(COMPLETED);
+        } else if (allCompleted && allFailed) {
+            return Optional.of(FAILED);
+        } else if (allCompleted) {
+            return Optional.of(PARTIALLY_FAILED);
+        } else {
+            LOGGER.info("Found {} leaf queries are still either in progress or queued for query {}", activeCount, queryId);
+            return Optional.empty();
+        }
+    }
 }

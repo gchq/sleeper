@@ -28,9 +28,9 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;

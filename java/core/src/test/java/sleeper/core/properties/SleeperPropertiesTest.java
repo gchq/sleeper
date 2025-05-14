@@ -19,8 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
-import sleeper.core.properties.validation.IngestQueue;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.model.IngestQueue;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -39,10 +39,10 @@ import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.ARM64;
+import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
+import static sleeper.core.properties.model.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.ARM64;
-import static sleeper.core.properties.validation.EmrInstanceArchitecture.X86_64;
-import static sleeper.core.properties.validation.IngestQueue.BULK_IMPORT_PERSISTENT_EMR;
 
 class SleeperPropertiesTest {
 

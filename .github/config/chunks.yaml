@@ -24,8 +24,11 @@ chunks:
       - sketches
       - parquet
       - common/common-job
+      - common/common-jobv2
       - common/common-task
+      - common/common-taskv2
       - common/common-invoke-tables
+      - common/common-invoke-tablesv2
       - build
       - common/dynamodb-tools
       - common/dynamodb-toolsv2
@@ -46,8 +49,8 @@ chunks:
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
       - compaction/compaction-core
-      - splitter/splitter-core
-      - splitter/splitter-lambda
+      - partitions/splitter
+      - partitions/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
       - bulk-export/bulk-export-planner
@@ -64,6 +67,7 @@ chunks:
     modules:
       - ingest/ingest-core
       - ingest/ingest-tracker
+      - ingest/ingest-trackerV2
       - ingest/ingest-starter
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
@@ -79,6 +83,7 @@ chunks:
     modules:
       - query/query-core
       - query/query-runner
+      - query/query-runnerv2
       - query/query-lambda
       - athena
       - trino

@@ -15,7 +15,7 @@
  */
 package sleeper.core.deploy;
 
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.core.properties.validation.OptionalStack.BulkExportStack;
+import static sleeper.core.properties.model.OptionalStack.BulkExportStack;
 
 /**
  * Definitions of handler methods for lambda functions.

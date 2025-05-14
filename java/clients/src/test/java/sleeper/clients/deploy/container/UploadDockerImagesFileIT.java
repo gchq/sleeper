@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.command.CommandPipeline;
-import sleeper.core.properties.validation.LambdaDeployType;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.LambdaDeployType;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
