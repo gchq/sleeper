@@ -48,6 +48,7 @@ chunks:
       - compaction/compaction-job-creation
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
+      - compaction/compaction-trackerV2
       - compaction/compaction-core
       - partitions/splitter
       - partitions/splitter-lambda

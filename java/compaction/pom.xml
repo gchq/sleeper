@@ -33,6 +33,7 @@
         <module>compaction-job-execution</module>
         <module>compaction-rust</module>
         <module>compaction-tracker</module>
+        <module>compaction-trackerV2</module>
         <module>compaction-task-creation</module>
     </modules>
 </project>

@@ -66,6 +66,21 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>bulk-export-planner</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>bulk-export-task-creator</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>bulk-export-task-execution</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>bulk-import-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
