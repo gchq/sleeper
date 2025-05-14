@@ -15,6 +15,7 @@
  */
 package sleeper.garbagecollector;
 
+import sleeper.core.util.S3Filename;
 import sleeper.core.util.SplitIntoBatches;
 
 import java.util.Collection;
@@ -41,11 +42,15 @@ public record FilesToDeleteInBucket(String bucketName, Map<String, String> objec
      * @param  files      the parsed state store filenames
      * @return            the index
      */
-    public static FilesToDeleteInBucket from(String bucketName, List<FileToDelete> files) {
+    public static FilesToDeleteInBucket from(String bucketName, List<S3Filename> files) {
         Map<String, String> objectKeyToFilename = files.stream()
-                .flatMap(file -> file.streamObjectKeys().map(key -> Map.entry(key, file.filename())))
+                .flatMap(file -> streamObjectKeys(file).map(key -> Map.entry(key, file.filename())))
                 .collect(toMap(Entry::getKey, Entry::getValue));
         return new FilesToDeleteInBucket(bucketName, objectKeyToFilename);
+    }
+
+    private static Stream<String> streamObjectKeys(S3Filename filename) {
+        return Stream.of(filename.objectKey(), filename.objectKey().replace(".parquet", ".sketches"));
     }
 
     public Collection<String> getObjectKeys() {
