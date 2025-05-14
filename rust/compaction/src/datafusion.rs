@@ -121,12 +121,7 @@ pub async fn compact(
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
     frame = frame.sort(sort_order)?;
-    frame = apply_aggregations(
-        &input_data.row_key_cols,
-        frame,
-        filter_agg_conf.as_ref(),
-        row_key_exprs,
-    )?;
+    frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
     frame = frame.select(col_names_expr)?;
 
     // Show explanation of plan
@@ -232,6 +227,7 @@ fn apply_filters(
 ) -> Result<DataFrame, DataFusionError> {
     Ok(
         if let Some(FilterAggregationConfig {
+            agg_cols: _,
             filter: Some(f),
             aggregation: _,
         }) = filter_agg_conf
@@ -252,21 +248,30 @@ fn apply_aggregations(
     row_key_cols: &[String],
     frame: DataFrame,
     filter_agg_conf: Option<&FilterAggregationConfig>,
-    row_key_exprs: Vec<Expr>,
 ) -> Result<DataFrame, DataFusionError> {
     Ok(
         if let Some(FilterAggregationConfig {
+            agg_cols,
             filter: _,
             aggregation: Some(aggregation),
         }) = &filter_agg_conf
         {
+            // Grab initial row key columns
+            let mut query_agg_cols = row_key_cols;
+            let mut extra_agg_cols = Vec::new();
+            // If we have any extra columns, concatenate them all together
+            if let Some(more_columns) = agg_cols {
+                extra_agg_cols.extend_from_slice(row_key_cols);
+                extra_agg_cols.extend_from_slice(more_columns);
+                query_agg_cols = &extra_agg_cols;
+            }
             // Check aggregations meet validity checks
-            validate_aggregations(row_key_cols, frame.schema(), aggregation)?;
+            validate_aggregations(query_agg_cols, frame.schema(), aggregation)?;
             let aggregations = aggregation
                 .iter()
-                .map(|agg| agg.to_expr(row_key_cols, &frame))
+                .map(|agg| agg.to_expr(&frame))
                 .collect::<Result<Vec<_>, _>>()?;
-            frame.aggregate(row_key_exprs, aggregations)?
+            frame.aggregate(query_agg_cols.iter().map(col).collect(), aggregations)?
         } else {
             frame
         },

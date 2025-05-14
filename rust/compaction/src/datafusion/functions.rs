@@ -17,7 +17,7 @@
 */
 use ageoff::AgeOff;
 use datafusion::{
-    common::{DFSchema, HashSet, config_err},
+    common::{DFSchema, HashSet, config_datafusion_err, config_err},
     error::{DataFusionError, Result},
     execution::FunctionRegistry,
     functions_aggregate::expr_fn::{count, max, min, sum},
@@ -39,7 +39,11 @@ pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 /// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
 #[derive(Debug, Default)]
 pub struct FilterAggregationConfig {
+    /// Extra columns beyons row key columns to aggregate
+    pub agg_cols: Option<Vec<String>>,
+    /// Single filtering option
     pub filter: Option<Filter>,
+    /// Aggregation columns. These must not include any row key columns or columns mentioned in `agg_cols`.
     pub aggregation: Option<Vec<Aggregate>>,
 }
 
@@ -68,7 +72,7 @@ pub struct Aggregate(String, AggOp);
 
 impl Aggregate {
     // Create a DataFusion logical expression to represent this aggregation operation.
-    pub fn to_expr(&self, _row_key_cols: &[String], frame: &DataFrame) -> Result<Expr> {
+    pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.1 {
             AggOp::Count => count(col(&self.0)),
             AggOp::Sum => sum(col(&self.0)),
@@ -120,8 +124,24 @@ impl TryFrom<&str> for FilterAggregationConfig {
     /// This is a minimum viable parser for the configuration for filters/aggregators.
     /// It is a really good example of how NOT to do it. This routine has some odd behaviour.
     fn try_from(value: &str) -> Result<Self, Self::Error> {
+        // split aggregation columns out
+        let (agg_cols, filter_agg) = value
+            .split_once(";")
+            .ok_or(config_datafusion_err!("No ; in aggregation config"))?;
+        // Convert to a vector of columns
+        let agg_cols = if agg_cols.len() > 0 {
+            Some(
+                agg_cols
+                    .split(',')
+                    .map(|s| s.trim().to_owned())
+                    .collect::<Vec<_>>(),
+            )
+        } else {
+            None
+        };
+
         // Create list of strings delimited by comma as iterator
-        let values = value.split(',').map(str::trim).collect::<Vec<_>>();
+        let values = filter_agg.split(',').map(str::trim).collect::<Vec<_>>();
         let filter = if values[0].starts_with("ageoff=") {
             let column = values[0].split('=').collect::<Vec<_>>()[1].replace('\'', "");
             let max_age = values[1]
@@ -153,6 +173,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
             Some(aggregation)
         };
         Ok(Self {
+            agg_cols,
             filter,
             aggregation,
         })
@@ -160,29 +181,41 @@ impl TryFrom<&str> for FilterAggregationConfig {
 }
 
 /// Validate that
-///  1. All columns that are NOT row key columns have an aggregation operation specified for them,
-///  2. No row key columns have aggregations specified,
-///  3. No aggregation column is specified multiple times.
-///  4. Aggregation columns must be valid in schema.
+///  1. All columns that are NOT query aggregation columns have an aggregation operation specified for them,
+///  2. No query aggregation columns have aggregations specified,
+///  3. No query aggregation column is duplicated.
+///  4. No aggregation column is specified multiple times,
+///  5. Aggregation columns must be valid in schema.
 ///
 /// Raise an error if this is not the case.
 pub fn validate_aggregations(
-    row_keys: &[String],
+    query_agg_cols: &[String],
     schema: &DFSchema,
     agg_conf: &[Aggregate],
 ) -> Result<()> {
     if !agg_conf.is_empty() {
+        // Check for duplicate aggregation columns
+        let mut dup_check = HashSet::new();
+        for col in query_agg_cols {
+            if !dup_check.insert(col) {
+                return config_err!(
+                    "Aggregation grouping column {col} is already a row key column or is duplicated"
+                );
+            }
+        }
         // List of columns
         let mut non_row_key_cols = schema.clone().strip_qualifiers().field_names();
-        // Remove row keys
-        non_row_key_cols.retain(|col| !row_keys.contains(col));
+        // Remove query aggregation columns
+        non_row_key_cols.retain(|col| !query_agg_cols.contains(col));
         // Columns with aggregators
         let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
         // Check for duplications in aggregation columns and row key aggregations
         let mut col_checks: HashSet<&String> = HashSet::new();
         for col in &agg_cols {
-            if row_keys.contains(*col) {
-                return config_err!("Row key column \"{col}\" cannot have an aggregation");
+            if query_agg_cols.contains(*col) {
+                return config_err!(
+                    "Row key/extra grouping column \"{col}\" cannot have an aggregation"
+                );
             }
             if !col_checks.insert(*col) {
                 return config_err!("Aggregation column \"{col}\" duplicated");
