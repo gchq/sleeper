@@ -15,6 +15,7 @@
  */
 package sleeper.query.runnerv2.output;
 
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
@@ -66,7 +67,7 @@ public class ApiGatewayWebSocketOutput {
 
         String accessKey = config.get(WebSocketOutput.ACCESS_KEY);
         String secretKey = config.get(WebSocketOutput.SECRET_KEY);
-        if (accessKey != null && secretKey != null && !accessKey.isEmpty() && !secretKey.isEmpty()) {
+        if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
             clientBuilder.credentialsProvider(StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKey, secretKey)));
         }
