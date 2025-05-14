@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.clients.api.aws;
 
 import com.amazonaws.services.sqs.model.Message;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
+import sleeper.clients.api.BulkImportJobSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.localstack.test.LocalStackTestBase;
