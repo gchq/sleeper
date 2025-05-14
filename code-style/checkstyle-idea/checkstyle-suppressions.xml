@@ -50,6 +50,8 @@
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]job[\\/]common[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]job[\\/]common[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]jobv2[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]jobv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]task[\\/]common[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]task[\\/]common[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]common[\\/]taskv2[\\/].*" id="missingJavadocMethod"/>
