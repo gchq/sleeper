@@ -15,7 +15,6 @@
  */
 package sleeper.clients.report.compaction.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.job.query.JobQuery;
@@ -31,7 +30,6 @@ public class CompactionJobStatusReporterPartialDataTest extends CompactionJobSta
     List<CompactionJobStatus> statusList = partialJobStatuses();
 
     @Test
-    @Disabled("TODO")
     void shouldReportPartialJobsWithStandardReporter() throws Exception {
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
@@ -39,7 +37,6 @@ public class CompactionJobStatusReporterPartialDataTest extends CompactionJobSta
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReportPartialJobsWithDetailedReporter() throws Exception {
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
@@ -47,7 +44,6 @@ public class CompactionJobStatusReporterPartialDataTest extends CompactionJobSta
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReportPartialJobsWithJsonReporter() throws Exception {
         // When / Then
         assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
