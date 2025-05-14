@@ -15,7 +15,6 @@
  */
 package sleeper.sketchesv2.store;
 
-import org.apache.commons.io.FilenameUtils;
 import software.amazon.awssdk.core.async.BlockingOutputStreamAsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
@@ -70,7 +69,7 @@ public class S3SketchesStore implements SketchesStore {
     }
 
     public static String sketchesObjectKey(S3Filename filename) {
-        return FilenameUtils.removeExtension(filename.objectKey()) + ".sketches";
+        return filename.objectKey().replace(".parquet", ".sketches");
     }
 
 }
