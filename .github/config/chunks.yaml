@@ -22,6 +22,7 @@ chunks:
       - configuration
       - configurationV2
       - sketches
+      - sketchesv2
       - parquet
       - common/common-job
       - common/common-jobv2
