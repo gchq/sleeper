@@ -44,6 +44,9 @@ chmod +x ./sleeper-install.sh
 ./sleeper-install.sh
 ```
 
+Relaunch your terminal and check that the command `sleeper version` gives a version number. Note that this will be the
+version of the CLI, rather than the version of Sleeper you will deploy.
+
 ### Commands
 
 The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
