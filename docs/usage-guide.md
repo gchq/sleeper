@@ -35,7 +35,7 @@ edited in the administration client detailed below, or set during deployment.
 
 ## Operations on data
 
-Data in Sleeper is held in a table. You can always add or remove Sleeper tables from an instance. See
+Data in Sleeper is held in tables. You can always add or remove Sleeper tables from an instance. See
 the [tables documentation](usage/tables.md) for how to define and edit a table.
 
 ### Ingest
