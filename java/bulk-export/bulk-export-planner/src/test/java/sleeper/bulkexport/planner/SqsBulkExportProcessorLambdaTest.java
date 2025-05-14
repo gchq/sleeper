@@ -29,19 +29,16 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class SqsBulkExportProcessorLambdaTest {
 
     private SqsBulkExportProcessor sqsBulkExportProcessor = mock(SqsBulkExportProcessor.class);
+    private BulkExportQuerySerDe bulkExportQuerySerDe = new BulkExportQuerySerDe(); //mock(BulkExportQuerySerDe.class);
 
     private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
-    private BulkExportQuerySerDe bulkExportQuerySerDe = mock(BulkExportQuerySerDe.class);
-
     private InstanceProperties instanceProperties;
 
     @BeforeEach
@@ -56,38 +53,33 @@ public class SqsBulkExportProcessorLambdaTest {
     @Test
     public void testHandleRequestCatchesValidationException() {
         // Given: An SQS event with an invalid message
-        SQSEvent event = createEvent("{\"tableName\":\"testing\",\"rubbish\":\"feild\"}");
-
-        when(bulkExportQuerySerDe.fromJson(anyString()))
-                .thenThrow(new BulkExportQueryValidationException("test-export", "Simulated invalid export query"));
+        SQSEvent event = createEvent("{\"rubbish\":\"feild\"}");
 
         // When: The handleRequest method is called
         // Then: Verify the exception was thrown
         assertThatThrownBy(() -> sqsBulkExportProcessorLambda.handleRequest(event, null))
                 .isInstanceOf(BulkExportQueryValidationException.class)
-                .hasMessageContaining("Simulated invalid export query");
+                .hasMessageContaining("tableId or tableName field must be provided");
     }
 
     @Test
     public void testHandleRequestCatchesRuntimeException() {
         // Given: An SQS event with a malformed message
         SQSEvent event = createEvent("{\"malformedJson\":}");
-        when(bulkExportQuerySerDe.fromJson(anyString()))
-                .thenThrow(new RuntimeException("Simulated deserialization error"));
+        // when(bulkExportQuerySerDe.fromJson(anyString()))
+        //       .thenThrow(new RuntimeException("Simulated deserialization error"));
 
         // When: The handleRequest method is called
         // Then: Verify the exception was thrown
         assertThatThrownBy(() -> sqsBulkExportProcessorLambda.handleRequest(event, null))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Simulated deserialization error");
+                .hasMessageContaining("MalformedJsonException");
     }
 
     @Test
     public void testHandleRequestCatchesExceptionFromProcessor() throws ObjectFactoryException {
         // Given: An SQS event with a malformed message
-        SQSEvent event = createEvent("{\"malformedJson\":}");
-        when(bulkExportQuerySerDe.fromJson(anyString()))
-                .thenReturn(createBulkExportQuery());
+        SQSEvent event = createEvent("{\"tableId\":\"testing\"}");
         doThrow(new ObjectFactoryException("Simulated Object Factory Exception"))
                 .when(sqsBulkExportProcessor)
                 .processExport(any(BulkExportQuery.class));
@@ -98,12 +90,6 @@ public class SqsBulkExportProcessorLambdaTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasRootCauseInstanceOf(ObjectFactoryException.class)
                 .hasMessageContaining("Simulated Object Factory Exception");
-    }
-
-    private BulkExportQuery createBulkExportQuery() {
-        return BulkExportQuery.builder()
-                .exportId("export-id")
-                .tableId("table-id").build();
     }
 
     private SQSEvent createEvent(String messageBody) {
