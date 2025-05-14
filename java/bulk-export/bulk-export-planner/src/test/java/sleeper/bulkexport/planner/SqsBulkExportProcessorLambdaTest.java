@@ -66,8 +66,6 @@ public class SqsBulkExportProcessorLambdaTest {
     public void testHandleRequestCatchesRuntimeException() {
         // Given: An SQS event with a malformed message
         SQSEvent event = createEvent("{\"malformedJson\":}");
-        // when(bulkExportQuerySerDe.fromJson(anyString()))
-        //       .thenThrow(new RuntimeException("Simulated deserialization error"));
 
         // When: The handleRequest method is called
         // Then: Verify the exception was thrown
