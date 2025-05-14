@@ -24,6 +24,7 @@ chunks:
       - sketches
       - parquet
       - common/common-job
+      - common/common-jobv2
       - common/common-task
       - common/common-taskv2
       - common/common-invoke-tables
@@ -48,6 +49,7 @@ chunks:
       - compaction/compaction-job-creationv2
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
+      - compaction/compaction-trackerV2
       - compaction/compaction-core
       - partitions/splitter
       - partitions/splitter-lambda

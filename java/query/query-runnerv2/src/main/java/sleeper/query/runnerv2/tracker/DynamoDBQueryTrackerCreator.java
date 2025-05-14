@@ -16,19 +16,14 @@
 
 package sleeper.query.runnerv2.tracker;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.google.common.collect.Lists;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
-
-import java.util.Collection;
-import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.query.runnerv2.tracker.DynamoDBQueryTracker.QUERY_ID;
@@ -36,33 +31,22 @@ import static sleeper.query.runnerv2.tracker.DynamoDBQueryTracker.SUB_QUERY_ID;
 
 public class DynamoDBQueryTrackerCreator {
     private final InstanceProperties instanceProperties;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final DynamoDbClient dynamoClient;
 
-    public DynamoDBQueryTrackerCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient) {
+    public DynamoDBQueryTrackerCreator(InstanceProperties instanceProperties, DynamoDbClient dynamoClient) {
         this.instanceProperties = instanceProperties;
-        this.dynamoDBClient = dynamoDBClient;
+        this.dynamoClient = dynamoClient;
     }
 
     public void create() {
-        String tableName = instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
-        dynamoDBClient.createTable(new CreateTableRequest(tableName, createKeySchema())
-                .withAttributeDefinitions(createAttributeDefinitions())
-                .withBillingMode(BillingMode.PAY_PER_REQUEST));
-    }
-
-    private Collection<AttributeDefinition> createAttributeDefinitions() {
-        return Lists.newArrayList(
-                new AttributeDefinition(QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(SUB_QUERY_ID, ScalarAttributeType.S));
-    }
-
-    private List<KeySchemaElement> createKeySchema() {
-        return Lists.newArrayList(
-                new KeySchemaElement()
-                        .withAttributeName(QUERY_ID)
-                        .withKeyType(KeyType.HASH),
-                new KeySchemaElement()
-                        .withAttributeName(SUB_QUERY_ID)
-                        .withKeyType(KeyType.RANGE));
+        dynamoClient.createTable(request -> request
+                .tableName(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
+                .attributeDefinitions(
+                        AttributeDefinition.builder().attributeName(QUERY_ID).attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName(SUB_QUERY_ID).attributeType(ScalarAttributeType.S).build())
+                .keySchema(
+                        KeySchemaElement.builder().attributeName(QUERY_ID).keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName(SUB_QUERY_ID).keyType(KeyType.RANGE).build())
+                .billingMode(BillingMode.PAY_PER_REQUEST));
     }
 }
