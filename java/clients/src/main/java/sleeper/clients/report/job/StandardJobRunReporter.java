@@ -73,9 +73,11 @@ public class StandardJobRunReporter {
             JobRunSummary summary = run.getFinishedSummary();
             builder.value(DURATION, getDurationString(summary))
                     .value(RECORDS_READ, getRecordsRead(summary))
-                    .value(RECORDS_WRITTEN, getRecordsWritten(summary))
-                    .value(READ_RATE, getRecordsReadPerSecond(summary))
-                    .value(WRITE_RATE, getRecordsWrittenPerSecond(summary));
+                    .value(RECORDS_WRITTEN, getRecordsWritten(summary));
+            if (!summary.getDuration().isZero()) {
+                builder.value(READ_RATE, getRecordsReadPerSecond(summary))
+                        .value(WRITE_RATE, getRecordsWrittenPerSecond(summary));
+            }
         }
     }
 
@@ -144,8 +146,10 @@ public class StandardJobRunReporter {
         if (update.isSuccessful()) {
             out.printf("Records read: %s%n", getRecordsRead(summary));
             out.printf("Records written: %s%n", getRecordsWritten(summary));
-            out.printf("Read rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
-            out.printf("Write rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
+            if (!summary.getDuration().isZero()) {
+                out.printf("Read rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
+                out.printf("Write rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
+            }
         } else {
             out.println("Run failed, reasons:");
             update.getFailureReasons()

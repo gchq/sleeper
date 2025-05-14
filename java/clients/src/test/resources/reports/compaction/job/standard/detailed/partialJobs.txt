@@ -12,8 +12,6 @@ Finish update time: 2025-05-14T10:47:00.123Z
 Duration: 0s
 Records read: 10
 Records written: 5
-Read rate (reads per second): Infinity
-Write rate (writes per second): Infinity
 State store commit time: 2025-05-14T10:47:01Z
 Delay between finish and commit: 1s
 --------------------------
