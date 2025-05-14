@@ -3,12 +3,30 @@ Interacting with an instance of Sleeper
 
 This contains information on the available methods to interact with a deployed instance of Sleeper.
 
-This will assume you have a deployed instance of Sleeper, and you've built the system locally in a builder container.
-See the [getting started guide](getting-started.md) for how to set that up. Also see
-the [deployment guide](deployment-guide.md) for more information on deploying an instance.
+This will assume you have a deployed instance of Sleeper, and you've installed the CLI as described in
+the [getting started guide](getting-started.md). See the [deployment guide](deployment-guide.md) for more information on
+deploying an instance.
 
-If you just want to test locally, see the documentation on [deploying to localstack](usage/deploy-to-localstack.md).
+If you just want to test locally, see the documentation on [deploying to localstack](deployment/deploy-to-localstack.md).
 This has very limited functionality compared to a deployed instance.
+
+## Build
+
+It's currently necessary to build the system before any of the clients will work. In the future we may publish
+pre-built artefacts that will make this unnecessary.
+
+We will build the system in a container invoked with `sleeper builder`. Run the following commands:
+
+```bash
+sleeper builder # Create a Docker container with a workspace mounted in from the host directory ~/.sleeper/builder
+git clone https://github.com/gchq/sleeper.git --branch main # Get the latest release version of Sleeper
+cd sleeper # Navigate into the Git repository
+./scripts/build/build.sh
+```
+
+This will take 20-40 minutes. This script creates the necessary artefacts and prepares the workspace to run the other
+scripts. This build will be persisted to other invocations of `sleeper builder`, and you can run any of Sleeper's
+scripts and tools in the command line this gives you.
 
 ## Configuration
 
@@ -17,7 +35,7 @@ edited in the administration client detailed below, or set during deployment.
 
 ## Operations on data
 
-Data in Sleeper is held in a table. You can always add or remove Sleeper tables from an instance. See
+Data in Sleeper is held in tables. You can always add or remove Sleeper tables from an instance. See
 the [tables documentation](usage/tables.md) for how to define and edit a table.
 
 ### Ingest

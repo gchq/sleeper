@@ -16,9 +16,9 @@
 
 package sleeper.query.runnerv2.tracker;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeAction;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
+import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -29,8 +29,6 @@ import sleeper.query.core.tracker.TrackedQuery;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import static sleeper.query.runnerv2.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
 
 /**
  * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
@@ -44,6 +42,7 @@ class DynamoDBQueryTrackerEntry {
     static final String SUB_QUERY_ID = "subQueryId";
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
+    static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
 
     private final String queryId;
     private final String subQueryId;
@@ -75,8 +74,8 @@ class DynamoDBQueryTrackerEntry {
 
     public Map<String, AttributeValue> getKey() {
         Map<String, AttributeValue> key = new HashMap<>();
-        key.put(QUERY_ID, new AttributeValue(queryId));
-        key.put(SUB_QUERY_ID, new AttributeValue(subQueryId));
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(subQueryId));
         return key;
     }
 
@@ -84,34 +83,41 @@ class DynamoDBQueryTrackerEntry {
         Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
         long now = System.currentTimeMillis() / 1000;
         long expiryDate = now + (3600 * 24 * queryTrackerTTL);
-        valueUpdate.put(LAST_UPDATE_TIME, new AttributeValueUpdate(
-                new AttributeValue().withN(String.valueOf(now)), AttributeAction.PUT));
-
-        valueUpdate.put(EXPIRY_DATE, new AttributeValueUpdate(
-                new AttributeValue().withN(String.valueOf(expiryDate)), AttributeAction.PUT));
-
-        valueUpdate.put(RECORD_COUNT, new AttributeValueUpdate(
-                new AttributeValue().withN(String.valueOf(recordCount)), AttributeAction.PUT));
-
-        valueUpdate.put(LAST_KNOWN_STATE, new AttributeValueUpdate(
-                new AttributeValue(state.name()), AttributeAction.PUT));
+        valueUpdate.put(LAST_UPDATE_TIME, AttributeValueUpdate.builder()
+                .value(AttributeValue.fromN(String.valueOf(now)))
+                .action(AttributeAction.PUT)
+                .build());
+        valueUpdate.put(EXPIRY_DATE, AttributeValueUpdate.builder()
+                .value(AttributeValue.fromN(String.valueOf(expiryDate)))
+                .action(AttributeAction.PUT)
+                .build());
+        valueUpdate.put(RECORD_COUNT, AttributeValueUpdate.builder()
+                .value(AttributeValue.fromN(String.valueOf(recordCount)))
+                .action(AttributeAction.PUT)
+                .build());
+        valueUpdate.put(LAST_KNOWN_STATE, AttributeValueUpdate.builder()
+                .value(AttributeValue.fromS(state.name()))
+                .action(AttributeAction.PUT)
+                .build());
         if (Objects.nonNull(errorMessage)) {
-            valueUpdate.put(ERROR_MESSAGE, new AttributeValueUpdate(
-                    new AttributeValue().withS(errorMessage), AttributeAction.PUT));
+            valueUpdate.put(ERROR_MESSAGE, AttributeValueUpdate.builder()
+                    .value(AttributeValue.fromS(errorMessage))
+                    .action(AttributeAction.PUT)
+                    .build());
         }
         return valueUpdate;
     }
 
     public static TrackedQuery toTrackedQuery(Map<String, AttributeValue> stringAttributeValueMap) {
-        String id = stringAttributeValueMap.get(QUERY_ID).getS();
-        Long updateTime = Long.valueOf(stringAttributeValueMap.get(LAST_UPDATE_TIME).getN());
-        Long expiryDate = Long.valueOf(stringAttributeValueMap.get(EXPIRY_DATE).getN());
-        Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).getN());
-        QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).getS());
-        String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).getS();
+        String id = stringAttributeValueMap.get(QUERY_ID).s();
+        Long updateTime = Long.valueOf(stringAttributeValueMap.get(LAST_UPDATE_TIME).n());
+        Long expiryDate = Long.valueOf(stringAttributeValueMap.get(EXPIRY_DATE).n());
+        Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).n());
+        QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).s());
+        String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).s();
         String errorMessage = null;
         if (stringAttributeValueMap.containsKey(ERROR_MESSAGE)) {
-            errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).getS();
+            errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).s();
         }
 
         return TrackedQuery.builder()

@@ -15,7 +15,6 @@
  */
 package sleeper.common.taskv2;
 
-import com.amazonaws.AmazonClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -92,7 +91,7 @@ public class RunECSTasks {
         }
     }
 
-    public void runTasksOrThrow() throws AmazonClientException {
+    public void runTasksOrThrow() {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
         try {
             int remainingTasks = numberOfTasksToCreate;

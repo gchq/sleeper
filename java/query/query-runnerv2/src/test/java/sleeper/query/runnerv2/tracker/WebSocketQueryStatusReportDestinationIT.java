@@ -15,13 +15,13 @@
  */
 package sleeper.query.runnerv2.tracker;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -34,6 +34,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
+import sleeper.query.runnerv2.output.ApiGatewayWebSocketOutput;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,6 +49,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 class WebSocketQueryStatusReportDestinationIT {
@@ -59,7 +61,7 @@ class WebSocketQueryStatusReportDestinationIT {
 
     @BeforeAll
     public static void setup(WireMockRuntimeInfo runtimeInfo) {
-        config = WebSocketQueryConfig.from(runtimeInfo);
+        config = new WebSocketQueryConfig(runtimeInfo);
     }
 
     @Test
@@ -208,16 +210,13 @@ class WebSocketQueryStatusReportDestinationIT {
         private final UrlPattern url;
         private final RangeFactory rangeFactory;
 
-        private WebSocketQueryConfig(String endpoint) {
-            String region = "eu-west-1";
+        WebSocketQueryConfig(WireMockRuntimeInfo runtimeInfo) {
             String connectionId = "connection1";
-            this.listener = new WebSocketQueryStatusReportDestination(region, endpoint, connectionId, new BasicAWSCredentials("accessKey", "secretKey"));
+            ApiGatewayManagementApiClient client = wiremockAwsV2Client(runtimeInfo, ApiGatewayManagementApiClient.builder());
+            ApiGatewayWebSocketOutput output = new ApiGatewayWebSocketOutput(client, connectionId);
+            this.listener = new WebSocketQueryStatusReportDestination(output);
             this.url = urlEqualTo("/@connections/" + connectionId);
             this.rangeFactory = new RangeFactory(SCHEMA);
-        }
-
-        public static WebSocketQueryConfig from(WireMockRuntimeInfo runtimeInfo) {
-            return new WebSocketQueryConfig(runtimeInfo.getHttpBaseUrl());
         }
 
         public WebSocketQueryStatusReportDestination getListener() {
