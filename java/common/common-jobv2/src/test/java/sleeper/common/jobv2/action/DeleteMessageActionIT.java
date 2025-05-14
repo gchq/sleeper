@@ -15,11 +15,12 @@
  */
 package sleeper.common.jobv2.action;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -32,12 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DeleteMessageActionIT extends LocalStackTestBase {
 
     private String createQueue() {
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("VisibilityTimeout", "5");
-        CreateQueueRequest createQueueRequest = new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString())
-                .withAttributes(attributes);
-        return sqsClient.createQueue(createQueueRequest).getQueueUrl();
+        Map<QueueAttributeName, String> attributes = new HashMap<>();
+        attributes.put(QueueAttributeName.VISIBILITY_TIMEOUT, "5");
+        CreateQueueRequest createQueueRequest = CreateQueueRequest.builder()
+                .queueName(UUID.randomUUID().toString())
+                .attributes(attributes)
+                .build();
+        return sqsClientV2.createQueue(createQueueRequest).queueUrl();
     }
 
     @Test
@@ -47,31 +49,34 @@ public class DeleteMessageActionIT extends LocalStackTestBase {
         String queueUrl = createQueue();
         //  - Put message on to queue
         String message = "A message";
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMessageBody(message);
-        sqsClient.sendMessage(sendMessageRequest);
+        SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .messageBody(message)
+                .build();
+        sqsClientV2.sendMessage(sendMessageRequest);
         //  - Retrieve message from queue
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMaxNumberOfMessages(1);
-        ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages()).hasSize(1);
-        String receiptHandle = result.getMessages().get(0).getReceiptHandle();
+        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(1)
+                .build();
+        ReceiveMessageResponse response = sqsClientV2.receiveMessage(receiveMessageRequest);
+        assertThat(response.messages()).hasSize(1);
+        String receiptHandle = response.messages().get(0).receiptHandle();
 
         // When
         //  - Delete the message
-        DeleteMessageAction action = new MessageReference(sqsClient, queueUrl, "test", receiptHandle).deleteAction();
+        DeleteMessageAction action = new MessageReference(sqsClientV2, queueUrl, "test", receiptHandle).deleteAction();
         action.call();
 
         // Then
         // - Sleep for 6 seconds, then check that message has not reappeared
         Thread.sleep(6000L);
-        receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMaxNumberOfMessages(1)
-                .withWaitTimeSeconds(0);
-        result = sqsClient.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages()).isEmpty();
+        receiveMessageRequest = ReceiveMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(1)
+                .waitTimeSeconds(0)
+                .build();
+        response = sqsClientV2.receiveMessage(receiveMessageRequest);
+        assertThat(response.messages()).isEmpty();
     }
 }
