@@ -15,9 +15,10 @@
  */
 package sleeper.compaction.job.creationv2;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
@@ -30,10 +31,10 @@ public class CompactionBatchMessageSenderToSqs implements CreateCompactionJobs.B
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionBatchMessageSenderToSqs.class);
 
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
 
-    public CompactionBatchMessageSenderToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    public CompactionBatchMessageSenderToSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
     }
@@ -41,6 +42,8 @@ public class CompactionBatchMessageSenderToSqs implements CreateCompactionJobs.B
     @Override
     public void sendMessage(CompactionJobDispatchRequest dispatchRequest) {
         LOGGER.info("Sending compaction jobs batch: {}", dispatchRequest);
-        sqsClient.sendMessage(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL), serDe.toJson(dispatchRequest));
+        sqsClient.sendMessage(SendMessageRequest.builder().queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                .messageBody(serDe.toJson(dispatchRequest))
+                .build());
     }
 }
