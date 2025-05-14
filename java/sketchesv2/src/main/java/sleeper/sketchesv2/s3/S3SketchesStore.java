@@ -25,13 +25,14 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.S3Filename;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.SketchesSerDe;
+import sleeper.sketchesv2.SketchesStore;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-public class S3SketchesStore {
+public class S3SketchesStore implements SketchesStore {
 
     private final S3Client s3Client;
     private final S3TransferManager s3TransferManager;
@@ -41,6 +42,7 @@ public class S3SketchesStore {
         this.s3TransferManager = s3TransferManager;
     }
 
+    @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
         S3Filename s3Filename = S3Filename.parse(filename);
         BlockingOutputStreamAsyncRequestBody body = BlockingOutputStreamAsyncRequestBody.builder().build();
@@ -58,6 +60,7 @@ public class S3SketchesStore {
         upload.completionFuture().join();
     }
 
+    @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
         S3Filename s3Filename = S3Filename.parse(filename);
         SketchesSerDe serDe = new SketchesSerDe(schema);
