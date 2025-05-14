@@ -17,12 +17,12 @@ package sleeper.compaction.trackerv2.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatusesBuilder;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,11 +30,11 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getDoubleAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getDoubleAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBCompactionTaskStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusFormat.class);

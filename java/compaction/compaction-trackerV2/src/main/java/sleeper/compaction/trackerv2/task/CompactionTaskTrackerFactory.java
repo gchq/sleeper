@@ -16,7 +16,7 @@
 
 package sleeper.compaction.trackerv2.task;
 
-import software.amazon.awssdk.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -28,7 +28,7 @@ public class CompactionTaskTrackerFactory {
     private CompactionTaskTrackerFactory() {
     }
 
-    public static CompactionTaskTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static CompactionTaskTracker getTracker(DynamoDbClient dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return new DynamoDBCompactionTaskTracker(dynamoDB, properties);
         } else {

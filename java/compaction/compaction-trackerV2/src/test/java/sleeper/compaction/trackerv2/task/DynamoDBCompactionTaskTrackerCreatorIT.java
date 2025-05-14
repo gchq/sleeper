@@ -17,8 +17,9 @@ package sleeper.compaction.trackerv2.task;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.dynamodbv2.model.DescribeTableResult;
-import software.amazon.awssdk.services.dynamodbv2.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -42,8 +43,10 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalStackTestBase {
         CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
         // Then
-        assertThat(dynamoClient.describeTable(tableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(tableName)
+                .build()))
+                .extracting(DescribeTableResponse::table).isNotNull();
         assertThat(tracker).isInstanceOf(DynamoDBCompactionTaskTracker.class);
     }
 
@@ -57,7 +60,9 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalStackTestBase {
         CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoClient.describeTable(tableName))
+        assertThatThrownBy(() -> dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(tableName)
+                .build()))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(tracker).isSameAs(CompactionTaskTracker.NONE);
         assertThatThrownBy(tracker::getAllTasks).isInstanceOf(UnsupportedOperationException.class);

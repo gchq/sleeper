@@ -18,7 +18,7 @@ package sleeper.compaction.trackerv2.job;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
@@ -35,8 +35,8 @@ import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
-import sleeper.dynamodb.tools.DynamoDBAttributes;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBAttributes;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -45,11 +45,11 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringListAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringListAttribute;
 
 class DynamoDBCompactionJobStatusFormat {
 

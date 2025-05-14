@@ -17,11 +17,12 @@ package sleeper.compaction.trackerv2.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.dynamodbv2.AmazonDynamoDB;
-import software.amazon.awssdk.services.dynamodbv2.model.AttributeDefinition;
-import software.amazon.awssdk.services.dynamodbv2.model.KeySchemaElement;
-import software.amazon.awssdk.services.dynamodbv2.model.KeyType;
-import software.amazon.awssdk.services.dynamodbv2.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -33,8 +34,8 @@ import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusForm
 import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
-import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
-import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionTaskTrackerCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskTrackerCreator.class);
@@ -42,27 +43,27 @@ public class DynamoDBCompactionTaskTrackerCreator {
     private DynamoDBCompactionTaskTrackerCreator() {
     }
 
-    public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
+    public static void create(InstanceProperties properties, DynamoDbClient dynamoDB) {
         if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
-                        new AttributeDefinition(TASK_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
+                        AttributeDefinition.builder().attributeName(TASK_ID).attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName(UPDATE_TIME).attributeType(ScalarAttributeType.N).build()),
                 Arrays.asList(
-                        new KeySchemaElement(TASK_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
+                        KeySchemaElement.builder().attributeName(TASK_ID).keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName(UPDATE_TIME).keyType(KeyType.RANGE).build()));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 
-    public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
+    public static void tearDown(InstanceProperties properties, DynamoDbClient dynamoDBClient) {
         if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));
         LOGGER.info("Deleting table: {}", tableName);
-        dynamoDBClient.deleteTable(tableName);
+        dynamoDBClient.deleteTable(DeleteTableRequest.builder().tableName(tableName).build());
     }
 }

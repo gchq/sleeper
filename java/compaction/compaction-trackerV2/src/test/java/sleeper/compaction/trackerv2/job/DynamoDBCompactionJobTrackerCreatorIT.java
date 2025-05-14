@@ -17,8 +17,9 @@ package sleeper.compaction.trackerv2.job;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.dynamodbv2.model.DescribeTableResult;
-import software.amazon.awssdk.services.dynamodbv2.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -43,10 +44,14 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends LocalStackTestBase {
         CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
         // Then
-        assertThat(dynamoClient.describeTable(updatesTableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
-        assertThat(dynamoClient.describeTable(jobsTableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(updatesTableName)
+                .build()))
+                .extracting(DescribeTableResponse::table).isNotNull();
+        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(jobsTableName)
+                .build()))
+                .extracting(DescribeTableResponse::table).isNotNull();
         assertThat(store).isInstanceOf(DynamoDBCompactionJobTracker.class);
     }
 
@@ -60,9 +65,13 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends LocalStackTestBase {
         CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoClient.describeTable(updatesTableName))
+        assertThatThrownBy(() -> dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(updatesTableName)
+                .build()))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> dynamoClient.describeTable(jobsTableName))
+        assertThatThrownBy(() -> dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(jobsTableName)
+                .build()))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobTracker.NONE);
         assertThatThrownBy(() -> store.getAllJobs("some-table"))

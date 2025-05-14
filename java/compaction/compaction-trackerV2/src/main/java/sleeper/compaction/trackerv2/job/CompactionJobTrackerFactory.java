@@ -16,7 +16,7 @@
 
 package sleeper.compaction.trackerv2.job;
 
-import software.amazon.awssdk.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -28,7 +28,7 @@ public class CompactionJobTrackerFactory {
     private CompactionJobTrackerFactory() {
     }
 
-    public static CompactionJobTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static CompactionJobTracker getTracker(DynamoDbClient dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return DynamoDBCompactionJobTracker.eventuallyConsistentReads(dynamoDB, properties);
         } else {
@@ -37,7 +37,7 @@ public class CompactionJobTrackerFactory {
     }
 
     public static CompactionJobTracker getTrackerWithStronglyConsistentReads(
-            AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+            DynamoDbClient dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return DynamoDBCompactionJobTracker.stronglyConsistentReads(dynamoDB, properties);
         } else {
