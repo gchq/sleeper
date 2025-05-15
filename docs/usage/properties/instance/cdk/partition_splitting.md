@@ -1,6 +1,6 @@
-## Partition Splitting
+## Partition Splitting - CDK Defined
 
-The following properties relate to the splitting of partitions.
+The following instance properties relate to the splitting of partitions.
 
 | Property Name                                       | Description                                                                                                  |
 |-----------------------------------------------------|--------------------------------------------------------------------------------------------------------------|

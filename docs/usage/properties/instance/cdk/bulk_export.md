@@ -1,6 +1,6 @@
-## Bulk Export
+## Bulk Export - CDK Defined
 
-The following properties relate to bulk export.
+The following instance properties relate to bulk export.
 
 | Property Name                                     | Description                                                                                      |
 |---------------------------------------------------|--------------------------------------------------------------------------------------------------|

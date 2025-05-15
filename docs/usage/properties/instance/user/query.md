@@ -1,6 +1,6 @@
-## Query
+## Query - User Defined
 
-The following properties relate to queries.
+The following instance properties relate to queries.
 
 | Property Name                                          | Description                                                                                                                                                                                | Default Value | Run CdkDeploy When Changed |
 |--------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

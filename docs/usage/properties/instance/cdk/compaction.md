@@ -1,6 +1,6 @@
-## Compaction
+## Compaction - CDK Defined
 
-The following properties relate to compactions.
+The following instance properties relate to compactions.
 
 | Property Name                                           | Description                                                                                     |
 |---------------------------------------------------------|-------------------------------------------------------------------------------------------------|

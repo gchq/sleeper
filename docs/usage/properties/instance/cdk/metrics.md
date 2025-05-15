@@ -1,6 +1,6 @@
-## Metrics
+## Metrics - CDK Defined
 
-The following properties relate to metrics.
+The following instance properties relate to metrics.
 
 | Property Name                         | Description                                                                     |
 |---------------------------------------|---------------------------------------------------------------------------------|

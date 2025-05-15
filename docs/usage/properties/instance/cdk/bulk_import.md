@@ -1,6 +1,6 @@
-## Bulk Import
+## Bulk Import - CDK Defined
 
-The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.
+The following instance properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.
 
 | Property Name                                     | Description                                                                            |
 |---------------------------------------------------|----------------------------------------------------------------------------------------|

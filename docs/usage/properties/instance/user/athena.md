@@ -1,6 +1,6 @@
-## Athena
+## Athena - User Defined
 
-The following properties relate to the integration with Athena.
+The following instance properties relate to the integration with Athena.
 
 | Property Name                           | Description                                                                                                                                                                          | Default Value                                                                                             | Run CdkDeploy When Changed |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|----------------------------|

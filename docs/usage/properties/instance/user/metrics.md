@@ -1,6 +1,6 @@
-## Metrics
+## Metrics - User Defined
 
-The following properties relate to metrics.
+The following instance properties relate to metrics.
 
 | Property Name                         | Description                                                                                                                                                                                                                                  | Default Value | Run CdkDeploy When Changed |
 |---------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

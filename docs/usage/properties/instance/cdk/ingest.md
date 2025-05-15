@@ -1,6 +1,6 @@
-## Ingest
+## Ingest - CDK Defined
 
-The following properties relate to standard ingest.
+The following instance properties relate to standard ingest.
 
 | Property Name                              | Description                                                                                      |
 |--------------------------------------------|--------------------------------------------------------------------------------------------------|

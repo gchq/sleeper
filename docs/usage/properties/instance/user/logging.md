@@ -1,6 +1,6 @@
-## Logging
+## Logging - User Defined
 
-The following properties relate to logging.
+The following instance properties relate to logging.
 
 | Property Name                 | Description                                                                                                          | Default Value | Run CdkDeploy When Changed |
 |-------------------------------|----------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

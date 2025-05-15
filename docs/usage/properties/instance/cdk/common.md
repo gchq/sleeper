@@ -1,6 +1,6 @@
-## Common
+## Common - CDK Defined
 
-The following properties are commonly used throughout Sleeper.
+The following instance properties are commonly used throughout Sleeper.
 
 | Property Name                                                    | Description                                                                                                                                                                |
 |------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
