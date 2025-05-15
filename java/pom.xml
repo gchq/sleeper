@@ -41,6 +41,7 @@
         <module>partitions</module>
         <module>cdk</module>
         <module>sketches</module>
+        <module>sketchesv2</module>
         <module>athena</module>
         <module>common</module>
         <module>bulk-import</module>
