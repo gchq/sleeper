@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.garbagecollector;
+package sleeper.core.util;
 
 import java.util.Set;
-import java.util.stream.Stream;
 
 /**
- * Parses a filename from the state store to prepare for deletion from S3.
+ * Parses a filename as held in the state store to interact with it in S3.
  *
  * @param filename   the full path of the file as recorded in the state store
  * @param bucketName the bucket name where the file is located
  * @param objectKey  the path within the bucket including the file name and extension
  */
-public record FileToDelete(String filename, String bucketName, String objectKey) {
+public record S3Filename(String filename, String bucketName, String objectKey) {
 
     private static final Set<String> SCHEMES = Set.of("s3", "s3a");
 
     /**
-     * Reads a filename from the state store.
+     * Parses a filename from the state store.
      *
      * @param  filename the filename from the state store
-     * @return          the parsed file details
+     * @return          the parsed details
      */
-    public static FileToDelete fromFilename(String filename) {
+    public static S3Filename parse(String filename) {
         int schemeEnd = filename.indexOf("://");
         if (schemeEnd < 0) {
             throw new IllegalArgumentException("Filename is missing scheme");
@@ -49,22 +48,17 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
         if (bucketNameEnd < 0) {
             throw new IllegalArgumentException("Filename is missing object key");
         }
-        return new FileToDelete(filename,
+        return new S3Filename(filename,
                 filename.substring(bucketNameStart, bucketNameEnd),
                 filename.substring(bucketNameEnd + 1));
     }
 
     /**
-     * Returns the locations of files stored in S3, for the file held in the state store. This includes the data file
-     * and the sketches file.
+     * Computes the location of the sketches file for this data file.
      *
-     * @return the S3 object keys
+     * @return the path within the bucket including the file name and extension
      */
-    public Stream<String> streamObjectKeys() {
-        return Stream.of(objectKey, sketchesObjectKey());
-    }
-
-    private String sketchesObjectKey() {
+    public String sketchesObjectKey() {
         return objectKey.replace(".parquet", ".sketches");
     }
 
