@@ -22,19 +22,14 @@ Below you can find all properties that can be set for a Sleeper instance by the 
 
 Below you can find all properties that can be set for a Sleeper instance by the CDK.
 
-[Athena](properties/instance/cdk/athena.md)<br>
 [Bulk Export](properties/instance/cdk/bulk_export.md)<br>
 [Bulk Import](properties/instance/cdk/bulk_import.md)<br>
 [Common](properties/instance/cdk/common.md)<br>
 [Compaction](properties/instance/cdk/compaction.md)<br>
 [Garbage Collector](properties/instance/cdk/garbage_collector.md)<br>
 [Ingest](properties/instance/cdk/ingest.md)<br>
-[Logging](properties/instance/cdk/logging.md)<br>
-[Metrics](properties/instance/cdk/metrics.md)<br>
 [Partition Splitting](properties/instance/cdk/partition_splitting.md)<br>
 [Query](properties/instance/cdk/query.md)<br>
-[Table Property Default](properties/instance/cdk/table_property_default.md)<br>
-[Table State](properties/instance/cdk/table_state.md)<br>
 
 ## Table Properties
 

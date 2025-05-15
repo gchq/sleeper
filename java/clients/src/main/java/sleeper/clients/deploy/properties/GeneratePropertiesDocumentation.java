@@ -19,10 +19,11 @@ import org.apache.commons.io.file.PathUtils;
 
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.core.properties.PropertyGroup;
-import sleeper.core.properties.SleeperProperties;
-import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
-import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
 
 import java.io.IOException;
@@ -54,18 +55,24 @@ public class GeneratePropertiesDocumentation {
         //---------- Instance Properties ----------
         Path instanceUserPath = Files.createDirectories(headPath.resolve("instance/user/"));
         Path instanceCdkPath = Files.createDirectories(headPath.resolve("instance/cdk/"));
-        InstancePropertyGroup.getAll().forEach(instancePropertyGroup -> {
-            writeFile(instanceUserPath.resolve(groupNameToFileName(instancePropertyGroup.getName())),
-                    output -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, output));
-            writeFile(instanceCdkPath.resolve(groupNameToFileName(instancePropertyGroup.getName())),
-                    output -> writePropertiesMarkdownFile(new InstanceProperties(), instancePropertyGroup, output));
+        InstancePropertyGroup.getAll().forEach(group -> {
+            List<UserDefinedInstanceProperty> userDefined = UserDefinedInstanceProperty.getAllInGroup(group);
+            List<CdkDefinedInstanceProperty> cdkDefined = CdkDefinedInstanceProperty.getAllInGroup(group);
+            if (!userDefined.isEmpty()) {
+                writeFile(instanceUserPath.resolve(groupFileName(group)),
+                        output -> writePropertiesMarkdownFile(group, userDefined, output));
+            }
+            if (!cdkDefined.isEmpty()) {
+                writeFile(instanceCdkPath.resolve(groupFileName(group)),
+                        output -> writePropertiesMarkdownFile(group, cdkDefined, output));
+            }
         });
 
         //---------- Table Properties ----------
         Path tablePath = Files.createDirectories(headPath.resolve("table/"));
-        TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
-            writeFile(tablePath.resolve(groupNameToFileName(tablePropertyGroup.getName())),
-                    output -> writePropertiesMarkdownFile(new TableProperties(new InstanceProperties()), tablePropertyGroup, output));
+        TablePropertyGroup.getAll().forEach(group -> {
+            writeFile(tablePath.resolve(groupFileName(group)),
+                    output -> writePropertiesMarkdownFile(group, TableProperty.getAllInGroup(group), output));
         });
     }
 
@@ -84,7 +91,9 @@ public class GeneratePropertiesDocumentation {
         out.println("Below you can find all properties that can be set for a Sleeper instance by the user.");
         out.println();
         instanceGroups.forEach(group -> {
-            out.println(pageLinkFromGroupName(group.getName(), "instance/user/"));
+            if (!UserDefinedInstanceProperty.getAllInGroup(group).isEmpty()) {
+                out.println(groupPageLink("instance/user/", group));
+            }
         });
         out.println();
         out.println("### CDK defined");
@@ -92,7 +101,9 @@ public class GeneratePropertiesDocumentation {
         out.println("Below you can find all properties that can be set for a Sleeper instance by the CDK.");
         out.println();
         instanceGroups.forEach(group -> {
-            out.println(pageLinkFromGroupName(group.getName(), "instance/cdk/"));
+            if (!CdkDefinedInstanceProperty.getAllInGroup(group).isEmpty()) {
+                out.println(groupPageLink("instance/cdk/", group));
+            }
         });
         out.println();
         out.println("## Table Properties");
@@ -100,12 +111,12 @@ public class GeneratePropertiesDocumentation {
         out.println("Below you can find all properties that can be set for a Sleeper table.");
         out.println();
         tableGroups.forEach(group -> {
-            out.println(pageLinkFromGroupName(group.getName(), "table/"));
+            out.println(groupPageLink("table/", group));
         });
     }
 
-    private static String pageLinkFromGroupName(String group, String directory) {
-        return String.format("[%s](properties/%s%s)<br>", group, directory, groupNameToFileName(group));
+    private static String groupPageLink(String directory, PropertyGroup group) {
+        return String.format("[%s](properties/%s%s)<br>", group.getName(), directory, groupFileName(group));
     }
 
     /**
@@ -115,14 +126,13 @@ public class GeneratePropertiesDocumentation {
      * @param  output                       the stream for the output
      * @throws UnsupportedEncodingException thrown if uft8 unavailable
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void writePropertiesMarkdownFile(SleeperProperties properties, PropertyGroup group, OutputStream output) {
+    private static <T extends SleeperProperty> void writePropertiesMarkdownFile(PropertyGroup group, List<T> properties, OutputStream output) {
         PrintStream out = printStream(output);
         out.println("## " + group.getName().toUpperCase(Locale.ENGLISH));
         out.println();
         out.println("Below is a table containing all the details for the property group: " + group.getName());
         out.println();
-        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
+        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.stream().map(p -> p));
         tableWriter.write(out);
     }
 
@@ -142,8 +152,8 @@ public class GeneratePropertiesDocumentation {
         }
     }
 
-    private static String groupNameToFileName(String group) {
-        return group.toLowerCase(Locale.ENGLISH).replace(" ", "_") + ".md";
+    private static String groupFileName(PropertyGroup group) {
+        return group.getName().toLowerCase(Locale.ENGLISH).replace(" ", "_") + ".md";
     }
 
     private static List<PropertyGroup> sortByName(List<PropertyGroup> groups) {
