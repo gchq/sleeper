@@ -38,7 +38,7 @@ public class SleeperPropertyMarkdownTableTest {
         List<SleeperProperty> propertyList = List.of(CommonProperty.JARS_BUCKET,
                 CommonProperty.FILE_SYSTEM);
 
-        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList.stream());
+        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList);
 
         // When
         writer.write(output.getPrintStream());
@@ -54,7 +54,7 @@ public class SleeperPropertyMarkdownTableTest {
         List<SleeperProperty> propertyList = List.of(CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,
                 CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS);
 
-        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList.stream());
+        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList);
 
         // When
         writer.write(output.getPrintStream());

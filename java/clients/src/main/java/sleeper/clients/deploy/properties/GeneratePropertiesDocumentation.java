@@ -132,7 +132,7 @@ public class GeneratePropertiesDocumentation {
         out.println();
         out.println("Below is a table containing all the details for the property group: " + group.getName());
         out.println();
-        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties.stream().map(p -> p));
+        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties);
         tableWriter.write(out);
     }
 

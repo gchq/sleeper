@@ -22,20 +22,20 @@ import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.properties.SleeperProperty;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class SleeperPropertyMarkdownTable {
 
     private SleeperPropertyMarkdownTable() {
     }
 
-    public static TableWriter generateTableBuildForGroup(Stream<SleeperProperty> propertyStream) {
+    public static <T extends SleeperProperty> TableWriter generateTableBuildForGroup(Collection<T> properties) {
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
         factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
         TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
-        propertyStream.forEach(property -> {
+        properties.forEach(property -> {
             builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
         });
 
