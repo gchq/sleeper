@@ -17,6 +17,7 @@ package sleeper.core.tracker.job.run;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -58,7 +59,8 @@ public class AverageRecordRate {
     public static AverageRecordRate of(Stream<JobRunReport> runs) {
         return builder().summaries(runs
                 .filter(JobRunReport::isFinishedSuccessfully)
-                .map(JobRunReport::getFinishedSummary)).build();
+                .map(JobRunReport::getFinishedSummary)
+                .filter(Objects::nonNull)).build();
     }
 
     public static Builder builder() {

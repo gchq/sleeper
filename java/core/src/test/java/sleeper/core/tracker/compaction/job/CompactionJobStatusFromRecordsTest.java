@@ -19,9 +19,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRuns;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -87,6 +89,31 @@ class CompactionJobStatusFromRecordsTest {
                 CompactionJobStatus.builder().jobId("test-job")
                         .jobRuns(JobRuns.latestFirst(List.of(jobRunOnTask(DEFAULT_TASK_ID, started, finished))))
                         .expiryDate(DEFAULT_EXPIRY).build());
+    }
+
+    @Test
+    void shouldBuildJobWithNoStartedUpdate() {
+        // Given
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(
+                Instant.parse("2022-09-23T09:23:30.001Z"),
+                new RecordsProcessed(200L, 100L));
+
+        // When
+        List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
+                forJobRunOnTask("test-job", finished));
+
+        // Then
+        assertThat(statuses).singleElement()
+                .isEqualTo(
+                        CompactionJobStatus.builder().jobId("test-job")
+                                .jobRuns(JobRuns.latestFirst(List.of(jobRunOnTask(DEFAULT_TASK_ID, finished))))
+                                .expiryDate(DEFAULT_EXPIRY).build())
+                .satisfies(status -> {
+                    assertThat(status.getRunsLatestFirst())
+                            .singleElement()
+                            .extracting(CompactionJobRun::isFinished, CompactionJobRun::getStartTime, CompactionJobRun::getFinishedSummary)
+                            .containsExactly(true, null, summary(Instant.parse("2022-09-23T09:23:30.001Z"), Duration.ZERO, 200, 100));
+                });
     }
 
     @Test

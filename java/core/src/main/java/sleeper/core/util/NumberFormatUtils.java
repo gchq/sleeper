@@ -87,14 +87,23 @@ public class NumberFormatUtils {
      * @param  decimal the decimal number to format
      * @return         a human readable string representing the decimal number
      */
-    public static String decimalWithCommas(String formatStr, double decimal) {
-        String str = String.format(formatStr, decimal);
+    public static String formatDecimal2dp(double decimal) {
+        if (!Double.isFinite(decimal)) {
+            return "" + decimal;
+        }
+        String str = String.format("%.2f", decimal);
+        String prefix = "";
+        String suffix = "";
+        if (decimal < 0) {
+            prefix = "-";
+            str = str.substring(1);
+        }
         int decimalIndex = str.indexOf('.');
         if (decimalIndex > 0) {
-            return splitNonDecimalIntoParts(str.substring(0, decimalIndex)) + str.substring(decimalIndex);
-        } else {
-            return splitNonDecimalIntoParts(str);
+            suffix = str.substring(decimalIndex);
+            str = str.substring(0, decimalIndex);
         }
+        return prefix + splitNonDecimalIntoParts(str) + suffix;
     }
 
     private static String splitNonDecimalIntoParts(String str) {
