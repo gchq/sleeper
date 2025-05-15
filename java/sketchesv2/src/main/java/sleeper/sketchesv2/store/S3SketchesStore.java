@@ -47,7 +47,7 @@ public class S3SketchesStore implements SketchesStore {
         Upload upload = s3TransferManager.upload(request -> request
                 .putObjectRequest(put -> put
                         .bucket(s3Filename.bucketName())
-                        .key(sketchesObjectKey(s3Filename)))
+                        .key(s3Filename.sketchesObjectKey()))
                 .requestBody(body));
         SketchesSerDe serDe = new SketchesSerDe(schema);
         try (DataOutputStream out = new DataOutputStream(body.outputStream())) {
@@ -64,12 +64,8 @@ public class S3SketchesStore implements SketchesStore {
         SketchesSerDe serDe = new SketchesSerDe(schema);
         return s3Client.getObject(request -> request
                 .bucket(s3Filename.bucketName())
-                .key(sketchesObjectKey(s3Filename)),
+                .key(s3Filename.sketchesObjectKey()),
                 (response, inputStream) -> serDe.deserialise(new DataInputStream(inputStream)));
-    }
-
-    public static String sketchesObjectKey(S3Filename filename) {
-        return filename.objectKey().replace(".parquet", ".sketches");
     }
 
 }

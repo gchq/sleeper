@@ -53,4 +53,13 @@ public record S3Filename(String filename, String bucketName, String objectKey) {
                 filename.substring(bucketNameEnd + 1));
     }
 
+    /**
+     * Computes the location of the sketches file for this data file.
+     *
+     * @return the path within the bucket including the file name and extension
+     */
+    public String sketchesObjectKey() {
+        return objectKey.replace(".parquet", ".sketches");
+    }
+
 }

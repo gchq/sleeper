@@ -50,7 +50,7 @@ public record FilesToDeleteInBucket(String bucketName, Map<String, String> objec
     }
 
     private static Stream<String> streamObjectKeys(S3Filename filename) {
-        return Stream.of(filename.objectKey(), filename.objectKey().replace(".parquet", ".sketches"));
+        return Stream.of(filename.objectKey(), filename.sketchesObjectKey());
     }
 
     public Collection<String> getObjectKeys() {
