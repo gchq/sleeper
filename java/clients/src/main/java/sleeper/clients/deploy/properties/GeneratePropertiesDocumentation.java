@@ -60,11 +60,13 @@ public class GeneratePropertiesDocumentation {
             List<CdkDefinedInstanceProperty> cdkDefined = CdkDefinedInstanceProperty.getAllInGroup(group);
             if (!userDefined.isEmpty()) {
                 writeFile(instanceUserPath.resolve(groupFileName(group)),
-                        output -> writePropertiesMarkdownFile(group, userDefined, output));
+                        output -> writePropertiesMarkdownFile(output, group,
+                                SleeperPropertyMarkdownTable.createTableWriterForUserDefinedProperties(userDefined)));
             }
             if (!cdkDefined.isEmpty()) {
                 writeFile(instanceCdkPath.resolve(groupFileName(group)),
-                        output -> writePropertiesMarkdownFile(group, cdkDefined, output));
+                        output -> writePropertiesMarkdownFile(output, group,
+                                SleeperPropertyMarkdownTable.createTableWriterForCdkDefinedProperties(cdkDefined)));
             }
         });
 
@@ -72,7 +74,9 @@ public class GeneratePropertiesDocumentation {
         Path tablePath = Files.createDirectories(headPath.resolve("table/"));
         TablePropertyGroup.getAll().forEach(group -> {
             writeFile(tablePath.resolve(groupFileName(group)),
-                    output -> writePropertiesMarkdownFile(group, TableProperty.getAllInGroup(group), output));
+                    output -> writePropertiesMarkdownFile(output, group,
+                            SleeperPropertyMarkdownTable.createTableWriterForUserDefinedProperties(
+                                    TableProperty.getAllInGroup(group))));
         });
     }
 
@@ -126,13 +130,12 @@ public class GeneratePropertiesDocumentation {
      * @param  output                       the stream for the output
      * @throws UnsupportedEncodingException thrown if uft8 unavailable
      */
-    private static <T extends SleeperProperty> void writePropertiesMarkdownFile(PropertyGroup group, List<T> properties, OutputStream output) {
+    private static <T extends SleeperProperty> void writePropertiesMarkdownFile(OutputStream output, PropertyGroup group, TableWriter tableWriter) {
         PrintStream out = printStream(output);
         out.println("## " + group.getName().toUpperCase(Locale.ENGLISH));
         out.println();
         out.println("Below is a table containing all the details for the property group: " + group.getName());
         out.println();
-        TableWriter tableWriter = SleeperPropertyMarkdownTable.generateTableBuildForGroup(properties);
         tableWriter.write(out);
     }
 

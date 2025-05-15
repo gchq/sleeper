@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.clients.util.tablewriter.TableWriter;
-import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.CommonProperty;
 
 import java.io.IOException;
@@ -29,37 +29,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class SleeperPropertyMarkdownTableTest {
+    ToStringConsoleOutput output = new ToStringConsoleOutput();
 
     @Test
-    void shouldCreateValidPropertiesTableWhenGivenAStreamOfProperties() throws IOException {
+    void shouldWriteTable() throws IOException {
         // Given
-        ToStringConsoleOutput output = new ToStringConsoleOutput();
-
-        List<SleeperProperty> propertyList = List.of(CommonProperty.JARS_BUCKET,
-                CommonProperty.FILE_SYSTEM);
-
-        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList);
+        TableWriter writer = SleeperPropertyMarkdownTable.createTableWriterForUserDefinedProperties(List.of(
+                CommonProperty.JARS_BUCKET,
+                CommonProperty.FILE_SYSTEM));
 
         // When
         writer.write(output.getPrintStream());
+
         // Then
         assertThat(output).hasToString(example("reports/table/property.txt"));
     }
 
     @Test
-    void shouldCreateMarkdownTableWithLongDescriptionEntry() throws IOException {
+    void shouldWriteTableWithLongDescriptionEntry() throws IOException {
         // Given
-        ToStringConsoleOutput output = new ToStringConsoleOutput();
-
-        List<SleeperProperty> propertyList = List.of(CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,
-                CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS);
-
-        TableWriter writer = SleeperPropertyMarkdownTable.generateTableBuildForGroup(propertyList);
+        TableWriter writer = SleeperPropertyMarkdownTable.createTableWriterForUserDefinedProperties(List.of(
+                CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB,
+                CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS));
 
         // When
         writer.write(output.getPrintStream());
+
         // Then
         assertThat(output).hasToString(example("reports/table/propertyLong.txt"));
+    }
+
+    @Test
+    void shouldWriteTableWithCdkDefinedProperties() throws IOException {
+        // Given
+        TableWriter writer = SleeperPropertyMarkdownTable.createTableWriterForCdkDefinedProperties(List.of(
+                CdkDefinedInstanceProperty.VERSION,
+                CdkDefinedInstanceProperty.ADMIN_ROLE_ARN));
+
+        // When
+        writer.write(output.getPrintStream());
+
+        // Then
+        assertThat(output).hasToString(example("reports/table/propertyCdk.txt"));
     }
 
 }

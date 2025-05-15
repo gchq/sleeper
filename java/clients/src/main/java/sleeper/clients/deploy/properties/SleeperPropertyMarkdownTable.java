@@ -15,44 +15,45 @@
  */
 package sleeper.clients.deploy.properties;
 
-import sleeper.clients.util.tablewriter.TableField;
-import sleeper.clients.util.tablewriter.TableRow.Builder;
+import sleeper.clients.util.tablewriter.TableFieldDefinition;
 import sleeper.clients.util.tablewriter.TableStructure;
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.properties.SleeperProperty;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class SleeperPropertyMarkdownTable {
 
     private SleeperPropertyMarkdownTable() {
     }
 
-    public static <T extends SleeperProperty> TableWriter generateTableBuildForGroup(Collection<T> properties) {
-        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
-        factoryBuilder.addFields(SleeperPropertyMarkdownTable.getMarkdownFields());
-        TableWriter.Builder builder = factoryBuilder.build().tableBuilder();
-        properties.forEach(property -> {
-            builder.row(generatePropertyDetails(factoryBuilder.getFields(), property));
-        });
+    private static final TableFieldDefinition NAME = TableFieldDefinition.field("Property Name");
+    private static final TableFieldDefinition DESCRIPTION = TableFieldDefinition.field("Description");
+    private static final TableFieldDefinition DEFAULT_VALUE = TableFieldDefinition.field("Default Value");
+    private static final TableFieldDefinition RUN_CDK_DEPLOY_WHEN_CHANGED = TableFieldDefinition.field("Run CdkDeploy When Changed");
 
-        return builder.build();
+    public static <T extends SleeperProperty> TableWriter createTableWriterForUserDefinedProperties(List<T> properties) {
+        return createTableWriter(properties);
     }
 
-    private static List<String> getMarkdownFields() {
-        return List.of("Property Name", "Description", "Default Value", "Run CdkDeploy When Changed");
+    public static <T extends SleeperProperty> TableWriter createTableWriterForCdkDefinedProperties(List<T> properties) {
+        return createTableWriter(properties, DEFAULT_VALUE, RUN_CDK_DEPLOY_WHEN_CHANGED);
     }
 
-    private static Consumer<Builder> generatePropertyDetails(List<TableField> fields, SleeperProperty property) {
-        return row -> {
-            row.value(fields.get(0), property.getPropertyName());
-            row.value(fields.get(1), adjustLongEntryForMarkdown(property.getDescription()));
-            row.value(fields.get(2), property.getDefaultValue());
-            row.value(fields.get(3), property.isRunCdkDeployWhenChanged());
-        };
+    private static <T extends SleeperProperty> TableWriter createTableWriter(List<T> properties, TableFieldDefinition... hideFields) {
+        TableWriterFactory factory = TableWriterFactory.builder()
+                .structure(TableStructure.MARKDOWN_FORMAT)
+                .addFields(NAME, DESCRIPTION, DEFAULT_VALUE, RUN_CDK_DEPLOY_WHEN_CHANGED)
+                .build();
+        return factory.tableBuilder()
+                .showFields(false, hideFields)
+                .itemsAndWriter(properties, (property, row) -> {
+                    row.value(NAME, property.getPropertyName());
+                    row.value(DESCRIPTION, adjustLongEntryForMarkdown(property.getDescription()));
+                    row.value(DEFAULT_VALUE, property.getDefaultValue());
+                    row.value(RUN_CDK_DEPLOY_WHEN_CHANGED, property.isRunCdkDeployWhenChanged());
+                }).build();
     }
 
     private static String adjustLongEntryForMarkdown(String valueIn) {
