@@ -47,6 +47,7 @@ chunks:
       - compaction/compaction-job-execution
       - compaction/compaction-task-creation
       - compaction/compaction-job-creation
+      - compaction/compaction-job-creationv2
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
       - compaction/compaction-trackerV2
