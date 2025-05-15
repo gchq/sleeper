@@ -51,16 +51,6 @@ public class S3FilenameTest {
     }
 
     @Test
-    void shouldRefuseInvalidFilename() {
-        // Given
-        String filename = "%^<";
-
-        // When / Then
-        assertThatThrownBy(() -> S3Filename.parse(filename))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     void shouldRefuseFilenameWithMissingScheme() {
         // Given
         String filename = "test-bucket/test-file.parquet";
@@ -102,6 +92,17 @@ public class S3FilenameTest {
         assertThatThrownBy(() -> S3Filename.parse(filename))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Filename is missing object key");
+    }
+
+    @Test
+    void shouldRefuseFilenameWithUnexpectedCharacters() {
+        // Given
+        String filename = "%^<";
+
+        // When / Then
+        assertThatThrownBy(() -> S3Filename.parse(filename))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Filename is missing scheme");
     }
 
 }
