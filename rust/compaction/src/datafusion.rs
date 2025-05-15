@@ -39,12 +39,14 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
+use functions::{FilterAggregationConfig, validate_aggregations};
 use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
+mod functions;
 mod metrics;
 pub mod sketch;
 mod udf;
@@ -87,11 +89,16 @@ pub async fn compact(
         frame = frame.filter(expr)?;
     }
 
+    // Parse Sleeper iterator configuration and apply
+    let filter_agg_conf = parse_iterator_config(input_data.iterator_config.as_ref())?;
+    frame = apply_filters(frame, filter_agg_conf.as_ref())?;
+
     // Create the sketch function
     let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
+    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
 
     // Iterate through column names, mapping each into an `Expr` of the name UNLESS
     // we find the first row key column which should be mapped to the sketch function
@@ -103,7 +110,7 @@ pub async fn compact(
                 // Map to the sketch function
                 sketch_func
                     // Sketch function needs to be called with each row key column
-                    .call(input_data.row_key_cols.iter().map(col).collect())
+                    .call(row_key_exprs.clone())
                     // Alias name to original schema column name
                     .alias(col_name)
             } else {
@@ -112,8 +119,10 @@ pub async fn compact(
         })
         .collect::<Vec<_>>();
 
-    // Apply sort to DataFrame, then project for DataSketch
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
+    frame = frame.sort(sort_order)?;
+    frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
+    frame = frame.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -208,6 +217,81 @@ fn create_sketch_udf(
     )));
     frame.task_ctx().register_udf(sketch_func.clone())?;
     Ok(sketch_func)
+}
+
+/// Apply any configured filters to the query if any are present.
+fn apply_filters(
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
+) -> Result<DataFrame, DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            agg_cols: _,
+            filter: Some(f),
+            aggregation: _,
+        }) = filter_agg_conf
+        {
+            info!("Applying Sleeper filter iterator: {f:?}");
+            frame.filter(f.create_filter_expr()?)?
+        } else {
+            frame
+        },
+    )
+}
+
+/// If any are present, apply Sleeper aggregations to this query.
+///
+/// # Errors
+/// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
+fn apply_aggregations(
+    row_key_cols: &[String],
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
+) -> Result<DataFrame, DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            agg_cols,
+            filter: _,
+            aggregation: Some(aggregation),
+        }) = &filter_agg_conf
+        {
+            // Grab initial row key columns
+            let mut query_agg_cols = row_key_cols;
+            let mut extra_agg_cols = vec![];
+            // If we have any extra query columns, concatenate them all together
+            if let Some(more_columns) = agg_cols {
+                extra_agg_cols.extend(
+                    row_key_cols
+                        .iter()
+                        .chain(more_columns)
+                        .map(ToOwned::to_owned),
+                );
+                query_agg_cols = &extra_agg_cols;
+            }
+            // Check aggregations meet validity checks
+            validate_aggregations(query_agg_cols, frame.schema(), aggregation)?;
+            let aggregations = aggregation
+                .iter()
+                .map(|agg| agg.to_expr(&frame))
+                .collect::<Result<Vec<_>, _>>()?;
+            frame.aggregate(query_agg_cols.iter().map(col).collect(), aggregations)?
+        } else {
+            frame
+        },
+    )
+}
+
+// Process the iterator configuration and create a filter and aggregation object from it.
+//
+// # Errors
+// If there is an error in parsing the configuration string.
+fn parse_iterator_config(
+    iterator_config: Option<&String>,
+) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
+    let filter_agg_conf = iterator_config
+        .map(|s| FilterAggregationConfig::try_from(s.as_str()))
+        .transpose()?;
+    Ok(filter_agg_conf)
 }
 
 /// Calculate the total input size of all the input paths and set the multipart upload size hint accordingly. This prevents
@@ -412,6 +496,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
     sf.options_mut().execution.target_partitions =
         std::cmp::max(sf.options().execution.target_partitions, input_paths.len());
     sf.options_mut().execution.parquet.enable_page_index = false;
+    sf.options_mut().optimizer.repartition_aggregations = false;
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));
