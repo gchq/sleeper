@@ -258,11 +258,15 @@ fn apply_aggregations(
         {
             // Grab initial row key columns
             let mut query_agg_cols = row_key_cols;
-            let mut extra_agg_cols = Vec::new();
-            // If we have any extra columns, concatenate them all together
+            let mut extra_agg_cols = vec![];
+            // If we have any extra query columns, concatenate them all together
             if let Some(more_columns) = agg_cols {
-                extra_agg_cols.extend_from_slice(row_key_cols);
-                extra_agg_cols.extend_from_slice(more_columns);
+                extra_agg_cols.extend(
+                    row_key_cols
+                        .iter()
+                        .chain(more_columns)
+                        .map(ToOwned::to_owned),
+                );
                 query_agg_cols = &extra_agg_cols;
             }
             // Check aggregations meet validity checks
