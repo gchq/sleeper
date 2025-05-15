@@ -1,4 +1,4 @@
-## Query Execution
+## Table Properties - Query Execution
 
 The following table properties relate to query execution
 

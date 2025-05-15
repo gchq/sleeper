@@ -1,4 +1,4 @@
-## Partition Splitting - User Defined
+## Instance Properties - Partition Splitting - User Defined
 
 The following instance properties relate to the splitting of partitions.
 

@@ -1,4 +1,4 @@
-## Data Storage
+## Table Properties - Data Storage
 
 The following table properties relate to the storage of data inside a table.
 

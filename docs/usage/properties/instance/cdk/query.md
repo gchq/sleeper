@@ -1,4 +1,4 @@
-## Query - CDK Defined
+## Instance Properties - Query - CDK Defined
 
 The following instance properties relate to queries.
 

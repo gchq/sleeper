@@ -1,4 +1,4 @@
-## Data Definition
+## Table Properties - Data Definition
 
 The following table properties relate to the definition of data inside a table.
 

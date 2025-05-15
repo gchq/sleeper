@@ -1,4 +1,4 @@
-## Partition Splitting
+## Table Properties - Partition Splitting
 
 The following table properties relate to partition splitting.
 

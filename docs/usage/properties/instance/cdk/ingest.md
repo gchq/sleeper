@@ -1,4 +1,4 @@
-## Ingest - CDK Defined
+## Instance Properties - Ingest - CDK Defined
 
 The following instance properties relate to standard ingest.
 

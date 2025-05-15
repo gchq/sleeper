@@ -1,4 +1,4 @@
-## Table State - User Defined
+## Instance Properties - Table State - User Defined
 
 The following instance properties relate to handling the state of Sleeper tables.
 

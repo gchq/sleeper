@@ -1,4 +1,4 @@
-## Compaction - CDK Defined
+## Instance Properties - Compaction - CDK Defined
 
 The following instance properties relate to compactions.
 

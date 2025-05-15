@@ -1,4 +1,4 @@
-## Partition Splitting - CDK Defined
+## Instance Properties - Partition Splitting - CDK Defined
 
 The following instance properties relate to the splitting of partitions.
 

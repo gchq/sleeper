@@ -1,4 +1,4 @@
-## Compaction - User Defined
+## Instance Properties - Compaction - User Defined
 
 The following instance properties relate to compactions.
 

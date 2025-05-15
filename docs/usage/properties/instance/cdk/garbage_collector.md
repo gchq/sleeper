@@ -1,4 +1,4 @@
-## Garbage Collector - CDK Defined
+## Instance Properties - Garbage Collector - CDK Defined
 
 The following instance properties relate to garbage collection.
 

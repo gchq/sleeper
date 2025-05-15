@@ -1,4 +1,4 @@
-## Query - User Defined
+## Instance Properties - Query - User Defined
 
 The following instance properties relate to queries.
 

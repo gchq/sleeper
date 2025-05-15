@@ -1,4 +1,4 @@
-## Metadata
+## Table Properties - Metadata
 
 The following table properties relate to storing and retrieving metadata for tables.
 

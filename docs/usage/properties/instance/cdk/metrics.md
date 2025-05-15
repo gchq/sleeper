@@ -1,4 +1,4 @@
-## Metrics - CDK Defined
+## Instance Properties - Metrics - CDK Defined
 
 The following instance properties relate to metrics.
 

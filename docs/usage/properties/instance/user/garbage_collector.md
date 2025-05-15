@@ -1,4 +1,4 @@
-## Garbage Collector - User Defined
+## Instance Properties - Garbage Collector - User Defined
 
 The following instance properties relate to garbage collection.
 

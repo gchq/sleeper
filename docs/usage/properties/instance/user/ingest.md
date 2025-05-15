@@ -1,4 +1,4 @@
-## Ingest - User Defined
+## Instance Properties - Ingest - User Defined
 
 The following instance properties relate to standard ingest.
 

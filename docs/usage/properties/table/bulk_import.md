@@ -1,4 +1,4 @@
-## Bulk Import
+## Table Properties - Bulk Import
 
 The following table properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.
 

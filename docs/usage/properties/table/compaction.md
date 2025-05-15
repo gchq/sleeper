@@ -1,4 +1,4 @@
-## Compaction
+## Table Properties - Compaction
 
 The following table properties relate to compactions.
 

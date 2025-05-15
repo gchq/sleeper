@@ -1,4 +1,4 @@
-## Ingest
+## Table Properties - Ingest
 
 The following table properties relate to ingest.
 

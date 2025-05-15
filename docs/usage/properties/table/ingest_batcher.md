@@ -1,4 +1,4 @@
-## Ingest Batcher
+## Table Properties - Ingest Batcher
 
 The following table properties relate to the ingest batcher.
 

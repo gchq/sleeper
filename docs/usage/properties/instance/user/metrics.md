@@ -1,4 +1,4 @@
-## Metrics - User Defined
+## Instance Properties - Metrics - User Defined
 
 The following instance properties relate to metrics.
 

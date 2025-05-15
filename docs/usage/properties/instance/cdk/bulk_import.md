@@ -1,4 +1,4 @@
-## Bulk Import - CDK Defined
+## Instance Properties - Bulk Import - CDK Defined
 
 The following instance properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.
 

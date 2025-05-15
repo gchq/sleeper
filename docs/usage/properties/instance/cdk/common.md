@@ -1,4 +1,4 @@
-## Common - CDK Defined
+## Instance Properties - Common - CDK Defined
 
 The following instance properties are commonly used throughout Sleeper.
 

@@ -1,4 +1,4 @@
-## Common - User Defined
+## Instance Properties - Common - User Defined
 
 The following instance properties are commonly used throughout Sleeper.
 

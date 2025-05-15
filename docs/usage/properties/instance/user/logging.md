@@ -1,4 +1,4 @@
-## Logging - User Defined
+## Instance Properties - Logging - User Defined
 
 The following instance properties relate to logging.
 

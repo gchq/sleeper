@@ -1,4 +1,4 @@
-## Athena - User Defined
+## Instance Properties - Athena - User Defined
 
 The following instance properties relate to the integration with Athena.
 

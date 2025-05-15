@@ -1,4 +1,4 @@
-## Table Property Defaults - User Defined
+## Instance Properties - Table Property Defaults - User Defined
 
 The following instance properties relate to default values used by table properties.
 

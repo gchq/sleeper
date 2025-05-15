@@ -1,4 +1,4 @@
-## Bulk Import - User Defined
+## Instance Properties - Bulk Import - User Defined
 
 The following instance properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.
 
