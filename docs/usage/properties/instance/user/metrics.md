@@ -1,6 +1,6 @@
-## METRICS
+## Metrics
 
-Below is a table containing all the details for the property group: Metrics
+The following properties relate to metrics.
 
 | Property Name                         | Description                                                                                                                                                                                                                                  | Default Value | Run CdkDeploy When Changed |
 |---------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

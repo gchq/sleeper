@@ -132,9 +132,9 @@ public class GeneratePropertiesDocumentation {
      */
     private static <T extends SleeperProperty> void writePropertiesMarkdownFile(OutputStream output, PropertyGroup group, TableWriter tableWriter) {
         PrintStream out = printStream(output);
-        out.println("## " + group.getName().toUpperCase(Locale.ENGLISH));
+        out.println("## " + group.getName());
         out.println();
-        out.println("Below is a table containing all the details for the property group: " + group.getName());
+        out.println(adjustLongEntryForMarkdown(group.getDescription()));
         out.println();
         tableWriter.write(out);
     }
@@ -163,5 +163,9 @@ public class GeneratePropertiesDocumentation {
         return groups.stream()
                 .sorted(Comparator.comparing(PropertyGroup::getName))
                 .toList();
+    }
+
+    private static String adjustLongEntryForMarkdown(String valueIn) {
+        return valueIn.replaceAll("\n", "<br>");
     }
 }

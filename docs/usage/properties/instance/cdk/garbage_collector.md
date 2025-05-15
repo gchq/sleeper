@@ -1,6 +1,6 @@
-## GARBAGE COLLECTOR
+## Garbage Collector
 
-Below is a table containing all the details for the property group: Garbage Collector
+The following properties relate to garbage collection.
 
 | Property Name              | Description                                                                              |
 |----------------------------|------------------------------------------------------------------------------------------|

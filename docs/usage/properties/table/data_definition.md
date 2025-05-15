@@ -1,6 +1,6 @@
-## DATA DEFINITION
+## Data Definition
 
-Below is a table containing all the details for the property group: Data Definition
+The following table properties relate to the definition of data inside a table.
 
 | Property Name                     | Description                                                                                                                                                                                                                                                                                                                                                                                         | Default Value | Run CdkDeploy When Changed |
 |-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

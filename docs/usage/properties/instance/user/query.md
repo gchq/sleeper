@@ -1,6 +1,6 @@
-## QUERY
+## Query
 
-Below is a table containing all the details for the property group: Query
+The following properties relate to queries.
 
 | Property Name                                          | Description                                                                                                                                                                                | Default Value | Run CdkDeploy When Changed |
 |--------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

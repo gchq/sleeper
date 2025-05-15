@@ -1,6 +1,6 @@
-## PARTITION SPLITTING
+## Partition Splitting
 
-Below is a table containing all the details for the property group: Partition Splitting
+The following table properties relate to partition splitting.
 
 | Property Name                                  | Description                                                                                                                                                                                                                                                                                                   | Default Value | Run CdkDeploy When Changed |
 |------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|

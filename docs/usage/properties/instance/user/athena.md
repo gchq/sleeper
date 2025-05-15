@@ -1,6 +1,6 @@
-## ATHENA
+## Athena
 
-Below is a table containing all the details for the property group: Athena
+The following properties relate to the integration with Athena.
 
 | Property Name                           | Description                                                                                                                                                                          | Default Value                                                                                             | Run CdkDeploy When Changed |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|----------------------------|

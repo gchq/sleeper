@@ -1,6 +1,6 @@
-## COMMON
+## Common
 
-Below is a table containing all the details for the property group: Common
+The following properties are commonly used throughout Sleeper.
 
 | Property Name                                                    | Description                                                                                                                                                                |
 |------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

@@ -1,6 +1,6 @@
-## DATA STORAGE
+## Data Storage
 
-Below is a table containing all the details for the property group: Data Storage
+The following table properties relate to the storage of data inside a table.
 
 | Property Name                                            | Description                                                                                                                                                                                                                                                                                                                                | Default Value | Run CdkDeploy When Changed |
 |----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|----------------------------|
