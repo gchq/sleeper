@@ -28,6 +28,7 @@ Below you can find all properties that can be set for a Sleeper instance by the 
 [Compaction](properties/instance/cdk/compaction.md)<br>
 [Garbage Collector](properties/instance/cdk/garbage_collector.md)<br>
 [Ingest](properties/instance/cdk/ingest.md)<br>
+[Metrics](properties/instance/cdk/metrics.md)<br>
 [Partition Splitting](properties/instance/cdk/partition_splitting.md)<br>
 [Query](properties/instance/cdk/query.md)<br>
 
