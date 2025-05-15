@@ -17,8 +17,6 @@ package sleeper.compaction.job.creationv2;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -46,6 +44,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -97,8 +96,8 @@ public class AwsCompactionJobDispatcher {
             try {
                 objectAString = IoUtils.toUtf8String(s3.getObject(GetObjectRequest.builder()
                         .bucket(bucketName).key(key).build(), ResponseTransformer.toInputStream()));
-            } catch (AwsServiceException | SdkClientException | IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
 
             return compactionJobSerDe.batchFromJson(objectAString);
