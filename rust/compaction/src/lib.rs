@@ -136,7 +136,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
                 .to_owned(),
         )
         // Set option to None if config is empty
-        .and_then(|v| if v.trim().is_empty() { Some(v) } else { None });
+        .and_then(|v| if v.trim().is_empty() {None} else { Some(v) });
 
         Ok(Self {
             aws_config: unpack_aws_config(params)?,
