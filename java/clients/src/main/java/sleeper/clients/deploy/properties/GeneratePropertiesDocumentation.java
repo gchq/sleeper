@@ -102,7 +102,7 @@ public class GeneratePropertiesDocumentation {
         out.println();
         out.println("### CDK defined");
         out.println();
-        out.println("Below you can find all properties that can be set for a Sleeper instance by the CDK.");
+        out.println("Below you can find all properties that can be set for a Sleeper instance by the CDK during deployment.");
         out.println();
         instanceGroups.forEach(group -> {
             if (!CdkDefinedInstanceProperty.getAllInGroup(group).isEmpty()) {
@@ -123,13 +123,6 @@ public class GeneratePropertiesDocumentation {
         return String.format("[%s](properties/%s%s)<br>", group.getName(), directory, groupFileName(group));
     }
 
-    /**
-     * Generates table containing all the properties for a given property group in markdown format.
-     * This is then written out to a file named for the property group.
-     *
-     * @param  output                       the stream for the output
-     * @throws UnsupportedEncodingException thrown if uft8 unavailable
-     */
     private static <T extends SleeperProperty> void writePropertiesMarkdownFile(
             OutputStream output, String groupNamePrefix, PropertyGroup group, String groupNameSuffix, boolean writeDetails, TableWriter tableWriter) {
         PrintStream out = printStream(output);
