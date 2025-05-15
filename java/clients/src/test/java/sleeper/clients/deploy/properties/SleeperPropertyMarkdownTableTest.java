@@ -21,6 +21,7 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.CommonProperty;
+import sleeper.core.properties.table.TableProperty;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,6 +72,20 @@ public class SleeperPropertyMarkdownTableTest {
 
         // Then
         assertThat(output).hasToString(example("reports/table/propertyCdk.txt"));
+    }
+
+    @Test
+    void shouldWriteTableWithTableProperties() throws IOException {
+        // Given
+        TableWriter writer = SleeperPropertyMarkdownTable.createTableWriterForTableProperties(List.of(
+                TableProperty.TABLE_NAME,
+                TableProperty.TABLE_ONLINE));
+
+        // When
+        writer.write(output.getPrintStream());
+
+        // Then
+        assertThat(output).hasToString(example("reports/table/propertyTable.txt"));
     }
 
 }

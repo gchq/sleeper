@@ -75,7 +75,7 @@ public class GeneratePropertiesDocumentation {
         TablePropertyGroup.getAll().forEach(group -> {
             writeFile(tablePath.resolve(groupFileName(group)),
                     output -> writePropertiesMarkdownFile(output, "Table Properties - ", group, "", true,
-                            SleeperPropertyMarkdownTable.createTableWriterForUserDefinedProperties(
+                            SleeperPropertyMarkdownTable.createTableWriterForTableProperties(
                                     TableProperty.getAllInGroup(group))));
         });
     }

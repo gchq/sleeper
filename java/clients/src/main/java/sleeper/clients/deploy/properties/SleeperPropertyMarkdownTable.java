@@ -31,7 +31,7 @@ public class SleeperPropertyMarkdownTable {
     private static final TableFieldDefinition NAME = TableFieldDefinition.field("Property Name");
     private static final TableFieldDefinition DESCRIPTION = TableFieldDefinition.field("Description");
     private static final TableFieldDefinition DEFAULT_VALUE = TableFieldDefinition.field("Default Value");
-    private static final TableFieldDefinition RUN_CDK_DEPLOY_WHEN_CHANGED = TableFieldDefinition.field("Run CdkDeploy When Changed");
+    private static final TableFieldDefinition RUN_CDK_DEPLOY_WHEN_CHANGED = TableFieldDefinition.field("Run CDK Deploy When Changed");
 
     public static <T extends SleeperProperty> TableWriter createTableWriterForUserDefinedProperties(List<T> properties) {
         return createTableWriter(properties);
@@ -39,6 +39,10 @@ public class SleeperPropertyMarkdownTable {
 
     public static <T extends SleeperProperty> TableWriter createTableWriterForCdkDefinedProperties(List<T> properties) {
         return createTableWriter(properties, DEFAULT_VALUE, RUN_CDK_DEPLOY_WHEN_CHANGED);
+    }
+
+    public static <T extends SleeperProperty> TableWriter createTableWriterForTableProperties(List<T> properties) {
+        return createTableWriter(properties, RUN_CDK_DEPLOY_WHEN_CHANGED);
     }
 
     private static <T extends SleeperProperty> TableWriter createTableWriter(List<T> properties, TableFieldDefinition... hideFields) {
