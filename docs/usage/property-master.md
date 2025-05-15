@@ -15,7 +15,7 @@ Below you can find all properties that can be set for a Sleeper instance by the 
 [Metrics](properties/instance/user/metrics.md)<br>
 [Partition Splitting](properties/instance/user/partition_splitting.md)<br>
 [Query](properties/instance/user/query.md)<br>
-[Table Property Default](properties/instance/user/table_property_default.md)<br>
+[Table Property Defaults](properties/instance/user/table_property_defaults.md)<br>
 [Table State](properties/instance/user/table_state.md)<br>
 
 ### CDK defined

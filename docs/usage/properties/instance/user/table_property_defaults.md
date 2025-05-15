@@ -1,4 +1,4 @@
-## Table Property Default
+## Table Property Defaults
 
 The following properties relate to default values used by table properties.
 
