@@ -17,6 +17,7 @@ package sleeper.core.properties.instance;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.List;
@@ -32,6 +33,21 @@ import java.util.List;
 // initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface CdkDefinedInstanceProperty extends InstanceProperty {
+
+    static List<CdkDefinedInstanceProperty> getAll() {
+        return Index.INSTANCE.getAll();
+    }
+
+    /**
+     * Retrieves a list of CDK defined instance properties in the given group.
+     *
+     * @param  group the group
+     * @return       the properties
+     */
+    static List<CdkDefinedInstanceProperty> getAllInGroup(PropertyGroup group) {
+        return Index.INSTANCE.getAllInGroup(group);
+    }
+
     CdkDefinedInstanceProperty VERSION = Index.propertyBuilder("sleeper.version")
             .description("The version of Sleeper that is being used. This property is used to identify the correct " +
                     "jars in the S3 jars bucket and to select the correct tag in the ECR repositories.")
@@ -748,10 +764,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The endpoint of the bulk import cluster using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-
-    static List<CdkDefinedInstanceProperty> getAll() {
-        return Index.INSTANCE.getAll();
-    }
 
     @Override
     default boolean isSetByCdk() {

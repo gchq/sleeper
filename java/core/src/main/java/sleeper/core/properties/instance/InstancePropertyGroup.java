@@ -21,7 +21,6 @@ import sleeper.core.properties.PropertyGroup;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertyGroup.group;
 
@@ -30,6 +29,10 @@ import static sleeper.core.properties.PropertyGroup.group;
  */
 public class InstancePropertyGroup {
     private InstancePropertyGroup() {
+    }
+
+    public static List<PropertyGroup> getAll() {
+        return Collections.unmodifiableList(ALL);
     }
 
     private static final List<PropertyGroup> ALL = new ArrayList<>();
@@ -91,14 +94,5 @@ public class InstancePropertyGroup {
 
     private static PropertyGroup.Builder instanceGroup(String name) {
         return group(name).afterBuild(ALL::add);
-    }
-
-    public static List<PropertyGroup> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static List<String> getAllGroupNamesAlphabetically() {
-        return getAll().stream().map(group -> group.getName()).toList()
-                .stream().sorted().collect(Collectors.toList());
     }
 }
