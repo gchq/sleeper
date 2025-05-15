@@ -68,6 +68,7 @@ pub async fn compact(
     );
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
+    info!("Iterator config {:?}", input_data.iterator_config);
     let sf = create_session_cfg(input_data, input_paths);
     let ctx = SessionContext::new_with_config(sf);
 
