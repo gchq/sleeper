@@ -80,7 +80,11 @@ public class CompactionJobRun implements JobRunReport {
 
     @Override
     public Instant getStartTime() {
-        return startedStatus.getStartTime();
+        if (startedStatus != null) {
+            return startedStatus.getStartTime();
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -94,8 +98,11 @@ public class CompactionJobRun implements JobRunReport {
 
     @Override
     public JobRunSummary getFinishedSummary() {
-        if (isFinished()) {
-            return JobRunSummary.from(startedStatus, endedStatus);
+        if (endedStatus != null) {
+            Instant startTime = Optional.ofNullable(startedStatus)
+                    .map(CompactionJobStartedStatus::getStartTime)
+                    .orElseGet(endedStatus::getFinishTime);
+            return JobRunSummary.from(startTime, endedStatus);
         } else {
             return null;
         }

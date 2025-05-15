@@ -23,18 +23,33 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>compaction</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>sketchesv2</artifactId>
 
-    <modules>
-        <module>compaction-core</module>
-        <module>compaction-job-creation</module>
-        <module>compaction-job-creationv2</module>
-        <module>compaction-job-creation-lambda</module>
-        <module>compaction-job-execution</module>
-        <module>compaction-rust</module>
-        <module>compaction-tracker</module>
-        <module>compaction-trackerV2</module>
-        <module>compaction-task-creation</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.datasketches</groupId>
+            <artifactId>datasketches-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aws</artifactId>
+        </dependency>
+        <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+    </dependencies>
 </project>

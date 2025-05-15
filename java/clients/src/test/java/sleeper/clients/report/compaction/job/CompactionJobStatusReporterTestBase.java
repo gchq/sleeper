@@ -25,6 +25,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.JobRuns;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -46,6 +47,8 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.fi
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public abstract class CompactionJobStatusReporterTestBase {
 
@@ -160,7 +163,7 @@ public abstract class CompactionJobStatusReporterTestBase {
                         committedTime1)));
     }
 
-    protected List<CompactionJobStatus> jobWithMultipleInputFiles() {
+    protected static List<CompactionJobStatus> jobWithMultipleInputFiles() {
         Instant creationTime = Instant.parse("2022-10-13T12:00:00.001Z");
         return List.of(CompactionJobStatus.builder().jobId("test-job")
                 .createdStatus(CompactionJobCreatedStatus.builder()
@@ -172,7 +175,18 @@ public abstract class CompactionJobStatusReporterTestBase {
                 .build());
     }
 
-    public String verboseReportString(
+    protected static List<CompactionJobStatus> partialJobStatuses() {
+        return CompactionJobStatus.listFrom(records().fromUpdates(
+                forJobRunOnTask("job-1",
+                        compactionFinishedStatus(
+                                Instant.parse("2025-05-14T10:47:00Z"),
+                                new RecordsProcessed(10, 5)),
+                        compactionCommittedStatus(
+                                Instant.parse("2025-05-14T10:47:01Z"))))
+                .stream());
+    }
+
+    protected static String verboseReportString(
             Function<PrintStream, CompactionJobStatusReporter> getReporter,
             List<CompactionJobStatus> statusList, Type queryType) {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
