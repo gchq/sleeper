@@ -31,8 +31,11 @@ public class LocalFileSystemSketchesStore implements SketchesStore {
     @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
         Path path = readPath(filename);
+        Path directory = path.getParent();
         try {
-            Files.createDirectories(path.getParent());
+            if (directory != null) {
+                Files.createDirectories(directory);
+            }
             try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(path))) {
                 new SketchesSerDe(schema).serialise(sketches, out);
             }
