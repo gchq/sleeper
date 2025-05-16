@@ -16,25 +16,18 @@ information.
 
 ## Add/edit a table
 
-Scripts can be used to add, rename and delete tables in a Sleeper instance.
+Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
+will consist of the following steps:
 
-The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
-schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
-client. We will add support for declarative deployment in the future.
+1. Use the `estimateSplitPoints.sh` script to estimate split points from your data.
+2. Use the `addTable.sh` script to create the table.
+3. Use the `reinitialiseTable.sh` script with the split points from the first step.
+4. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
 
+All of these scripts will rely on a schema for your table, which should be created first.
 See [creating a schema](schema.md) for how to set up a schema for your table.
 
-```bash
-cd scripts
-editor templates/tableproperties.template
-editor templates/schema.template
-./utility/addTable.sh <instance-id> <table-name>
-./utility/renameTable.sh <instance-id> <old-table-name> <new-table-name>
-./utility/deleteTable.sh <instance-id> <table-name>
-```
-
-You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
-all the data. This will permanently delete all data held in the table, as well as metadata.
+We also have scripts to rename and delete a table.
 
 ### Pre-split partitions
 
@@ -56,6 +49,19 @@ You can apply the resulting split points when adding a table by setting an absol
 table property `sleeper.table.splits.file`. If you haven't added any data to the table yet, you can apply the split
 points by reinitialising the table.
 
+### Add table
+
+The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
+schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
+client. We will add support for declarative deployment in the future.
+
+```bash
+cd scripts
+editor templates/tableproperties.template
+editor templates/schema.template
+./utility/addTable.sh <instance-id> <table-name>
+```
+
 ### Reinitialise a table
 
 Reinitialising a table means deleting all its contents. This can sometimes be useful when you are experimenting
@@ -76,3 +82,15 @@ For example
 If you want to change the table schema you'll need to change it directly in the table properties file in the S3 config
 bucket, and then reinitialise the table. An alternative is to delete the table and create a new table with the same
 name.
+
+### Rename/delete a table
+
+You can rename or delete a table using the following commands:
+
+```bash
+./scripts/utility/renameTable.sh <instance-id> <old-table-name> <new-table-name>
+./scripts/utility/deleteTable.sh <instance-id> <table-name>
+```
+
+You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
+all the data. This will permanently delete all data held in the table, as well as metadata.
