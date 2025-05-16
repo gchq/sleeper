@@ -24,11 +24,11 @@ import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class InMemorySleeperClientProvider implements SleeperClientFactory {
+public class InMemorySleeperClientFactory implements SleeperClientFactory {
 
     private final Map<String, InMemorySleeperInstance> instanceById = new HashMap<>();
 
-    public InMemorySleeperClientProvider(InMemorySleeperInstance... instances) {
+    public InMemorySleeperClientFactory(InMemorySleeperInstance... instances) {
         for (InMemorySleeperInstance instance : instances) {
             instanceById.put(instance.properties().get(ID), instance);
         }
