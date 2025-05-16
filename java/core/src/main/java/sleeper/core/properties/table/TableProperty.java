@@ -17,6 +17,7 @@ package sleeper.core.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.CompactionMethod;
@@ -101,6 +102,21 @@ import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEn
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface TableProperty extends SleeperProperty, TablePropertyComputeValue {
+
+    static List<TableProperty> getAll() {
+        return Index.INSTANCE.getAll();
+    }
+
+    /**
+     * Retrieves a list of table properties in the given group.
+     *
+     * @param  group the group
+     * @return       the properties
+     */
+    static List<TableProperty> getAllInGroup(PropertyGroup group) {
+        return Index.INSTANCE.getAllInGroup(group);
+    }
+
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
@@ -635,10 +651,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This is only applied if async commits are enabled for the table. The default value is set in an " +
                     "instance property.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
-
-    static List<TableProperty> getAll() {
-        return Index.INSTANCE.getAll();
-    }
 
     /**
      * An index of property definitions in this file.
