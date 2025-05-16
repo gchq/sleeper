@@ -205,19 +205,20 @@ Before we can use CDK to deploy Sleeper, we need to create some configuration fi
 
 * An `instance.properties` file - containing information about your Sleeper instance, as well as
   default values used by tables if not specified.
+* A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
 * A `table.properties` file which contains information about a table and a link to its schema file.
 * A `schema.json` file which describes the data stored in a Sleeper table.
-* A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
+* A `splits.txt` file which allows you to pre-split partitions in a Sleeper table.
 
-The `instance.properties` and `table.properties` files are Java properties files. You can find descriptions of all
-properties in the system [here](usage/property-master.md).
+The `.properties` files are Java properties files. You can find descriptions of all properties in the
+system [here](usage/property-master.md). More information about this configuration is available
+under [Sleeper instance configuration](deployment/instance-configuration.md).
 
-There's an example of a basic instance properties file [here](../example/basic/instance.properties) and an example of a
-full instance properties file [here](../example/full/instance.properties). This latter file shows all the instance
-properties that you can set. You can use one of these as your starting point. Examples of the other files listed above
-can also be found alongside those.
+You can start by copying the basic configuration example [here](../example/basic/). There's also an example of a full
+configuration [here](../example/full/).
 
-You will need to set sensible values for the following instance properties:
+You will need to set sensible values for the following instance properties, which are set for you if you use the
+automated deployment script:
 
 * `sleeper.id`
 * `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
@@ -228,51 +229,21 @@ You will need to set sensible values for the following instance properties:
 * `sleeper.subnets` - multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
+* `sleeper.ecr.repository.prefix` - this will be used to find the ECR repositories with your Docker images
 
-You will also need to set values for whichever ECR repositories you have uploaded Docker images to. These should be set
-to the ECR repository name, eg. `my-instance-id/ingest`.
+You will also need to ensure your Docker images are uploaded to ECR repositories with names starting with your
+repository prefix property value. Each repository must have the expected name appended to the prefix,
+e.g. `my-prefix/ingest`, `my-prefix/compaction`. These names are the same as the directory names in
+the `scripts/docker` folder that is created when the system is built.
 
-* `sleeper.ingest.repo`
-* `sleeper.compaction.repo`
-* `sleeper.bulk.import.emr.serverless.repo`
-* `sleeper.bulk.import.eks.repo`
-* `sleeper.systemtest.repo`
-
-To include a table in your instance, your `table.properties` file can be in the same folder as
-your `instance.properties` file. You can add more than one by creating a `tables` directory in the same folder, with a
-subfolder for each table.
-
-See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
-
-Each table will also need a `schema.json` file next to the `table.properties` file.
-See [create a schema](usage/schema.md) for how to create a schema.
-
-You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
-deployed by Sleeper. An example tags.properties file can be found [here](../example/full/tags.properties).
-
-Here's a full example with two tables:
-
-```
-instance.properties
-tags.properties
-tables/table-1/table.properties
-tables/table-1/schema.json
-tables/table-2/table.properties
-tables/table-2/schema.json
-```
-
-Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false
-when deploying then however you choose to tear down Sleeper later on
-you will also need to destroy some further S3 buckets and DynamoDB tables manually.
+Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
+choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.
 
-You may optionally want to predefine your split points for a given table.
-You can do this by setting the `sleeper.table.splits.file` property in the
-table properties file. There's an example of this in the
-[full example](../example/full/table.properties). If you decide not to set
-this, your state store will be initialised with a single root partition. Note that
-pre-splitting a table is important for any large-scale use of Sleeper, and is essential
-for running bulk import jobs.
+Please ensure you predefine split points for your table. See [tables](../usage/tables.md#pre-split-partitions) how to
+do this. If you decide not to set split points, your state store will be initialised with a single root partition.
+Note that pre-splitting a table is important for any large-scale use of Sleeper, and is essential for running bulk
+import jobs.
 
 #### Deploy with the CDK
 
@@ -295,49 +266,6 @@ INSTANCE_PROPERTIES=/path/to/instance.properties
 VERSION=$(cat "./scripts/templates/version.txt")
 cdk -a "java -cp scripts/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
 ```
-
-#### Customising the Stacks
-
-By default all the stacks are deployed. However, if you don't need them, you can customise which stacks are deployed.
-
-Mandatory components are the configuration bucket and data bucket, the index of Sleeper tables, the state store,
-policies and roles to interact with the instance, and the `TopicStack` which creates an SNS topic used by other stacks
-to report errors.
-
-That leaves the following stacks as optional:
-
-* `CompactionStack` - for running compactions (in practice this is essential)
-* `GarbageCollectorStack` - for running garbage collection (in practice this is essential)
-* `IngestStack` - for ingesting files using the "standard" ingest method
-* `PartitionSplittingStack` - for splitting partitions when they get too large
-* `QueryStack` - for handling queries via SQS
-* `WebSocketQueryStack` - for handling queries via a web socket
-* `KeepLambdaWarmStack` - for sending dummy queries to avoid waiting for lambdas to start up during queries
-* `EmrServerlessBulkImportStack` - for running bulk import jobs using Spark running on EMR Serverless
-* `EmrStudioStack` - to create an EMR Studio containing the EMR Serverless application
-* `EmrBulkImportStack` - for running bulk import jobs using Spark running on an EMR cluster that is created on demand
-* `PersistentEmrBulkImportStack` - for running bulk import jobs using Spark running on a persistent EMR cluster, i.e. one
-  that is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up
-  and down on demand.
-* `IngestBatcherStack` - for gathering files to be ingested or bulk imported in larger jobs
-* `TableMetricsStack` - for creating CloudWatch metrics showing statistics such as the number of records in a table over
-  time
-* `DashboardStack` - to create a CloudWatch dashboard showing recorded metrics
-* `BulkExportStack` - to export a whole table as parquet files
-
-The following stacks are optional and experimental:
-
-* `AthenaStack` - for running SQL analytics over the data
-* `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
-
-By default most of the optional stacks are included but to customise it, set the `sleeper.optional.stacks` sleeper
-property to a comma separated list of stack names, for example:
-
-```properties
-sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
-```
-
-Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
 
 ## Scripts to edit an instance
 
