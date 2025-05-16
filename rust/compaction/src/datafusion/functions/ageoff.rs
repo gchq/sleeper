@@ -149,7 +149,12 @@ impl ScalarUDFImpl for AgeOff {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
+    use arrow::array::{AsArray, Int64Builder};
     use datafusion::{
+        common::exec_err,
+        error::DataFusionError,
         logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl},
         scalar::ScalarValue,
     };
@@ -332,5 +337,81 @@ mod tests {
             result.err(),
             Some("Invalid or Unsupported Configuration: Age off called with null Int64".into())
         );
+    }
+
+    #[test]
+    fn invoke_should_retain_single_value() -> Result<(), DataFusionError> {
+        // Given
+        let ageoff = AgeOff::new(1000);
+
+        // When
+        let result = ageoff.invoke_with_args(ScalarFunctionArgs {
+            number_rows: 1,
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(1000)))],
+            return_type: &arrow::datatypes::DataType::Boolean,
+        })?;
+
+        // Then
+        if let ColumnarValue::Scalar(ScalarValue::Boolean(Some(true))) = result {
+            Ok(())
+        } else {
+            exec_err!("Test should have returned a single scalar boolean true")
+        }
+    }
+
+    #[test]
+    fn invoke_should_not_retain_single_value() -> Result<(), DataFusionError> {
+        // Given
+        let ageoff = AgeOff::new(1000);
+
+        // When
+        let result = ageoff.invoke_with_args(ScalarFunctionArgs {
+            number_rows: 1,
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(999)))],
+            return_type: &arrow::datatypes::DataType::Boolean,
+        })?;
+
+        // Then
+        if let ColumnarValue::Scalar(ScalarValue::Boolean(Some(false))) = result {
+            Ok(())
+        } else {
+            exec_err!("Test should have returned a single scalar boolean false")
+        }
+    }
+
+    #[test]
+    fn invoke_test_with_array() -> Result<(), DataFusionError> {
+        // Given
+        let ageoff = AgeOff::new(1000);
+        let mut vals_array = Int64Builder::new();
+        vals_array.append_values(
+            &[-45, 0, 1, 999, 1000, 1001, 10_000],
+            &[true, true, true, true, true, true, true],
+        );
+        let vals = Arc::new(vals_array.finish());
+
+        // When
+        let result = ageoff.invoke_with_args(ScalarFunctionArgs {
+            number_rows: 1,
+            args: vec![ColumnarValue::Array(vals)],
+            return_type: &arrow::datatypes::DataType::Boolean,
+        })?;
+
+        // Then
+        if let ColumnarValue::Array(result_array) = result {
+            assert_eq!(result_array.len(), 7);
+            let bool_array = result_array
+                .as_boolean()
+                .into_iter()
+                .collect::<Option<Vec<_>>>();
+            if let Some(values) = bool_array {
+                assert_eq!(values, vec![false, false, false, false, true, true, true]);
+                Ok(())
+            } else {
+                exec_err!("Test should not have returned nulls")
+            }
+        } else {
+            exec_err!("Test should have returned a scalar array")
+        }
     }
 }
