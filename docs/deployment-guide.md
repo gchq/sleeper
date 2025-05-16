@@ -240,8 +240,8 @@ Note, if you do not set the property `sleeper.retain.infra.after.destroy` to fal
 choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.
 
-Please ensure you predefine split points for your table. See [tables](../usage/tables.md#pre-split-partitions) how to
-do this. If you decide not to set split points, your state store will be initialised with a single root partition.
+Please ensure you predefine split points for your table. See [tables](../usage/tables.md#pre-split-partitions) for how
+to do this. If you decide not to set split points, your state store will be initialised with a single root partition.
 Note that pre-splitting a table is important for any large-scale use of Sleeper, and is essential for running bulk
 import jobs.
 
