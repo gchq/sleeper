@@ -16,6 +16,7 @@ on:
       - 'java/build-uptime-lambda/**'
       - 'java/system-test/system-test-cdk/**'
       - 'java/system-test/system-test-configuration/**'
+      - 'java/system-test/system-test-configurationv2/**'
       - 'java/system-test/system-test-data-generation/**'
       - 'java/system-test/system-test-dsl/**'
       - 'java/system-test/system-test-drivers/**'

@@ -10,6 +10,7 @@ chunks:
       - build-uptime-lambda
       - system-test/system-test-cdk
       - system-test/system-test-configuration
+      - system-test/system-test-configurationv2
       - system-test/system-test-data-generation
       - system-test/system-test-dsl
       - system-test/system-test-drivers
