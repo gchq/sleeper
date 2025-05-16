@@ -58,7 +58,7 @@ public class StateStoreSnapshotsST {
     void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
         // Given we create a table
         sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA, Map.of(
-                STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName(),
+                STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "100000")); // Prevent compaction while waiting for snapshot
         String partitionId = exampleUUID("partn", 0);

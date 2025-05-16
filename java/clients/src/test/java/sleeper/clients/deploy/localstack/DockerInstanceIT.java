@@ -65,7 +65,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         void shouldDeployInstance() throws Exception {
             // Given / When
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
-            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
+            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName()));
 
             // Then
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
@@ -86,7 +86,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         void shouldTearDownInstance() {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
-            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
+            deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName()));
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When

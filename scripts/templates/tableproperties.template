@@ -35,6 +35,6 @@ sleeper.table.gc.delay.minutes=15
 
 # The name of the class used for the state store. The default is DynamoDBTransactionLogStateStore.
 # Options are:
-# sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
-# sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots
-sleeper.table.statestore.classname=sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
+# DynamoDBTransactionLogStateStore
+# DynamoDBTransactionLogStateStoreNoSnapshots
+sleeper.table.statestore.classname=DynamoDBTransactionLogStateStore

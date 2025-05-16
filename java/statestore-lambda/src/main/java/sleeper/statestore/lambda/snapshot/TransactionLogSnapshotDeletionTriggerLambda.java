@@ -82,7 +82,7 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient), Instant::now);
         return tableIndex.streamOnlineTables()
-                .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getName()
+                .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getSimpleName()
                         .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));
     }
 }
