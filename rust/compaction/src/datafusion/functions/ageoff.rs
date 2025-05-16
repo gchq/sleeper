@@ -120,6 +120,9 @@ impl ScalarUDFImpl for AgeOff {
             ColumnarValue::Scalar(ScalarValue::Int64(Some(v))) => Ok(ColumnarValue::Scalar(
                 ScalarValue::Boolean(Some(self.retain(*v))),
             )),
+            ColumnarValue::Scalar(ScalarValue::Int64(None)) => {
+                config_err!("Age off called with null Int64")
+            }
             ColumnarValue::Array(arr) => {
                 let prim_arr = arr.as_primitive::<Int64Type>();
                 let mut result_builder = BooleanBuilder::with_capacity(args.number_rows);
@@ -308,6 +311,26 @@ mod tests {
         assert_eq!(
             result.err(),
             Some("Invalid or Unsupported Configuration: Age off called with unsupported column datatype Float32".into())
+        );
+    }
+
+    #[test]
+    fn invoke_should_fail_null_value() {
+        // Given
+        let ageoff = AgeOff::new(1000);
+
+        // When
+        let result = ageoff
+            .invoke_with_args(ScalarFunctionArgs {
+                number_rows: 1,
+                args: vec![ColumnarValue::Scalar(ScalarValue::Int64(None))],
+                return_type: &arrow::datatypes::DataType::Boolean,
+            })
+            .map_err(|e| e.to_string());
+
+        assert_eq!(
+            result.err(),
+            Some("Invalid or Unsupported Configuration: Age off called with null Int64".into())
         );
     }
 }
