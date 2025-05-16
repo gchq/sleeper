@@ -19,7 +19,7 @@ use arrow::{
     datatypes::{DataType, Int64Type},
 };
 use datafusion::{
-    common::internal_err,
+    common::config_err,
     error::{DataFusionError, Result},
     logical_expr::{
         ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
@@ -48,6 +48,7 @@ pub struct AgeOff {
 impl AgeOff {
     /// Create a new age-off filter expression with the given threshold.
     ///
+    /// Threshold is measured in seconds since the UNIX epoch.
     pub fn new(threshold: i64) -> Self {
         Self {
             threshold,
@@ -110,7 +111,7 @@ impl ScalarUDFImpl for AgeOff {
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
         if args.args.len() != 1 {
-            return internal_err!(
+            return config_err!(
                 "AgeOff UDF called with {} input columns, only accepts 1",
                 args.args.len()
             );
@@ -131,7 +132,7 @@ impl ScalarUDFImpl for AgeOff {
                 }
                 Ok(ColumnarValue::Array(Arc::new(result_builder.finish())))
             }
-            ColumnarValue::Scalar(_) => internal_err!(
+            ColumnarValue::Scalar(_) => config_err!(
                 "Age off called with unsupported column datatype {:?}",
                 args.args[0].data_type()
             ),
@@ -145,6 +146,11 @@ impl ScalarUDFImpl for AgeOff {
 
 #[cfg(test)]
 mod tests {
+    use datafusion::{
+        logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl},
+        scalar::ScalarValue,
+    };
+
     use crate::datafusion::functions::Filter;
 
     use super::AgeOff;
@@ -164,15 +170,15 @@ mod tests {
             (10, 10, true),
             (10, 11, true),
             (10, 0, false),
-            (10, -999999, false),
+            (10, -999_999, false),
             (0, 0, true),
             (0, 1, true),
             (0, 2, true),
             (0, -1, false),
             (1, 0, false),
             (-1, 0, true),
-            (123566, -8775435, false),
-            (-54678, 74556344, true),
+            (123_566, -8_775_435, false),
+            (-54_678, 74_556_344, true),
             (i64::MAX, i64::MAX, true),
             (i64::MAX, i64::MAX - 1, false),
             (i64::MAX - 1, i64::MAX, true),
@@ -215,6 +221,7 @@ mod tests {
         // When
         let result = AgeOff::try_from(&filter).map_err(|e| e.to_string());
 
+        // Then
         assert_eq!(
             result.err(),
             Some("External error: second time provided was later than self".into()),
@@ -233,10 +240,74 @@ mod tests {
         // When
         let result = AgeOff::try_from(&filter).map_err(|e| e.to_string());
 
+        // Then
         assert_eq!(
             result.err(),
             Some("Invalid or Unsupported Configuration: Age off filter max_age not representable as timestamp".into()),
             "AgeOff filter creation should fail!"
+        );
+    }
+
+    #[test]
+    fn invoke_should_fail_with_zero_columns() {
+        // Given
+        let ageoff = AgeOff::new(1000);
+
+        // When
+        let result = ageoff
+            .invoke_with_args(ScalarFunctionArgs {
+                number_rows: 1,
+                args: vec![],
+                return_type: &arrow::datatypes::DataType::Boolean,
+            })
+            .map_err(|e| e.to_string());
+
+        assert_eq!(
+            result.err(),
+            Some("Invalid or Unsupported Configuration: AgeOff UDF called with 0 input columns, only accepts 1".into())
+        );
+    }
+
+    #[test]
+    fn invoke_should_fail_with_two_columns() {
+        // Given
+        let ageoff = AgeOff::new(1000);
+
+        // When
+        let result = ageoff
+            .invoke_with_args(ScalarFunctionArgs {
+                number_rows: 1,
+                args: vec![
+                    ColumnarValue::Scalar(ScalarValue::Boolean(Some(true))),
+                    ColumnarValue::Scalar(ScalarValue::Boolean(Some(false))),
+                ],
+                return_type: &arrow::datatypes::DataType::Boolean,
+            })
+            .map_err(|e| e.to_string());
+
+        assert_eq!(
+            result.err(),
+            Some("Invalid or Unsupported Configuration: AgeOff UDF called with 2 input columns, only accepts 1".into())
+        );
+    }
+
+    #[test]
+    fn invoke_should_fail_with_unsupported_type() {
+        // Given
+        let ageoff = AgeOff::new(1000);
+
+        // When
+        let result = ageoff
+            .invoke_with_args(ScalarFunctionArgs {
+                number_rows: 1,
+                args: vec![ColumnarValue::Scalar(ScalarValue::Float32(None))],
+                return_type: &arrow::datatypes::DataType::Boolean,
+            })
+            .map_err(|e| e.to_string());
+
+        assert_eq!(
+            result.err(),
+            Some("Invalid or Unsupported Configuration: Age off called with unsupported column datatype Float32".into())
         );
     }
 }

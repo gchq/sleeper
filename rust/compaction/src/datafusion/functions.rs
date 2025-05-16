@@ -126,18 +126,18 @@ impl TryFrom<&str> for FilterAggregationConfig {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         // split aggregation columns out
         let (agg_cols, filter_agg) = value
-            .split_once(";")
+            .split_once(';')
             .ok_or(config_datafusion_err!("No ; in aggregation configuration"))?;
         // Convert to a vector of columns
-        let agg_cols = if agg_cols.len() > 0 {
+        let agg_cols = if agg_cols.is_empty() {
+            None
+        } else {
             Some(
                 agg_cols
                     .split(',')
                     .map(|s| s.trim().to_owned())
                     .collect::<Vec<_>>(),
             )
-        } else {
-            None
         };
 
         // Create list of strings delimited by comma as iterator
