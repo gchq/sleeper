@@ -95,7 +95,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      */
     @Override
     public StateStore getStateStore(TableProperties tableProperties) {
-        String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
+        String stateStoreClassName = readSimpleClassName(tableProperties);
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,
                     DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, s3TransferManager)).build();
@@ -124,6 +124,16 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
             return tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT);
         } else {
             return true;
+        }
+    }
+
+    private static String readSimpleClassName(TableProperties tableProperties) {
+        String className = tableProperties.get(STATESTORE_CLASSNAME);
+        int dotIndex = className.lastIndexOf('.');
+        if (dotIndex >= 0) {
+            return className.substring(dotIndex + 1);
+        } else {
+            return className;
         }
     }
 }
