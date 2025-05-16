@@ -65,6 +65,7 @@ tables/table-2/splits.txt
 
 ### Optional Stacks
 
+Each bit of functionality in Sleeper is deployed using a separate CDK nested stack, under one main stack.
 By default all the stacks are deployed. However, if you don't need them, you can customise which stacks are deployed.
 
 Mandatory components are the configuration bucket and data bucket, the index of Sleeper tables, the state store,
