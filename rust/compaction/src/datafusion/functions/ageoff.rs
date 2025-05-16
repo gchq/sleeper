@@ -22,8 +22,8 @@ use datafusion::{
     common::internal_err,
     error::{DataFusionError, Result},
     logical_expr::{
-        interval_arithmetic::Interval, ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature,
-        Volatility,
+        ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
+        interval_arithmetic::Interval,
     },
     scalar::ScalarValue,
 };
@@ -68,25 +68,25 @@ impl TryFrom<&Filter> for AgeOff {
 
     #[allow(irrefutable_let_patterns, clippy::cast_possible_wrap)]
     fn try_from(value: &Filter) -> std::result::Result<Self, Self::Error> {
-        if let Filter::Ageoff { column: _, max_age } = value {
-            // Figure out max_age in as a millisecond threshold from current time
-            let threshold = if *max_age >= 0 {
-                SystemTime::now().checked_sub(Duration::from_secs(max_age.unsigned_abs()))
-            } else {
-                SystemTime::now().checked_add(Duration::from_secs(max_age.unsigned_abs()))
+        match value {
+            Filter::Ageoff { column: _, max_age } => {
+                // Figure out max_age in as a millisecond threshold from current time
+                let threshold = if *max_age >= 0 {
+                    SystemTime::now().checked_sub(Duration::from_secs(max_age.unsigned_abs()))
+                } else {
+                    SystemTime::now().checked_add(Duration::from_secs(max_age.unsigned_abs()))
+                }
+                // Convert Option to Result with DataFusionError
+                .ok_or(DataFusionError::Configuration(
+                    "Age off filter max_age not representable as timestamp".into(),
+                ))?
+                // Figure out duration since unix epoch
+                .duration_since(UNIX_EPOCH)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?
+                // Finally, convert to raw integer
+                .as_secs() as i64;
+                Ok(AgeOff::new(threshold))
             }
-            // Convert Option to Result with DataFusionError
-            .ok_or(DataFusionError::Configuration(
-                "Age off filter max_age not representable as timestamp".into(),
-            ))?
-            // Figure out duration since unix epoch
-            .duration_since(UNIX_EPOCH)
-            .map_err(|e| DataFusionError::External(Box::new(e)))?
-            // Finally, convert to raw integer
-            .as_secs() as i64;
-            Ok(AgeOff::new(threshold))
-        } else {
-            internal_err!("AgeOff try_from called on non Filter::AgeOff variant")
         }
     }
 }
@@ -140,5 +140,103 @@ impl ScalarUDFImpl for AgeOff {
 
     fn evaluate_bounds(&self, _input: &[&Interval]) -> Result<Interval> {
         Interval::make_unbounded(&DataType::Boolean)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::datafusion::functions::Filter;
+
+    use super::AgeOff;
+
+    fn run_retain_check(threshold: i64, candidate: i64) -> bool {
+        let ageoff = AgeOff::new(threshold);
+        ageoff.retain(candidate)
+    }
+
+    #[test]
+    fn threshold_test() {
+        // Given
+        // Sequence of tuples: (threshold, candidate, retain)
+        // where retain should be the whether the candidate is retained or not
+        let tests = vec![
+            (10, 9, false),
+            (10, 10, true),
+            (10, 11, true),
+            (10, 0, false),
+            (10, -999999, false),
+            (0, 0, true),
+            (0, 1, true),
+            (0, 2, true),
+            (0, -1, false),
+            (1, 0, false),
+            (-1, 0, true),
+            (123566, -8775435, false),
+            (-54678, 74556344, true),
+            (i64::MAX, i64::MAX, true),
+            (i64::MAX, i64::MAX - 1, false),
+            (i64::MAX - 1, i64::MAX, true),
+            (i64::MIN, i64::MIN, true),
+            (i64::MIN, i64::MIN + 1, true),
+            (i64::MIN + 1, i64::MIN, false),
+        ];
+
+        // When - Then
+        for (threshold, candidate, retain) in &tests {
+            assert_eq!(
+                *retain,
+                run_retain_check(*threshold, *candidate),
+                "Age-off check threshold {threshold} candidate {candidate} should be {retain}"
+            );
+        }
+    }
+
+    #[test]
+    fn try_from_should_create_from_filter() -> Result<(), String> {
+        // Given
+        let filter = Filter::Ageoff {
+            column: "test".into(),
+            max_age: 1000,
+        };
+
+        // When
+        let _ = AgeOff::try_from(&filter).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[test]
+    fn try_from_should_produce_error_on_large_timestamp() {
+        // Given
+        let filter = Filter::Ageoff {
+            column: "test".into(),
+            max_age: i64::MAX,
+        };
+
+        // When
+        let result = AgeOff::try_from(&filter).map_err(|e| e.to_string());
+
+        assert_eq!(
+            result.err(),
+            Some("External error: second time provided was later than self".into()),
+            "AgeOff filter creation should fail!"
+        );
+    }
+
+    #[test]
+    fn try_from_should_produce_error_on_large_negative_timestamp() {
+        // Given
+        let filter = Filter::Ageoff {
+            column: "test".into(),
+            max_age: i64::MIN,
+        };
+
+        // When
+        let result = AgeOff::try_from(&filter).map_err(|e| e.to_string());
+
+        assert_eq!(
+            result.err(),
+            Some("Invalid or Unsupported Configuration: Age off filter max_age not representable as timestamp".into()),
+            "AgeOff filter creation should fail!"
+        );
     }
 }
