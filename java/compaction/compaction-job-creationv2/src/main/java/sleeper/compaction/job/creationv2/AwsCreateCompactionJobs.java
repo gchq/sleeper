@@ -15,8 +15,8 @@
  */
 package sleeper.compaction.job.creationv2;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
@@ -26,7 +26,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
-import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Instant;
 import java.util.Random;
@@ -41,8 +41,8 @@ public class AwsCreateCompactionJobs {
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            AmazonS3 s3Client,
-            AmazonSQS sqsClient) {
+            S3Client s3Client,
+            SqsClient sqsClient) {
         return new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
                 new CompactionBatchJobsWriterToS3(s3Client),
