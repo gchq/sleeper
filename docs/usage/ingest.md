@@ -697,7 +697,7 @@ kubectl port-forward my-job-name 4040:4040
 An alternative to creating ingest jobs directly is to use the ingest batcher. This lets you submit a list of
 files or directories, and Sleeper will group them into jobs for you.
 
-This may be deployed by adding `IngestBatcherStack` to the list of optional stacks in the instance property
+This is deployed when `IngestBatcherStack` is in the list of optional stacks in the instance property
 `sleeper.optional.stacks`.
 
 By default this will use bulk import on EMR Serverless. Note that it is vital that a table is pre-split before data is
