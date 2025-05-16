@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.clients.api.aws;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -23,6 +23,10 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.clients.api.BulkImportJobSender;
+import sleeper.clients.api.IngestBatcherSender;
+import sleeper.clients.api.IngestJobSender;
+import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -54,7 +58,8 @@ public class AwsSleeperClientBuilder {
     private Configuration hadoopConf;
 
     /**
-     * Creates default clients to interact with AWS. This is done by default in {@link SleeperClient#builder}.
+     * Creates default clients to interact with AWS. These clients will be shut down automatically when the Sleeper
+     * client is closed.
      *
      * @return this builder
      */
