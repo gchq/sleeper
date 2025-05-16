@@ -161,7 +161,7 @@ of `sleeper.ingest.max.local.records`). Using the bulk import method, there will
 the 1000 files are all imported in the same bulk import job).
 
 Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](../usage/tables.md#reinitialise-a-table)).
+imported ([see here](../usage/tables.md#pre-split-partitions)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
@@ -697,30 +697,30 @@ kubectl port-forward my-job-name 4040:4040
 An alternative to creating ingest jobs directly is to use the ingest batcher. This lets you submit a list of
 files or directories, and Sleeper will group them into jobs for you.
 
-This may be deployed by adding `IngestBatcherStack` to the list of optional stacks in the instance property
+This is deployed when `IngestBatcherStack` is in the list of optional stacks in the instance property
 `sleeper.optional.stacks`.
+
+By default this will use bulk import on EMR Serverless. Note that it is vital that a table is pre-split before data is
+bulk imported ([see here](../usage/tables.md#pre-split-partitions)).
 
 Files to be ingested must be accessible to the ingest system you will use. See above for ways to provide access to an
 ingest source bucket, e.g. by setting the property `sleeper.ingest.source.bucket`.
 
-Files can be submitted as messages to the batcher submission SQS queue. You can find the URL of this queue in the
-system-defined property `sleeper.ingest.batcher.submit.queue.url`.
+Files can be submitted as messages to the batcher submission SQS queue. A script is available to do this:
 
-An example message is shown below:
-
-```json
-{
-  "tableName": "target-table",
-  "files": [
-    "source-bucket-name/file.parquet"
-  ]
-}
+```bash
+./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> <parquet-paths-as-separate-args>
 ```
 
-Each message is a request to ingest a collection of files into a Sleeper table. If you provide a directory in S3
-instead of a file, the batcher will look in all subdirectories and track any files found in them.
+Paths to the files must be in an S3 bucket, specified with the bucket name and object key like
+this: `source-bucket-name/folder-prefix/file.parquet`. If you provide a directory in S3 instead of a file, the batcher
+will look in all subdirectories and track any files found in them.
 
-The batcher will then track these files and group them into jobs periodically, based on the configuration. The
+You can also submit requests to the queue manually as described [below](#manually-sending-files-to-the-batcher-queue).
+
+### Job creation
+
+The batcher will track all submitted files and group them into jobs periodically, based on its configuration. The
 configuration specifies minimum and maximum size of a batch, and a maximum age for files.
 
 The minimum batch size determines whether any jobs will be created. The maximum batch size splits the tracked files
@@ -748,3 +748,22 @@ types below:
 
 - ALL, which will show you files waiting to be batched, and files that have been batched.
 - PENDING, which will only show you files that are waiting to be batched.
+
+### Manually sending files to the batcher queue
+
+You can find the URL of the ingest batcher submission queue in the system-defined
+property `sleeper.ingest.batcher.submit.queue.url`.
+
+An example message is shown below:
+
+```json
+{
+  "tableName": "target-table",
+  "files": [
+    "source-bucket-name/folder-prefix/file.parquet"
+  ]
+}
+```
+
+Each message is a request to ingest a collection of files into a Sleeper table. If you provide a directory in S3
+instead of a file, the batcher will look in all subdirectories and track any files found in them.
