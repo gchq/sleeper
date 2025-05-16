@@ -22,7 +22,8 @@ will consist of the following steps:
 1. Use the `estimateSplitPoints.sh` script to estimate split points from your data.
 2. Use the `addTable.sh` script to create the table.
 3. Use the `reinitialiseTable.sh` script with the split points from the first step.
-4. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table.
+4. Use the `sendToIngestBatcher.sh` script to send your data to the ingest batcher to be added to the table. See
+   the [ingest documentation](ingest.md#ingest-batcher) for how to use this.
 
 All of these scripts will rely on a schema for your table, which should be created first.
 See [creating a schema](schema.md) for how to set up a schema for your table.
