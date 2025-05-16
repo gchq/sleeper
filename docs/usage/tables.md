@@ -32,8 +32,11 @@ We also have scripts to rename and delete a table.
 
 ### Pre-split partitions
 
-Before you create a Sleeper table, it is worthwhile to pre-split partitions for the table. One way to do this is by
-taking a sample of your data to generate a split points file:
+Before you create a Sleeper table, it is worthwhile to pre-split partitions for the table. If you do not do this, your
+state store will be initialised with a single root partition. Note that pre-splitting a table is important for any
+large-scale use of Sleeper, and is essential for running bulk import jobs.
+
+One way to do this is by taking a sample of your data to generate a split points file:
 
 ```bash
 ./scripts/utility/estimateSplitPoints.sh <schema-file> <num-partitions> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
