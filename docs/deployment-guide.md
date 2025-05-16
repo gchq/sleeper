@@ -229,11 +229,11 @@ automated deployment script:
 * `sleeper.subnets` - multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
-* `sleeper.ecr.repository.prefix` - this will be used to find the ECR repositories with your Docker images
 
-You will also need to ensure your Docker images are uploaded to ECR repositories with names starting with your
-repository prefix property value. Each repository must have the expected name appended to the prefix,
-e.g. `my-prefix/ingest`, `my-prefix/compaction`. These names are the same as the directory names in
+You will also need to ensure your Docker images are in ECR repositories with the correct names. If you followed the
+steps above this will already be correct. Each repository must have the expected name appended to a prefix,
+e.g. `my-prefix/ingest`, `my-prefix/compaction`. The prefix is the Sleeper instance ID by default, but it can be changed
+in the instance property `sleeper.ecr.repository.prefix`. The image names are the same as the directory names in
 the `scripts/docker` folder that is created when the system is built.
 
 Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
