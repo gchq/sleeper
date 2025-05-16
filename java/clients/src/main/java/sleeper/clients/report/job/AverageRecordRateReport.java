@@ -19,7 +19,7 @@ import sleeper.core.tracker.job.run.AverageRecordRate;
 
 import java.io.PrintStream;
 
-import static sleeper.clients.report.job.StandardJobRunReporter.formatDecimal;
+import static sleeper.core.util.NumberFormatUtils.formatDecimal2dp;
 
 public class AverageRecordRateReport {
 
@@ -31,8 +31,8 @@ public class AverageRecordRateReport {
             return;
         }
         String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal(average.getAverageRunRecordsReadPerSecond()),
-                formatDecimal(average.getAverageRunRecordsWrittenPerSecond()));
+                formatDecimal2dp(average.getAverageRunRecordsReadPerSecond()),
+                formatDecimal2dp(average.getAverageRunRecordsWrittenPerSecond()));
         out.printf(format, rateString);
     }
 }

@@ -14,6 +14,7 @@ on:
       - 'java/configuration/**'
       - 'java/configurationV2/**'
       - 'java/sketches/**'
+      - 'java/sketchesv2/**'
       - 'java/parquet/**'
       - 'java/common/common-job/**'
       - 'java/common/common-jobv2/**'

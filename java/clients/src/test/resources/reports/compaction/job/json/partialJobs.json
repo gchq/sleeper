@@ -1,0 +1,27 @@
+[
+  {
+    "jobId": "job-1",
+    "jobRuns": [
+      {
+        "taskId": "test-task-id",
+        "updates": [
+          {
+            "updateTime": "2025-05-14T10:47:00.123Z",
+            "finishTime": "2025-05-14T10:47:00Z",
+            "recordsProcessed": {
+              "recordsRead": 10,
+              "recordsWritten": 5
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
+          },
+          {
+            "commitTime": "2025-05-14T10:47:01Z",
+            "updateTime": "2025-05-14T10:47:01.123Z",
+            "type": "COMMITTED"
+          }
+        ]
+      }
+    ],
+    "expiryDate": "2001-09-09T01:46:39Z"
+  }
+]

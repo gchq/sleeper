@@ -1,0 +1,17 @@
+
+Compaction Job Status Report
+----------------------------
+Details for job job-1:
+State: FINISHED
+Creation time: null
+Partition ID: null
+
+Run on task test-task-id
+Finish time: 2025-05-14T10:47:00Z
+Finish update time: 2025-05-14T10:47:00.123Z
+Duration: 0s
+Records read: 10
+Records written: 5
+State store commit time: 2025-05-14T10:47:01Z
+Delay between finish and commit: 1s
+--------------------------

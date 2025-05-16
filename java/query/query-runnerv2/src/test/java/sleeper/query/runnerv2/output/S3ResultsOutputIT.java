@@ -83,8 +83,7 @@ class S3ResultsOutputIT {
     @BeforeEach
     public void setup() throws IOException {
         outputDir = createTempDirectory(tempDir, null).toString();
-        String queryResultsBucket = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
+        instanceProperties.set(QUERY_RESULTS_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, outputDir + "/");
         tableProperties.setSchema(schema);
     }

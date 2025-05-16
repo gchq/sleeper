@@ -10,6 +10,7 @@ chunks:
       - build-uptime-lambda
       - system-test/system-test-cdk
       - system-test/system-test-configuration
+      - system-test/system-test-configurationv2
       - system-test/system-test-data-generation
       - system-test/system-test-dsl
       - system-test/system-test-drivers
@@ -22,6 +23,7 @@ chunks:
       - configuration
       - configurationV2
       - sketches
+      - sketchesv2
       - parquet
       - common/common-job
       - common/common-jobv2
@@ -46,8 +48,10 @@ chunks:
       - compaction/compaction-job-execution
       - compaction/compaction-task-creation
       - compaction/compaction-job-creation
+      - compaction/compaction-job-creationv2
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
+      - compaction/compaction-trackerV2
       - compaction/compaction-core
       - partitions/splitter
       - partitions/splitter-lambda
