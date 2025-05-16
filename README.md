@@ -8,8 +8,8 @@ allow the ingest of very large volumes of data at low cost. Queries for rows whe
 around 1-2 seconds, but many thousands can be run in parallel. Each individual query has a negligible cost.
 
 Data is stored as records in tables. A table has a schema with key fields, optional sort fields, and some value fields.
-Each table has a metadata store that tracks Parquet files in S3. These files contain records in sorted order, by the key
-field and then by the sort field. Files exist within a partition, which each contain data for a range of keys.
+A metadata store tracks Parquet files in S3. These files contain records in sorted order, by the key field and then by
+the sort field. Files exist within a partition, which each contain data for a range of keys.
 
 Sleeper can be thought of as a cloud-native reimagining of systems such as Hbase and Accumulo. The architecture is
 very different to those systems. Sleeper has no long running servers. This means that if there is no work to be done,
