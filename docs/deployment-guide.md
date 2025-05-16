@@ -211,7 +211,7 @@ Before we can use CDK to deploy Sleeper, we need to create some configuration fi
 * A `splits.txt` file which allows you to pre-split partitions in a Sleeper table.
 
 The `.properties` files are Java properties files. You can find descriptions of all properties in the
-system [here](usage/property-master.md). More information about this configuration is available
+system [here](usage/property-master.md). Details of this configuration are available
 under [Sleeper instance configuration](deployment/instance-configuration.md).
 
 You can start by copying the basic configuration example [here](../example/basic/). There's also an example of a full
