@@ -96,11 +96,11 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     @Override
     public StateStore getStateStore(TableProperties tableProperties) {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
-        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,
                     DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, s3TransferManager)).build();
         }
-        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,
                     DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)).build();
         }
