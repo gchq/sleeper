@@ -232,7 +232,7 @@ automated deployment script:
 
 You will also need to ensure your Docker images are in ECR repositories with the correct names. If you followed the
 steps above this will already be correct. Each repository must have the expected name appended to a prefix,
-e.g. `my-prefix/ingest`, `my-prefix/compaction`. The prefix is the Sleeper instance ID by default, but it can be changed
+e.g. `my-prefix/ingest`, `my-prefix/compaction`. The prefix is the Sleeper instance ID by default, but it can be set
 in the instance property `sleeper.ecr.repository.prefix`. The image names are the same as the directory names in
 the `scripts/docker` folder that is created when the system is built.
 
