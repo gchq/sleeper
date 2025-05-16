@@ -16,7 +16,7 @@
 package sleeper.clients.api.testutils;
 
 import sleeper.clients.api.SleeperClient;
-import sleeper.clients.api.SleeperClientProvider;
+import sleeper.clients.api.SleeperClientFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
@@ -24,7 +24,7 @@ import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class InMemorySleeperClientProvider implements SleeperClientProvider {
+public class InMemorySleeperClientProvider implements SleeperClientFactory {
 
     private final Map<String, InMemorySleeperInstance> instanceById = new HashMap<>();
 

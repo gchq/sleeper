@@ -17,7 +17,7 @@ package sleeper.clients.api;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-public interface SleeperClientProvider {
+public interface SleeperClientFactory {
 
     SleeperClient createClientForInstance(String instanceId);
 
