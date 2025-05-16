@@ -83,10 +83,6 @@ these easier to use. Briefly, the following steps are required:
 - Ensure that queries are submitted to the query queue via a service that authenticates users, and passes their
   authorisations into the query time iterator configuration.
 
-## License
-
-Sleeper is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-2.0) license.
-
 ## Documentation
 
 See the documentation contained in the docs folder:
@@ -99,3 +95,7 @@ See the documentation contained in the docs folder:
 6. [Design risks and mitigations](docs/design-risks-and-mitigations.md)
 7. [Common problems and their solutions](docs/common-problems-and-their-solutions.md)
 8. [Roadmap](docs/development/roadmap.md)
+
+## License
+
+Sleeper is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-2.0) license.
