@@ -51,6 +51,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -61,9 +62,17 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LA
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
+import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+
 public class BulkExportStack extends NestedStack {
     public static final String BULK_EXPORT_QUEUE_URL = "BulkExportQueueUrl";
     public static final String BULK_EXPORT_QUEUE_NAME = "BulkExportQueueName";
@@ -101,7 +110,17 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        attachPolicy(bulkExportLambda, "BulkExportPlanner");
+        List<String> s3Buckets = List.of(String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "bulk-export-results"),
+                instanceProperties.get(CONFIG_BUCKET));
+
+        List<String> dynamoTables = List.of(
+                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+                instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME),
+                instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME));
+
+        attachPolicy(bulkExportLambda, "BulkExportPlanner", instanceProperties, s3Buckets, dynamoTables);
 
         List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
         Queue bulkExportQ = bulkExportQueues.get(0);
@@ -143,9 +162,9 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create a queue and a dead letter queue for the queue.
      *
-     * @param id                 the id of the queue
-     * @param instanceProperties the instance properties
-     * @return the queue and the dead letter queue
+     * @param  id                 the id of the queue
+     * @param  instanceProperties the instance properties
+     * @return                    the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -174,10 +193,10 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create the export results bucket.
      *
-     * @param instanceProperties the instance properties
-     * @param coreStacks         the core stacks
-     * @param lambdaCode         the lambda code
-     * @return the export results bucket
+     * @param  instanceProperties the instance properties
+     * @param  coreStacks         the core stacks
+     * @param  lambdaCode         the lambda code
+     * @return                    the export results bucket
      */
     private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
             LambdaCode lambdaCode) {
@@ -214,22 +233,49 @@ public class BulkExportStack extends NestedStack {
      * @param id     the id of the lambda function
      */
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void attachPolicy(IFunction lambda, String id) {
+    private void attachPolicy(IFunction lambda, String id, InstanceProperties instanceProperties,
+            List<String> s3Buckets, List<String> dynamoTables) {
+        List<String> s3Arns = buildS3Arns(s3Buckets);
+        List<String> dynamoArns = buildDynamoDbArns(dynamoTables, instanceProperties.get(REGION), instanceProperties.get(ACCOUNT));
+
+        List<String> resources = new ArrayList<>();
+        resources.add(String.format("arn:aws:sqs:%s:%s:*", instanceProperties.get(REGION), instanceProperties.get(ACCOUNT)));
+        resources.addAll(s3Arns);
+        resources.addAll(dynamoArns);
+
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)
-                .actions(
-                        Arrays.asList(SQSActions.SendMessage.getActionName(),
-                                SQSActions.ReceiveMessage.getActionName(),
-                                S3Actions.PutObject.getActionName(),
-                                S3Actions.GetObject.getActionName(),
-                                DynamoDBv2Actions.Query.getActionName()))
-                .resources(Collections.singletonList("*"))
+                .actions(Arrays.asList(
+                        SQSActions.SendMessage.getActionName(),
+                        SQSActions.ReceiveMessage.getActionName(),
+                        S3Actions.PutObject.getActionName(),
+                        S3Actions.GetObject.getActionName(),
+                        DynamoDBv2Actions.Query.getActionName()))
+                .resources(resources)
                 .build();
+
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
         String policyName = "BulkExportPolicy" + id;
         Policy policy = new Policy(this, policyName);
         policy.addStatements(policyStatement);
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
+    }
+
+    private List<String> buildS3Arns(List<String> bucketNames) {
+        List<String> arns = new ArrayList<>();
+        for (String bucket : bucketNames) {
+            arns.add(String.format("arn:aws:s3:::%s", bucket));
+            arns.add(String.format("arn:aws:s3:::%s/*", bucket));
+        }
+        return arns;
+    }
+
+    private List<String> buildDynamoDbArns(List<String> tableNames, String region, String accountId) {
+        List<String> arns = new ArrayList<>();
+        for (String table : tableNames) {
+            arns.add(String.format("arn:aws:dynamodb:%s:%s:table/%s", region, accountId, table));
+        }
+        return arns;
     }
 
     public enum QueueType {

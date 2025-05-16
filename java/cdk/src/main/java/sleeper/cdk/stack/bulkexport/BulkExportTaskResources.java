@@ -184,7 +184,7 @@ public class BulkExportTaskResources {
                 .effect(Effect.ALLOW)
                 .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances"))
-                .resources(List.of("*"))
+                .resources(List.of("*")) // ToDo
                 .build();
     }
 }
