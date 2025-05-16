@@ -700,6 +700,9 @@ files or directories, and Sleeper will group them into jobs for you.
 This may be deployed by adding `IngestBatcherStack` to the list of optional stacks in the instance property
 `sleeper.optional.stacks`.
 
+By default this will use bulk import on EMR Serverless. Note that it is vital that a table is pre-split before data is
+bulk imported ([see here](../usage/tables.md#pre-split-partitions)).
+
 Files to be ingested must be accessible to the ingest system you will use. See above for ways to provide access to an
 ingest source bucket, e.g. by setting the property `sleeper.ingest.source.bucket`.
 
