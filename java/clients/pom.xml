@@ -113,6 +113,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>compaction-trackerV2</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>ingest-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
