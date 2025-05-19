@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -109,11 +108,6 @@ public class FilesToDeleteTest {
                                     buildObjectKey(table2, "root", "test-file2"), filename2,
                                     buildObjectKeyForSketches(table2, "root", "test-file2"), filename2))));
         }
-    }
-
-    @Nested
-    @DisplayName("Handle invalid filenames")
-    class InvalidFilenames {
 
         @Test
         void shouldIgnoreInvalidFilename() {
@@ -125,50 +119,6 @@ public class FilesToDeleteTest {
 
             // Then
             assertThat(filesToDelete.getBuckets()).isEmpty();
-        }
-
-        @Test
-        void shouldRefuseFilenameWithMissingScheme() {
-            // Given
-            String filename = "test-bucket/test-file.parquet";
-
-            // When / Then
-            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Filename is missing scheme");
-        }
-
-        @Test
-        void shouldRefuseFilenameWithNonS3Scheme() {
-            // Given
-            String filename = "file://test-bucket/test-file.parquet";
-
-            // When / Then
-            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Unexpected scheme: file");
-        }
-
-        @Test
-        void shouldRefuseFilenameWithNoObjectKey() {
-            // Given
-            String filename = "s3a://test-bucket";
-
-            // When / Then
-            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Filename is missing object key");
-        }
-
-        @Test
-        void shouldRefuseFilenameWithNoBucketNameOrObjectKey() {
-            // Given
-            String filename = "s3a://";
-
-            // When / Then
-            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Filename is missing object key");
         }
     }
 

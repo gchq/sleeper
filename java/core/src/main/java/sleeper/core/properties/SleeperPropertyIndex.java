@@ -94,6 +94,12 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
      * @return               the list of properties in the group
      */
     public List<T> getAllInGroup(PropertyGroup propertyGroup) {
-        return byGroup.getOrDefault(propertyGroup, Collections.emptyList());
+        List<T> properties = byGroup.get(propertyGroup);
+        if (properties == null) {
+            properties = Collections.emptyList();
+        } else {
+            properties = Collections.unmodifiableList(properties);
+        }
+        return properties;
     }
 }

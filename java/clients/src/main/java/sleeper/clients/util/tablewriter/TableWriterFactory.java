@@ -82,10 +82,6 @@ public class TableWriterFactory {
             return this;
         }
 
-        public List<TableField> getFields() {
-            return this.fields;
-        }
-
         public TableWriterFactory build() {
             return new TableWriterFactory(this);
         }
