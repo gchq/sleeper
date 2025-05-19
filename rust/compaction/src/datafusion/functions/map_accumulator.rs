@@ -190,15 +190,188 @@ where
 
 #[cfg(test)]
 mod prim_tests {
+    use arrow::{
+        array::{Int64Builder, StructBuilder},
+        datatypes::{DataType, Field, Fields},
+    };
+    use datafusion::common::HashMap;
+
+    use crate::datafusion::functions::map_agg::MapAggregatorOp;
+
+    use super::update_primitive_map;
+
+    #[test]
+    fn update_prim_map_none() {
+        // Given
+        let mut map = HashMap::<i64, i64>::new();
+        map.insert(1, 2);
+        map.insert(3, 4);
+        let expected = map.clone();
+
+        // When
+        update_primitive_map::<Int64Builder, Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
+
+        // Then - expect no changes
+        assert_eq!(map, expected);
+    }
+
+    #[test]
+    fn update_prim_map_empty_values() {
+        // Given
+        let mut map = HashMap::<i64, i64>::new();
+        map.insert(1, 2);
+        map.insert(3, 4);
+        let expected = map.clone();
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+
+        // When
+        update_primitive_map::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then - expect no changes
+        assert_eq!(map, expected);
+    }
+
+    #[test]
+    fn update_prim_map_enters_first_values() {
+        // Given
+        let mut map = HashMap::<i64, i64>::new();
+        let mut expected = HashMap::new();
+        expected.insert(1, 2);
+        expected.insert(3, 4);
+        expected.insert(8, -10);
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+        for (k, v) in &[(1, 2), (3, 4), (8, -10)] {
+            entry_builder
+                .field_builder::<Int64Builder>(0)
+                .unwrap()
+                .append_value(*k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(*v);
+            entry_builder.append(true);
+        }
+
+        // When
+        update_primitive_map::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_eq!(map, expected);
+    }
+
+    #[test]
+    fn update_prim_map_enters_values_and_sums() {
+        // Given
+        let mut map = HashMap::<i64, i64>::new();
+        map.insert(1, 2);
+        map.insert(3, 4);
+        let mut expected = HashMap::new();
+        expected.insert(1, 6);
+        expected.insert(3, 8);
+        expected.insert(4, 2);
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+        for (k, v) in &[(1, 2), (1, 2), (3, 4), (4, 2)] {
+            entry_builder
+                .field_builder::<Int64Builder>(0)
+                .unwrap()
+                .append_value(*k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(*v);
+            entry_builder.append(true);
+        }
+
+        // When
+        update_primitive_map::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_eq!(map, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "Nullable entries aren't supported")]
+    fn update_prim_map_panics_on_null() {
+        // Given
+        let mut map = HashMap::<i64, i64>::new();
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, true),
+                Field::new("value", DataType::Int64, true),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+        for (k, v) in &[(1, 2), (1, 2), (3, 4), (4, 2)] {
+            entry_builder
+                .field_builder::<Int64Builder>(0)
+                .unwrap()
+                .append_value(*k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(*v);
+            entry_builder.append(true);
+        }
+        // Add null elements
+        entry_builder
+            .field_builder::<Int64Builder>(0)
+            .unwrap()
+            .append_null();
+        entry_builder
+            .field_builder::<Int64Builder>(1)
+            .unwrap()
+            .append_null();
+        entry_builder.append(true);
+
+        // When - panic
+        update_primitive_map::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &MapAggregatorOp::Sum,
+        );
+    }
+
+    #[test]
+    fn try_new_should_succeed() {
+        // Given
+    }
+
     /*
     Tests to write:
-    update_primitive_map
-    Passing None input makes no changes
-    Passing empty makes no changes
-    Passing some pairs enters them correctly
-    Passing some pairs to existing map makes correct changes according to op
-    Passing nulls produces an error
-
     try_new
     should_error on invalid datatype
     should_error on inner type wrong
