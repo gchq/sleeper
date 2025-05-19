@@ -49,6 +49,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 .s3V2(SleeperLocalStackClients.S3_CLIENT_V2)
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamoDB(SleeperLocalStackClients.DYNAMO_CLIENT)
+                .dynamoV2(SleeperLocalStackClients.DYNAMO_CLIENT_V2)
                 .sqs(SleeperLocalStackClients.SQS_CLIENT)
                 .sqsV2(SleeperLocalStackClients.SQS_CLIENT_V2)
                 .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
