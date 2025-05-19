@@ -16,9 +16,9 @@
 
 package sleeper.garbagecollector;
 
-import com.amazonaws.SdkClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -103,7 +103,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                             assertThat(failure.table()).isEqualTo(tableProperties.getStatus());
                             assertThat(failure.streamFailures())
                                     .singleElement()
-                                    .isInstanceOf(SdkClientException.class);
+                                    .isInstanceOf(NoSuchBucketException.class);
                             assertThat(failure.fileFailures())
                                     .flatExtracting(FileFailure::filenames)
                                     .containsExactly("s3a://not-a-bucket/old-file-1.parquet");
