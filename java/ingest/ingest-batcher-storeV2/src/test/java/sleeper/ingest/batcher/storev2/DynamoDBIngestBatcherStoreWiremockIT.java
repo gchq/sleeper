@@ -120,6 +120,8 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
 
     private IngestBatcherStore storeWithNoRetry(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
+                // Passing a 1 into this method means do 1 attempt overall, not 1 attempt and 1 retry.
+                // So in effect this method is not re-trying if the initial attempt fails.
                 wiremockAwsV2ClientWithRetryAttempts(1, runtimeInfo, DynamoDbClient.builder()),
                 instanceProperties, tablePropertiesProvider);
     }
