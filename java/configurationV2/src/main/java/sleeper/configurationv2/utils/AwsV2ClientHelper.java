@@ -59,6 +59,12 @@ public class AwsV2ClientHelper {
         }
     }
 
+    /**
+     * Builds a Common Run Time based S3AsyncClient with default configuration.
+     *
+     * @param  builder the builder
+     * @return         the client
+     */
     public static S3AsyncClient buildAwsV2Client(S3CrtAsyncClientBuilder builder) {
         String endpoint = System.getenv(AWS_ENDPOINT_ENV_VAR);
         if (endpoint != null) {
