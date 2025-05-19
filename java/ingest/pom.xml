@@ -36,6 +36,7 @@
         <module>ingest-batcher-store</module>
         <module>ingest-batcher-storev2</module>
         <module>ingest-batcher-submitter</module>
+        <module>ingest-batcher-submitterv2</module>
         <module>ingest-batcher-job-creator</module>
     </modules>
 </project>
