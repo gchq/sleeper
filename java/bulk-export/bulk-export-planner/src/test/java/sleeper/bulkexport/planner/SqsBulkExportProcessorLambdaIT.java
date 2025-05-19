@@ -81,7 +81,7 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    public void testProcessorLambdaProducesLeafPartitionMessages() {
+    public void shouldSplitBulkExportToLeafPartitionMessages() {
         // Given
         String tableName = tableProperties.get(TABLE_NAME);
         SQSEvent event = createEvent("{\"tableName\":\"" + tableName + "\"}");
@@ -102,7 +102,7 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    public void testMalformedJsonThrowsException() {
+    public void shouldThrowExceptionForMalformedJson() {
         // Given
         SQSEvent event = createEvent("not json");
 
@@ -113,7 +113,7 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    public void testValidationExceptionThrowsException() {
+    public void shouldThrowExceptionWhenTableIsNotSet() {
         // Given
         SQSEvent event = createEvent("{\"invalidField\":\"value\"}");
 
