@@ -72,9 +72,9 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        S3AsyncClient s3AsyncClient = S3AsyncClient.create();
+        S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
         S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
-        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager); //TODO
+        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
