@@ -25,7 +25,7 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Locale;
 
-import static sleeper.clients.deploy.localstack.Utils.tearDownBucket;
+import static sleeper.clients.deploy.localstack.TearDownUtils.tearDownBucket;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
