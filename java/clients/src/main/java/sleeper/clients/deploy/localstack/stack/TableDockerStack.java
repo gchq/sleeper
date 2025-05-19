@@ -19,13 +19,13 @@ package sleeper.clients.deploy.localstack.stack;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 
+import sleeper.clients.deploy.localstack.TearDownBucket;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Locale;
 
-import static sleeper.clients.deploy.localstack.TearDownUtils.tearDownBucket;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
@@ -83,7 +83,7 @@ public class TableDockerStack implements DockerStack {
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME));
-        tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));
+        TearDownBucket.emptyAndDelete(s3Client, instanceProperties.get(DATA_BUCKET));
     }
 
     public static final class Builder {

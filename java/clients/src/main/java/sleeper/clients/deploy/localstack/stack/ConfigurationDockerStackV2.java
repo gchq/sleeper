@@ -17,7 +17,7 @@ package sleeper.clients.deploy.localstack.stack;
 
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.localstack.TearDownUtils;
+import sleeper.clients.deploy.localstack.TearDownBucket;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -40,7 +40,7 @@ public class ConfigurationDockerStackV2 {
     }
 
     public void tearDown() {
-        TearDownUtils.tearDownBucket(s3Client, instanceProperties.get(CONFIG_BUCKET));
+        TearDownBucket.emptyAndDelete(s3Client, instanceProperties.get(CONFIG_BUCKET));
     }
 
 }

@@ -22,17 +22,17 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
-public class TearDownUtils {
-    private TearDownUtils() {
+public class TearDownBucket {
+    private TearDownBucket() {
     }
 
-    public static void tearDownBucket(AmazonS3 s3Client, String bucketName) {
+    public static void emptyAndDelete(AmazonS3 s3Client, String bucketName) {
         S3Objects.inBucket(s3Client, bucketName)
                 .forEach(object -> s3Client.deleteObject(bucketName, object.getKey()));
         s3Client.deleteBucket(bucketName);
     }
 
-    public static void tearDownBucket(S3Client s3Client, String bucketName) {
+    public static void emptyAndDelete(S3Client s3Client, String bucketName) {
         s3Client.listObjectsV2Paginator(request -> request.bucket(bucketName))
                 .forEach((ListObjectsV2Response response) -> {
                     s3Client.deleteObjects(request -> request
