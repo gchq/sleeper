@@ -20,13 +20,11 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -43,13 +41,11 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
@@ -72,9 +68,6 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
     private InstanceProperties instanceProperties;
     private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
     private TableProperties tableProperties;
-
-    @TempDir
-    public Path tempDir;
 
     @BeforeEach
     public void setUp() throws ObjectFactoryException, IOException {
@@ -151,35 +144,27 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
         TransactionLogStateStore transctionLogStateStore = DynamoDBTransactionLogStateStore.builderFrom(
                 instanceProperties, tableProperties, dynamoClient, s3Client, hadoopConf).build();
 
-        update(transctionLogStateStore).initialise(tableProperties.getSchema());
         setupPartitionsAndAddFiles(transctionLogStateStore);
 
         return transctionLogStateStore;
     }
 
     private void setupPartitionsAndAddFiles(StateStore stateStore) throws IOException {
-        //  - Get root partition
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
-        //  - Create two files of sorted data
-        String folderName = createTempDirectory(tempDir, null).toString();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        String file3 = folderName + "/file3.parquet";
-
-        FileReference fileReference1 = createFileReference(file1, rootPartition.getId());
-        FileReference fileReference2 = createFileReference(file2, rootPartition.getId());
-
-        //  - Split root partition
+        //  - Set partitions
         PartitionTree tree = new PartitionsBuilder(
                 KEY_VALUE_SCHEMA)
                 .rootFirst("root")
-                .splitToNewChildren("root", "0" + "---eee", "eee---zzz", "eee")
+                .splitToNewChildren("root", "0---eee", "eee---zzz", "eee")
                 .buildTree();
+        update(stateStore).initialise(tree.getAllPartitions());
 
-        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(
-                tree.getPartition("root"),
-                tree.getPartition("0" + "---eee"),
-                tree.getPartition("eee---zzz"));
+        //  - Create 3 fake files, 2 of which have references
+        String file1 = "file1.parquet";
+        String file2 = "file2.parquet";
+        String file3 = "file3.parquet";
+
+        FileReference fileReference1 = createFileReference(file1, "root");
+        FileReference fileReference2 = createFileReference(file2, "root");
 
         //  - Update Dynamo state store with details of files
         update(stateStore).addFilesWithReferences(List.of(
