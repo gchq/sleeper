@@ -72,7 +72,7 @@ chunks:
       - ingest/ingest-starter
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
-      - ingest/ingest-batcher-storeV2
+      - ingest/ingest-batcher-storev2
       - ingest/ingest-batcher-submitter
       - ingest/ingest-batcher-job-creator
       - bulk-import/bulk-import-core
