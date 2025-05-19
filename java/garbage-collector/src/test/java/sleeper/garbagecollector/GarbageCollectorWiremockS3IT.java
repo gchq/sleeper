@@ -15,20 +15,19 @@
  */
 package sleeper.garbagecollector;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.localstack.test.WiremockAwsV1ClientHelper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,22 +48,27 @@ import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELA
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
 
-    AmazonS3 s3Client;
+    S3Client s3Client;
     TableProperties table = createTableWithId("test-table");
     StateStore stateStore = stateStore(table);
     List<Duration> threadSleeps = new ArrayList<>();
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        s3Client = WiremockAwsV1ClientHelper.buildAwsV1Client(runtimeInfo,
-                AmazonS3ClientBuilder.standard()
-                        .withPathStyleAccessEnabled(true)
-                        .withClientConfiguration(new ClientConfiguration()
-                                .withMaxErrorRetry(0)));
+        s3Client = wiremockAwsV2Client(runtimeInfo,
+                S3Client.builder()
+                        .serviceConfiguration(S3Configuration.builder()
+                                .pathStyleAccessEnabled(true)
+                                .build())
+                        .overrideConfiguration(ClientOverrideConfiguration.builder()
+                                .retryStrategy(err -> err.maxAttempts(0))
+                                .build()));
+
         instanceProperties.set(DATA_BUCKET, "test-bucket");
     }
 

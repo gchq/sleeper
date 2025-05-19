@@ -15,14 +15,15 @@
  */
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
-import com.amazonaws.services.s3.model.DeleteObjectsResult;
-import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
+import software.amazon.awssdk.services.s3.model.DeletedObject;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
@@ -35,15 +36,15 @@ import java.util.List;
 public class S3DeleteFiles implements DeleteFiles {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3DeleteFiles.class);
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final int s3BatchSize;
     private final ThreadSleep sleep;
 
-    public S3DeleteFiles(AmazonS3 s3Client) {
+    public S3DeleteFiles(S3Client s3Client) {
         this(s3Client, 1000, Thread::sleep);
     }
 
-    public S3DeleteFiles(AmazonS3 s3Client, int s3BatchSize, ThreadSleep sleep) {
+    public S3DeleteFiles(S3Client s3Client, int s3BatchSize, ThreadSleep sleep) {
         this.s3Client = s3Client;
         this.s3BatchSize = s3BatchSize;
         this.sleep = sleep;
@@ -65,9 +66,9 @@ public class S3DeleteFiles implements DeleteFiles {
             retry = false;
             try {
                 LOGGER.debug("Sending request to delete {} objects", objectKeys.size());
-                DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
-                for (DeletedObject object : result.getDeletedObjects()) {
-                    deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
+                DeleteObjectsResponse response = s3Client.deleteObjects(deleteRequest);
+                for (DeletedObject object : response.deleted()) {
+                    deleted.deleted(filesInBucket.getFilenameForObjectKey(object.key()));
                 }
             } catch (Exception e) {
                 if (isSlowDownException(e)) {
@@ -83,13 +84,20 @@ public class S3DeleteFiles implements DeleteFiles {
     }
 
     private static boolean isSlowDownException(Exception e) {
-        return e instanceof AmazonS3Exception s3e
-                && "SlowDown".equals(s3e.getErrorCode());
+        return e instanceof AwsServiceException s3e
+                && "SlowDown".equals(s3e.awsErrorDetails().errorCode());
     }
 
     private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> objectKeys) {
-        return new DeleteObjectsRequest(filesInBucket.bucketName())
-                .withKeys(objectKeys.stream().map(objectKey -> new KeyVersion(objectKey)).toList());
+        return DeleteObjectsRequest.builder()
+                .bucket(filesInBucket.bucketName())
+                .delete(Delete.builder()
+                        .objects((objectKeys.stream().map(objectKey -> ObjectIdentifier.builder()
+                                .key(objectKey)
+                                .build())
+                                .toList()))
+                        .build())
+                .build();
     }
 
 }
