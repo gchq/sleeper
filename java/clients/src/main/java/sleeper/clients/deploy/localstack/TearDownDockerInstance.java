@@ -20,10 +20,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.clients.deploy.localstack.stack.CompactionDockerStackV2;
-import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStackV2;
-import sleeper.clients.deploy.localstack.stack.IngestDockerStackV2;
-import sleeper.clients.deploy.localstack.stack.TableDockerStackV2;
+import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
+import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
+import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
+import sleeper.clients.deploy.localstack.stack.TableDockerStack;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -51,9 +51,9 @@ public class TearDownDockerInstance {
     public static void tearDown(String instanceId, S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
-        ConfigurationDockerStackV2.from(instanceProperties, s3Client).tearDown();
-        TableDockerStackV2.from(instanceProperties, s3Client, dynamoClient).tearDown();
-        IngestDockerStackV2.from(instanceProperties, dynamoClient, sqsClient).tearDown();
-        CompactionDockerStackV2.from(instanceProperties, dynamoClient, sqsClient).tearDown();
+        ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
+        TableDockerStack.from(instanceProperties, s3Client, dynamoClient).tearDown();
+        IngestDockerStack.from(instanceProperties, dynamoClient, sqsClient).tearDown();
+        CompactionDockerStack.from(instanceProperties, dynamoClient, sqsClient).tearDown();
     }
 }

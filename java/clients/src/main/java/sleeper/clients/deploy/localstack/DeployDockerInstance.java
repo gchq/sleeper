@@ -23,10 +23,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.clients.deploy.localstack.stack.CompactionDockerStackV2;
-import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStackV2;
-import sleeper.clients.deploy.localstack.stack.IngestDockerStackV2;
-import sleeper.clients.deploy.localstack.stack.TableDockerStackV2;
+import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
+import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
+import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
+import sleeper.clients.deploy.localstack.stack.TableDockerStack;
 import sleeper.clients.table.AddTable;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -110,10 +110,10 @@ public class DeployDockerInstance {
     public void deploy(InstanceProperties instanceProperties, List<TableProperties> tables) {
         setForcedInstanceProperties(instanceProperties);
 
-        ConfigurationDockerStackV2.from(instanceProperties, s3Client).deploy();
-        TableDockerStackV2.from(instanceProperties, s3Client, dynamoClient).deploy();
-        IngestDockerStackV2.from(instanceProperties, dynamoClient, sqsClient).deploy();
-        CompactionDockerStackV2.from(instanceProperties, dynamoClient, sqsClient).deploy();
+        ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
+        TableDockerStack.from(instanceProperties, s3Client, dynamoClient).deploy();
+        IngestDockerStack.from(instanceProperties, dynamoClient, sqsClient).deploy();
+        CompactionDockerStack.from(instanceProperties, dynamoClient, sqsClient).deploy();
 
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 

@@ -16,20 +16,12 @@
 
 package sleeper.clients.deploy.localstack;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 public class TearDownBucket {
     private TearDownBucket() {
-    }
-
-    public static void emptyAndDelete(AmazonS3 s3Client, String bucketName) {
-        S3Objects.inBucket(s3Client, bucketName)
-                .forEach(object -> s3Client.deleteObject(bucketName, object.getKey()));
-        s3Client.deleteBucket(bucketName);
     }
 
     public static void emptyAndDelete(S3Client s3Client, String bucketName) {
