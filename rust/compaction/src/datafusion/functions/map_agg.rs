@@ -644,7 +644,7 @@ mod tests {
         builder.append(true)?;
 
         // Then - should accumulate without panic
-        let _ = acc.update_batch(&[Arc::new(builder.finish())])?;
+        acc.update_batch(&[Arc::new(builder.finish())])?;
 
         Ok(())
     }
@@ -678,7 +678,7 @@ mod tests {
         builder.append(true)?;
 
         // Then - should accumulate without panic
-        let _ = acc.update_batch(&[Arc::new(builder.finish())])?;
+        acc.update_batch(&[Arc::new(builder.finish())])?;
 
         Ok(())
     }
@@ -707,12 +707,12 @@ mod tests {
         let mut builder = MapBuilder::new(Some(names), key_builder, value_builder);
 
         // Feed values to it
-        builder.keys().append_value(&vec![1, 2, 3]);
+        builder.keys().append_value(vec![1, 2, 3]);
         builder.values().append_value(2);
         builder.append(true)?;
 
         // Then - should accumulate without panic
-        let _ = acc.update_batch(&[Arc::new(builder.finish())])?;
+        acc.update_batch(&[Arc::new(builder.finish())])?;
 
         Ok(())
     }
@@ -834,7 +834,7 @@ mod tests {
         builder.append(true)?;
 
         // Then - should accumulate without panic
-        let _ = acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
+        acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
 
         Ok(())
     }
@@ -868,7 +868,7 @@ mod tests {
         builder.append(true)?;
 
         // Then - should accumulate without panic
-        let _ = acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
+        acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
 
         Ok(())
     }
@@ -897,12 +897,12 @@ mod tests {
         let mut builder = MapBuilder::new(Some(names), key_builder, value_builder);
 
         // Feed values to it
-        builder.keys().append_value(&vec![1, 2, 3]);
+        builder.keys().append_value(vec![1, 2, 3]);
         builder.values().append_value(2);
         builder.append(true)?;
 
         // Then - should accumulate without panic
-        let _ = acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
+        acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
 
         Ok(())
     }

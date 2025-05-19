@@ -22,7 +22,7 @@ use arrow::{
     datatypes::DataType,
 };
 use datafusion::{
-    common::{exec_err, plan_err, HashMap},
+    common::{HashMap, exec_err, plan_err},
     error::Result,
     logical_expr::Accumulator,
     scalar::ScalarValue,
@@ -186,6 +186,40 @@ where
     fn merge_batch(&mut self, states: &[ArrayRef]) -> Result<()> {
         self.update_batch(states)
     }
+}
+
+#[cfg(test)]
+mod prim_tests {
+    /*
+    Tests to write:
+    update_primitive_map
+    Passing None input makes no changes
+    Passing empty makes no changes
+    Passing some pairs enters them correctly
+    Passing some pairs to existing map makes correct changes according to op
+    Passing nulls produces an error
+
+    try_new
+    should_error on invalid datatype
+    should_error on inner type wrong
+    should_succeed
+
+    make_map_builder
+    check trigger unreachable via direct construction
+    check field names are equal to input
+    check datatypes of builders
+
+    update_batch
+    check error is triggered
+    check update with zero entries
+    check values update with empty single entry
+    check values updates correctly with single entry
+    check values updates correctly with 2 x single entry
+    check values updates correctly with multiple entries entry
+
+    evaluate
+    enter values, check result map has correct results
+     */
 }
 
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
