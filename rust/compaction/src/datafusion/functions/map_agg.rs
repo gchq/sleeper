@@ -241,17 +241,17 @@ impl AggregateUDFImpl for MapAggregator {
         if key_type.is_integer() {
             downcast_integer! {
                 key_type => (key_type_helper, value_type, PrimGroupMapAccumulator, map_type, op_type),
-                _ => unreachable!()
+                _ => exec_err!("MapAggregator value type must be an integer type not {value_type}")
             }
         } else {
             match key_type {
                 DataType::Utf8 => downcast_integer! {
                     value_type => (value_only_helper, StringGroupMapAccumulator, map_type, op_type),
-                    _ => unreachable!()
+                    _ => exec_err!("MapAggregator value type must be an integer type not {value_type}")
                 },
                 DataType::Binary => downcast_integer! {
                     value_type => (value_only_helper, ByteGroupMapAccumulator, map_type, op_type),
-                    _ => unreachable!()
+                    _ => exec_err!("MapAggregator value type must be an integer type not {value_type}")
                 },
                 _ => exec_err!("MapAggregator can't process this data type {map_type:?}"),
             }
@@ -544,7 +544,7 @@ mod tests {
     }
 
     #[test]
-    fn should_error_on_binary_value_type_prim_key() -> Result<(), DataFusionError> {
+    fn should_error_on_accumulator_binary_value_type_prim_key() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
@@ -568,7 +568,7 @@ mod tests {
     }
 
     #[test]
-    fn should_error_on_binary_value_type_string_key() -> Result<(), DataFusionError> {
+    fn should_error_on_accumulator_binary_value_type_string_key() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
@@ -592,7 +592,7 @@ mod tests {
     }
 
     #[test]
-    fn should_error_on_binary_value_type_binary_key() -> Result<(), DataFusionError> {
+    fn should_error_on_accumulator_binary_value_type_binary_key() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
@@ -713,6 +713,196 @@ mod tests {
 
         // Then - should accumulate without panic
         let _ = acc.update_batch(&[Arc::new(builder.finish())])?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_get_prim_group_accumulator() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let _acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ))?;
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_group_accumulator_binary_value_type_prim_key() -> Result<(), DataFusionError>
+    {
+        // Given
+        let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let acc = agg
+            .create_groups_accumulator(make_accumulator_args(
+                &Schema::empty(),
+                LexOrdering::empty(),
+                &map_type,
+            ))
+            .map_err(|e| e.to_string());
+
+        // Then
+        assert_eq!(
+            acc.err(),
+            Some(
+                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
+                    .into()
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_group_accumulator_binary_value_type_string_key()
+    -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let acc = agg
+            .create_groups_accumulator(make_accumulator_args(
+                &Schema::empty(),
+                LexOrdering::empty(),
+                &map_type,
+            ))
+            .map_err(|e| e.to_string());
+
+        // Then
+        assert_eq!(
+            acc.err(),
+            Some(
+                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
+                    .into()
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_group_accumulator_binary_value_type_binary_key()
+    -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let acc = agg
+            .create_groups_accumulator(make_accumulator_args(
+                &Schema::empty(),
+                LexOrdering::empty(),
+                &map_type,
+            ))
+            .map_err(|e| e.to_string());
+
+        // Then
+        assert_eq!(
+            acc.err(),
+            Some(
+                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
+                    .into()
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_make_primitive_key_group_accumlator() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        // Make accumulator
+        let mut acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ))?;
+
+        // When
+        // Create builder
+        let names = MapFieldNames {
+            key: "key".into(),
+            value: "value".into(),
+            entry: "key_value".into(),
+        };
+        let key_builder = Int64Builder::new();
+        let value_builder = Int64Builder::new();
+        let mut builder = MapBuilder::new(Some(names), key_builder, value_builder);
+
+        // Feed values to it
+        builder.keys().append_value(1);
+        builder.values().append_value(2);
+        builder.append(true)?;
+
+        // Then - should accumulate without panic
+        let _ = acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_make_string_key_group_accumlator() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Utf8, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        // Make accumulator
+        let mut acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ))?;
+
+        // When
+        // Create builder
+        let names = MapFieldNames {
+            key: "key".into(),
+            value: "value".into(),
+            entry: "key_value".into(),
+        };
+        let key_builder = StringBuilder::new();
+        let value_builder = Int64Builder::new();
+        let mut builder = MapBuilder::new(Some(names), key_builder, value_builder);
+
+        // Feed values to it
+        builder.keys().append_value("test");
+        builder.values().append_value(2);
+        builder.append(true)?;
+
+        // Then - should accumulate without panic
+        let _ = acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_make_binary_key_group_accumlator() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Binary, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        // Make accumulator
+        let mut acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ))?;
+
+        // When
+        // Create builder
+        let names = MapFieldNames {
+            key: "key".into(),
+            value: "value".into(),
+            entry: "key_value".into(),
+        };
+        let key_builder = BinaryBuilder::new();
+        let value_builder = Int64Builder::new();
+        let mut builder = MapBuilder::new(Some(names), key_builder, value_builder);
+
+        // Feed values to it
+        builder.keys().append_value(&vec![1, 2, 3]);
+        builder.values().append_value(2);
+        builder.append(true)?;
+
+        // Then - should accumulate without panic
+        let _ = acc.update_batch(&[Arc::new(builder.finish())], &[1], None, 2)?;
 
         Ok(())
     }
