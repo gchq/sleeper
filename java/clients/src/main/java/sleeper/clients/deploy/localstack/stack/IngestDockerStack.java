@@ -30,7 +30,7 @@ public class IngestDockerStack {
     private final DynamoDbClient dynamoClient;
     private final SqsClient sqsClient;
 
-    public IngestDockerStack(InstanceProperties instanceProperties, DynamoDbClient dynamoClient, SqsClient sqsClient) {
+    private IngestDockerStack(InstanceProperties instanceProperties, DynamoDbClient dynamoClient, SqsClient sqsClient) {
         this.instanceProperties = instanceProperties;
         this.dynamoClient = dynamoClient;
         this.sqsClient = sqsClient;
