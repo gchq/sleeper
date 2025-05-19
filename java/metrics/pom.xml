@@ -39,14 +39,14 @@
             <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-lambda-java-core</artifactId>
-            <version>${aws-lambda-java-core.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-lambda-java-events</artifactId>
-            <version>${aws-lambda-java-events.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudwatch</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.lambda</groupId>
@@ -54,9 +54,9 @@
             <version>${aws-lambda-powertools.version}</version>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sqs</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+            <version>${aws-lambda-java-events.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
