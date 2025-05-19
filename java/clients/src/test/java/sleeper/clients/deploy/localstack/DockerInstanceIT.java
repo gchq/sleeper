@@ -16,14 +16,13 @@
 
 package sleeper.clients.deploy.localstack;
 
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
-import com.amazonaws.services.s3.model.HeadBucketRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -90,13 +89,13 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3ClientV2, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, s3Client, dynamoClient, sqsClientV2);
+            TearDownDockerInstance.tearDown(instanceId, s3ClientV2, dynamoClientV2, sqsClientV2);
 
             // Then
-            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
-                    .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
-                    .isInstanceOf(AmazonServiceException.class);
+            assertThatThrownBy(() -> s3ClientV2.headBucket(request -> request.bucket(instanceProperties.get(CONFIG_BUCKET))))
+                    .isInstanceOf(NoSuchBucketException.class);
+            assertThatThrownBy(() -> s3ClientV2.headBucket(request -> request.bucket(instanceProperties.get(DATA_BUCKET))))
+                    .isInstanceOf(NoSuchBucketException.class);
             assertTablesDoNotExist(instanceProperties,
                     TABLE_NAME_INDEX_DYNAMO_TABLENAME,
                     TABLE_ONLINE_INDEX_DYNAMO_TABLENAME,
@@ -109,7 +108,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
 
         private void assertTablesExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) throws AmazonDynamoDBException {
             for (InstanceProperty tableNameProperty : tableNameProperties) {
-                assertThatCode(() -> dynamoClient.describeTable(instanceProperties.get(tableNameProperty)))
+                assertThatCode(() -> dynamoClientV2.describeTable(request -> request.tableName(instanceProperties.get(tableNameProperty))))
                         .describedAs("Table should exist: " + tableNameProperty)
                         .doesNotThrowAnyException();
             }
@@ -117,7 +116,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
 
         private void assertTablesDoNotExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) {
             for (InstanceProperty tableNameProperty : tableNameProperties) {
-                assertThatThrownBy(() -> dynamoClient.describeTable(instanceProperties.get(tableNameProperty)),
+                assertThatThrownBy(() -> dynamoClientV2.describeTable(request -> request.tableName(instanceProperties.get(tableNameProperty))),
                         "Table should not exist: " + tableNameProperty)
                         .isInstanceOf(ResourceNotFoundException.class);
             }

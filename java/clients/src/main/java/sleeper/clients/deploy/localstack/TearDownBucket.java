@@ -35,13 +35,15 @@ public class TearDownBucket {
     public static void emptyAndDelete(S3Client s3Client, String bucketName) {
         s3Client.listObjectsV2Paginator(request -> request.bucket(bucketName))
                 .forEach((ListObjectsV2Response response) -> {
-                    s3Client.deleteObjects(request -> request
-                            .bucket(bucketName)
-                            .delete(delete -> delete.objects(response.contents().stream()
-                                    .map(object -> ObjectIdentifier.builder()
-                                            .key(object.key())
-                                            .build())
-                                    .toList())));
+                    if (response.hasContents() && !response.contents().isEmpty()) {
+                        s3Client.deleteObjects(request -> request
+                                .bucket(bucketName)
+                                .delete(delete -> delete.objects(response.contents().stream()
+                                        .map(object -> ObjectIdentifier.builder()
+                                                .key(object.key())
+                                                .build())
+                                        .toList())));
+                    }
                 });
         s3Client.deleteBucket(request -> request.bucket(bucketName));
     }
