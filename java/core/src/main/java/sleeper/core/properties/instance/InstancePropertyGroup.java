@@ -21,7 +21,6 @@ import sleeper.core.properties.PropertyGroup;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertyGroup.group;
 
@@ -32,21 +31,25 @@ public class InstancePropertyGroup {
     private InstancePropertyGroup() {
     }
 
+    public static List<PropertyGroup> getAll() {
+        return Collections.unmodifiableList(ALL);
+    }
+
     private static final List<PropertyGroup> ALL = new ArrayList<>();
     public static final PropertyGroup COMMON = instanceGroup("Common")
-            .description("The following properties are commonly used throughout Sleeper.")
+            .description("The following instance properties are commonly used throughout Sleeper.")
             .build();
     public static final PropertyGroup TABLE_STATE = instanceGroup("Table State")
-            .description("The following properties relate to handling the state of Sleeper tables.")
+            .description("The following instance properties relate to handling the state of Sleeper tables.")
             .build();
     public static final PropertyGroup INGEST = instanceGroup("Ingest")
-            .description("The following properties relate to standard ingest.")
+            .description("The following instance properties relate to standard ingest.")
             .build();
     public static final PropertyGroup BULK_EXPORT = instanceGroup("Bulk Export")
-            .description("The following properties relate to bulk export.")
+            .description("The following instance properties relate to bulk export.")
             .build();
     public static final PropertyGroup BULK_IMPORT = instanceGroup("Bulk Import")
-            .description("The following properties relate to bulk import, " +
+            .description("The following instance properties relate to bulk import, " +
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.")
             .details("Note that on EMR, the total resource allocation must align with the instance types used for the " +
                     "cluster. For the maximum memory usage, combine the memory and memory overhead properties, and " +
@@ -65,40 +68,31 @@ public class InstancePropertyGroup {
                     "https://aws.github.io/aws-emr-best-practices/docs/bestpractices/Applications/Spark/best_practices/#bp-516----tune-driverexecutor-memory-cores-and-sparksqlshufflepartitions-to-fully-utilize-cluster-resources")
             .build();
     public static final PropertyGroup PARTITION_SPLITTING = instanceGroup("Partition Splitting")
-            .description("The following properties relate to the splitting of partitions.")
+            .description("The following instance properties relate to the splitting of partitions.")
             .build();
     public static final PropertyGroup GARBAGE_COLLECTOR = instanceGroup("Garbage Collector")
-            .description("The following properties relate to garbage collection.")
+            .description("The following instance properties relate to garbage collection.")
             .build();
     public static final PropertyGroup COMPACTION = instanceGroup("Compaction")
-            .description("The following properties relate to compactions.")
+            .description("The following instance properties relate to compactions.")
             .build();
     public static final PropertyGroup QUERY = instanceGroup("Query")
-            .description("The following properties relate to queries.")
+            .description("The following instance properties relate to queries.")
             .build();
     public static final PropertyGroup METRICS = instanceGroup("Metrics")
-            .description("The following properties relate to metrics.")
+            .description("The following instance properties relate to metrics.")
             .build();
     public static final PropertyGroup LOGGING = instanceGroup("Logging")
-            .description("The following properties relate to logging.")
+            .description("The following instance properties relate to logging.")
             .build();
     public static final PropertyGroup ATHENA = instanceGroup("Athena")
-            .description("The following properties relate to the integration with Athena.")
+            .description("The following instance properties relate to the integration with Athena.")
             .build();
-    public static final PropertyGroup TABLE_PROPERTY_DEFAULT = instanceGroup("Table Property Default")
-            .description("The following properties relate to default values used by table properties.")
+    public static final PropertyGroup TABLE_PROPERTY_DEFAULT = instanceGroup("Table Property Defaults")
+            .description("The following instance properties relate to default values used by table properties.")
             .build();
 
     private static PropertyGroup.Builder instanceGroup(String name) {
         return group(name).afterBuild(ALL::add);
-    }
-
-    public static List<PropertyGroup> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static List<String> getAllGroupNamesAlphabetically() {
-        return getAll().stream().map(group -> group.getName()).toList()
-                .stream().sorted().collect(Collectors.toList());
     }
 }
