@@ -1,18 +1,20 @@
 Tables
 ======
 
-A Sleeper instance contains one or more tables. Each table has four important properties: a name, a schema for storing
-data for that table, a state store for storing metadata about the table, and a flag to denote whether the table is
-online or not. See the [design documentation](../design.md#Tables) for more information about online tables.
+A Sleeper instance contains one or more tables. Each table must have a name and schema. A table also has a state store
+for storing metadata about the table, and it can be taken offline to disable certain background operations.
 
 All resources for the instance, such as the S3 bucket used for storing data in a table, ECS clusters and lambda
 functions are shared across all the tables.
 
-## The metadata store
+## The state store
 
 Each table has metadata associated to it. This metadata is stored in a state store and consists of information about
 files that are in the system, and the partitions. See the [design documentation](../design.md#State_store) for more
 information.
+
+The implementation of this can be chosen in the table property `sleeper.table.statestore.classname`, but usually this
+should be left as the default value.
 
 ## Add/edit a table
 
@@ -27,7 +29,7 @@ will consist of the following steps:
 All of these scripts will rely on a schema for your table, which should be created first.
 See [creating a schema](schema.md) for how to set up a schema for your table.
 
-We also have scripts to rename and delete a table.
+We also have scripts to rename and delete a table, and to take it offline / online.
 
 Here's an example of how you might use these together to create and add data to a table:
 
@@ -128,3 +130,24 @@ You can rename or delete a table using the following commands:
 
 You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
 all the data. This will permanently delete all data held in the table, as well as metadata.
+
+### Take a table online/offline
+
+You can take a table offline or put it online with the following commands:
+
+```bash
+./scripts/utility/takeTableOffline.sh <instance-id> <table-name>
+./scripts/utility/putTableOnline.sh <instance-id> <table-name>
+```
+
+These scripts will set the table property `sleeper.table.online`, and update an index of table status to match.
+
+You are still able to ingest files to offline tables, and perform queries against them. Here are some operations that
+will not run for offline tables:
+
+- Compaction job creation
+- Partition splitting
+- State store snapshot creation/deletion
+- State store transaction deletion
+- Garbage collection, unless the instance property `sleeper.gc.offline.enabled` is set to `true`
+- Table metrics computation, unless the instance property `sleeper.metrics.offline.enabled` is set to `true`
