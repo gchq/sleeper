@@ -29,7 +29,6 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sqs</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>

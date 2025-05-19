@@ -16,7 +16,6 @@
 package sleeper.compaction.job.creationv2;
 
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
@@ -42,13 +41,11 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -58,7 +55,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -155,12 +151,9 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
-                .queueName(UUID.randomUUID().toString()).build()).queueUrl());
-        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
-                .queueName(UUID.randomUUID().toString()).build()).queueUrl());
-        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
-                .queueName(UUID.randomUUID().toString()).build()).queueUrl());
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, createSqsQueueGetUrl());
 
         DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
@@ -175,7 +168,6 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     private TableProperties addTable(InstanceProperties instanceProperties, Schema schema, PartitionTree partitions) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
         S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2)
                 .createTable(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties))

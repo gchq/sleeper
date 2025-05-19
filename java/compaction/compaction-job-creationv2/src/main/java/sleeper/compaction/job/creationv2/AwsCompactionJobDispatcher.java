@@ -28,7 +28,6 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
-import software.amazon.awssdk.utils.IoUtils;
 
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
@@ -43,8 +42,6 @@ import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestorev2.StateStoreFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -92,15 +89,8 @@ public class AwsCompactionJobDispatcher {
 
     private static ReadBatch readBatch(S3Client s3, CompactionJobSerDe compactionJobSerDe) {
         return (bucketName, key) -> {
-            String objectAString = "";
-            try {
-                objectAString = IoUtils.toUtf8String(s3.getObject(GetObjectRequest.builder()
-                        .bucket(bucketName).key(key).build(), ResponseTransformer.toInputStream()));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-
-            return compactionJobSerDe.batchFromJson(objectAString);
+            return compactionJobSerDe.batchFromJson(s3.getObject(GetObjectRequest.builder()
+                    .bucket(bucketName).key(key).build(), ResponseTransformer.toBytes()).asUtf8String());
         };
     }
 
