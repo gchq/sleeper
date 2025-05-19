@@ -34,17 +34,15 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -65,17 +63,20 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
             .build();
 
-    private InstanceProperties instanceProperties;
-    private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
-    private TableProperties tableProperties;
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+    SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
 
     @BeforeEach
     public void setUp() throws ObjectFactoryException, IOException {
-        creatInstanceProperties();
-        tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+        instanceProperties.set(BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        setupTransactionLogStateStore(tableProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        setupPartitionsAndAddFiles(new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties));
         sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(sqsClient, s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
@@ -128,25 +129,6 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
         message.setBody(messageBody);
         event.setRecords(Collections.singletonList(message));
         return event;
-    }
-
-    private void creatInstanceProperties() {
-        instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(BULK_EXPORT_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL,
-                sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-    }
-
-    private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        TransactionLogStateStore transctionLogStateStore = DynamoDBTransactionLogStateStore.builderFrom(
-                instanceProperties, tableProperties, dynamoClient, s3Client, hadoopConf).build();
-
-        setupPartitionsAndAddFiles(transctionLogStateStore);
-
-        return transctionLogStateStore;
     }
 
     private void setupPartitionsAndAddFiles(StateStore stateStore) throws IOException {
