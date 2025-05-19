@@ -19,7 +19,9 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3BaseClientBuilder;
+import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
 import java.net.URI;
 
@@ -47,6 +49,21 @@ public class AwsV2ClientHelper {
                 ((S3BaseClientBuilder<?, ?>) builder).forcePathStyle(true);
             }
             return builder
+                    .endpointOverride(URI.create(endpoint))
+                    .region(Region.US_EAST_1)
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create("test-access-key", "test-secret-key")))
+                    .build();
+        } else {
+            return builder.build();
+        }
+    }
+
+    public static S3AsyncClient buildAwsV2Client(S3CrtAsyncClientBuilder builder) {
+        String endpoint = System.getenv(AWS_ENDPOINT_ENV_VAR);
+        if (endpoint != null) {
+            return builder
+                    .forcePathStyle(true)
                     .endpointOverride(URI.create(endpoint))
                     .region(Region.US_EAST_1)
                     .credentialsProvider(StaticCredentialsProvider.create(

@@ -19,6 +19,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
 import java.net.URI;
 import java.util.Map;
@@ -35,6 +37,14 @@ public class AssumeSleeperRoleV2 {
     }
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T buildClient(B builder) {
+        builder.credentialsProvider(provider).region(Region.of(region));
+        if (endpointUrl != null) {
+            builder.endpointOverride(URI.create(endpointUrl));
+        }
+        return builder.build();
+    }
+
+    public S3AsyncClient buildClient(S3CrtAsyncClientBuilder builder) {
         builder.credentialsProvider(provider).region(Region.of(region));
         if (endpointUrl != null) {
             builder.endpointOverride(URI.create(endpointUrl));
