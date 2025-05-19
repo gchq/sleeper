@@ -15,7 +15,6 @@
  */
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -24,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -66,7 +66,7 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
                                 .pathStyleAccessEnabled(true)
                                 .build())
                         .overrideConfiguration(ClientOverrideConfiguration.builder()
-                                .retryStrategy(err -> err.maxAttempts(0))
+                                .retryStrategy(err -> err.maxAttempts(1))
                                 .build()));
 
         instanceProperties.set(DATA_BUCKET, "test-bucket");
@@ -124,10 +124,11 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
                 .isInstanceOf(FailedGarbageCollectionException.class)
-                .hasCauseInstanceOf(AmazonS3Exception.class);
-        verify(1, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
+                .hasCauseInstanceOf(S3Exception.class);
+        verify(1, postRequestedFor(urlEqualTo("/test-bucket?delete"))
                 .withRequestBody(equalTo(
-                        "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Delete xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
+                                "<Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
                                 "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                 activeAndReadyForGCFilesReport(oldEnoughTime,
