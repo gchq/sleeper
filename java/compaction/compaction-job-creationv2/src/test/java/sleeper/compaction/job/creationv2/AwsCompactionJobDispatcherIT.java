@@ -15,10 +15,10 @@
  */
 package sleeper.compaction.job.creationv2;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -26,10 +26,10 @@ import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
-import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -40,13 +40,12 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -64,7 +63,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
-    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
     Schema schema = createSchemaWithKey("key");
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     TableProperties tableProperties = addTable(instanceProperties, schema, partitions);
@@ -152,24 +151,24 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, createSqsQueueGetUrl());
 
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
 
         return instanceProperties;
     }
 
     private TableProperties addTable(InstanceProperties instanceProperties, Schema schema, PartitionTree partitions) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2)
                 .createTable(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties))
                 .initialise(partitions.getAllPartitions());
@@ -177,7 +176,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private void saveTableProperties() {
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2)
                 .save(tableProperties);
     }
 
@@ -208,33 +207,36 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return AwsCompactionJobDispatcher.from(s3Client, dynamoClient, sqsClient, hadoopConf, instanceProperties, times.iterator()::next);
+        return AwsCompactionJobDispatcher.from(s3ClientV2, dynamoClientV2, sqsClientV2, s3TransferManager, instanceProperties, times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMaxNumberOfMessages(10));
-        return result.getMessages().stream()
-                .map(Message::getBody)
+        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .maxNumberOfMessages(10)
+                .build());
+        return response.messages().stream()
+                .map(Message::body)
                 .map(new CompactionJobSerDe()::fromJson).toList();
     }
 
     private List<CompactionJobDispatchRequest> recievePendingBatches() {
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
-                .withMaxNumberOfMessages(10));
-        return result.getMessages().stream()
-                .map(Message::getBody)
+        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                .maxNumberOfMessages(10)
+                .build());
+        return response.messages().stream()
+                .map(Message::body)
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
 
     private List<CompactionJobDispatchRequest> receiveDeadLetters() {
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
-                .withMaxNumberOfMessages(10));
-        return result.getMessages().stream()
-                .map(Message::getBody)
+        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
+                .maxNumberOfMessages(10)
+                .build());
+        return response.messages().stream()
+                .map(Message::body)
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
 
