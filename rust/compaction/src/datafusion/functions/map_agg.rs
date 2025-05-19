@@ -486,6 +486,51 @@ mod tests {
     }
 
     #[test]
+    fn should_be_nullable() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+
+        // Then
+        assert!(agg.is_nullable());
+        Ok(())
+    }
+
+    #[test]
+    fn should_support_group_accumulator() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+
+        // Then
+        assert!(agg.groups_accumulator_supported(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type
+        )));
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_multiple_arg_types() -> Result<(), DataFusionError> {
+        // Given
+        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
+        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+
+        // When
+        let result = agg
+            .return_type(&[DataType::Int64, DataType::Int64])
+            .map_err(|e| e.to_string());
+
+        //Then
+        assert_eq!(
+            result.err(),
+            Some("Invalid or Unsupported Configuration: MapAggregator expects a single column of Map type".into())
+        );
+        Ok(())
+    }
+
+    #[test]
     fn should_get_prim_accumulator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
@@ -566,51 +611,6 @@ mod tests {
                 "Execution error: MapAggregator value type must be an integer type not LargeBinary"
                     .into()
             )
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn should_be_nullable() -> Result<(), DataFusionError> {
-        // Given
-        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-
-        // Then
-        assert!(agg.is_nullable());
-        Ok(())
-    }
-
-    #[test]
-    fn should_support_group_accumulator() -> Result<(), DataFusionError> {
-        // Given
-        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-
-        // Then
-        assert!(agg.groups_accumulator_supported(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type
-        )));
-        Ok(())
-    }
-
-    #[test]
-    fn should_error_on_multiple_arg_types() -> Result<(), DataFusionError> {
-        // Given
-        let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-
-        // When
-        let result = agg
-            .return_type(&[DataType::Int64, DataType::Int64])
-            .map_err(|e| e.to_string());
-
-        //Then
-        assert_eq!(
-            result.err(),
-            Some("Invalid or Unsupported Configuration: MapAggregator expects a single column of Map type".into())
         );
         Ok(())
     }
