@@ -19,10 +19,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
@@ -41,11 +40,11 @@ import sleeper.clients.util.AwsV2ClientHelper;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
-import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,10 +94,10 @@ public class AdminClient {
         ConsoleInput in = new ConsoleInput(System.console());
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoClient = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         int errorCode;
-        try (EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
+        try (SqsClient sqsClient = AwsV2ClientHelper.buildAwsV2Client(SqsClient.builder());
+                EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
             UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
                     .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
@@ -110,7 +109,6 @@ public class AdminClient {
         } finally {
             s3Client.shutdown();
             dynamoClient.shutdown();
-            sqsClient.shutdown();
         }
         System.exit(errorCode);
     }
