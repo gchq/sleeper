@@ -19,8 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
@@ -29,6 +27,7 @@ import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
+import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -40,7 +39,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.task.common.QueueMessageCount;
 
 import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -112,7 +110,6 @@ public class StatusReport {
 
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClientV1 = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
@@ -125,12 +122,11 @@ public class StatusReport {
             StatusReport statusReport = new StatusReport(
                     instanceProperties, tableProperties, verbose,
                     stateStore, compactionJobTracker, compactionTaskTracker,
-                    sqsClient, QueueMessageCount.withSqsClient(sqsClientV1), tablePropertiesProvider);
+                    sqsClient, QueueMessageCount.withSqsClient(sqsClient), tablePropertiesProvider);
             statusReport.run();
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();
-            sqsClientV1.shutdown();
         }
     }
 }
