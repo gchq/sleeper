@@ -16,30 +16,28 @@
 
 package sleeper.clients.report;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.report.ingest.batcher.IngestBatcherReporter;
 import sleeper.clients.report.ingest.batcher.JsonIngestBatcherReporter;
 import sleeper.clients.report.ingest.batcher.StandardIngestBatcherReporter;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class IngestBatcherReport {
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
@@ -100,12 +98,11 @@ public class IngestBatcherReport {
             return;
         }
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
-                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient));
+            IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties,
+                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
             IngestBatcherReporter reporter;
             switch (reporterType) {
                 case JSON:
@@ -116,11 +113,8 @@ public class IngestBatcherReport {
                     reporter = new StandardIngestBatcherReporter();
             }
             new IngestBatcherReport(store, reporter, queryType,
-                    new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
+                    new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoClient)))
                     .run();
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 
