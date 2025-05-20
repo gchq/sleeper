@@ -23,7 +23,6 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.utils.IoUtils;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperProperties;
@@ -33,9 +32,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.model.LambdaDeployType;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
@@ -83,19 +80,16 @@ public class SystemTestStandaloneProperties
 
     public static SystemTestStandaloneProperties fromS3(S3Client s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        String propertiesString = "";
-        try {
-            propertiesString = IoUtils.toUtf8String(
-                    s3Client.getObject(
-                            GetObjectRequest.builder()
-                                    .bucket(bucket)
-                                    .key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)
-                                    .build(),
-                            ResponseTransformer.toInputStream()));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        properties.resetAndValidate(loadProperties(propertiesString));
+
+        properties.resetAndValidate(
+                loadProperties(
+                        s3Client.getObject(
+                                GetObjectRequest.builder()
+                                        .bucket(bucket)
+                                        .key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)
+                                        .build(),
+                                ResponseTransformer.toBytes()).asUtf8String()));
+
         return properties;
     }
 

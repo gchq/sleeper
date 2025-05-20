@@ -18,15 +18,12 @@ package sleeper.systemtest.configurationv2;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.utils.IoUtils;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Properties;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
@@ -48,18 +45,15 @@ public class SystemTestProperties extends InstanceProperties {
 
     public static SystemTestProperties loadFromBucket(S3Client s3Client, String bucket) {
         SystemTestProperties properties = new SystemTestProperties();
-        try {
-            properties.resetAndValidate(loadProperties(
-                    IoUtils.toUtf8String(
-                            s3Client.getObject(
-                                    GetObjectRequest.builder()
-                                            .bucket(bucket)
-                                            .key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)
-                                            .build(),
-                                    ResponseTransformer.toInputStream()))));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+
+        properties.resetAndValidate(
+                loadProperties(
+                        s3Client.getObject(
+                                GetObjectRequest.builder()
+                                        .bucket(bucket)
+                                        .key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)
+                                        .build(),
+                                ResponseTransformer.toBytes()).asUtf8String()));
 
         return properties;
     }
