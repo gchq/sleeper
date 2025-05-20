@@ -412,10 +412,29 @@ mod prim_tests {
         );
     }
 
+    #[test]
+    #[should_panic(expected = "Invalid datatype inside PrimMapAccumulator Int16")]
+    fn make_map_builder_check_unreachable() {
+        // Given
+        // Build instance directly via private constructor
+        let acc = PrimMapAccumulator::<Int64Builder, Int64Builder> {
+            inner_field_type: DataType::Int16,
+            values: HashMap::new(),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // Then - should panic
+        acc.make_map_builder(10);
+    }
+
+    #[test]
+    fn make_map_builder_field_names_equal() {
+        // Given
+    }
+
     /*
     Tests to write:
     make_map_builder
-    check trigger unreachable via direct construction
     check field names are equal to input
     check datatypes of builders
 
