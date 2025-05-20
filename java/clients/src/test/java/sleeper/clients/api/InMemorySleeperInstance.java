@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api.testutils;
+package sleeper.clients.api;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.clients.api.BulkImportJobSender;
-import sleeper.clients.api.SleeperClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;

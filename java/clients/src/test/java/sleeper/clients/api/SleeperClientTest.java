@@ -19,8 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.clients.api.testutils.InMemorySleeperClientFactory;
-import sleeper.clients.api.testutils.InMemorySleeperInstance;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
@@ -57,8 +55,7 @@ class SleeperClientTest {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = createSchemaWithKey("key", new StringType());
     InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties);
-    InMemorySleeperClientFactory clientProvider = new InMemorySleeperClientFactory(instance);
-    SleeperClient sleeperClient = clientProvider.createClientForInstance(instanceProperties);
+    SleeperClient sleeperClient = instance.sleeperClientBuilder().build();
 
     @Test
     void validateThatClientCannotBeCreatedWithNulls() {
