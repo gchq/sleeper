@@ -17,6 +17,7 @@ package sleeper.clients.api.aws;
 
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;

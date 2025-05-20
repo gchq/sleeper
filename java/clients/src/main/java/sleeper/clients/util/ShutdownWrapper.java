@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api.aws;
-
-import sleeper.clients.util.UncheckedAutoCloseable;
+package sleeper.clients.util;
 
 import java.util.Objects;
 import java.util.function.Consumer;
