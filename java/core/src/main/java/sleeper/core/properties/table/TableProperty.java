@@ -351,11 +351,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
 
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
-            .defaultValue("sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore")
+            .defaultValue("DynamoDBTransactionLogStateStore")
             .description("The name of the class used for the state store. " +
                     "The default is DynamoDBTransactionLogStateStore. Options are:\n" +
-                    "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore\n" +
-                    "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots")
+                    "DynamoDBTransactionLogStateStore\n" +
+                    "DynamoDBTransactionLogStateStoreNoSnapshots")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")

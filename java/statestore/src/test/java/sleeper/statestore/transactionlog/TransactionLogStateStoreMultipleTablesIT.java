@@ -131,7 +131,7 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
 
     private StateStore getTableStateStore() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
+        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName());
         return stateStoreFactory.getStateStore(tableProperties);
     }
 }
