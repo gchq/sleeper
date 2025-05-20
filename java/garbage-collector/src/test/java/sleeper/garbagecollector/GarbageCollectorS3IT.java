@@ -16,9 +16,9 @@
 
 package sleeper.garbagecollector;
 
-import com.amazonaws.SdkClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -40,7 +40,7 @@ import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -103,7 +103,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                             assertThat(failure.table()).isEqualTo(tableProperties.getStatus());
                             assertThat(failure.streamFailures())
                                     .singleElement()
-                                    .isInstanceOf(SdkClientException.class);
+                                    .isInstanceOf(NoSuchBucketException.class);
                             assertThat(failure.fileFailures())
                                     .flatExtracting(FileFailure::filenames)
                                     .containsExactly("s3a://not-a-bucket/old-file-1.parquet");
@@ -231,14 +231,14 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void collectGarbageAtTimeWithS3BatchSize(Instant time, int s3BatchSize) throws Exception {
-        createGarbageCollector(new S3DeleteFiles(s3Client, s3BatchSize, refuseWaits()))
+        createGarbageCollector(new S3DeleteFiles(s3ClientV2, s3BatchSize, refuseWaits()))
                 .runAtTime(time, List.of(tableProperties));
     }
 
     private GarbageCollector createGarbageCollector(DeleteFiles deleteFiles) {
         return new GarbageCollector(deleteFiles, instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClientV2, s3ClientV2, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
 
     private static Schema getSchema() {
