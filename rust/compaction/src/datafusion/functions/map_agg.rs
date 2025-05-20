@@ -294,6 +294,19 @@ pub mod map_test_common {
             false,
         )
     }
+
+    #[macro_export]
+    macro_rules! assert_error {
+        ($err_expr: expr, $err_type: path, $err_contents: expr) => {
+            let result = if let Err($err_type(err)) = $err_expr {
+                assert_eq!(err, $err_contents);
+                true
+            } else {
+                false
+            };
+            assert!(result);
+        };
+    }
 }
 
 #[cfg(test)]

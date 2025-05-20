@@ -197,8 +197,9 @@ mod prim_tests {
     };
     use datafusion::{common::HashMap, error::DataFusionError};
 
-    use crate::datafusion::functions::map_agg::{
-        MapAggregatorOp, map_test_common::make_map_datatype,
+    use crate::{
+        assert_error,
+        datafusion::functions::map_agg::{MapAggregatorOp, map_test_common::make_map_datatype},
     };
 
     use super::{PrimMapAccumulator, update_primitive_map};
@@ -389,13 +390,11 @@ mod prim_tests {
             PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
-        let result = if let Err(DataFusionError::Plan(e)) = acc {
-            assert_eq!(e, "Invalid datatype for PrimMapAccumulator Int16");
-            true
-        } else {
-            false
-        };
-        assert!(result);
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "Invalid datatype for PrimMapAccumulator Int16"
+        );
     }
 
     #[test]
@@ -406,16 +405,11 @@ mod prim_tests {
             PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
-        let result = if let Err(DataFusionError::Plan(e)) = acc {
-            assert_eq!(
-                e,
-                "PrimMapAccumulator inner field type should be a DataType::Struct"
-            );
-            true
-        } else {
-            false
-        };
-        assert!(result);
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "PrimMapAccumulator inner field type should be a DataType::Struct"
+        );
     }
 
     /*
