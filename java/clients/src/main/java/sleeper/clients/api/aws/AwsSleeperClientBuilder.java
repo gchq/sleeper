@@ -43,9 +43,9 @@ public class AwsSleeperClientBuilder {
 
     private String instanceId;
     private InstanceProperties instanceProperties;
-    private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.getDefault();
+    private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.getDefault();
+    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.createDefaultForEachClient();
 
     /**
      * Creates a Sleeper client.
@@ -112,7 +112,7 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        this.queryProvider = SleeperClientHadoopQueryProvider.withThreadPoolSize(queryThreadPoolSize);
+        this.queryProvider = SleeperClientHadoopQueryProvider.withThreadPoolSizeForEachClient(queryThreadPoolSize);
         return this;
     }
 

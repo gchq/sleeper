@@ -23,15 +23,37 @@ import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Provides record retrievers for running Sleeper queries with Hadoop.
+ */
 public interface SleeperClientHadoopQueryProvider {
 
+    /**
+     * Creates or retrieves a record retriever provider.
+     *
+     * @param  hadoopConf the Hadoop configuration
+     * @return            the record retriever
+     */
     ShutdownWrapper<LeafPartitionRecordRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf);
 
-    public static SleeperClientHadoopQueryProvider getDefault() {
-        return withThreadPoolSize(10);
+    /**
+     * Creates a provider that will create a thread pool of the default size. A new thread pool will be created for each
+     * Sleeper client and closed when the Sleeper client is closed.
+     *
+     * @return the provider
+     */
+    public static SleeperClientHadoopQueryProvider createDefaultForEachClient() {
+        return withThreadPoolSizeForEachClient(10);
     }
 
-    static SleeperClientHadoopQueryProvider withThreadPoolSize(int threadPoolSize) {
+    /**
+     * Creates a provider that will create a new thread pool for each Sleeper client, that will be closed when the
+     * Sleeper client is closed.
+     *
+     * @param  threadPoolSize the number of threads in the thread pool for each client
+     * @return                the provider
+     */
+    static SleeperClientHadoopQueryProvider withThreadPoolSizeForEachClient(int threadPoolSize) {
         return hadoopConf -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
             LeafPartitionRecordRetrieverProvider provider = LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf);

@@ -23,12 +23,29 @@ import java.util.function.Consumer;
 @FunctionalInterface
 public interface SleeperClientAwsClientsProvider {
 
+    /**
+     * Creates or retrieves the AWS clients.
+     *
+     * @return the AWS clients
+     */
     SleeperClientAwsClients getAwsClients();
 
-    static SleeperClientAwsClientsProvider getDefault() {
+    /**
+     * Creates a provider that will create AWS clients with the default configuration. These will be created separately
+     * for each Sleeper client and closed when the Sleeper client is closed.
+     *
+     * @return the provider
+     */
+    static SleeperClientAwsClientsProvider createDefaultForEachClient() {
         return () -> SleeperClientAwsClients.builder().defaultClients().build();
     }
 
+    /**
+     * Creates a provider that will apply the given configuration.
+     *
+     * @param  clients the configuration to apply
+     * @return         the provider
+     */
     static SleeperClientAwsClientsProvider withConfig(Consumer<SleeperClientAwsClients.Builder> config) {
         return () -> {
             SleeperClientAwsClients.Builder builder = SleeperClientAwsClients.builder();
@@ -37,6 +54,12 @@ public interface SleeperClientAwsClientsProvider {
         };
     }
 
+    /**
+     * Creates a provider that will reuse the given clients.
+     *
+     * @param  clients the AWS clients
+     * @return         the provider
+     */
     static SleeperClientAwsClientsProvider withClients(SleeperClientAwsClients clients) {
         return () -> clients;
     }

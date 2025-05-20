@@ -26,12 +26,28 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 @FunctionalInterface
 public interface SleeperClientHadoopProvider {
 
+    /**
+     * Creates or retrieves the Hadoop configuration.
+     *
+     * @return the Hadoop configuration
+     */
     Configuration getConfiguration(InstanceProperties instanceProperties);
 
+    /**
+     * Creates a provider that will apply the default client configuration for a given Sleeper instance.
+     *
+     * @return the provider
+     */
     static SleeperClientHadoopProvider getDefault() {
         return instanceProperties -> HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
     }
 
+    /**
+     * Creates a provider that will reuse the given configuration.
+     *
+     * @param  configuration the Hadoop configuration
+     * @return               the provider
+     */
     static SleeperClientHadoopProvider withConfig(Configuration configuration) {
         return instanceProperties -> configuration;
     }
