@@ -15,12 +15,18 @@
  */
 package sleeper.clients.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Handles shut down of multiple closeables.
  */
 public class UncheckedAutoCloseables implements UncheckedAutoCloseable {
+    public static final Logger LOGGER = LoggerFactory.getLogger(UncheckedAutoCloseables.class);
+
     private final List<UncheckedAutoCloseable> closeables;
 
     public UncheckedAutoCloseables(List<UncheckedAutoCloseable> closeables) {
@@ -29,8 +35,17 @@ public class UncheckedAutoCloseables implements UncheckedAutoCloseable {
 
     @Override
     public void close() {
+        List<RuntimeException> failures = new ArrayList<>();
         for (UncheckedAutoCloseable closeable : closeables) {
-            closeable.close();
+            try {
+                closeable.close();
+            } catch (RuntimeException e) {
+                failures.add(e);
+                LOGGER.error("Failed closing a resource", e);
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new FailedCloseException(failures);
         }
     }
 
