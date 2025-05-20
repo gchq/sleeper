@@ -22,6 +22,9 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
+import sleeper.clients.util.UncheckedAutoCloseable;
+import sleeper.clients.util.UncheckedAutoCloseables;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -32,9 +35,9 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  */
 public class SleeperClientAwsClients {
 
-    private final AwsClientShutdown<AmazonS3> s3ClientWrapper;
-    private final AwsClientShutdown<AmazonDynamoDB> dynamoClientWrapper;
-    private final AwsClientShutdown<AmazonSQS> sqsClientWrapper;
+    private final ShutdownWrapper<AmazonS3> s3ClientWrapper;
+    private final ShutdownWrapper<AmazonDynamoDB> dynamoClientWrapper;
+    private final ShutdownWrapper<AmazonSQS> sqsClientWrapper;
 
     private SleeperClientAwsClients(Builder builder) {
         s3ClientWrapper = Objects.requireNonNull(builder.s3ClientWrapper, "s3Client must not be null");
@@ -46,26 +49,26 @@ public class SleeperClientAwsClients {
         return new Builder();
     }
 
-    public AmazonS3 s3Client() {
-        return s3ClientWrapper.getClient();
+    public AmazonS3 s3() {
+        return s3ClientWrapper.get();
     }
 
-    public AmazonDynamoDB dynamoClient() {
-        return dynamoClientWrapper.getClient();
+    public AmazonDynamoDB dynamo() {
+        return dynamoClientWrapper.get();
     }
 
-    public AmazonSQS sqsClient() {
-        return sqsClientWrapper.getClient();
+    public AmazonSQS sqs() {
+        return sqsClientWrapper.get();
     }
 
-    public List<AwsClientShutdown<?>> shutdownWrappers() {
-        return List.of(s3ClientWrapper, dynamoClientWrapper, sqsClientWrapper);
+    public UncheckedAutoCloseable shutdownWrapper() {
+        return new UncheckedAutoCloseables(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
     }
 
     public static class Builder {
-        private AwsClientShutdown<AmazonS3> s3ClientWrapper;
-        private AwsClientShutdown<AmazonDynamoDB> dynamoClientWrapper;
-        private AwsClientShutdown<AmazonSQS> sqsClientWrapper;
+        private ShutdownWrapper<AmazonS3> s3ClientWrapper;
+        private ShutdownWrapper<AmazonDynamoDB> dynamoClientWrapper;
+        private ShutdownWrapper<AmazonSQS> sqsClientWrapper;
 
         /**
          * Creates default clients to interact with AWS. These clients will be shut down automatically when the Sleeper
@@ -74,9 +77,9 @@ public class SleeperClientAwsClients {
          * @return this builder
          */
         public Builder defaultClients() {
-            s3ClientWrapper = AwsClientShutdown.shutdown(buildAwsV1Client(AmazonS3ClientBuilder.standard()), AmazonS3::shutdown);
-            dynamoClientWrapper = AwsClientShutdown.shutdown(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()), AmazonDynamoDB::shutdown);
-            sqsClientWrapper = AwsClientShutdown.shutdown(buildAwsV1Client(AmazonSQSClientBuilder.standard()), AmazonSQS::shutdown);
+            s3ClientWrapper = ShutdownWrapper.shutdown(buildAwsV1Client(AmazonS3ClientBuilder.standard()), AmazonS3::shutdown);
+            dynamoClientWrapper = ShutdownWrapper.shutdown(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()), AmazonDynamoDB::shutdown);
+            sqsClientWrapper = ShutdownWrapper.shutdown(buildAwsV1Client(AmazonSQSClientBuilder.standard()), AmazonSQS::shutdown);
             return this;
         }
 
@@ -87,7 +90,7 @@ public class SleeperClientAwsClients {
          * @return          this builder
          */
         public Builder s3Client(AmazonS3 s3Client) {
-            this.s3ClientWrapper = AwsClientShutdown.noShutdown(s3Client);
+            this.s3ClientWrapper = ShutdownWrapper.noShutdown(s3Client);
             return this;
         }
 
@@ -98,7 +101,7 @@ public class SleeperClientAwsClients {
          * @return              this builder
          */
         public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
-            this.dynamoClientWrapper = AwsClientShutdown.noShutdown(dynamoClient);
+            this.dynamoClientWrapper = ShutdownWrapper.noShutdown(dynamoClient);
             return this;
         }
 
@@ -109,7 +112,7 @@ public class SleeperClientAwsClients {
          * @return           this builder
          */
         public Builder sqsClient(AmazonSQS sqsClient) {
-            this.sqsClientWrapper = AwsClientShutdown.noShutdown(sqsClient);
+            this.sqsClientWrapper = ShutdownWrapper.noShutdown(sqsClient);
             return this;
         }
 
