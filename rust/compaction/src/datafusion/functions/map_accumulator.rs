@@ -98,7 +98,6 @@ where
     /// # Errors
     /// If the incorrect type of data type is provided. Must me a map type with an
     /// inner Struct type.
-    #[allow(dead_code)]
     pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
@@ -190,15 +189,19 @@ where
 
 #[cfg(test)]
 mod prim_tests {
+    use std::sync::Arc;
+
     use arrow::{
         array::{Int64Builder, StructBuilder},
         datatypes::{DataType, Field, Fields},
     };
-    use datafusion::common::HashMap;
+    use datafusion::{common::HashMap, error::DataFusionError};
 
-    use crate::datafusion::functions::map_agg::MapAggregatorOp;
+    use crate::datafusion::functions::map_agg::{
+        MapAggregatorOp, map_test_common::make_map_datatype,
+    };
 
-    use super::update_primitive_map;
+    use super::{PrimMapAccumulator, update_primitive_map};
 
     #[test]
     fn update_prim_map_none() {
@@ -368,15 +371,55 @@ mod prim_tests {
     #[test]
     fn try_new_should_succeed() {
         // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+
+        // When
+        let acc =
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert!(acc.is_ok());
+    }
+
+    #[test]
+    fn try_new_should_error_on_non_map_type() {
+        // Given
+        let mt = DataType::Int16;
+        let acc =
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        let result = if let Err(DataFusionError::Plan(e)) = acc {
+            assert_eq!(e, "Invalid datatype for PrimMapAccumulator Int16");
+            true
+        } else {
+            false
+        };
+        assert!(result);
+    }
+
+    #[test]
+    fn try_new_should_error_on_wrong_inner_type() {
+        // Given
+        let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
+        let acc =
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        let result = if let Err(DataFusionError::Plan(e)) = acc {
+            assert_eq!(
+                e,
+                "PrimMapAccumulator inner field type should be a DataType::Struct"
+            );
+            true
+        } else {
+            false
+        };
+        assert!(result);
     }
 
     /*
     Tests to write:
-    try_new
-    should_error on invalid datatype
-    should_error on inner type wrong
-    should_succeed
-
     make_map_builder
     check trigger unreachable via direct construction
     check field names are equal to input

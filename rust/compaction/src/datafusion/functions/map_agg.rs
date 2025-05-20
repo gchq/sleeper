@@ -276,6 +276,27 @@ impl AggregateUDFImpl for MapAggregator {
 }
 
 #[cfg(test)]
+pub mod map_test_common {
+    use std::sync::Arc;
+
+    use arrow::datatypes::{DataType, Field, Fields};
+
+    pub fn make_map_datatype(key_type: DataType, value_type: DataType) -> DataType {
+        DataType::Map(
+            Arc::new(Field::new(
+                "map",
+                DataType::Struct(Fields::from(vec![
+                    Field::new("key", key_type, false),
+                    Field::new("value", value_type, false),
+                ])),
+                false,
+            )),
+            false,
+        )
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use std::sync::Arc;
 
@@ -291,6 +312,8 @@ mod tests {
         logical_expr::{AggregateUDFImpl, function::AccumulatorArgs},
         physical_expr::LexOrdering,
     };
+
+    use crate::datafusion::functions::map_agg::map_test_common::make_map_datatype;
 
     use super::{MapAggregator, MapAggregatorOp, PrimBuilderType, validate_map_struct_type};
 
@@ -452,20 +475,6 @@ mod tests {
                 "Error during planning: MapAggregator can only be used on Map column types".into()
             )
         );
-    }
-
-    fn make_map_datatype(key_type: DataType, value_type: DataType) -> DataType {
-        DataType::Map(
-            Arc::new(Field::new(
-                "map",
-                DataType::Struct(Fields::from(vec![
-                    Field::new("key", key_type, false),
-                    Field::new("value", value_type, false),
-                ])),
-                false,
-            )),
-            false,
-        )
     }
 
     fn make_accumulator_args<'a>(
