@@ -92,10 +92,11 @@ public class S3DeleteFiles implements DeleteFiles {
         return DeleteObjectsRequest.builder()
                 .bucket(filesInBucket.bucketName())
                 .delete(Delete.builder()
-                        .objects((objectKeys.stream().map(objectKey -> ObjectIdentifier.builder()
-                                .key(objectKey)
-                                .build())
-                                .toList()))
+                        .objects(objectKeys.stream()
+                                .map(objectKey -> ObjectIdentifier.builder()
+                                        .key(objectKey)
+                                        .build())
+                                .toList())
                         .build())
                 .build();
     }
