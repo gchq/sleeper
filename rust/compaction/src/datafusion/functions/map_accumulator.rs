@@ -192,7 +192,7 @@ mod prim_tests {
     use std::sync::Arc;
 
     use arrow::{
-        array::{Int64Builder, StructBuilder},
+        array::{Int64Builder, StructBuilder, UInt16Builder},
         datatypes::{DataType, Field, Fields},
     };
     use datafusion::{common::HashMap, error::DataFusionError};
@@ -430,14 +430,47 @@ mod prim_tests {
     #[test]
     fn make_map_builder_field_names_equal() {
         // Given
+        let acc = PrimMapAccumulator::<Int64Builder, Int64Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Int64, false),
+                Field::new("value1_name", DataType::Int64, false),
+            ])),
+            values: HashMap::new(),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(
+            &array.entries().column_names(),
+            &["key1_name", "value1_name"]
+        );
+    }
+
+    #[test]
+    fn make_map_builder_field_types_equal() {
+        // Given
+        let acc = PrimMapAccumulator::<Int64Builder, UInt16Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Int64, false),
+                Field::new("value1_name", DataType::UInt16, false),
+            ])),
+            values: HashMap::new(),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(*array.key_type(), DataType::Int64);
+        assert_eq!(*array.value_type(), DataType::UInt16);
     }
 
     /*
     Tests to write:
-    make_map_builder
-    check field names are equal to input
-    check datatypes of builders
-
     update_batch
     check error is triggered
     check update with zero entries
