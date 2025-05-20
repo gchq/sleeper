@@ -15,25 +15,23 @@
  */
 package sleeper.query.lambda;
 
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.services.apigatewaymanagementapi.AmazonApiGatewayManagementApi;
-import com.amazonaws.services.apigatewaymanagementapi.AmazonApiGatewayManagementApiClientBuilder;
-import com.amazonaws.services.apigatewaymanagementapi.model.PostToConnectionRequest;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2WebSocketEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2WebSocketResponse;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
+import software.amazon.awssdk.services.apigatewaymanagementapi.model.PostToConnectionRequest;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -41,9 +39,9 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runner.output.WebSocketResultsOutput;
-import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
+import sleeper.query.runnerv2.output.WebSocketOutput;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -54,18 +52,18 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryProcessorLambda.class);
 
     private final QuerySerDe serde;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final String queryQueueUrl;
 
     public WebSocketQueryProcessorLambda() {
         this(
-                AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                AmazonSQSClientBuilder.defaultClient(),
+                S3Client.create(),
+                DynamoDbClient.create(),
+                SqsClient.create(),
                 System.getenv(CdkDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, String configBucket) {
+    public WebSocketQueryProcessorLambda(S3Client s3Client, DynamoDbClient dynamoClient, SqsClient sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.queryQueueUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL);
@@ -74,21 +72,32 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
     }
 
     private void sendErrorToClient(String endpoint, String region, String connectionId, String errorMessage) {
-        AmazonApiGatewayManagementApi client = AmazonApiGatewayManagementApiClientBuilder.standard()
-                .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+
+        ApiGatewayManagementApiClient client = ApiGatewayManagementApiClient.builder()
+                .endpointOverride(URI.create(endpoint))
+                .region(Region.of(region))
                 .build();
+        /*
+         * AmazonApiGatewayManagementApi client = AmazonApiGatewayManagementApiClientBuilder.standard()
+         * .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+         * .build();
+         */
 
         String data = "{\"message\":\"error\",\"error\":\"" + errorMessage + "\"}";
-        PostToConnectionRequest request = new PostToConnectionRequest()
-                .withConnectionId(connectionId)
-                .withData(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)));
+        PostToConnectionRequest request = PostToConnectionRequest.builder()
+                .connectionId(connectionId)
+                .data(SdkBytes.fromByteBuffer(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)))).build();
 
         client.postToConnection(request);
     }
 
     public void submitQueryForProcessing(Query query) {
         String message = serde.toJson(query);
-        sqsClient.sendMessage(queryQueueUrl, message);
+
+        sqsClient.sendMessage(SendMessageRequest.builder()
+                .queueUrl(queryQueueUrl)
+                .messageBody(message)
+                .build());
     }
 
     @Override
@@ -113,17 +122,17 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
 
             if (query != null) {
                 Map<String, String> statusReportDestination = new HashMap<>();
-                statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
-                statusReportDestination.put(WebSocketQueryStatusReportDestination.ENDPOINT, endpoint);
-                statusReportDestination.put(WebSocketQueryStatusReportDestination.CONNECTION_ID, event.getRequestContext().getConnectionId());
+                statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+                statusReportDestination.put(WebSocketOutput.ENDPOINT, endpoint);
+                statusReportDestination.put(WebSocketOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
                 query = query.withStatusReportDestination(statusReportDestination);
 
                 // Default to sending results back to client via WebSocket connection
                 if (query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
-                        query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketResultsOutput.DESTINATION_NAME)) {
-                    query.getResultsPublisherConfig().put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
-                    query.getResultsPublisherConfig().put(WebSocketResultsOutput.ENDPOINT, endpoint);
-                    query.getResultsPublisherConfig().put(WebSocketResultsOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
+                        query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketOutput.DESTINATION_NAME)) {
+                    query.getResultsPublisherConfig().put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+                    query.getResultsPublisherConfig().put(WebSocketOutput.ENDPOINT, endpoint);
+                    query.getResultsPublisherConfig().put(WebSocketOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
                 }
 
                 LOGGER.info("Query to be processed: {}", query);

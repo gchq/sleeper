@@ -39,7 +39,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
-import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -64,7 +64,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
+import static sleeper.query.runnerv2.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 
@@ -79,7 +79,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
     void setUp() throws IOException, ObjectFactoryException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         createInstanceProperties(dataDir);
-        lambda = new WarmQueryExecutorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        lambda = new WarmQueryExecutorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
