@@ -16,18 +16,18 @@
 
 package sleeper.clients.report.partitions;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.report.PartitionsStatusReport;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.PrintStream;
 import java.util.function.Function;
@@ -55,11 +55,11 @@ public class PartitionsStatusReportArguments {
         return new PartitionsStatusReportArguments(args[0], args[1], PartitionsStatusReporter::new);
     }
 
-    public void runReport(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, PrintStream out) {
+    public void runReport(S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, PrintStream out) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager);
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
 
         new PartitionsStatusReport(stateStore, tableProperties, reporter.apply(out)).run();
