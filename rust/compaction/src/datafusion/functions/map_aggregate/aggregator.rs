@@ -259,9 +259,8 @@ impl AggregateUDFImpl for MapAggregator {
 
 #[cfg(test)]
 pub mod map_test_common {
-    use std::sync::Arc;
-
     use arrow::datatypes::{DataType, Field, Fields};
+    use std::sync::Arc;
 
     pub fn make_map_datatype(key_type: DataType, value_type: DataType) -> DataType {
         DataType::Map(

@@ -189,8 +189,13 @@ where
 
 #[cfg(test)]
 mod prim_tests {
-    use std::sync::Arc;
-
+    use super::{PrimMapAccumulator, update_primitive_map};
+    use crate::{
+        assert_error,
+        datafusion::functions::{
+            MapAggregatorOp, map_aggregate::aggregator::map_test_common::make_map_datatype,
+        },
+    };
     use arrow::{
         array::{AsArray, Int64Array, Int64Builder, StructBuilder, UInt16Builder},
         datatypes::{DataType, Field, Fields, Int64Type},
@@ -198,15 +203,7 @@ mod prim_tests {
     use datafusion::{
         common::HashMap, error::DataFusionError, logical_expr::Accumulator, scalar::ScalarValue,
     };
-
-    use crate::{
-        assert_error,
-        datafusion::functions::{
-            MapAggregatorOp, map_aggregate::aggregator::map_test_common::make_map_datatype,
-        },
-    };
-
-    use super::{PrimMapAccumulator, update_primitive_map};
+    use std::sync::Arc;
 
     #[test]
     fn update_prim_map_none() {

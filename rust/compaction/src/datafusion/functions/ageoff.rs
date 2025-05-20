@@ -149,8 +149,8 @@ impl ScalarUDFImpl for AgeOff {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
+    use super::AgeOff;
+    use crate::{assert_error, datafusion::functions::Filter};
     use arrow::array::{AsArray, Int64Builder};
     use datafusion::{
         common::exec_err,
@@ -158,10 +158,7 @@ mod tests {
         logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl},
         scalar::ScalarValue,
     };
-
-    use crate::{assert_error, datafusion::functions::Filter};
-
-    use super::AgeOff;
+    use std::sync::Arc;
 
     fn run_retain_check(threshold: i64, candidate: i64) -> bool {
         let ageoff = AgeOff::new(threshold);
