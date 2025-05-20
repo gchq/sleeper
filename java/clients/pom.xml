@@ -93,6 +93,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>query-runnerv2</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -269,6 +274,13 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>query-runner</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-runnerv2</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

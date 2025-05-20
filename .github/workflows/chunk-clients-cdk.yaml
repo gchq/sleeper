@@ -31,6 +31,7 @@ on:
       - 'java/common/common-task/**'
       - 'java/common/common-taskv2/**'
       - 'java/query/query-runner/**'
+      - 'java/query/query-runnerv2/**'
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/bulk-import/bulk-import-core/**'
