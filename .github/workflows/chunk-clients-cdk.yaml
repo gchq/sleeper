@@ -28,6 +28,7 @@ on:
       - 'java/statestorev2/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/ingest/ingest-batcher-storev2/**'
+      - 'java/common/common-task/**'
       - 'java/common/common-taskv2/**'
       - 'java/query/query-runner/**'
       - 'java/configurationV2/**'
