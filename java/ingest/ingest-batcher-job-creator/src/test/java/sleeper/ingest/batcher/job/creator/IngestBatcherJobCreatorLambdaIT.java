@@ -15,10 +15,10 @@
  */
 package sleeper.ingest.batcher.job.creator;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -36,7 +36,6 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -63,7 +62,7 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
         DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
         instanceProperties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString());
         instanceProperties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
         S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
     }
@@ -95,15 +94,16 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     }
 
     private List<Message> consumeQueueMessages(InstanceProperty queueProperty) {
-        return sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(queueProperty))
-                .withWaitTimeSeconds(1)
-                .withMaxNumberOfMessages(10))
-                .getMessages();
+        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(queueProperty))
+                .waitTimeSeconds(1)
+                .maxNumberOfMessages(10)
+                .build())
+                .messages();
     }
 
     private IngestJob readJobMessage(Message message) {
-        return new IngestJobSerDe().fromJson(message.getBody());
+        return new IngestJobSerDe().fromJson(message.body());
     }
 
     private IngestBatcherStore batcherStore() {
