@@ -20,6 +20,7 @@ on:
       - 'java/compaction/compaction-trackerV2/**'
       - 'java/compaction/compaction-core/**'
       - 'java/partitions/splitter/**'
+      - 'java/partitions/splitterv2/**'
       - 'java/partitions/splitter-lambda/**'
       - 'java/garbage-collector/**'
       - 'java/bulk-export/bulk-export-core/**'
