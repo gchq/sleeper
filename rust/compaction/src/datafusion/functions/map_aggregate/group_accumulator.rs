@@ -14,4 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-pub mod map_group_accumulator;
+pub mod byte_group_accumulator;
+pub mod prim_group_accumulator;
+pub mod string_group_accumulator;

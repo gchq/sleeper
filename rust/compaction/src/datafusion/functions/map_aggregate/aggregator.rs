@@ -39,8 +39,10 @@ use crate::datafusion::functions::{
             byte_accumulator::ByteMapAccumulator, prim_accumulator::PrimMapAccumulator,
             string_accumulator::StringMapAccumulator,
         },
-        group_accumulator::map_group_accumulator::{
-            ByteGroupMapAccumulator, PrimGroupMapAccumulator, StringGroupMapAccumulator,
+        group_accumulator::{
+            byte_group_accumulator::ByteGroupMapAccumulator,
+            prim_group_accumulator::PrimGroupMapAccumulator,
+            string_group_accumulator::StringGroupMapAccumulator,
         },
     },
 };
