@@ -77,7 +77,7 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
         return exec_err!("MapAggregator can only be used on Map column types");
     };
     let DataType::Struct(struct_fields) = field.data_type() else {
-        return exec_err!("MapAggregator Map field is not a Struct type!");
+        return exec_err!("MapAggregator Map field is not a Struct type");
     };
     if struct_fields.len() != 2 {
         return exec_err!("MapAggregator Map inner struct length is not 2");
@@ -294,19 +294,6 @@ pub mod map_test_common {
             false,
         )
     }
-
-    #[macro_export]
-    macro_rules! assert_error {
-        ($err_expr: expr, $err_type: path, $err_contents: expr) => {
-            let result = if let Err($err_type(err)) = $err_expr {
-                assert_eq!(err, $err_contents);
-                true
-            } else {
-                false
-            };
-            assert!(result);
-        };
-    }
 }
 
 #[cfg(test)]
@@ -326,7 +313,7 @@ mod tests {
         physical_expr::LexOrdering,
     };
 
-    use crate::datafusion::functions::map_agg::map_test_common::make_map_datatype;
+    use crate::{assert_error, datafusion::functions::map_agg::map_test_common::make_map_datatype};
 
     use super::{MapAggregator, MapAggregatorOp, PrimBuilderType, validate_map_struct_type};
 
@@ -359,12 +346,13 @@ mod tests {
             is_reversed: false,
             is_distinct: false,
         };
-        let result = validate_map_struct_type(&args).map_err(|e| e.to_string());
+        let result = validate_map_struct_type(&args);
 
         // Then
-        assert_eq!(
-            result.err(),
-            Some("Execution error: MapAggregator can only be used on Map column types".into())
+        assert_error!(
+            result,
+            DataFusionError::Execution,
+            "MapAggregator can only be used on Map column types"
         );
     }
 
@@ -384,12 +372,13 @@ mod tests {
             is_reversed: false,
             is_distinct: false,
         };
-        let result = validate_map_struct_type(&args).map_err(|e| e.to_string());
+        let result = validate_map_struct_type(&args);
 
         // Then
-        assert_eq!(
-            result.err(),
-            Some("Execution error: MapAggregator Map field is not a Struct type!".into())
+        assert_error!(
+            result,
+            DataFusionError::Execution,
+            "MapAggregator Map field is not a Struct type"
         );
     }
 
@@ -417,12 +406,13 @@ mod tests {
             is_reversed: false,
             is_distinct: false,
         };
-        let result = validate_map_struct_type(&args).map_err(|e| e.to_string());
+        let result = validate_map_struct_type(&args);
 
         // Then
-        assert_eq!(
-            result.err(),
-            Some("Execution error: MapAggregator Map inner struct length is not 2".into())
+        assert_error!(
+            result,
+            DataFusionError::Execution,
+            "MapAggregator Map inner struct length is not 2"
         );
     }
 
@@ -478,15 +468,13 @@ mod tests {
     #[test]
     fn map_aggregator_new_type_check() {
         // Given
-        let map = MapAggregator::try_new(&DataType::Boolean, MapAggregatorOp::Sum)
-            .map_err(|e| e.to_string());
+        let map = MapAggregator::try_new(&DataType::Boolean, MapAggregatorOp::Sum);
 
         // Then
-        assert_eq!(
-            map.err(),
-            Some(
-                "Error during planning: MapAggregator can only be used on Map column types".into()
-            )
+        assert_error!(
+            map,
+            DataFusionError::Plan,
+            "MapAggregator can only be used on Map column types"
         );
     }
 
@@ -540,15 +528,15 @@ mod tests {
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
 
         // When
-        let result = agg
-            .return_type(&[DataType::Int64, DataType::Int64])
-            .map_err(|e| e.to_string());
+        let result = agg.return_type(&[DataType::Int64, DataType::Int64]);
 
         //Then
-        assert_eq!(
-            result.err(),
-            Some("Invalid or Unsupported Configuration: MapAggregator expects a single column of Map type".into())
+        assert_error!(
+            result,
+            DataFusionError::Plan,
+            "MapAggregator expects a single column of Map type"
         );
+
         Ok(())
     }
 
@@ -570,21 +558,17 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-        let acc = agg
-            .accumulator(make_accumulator_args(
-                &Schema::empty(),
-                LexOrdering::empty(),
-                &map_type,
-            ))
-            .map_err(|e| e.to_string());
+        let acc = agg.accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ));
 
         // Then
-        assert_eq!(
-            acc.err(),
-            Some(
-                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
-                    .into()
-            )
+        assert_error!(
+            acc,
+            DataFusionError::Execution,
+            "MapAggregator value type must be an integer type not LargeBinary"
         );
         Ok(())
     }
@@ -594,21 +578,17 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-        let acc = agg
-            .accumulator(make_accumulator_args(
-                &Schema::empty(),
-                LexOrdering::empty(),
-                &map_type,
-            ))
-            .map_err(|e| e.to_string());
+        let acc = agg.accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ));
 
         // Then
-        assert_eq!(
-            acc.err(),
-            Some(
-                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
-                    .into()
-            )
+        assert_error!(
+            acc,
+            DataFusionError::Execution,
+            "MapAggregator value type must be an integer type not LargeBinary"
         );
         Ok(())
     }
@@ -618,22 +598,19 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-        let acc = agg
-            .accumulator(make_accumulator_args(
-                &Schema::empty(),
-                LexOrdering::empty(),
-                &map_type,
-            ))
-            .map_err(|e| e.to_string());
+        let acc = agg.accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ));
 
         // Then
-        assert_eq!(
-            acc.err(),
-            Some(
-                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
-                    .into()
-            )
+        assert_error!(
+            acc,
+            DataFusionError::Execution,
+            "MapAggregator value type must be an integer type not LargeBinary"
         );
+
         Ok(())
     }
 
@@ -758,22 +735,19 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-        let acc = agg
-            .create_groups_accumulator(make_accumulator_args(
-                &Schema::empty(),
-                LexOrdering::empty(),
-                &map_type,
-            ))
-            .map_err(|e| e.to_string());
+        let acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ));
 
         // Then
-        assert_eq!(
-            acc.err(),
-            Some(
-                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
-                    .into()
-            )
+        assert_error!(
+            acc,
+            DataFusionError::Execution,
+            "MapAggregator value type must be an integer type not LargeBinary"
         );
+
         Ok(())
     }
 
@@ -783,22 +757,19 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-        let acc = agg
-            .create_groups_accumulator(make_accumulator_args(
-                &Schema::empty(),
-                LexOrdering::empty(),
-                &map_type,
-            ))
-            .map_err(|e| e.to_string());
+        let acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ));
 
         // Then
-        assert_eq!(
-            acc.err(),
-            Some(
-                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
-                    .into()
-            )
+        assert_error!(
+            acc,
+            DataFusionError::Execution,
+            "MapAggregator value type must be an integer type not LargeBinary"
         );
+
         Ok(())
     }
 
@@ -808,22 +779,19 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
-        let acc = agg
-            .create_groups_accumulator(make_accumulator_args(
-                &Schema::empty(),
-                LexOrdering::empty(),
-                &map_type,
-            ))
-            .map_err(|e| e.to_string());
+        let acc = agg.create_groups_accumulator(make_accumulator_args(
+            &Schema::empty(),
+            LexOrdering::empty(),
+            &map_type,
+        ));
 
         // Then
-        assert_eq!(
-            acc.err(),
-            Some(
-                "Execution error: MapAggregator value type must be an integer type not LargeBinary"
-                    .into()
-            )
+        assert_error!(
+            acc,
+            DataFusionError::Execution,
+            "MapAggregator value type must be an integer type not LargeBinary"
         );
+
         Ok(())
     }
 
