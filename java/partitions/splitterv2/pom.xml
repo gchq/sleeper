@@ -17,18 +17,33 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>aws</artifactId>
+        <artifactId>partitions</artifactId>
         <groupId>sleeper</groupId>
         <version>0.31.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>partitions</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>splitterv2</artifactId>
 
-    <modules>
-        <module>splitter</module>
-        <module>splitterv2</module>
-        <module>splitter-lambda</module>
-    </modules>
+    <dependencies>
+        <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>sketches</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

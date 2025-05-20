@@ -54,6 +54,7 @@ chunks:
       - compaction/compaction-trackerV2
       - compaction/compaction-core
       - partitions/splitter
+      - partitions/splitterv2
       - partitions/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
