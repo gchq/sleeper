@@ -17,7 +17,7 @@
 */
 use ageoff::AgeOff;
 use datafusion::{
-    common::{DFSchema, HashSet, config_datafusion_err, config_err},
+    common::{DFSchema, HashSet, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
     execution::FunctionRegistry,
     functions_aggregate::expr_fn::{count, max, min, sum},
@@ -127,7 +127,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
         // split aggregation columns out
         let (agg_cols, filter_agg) = value
             .split_once(';')
-            .ok_or(config_datafusion_err!("No ; in aggregation configuration"))?;
+            .ok_or(plan_datafusion_err!("No ; in aggregation configuration"))?;
         // Convert to a vector of columns
         let agg_cols = if agg_cols.is_empty() {
             None
@@ -201,13 +201,13 @@ pub fn validate_aggregations(
         for col in query_agg_cols {
             // Is this column duplicated or a row key column?
             if !dup_check.insert(col) {
-                return config_err!(
+                return plan_err!(
                     "Aggregation grouping column \"{col}\" is already a row key column or is duplicated"
                 );
             }
             // Is this column valid?
             if !all_cols.contains(col) {
-                return config_err!("Aggregation grouping column \"{col}\" doesn't exist");
+                return plan_err!("Aggregation grouping column \"{col}\" doesn't exist");
             }
         }
         // Remove query aggregation columns
@@ -219,21 +219,21 @@ pub fn validate_aggregations(
         let mut col_checks: HashSet<&String> = HashSet::new();
         for col in &agg_cols {
             if query_agg_cols.contains(*col) {
-                return config_err!(
+                return plan_err!(
                     "Row key/extra grouping column \"{col}\" cannot have an aggregation"
                 );
             }
             if !col_checks.insert(*col) {
-                return config_err!("Aggregation column \"{col}\" duplicated");
+                return plan_err!("Aggregation column \"{col}\" duplicated");
             }
             if !non_row_key_cols.contains(*col) {
-                return config_err!("Aggregation column \"{col}\" doesn't exist");
+                return plan_err!("Aggregation column \"{col}\" doesn't exist");
             }
         }
         // Check all non row key columns exist in aggregation column list
         for col in non_row_key_cols {
             if !agg_cols.contains(&&col) {
-                return config_err!(
+                return plan_err!(
                     "Column \"{col}\" doesn't have a aggregation operator specified!"
                 );
             }

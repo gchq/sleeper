@@ -19,7 +19,7 @@ use arrow::{
     datatypes::{DataType, Int64Type},
 };
 use datafusion::{
-    common::config_err,
+    common::exec_err,
     error::{DataFusionError, Result},
     logical_expr::{
         ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
@@ -111,7 +111,7 @@ impl ScalarUDFImpl for AgeOff {
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
         if args.args.len() != 1 {
-            return config_err!(
+            return exec_err!(
                 "AgeOff UDF called with {} input columns, only accepts 1",
                 args.args.len()
             );
@@ -121,7 +121,7 @@ impl ScalarUDFImpl for AgeOff {
                 ScalarValue::Boolean(Some(self.retain(*v))),
             )),
             ColumnarValue::Scalar(ScalarValue::Int64(None)) => {
-                config_err!("Age off called with null Int64")
+                exec_err!("Age off called with null Int64")
             }
             ColumnarValue::Array(arr) => {
                 let prim_arr = arr.as_primitive::<Int64Type>();
@@ -135,7 +135,7 @@ impl ScalarUDFImpl for AgeOff {
                 }
                 Ok(ColumnarValue::Array(Arc::new(result_builder.finish())))
             }
-            ColumnarValue::Scalar(_) => config_err!(
+            ColumnarValue::Scalar(_) => exec_err!(
                 "Age off called with unsupported column datatype {:?}",
                 args.args[0].data_type()
             ),

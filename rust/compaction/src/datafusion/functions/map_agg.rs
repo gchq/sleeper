@@ -43,7 +43,7 @@ use arrow::{
     datatypes::{DataType, Fields},
 };
 use datafusion::{
-    common::{config_err, exec_err, plan_err},
+    common::{exec_err, plan_err},
     error::Result,
     logical_expr::{
         Accumulator, AggregateUDFImpl, GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature,
@@ -187,7 +187,7 @@ impl AggregateUDFImpl for MapAggregator {
         if arg_types.len() == 1 {
             Ok(arg_types[0].clone())
         } else {
-            config_err!("MapAggregator expects a single column of Map type")
+            plan_err!("MapAggregator expects a single column of Map type")
         }
     }
 
