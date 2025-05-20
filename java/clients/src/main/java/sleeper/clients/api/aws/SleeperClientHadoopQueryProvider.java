@@ -73,7 +73,7 @@ public interface SleeperClientHadoopQueryProvider {
         return new PersistentThreadPool(Executors.newFixedThreadPool(threadPoolSize));
     }
 
-    public class PersistentThreadPool implements SleeperClientHadoopQueryProvider, UncheckedAutoCloseable {
+    class PersistentThreadPool implements SleeperClientHadoopQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
 
         private PersistentThreadPool(ExecutorService executorService) {
