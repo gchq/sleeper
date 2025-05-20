@@ -36,13 +36,13 @@ import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
-import sleeper.clients.util.AwsV2ClientHelper;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.AwsV1ClientHelper;
+import sleeper.configurationv2.utils.AwsV2ClientHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 
