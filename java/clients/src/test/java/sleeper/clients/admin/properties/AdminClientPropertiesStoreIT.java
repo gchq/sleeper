@@ -25,7 +25,7 @@ import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.OptionalStack;
