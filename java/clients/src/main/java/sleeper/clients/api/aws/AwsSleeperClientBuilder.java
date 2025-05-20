@@ -29,13 +29,11 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -45,9 +43,9 @@ public class AwsSleeperClientBuilder {
 
     private String instanceId;
     private InstanceProperties instanceProperties;
-    private int queryThreadPoolSize = 10;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.getDefault();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
+    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.withThreadPoolSize(10);
 
     /**
      * Creates a Sleeper client.
@@ -60,9 +58,9 @@ public class AwsSleeperClientBuilder {
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
-        ExecutorService executorService = Executors.newFixedThreadPool(queryThreadPoolSize);
+        ShutdownWrapper<LeafPartitionRecordRetrieverProvider> recordRetrieverProvider = queryProvider.getRecordRetrieverProvider(hadoopConf);
         UncheckedAutoCloseables shutdown = new UncheckedAutoCloseables(List.of(
-                executorService::shutdown,
+                recordRetrieverProvider,
                 awsClients.shutdownWrapper()));
 
         return new SleeperClient.Builder()
@@ -72,7 +70,7 @@ public class AwsSleeperClientBuilder {
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo(), hadoopConf))
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf))
+                .recordRetrieverProvider(recordRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
@@ -118,7 +116,7 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        this.queryThreadPoolSize = queryThreadPoolSize;
+        this.queryProvider = SleeperClientHadoopQueryProvider.withThreadPoolSize(queryThreadPoolSize);
         return this;
     }
 

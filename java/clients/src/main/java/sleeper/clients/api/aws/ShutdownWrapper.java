@@ -59,6 +59,18 @@ public class ShutdownWrapper<T> implements UncheckedAutoCloseable {
         return new ShutdownWrapper<T>(wrap, () -> shutdown.accept(wrap));
     }
 
+    /**
+     * Creates a wrapper that will shut down the object.
+     *
+     * @param  <T>      the type of the object
+     * @param  wrap     the object to wrap
+     * @param  shutdown the method to call to shut the object down
+     * @return          the wrapper
+     */
+    public static <T> ShutdownWrapper<T> shutdown(T wrap, Runnable shutdown) {
+        return new ShutdownWrapper<T>(wrap, shutdown);
+    }
+
     public T get() {
         return toShutdown;
     }
