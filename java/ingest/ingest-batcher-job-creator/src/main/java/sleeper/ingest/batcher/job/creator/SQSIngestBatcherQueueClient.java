@@ -15,7 +15,8 @@
  */
 package sleeper.ingest.batcher.job.creator;
 
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.ingest.batcher.core.IngestBatcherQueueClient;
 import sleeper.ingest.core.job.IngestJob;
@@ -23,15 +24,18 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 
 public class SQSIngestBatcherQueueClient implements IngestBatcherQueueClient {
 
-    private final AmazonSQS sqs;
+    private final SqsClient sqs;
     private final IngestJobSerDe serDe = new IngestJobSerDe();
 
-    public SQSIngestBatcherQueueClient(AmazonSQS sqs) {
+    public SQSIngestBatcherQueueClient(SqsClient sqs) {
         this.sqs = sqs;
     }
 
     @Override
     public void send(String queueUrl, IngestJob job) {
-        sqs.sendMessage(queueUrl, serDe.toJson(job));
+        sqs.sendMessage(SendMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .messageBody(serDe.toJson(job))
+                .build());
     }
 }
