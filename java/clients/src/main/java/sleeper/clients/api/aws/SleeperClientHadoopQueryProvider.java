@@ -27,6 +27,10 @@ public interface SleeperClientHadoopQueryProvider {
 
     ShutdownWrapper<LeafPartitionRecordRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf);
 
+    public static SleeperClientHadoopQueryProvider getDefault() {
+        return withThreadPoolSize(10);
+    }
+
     static SleeperClientHadoopQueryProvider withThreadPoolSize(int threadPoolSize) {
         return hadoopConf -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);

@@ -35,6 +35,10 @@ public class UncheckedAutoCloseables implements UncheckedAutoCloseable {
 
     @Override
     public void close() {
+        close(closeables);
+    }
+
+    public static void close(List<UncheckedAutoCloseable> closeables) {
         List<RuntimeException> failures = new ArrayList<>();
         for (UncheckedAutoCloseable closeable : closeables) {
             try {

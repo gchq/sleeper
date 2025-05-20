@@ -45,7 +45,7 @@ public class AwsSleeperClientBuilder {
     private InstanceProperties instanceProperties;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.getDefault();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.withThreadPoolSize(10);
+    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.getDefault();
 
     /**
      * Creates a Sleeper client.
@@ -54,14 +54,10 @@ public class AwsSleeperClientBuilder {
      */
     public SleeperClient build() {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
-
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
-        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
         ShutdownWrapper<LeafPartitionRecordRetrieverProvider> recordRetrieverProvider = queryProvider.getRecordRetrieverProvider(hadoopConf);
-        UncheckedAutoCloseables shutdown = new UncheckedAutoCloseables(List.of(
-                recordRetrieverProvider,
-                awsClients.shutdownWrapper()));
+        TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
 
         return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
@@ -74,7 +70,7 @@ public class AwsSleeperClientBuilder {
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
-                .shutdown(shutdown)
+                .shutdown(new UncheckedAutoCloseables(List.of(awsClients, recordRetrieverProvider)))
                 .build();
     }
 

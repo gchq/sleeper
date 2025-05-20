@@ -33,7 +33,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 /**
  * AWS clients to instantiate a Sleeper client.
  */
-public class SleeperClientAwsClients {
+public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
     private final ShutdownWrapper<AmazonS3> s3ClientWrapper;
     private final ShutdownWrapper<AmazonDynamoDB> dynamoClientWrapper;
@@ -61,8 +61,9 @@ public class SleeperClientAwsClients {
         return sqsClientWrapper.get();
     }
 
-    public UncheckedAutoCloseable shutdownWrapper() {
-        return new UncheckedAutoCloseables(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
+    @Override
+    public void close() {
+        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
     }
 
     public static class Builder {
