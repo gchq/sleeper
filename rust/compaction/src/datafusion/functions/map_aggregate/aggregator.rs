@@ -32,11 +32,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use super::MapAggregatorOp;
 use crate::datafusion::functions::{
-    map_accumulator::{ByteMapAccumulator, PrimMapAccumulator, StringMapAccumulator},
-    map_group_accumulator::{
-        ByteGroupMapAccumulator, PrimGroupMapAccumulator, StringGroupMapAccumulator,
+    MapAggregatorOp,
+    map_aggregate::{
+        accumulator::map_accumulator::{
+            ByteMapAccumulator, PrimMapAccumulator, StringMapAccumulator,
+        },
+        group_accumulator::map_group_accumulator::{
+            ByteGroupMapAccumulator, PrimGroupMapAccumulator, StringGroupMapAccumulator,
+        },
     },
 };
 use arrow::{
@@ -291,7 +295,10 @@ mod tests {
         physical_expr::LexOrdering,
     };
 
-    use crate::{assert_error, datafusion::functions::map_agg::map_test_common::make_map_datatype};
+    use crate::{
+        assert_error,
+        datafusion::functions::map_aggregate::aggregator::map_test_common::make_map_datatype,
+    };
 
     use super::{MapAggregator, MapAggregatorOp, PrimBuilderType, validate_map_struct_type};
 

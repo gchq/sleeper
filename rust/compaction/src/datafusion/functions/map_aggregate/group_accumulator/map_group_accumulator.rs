@@ -14,7 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use super::{MapAggregatorOp, map_agg::PrimBuilderType, state::MapNullState};
+use crate::datafusion::functions::{
+    MapAggregatorOp,
+    map_aggregate::{aggregator::PrimBuilderType, state::MapNullState},
+};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, BooleanArray,

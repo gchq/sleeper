@@ -24,16 +24,13 @@ use datafusion::{
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
 };
-use map_agg::MapAggregator;
+use map_aggregate::MapAggregator;
 use num_traits::NumAssign;
 use regex::Regex;
 use std::sync::Arc;
 
 pub mod ageoff;
-mod map_accumulator;
-pub mod map_agg;
-mod map_group_accumulator;
-mod state;
+pub mod map_aggregate;
 
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 
