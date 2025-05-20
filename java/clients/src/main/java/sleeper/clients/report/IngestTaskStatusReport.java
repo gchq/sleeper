@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestTaskStatusReport {
     private final IngestTaskTracker tracker;

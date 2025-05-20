@@ -32,7 +32,7 @@ import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 
 import java.util.function.Function;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;

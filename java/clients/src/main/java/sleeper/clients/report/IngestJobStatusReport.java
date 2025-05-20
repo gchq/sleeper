@@ -43,8 +43,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";

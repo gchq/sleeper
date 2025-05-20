@@ -26,7 +26,7 @@ import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class CompactionTaskStatusReport {
 

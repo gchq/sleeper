@@ -36,8 +36,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestBatcherReport {
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();
