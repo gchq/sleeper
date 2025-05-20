@@ -13,64 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.clients.deploy.localstack.stack;
 
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.localstack.TearDownBucket;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.clients.deploy.localstack.Utils.tearDownBucket;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class ConfigurationDockerStack implements DockerStack {
-    private final AmazonS3 s3Client;
+public class ConfigurationDockerStack {
     private final InstanceProperties instanceProperties;
+    private final S3Client s3Client;
 
-    private ConfigurationDockerStack(Builder builder) {
-        s3Client = builder.s3Client;
-        instanceProperties = builder.instanceProperties;
+    private ConfigurationDockerStack(InstanceProperties instanceProperties, S3Client s3Client) {
+        this.instanceProperties = instanceProperties;
+        this.s3Client = s3Client;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static ConfigurationDockerStack from(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        return builder().instanceProperties(instanceProperties).s3Client(s3Client).build();
+    public static ConfigurationDockerStack from(InstanceProperties instanceProperties, S3Client s3Client) {
+        return new ConfigurationDockerStack(instanceProperties, s3Client);
     }
 
     public void deploy() {
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(request -> request.bucket(instanceProperties.get(CONFIG_BUCKET)));
     }
 
     public void tearDown() {
-        tearDownBucket(s3Client, instanceProperties.get(CONFIG_BUCKET));
+        TearDownBucket.emptyAndDelete(s3Client, instanceProperties.get(CONFIG_BUCKET));
     }
 
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
-
-    public static final class Builder {
-        private AmazonS3 s3Client;
-        private InstanceProperties instanceProperties;
-
-        public Builder() {
-        }
-
-        public Builder s3Client(AmazonS3 s3Client) {
-            this.s3Client = s3Client;
-            return this;
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public ConfigurationDockerStack build() {
-            return new ConfigurationDockerStack(this);
-        }
-    }
 }
