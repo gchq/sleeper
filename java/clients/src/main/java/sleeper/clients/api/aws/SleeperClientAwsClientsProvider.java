@@ -43,8 +43,8 @@ public interface SleeperClientAwsClientsProvider {
     /**
      * Creates a provider that will apply the given configuration.
      *
-     * @param  clients the configuration to apply
-     * @return         the provider
+     * @param  config the configuration to apply
+     * @return        the provider
      */
     static SleeperClientAwsClientsProvider withConfig(Consumer<SleeperClientAwsClients.Builder> config) {
         return () -> {

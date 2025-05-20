@@ -44,7 +44,7 @@ public interface SleeperClientHadoopQueryProvider {
      *
      * @return the provider
      */
-    public static SleeperClientHadoopQueryProvider createDefaultForEachClient() {
+    static SleeperClientHadoopQueryProvider createDefaultForEachClient() {
         return withThreadPoolForEachClient(10);
     }
 
