@@ -94,7 +94,7 @@ public class SleeperClient implements AutoCloseable {
 
     /**
      * Creates a builder for a client to interact with AWS. The Sleeper instance to interact with must be set on the
-     * builder.
+     * builder. Will use the default AWS configuration unless this is overridden.
      *
      * @return the builder
      */
