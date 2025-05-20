@@ -28,11 +28,11 @@ public interface SleeperClientHadoopProvider {
 
     Configuration getConfiguration(InstanceProperties instanceProperties);
 
-    public static SleeperClientHadoopProvider getDefault() {
+    static SleeperClientHadoopProvider getDefault() {
         return instanceProperties -> HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
     }
 
-    public static SleeperClientHadoopProvider withConfig(Configuration configuration) {
+    static SleeperClientHadoopProvider withConfig(Configuration configuration) {
         return instanceProperties -> configuration;
     }
 

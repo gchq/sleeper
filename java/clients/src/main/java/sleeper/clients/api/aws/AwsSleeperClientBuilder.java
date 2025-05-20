@@ -129,8 +129,8 @@ public class AwsSleeperClientBuilder {
     /**
      * Sets the provider of clients to interact with AWS.
      *
-     * @param  clientsConfig the provider
-     * @return               this builder
+     * @param  awsProvider the provider
+     * @return             this builder
      */
     public AwsSleeperClientBuilder awsProvider(SleeperClientAwsClientsProvider awsProvider) {
         this.awsProvider = awsProvider;
