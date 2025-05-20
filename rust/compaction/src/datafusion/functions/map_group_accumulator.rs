@@ -14,10 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use super::{
-    map_agg::{MapAggregatorOp, PrimBuilderType},
-    state::MapNullState,
-};
+use super::{MapAggregatorOp, map_agg::PrimBuilderType, state::MapNullState};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, BooleanArray,
@@ -26,7 +23,7 @@ use arrow::{
     datatypes::{DataType, Field},
 };
 use datafusion::{
-    common::{exec_err, plan_err, HashMap},
+    common::{HashMap, exec_err, plan_err},
     error::Result,
     logical_expr::{EmitTo, GroupsAccumulator},
 };

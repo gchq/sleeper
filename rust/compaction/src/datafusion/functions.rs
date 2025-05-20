@@ -24,7 +24,8 @@ use datafusion::{
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
 };
-use map_agg::{MapAggregator, MapAggregatorOp};
+use map_agg::MapAggregator;
+use num_traits::NumAssign;
 use regex::Regex;
 use std::sync::Arc;
 
@@ -87,6 +88,28 @@ impl Aggregate {
         }
         // Rename column to original name
         .alias(&self.0))
+    }
+}
+
+/// The aggregation operation to peform inside of each map. The values
+/// of identical keys will be aggregated according to the specified operation.
+#[derive(Debug, Clone)]
+pub enum MapAggregatorOp {
+    Sum,
+    Min,
+    Max,
+}
+
+impl MapAggregatorOp {
+    pub fn op<T>(&self, acc: T, value: T) -> T
+    where
+        T: NumAssign + Ord,
+    {
+        match self {
+            Self::Sum => acc + value,
+            Self::Min => std::cmp::min(acc, value),
+            Self::Max => std::cmp::max(acc, value),
+        }
     }
 }
 

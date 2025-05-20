@@ -14,6 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use super::{MapAggregatorOp, map_agg::PrimBuilderType};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, MapBuilder,
@@ -29,8 +30,6 @@ use datafusion::{
 };
 use num_traits::NumAssign;
 use std::{fmt::Debug, hash::Hash, sync::Arc};
-
-use super::map_agg::{MapAggregatorOp, PrimBuilderType};
 
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///

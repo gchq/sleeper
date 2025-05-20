@@ -32,6 +32,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use super::MapAggregatorOp;
 use crate::datafusion::functions::{
     map_accumulator::{ByteMapAccumulator, PrimMapAccumulator, StringMapAccumulator},
     map_group_accumulator::{
@@ -50,7 +51,6 @@ use datafusion::{
         Volatility, function::AccumulatorArgs, utils::AggregateOrderSensitivity,
     },
 };
-use num_traits::NumAssign;
 use std::fmt::Debug;
 
 /// Trait to allow all `PrimitiveBuilder` types to be used as builders in evaluate function in accumulator implementations.
@@ -83,28 +83,6 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
         return exec_err!("MapAggregator Map inner struct length is not 2");
     }
     Ok(struct_fields)
-}
-
-/// The aggregation operation to peform inside of each map. The values
-/// of identical keys will be aggregated according to the specified operation.
-#[derive(Debug, Clone)]
-pub enum MapAggregatorOp {
-    Sum,
-    Min,
-    Max,
-}
-
-impl MapAggregatorOp {
-    pub fn op<T>(&self, acc: T, value: T) -> T
-    where
-        T: NumAssign + Ord,
-    {
-        match self {
-            Self::Sum => acc + value,
-            Self::Min => std::cmp::min(acc, value),
-            Self::Max => std::cmp::max(acc, value),
-        }
-    }
 }
 
 /// A aggregator for map columns. See module documentation.
