@@ -15,6 +15,7 @@
  */
 package sleeper.clients.api.aws;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -29,8 +30,8 @@ public class AwsClientShutdown<C> {
     private final Runnable shutdown;
 
     private AwsClientShutdown(C client, Runnable shutdown) {
-        this.client = client;
-        this.shutdown = shutdown;
+        this.client = Objects.requireNonNull(client, "client must not be null");
+        this.shutdown = Objects.requireNonNull(shutdown, "shutdown must not be null");
     }
 
     /**

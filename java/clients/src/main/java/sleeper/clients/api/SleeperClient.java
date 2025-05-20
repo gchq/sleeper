@@ -89,7 +89,7 @@ public class SleeperClient implements AutoCloseable {
      * @return            the client
      */
     public static SleeperClient createForInstanceId(String instanceId) {
-        return builder().instanceId(instanceId).defaultClients().build();
+        return builder().instanceId(instanceId).build();
     }
 
     /**
