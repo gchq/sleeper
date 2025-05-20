@@ -252,7 +252,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             assertThatThrownBy(() -> updateInstanceProperty(
                     instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveInstanceProperties.class)
-                    .hasCauseReference(thrown);
+                    .cause().isSameAs(thrown);
         }
 
         @Test
