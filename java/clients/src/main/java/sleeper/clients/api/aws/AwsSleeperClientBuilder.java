@@ -44,7 +44,7 @@ public class AwsSleeperClientBuilder {
     private String instanceId;
     private InstanceProperties instanceProperties;
     private int queryThreadPoolSize = 10;
-    private Consumer<SleeperClientAwsClients.Builder> clientsConfig = builder -> builder.defaultClients();
+    private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.getDefault();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
 
     /**
@@ -53,7 +53,7 @@ public class AwsSleeperClientBuilder {
      * @return the client
      */
     public SleeperClient build() {
-        SleeperClientAwsClients clients = SleeperClientAwsClientsProvider.withConfig(clientsConfig).getAwsClients();
+        SleeperClientAwsClients clients = awsProvider.getAwsClients();
 
         ExecutorService executorService = Executors.newFixedThreadPool(queryThreadPoolSize);
         InstanceProperties instanceProperties = loadInstanceProperties(clients.s3Client());
@@ -124,7 +124,17 @@ public class AwsSleeperClientBuilder {
      * @return               this builder
      */
     public AwsSleeperClientBuilder awsClients(Consumer<SleeperClientAwsClients.Builder> clientsConfig) {
-        this.clientsConfig = clientsConfig;
+        return awsProvider(SleeperClientAwsClientsProvider.withConfig(clientsConfig));
+    }
+
+    /**
+     * Sets the provider of clients to interact with AWS.
+     *
+     * @param  clientsConfig the provider
+     * @return               this builder
+     */
+    public AwsSleeperClientBuilder awsProvider(SleeperClientAwsClientsProvider awsProvider) {
+        this.awsProvider = awsProvider;
         return this;
     }
 
