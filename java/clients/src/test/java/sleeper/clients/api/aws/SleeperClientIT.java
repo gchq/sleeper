@@ -72,9 +72,7 @@ public class SleeperClientIT extends LocalStackTestBase {
     private SleeperClient createClient() {
         return new AwsSleeperClientBuilder()
                 .instanceId(instanceProperties.get(ID))
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
-                .sqsClient(sqsClient)
+                .awsClients(clients -> clients.s3Client(s3Client).dynamoClient(dynamoClient).sqsClient(sqsClient))
                 .hadoopConf(hadoopConf)
                 .build();
     }

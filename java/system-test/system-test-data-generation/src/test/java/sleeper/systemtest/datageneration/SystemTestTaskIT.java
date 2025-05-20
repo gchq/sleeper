@@ -113,9 +113,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     SleeperClient createSleeperClient() {
         return new AwsSleeperClientBuilder()
                 .instanceProperties(instanceProperties)
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
-                .sqsClient(sqsClient)
+                .awsClients(clients -> clients.s3Client(s3Client).dynamoClient(dynamoClient).sqsClient(sqsClient))
                 .hadoopConf(hadoopConf)
                 .build();
     }

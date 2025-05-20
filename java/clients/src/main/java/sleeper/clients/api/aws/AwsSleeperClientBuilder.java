@@ -15,9 +15,7 @@
  */
 package sleeper.clients.api.aws;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.api.BulkImportJobSender;
@@ -120,35 +118,13 @@ public class AwsSleeperClientBuilder {
     }
 
     /**
-     * Sets the AWS client to interact with S3.
+     * Sets the clients to interact with AWS.
      *
-     * @param  s3Client the client
-     * @return          this builder
+     * @param  clientsConfig configuration to set the clients
+     * @return               this builder
      */
-    public AwsSleeperClientBuilder s3Client(AmazonS3 s3Client) {
-        clientsConfig = clientsConfig.andThen(builder -> builder.s3Client(s3Client));
-        return this;
-    }
-
-    /**
-     * Sets the AWS client to interact with DynamoDB.
-     *
-     * @param  dynamoClient the client
-     * @return              this builder
-     */
-    public AwsSleeperClientBuilder dynamoClient(AmazonDynamoDB dynamoClient) {
-        clientsConfig = clientsConfig.andThen(builder -> builder.dynamoClient(dynamoClient));
-        return this;
-    }
-
-    /**
-     * Sets the AWS client to interact with SQS.
-     *
-     * @param  sqsClient the client
-     * @return           this builder
-     */
-    public AwsSleeperClientBuilder sqsClient(AmazonSQS sqsClient) {
-        clientsConfig = clientsConfig.andThen(builder -> builder.sqsClient(sqsClient));
+    public AwsSleeperClientBuilder awsClients(Consumer<SleeperClientAwsClients.Builder> clientsConfig) {
+        this.clientsConfig = clientsConfig;
         return this;
     }
 
@@ -159,7 +135,17 @@ public class AwsSleeperClientBuilder {
      * @return            this builder
      */
     public AwsSleeperClientBuilder hadoopConf(Configuration hadoopConf) {
-        hadoopProvider = SleeperClientHadoopProvider.withConfig(hadoopConf);
+        return hadoopProvider(SleeperClientHadoopProvider.withConfig(hadoopConf));
+    }
+
+    /**
+     * Sets a provider of the Hadoop configuration.
+     *
+     * @param  hadoopProvider the provider
+     * @return                this builder
+     */
+    public AwsSleeperClientBuilder hadoopProvider(SleeperClientHadoopProvider hadoopProvider) {
+        this.hadoopProvider = hadoopProvider;
         return this;
     }
 
