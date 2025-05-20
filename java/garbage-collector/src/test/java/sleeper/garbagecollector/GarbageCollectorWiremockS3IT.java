@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -35,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToXml;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -48,7 +47,7 @@ import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELA
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
 @WireMockTest
 class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
@@ -60,13 +59,10 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        s3Client = wiremockAwsV2Client(runtimeInfo,
+        s3Client = wiremockAwsV2ClientWithRetryAttempts(1, runtimeInfo,
                 S3Client.builder()
                         .serviceConfiguration(S3Configuration.builder()
                                 .pathStyleAccessEnabled(true)
-                                .build())
-                        .overrideConfiguration(ClientOverrideConfiguration.builder()
-                                .retryStrategy(err -> err.maxAttempts(1))
                                 .build()));
 
         instanceProperties.set(DATA_BUCKET, "test-bucket");
@@ -80,14 +76,14 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
         stateStore.fixFileUpdateTime(oldEnoughTime);
         table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
         createFileWithNoReferencesByCompaction(stateStore, "old-file", "new-file");
-        stubFor(post("/test-bucket/?delete")
+        stubFor(post("/test-bucket?delete")
                 .inScenario("retry")
                 .whenScenarioStateIs(Scenario.STARTED)
                 .willSetStateTo("retry")
                 .willReturn(aResponse()
                         .withStatus(503)
                         .withBody("<Error><Code>SlowDown</Code><Message>Reduce your request rate.</Message></Error>")));
-        stubFor(post("/test-bucket/?delete")
+        stubFor(post("/test-bucket?delete")
                 .inScenario("retry")
                 .whenScenarioStateIs("retry")
                 .willReturn(aResponse()
@@ -99,8 +95,8 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
         collectGarbageAtTime(currentTime);
 
         // Then
-        verify(2, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
-                .withRequestBody(equalTo(
+        verify(2, postRequestedFor(urlEqualTo("/test-bucket?delete"))
+                .withRequestBody(equalToXml(
                         "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
                                 "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
@@ -126,9 +122,8 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
                 .isInstanceOf(FailedGarbageCollectionException.class)
                 .hasCauseInstanceOf(S3Exception.class);
         verify(1, postRequestedFor(urlEqualTo("/test-bucket?delete"))
-                .withRequestBody(equalTo(
-                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Delete xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
-                                "<Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
+                .withRequestBody(equalToXml(
+                        "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
                                 "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                 activeAndReadyForGCFilesReport(oldEnoughTime,
