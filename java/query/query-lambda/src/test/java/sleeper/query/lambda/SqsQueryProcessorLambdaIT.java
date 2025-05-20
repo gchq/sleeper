@@ -32,9 +32,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -70,8 +70,8 @@ import sleeper.query.runnerv2.output.SQSResultsOutput;
 import sleeper.query.runnerv2.output.WebSocketOutput;
 import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
 import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -691,7 +691,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private void processQuery(Query query) {
-        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
+        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery);
     }
@@ -728,7 +728,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(createTempDirectory(tempDir, null).toString())
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConf)
                     .build();
@@ -771,9 +771,9 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
 
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
                 .getStateStore(tableProperties);
         try {
             update(stateStore).initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
@@ -798,10 +798,10 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
 
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
 
         return instanceProperties;
     }
