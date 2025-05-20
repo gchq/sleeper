@@ -19,6 +19,9 @@ import sleeper.clients.api.SleeperClient;
 import sleeper.clients.api.SleeperClientFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 
+/**
+ * Creates Sleeper clients to interact with AWS.
+ */
 public class AwsSleeperClientFactory implements SleeperClientFactory {
 
     private final AwsSleeperClientBuilder builder;

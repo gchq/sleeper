@@ -17,6 +17,10 @@ package sleeper.clients.api.aws;
 
 import java.util.function.Consumer;
 
+/**
+ * Provides AWS clients to instantiate a Sleeper client.
+ */
+@FunctionalInterface
 public interface SleeperClientAwsClientsProvider {
 
     SleeperClientAwsClients getAwsClients();

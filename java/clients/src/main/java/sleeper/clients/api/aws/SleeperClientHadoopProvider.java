@@ -20,6 +20,10 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
+/**
+ * Provides a Hadoop configuration to instantiate a Sleeper client.
+ */
+@FunctionalInterface
 public interface SleeperClientHadoopProvider {
 
     Configuration getConfiguration(InstanceProperties instanceProperties);

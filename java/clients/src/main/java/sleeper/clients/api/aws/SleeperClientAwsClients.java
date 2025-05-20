@@ -26,6 +26,9 @@ import java.util.Objects;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
+/**
+ * AWS clients to instantiate a Sleeper client.
+ */
 public class SleeperClientAwsClients {
 
     private final AwsClientShutdown<AmazonS3> s3ClientWrapper;
