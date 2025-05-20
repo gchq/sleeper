@@ -112,7 +112,17 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        this.queryProvider = SleeperClientHadoopQueryProvider.withThreadPoolSizeForEachClient(queryThreadPoolSize);
+        return queryProvider(SleeperClientHadoopQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
+    }
+
+    /**
+     * Sets the provider for running queries. This can be used to control the thread pool used.
+     *
+     * @param  queryProvider the provider
+     * @return               this builder
+     */
+    public AwsSleeperClientBuilder queryProvider(SleeperClientHadoopQueryProvider queryProvider) {
+        this.queryProvider = queryProvider;
         return this;
     }
 

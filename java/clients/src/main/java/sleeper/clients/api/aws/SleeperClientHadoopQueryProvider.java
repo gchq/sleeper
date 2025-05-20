@@ -17,6 +17,7 @@ package sleeper.clients.api.aws;
 
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
@@ -26,6 +27,7 @@ import java.util.concurrent.Executors;
 /**
  * Provides record retrievers for running Sleeper queries with Hadoop.
  */
+@FunctionalInterface
 public interface SleeperClientHadoopQueryProvider {
 
     /**
@@ -43,7 +45,7 @@ public interface SleeperClientHadoopQueryProvider {
      * @return the provider
      */
     public static SleeperClientHadoopQueryProvider createDefaultForEachClient() {
-        return withThreadPoolSizeForEachClient(10);
+        return withThreadPoolForEachClient(10);
     }
 
     /**
@@ -53,12 +55,42 @@ public interface SleeperClientHadoopQueryProvider {
      * @param  threadPoolSize the number of threads in the thread pool for each client
      * @return                the provider
      */
-    static SleeperClientHadoopQueryProvider withThreadPoolSizeForEachClient(int threadPoolSize) {
+    static SleeperClientHadoopQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
         return hadoopConf -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
             LeafPartitionRecordRetrieverProvider provider = LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf);
             return ShutdownWrapper.shutdown(provider, executorService::shutdown);
         };
+    }
+
+    /**
+     * Creates a provider backed by one thread pool. Please ensure the returned provider is closed.
+     *
+     * @param  threadPoolSize the number of threads in the thread pool
+     * @return                the provider
+     */
+    static PersistentThreadPool withPersistentThreadPool(int threadPoolSize) {
+        return new PersistentThreadPool(Executors.newFixedThreadPool(threadPoolSize));
+    }
+
+    public class PersistentThreadPool implements SleeperClientHadoopQueryProvider, UncheckedAutoCloseable {
+        private final ExecutorService executorService;
+
+        private PersistentThreadPool(ExecutorService executorService) {
+            this.executorService = executorService;
+        }
+
+        @Override
+        public ShutdownWrapper<LeafPartitionRecordRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf) {
+            return ShutdownWrapper.noShutdown(
+                    LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf));
+        }
+
+        @Override
+        public void close() {
+            executorService.shutdown();
+        }
+
     }
 
 }
