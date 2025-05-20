@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -45,18 +46,6 @@ public class SleeperClientAwsClients {
         return new Builder();
     }
 
-    public AwsClientShutdown<AmazonS3> s3ClientWrapper() {
-        return s3ClientWrapper;
-    }
-
-    public AwsClientShutdown<AmazonDynamoDB> dynamoClientWrapper() {
-        return dynamoClientWrapper;
-    }
-
-    public AwsClientShutdown<AmazonSQS> sqsClientWrapper() {
-        return sqsClientWrapper;
-    }
-
     public AmazonS3 s3Client() {
         return s3ClientWrapper.getClient();
     }
@@ -67,6 +56,10 @@ public class SleeperClientAwsClients {
 
     public AmazonSQS sqsClient() {
         return sqsClientWrapper.getClient();
+    }
+
+    public List<AwsClientShutdown<?>> shutdownWrappers() {
+        return List.of(s3ClientWrapper, dynamoClientWrapper, sqsClientWrapper);
     }
 
     public static class Builder {

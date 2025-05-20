@@ -33,7 +33,6 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,7 +73,7 @@ public class AwsSleeperClientBuilder {
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, clients.sqsClient()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, clients.sqsClient()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, clients.sqsClient()))
-                .shutdown(new AwsSleeperClientShutdown(executorService, List.of(clients.s3ClientWrapper(), clients.dynamoClientWrapper(), clients.sqsClientWrapper())))
+                .shutdown(new AwsSleeperClientShutdown(executorService, clients.shutdownWrappers()))
                 .build();
     }
 
