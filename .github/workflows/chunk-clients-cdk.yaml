@@ -42,6 +42,7 @@ on:
       - 'java/compaction/compaction-rust/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-invoke-tables/**'
+      - 'java/common/common-invoke-tablesv2/**'
       - 'java/compaction/compaction-core/**'
       - 'java/statestore/**'
       - 'java/common/common-job/**'
