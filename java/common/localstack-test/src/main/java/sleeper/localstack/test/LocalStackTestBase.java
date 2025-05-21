@@ -41,6 +41,7 @@ import java.util.UUID;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
 import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
+import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT_V2;
 
 /**
  * A base class for tests to run against LocalStack.
@@ -85,6 +86,13 @@ public abstract class LocalStackTestBase {
 
     public static String createSqsQueueGetUrl() {
         return SQS_CLIENT.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+    }
+
+    public static String createSqsQueueGetUrlV2() {
+        return SQS_CLIENT_V2.createQueue(software.amazon.awssdk.services.sqs.model.CreateQueueRequest.builder()
+                .queueName(UUID.randomUUID().toString())
+                .build())
+                .queueUrl();
     }
 
 }

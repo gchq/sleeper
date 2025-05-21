@@ -48,7 +48,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,11 +134,9 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(CONFIG_BUCKET, "testing");
-        instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL,
-                sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(QUERY_RESULTS_QUEUE_URL,
-                sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(QUERY_QUEUE_URL, createSqsQueueGetUrlV2());
+        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, createSqsQueueGetUrlV2());
+        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, createSqsQueueGetUrlV2());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
