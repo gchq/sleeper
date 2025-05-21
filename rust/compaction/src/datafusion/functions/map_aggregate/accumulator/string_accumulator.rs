@@ -201,7 +201,7 @@ mod tests {
     };
     use std::sync::Arc;
 
-    // Macro to quickly stringify a literal
+    // Macro to stringify a literal
     macro_rules! s {
         ($l:literal) => {
             String::from($l)
