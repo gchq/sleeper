@@ -33,8 +33,10 @@ on:
       - 'java/statestorev2/**'
       - 'java/metrics/**'
       - 'java/compaction/compaction-tracker/**'
+      - 'java/compaction/compaction-trackerV2/**'
       - 'java/compaction/compaction-core/**'
       - 'java/ingest/ingest-tracker/**'
+      - 'java/ingest/ingest-trackerV2/**'
       - 'java/ingest/ingest-core/**'
 
 jobs:
