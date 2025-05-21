@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.clients.api.aws;
 
 import org.junit.jupiter.api.AutoClose;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -71,9 +72,7 @@ public class SleeperClientIT extends LocalStackTestBase {
     private SleeperClient createClient() {
         return new AwsSleeperClientBuilder()
                 .instanceId(instanceProperties.get(ID))
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
-                .sqsClient(sqsClient)
+                .awsClients(clients -> clients.s3Client(s3Client).dynamoClient(dynamoClient).sqsClient(sqsClient))
                 .hadoopConf(hadoopConf)
                 .build();
     }

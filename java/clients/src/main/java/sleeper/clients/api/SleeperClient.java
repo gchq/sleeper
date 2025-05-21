@@ -17,6 +17,7 @@ package sleeper.clients.api;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.clients.api.aws.AwsSleeperClientBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -48,6 +49,9 @@ import java.util.stream.Stream;
  * requires permissions against those resources, e.g. the configuration and data buckets in S3, the transaction logs and
  * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
+ * <p>
+ * Note that this class is not thread safe. {@link TablePropertiesProvider} and {@link StateStoreProvider} both cache
+ * data in ways that are not thread safe, so this client should be owned by a single thread.
  */
 public class SleeperClient implements AutoCloseable {
 
@@ -89,13 +93,13 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Creates a builder for a client with the default AWS configuration. The ID of the Sleeper instance to interact
-     * with must be set on the builder.
+     * Creates a builder for a client to interact with AWS. The Sleeper instance to interact with must be set on the
+     * builder. Will use the default AWS configuration unless this is overridden.
      *
      * @return the builder
      */
     public static AwsSleeperClientBuilder builder() {
-        return new AwsSleeperClientBuilder().defaultClients();
+        return new AwsSleeperClientBuilder();
     }
 
     /**
