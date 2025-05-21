@@ -27,9 +27,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-cloudwatch</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudwatch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -53,17 +60,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
+            <artifactId>statestorev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-job</artifactId>
+            <artifactId>common-jobv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -78,7 +85,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-tracker</artifactId>
+            <artifactId>ingest-trackerV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Arrow dependencies -->
