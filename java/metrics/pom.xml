@@ -30,12 +30,10 @@
         <dependency>
             <groupId>software.amazon.lambda</groupId>
             <artifactId>powertools-metrics</artifactId>
-            <version>${aws-lambda-powertools.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-events</artifactId>
-            <version>${aws-lambda-java-events.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
