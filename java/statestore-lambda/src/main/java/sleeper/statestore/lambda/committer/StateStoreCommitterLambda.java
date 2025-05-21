@@ -68,7 +68,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public StateStoreCommitterLambda() {
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoDBClient = DynamoDbClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.create()).build();
+        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);

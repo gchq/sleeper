@@ -64,7 +64,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoClient = DynamoDbClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.create()).build();
+        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);

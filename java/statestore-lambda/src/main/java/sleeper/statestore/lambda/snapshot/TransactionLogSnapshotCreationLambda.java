@@ -59,7 +59,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
     public TransactionLogSnapshotCreationLambda() {
         s3Client = S3Client.create();
         dynamoClient = DynamoDbClient.create();
-        s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.create()).build();
+        s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
