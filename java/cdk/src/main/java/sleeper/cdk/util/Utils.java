@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.util;
 
-import com.amazonaws.services.s3.internal.BucketNameUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
@@ -40,6 +39,7 @@ import software.amazon.awscdk.services.stepfunctions.LogLevel;
 import software.amazon.awscdk.services.stepfunctions.LogOptions;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.core.SleeperVersion;
@@ -205,9 +205,12 @@ public class Utils {
 
         if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
             properties.validate();
-            if (!BucketNameUtils.isValidV2BucketName(properties.get(ID))) {
+            try {
+                BucketUtils.isValidDnsBucketName(properties.get(ID), true);
+            } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException(
-                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID));
+                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID),
+                        e);
             }
         }
         if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {

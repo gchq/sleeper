@@ -42,7 +42,6 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Collections;
 import java.util.List;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
@@ -94,7 +93,7 @@ public class TableMetricsStack extends NestedStack {
                 .ruleName(SleeperScheduleRule.TABLE_METRICS.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.TABLE_METRICS.getDescription())
                 .schedule(Schedule.rate(Duration.minutes(1)))
-                .targets(Collections.singletonList(new LambdaFunction(tableMetricsTrigger)))
+                .targets(List.of(new LambdaFunction(tableMetricsTrigger)))
                 .enabled(!shouldDeployPaused(this))
                 .build();
         instanceProperties.set(TABLE_METRICS_RULE, rule.getRuleName());

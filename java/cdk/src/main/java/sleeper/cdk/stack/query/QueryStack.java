@@ -15,8 +15,6 @@
  */
 package sleeper.cdk.stack.query;
 
-import com.amazonaws.auth.policy.actions.S3Actions;
-import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
@@ -59,8 +57,6 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -207,8 +203,10 @@ public class QueryStack extends NestedStack {
     private void attachPolicy(IFunction lambda, String id) {
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)
-                .actions(Arrays.asList(S3Actions.PutObject.getActionName(), SQSActions.SendMessage.getActionName()))
-                .resources(Collections.singletonList("*"))
+                .actions(List.of(
+                        "s3:PutObject",
+                        "sqs:SendMessage"))
+                .resources(List.of("*"))
                 .build();
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
         String policyName = "PutToAnyS3BucketAndSendToAnySQSPolicy" + id;
@@ -313,7 +311,7 @@ public class QueryStack extends NestedStack {
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .removalPolicy(removalPolicy)
-                .lifecycleRules(Collections.singletonList(
+                .lifecycleRules(List.of(
                         LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());

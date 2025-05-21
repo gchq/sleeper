@@ -47,7 +47,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public final class WebSocketQueryStack extends NestedStack {
@@ -157,8 +157,8 @@ public final class WebSocketQueryStack extends NestedStack {
     public Grant grantAccessToWebSocketQueryApi(IGrantable identity) {
         return Grant.addToPrincipal(GrantOnPrincipalOptions.builder()
                 .grantee(identity)
-                .actions(Collections.singletonList("execute-api:Invoke"))
-                .resourceArns(Collections.singletonList(Stack.of(this).formatArn(ArnComponents.builder()
+                .actions(List.of("execute-api:Invoke"))
+                .resourceArns(List.of(Stack.of(this).formatArn(ArnComponents.builder()
                         .service("execute-api")
                         .resource(this.webSocketApi.getRef())
                         .build())
