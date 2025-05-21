@@ -45,8 +45,8 @@ import sleeper.ingest.runner.testutils.ResultVerifier;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -103,13 +103,13 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @BeforeEach
     public void before() {
         createBucket(dataBucketName);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
     }
 
     @ParameterizedTest

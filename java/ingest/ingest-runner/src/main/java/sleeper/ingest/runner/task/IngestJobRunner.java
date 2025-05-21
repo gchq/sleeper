@@ -15,14 +15,14 @@
  */
 package sleeper.ingest.runner.task;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
@@ -50,7 +50,7 @@ import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.HadoopPathUtils;
-import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -75,7 +75,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final IngestFactory ingestFactory;
     private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
@@ -90,9 +90,9 @@ public class IngestJobRunner implements IngestJobHandler {
             IngestJobTracker tracker,
             String taskId,
             String localDir,
-            AmazonS3 s3Client,
+            S3Client s3Client,
             S3AsyncClient s3AsyncClient,
-            AmazonSQS sqsClient,
+            SqsClient sqsClient,
             Configuration hadoopConfiguration,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;

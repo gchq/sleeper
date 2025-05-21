@@ -336,7 +336,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 stateStoreProvider, tracker,
                 "test-task",
                 localDir.toString(),
-                s3Client, s3AsyncClient, sqsClient,
+                s3ClientV2, s3AsyncClient, sqsClientV2,
                 hadoopConf,
                 timeSupplier);
     }
