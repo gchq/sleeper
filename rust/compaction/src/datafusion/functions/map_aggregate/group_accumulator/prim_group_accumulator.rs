@@ -278,3 +278,74 @@ where
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use arrow::{
+        array::Int64Builder,
+        datatypes::{DataType, Field},
+    };
+    use datafusion::error::DataFusionError;
+
+    use crate::{
+        assert_error,
+        datafusion::functions::{
+            MapAggregatorOp,
+            map_aggregate::{
+                aggregator::map_test_common::make_map_datatype,
+                group_accumulator::prim_group_accumulator::PrimGroupMapAccumulator,
+            },
+        },
+    };
+
+    #[test]
+    fn try_new_should_succeed() {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+
+        // When
+        let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert!(acc.is_ok());
+    }
+
+    #[test]
+    fn try_new_should_error_on_non_map_type() {
+        // Given
+        let mt = DataType::Int16;
+        let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "Invalid datatype for PrimGroupMapAccumulator Int16"
+        );
+    }
+
+    #[test]
+    fn try_new_should_error_on_wrong_inner_type() {
+        // Given
+        let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
+        let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "PrimGroupMapAccumulator inner field type should be a DataType::Struct"
+        );
+    }
+}
