@@ -15,15 +15,14 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
@@ -53,10 +52,11 @@ public class DeployNewTestInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <csv-list-of-subnets> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
+                S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             Path scriptsDirectory = Path.of(args[0]);
@@ -74,10 +74,7 @@ public class DeployNewTestInstance {
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
-                    .deployWithClients(s3, s3Client, dynamoDB, ecrClient);
-        } finally {
-            s3.shutdown();
-            dynamoDB.shutdown();
+                    .deployWithClients(s3Client, s3TransferManager, dynamoClient, ecrClient);
         }
     }
 

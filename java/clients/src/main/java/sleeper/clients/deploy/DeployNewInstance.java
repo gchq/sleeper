@@ -15,17 +15,16 @@
  */
 package sleeper.clients.deploy;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.StackDockerImage;
@@ -39,7 +38,7 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
@@ -56,15 +55,14 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
-    private final AmazonS3 s3;
-    private final S3Client s3v2;
-    private final AmazonDynamoDB dynamoDB;
-    private final EcrClient ecr;
+    private final S3Client s3Client;
+    private final S3TransferManager s3TransferManager;
+    private final DynamoDbClient dynamoClient;
+    private final EcrClient ecrClient;
     private final Path scriptsDirectory;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
@@ -73,10 +71,10 @@ public class DeployNewInstance {
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
-        s3 = builder.s3;
-        s3v2 = builder.s3v2;
-        dynamoDB = builder.dynamoDB;
-        ecr = builder.ecr;
+        s3Client = builder.s3Client;
+        s3TransferManager = builder.s3TransferManager;
+        dynamoClient = builder.dynamoClient;
+        ecrClient = builder.ecrClient;
         scriptsDirectory = builder.scriptsDirectory;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraDockerImages = builder.extraDockerImages;
@@ -94,10 +92,11 @@ public class DeployNewInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> " +
                     "<optional-instance-properties-file> <optional-deploy-paused-flag>");
         }
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
+                S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             Path scriptsDirectory = Path.of(args[0]);
@@ -111,10 +110,7 @@ public class DeployNewInstance {
                             instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                    .deployWithClients(s3, s3Client, dynamoDB, ecrClient);
-        } finally {
-            s3.shutdown();
-            dynamoDB.shutdown();
+                    .deployWithClients(s3Client, s3TransferManager, dynamoClient, ecrClient);
         }
     }
 
@@ -141,12 +137,12 @@ public class DeployNewInstance {
         LOGGER.info("deployPaused: {}", deployPaused);
         validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
 
-        SyncJars.builder().s3(s3v2)
+        SyncJars.builder().s3(s3Client)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
-                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
+                .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
                 .build().upload(runCommand,
                         UploadDockerImagesRequest.forNewDeployment(instanceProperties, sleeperVersion)
                                 .withExtraImages(extraDockerImages));
@@ -164,10 +160,10 @@ public class DeployNewInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
-        instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
+        instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
-            new AddTable(s3, dynamoDB, instanceProperties, tableProperties, getConfigurationForClient(instanceProperties, tableProperties)).run();
+            new AddTable(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient).run();
         }
         LOGGER.info("Finished deployment of new instance");
     }
@@ -180,10 +176,10 @@ public class DeployNewInstance {
     }
 
     public static final class Builder {
-        private AmazonS3 s3;
-        private S3Client s3v2;
-        private AmazonDynamoDB dynamoDB;
-        private EcrClient ecr;
+        private S3Client s3Client;
+        private S3TransferManager s3TransferManager;
+        private DynamoDbClient dynamoClient;
+        private EcrClient ecrClient;
         private Path scriptsDirectory;
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
@@ -194,23 +190,23 @@ public class DeployNewInstance {
         private Builder() {
         }
 
-        public Builder s3(AmazonS3 s3) {
-            this.s3 = s3;
+        public Builder s3Client(S3Client s3Client) {
+            this.s3Client = s3Client;
             return this;
         }
 
-        public Builder s3v2(S3Client s3v2) {
-            this.s3v2 = s3v2;
+        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
+            this.s3TransferManager = s3TransferManager;
             return this;
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
+            this.dynamoClient = dynamoClient;
             return this;
         }
 
-        public Builder ecr(EcrClient ecr) {
-            this.ecr = ecr;
+        public Builder ecrClient(EcrClient ecrClient) {
+            this.ecrClient = ecrClient;
             return this;
         }
 
@@ -249,8 +245,11 @@ public class DeployNewInstance {
         }
 
         public void deployWithClients(
-                AmazonS3 s3, S3Client s3v2, AmazonDynamoDB dynamoDB, EcrClient ecr) throws IOException, InterruptedException {
-            s3(s3).s3v2(s3v2).dynamoDB(dynamoDB).ecr(ecr)
+                S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, EcrClient ecrClient) throws IOException, InterruptedException {
+            s3Client(s3Client)
+                    .s3TransferManager(s3TransferManager)
+                    .dynamoClient(dynamoClient)
+                    .ecrClient(ecrClient)
                     .build().deploy();
         }
     }

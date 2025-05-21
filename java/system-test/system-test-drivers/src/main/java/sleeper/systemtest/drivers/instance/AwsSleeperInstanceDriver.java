@@ -16,17 +16,17 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
@@ -34,7 +34,7 @@ import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -56,9 +56,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperInstanceDriver.class);
 
     private final SystemTestParameters parameters;
-    private final AmazonS3 s3;
-    private final S3Client s3v2;
-    private final AmazonDynamoDB dynamoDB;
+    private final S3Client s3;
+    private final S3TransferManager s3TransferManager;
+    private final DynamoDbClient dynamoDB;
     private final StsClient sts;
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
@@ -67,9 +67,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        this.s3 = clients.getS3();
-        this.s3v2 = clients.getS3V2();
-        this.dynamoDB = clients.getDynamoDB();
+        this.s3 = clients.getS3V2();
+        this.s3TransferManager = clients.getS3TransferManager();
+        this.dynamoDB = clients.getDynamoV2();
         this.sts = clients.getStsV2();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
@@ -100,7 +100,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .deployInstanceConfiguration(deployConfig)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
-                    .deployWithClients(s3, s3v2, dynamoDB, ecr);
+                    .deployWithClients(s3, s3TransferManager, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -129,7 +129,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         try {
             DeployExistingInstance.builder()
-                    .clients(s3v2, ecr)
+                    .clients(s3, ecr)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
