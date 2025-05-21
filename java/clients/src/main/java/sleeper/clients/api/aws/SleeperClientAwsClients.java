@@ -110,8 +110,8 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         /**
          * Sets the AWS transfer manager to interact with S3.
          *
-         * @param  s3Client the client
-         * @return          this builder
+         * @param  s3TransferManager the transfer manager
+         * @return                   this builder
          */
         public Builder s3TransferManager(S3TransferManager s3TransferManager) {
             this.s3TransferManagerWrapper = ShutdownWrapper.noShutdown(s3TransferManager);
