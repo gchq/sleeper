@@ -16,13 +16,10 @@
 
 package sleeper.clients.report;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
@@ -33,22 +30,21 @@ import sleeper.clients.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.task.common.QueueMessageCount;
+import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -111,22 +107,18 @@ public class IngestJobStatusReport {
             JobQuery.Type queryType = IngestJobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-            AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-            AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-            AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-            try (EmrClient emrClient = buildAwsV2Client(EmrClient.builder())) {
+            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                    SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                    EmrClient emrClient = buildAwsV2Client(EmrClient.builder())) {
                 InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+                IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
                 new IngestJobStatusReport(tracker, table, queryType, queryParameters,
                         reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                         PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
-            } finally {
-                s3Client.shutdown();
-                dynamoDBClient.shutdown();
-                sqsClient.shutdown();
             }
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());

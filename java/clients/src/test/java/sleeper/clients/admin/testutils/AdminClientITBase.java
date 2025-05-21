@@ -24,6 +24,7 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -31,7 +32,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.task.common.QueueMessageCount;
 
 import java.nio.file.Path;
 import java.util.Map;
