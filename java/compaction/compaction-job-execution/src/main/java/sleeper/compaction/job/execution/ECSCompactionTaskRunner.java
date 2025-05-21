@@ -15,30 +15,30 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
+import sleeper.common.jobv2.EC2ContainerMetadata;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.BatchedCommitQueueSender;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
-import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
-import sleeper.configuration.jars.S3UserJarsLoader;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3PropertiesReloader;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
+import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
+import sleeper.configurationv2.jars.S3UserJarsLoader;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3PropertiesReloader;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -49,16 +49,15 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.job.common.EC2ContainerMetadata;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.compaction.job.execution.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -81,11 +80,13 @@ public class ECSCompactionTaskRunner {
         String s3Bucket = args[0];
 
         Instant startTime = Instant.now();
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
 
-        try (EcsClient ecsClient = buildAwsV2Client(EcsClient.builder())) {
+        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
+        SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+        S3Client s3Client = buildAwsV2Client(S3Client.builder());
+
+        try (EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
             // Log some basic data if running on EC2 inside ECS
@@ -94,14 +95,14 @@ public class ECSCompactionTaskRunner {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                    s3TransferManager);
             CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             String taskId = UUID.randomUUID().toString();
 
-            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
+            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
 
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
@@ -115,11 +116,11 @@ public class ECSCompactionTaskRunner {
                     waitForFiles, committerOrLambda, jobTracker, taskTracker, compactionSelector, taskId);
             task.run();
         } finally {
-            sqsClient.shutdown();
+            sqsClient.close();
             LOGGER.info("Shut down sqsClient");
-            dynamoDBClient.shutdown();
+            dynamoDBClient.close();
             LOGGER.info("Shut down dynamoDBClient");
-            s3Client.shutdown();
+            s3Client.close();
             LOGGER.info("Shut down s3Client");
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
@@ -144,7 +145,7 @@ public class ECSCompactionTaskRunner {
 
     public static CompactionJobCommitterOrSendToLambda committerOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobTracker jobTracker, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+            CompactionJobTracker jobTracker, InstanceProperties instanceProperties, SqsClient sqsClient) {
         return new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
                 sendToSqs(instanceProperties, tablePropertiesProvider, sqsClient),
@@ -152,22 +153,24 @@ public class ECSCompactionTaskRunner {
     }
 
     private static CommitQueueSender sendToSqs(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient) {
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, SqsClient sqsClient) {
         return request -> {
             String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
             String tableId = request.getTableId();
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(queueUrl)
-                    .withMessageDeduplicationId(UUID.randomUUID().toString())
-                    .withMessageGroupId(tableId)
-                    .withMessageBody(new StateStoreCommitRequestSerDe(tablePropertiesProvider).toJson(request)));
+            sqsClient.sendMessage(SendMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .messageDeduplicationId(UUID.randomUUID().toString())
+                    .messageGroupId(tableId)
+                    .messageBody(new StateStoreCommitRequestSerDe(tablePropertiesProvider).toJson(request))
+                    .build());
         };
     }
 
     private static BatchedCommitQueueSender sendToSqsBatched(
-            InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        return request -> sqsClient.sendMessage(
-                instanceProperties.get(COMPACTION_COMMIT_QUEUE_URL),
-                new CompactionCommitMessageSerDe().toJson(request));
+            InstanceProperties instanceProperties, SqsClient sqsClient) {
+        return request -> sqsClient.sendMessage(SendMessageRequest.builder()
+                .queueUrl(instanceProperties.get(COMPACTION_COMMIT_QUEUE_URL))
+                .messageBody(new CompactionCommitMessageSerDe().toJson(request))
+                .build());
     }
 }

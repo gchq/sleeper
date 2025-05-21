@@ -36,13 +36,13 @@ import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
-import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
-import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
+import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTrackerCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
@@ -72,8 +72,8 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -118,30 +118,30 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("key", new LongType()))
             .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
             .build();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-    private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+    private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
     private InMemoryTransactionLogsPerTable inMemoryTransactionLogsPerTable;
 
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         tablePropertiesStore.save(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties)).initialise(schema);
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
     }
 
     @TempDir
@@ -469,10 +469,10 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 ObjectFactory.noUserJars(), hadoopConf);
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
-                instanceProperties, sqsClient);
+                instanceProperties, sqsClientV2);
         StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
-                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClientV2, instanceProperties),
                 waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
