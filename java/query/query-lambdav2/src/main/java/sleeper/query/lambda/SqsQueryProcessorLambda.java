@@ -63,7 +63,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
         this(S3Client.create(), SqsClient.create(),
                 DynamoDbClient.create(),
-                S3TransferManager.builder().s3Client(S3AsyncClient.create()).build(),
+                S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build(),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
