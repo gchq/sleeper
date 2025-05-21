@@ -44,12 +44,16 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
             <artifactId>autoscaling</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-task</artifactId>
+            <artifactId>common-taskv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

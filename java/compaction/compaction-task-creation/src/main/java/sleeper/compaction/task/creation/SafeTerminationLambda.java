@@ -17,8 +17,6 @@ package sleeper.compaction.task.creation;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -29,10 +27,11 @@ import com.google.gson.stream.JsonReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.common.taskv2.EC2InstanceDetails;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.task.common.EC2InstanceDetails;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -71,7 +70,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     public SafeTerminationLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        S3Client s3Client = S3Client.create();
         this.ecsClient = EcsClient.create();
 
         // Find the instance properties from S3
