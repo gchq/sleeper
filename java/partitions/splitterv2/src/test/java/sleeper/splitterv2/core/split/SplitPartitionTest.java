@@ -38,7 +38,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
-import sleeper.sketches.Sketches;
+import sleeper.sketchesv2.Sketches;
 import sleeper.splitterv2.core.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.ArrayList;
