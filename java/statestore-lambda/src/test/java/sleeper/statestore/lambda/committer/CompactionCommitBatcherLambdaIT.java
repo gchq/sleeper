@@ -21,7 +21,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
@@ -37,7 +36,6 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileRefere
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,11 +53,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClientV2.createQueue(
-                software.amazon.awssdk.services.sqs.model.CreateQueueRequest.builder()
-                        .queueName(UUID.randomUUID().toString() + ".fifo")
-                        .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
-                .queueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrlV2());
     }
 
     @Test
