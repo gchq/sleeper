@@ -32,8 +32,8 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,11 +48,11 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 public class QueryMessageHandlerIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
+    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
     @BeforeEach
     void setUp() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
     }
 
     private final TableProperties tableProperties = createTable("table-1");

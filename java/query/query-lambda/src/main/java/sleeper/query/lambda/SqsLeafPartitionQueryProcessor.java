@@ -15,14 +15,14 @@
  */
 package sleeper.query.lambda;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configurationv2.jars.S3UserJarsLoader;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
@@ -39,17 +39,15 @@ import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.query.runnerv2.output.NoResultsOutput;
-import sleeper.query.runnerv2.output.S3ResultsOutput;
-import sleeper.query.runnerv2.output.SQSResultsOutput;
-import sleeper.query.runnerv2.output.WebSocketOutput;
-import sleeper.query.runnerv2.output.WebSocketResultsOutput;
-import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
-import sleeper.query.runnerv2.tracker.QueryStatusReportListeners;
+import sleeper.query.runner.output.NoResultsOutput;
+import sleeper.query.runner.output.S3ResultsOutput;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.output.WebSocketResultsOutput;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +56,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.query.runnerv2.output.NoResultsOutput.NO_RESULTS_OUTPUT;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
@@ -66,7 +64,7 @@ public class SqsLeafPartitionQueryProcessor {
 
     private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
-    private final SqsClient sqsClient;
+    private final AmazonSQS sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final DynamoDBQueryTracker queryTracker;
@@ -77,7 +75,7 @@ public class SqsLeafPartitionQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, Path.of("/tmp")).buildObjectFactory();
+        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, "/tmp").buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
     }
 
@@ -136,7 +134,7 @@ public class SqsLeafPartitionQueryProcessor {
             return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
         } else if (S3ResultsOutput.S3.equals(destination)) {
             return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
-        } else if (WebSocketOutput.DESTINATION_NAME.equals(destination)) {
+        } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
             return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig);
         } else if (NO_RESULTS_OUTPUT.equals(destination)) {
             return new NoResultsOutput();
@@ -148,26 +146,26 @@ public class SqsLeafPartitionQueryProcessor {
     }
 
     public static final class Builder {
-        private SqsClient sqsClient;
-        private S3Client s3Client;
-        private DynamoDbClient dynamoClient;
+        private AmazonSQS sqsClient;
+        private AmazonS3 s3Client;
+        private AmazonDynamoDB dynamoClient;
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
 
-        public Builder sqsClient(SqsClient sqsClient) {
+        public Builder sqsClient(AmazonSQS sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }
 
-        public Builder s3Client(S3Client s3Client) {
+        public Builder s3Client(AmazonS3 s3Client) {
             this.s3Client = s3Client;
             return this;
         }
 
-        public Builder dynamoClient(DynamoDbClient dynamoClient) {
+        public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
             this.dynamoClient = dynamoClient;
             return this;
         }

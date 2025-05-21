@@ -16,15 +16,15 @@
 package sleeper.query.lambda;
 
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
@@ -39,9 +39,9 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -64,7 +64,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.query.runnerv2.output.NoResultsOutput.NO_RESULTS_OUTPUT;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 
@@ -79,7 +79,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
     void setUp() throws IOException, ObjectFactoryException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         createInstanceProperties(dataDir);
-        lambda = new WarmQueryExecutorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
+        lambda = new WarmQueryExecutorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test
@@ -94,13 +94,10 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
-        ReceiveMessageResponse result = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(QUERY_QUEUE_URL))
-                .build());
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
+        assertThat(result.getMessages()).hasSize(1);
 
-        assertThat(result.messages()).hasSize(1);
-
-        Query query = querySerDe.fromJson(result.messages().get(0).body());
+        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
         Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema,
                 new Field("test-key", new StringType()), "a");
 
@@ -143,16 +140,16 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     private void createTable(TableProperties tableProperties) {
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(tableProperties.getSchema());
     }

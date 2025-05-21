@@ -24,7 +24,7 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.model.QueryValidationException;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runnerv2.tracker.QueryStatusReportListeners;
+import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.util.Optional;
 import java.util.UUID;

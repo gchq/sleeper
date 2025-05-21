@@ -15,25 +15,26 @@
  */
 package sleeper.query.lambda;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.time.Instant;
 
@@ -53,26 +54,21 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
 
     private Instant lastUpdateTime;
     private InstanceProperties instanceProperties;
-    private final SqsClient sqsClient;
-    private final S3Client s3Client;
-    private final DynamoDbClient dynamoClient;
-    private final S3TransferManager s3TransferManager;
+    private final AmazonSQS sqsClient;
+    private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoClient;
     private QueryMessageHandler messageHandler;
     private SqsQueryProcessor processor;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
-        this(S3Client.create(), SqsClient.create(),
-                DynamoDbClient.create(),
-                S3TransferManager.builder().s3Client(S3AsyncClient.create()).build(),
-                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
+                AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SqsQueryProcessorLambda(S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient,
-            S3TransferManager s3TransferManager, String configBucket) throws ObjectFactoryException {
+    public SqsQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
-        this.s3TransferManager = s3TransferManager;
         updateProperties(configBucket);
     }
 
@@ -112,10 +108,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
-                .sqsClient(sqsClient)
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
-                .s3TransferManager(s3TransferManager)
+                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
         lastUpdateTime = Instant.now();

@@ -17,6 +17,8 @@ package sleeper.query.lambda;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.google.common.collect.Lists;
@@ -29,12 +31,10 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -65,13 +65,14 @@ import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.runnerv2.output.S3ResultsOutput;
-import sleeper.query.runnerv2.output.SQSResultsOutput;
-import sleeper.query.runnerv2.output.WebSocketOutput;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.query.runner.output.S3ResultsOutput;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.output.WebSocketResultsOutput;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runner.tracker.WebSocketQueryStatusReportDestination;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -139,9 +140,9 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     void setUp() throws IOException, ObjectFactoryException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
-        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
-        queryProcessorLambda = new SqsQueryProcessorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, s3TransferManager, instanceProperties.get(CONFIG_BUCKET));
-        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
+        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test
@@ -463,13 +464,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
-        resultsPublishConfig.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
-        resultsPublishConfig.put(WebSocketOutput.REGION, "eu-west-1");
-        resultsPublishConfig.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        resultsPublishConfig.put(WebSocketOutput.MAX_BATCH_SIZE, "1");
-        resultsPublishConfig.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        resultsPublishConfig.put(WebSocketOutput.SECRET_KEY, "secretKey");
+        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
+        resultsPublishConfig.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
+        resultsPublishConfig.put(WebSocketResultsOutput.REGION, "eu-west-1");
+        resultsPublishConfig.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
+        resultsPublishConfig.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "1");
+        resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
+        resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
@@ -516,13 +517,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
-        resultsPublishConfig.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
-        resultsPublishConfig.put(WebSocketOutput.REGION, "eu-west-1");
-        resultsPublishConfig.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        resultsPublishConfig.put(WebSocketOutput.MAX_BATCH_SIZE, "8");
-        resultsPublishConfig.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        resultsPublishConfig.put(WebSocketOutput.SECRET_KEY, "secretKey");
+        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
+        resultsPublishConfig.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
+        resultsPublishConfig.put(WebSocketResultsOutput.REGION, "eu-west-1");
+        resultsPublishConfig.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
+        resultsPublishConfig.put(WebSocketResultsOutput.MAX_BATCH_SIZE, "8");
+        resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
+        resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
@@ -568,12 +569,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> statusReportDestination = new HashMap<>();
-        statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketOutput.DESTINATION_NAME);
-        statusReportDestination.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
-        statusReportDestination.put(WebSocketOutput.REGION, "eu-west-1");
-        statusReportDestination.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        statusReportDestination.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        statusReportDestination.put(WebSocketOutput.SECRET_KEY, "secretKey");
+        statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
+        statusReportDestination.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
+        statusReportDestination.put(WebSocketResultsOutput.REGION, "eu-west-1");
+        statusReportDestination.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
+        statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
+        statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
@@ -588,7 +589,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
             // Then
             wireMockServer.verify(2, postRequestedFor(url));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
@@ -620,12 +621,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> statusReportDestination = new HashMap<>();
-        statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketOutput.DESTINATION_NAME);
-        statusReportDestination.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
-        statusReportDestination.put(WebSocketOutput.REGION, "eu-west-1");
-        statusReportDestination.put(WebSocketOutput.CONNECTION_ID, connectionId);
-        statusReportDestination.put(WebSocketOutput.ACCESS_KEY, "accessKey");
-        statusReportDestination.put(WebSocketOutput.SECRET_KEY, "secretKey");
+        statusReportDestination.put(QueryStatusReportListener.DESTINATION, WebSocketQueryStatusReportDestination.DESTINATION_NAME);
+        statusReportDestination.put(WebSocketResultsOutput.ENDPOINT, wireMockServer.baseUrl());
+        statusReportDestination.put(WebSocketResultsOutput.REGION, "eu-west-1");
+        statusReportDestination.put(WebSocketResultsOutput.CONNECTION_ID, connectionId);
+        statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
+        statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
                 .queryId("abc")
@@ -659,15 +660,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private long getNumberOfRecordsInSqsOutput(InstanceProperties instanceProperties) {
         long recordCount = 0;
-        ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-                .maxNumberOfMessages(1)
-                .build();
-
+        ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
+                .withMaxNumberOfMessages(1);
         int lastReceiveCount = -1;
         while (lastReceiveCount != 0) {
-            ReceiveMessageResponse response = sqsClientV2.receiveMessage(request);
-            lastReceiveCount = response.messages().size();
+            ReceiveMessageResult response = sqsClient.receiveMessage(request);
+            lastReceiveCount = response.getMessages().size();
             recordCount += lastReceiveCount;
         }
         return recordCount;
@@ -694,7 +692,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private void processQuery(Query query) {
-        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2));
+        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery);
     }
@@ -709,12 +707,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private void processLeafPartitionQuery(int maxMessages) {
         List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClientV2.receiveMessage(
-                ReceiveMessageRequest.builder().queueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
-                        .maxNumberOfMessages(maxMessages).build())
-                .messages().forEach(message -> {
+        sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
                     SQSMessage leafMessage = new SQSMessage();
-                    leafMessage.setBody(message.body());
+                    leafMessage.setBody(message.getBody());
                     leafPartitionQueries.add(leafMessage);
                 });
 
@@ -732,7 +729,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(createTempDirectory(tempDir, null).toString())
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConf)
                     .build();
@@ -775,9 +772,9 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
         try {
             update(stateStore).initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
@@ -794,7 +791,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
 
         instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
@@ -802,10 +799,10 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;
     }
