@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.api.SleeperClient;
-import sleeper.clients.api.aws.AwsSleeperClientBuilder;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -111,7 +110,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     SleeperClient createSleeperClient() {
-        return new AwsSleeperClientBuilder()
+        return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients
                         .s3Client(s3ClientV2)

@@ -70,7 +70,7 @@ public class SleeperClientIT extends LocalStackTestBase {
     }
 
     private SleeperClient createClient() {
-        return new AwsSleeperClientBuilder()
+        return SleeperClient.builder()
                 .instanceId(instanceProperties.get(ID))
                 .awsClients(clients -> clients
                         .s3Client(s3ClientV2)
