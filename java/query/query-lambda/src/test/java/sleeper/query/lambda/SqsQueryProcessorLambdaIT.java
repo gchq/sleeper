@@ -17,8 +17,6 @@ package sleeper.query.lambda;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.google.common.collect.Lists;
@@ -31,6 +29,8 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -140,7 +140,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
-        queryProcessorLambda = new SqsQueryProcessorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, s3TransferManager, instanceProperties.get(CONFIG_BUCKET));
         queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
     }
 
@@ -659,12 +659,15 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private long getNumberOfRecordsInSqsOutput(InstanceProperties instanceProperties) {
         long recordCount = 0;
-        ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-                .withMaxNumberOfMessages(1);
+        ReceiveMessageRequest request = ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
+                .maxNumberOfMessages(1)
+                .build();
+
         int lastReceiveCount = -1;
         while (lastReceiveCount != 0) {
-            ReceiveMessageResult response = sqsClient.receiveMessage(request);
-            lastReceiveCount = response.getMessages().size();
+            ReceiveMessageResponse response = sqsClientV2.receiveMessage(request);
+            lastReceiveCount = response.messages().size();
             recordCount += lastReceiveCount;
         }
         return recordCount;
@@ -706,11 +709,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private void processLeafPartitionQuery(int maxMessages) {
         List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
-                .withMaxNumberOfMessages(maxMessages)).getMessages().forEach(message -> {
+        sqsClientV2.receiveMessage(
+                ReceiveMessageRequest.builder().queueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                        .maxNumberOfMessages(maxMessages).build())
+                .messages().forEach(message -> {
                     SQSMessage leafMessage = new SQSMessage();
-                    leafMessage.setBody(message.getBody());
+                    leafMessage.setBody(message.body());
                     leafPartitionQueries.add(leafMessage);
                 });
 

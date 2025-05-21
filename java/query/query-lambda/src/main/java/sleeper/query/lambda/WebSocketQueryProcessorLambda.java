@@ -77,11 +77,6 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.of(region))
                 .build();
-        /*
-         * AmazonApiGatewayManagementApi client = AmazonApiGatewayManagementApiClientBuilder.standard()
-         * .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
-         * .build();
-         */
 
         String data = "{\"message\":\"error\",\"error\":\"" + errorMessage + "\"}";
         PostToConnectionRequest request = PostToConnectionRequest.builder()
