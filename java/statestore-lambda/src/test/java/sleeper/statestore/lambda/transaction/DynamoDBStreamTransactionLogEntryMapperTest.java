@@ -35,7 +35,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
 
 import java.time.Instant;
 import java.util.List;

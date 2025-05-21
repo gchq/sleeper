@@ -15,30 +15,26 @@
  */
 package sleeper.statestore.lambda.snapshot;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3PropertiesReloader;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3PropertiesReloader;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.transactionlog.snapshots.SnapshotDeletionTracker;
-import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter;
+import sleeper.statestorev2.transactionlog.snapshots.SnapshotDeletionTracker;
+import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotDeleter;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -55,15 +51,15 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeletionLambda.class);
 
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
 
     public TransactionLogSnapshotDeletionLambda() {
-        s3Client = AmazonS3ClientBuilder.defaultClient();
-        dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        s3Client = S3Client.create();
+        dynamoClient = DynamoDbClient.create();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
@@ -89,12 +85,11 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
 
     private void deleteSnapshots(List<TableProperties> tables, Map<String, List<SQSMessage>> messagesByTableId,
             List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
-        Configuration configuration = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
                 SnapshotDeletionTracker snapshotDeleteTracker = new TransactionLogSnapshotDeleter(instanceProperties, table,
-                        dynamoClient, configuration).deleteSnapshots(Instant.now());
+                        dynamoClient, s3Client).deleteSnapshots(Instant.now());
                 LOGGER.info("Total snapshots deleted {}, last deleted transaction number: {}", snapshotDeleteTracker.getDeletedCount(), snapshotDeleteTracker.getLastTransactionNumber());
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);

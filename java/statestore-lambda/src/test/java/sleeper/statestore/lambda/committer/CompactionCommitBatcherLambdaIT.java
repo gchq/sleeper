@@ -107,7 +107,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
 
     private CompactionCommitBatcherLambda lambda() {
         return new CompactionCommitBatcherLambda(
-                CompactionCommitBatcherLambda.createBatcher(instanceProperties, sqsClient, s3Client));
+                CompactionCommitBatcherLambda.createBatcher(instanceProperties, sqsClientV2, s3ClientV2));
     }
 
     private SQSEvent createEvent(String tableId, ReplaceFileReferencesRequest request) {

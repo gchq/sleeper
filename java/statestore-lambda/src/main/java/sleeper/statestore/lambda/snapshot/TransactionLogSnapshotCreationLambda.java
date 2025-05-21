@@ -15,26 +15,25 @@
  */
 package sleeper.statestore.lambda.snapshot;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -51,14 +50,16 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationLambda.class);
 
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
+    private final S3TransferManager s3TransferManager;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public TransactionLogSnapshotCreationLambda() {
-        s3Client = AmazonS3ClientBuilder.defaultClient();
-        dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        s3Client = S3Client.create();
+        dynamoClient = DynamoDbClient.create();
+        s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.create()).build();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
@@ -85,8 +86,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Creating snapshot for table {}", table.getStatus());
             try {
-                DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoClient,
-                        HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties))
+                DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
                         .createSnapshot();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed creating snapshot for table {}", table.getStatus(), e);
