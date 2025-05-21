@@ -15,12 +15,11 @@
  */
 package sleeper.clients.api.aws;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
@@ -29,19 +28,21 @@ import sleeper.clients.util.UncheckedAutoCloseables;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * AWS clients to instantiate a Sleeper client.
  */
 public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
-    private final ShutdownWrapper<AmazonS3> s3ClientWrapper;
-    private final ShutdownWrapper<AmazonDynamoDB> dynamoClientWrapper;
-    private final ShutdownWrapper<AmazonSQS> sqsClientWrapper;
+    private final ShutdownWrapper<S3Client> s3ClientWrapper;
+    private final ShutdownWrapper<S3TransferManager> s3TransferManagerWrapper;
+    private final ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
+    private final ShutdownWrapper<SqsClient> sqsClientWrapper;
 
     private SleeperClientAwsClients(Builder builder) {
         s3ClientWrapper = Objects.requireNonNull(builder.s3ClientWrapper, "s3Client must not be null");
+        s3TransferManagerWrapper = Objects.requireNonNull(builder.s3TransferManagerWrapper, "s3TransferManager must not be null");
         dynamoClientWrapper = Objects.requireNonNull(builder.dynamoClientWrapper, "dynamoClient must not be null");
         sqsClientWrapper = Objects.requireNonNull(builder.sqsClientWrapper, "sqsClient must not be null");
     }
@@ -50,15 +51,19 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         return new Builder();
     }
 
-    public AmazonS3 s3() {
+    public S3Client s3() {
         return s3ClientWrapper.get();
     }
 
-    public AmazonDynamoDB dynamo() {
+    public S3TransferManager s3TransferManager() {
+        return s3TransferManagerWrapper.get();
+    }
+
+    public DynamoDbClient dynamo() {
         return dynamoClientWrapper.get();
     }
 
-    public AmazonSQS sqs() {
+    public SqsClient sqs() {
         return sqsClientWrapper.get();
     }
 
@@ -68,9 +73,10 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
     }
 
     public static class Builder {
-        private ShutdownWrapper<AmazonS3> s3ClientWrapper;
-        private ShutdownWrapper<AmazonDynamoDB> dynamoClientWrapper;
-        private ShutdownWrapper<AmazonSQS> sqsClientWrapper;
+        private ShutdownWrapper<S3Client> s3ClientWrapper;
+        private ShutdownWrapper<S3TransferManager> s3TransferManagerWrapper;
+        private ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
+        private ShutdownWrapper<SqsClient> sqsClientWrapper;
 
         /**
          * Creates default clients to interact with AWS. These clients will be shut down automatically when the Sleeper
@@ -79,9 +85,14 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          * @return this builder
          */
         public Builder defaultClients() {
-            s3ClientWrapper = ShutdownWrapper.shutdown(buildAwsV1Client(AmazonS3ClientBuilder.standard()), AmazonS3::shutdown);
-            dynamoClientWrapper = ShutdownWrapper.shutdown(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()), AmazonDynamoDB::shutdown);
-            sqsClientWrapper = ShutdownWrapper.shutdown(buildAwsV1Client(AmazonSQSClientBuilder.standard()), AmazonSQS::shutdown);
+            s3ClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(S3Client.builder()), S3Client::close);
+            S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
+            S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+            UncheckedAutoCloseables shutdownTransferManager = new UncheckedAutoCloseables(
+                    List.of(s3AsyncClient::close, s3TransferManager::close));
+            s3TransferManagerWrapper = ShutdownWrapper.shutdown(s3TransferManager, shutdownTransferManager::close);
+            dynamoClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(DynamoDbClient.builder()), DynamoDbClient::close);
+            sqsClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(SqsClient.builder()), SqsClient::close);
             return this;
         }
 
@@ -91,8 +102,19 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          * @param  s3Client the client
          * @return          this builder
          */
-        public Builder s3Client(AmazonS3 s3Client) {
+        public Builder s3Client(S3Client s3Client) {
             this.s3ClientWrapper = ShutdownWrapper.noShutdown(s3Client);
+            return this;
+        }
+
+        /**
+         * Sets the AWS transfer manager to interact with S3.
+         *
+         * @param  s3Client the client
+         * @return          this builder
+         */
+        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
+            this.s3TransferManagerWrapper = ShutdownWrapper.noShutdown(s3TransferManager);
             return this;
         }
 
@@ -102,7 +124,7 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          * @param  dynamoClient the client
          * @return              this builder
          */
-        public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClientWrapper = ShutdownWrapper.noShutdown(dynamoClient);
             return this;
         }
@@ -113,7 +135,7 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          * @param  sqsClient the client
          * @return           this builder
          */
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClientWrapper = ShutdownWrapper.noShutdown(sqsClient);
             return this;
         }

@@ -50,7 +50,7 @@ public class IngestJobSenderIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        IngestJobSender.toSqs(instanceProperties, sqsClient)
+        IngestJobSender.toSqs(instanceProperties, sqsClientV2)
                 .sendFilesToIngest(job);
         assertThat(recieveIngestJobs()).containsExactly(job);
     }
