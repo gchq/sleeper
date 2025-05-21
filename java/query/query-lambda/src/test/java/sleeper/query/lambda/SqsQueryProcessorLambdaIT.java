@@ -588,7 +588,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
             // Then
             wireMockServer.verify(2, postRequestedFor(url));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
+            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.queryId", equalTo("abc"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
