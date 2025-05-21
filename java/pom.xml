@@ -1305,6 +1305,7 @@
                             </includes>
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
+                        <dependencyConvergence/>
                     </rules>
                 </configuration>
             </plugin>
