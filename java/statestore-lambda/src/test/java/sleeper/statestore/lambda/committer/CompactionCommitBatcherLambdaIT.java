@@ -19,10 +19,10 @@ import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
@@ -55,10 +55,11 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")))
-                .getQueueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClientV2.createQueue(
+                software.amazon.awssdk.services.sqs.model.CreateQueueRequest.builder()
+                        .queueName(UUID.randomUUID().toString() + ".fifo")
+                        .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
+                .queueUrl());
     }
 
     @Test
@@ -128,12 +129,12 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> consumeQueueMessages() {
-        return sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withWaitTimeSeconds(1)
-                .withMaxNumberOfMessages(10))
-                .getMessages().stream()
-                .map(message -> stateStoreSerDe.fromJson(message.getBody()))
+        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .waitTimeSeconds(1)
+                .maxNumberOfMessages(10).build())
+                .messages().stream()
+                .map(message -> stateStoreSerDe.fromJson(message.body()))
                 .toList();
     }
 }
