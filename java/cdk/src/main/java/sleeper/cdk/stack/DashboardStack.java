@@ -38,12 +38,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperty;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -81,7 +77,7 @@ public class DashboardStack extends NestedStack {
                 .sorted()
                 // There's a limit of 500 widgets in a dashboard, including the widgets not associated with a table
                 .limit(50)
-                .collect(Collectors.toList());
+                .toList();
         metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
@@ -131,7 +127,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsSubmitted")
-                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricNumberOfMessagesSent(MetricOptions.builder()
+                        .left(List.of(ingestStack.getIngestJobQueue().metricNumberOfMessagesSent(MetricOptions.builder()
                                 .unit(Unit.COUNT)
                                 .period(window)
                                 .statistic("Sum")
@@ -141,7 +137,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("NumberOfJobsWaiting")
-                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
+                        .left(List.of(ingestStack.getIngestJobQueue().metricApproximateNumberOfMessagesVisible(MetricOptions.builder()
                                 .unit(Unit.COUNT)
                                 .period(window)
                                 .statistic("Average")
@@ -151,7 +147,7 @@ public class DashboardStack extends NestedStack {
                 GraphWidget.Builder.create()
                         .view(GraphWidgetView.TIME_SERIES)
                         .title("AgeOfOldestWaitingJob")
-                        .left(Collections.singletonList(ingestStack.getIngestJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
+                        .left(List.of(ingestStack.getIngestJobQueue().metricApproximateAgeOfOldestMessage(MetricOptions.builder()
                                 .unit(Unit.SECONDS)
                                 .period(window)
                                 .statistic("Maximum")
@@ -171,7 +167,7 @@ public class DashboardStack extends NestedStack {
                                                     .label(tableNames.get(i))
                                                     .expression("FILL(m" + i + ", 0)")
                                                     .period(window)
-                                                    .usingMetrics(Collections.singletonMap("m" + i, Metric.Builder.create()
+                                                    .usingMetrics(Map.of("m" + i, Metric.Builder.create()
                                                             .namespace(metricsNamespace)
                                                             .metricName("StandardIngestRecordsWritten")
                                                             .unit(Unit.COUNT)
@@ -180,7 +176,7 @@ public class DashboardStack extends NestedStack {
                                                             .dimensionsMap(createDimensionMap(instanceId, tableNames.get(i)))
                                                             .build()))
                                                     .build())
-                                            .collect(Collectors.toList()))
+                                            .toList())
                             .leftYAxis(YAxisProps.builder().min(0).build())
                             .width(6)
                             .build());
@@ -188,10 +184,9 @@ public class DashboardStack extends NestedStack {
     }
 
     private static Map<String, String> createDimensionMap(String instanceId, String tableName) {
-        Map<String, String> hashMap = new HashMap<>();
-        hashMap.put("instanceId", instanceId);
-        hashMap.put("tableName", tableName);
-        return hashMap;
+        return Map.of(
+                "instanceId", instanceId,
+                "tableName", tableName);
     }
 
     private void addTableWidgets() {
@@ -207,7 +202,7 @@ public class DashboardStack extends NestedStack {
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
                             .title("NumberOfFilesWithReferences")
-                            .left(Collections.singletonList(Metric.Builder.create()
+                            .left(List.of(Metric.Builder.create()
                                     .namespace(metricsNamespace)
                                     .metricName("NumberOfFilesWithReferences")
                                     .unit(Unit.COUNT)
@@ -221,7 +216,7 @@ public class DashboardStack extends NestedStack {
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
                             .title("RecordCount")
-                            .left(Collections.singletonList(Metric.Builder.create()
+                            .left(List.of(Metric.Builder.create()
                                     .namespace(metricsNamespace)
                                     .metricName("RecordCount")
                                     .unit(Unit.COUNT)
@@ -235,7 +230,7 @@ public class DashboardStack extends NestedStack {
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
                             .title("Partitions")
-                            .left(Arrays.asList(
+                            .left(List.of(
                                     Metric.Builder.create()
                                             .namespace(metricsNamespace)
                                             .metricName("PartitionCount")
@@ -258,7 +253,7 @@ public class DashboardStack extends NestedStack {
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
                             .title("FilesReferencesPerPartition")
-                            .left(Collections.singletonList(Metric.Builder.create()
+                            .left(List.of(Metric.Builder.create()
                                     .namespace(metricsNamespace)
                                     .metricName("AverageFileReferencesPerPartition")
                                     .unit(Unit.COUNT)

@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -130,8 +129,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .sid("EmrServerlessStartJobRun")
-                .actions(Lists.newArrayList("emr-serverless:StartJobRun"))
-                .resources(Lists.newArrayList("*"))
+                .actions(List.of("emr-serverless:StartJobRun"))
+                .resources(List.of("*"))
                 .build());
     }
 

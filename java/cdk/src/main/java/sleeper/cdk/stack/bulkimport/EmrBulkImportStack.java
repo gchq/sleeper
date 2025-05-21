@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.Effect;
@@ -80,20 +79,20 @@ public class EmrBulkImportStack extends NestedStack {
         conditions.put("StringEquals", tagKeyCondition);
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList(
+                .actions(List.of(
                         "elasticmapreduce:RunJobFlow",
                         "elasticmapreduce:AddTags"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
+                .resources(List.of("*"))
                 .conditions(conditions)
                 .build());
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .sid("CreateCleanupRole")
-                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
+                .actions(List.of("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
+                .resources(List.of("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
                 .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
-                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
+                        List.of("elasticmapreduce.amazonaws.com",
                                 "elasticmapreduce.amazonaws.com.cn"))))
                 .build());
     }
