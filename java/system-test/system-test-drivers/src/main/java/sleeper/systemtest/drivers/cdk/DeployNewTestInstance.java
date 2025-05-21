@@ -19,12 +19,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
@@ -54,15 +53,15 @@ public class DeployNewTestInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <csv-list-of-subnets> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
-        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
-        try (S3Client s3v2 = S3Client.create();
-                EcrClient ecr = EcrClient.create()) {
+        try (S3Client s3Client = S3Client.create();
+                StsClient stsClient = StsClient.create();
+                EcrClient ecrClient = EcrClient.create()) {
             Path scriptsDirectory = Path.of(args[0]);
             Path propertiesFile = Path.of(args[1]);
-            PopulateInstanceProperties populateInstanceProperties = PopulateInstancePropertiesAws.builder(sts, regionProvider)
+            PopulateInstanceProperties populateInstanceProperties = PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
                     .instanceId(args[2]).vpcId(args[3]).subnetIds(args[4])
                     .extraInstanceProperties(properties -> properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
                     .build();
@@ -75,9 +74,8 @@ public class DeployNewTestInstance {
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
-                    .deployWithClients(s3, s3v2, dynamoDB, ecr);
+                    .deployWithClients(s3, s3Client, dynamoDB, ecrClient);
         } finally {
-            sts.shutdown();
             s3.shutdown();
             dynamoDB.shutdown();
         }

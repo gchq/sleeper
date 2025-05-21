@@ -18,7 +18,6 @@ package sleeper.systemtest.drivers.instance;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
@@ -27,6 +26,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
@@ -59,7 +59,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonDynamoDB dynamoDB;
-    private final AWSSecurityTokenService sts;
+    private final StsClient sts;
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
     private final EcrClient ecr;
@@ -70,7 +70,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         this.s3 = clients.getS3();
         this.s3v2 = clients.getS3V2();
         this.dynamoDB = clients.getDynamoDB();
-        this.sts = clients.getSts();
+        this.sts = clients.getStsV2();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
         this.ecr = clients.getEcr();
