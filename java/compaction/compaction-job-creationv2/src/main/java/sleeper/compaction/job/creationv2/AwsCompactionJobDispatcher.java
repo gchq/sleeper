@@ -57,11 +57,11 @@ public class AwsCompactionJobDispatcher {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionJobDispatcher.class);
 
     public static CompactionJobDispatcher from(
-            S3Client s3, DynamoDbClient dynamoDB, SqsClient sqs, S3TransferManager conf, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
+            S3Client s3, DynamoDbClient dynamoDB, SqsClient sqs, S3TransferManager s3TransferManager, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe();
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
-                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
+                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, s3TransferManager),
                 CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 readBatch(s3, compactionJobSerDe),
                 sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,

@@ -108,7 +108,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-job-creation</artifactId>
+            <artifactId>compaction-job-creationv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
