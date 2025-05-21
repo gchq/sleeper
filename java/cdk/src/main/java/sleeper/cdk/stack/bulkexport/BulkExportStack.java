@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
-import com.amazonaws.auth.policy.actions.DynamoDBv2Actions;
-import com.amazonaws.auth.policy.actions.S3Actions;
-import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
@@ -143,9 +140,9 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create a queue and a dead letter queue for the queue.
      *
-     * @param id                 the id of the queue
-     * @param instanceProperties the instance properties
-     * @return the queue and the dead letter queue
+     * @param  id                 the id of the queue
+     * @param  instanceProperties the instance properties
+     * @return                    the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -174,10 +171,10 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create the export results bucket.
      *
-     * @param instanceProperties the instance properties
-     * @param coreStacks         the core stacks
-     * @param lambdaCode         the lambda code
-     * @return the export results bucket
+     * @param  instanceProperties the instance properties
+     * @param  coreStacks         the core stacks
+     * @param  lambdaCode         the lambda code
+     * @return                    the export results bucket
      */
     private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
             LambdaCode lambdaCode) {
@@ -217,12 +214,12 @@ public class BulkExportStack extends NestedStack {
     private void attachPolicy(IFunction lambda, String id) {
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)
-                .actions(
-                        Arrays.asList(SQSActions.SendMessage.getActionName(),
-                                SQSActions.ReceiveMessage.getActionName(),
-                                S3Actions.PutObject.getActionName(),
-                                S3Actions.GetObject.getActionName(),
-                                DynamoDBv2Actions.Query.getActionName()))
+                .actions(List.of(
+                        "sqs:SendMessage",
+                        "sqs:ReceiveMessage",
+                        "s3:PutObject",
+                        "s3:GetObject",
+                        "dynamodb:Query"))
                 .resources(Collections.singletonList("*"))
                 .build();
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
