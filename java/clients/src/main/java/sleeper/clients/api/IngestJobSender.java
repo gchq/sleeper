@@ -15,7 +15,7 @@
  */
 package sleeper.clients.api;
 
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.IngestJob;
@@ -28,10 +28,10 @@ public interface IngestJobSender {
 
     void sendFilesToIngest(IngestJob job);
 
-    static IngestJobSender toSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    static IngestJobSender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         IngestJobSerDe serDe = new IngestJobSerDe();
-        return job -> sqsClient.sendMessage(
-                instanceProperties.get(INGEST_JOB_QUEUE_URL),
-                serDe.toJson(job));
+        return job -> sqsClient.sendMessage(send -> send
+                .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+                .messageBody(serDe.toJson(job)));
     }
 }

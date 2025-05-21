@@ -15,8 +15,8 @@
  */
 package sleeper.clients.api.aws;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.clients.api.IngestBatcherSender;
@@ -24,14 +24,14 @@ import sleeper.clients.api.IngestJobSender;
 import sleeper.clients.api.SleeperClient;
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseables;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -65,7 +65,7 @@ public class AwsSleeperClientBuilder {
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3()))
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo(), hadoopConf))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo(), awsClients.s3TransferManager()))
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordRetrieverProvider(recordRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
@@ -75,7 +75,7 @@ public class AwsSleeperClientBuilder {
                 .build();
     }
 
-    private InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
+    private InstanceProperties loadInstanceProperties(S3Client s3Client) {
         if (instanceProperties != null) {
             return instanceProperties;
         }

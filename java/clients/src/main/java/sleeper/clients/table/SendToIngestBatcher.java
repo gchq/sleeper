@@ -15,21 +15,20 @@
  */
 package sleeper.clients.table;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.clients.api.IngestBatcherSender;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 
 import java.util.List;
+
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class SendToIngestBatcher {
 
@@ -45,10 +44,9 @@ public class SendToIngestBatcher {
         String tableName = args[1];
         List<String> files = List.of(args).subList(2, args.length);
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
             if (!tableIndex.getTableByName(tableName).isPresent()) {
@@ -57,10 +55,6 @@ public class SendToIngestBatcher {
             }
             IngestBatcherSender.toSqs(instanceProperties, sqsClient)
                     .submit(new IngestBatcherSubmitRequest(tableName, files));
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-            sqsClient.shutdown();
         }
     }
 

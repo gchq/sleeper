@@ -46,7 +46,7 @@ public class IngestBatcherSenderIT extends LocalStackTestBase {
         IngestBatcherSubmitRequest request = new IngestBatcherSubmitRequest("test-table", List.of());
 
         // When
-        IngestBatcherSender.toSqs(instanceProperties, sqsClient)
+        IngestBatcherSender.toSqs(instanceProperties, sqsClientV2)
                 .submit(request);
 
         // Then
