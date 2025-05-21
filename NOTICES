@@ -1,7 +1,7 @@
 Sleeper is mainly written in Java and this is built using Maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
-AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.*)
+AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.*, com.amazonaws:jmespath-java:1.*)
 
 - Apache License, Version 2.0
 
@@ -29,13 +29,17 @@ Trino (io.trino:trino-*:390)
 
 - Apache License, Version 2.0
 
-WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.*)
+WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.*, org.wildfly.common:wildfly-common:2.*)
 
 - Apache License, Version 2.0
 
 Woodstox (com.fasterxml.woodstox:woodstox-core:7.*)
 
 - Apache License, Version 2.0
+
+Stax2 (org.codehaus.woodstox:stax2-api:4.*)
+
+- BSD 2-Clause License
 
 Apache Ivy (org.apache.ivy:ivy:2.*)
 
@@ -66,6 +70,10 @@ Apache Kerby (org.apache.kerby:*:2.*)
 - Apache License, Version 2.0
 
 XNIO (org.jboss.xnio:xnio-api:3.*)
+
+- Apache License, Version 2.0
+
+JBoss Logging (org.jboss.logging:jboss-logging:3.*)
 
 - Apache License, Version 2.0
 
@@ -151,9 +159,61 @@ Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.*)
 
 - Apache License, Version 2.0
 
+Apache Commons Logging (commons-logging:commons-logging:1.*)
+
+- Apache License, Version 2.0
+
+Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
+
+- Apache License, Version 2.0
+
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*)
+
+- Apache License, Version 2.0
+
 Codehaus Janino (org.codehaus.janino:*:3.*)
 
 - The 3-Clause BSD License
+
+JAXB API (javax.xml.bind:jaxb-api:2.*)
+
+- Common Development and Distribution License (CDDL) Version 1.1 (https://javaee.github.io/jaxb-v2/LICENSE)
+
+JLine (org.jline:jline:3.*)
+
+- The 3-Clause BSD License
+
+JetBrains Annotations (org.jetbrains:annotations:26.*)
+
+- Apache License, Version 2.0
+
+ParaNamer (com.thoughtworks.paranamer:paranamer:2.*)
+
+- The 3-Clause BSD License
+
+ZSTD JNI (com.github.luben:zstd-jni:1.*)
+
+- BSD 2-Clause License
+
+Units (io.airlift:units:1.*)
+
+- Apache License, Version 2.0
+
+Slice (io.airlift:slice:2.*)
+
+- Apache License, Version 2.0
+
+Google Guice (com.google.inject:guice:5.*)
+
+- Apache License, Version 2.0
+
+Java Object Layout (org.openjdk.jol:jol-core:0.*)
+
+- GNU General Public License (GPL) Version 2
+
+Apache ZooKeeper (org.apache.zookeeper:zookeeper:3.*)
+
+- Apache License, Version 2.0
 
 Apache Datasketches (org.apache.datasketches:datasketches-java:3.*)
 
@@ -203,6 +263,10 @@ AssertJ (org.assertj:assertj-core:3.*)
 
 - Apache License, Version 2.0
 
+Hamcrest (org.hamcrest:hamcrest-core:1.*)
+
+- The 3-Clause BSD License
+
 JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:4.*)
 
 - Apache License, Version 2.0
@@ -232,6 +296,10 @@ CDK Lambda Layer KUBECTL V32 (software.amazon.awscdk:cdk-lambda-layer-kubectl-v3
 - Apache License, Version 2.0
 
 AWS Constructs (software.constructs:constructs:10.*)
+
+- Apache License, Version 2.0
+
+AWS JSii (software.amazon.jsii:jsii-runtime:1.*)
 
 - Apache License, Version 2.0
 
@@ -319,6 +387,10 @@ Dependency Check Maven Plugin (org.owasp:dependency-check-maven:12.*)
 SpotBugs Maven Plugin (com.github.spotbugs:spotbugs-*:4.*)
 
 - GNU Lesser General Public License, version 3
+
+FindBugs Annotations (com.google.code.findbugs:jsr305:3.*)
+
+- Apache License, Version 2.0
 
 Checkstyle (com.puppycrawl.tools:checkstyle:10.*)
 
