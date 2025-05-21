@@ -15,19 +15,17 @@
  */
 package sleeper.clients.deploy.properties;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class DownloadConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(DownloadConfig.class);
@@ -35,23 +33,17 @@ public class DownloadConfig {
     private DownloadConfig() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length != 2) {
             throw new IllegalArgumentException("Usage: <instance-id> <directory-to-write-to>");
         }
         String instanceId = args[0];
         Path basePath = Path.of(args[1]);
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             LOGGER.info("Downloading configuration from S3");
-            S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoDBClient, instanceId, basePath);
+            S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, instanceId, basePath);
             LOGGER.info("Download complete");
-        } catch (IOException e) {
-            LOGGER.error("Download failed: {}", e.getMessage());
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 
