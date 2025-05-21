@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin.properties;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -111,7 +110,7 @@ public class AdminClientPropertiesStore {
                 LOGGER.info("Saving to AWS");
                 S3InstanceProperties.saveToS3(s3Client, properties);
             }
-        } catch (IOException | AmazonS3Exception | InterruptedException e) {
+        } catch (IOException | RuntimeException | InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {
@@ -142,7 +141,7 @@ public class AdminClientPropertiesStore {
                             .map(table -> tableName.equals(table.get(TABLE_NAME)) ? properties : table));
             LOGGER.info("Saving to AWS");
             S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(properties);
-        } catch (IOException | AmazonS3Exception e) {
+        } catch (IOException | RuntimeException e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
                 S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, instanceId, generatedDirectory);
