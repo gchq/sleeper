@@ -90,7 +90,7 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
             S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
             UncheckedAutoCloseables shutdownTransferManager = new UncheckedAutoCloseables(
                     List.of(s3AsyncClient::close, s3TransferManager::close));
-            s3TransferManagerWrapper = ShutdownWrapper.shutdown(s3TransferManager, shutdownTransferManager::close);
+            s3TransferManagerWrapper = ShutdownWrapper.shutdown(s3TransferManager, shutdownTransferManager);
             dynamoClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(DynamoDbClient.builder()), DynamoDbClient::close);
             sqsClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(SqsClient.builder()), SqsClient::close);
             return this;
