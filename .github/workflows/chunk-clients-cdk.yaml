@@ -23,6 +23,7 @@ on:
       - 'java/system-test/system-test-suite/**'
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-job-creationv2/**'
       - 'java/compaction/compaction-trackerV2/**'
       - 'java/ingest/ingest-trackerV2/**'
       - 'java/statestorev2/**'
