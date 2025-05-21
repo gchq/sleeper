@@ -111,7 +111,7 @@ where
                     .with_values_field(fields[1].clone())
             }
             _ => unreachable!(
-                "Invalid datatype inside StringGroupMapAccumulator {:?}",
+                "Invalid datatype inside PrimGroupMapAccumulator {:?}",
                 self.inner_field_type
             ),
         }
@@ -281,24 +281,26 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use arrow::{
-        array::Int64Builder,
-        datatypes::{DataType, Field},
-    };
-    use datafusion::error::DataFusionError;
-
     use crate::{
         assert_error,
         datafusion::functions::{
             MapAggregatorOp,
             map_aggregate::{
                 aggregator::map_test_common::make_map_datatype,
-                group_accumulator::prim_group_accumulator::PrimGroupMapAccumulator,
+                group_accumulator::prim_group_accumulator::{
+                    PrimGroupMapAccumulator, update_prim_map_group,
+                },
+                state::MapNullState,
             },
         },
     };
+    use arrow::{
+        array::{Int64Builder, StructBuilder, UInt16Builder},
+        datatypes::{DataType, Field, Fields},
+    };
+    use datafusion::{common::HashMap, error::DataFusionError};
+    use nohash::BuildNoHashHasher;
+    use std::sync::Arc;
 
     #[test]
     fn try_new_should_succeed() {
@@ -346,6 +348,297 @@ mod tests {
             acc,
             DataFusionError::Plan,
             "PrimGroupMapAccumulator inner field type should be a DataType::Struct"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid datatype inside PrimGroupMapAccumulator Int16")]
+    fn make_map_builder_check_unreachable() {
+        // Given
+        // Build instance directly via private constructor
+        let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder> {
+            inner_field_type: DataType::Int16,
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // Then - should panic
+        acc.make_map_builder(10);
+    }
+
+    #[test]
+    fn make_map_builder_field_names_equal() {
+        // Given
+        let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Int64, false),
+                Field::new("value1_name", DataType::Int64, false),
+            ])),
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(
+            &array.entries().column_names(),
+            &["key1_name", "value1_name"]
+        );
+    }
+
+    #[test]
+    fn make_map_builder_field_types_equal() {
+        // Given
+        let acc = PrimGroupMapAccumulator::<Int64Builder, UInt16Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Int64, false),
+                Field::new("value1_name", DataType::UInt16, false),
+            ])),
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(*array.key_type(), DataType::Int64);
+        assert_eq!(*array.value_type(), DataType::UInt16);
+    }
+
+    #[test]
+    fn update_prim_map_none() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        map.insert(0, 2);
+        map.insert(1, 4);
+        let expected_map = map.clone();
+
+        let mut key_cache = HashMap::<i64, usize>::new();
+        key_cache.insert(1, 0);
+        key_cache.insert(3, 1);
+        let expected_key_cache = key_cache.clone();
+
+        let mut klist = vec![1, 3];
+        let expected_klist = klist.clone();
+
+        // When
+        update_prim_map_group::<Int64Builder, Int64Builder>(
+            None,
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then - expect no changes
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    fn update_prim_map_empty_values() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        map.insert(0, 2);
+        map.insert(1, 4);
+        let expected_map = map.clone();
+
+        let mut key_cache = HashMap::<i64, usize>::new();
+        key_cache.insert(1, 0);
+        key_cache.insert(3, 1);
+        let expected_key_cache = key_cache.clone();
+
+        let mut klist = vec![1, 3];
+        let expected_klist = klist.clone();
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+
+        // When
+        update_prim_map_group::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then - expect no changes
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    fn update_prim_map_enters_first_values() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        let mut expected_map = map.clone();
+        expected_map.insert(0, 2);
+        expected_map.insert(1, 4);
+        expected_map.insert(2, -10);
+
+        let mut key_cache = HashMap::<i64, usize>::new();
+        let mut expected_key_cache = key_cache.clone();
+        expected_key_cache.insert(1, 0);
+        expected_key_cache.insert(3, 1);
+        expected_key_cache.insert(8, 2);
+
+        let mut klist = vec![];
+        let expected_klist = vec![1, 3, 8];
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+        for (k, v) in &[(1, 2), (3, 4), (8, -10)] {
+            entry_builder
+                .field_builder::<Int64Builder>(0)
+                .unwrap()
+                .append_value(*k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(*v);
+            entry_builder.append(true);
+        }
+
+        // When
+        update_prim_map_group::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    fn update_prim_map_enters_values_and_sums() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        map.insert(0, 2);
+        map.insert(1, 4);
+        let mut expected_map = map.clone();
+        expected_map.insert(0, 6);
+        expected_map.insert(1, 8);
+        expected_map.insert(2, 2);
+
+        let mut key_cache = HashMap::<i64, usize>::new();
+        key_cache.insert(1, 0);
+        key_cache.insert(3, 1);
+        let mut expected_key_cache = key_cache.clone();
+        expected_key_cache.insert(1, 0);
+        expected_key_cache.insert(3, 1);
+        expected_key_cache.insert(4, 2);
+
+        let mut klist = vec![1, 3];
+        let expected_klist = vec![1, 3, 4];
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+        for (k, v) in [(1, 2), (1, 2), (3, 4), (4, 2)] {
+            entry_builder
+                .field_builder::<Int64Builder>(0)
+                .unwrap()
+                .append_value(k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(v);
+            entry_builder.append(true);
+        }
+
+        // When
+        update_prim_map_group::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &mut &MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    #[should_panic(expected = "Nullable entries aren't supported")]
+    fn update_prim_map_panics_on_null() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        let mut key_cache = HashMap::<i64, usize>::new();
+        let mut klist = vec![];
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Int64, true),
+                Field::new("value", DataType::Int64, true),
+            ]),
+            vec![Box::new(Int64Builder::new()), Box::new(Int64Builder::new())],
+        );
+        for (k, v) in [(1, 2), (1, 2), (3, 4), (4, 2)] {
+            entry_builder
+                .field_builder::<Int64Builder>(0)
+                .unwrap()
+                .append_value(k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(v);
+            entry_builder.append(true);
+        }
+        // Add null elements
+        entry_builder
+            .field_builder::<Int64Builder>(0)
+            .unwrap()
+            .append_null();
+        entry_builder
+            .field_builder::<Int64Builder>(1)
+            .unwrap()
+            .append_null();
+        entry_builder.append(true);
+
+        // When - panic
+        update_prim_map_group::<Int64Builder, Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
         );
     }
 }

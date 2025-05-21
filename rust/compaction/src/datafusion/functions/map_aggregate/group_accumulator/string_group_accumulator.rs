@@ -266,3 +266,132 @@ where
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use arrow::{
+        array::{Int64Builder, UInt16Builder},
+        datatypes::{DataType, Field, Fields},
+    };
+    use datafusion::{common::HashMap, error::DataFusionError};
+
+    use crate::{
+        assert_error,
+        datafusion::functions::{
+            MapAggregatorOp,
+            map_aggregate::{
+                aggregator::map_test_common::make_map_datatype,
+                group_accumulator::string_group_accumulator::StringGroupMapAccumulator,
+                state::MapNullState,
+            },
+        },
+    };
+
+    #[test]
+    fn try_new_should_succeed() {
+        // Given
+        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
+
+        // When
+        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert!(acc.is_ok());
+    }
+
+    #[test]
+    fn try_new_should_error_on_non_map_type() {
+        // Given
+        let mt = DataType::Int16;
+        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "Invalid datatype for StringGroupMapAccumulator Int16"
+        );
+    }
+
+    #[test]
+    fn try_new_should_error_on_wrong_inner_type() {
+        // Given
+        let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
+        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "StringGroupMapAccumulator inner field type should be a DataType::Struct"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid datatype inside StringGroupMapAccumulator Int16")]
+    fn make_map_builder_check_unreachable() {
+        // Given
+        // Build instance directly via private constructor
+        let acc = StringGroupMapAccumulator::<Int64Builder> {
+            inner_field_type: DataType::Int16,
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // Then - should panic
+        acc.make_map_builder(10);
+    }
+
+    #[test]
+    fn make_map_builder_field_names_equal() {
+        // Given
+        let acc = StringGroupMapAccumulator::<Int64Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Utf8, false),
+                Field::new("value1_name", DataType::Int64, false),
+            ])),
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(
+            &array.entries().column_names(),
+            &["key1_name", "value1_name"]
+        );
+    }
+
+    #[test]
+    fn make_map_builder_field_types_equal() {
+        // Given
+        let acc = StringGroupMapAccumulator::<UInt16Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Utf8, false),
+                Field::new("value1_name", DataType::UInt16, false),
+            ])),
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(*array.key_type(), DataType::Utf8);
+        assert_eq!(*array.value_type(), DataType::UInt16);
+    }
+}

@@ -266,3 +266,132 @@ where
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use arrow::{
+        array::{Int64Builder, UInt16Builder},
+        datatypes::{DataType, Field, Fields},
+    };
+    use datafusion::{common::HashMap, error::DataFusionError};
+
+    use crate::{
+        assert_error,
+        datafusion::functions::{
+            MapAggregatorOp,
+            map_aggregate::{
+                aggregator::map_test_common::make_map_datatype,
+                group_accumulator::byte_group_accumulator::ByteGroupMapAccumulator,
+                state::MapNullState,
+            },
+        },
+    };
+
+    #[test]
+    fn try_new_should_succeed() {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+
+        // When
+        let acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert!(acc.is_ok());
+    }
+
+    #[test]
+    fn try_new_should_error_on_non_map_type() {
+        // Given
+        let mt = DataType::Int16;
+        let acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "Invalid datatype for ByteGroupMapAccumulator Int16"
+        );
+    }
+
+    #[test]
+    fn try_new_should_error_on_wrong_inner_type() {
+        // Given
+        let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
+        let acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+
+        // Then
+        assert_error!(
+            acc,
+            DataFusionError::Plan,
+            "ByteGroupMapAccumulator inner field type should be a DataType::Struct"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid datatype inside ByteGroupMapAccumulator Int16")]
+    fn make_map_builder_check_unreachable() {
+        // Given
+        // Build instance directly via private constructor
+        let acc = ByteGroupMapAccumulator::<Int64Builder> {
+            inner_field_type: DataType::Int16,
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // Then - should panic
+        acc.make_map_builder(10);
+    }
+
+    #[test]
+    fn make_map_builder_field_names_equal() {
+        // Given
+        let acc = ByteGroupMapAccumulator::<Int64Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Binary, false),
+                Field::new("value1_name", DataType::Int64, false),
+            ])),
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(
+            &array.entries().column_names(),
+            &["key1_name", "value1_name"]
+        );
+    }
+
+    #[test]
+    fn make_map_builder_field_types_equal() {
+        // Given
+        let acc = ByteGroupMapAccumulator::<UInt16Builder> {
+            inner_field_type: DataType::Struct(Fields::from(vec![
+                Field::new("key1_name", DataType::Binary, false),
+                Field::new("value1_name", DataType::UInt16, false),
+            ])),
+            group_maps: Vec::with_capacity(1000),
+            words: Vec::with_capacity(200),
+            nulls: MapNullState::new(),
+            word_cache: HashMap::with_capacity(200),
+            op: MapAggregatorOp::Sum,
+        };
+
+        // When
+        let array = acc.make_map_builder(10).finish();
+
+        // Then
+        assert_eq!(*array.key_type(), DataType::Binary);
+        assert_eq!(*array.value_type(), DataType::UInt16);
+    }
+}
