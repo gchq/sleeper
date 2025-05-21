@@ -37,7 +37,6 @@ import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableNotFoundException;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
@@ -76,7 +75,7 @@ public class AdminClientPropertiesStore {
     public InstanceProperties loadInstanceProperties(String instanceId) {
         try {
             return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3Client, instanceId);
-        } catch (AmazonS3Exception e) {
+        } catch (RuntimeException e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
     }
@@ -85,7 +84,7 @@ public class AdminClientPropertiesStore {
         try {
             return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByNameNoValidation(tableName);
-        } catch (TableNotFoundException e) {
+        } catch (RuntimeException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
     }
