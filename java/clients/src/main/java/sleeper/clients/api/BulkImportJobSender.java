@@ -15,7 +15,7 @@
  */
 package sleeper.clients.api;
 
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -27,10 +27,10 @@ public interface BulkImportJobSender {
 
     void sendFilesToBulkImport(BulkImportPlatform platform, BulkImportJob job);
 
-    static BulkImportJobSender toSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    static BulkImportJobSender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         BulkImportJobSerDe serDe = new BulkImportJobSerDe();
-        return (platform, job) -> sqsClient.sendMessage(
-                platform.getBulkImportQueueUrl(instanceProperties),
-                serDe.toJson(job));
+        return (platform, job) -> sqsClient.sendMessage(send -> send
+                .queueUrl(platform.getBulkImportQueueUrl(instanceProperties))
+                .messageBody(serDe.toJson(job)));
     }
 }

@@ -56,7 +56,7 @@ In the future it will be possible to export Sleeper table data in bulk. See the 
 There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to work with an
 existing instance.
 
-Also see the [tables documentation](usage/tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
+Also see the [tables documentation](usage/tables.md#add-edit-a-table) for scripts to add/edit Sleeper tables.
 
 ### Sleeper Administration Client
 

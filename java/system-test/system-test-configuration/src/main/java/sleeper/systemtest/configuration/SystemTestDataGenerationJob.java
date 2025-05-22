@@ -142,7 +142,7 @@ public class SystemTestDataGenerationJob {
         private String tableName;
         private SystemTestIngestMode ingestMode;
         private IngestQueue ingestQueue;
-        private int numberOfIngests;
+        private int numberOfIngests = 1;
         private long recordsPerIngest;
         private SystemTestRandomDataSettings randomDataSettings;
 

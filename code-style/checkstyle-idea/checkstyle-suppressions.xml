@@ -72,6 +72,8 @@
     <suppress files="[\\/]sleeper[\\/]compaction[\\/]trackerv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]splitterv2[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]splitterv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocMethod"/>

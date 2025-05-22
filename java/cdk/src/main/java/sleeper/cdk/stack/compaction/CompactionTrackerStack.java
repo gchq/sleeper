@@ -26,9 +26,9 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
-import sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker;
-import sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat;
-import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker;
+import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker;
+import sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusFormat;
+import sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTracker;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.cdk.util.Utils.removalPolicy;

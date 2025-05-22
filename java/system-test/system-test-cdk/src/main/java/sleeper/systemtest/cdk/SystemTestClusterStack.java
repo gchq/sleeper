@@ -47,28 +47,28 @@ import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.systemtest.configuration.SystemTestConstants;
-import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.configuration.SystemTestPropertySetter;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestConstants;
+import sleeper.systemtest.configurationv2.SystemTestProperties;
+import sleeper.systemtest.configurationv2.SystemTestPropertySetter;
+import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 
 import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_DLQ_ARN;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_DLQ_URL;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_ARN;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
-import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_DLQ_ARN;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_DLQ_URL;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_ARN;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 public class SystemTestClusterStack extends NestedStack {
 

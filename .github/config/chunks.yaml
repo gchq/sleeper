@@ -10,6 +10,7 @@ chunks:
       - build-uptime-lambda
       - system-test/system-test-cdk
       - system-test/system-test-configuration
+      - system-test/system-test-configurationv2
       - system-test/system-test-data-generation
       - system-test/system-test-dsl
       - system-test/system-test-drivers
@@ -53,6 +54,7 @@ chunks:
       - compaction/compaction-trackerV2
       - compaction/compaction-core
       - partitions/splitter
+      - partitions/splitterv2
       - partitions/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
@@ -74,7 +76,9 @@ chunks:
       - ingest/ingest-starter
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
+      - ingest/ingest-batcher-storev2
       - ingest/ingest-batcher-submitter
+      - ingest/ingest-batcher-submitterv2
       - ingest/ingest-batcher-job-creator
       - bulk-import/bulk-import-core
       - bulk-import/bulk-import-starter
@@ -88,5 +92,6 @@ chunks:
       - query/query-runner
       - query/query-runnerv2
       - query/query-lambda
+      - query/query-lambdav2
       - athena
       - trino

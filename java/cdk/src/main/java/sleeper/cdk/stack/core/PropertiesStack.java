@@ -30,7 +30,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.HashMap;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -46,9 +46,6 @@ public class PropertiesStack extends NestedStack {
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put("properties", instanceProperties.saveAsString());
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "properties-writer");
@@ -69,7 +66,7 @@ public class PropertiesStack extends NestedStack {
 
         CustomResource.Builder.create(this, "InstanceProperties")
                 .resourceType("Custom::InstanceProperties")
-                .properties(properties)
+                .properties(Map.of("properties", instanceProperties.saveAsString()))
                 .serviceToken(propertiesWriterProvider.getServiceToken())
                 .build();
 

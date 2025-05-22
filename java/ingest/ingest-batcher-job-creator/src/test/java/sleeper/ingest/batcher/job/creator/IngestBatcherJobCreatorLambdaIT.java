@@ -15,28 +15,27 @@
  */
 package sleeper.ingest.batcher.job.creator;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
-import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
+import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStoreCreator;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -59,13 +58,13 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
         instanceProperties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString());
         instanceProperties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
     }
 
     @Test
@@ -95,25 +94,26 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     }
 
     private List<Message> consumeQueueMessages(InstanceProperty queueProperty) {
-        return sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(queueProperty))
-                .withWaitTimeSeconds(1)
-                .withMaxNumberOfMessages(10))
-                .getMessages();
+        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(queueProperty))
+                .waitTimeSeconds(1)
+                .maxNumberOfMessages(10)
+                .build())
+                .messages();
     }
 
     private IngestJob readJobMessage(Message message) {
-        return new IngestJobSerDe().fromJson(message.getBody());
+        return new IngestJobSerDe().fromJson(message.body());
     }
 
     private IngestBatcherStore batcherStore() {
-        return new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties,
-                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
+        return new DynamoDBIngestBatcherStore(dynamoClientV2, instanceProperties,
+                S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2));
     }
 
     private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
         return new IngestBatcherJobCreatorLambda(
-                s3Client, instanceProperties.get(CONFIG_BUCKET),
-                sqsClient, dynamoClient, timeSupplier(times), jobIdSupplier(jobIds));
+                s3ClientV2, instanceProperties.get(CONFIG_BUCKET),
+                sqsClientV2, dynamoClientV2, timeSupplier(times), jobIdSupplier(jobIds));
     }
 }

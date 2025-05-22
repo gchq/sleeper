@@ -145,7 +145,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldLoadLatestSnapshotsWhenCreatingStateStore() throws Exception {
             // Given
-            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName());
+            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName());
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)
@@ -173,7 +173,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldNotLoadLatestSnapshotsByClassname() throws Exception {
             // Given
-            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStoreNoSnapshots.class.getName());
+            tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStoreNoSnapshots.class.getSimpleName());
             PartitionTree tree = new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 123L)

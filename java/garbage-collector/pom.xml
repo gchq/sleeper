@@ -29,17 +29,10 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-core</artifactId>
-            <version>${aws-lambda-java-core.version}</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-events</artifactId>
-            <version>${aws-lambda-java-events.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sqs</artifactId>
-            <version>${aws-java-sdk.version}</version>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
@@ -49,22 +42,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>statestorev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>common-invoke-tables</artifactId>
+            <artifactId>common-invoke-tablesv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

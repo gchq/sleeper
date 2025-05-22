@@ -15,10 +15,10 @@
  */
 package sleeper.clients.report;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.report.filestatus.CVSFileStatusReporter;
 import sleeper.clients.report.filestatus.FileStatusCollector;
@@ -26,19 +26,18 @@ import sleeper.clients.report.filestatus.FileStatusReporter;
 import sleeper.clients.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.report.filestatus.TableFilesStatus;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfigurationForClient;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * A utility class to report information about the files in the system and their
@@ -114,18 +113,15 @@ public class FilesStatusReport {
             reporterType = args[4].toUpperCase(Locale.ROOT);
         }
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-            StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient());
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+            StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(tableName));
             new FilesStatusReport(stateStore, maxFilesWithNoReferences, verbose, reporterType).run();
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 }

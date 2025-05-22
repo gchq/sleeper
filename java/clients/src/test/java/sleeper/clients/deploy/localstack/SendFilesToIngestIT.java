@@ -20,7 +20,7 @@ import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.IngestJob;
 
@@ -44,13 +44,13 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         // Given
         String instanceId = UUID.randomUUID().toString().substring(0, 18);
         deployInstance(instanceId);
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3ClientV2, instanceId);
 
         Path filePath = tempDir.resolve("test-file.parquet");
         Files.writeString(filePath, "abc");
 
         // When
-        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3Client, sqsClientV2);
+        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3ClientV2, sqsClientV2);
 
         // Then
         assertThat(getObjectContents(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))

@@ -21,6 +21,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -56,6 +59,14 @@ public class AddTable {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, configuration);
+    }
+
+    public AddTable(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient) {
+        this.tableProperties = tableProperties;
+        this.tablePropertiesStore = sleeper.configurationv2.properties.S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        this.stateStoreProvider = sleeper.statestorev2.StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);
     }
 
     public void run() throws IOException {
