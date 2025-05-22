@@ -31,7 +31,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
@@ -97,15 +97,14 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
-        IngestResult result = ingestRecords(table, List.of(
+        AllReferencesToAFile file = ingestRecords(table, List.of(
                 new Record(Map.of("key1", 25L)),
                 new Record(Map.of("key1", 100L))));
-        FileReference rootFile = result.getFileReferenceList().get(0);
-        assertThat(listTableObjectKeys(table))
+        assertThat(listDataBucketObjectKeys())
                 .extracting(FilenameUtils::getName)
                 .containsExactly(
-                        FilenameUtils.getName(rootFile.getFilename()),
-                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
 
         // When
         deleteTable("table-1");
@@ -113,7 +112,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         // Then
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(listTableObjectKeys(table)).isEmpty();
+        assertThat(listDataBucketObjectKeys()).isEmpty();
         assertThat(streamTableFileTransactions(table)).isEmpty();
         assertThat(streamTablePartitionTransactions(table)).isEmpty();
     }
@@ -124,18 +123,17 @@ public class DeleteTableIT extends LocalStackTestBase {
         TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
         StateStore stateStore1 = createStateStore(table1);
         update(stateStore1).initialise(schema);
-        IngestResult result = ingestRecords(table1, List.of(
+        AllReferencesToAFile file1 = ingestRecords(table1, List.of(
                 new Record(Map.of("key1", 25L))));
-        FileReference rootFile = result.getFileReferenceList().get(0);
-        assertThat(listTableObjectKeys(table1))
+        assertThat(listDataBucketObjectKeys())
                 .extracting(FilenameUtils::getName)
                 .containsExactly(
-                        FilenameUtils.getName(rootFile.getFilename()),
-                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
+                        FilenameUtils.getName(file1.getFilename()),
+                        FilenameUtils.getName(file1.getFilename()).replace("parquet", "sketches"));
         TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
         StateStore stateStore2 = createStateStore(table2);
         update(stateStore2).initialise(schema);
-        ingestRecords(table2, List.of(new Record(Map.of("key1", 25L))));
+        AllReferencesToAFile file2 = ingestRecords(table2, List.of(new Record(Map.of("key1", 25L))));
 
         // When
         deleteTable("table-1");
@@ -143,14 +141,17 @@ public class DeleteTableIT extends LocalStackTestBase {
         // Then
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(listTableObjectKeys(table1)).isEmpty();
         assertThat(streamTableFileTransactions(table1)).isEmpty();
         assertThat(streamTablePartitionTransactions(table1)).isEmpty();
         assertThat(propertiesStore.loadByName("table-2"))
                 .isEqualTo(table2);
-        assertThat(listTableObjectKeys(table2)).isNotEmpty();
         assertThat(streamTableFileTransactions(table2)).isNotEmpty();
         assertThat(streamTablePartitionTransactions(table2)).isNotEmpty();
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        FilenameUtils.getName(file2.getFilename()),
+                        FilenameUtils.getName(file2.getFilename()).replace("parquet", "sketches"));
     }
 
     @Test
@@ -162,21 +163,19 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
-        IngestResult result = ingestRecords(table, List.of(
+        AllReferencesToAFile file = ingestRecords(table, List.of(
                 new Record(Map.of("key1", 25L)),
                 new Record(Map.of("key1", 100L))));
-        FileReference rootFile = result.getFileReferenceList().get(0);
 
         DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3ClientV2, s3TransferManager, dynamoClientV2)
                 .createSnapshot();
 
-        List<String> tableFilesInS3 = listTableObjectKeys(table);
-        assertThat(tableFilesInS3.stream()
-                .map(FilenameUtils::getName))
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
                 .containsExactly(
                         // Data files
-                        FilenameUtils.getName(rootFile.getFilename()),
-                        FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"),
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"),
                         // Snapshot files
                         "1-files.arrow",
                         "1-partitions.arrow");
@@ -187,7 +186,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         // Then
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(listTableObjectKeys(table)).isEmpty();
+        assertThat(listDataBucketObjectKeys()).isEmpty();
         // And
         var snapshotMetadataStore = snapshotMetadataStore(table);
         assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
@@ -219,7 +218,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
     }
 
-    private IngestResult ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
+    private AllReferencesToAFile ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
@@ -233,16 +232,19 @@ public class DeleteTableIT extends LocalStackTestBase {
         for (Record record : records) {
             ingestRecords.write(record);
         }
-        return ingestRecords.close();
+        IngestResult result = ingestRecords.close();
+        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(result.getFileReferenceList());
+        if (files.size() != 1) {
+            throw new IllegalStateException("Expected one file ingested, found " + files.size());
+        }
+        return files.get(0);
     }
 
-    private List<String> listTableObjectKeys(TableProperties tableProperties) {
+    private List<String> listDataBucketObjectKeys() {
         return s3ClientV2.listObjects(ListObjectsRequest.builder()
                 .bucket(instanceProperties.get(DATA_BUCKET))
-                .prefix(tableProperties.get(TABLE_ID) + "/")
                 .build())
                 .contents().stream()
-                .filter(object -> object.size() > 0)
                 .map(S3Object::key)
                 .toList();
     }
