@@ -44,9 +44,9 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -310,19 +310,18 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {
-        String splitPointsFileName = tempDir.toString() + "/split-points.txt";
-        FileWriter fstream = new FileWriter(splitPointsFileName, StandardCharsets.UTF_8);
-        BufferedWriter info = new BufferedWriter(fstream);
-        if (encoded) {
-            info.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_1.getBytes(StandardCharsets.UTF_8))));
-            info.newLine();
-            info.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_2.getBytes(StandardCharsets.UTF_8))));
-        } else {
-            info.write(SPLIT_PARTITION_STRING_1);
-            info.newLine();
-            info.write(SPLIT_PARTITION_STRING_2);
+        Path path = tempDir.resolve("test-split-points.txt");
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            if (encoded) {
+                writer.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_1.getBytes(StandardCharsets.UTF_8))));
+                writer.newLine();
+                writer.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_2.getBytes(StandardCharsets.UTF_8))));
+            } else {
+                writer.write(SPLIT_PARTITION_STRING_1);
+                writer.newLine();
+                writer.write(SPLIT_PARTITION_STRING_2);
+            }
         }
-        info.close();
-        return splitPointsFileName;
+        return path.toString();
     }
 }
