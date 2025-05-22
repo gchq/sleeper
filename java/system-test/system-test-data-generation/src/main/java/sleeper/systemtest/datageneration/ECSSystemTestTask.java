@@ -26,14 +26,15 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
+import sleeper.common.jobv2.action.ActionException;
+import sleeper.common.jobv2.action.MessageReference;
+import sleeper.common.jobv2.action.thread.PeriodicActionRunnable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.MessageReference;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
@@ -53,21 +54,23 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QU
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
     private final SystemTestPropertyValues properties;
-    private final AmazonSQS sqsClient;
+    private final AmazonSQS sqsClientV1;
+    private final SqsClient sqsClientV2;
     private final Consumer<SystemTestDataGenerationJob> jobRunner;
 
-    public ECSSystemTestTask(SystemTestPropertyValues properties, AmazonSQS sqsClient, Consumer<SystemTestDataGenerationJob> jobRunner) {
+    public ECSSystemTestTask(SystemTestPropertyValues properties, AmazonSQS sqsClientV1, SqsClient sqsClientV2, Consumer<SystemTestDataGenerationJob> jobRunner) {
         this.properties = properties;
-        this.sqsClient = sqsClient;
+        this.sqsClientV1 = sqsClientV1;
+        this.sqsClientV2 = sqsClientV2;
         this.jobRunner = jobRunner;
     }
 
     public static void main(String[] args) {
         AWSSecurityTokenService stsClientV1 = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        try (StsClient stsClientV2 = StsClient.create()) {
-            CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2, sqsClient);
-            if (args.length > 3 || args.length < 2) {
+        AmazonSQS sqsClientV1 = AmazonSQSClientBuilder.defaultClient();
+        try (StsClient stsClientV2 = StsClient.create(); SqsClient sqsClientV2 = SqsClient.create()) {
+            CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2, sqsClientV1, sqsClientV2);
+            if (args.length > 4 || args.length < 3) {
                 throw new RuntimeException("Wrong number of arguments detected. Usage: ECSSystemTestTask <standalone-or-combined> <config bucket> <optional role ARN to load combined config as>");
             }
             String deployType = args[0];
@@ -84,7 +87,7 @@ public class ECSSystemTestTask {
             ingestRandomData.run();
         } finally {
             stsClientV1.shutdown();
-            sqsClient.shutdown();
+            sqsClientV1.shutdown();
         }
     }
 
@@ -93,7 +96,7 @@ public class ECSSystemTestTask {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueUrl)
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(20);
-        ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+        ReceiveMessageResult receiveMessageResult = sqsClientV1.receiveMessage(receiveMessageRequest);
         List<Message> messages = receiveMessageResult.getMessages();
         if (messages.isEmpty()) {
             LOGGER.info("Finishing as no jobs have been received");
@@ -103,7 +106,7 @@ public class ECSSystemTestTask {
         LOGGER.info("Received message {}", message.getBody());
         SystemTestDataGenerationJob job = new SystemTestDataGenerationJobSerDe().fromJson(message.getBody());
 
-        MessageReference messageReference = new MessageReference(sqsClient, queueUrl,
+        MessageReference messageReference = new MessageReference(sqsClientV2, queueUrl,
                 "Data generation job " + job.getJobId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
         PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
@@ -123,12 +126,14 @@ public class ECSSystemTestTask {
     private static class CommandLineFactory {
         private final AWSSecurityTokenService stsClientV1;
         private final StsClient stsClientV2;
-        private final AmazonSQS sqsClient;
+        private final AmazonSQS sqsClientV1;
+        private final SqsClient sqsClientV2;
 
-        CommandLineFactory(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, AmazonSQS sqsClient) {
+        CommandLineFactory(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, AmazonSQS sqsClientV1, SqsClient sqsClientV2) {
             this.stsClientV1 = stsClientV1;
             this.stsClientV2 = stsClientV2;
-            this.sqsClient = sqsClient;
+            this.sqsClientV1 = sqsClientV1;
+            this.sqsClientV2 = sqsClientV2;
         }
 
         ECSSystemTestTask noLoadConfigRole(String configBucket) {
@@ -153,7 +158,7 @@ public class ECSSystemTestTask {
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
-                return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
+                return new ECSSystemTestTask(systemTestProperties, sqsClientV1, sqsClientV2, job -> {
                     AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
                     try {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
@@ -173,7 +178,7 @@ public class ECSSystemTestTask {
         ECSSystemTestTask combinedInstance(String configBucket, AmazonS3 s3Client) {
             SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
             IngestRandomData ingestData = ingestRandomData(properties, properties.testPropertiesOnly());
-            return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClient, job -> {
+            return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClientV1, sqsClientV2, job -> {
                 try {
                     ingestData.run(job);
                 } catch (IOException e) {

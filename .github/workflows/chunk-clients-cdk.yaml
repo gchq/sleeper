@@ -50,6 +50,7 @@ on:
       - 'java/compaction/compaction-core/**'
       - 'java/statestore/**'
       - 'java/common/common-job/**'
+      - 'java/common/common-jobv2/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/sketchesv2/**'

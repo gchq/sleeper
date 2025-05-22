@@ -73,7 +73,7 @@ chunks:
       - ingest/ingest-core
       - ingest/ingest-tracker
       - ingest/ingest-trackerV2
-      - ingest/ingest-starter
+      - ingest/ingest-taskrunner
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
       - ingest/ingest-batcher-storev2

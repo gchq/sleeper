@@ -15,14 +15,14 @@
  */
 package sleeper.ingest.runner.task;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -291,10 +291,12 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private List<StateStoreCommitRequest> getCommitRequestsFromQueue(TableProperties tableProperties) {
         String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
-        ReceiveMessageResult result = sqsClient.receiveMessage(commitQueueUrl);
+        ReceiveMessageResponse response = sqsClientV2.receiveMessage(request -> request
+                .queueUrl(commitQueueUrl));
+
         StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
-        return result.getMessages().stream()
-                .map(Message::getBody)
+        return response.messages().stream()
+                .map(Message::body)
                 .map(serDe::fromJson)
                 .collect(Collectors.toList());
     }
@@ -336,7 +338,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 stateStoreProvider, tracker,
                 "test-task",
                 localDir.toString(),
-                s3Client, s3AsyncClient, sqsClient,
+                s3ClientV2, s3AsyncClient, sqsClientV2,
                 hadoopConf,
                 timeSupplier);
     }
