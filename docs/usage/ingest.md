@@ -40,11 +40,15 @@ queue in SQS. There are multiple stacks that can be deployed for this approach. 
 Spark job on EMR Serverless. `EmrBulkImportStack` creates an EMR cluster on demand to run the Spark job. The cluster is
 only used for that bulk import job. `PersistentEmrBulkImportStack` creates an EMR cluster that is permanently running.
 By default it scales up and down so that if there are no bulk import jobs to run then minimal resources will be used.
-`EksBulkImportStack` is an experimental option to run Spark on an EKS cluster. If you have a lot of import jobs then the
-persistent EMR approach is recommended. If you have occasional jobs then use the serverless EMR approach.
+`EksBulkImportStack` is an experimental option to run Spark on an EKS cluster.
 
-An ingest batcher is also available to automatically group smaller files into jobs of a configurable size. These jobs
-will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
+If you have occasional bulk import jobs, or you just want to get started, then we recommend the serverless EMR approach.
+If you will have a lot of jobs running fairly constantly, then the persistent EMR approach is recommended.
+
+An `IngestBatcherStack` is also available to automatically group smaller files into jobs of a configurable size. These
+jobs will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
+
+By default, a new Sleeper instance includes `EmrServerlessBulkImportStack`, `IngestStack` and `IngestBatcherStack`.
 
 ## What ingest rate does Sleeper support?
 
