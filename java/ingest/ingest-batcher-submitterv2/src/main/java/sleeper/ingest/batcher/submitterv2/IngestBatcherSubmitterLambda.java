@@ -55,9 +55,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
-        S3Client s3Client = S3Client.builder().build();
-        SqsClient sqsClient = SqsClient.builder().build();
-        DynamoDbClient dynamoDBClient = DynamoDbClient.builder().build();
+        S3Client s3Client = S3Client.create();
+        SqsClient sqsClient = SqsClient.create();
+        DynamoDbClient dynamoDBClient = DynamoDbClient.create();
 
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
