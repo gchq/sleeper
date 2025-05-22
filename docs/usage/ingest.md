@@ -23,14 +23,44 @@ property `sleeper.ingest.source.bucket`, documented [here](properties/instance/u
 
 You can choose which ingest system to use for this by which SQS queue you send your message to. You can find the queue
 URLs in instance properties like `sleeper.ingest.job.queue.url`, documented
-under [ingest](properties/instance/cdk/ingest.md) and [bulk import](properties/instance/cdk/bulk_import.md). Which
-queues are available will depend on which optional stacks are deployed.
+under [ingest](properties/instance/cdk/ingest.md) and [bulk import](properties/instance/cdk/bulk_import.md).
+Which queues are available will depend on which optional stacks are deployed.
+
+Here's an example of an SQS message for an ingest or bulk import job:
+
+```json
+{
+  "id": "a_unique_id",
+  "tableName": "myTable",
+  "files": [
+    "databucket/file.parquet",
+    "databucket/directory/path"
+  ]
+}
+```
 
 Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
 the cost, with lower latency generally costing more.
 
-## Ingest systems
+You can also submit your files to the ingest batcher, which will group larger batches of data into ingest or bulk import
+jobs. In this case you won't be able to use the ingest job tracker directly, but you can find which jobs are created
+from which files by querying the ingest batcher store. The SQS queue URL can be find in the instance
+property `sleeper.ingest.batcher.submit.queue.url`. The ingest batcher can be configured in table properties
+documented [here](properties/table/ingest_batcher.md). Here's an example of an SQS message to submit to the ingest
+batcher:
+
+```json
+{
+  "tableName": "myTable",
+  "files": [
+    "databucket/file.parquet",
+    "databucket/directory/path"
+  ]
+}
+```
+
+## Choosing an ingest system
 
 There are two types of system for ingesting data: standard ingest and bulk import. The former refers to a process that
 reads data and partitions and sorts it locally before writing it to files in S3. Bulk import means using
@@ -40,8 +70,9 @@ distributed process.
 For ingesting any significant volumes of data, the bulk import process is preferred because it is faster and results in
 less compaction work later. The standard ingest process is mainly used for testing purposes.
 
-The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
-deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message to an ingest queue in SQS.
+The standard ingest process can be called from Java on any `Iterable` of `Record`s, with the class `IngestFactory`.
+There is also an `IngestStack` which deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message
+to an ingest queue in SQS.
 
 The bulk import approach can be customised to run in your own Spark cluster, or Sleeper can run it for you via an ingest
 queue in SQS. There are multiple stacks that can be deployed for this approach. `EmrServerlessBulkImportStack` runs the
