@@ -76,6 +76,25 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- This dependency is only required when the AWS client is explicitly created
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
