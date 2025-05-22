@@ -51,6 +51,10 @@ public class BucketUtils {
         }
     }
 
+    public static void deleteAllObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix) {
+        deleteObjectsInBucketWithPrefix(s3Client, bucketName, prefix, key -> true);
+    }
+
     public static void deleteObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix, Predicate<String> keyPredicate) {
         LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);
         int totalObjectsDeleted = 0;

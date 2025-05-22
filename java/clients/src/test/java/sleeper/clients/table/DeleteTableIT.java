@@ -212,7 +212,7 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(instanceProperties, s3Client, dynamoClient, hadoopConf)
+        new DeleteTable(instanceProperties, s3ClientV2, s3TransferManager, dynamoClientV2)
                 .delete(tableName);
     }
 
