@@ -89,6 +89,11 @@
             <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>common-invoke-tables</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>net.javacrumbs.json-unit</groupId>
