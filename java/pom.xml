@@ -158,7 +158,7 @@
         <airlift-units.version>1.10</airlift-units.version>
         <airlift-slice.version>0.41</airlift-slice.version>
         <guice.version>5.0.1</guice.version>
-        <jol.version>0.2</jol.version>
+        <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.3</zookeeper.version>
         <jackson.version>2.19.0</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
