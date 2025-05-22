@@ -50,10 +50,6 @@ public class EstimateSplitPoints {
         this.sketchSize = sketchSize;
     }
 
-    public EstimateSplitPoints(Schema schema, Iterable<Record> records, int numPartitions) {
-        this(schema, records, numPartitions, 32768);
-    }
-
     public List<Object> estimate() {
         if (1 == numPartitions) {
             return Collections.emptyList();

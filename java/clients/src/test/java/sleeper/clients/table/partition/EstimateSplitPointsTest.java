@@ -48,10 +48,9 @@ public class EstimateSplitPointsTest {
             record.put("key", 100 - i - 1); // Reverse order because the method shouldn't assume that the records are sorted
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimate(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly(10, 20, 30, 40, 50, 60, 70, 80, 90);
@@ -67,10 +66,9 @@ public class EstimateSplitPointsTest {
             record.put("key", i * 100L);
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimate(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L);
@@ -86,10 +84,9 @@ public class EstimateSplitPointsTest {
             record.put("key", String.format("%04d", i * 100L));
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimate(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly("1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000");
@@ -105,10 +102,9 @@ public class EstimateSplitPointsTest {
             record.put("key", new byte[]{(byte) i});
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimate(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly(new byte[]{10},
@@ -128,7 +124,11 @@ public class EstimateSplitPointsTest {
         }
 
         // When / Then
-        assertThatThrownBy(() -> new EstimateSplitPoints(schema, records, 1))
+        assertThatThrownBy(() -> estimate(schema, records, 1))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private List<Object> estimate(Schema schema, List<Record> records, int numPartitions) {
+        return new EstimateSplitPoints(schema, records, numPartitions, 32768).estimate();
     }
 }
