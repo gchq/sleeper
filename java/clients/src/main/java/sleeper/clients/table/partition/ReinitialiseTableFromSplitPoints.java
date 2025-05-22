@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 
 /**
  * A utility class to reinitialise a table. It deletes all the data in the table

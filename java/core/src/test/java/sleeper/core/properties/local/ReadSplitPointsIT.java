@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.core.properties.local;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,7 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
+import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;

@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.WriteSplitPoints.writeSplitPoints;
+import static sleeper.core.properties.local.WriteSplitPoints.writeSplitPoints;
 
 public class EstimateSplitPointsClient {
 

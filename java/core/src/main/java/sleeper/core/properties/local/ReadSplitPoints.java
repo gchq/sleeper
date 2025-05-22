@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.core.properties.local;
 
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;

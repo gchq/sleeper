@@ -49,8 +49,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static sleeper.configuration.WriteSplitPoints.writeSplitPoints;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.local.WriteSplitPoints.writeSplitPoints;
 
 /**
  * Allows the split points to be exported from a table. They can then be used
