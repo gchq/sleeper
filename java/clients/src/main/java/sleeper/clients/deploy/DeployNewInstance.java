@@ -39,12 +39,14 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -163,7 +165,10 @@ public class DeployNewInstance {
         instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
-            new AddTable(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient).run();
+            new AddTable(instanceProperties, tableProperties,
+                    S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
+                    StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager))
+                    .run();
         }
         LOGGER.info("Finished deployment of new instance");
     }
