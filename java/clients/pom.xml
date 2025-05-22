@@ -133,11 +133,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitter</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>splitterv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
