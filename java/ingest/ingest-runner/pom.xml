@@ -75,7 +75,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>sketchesv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

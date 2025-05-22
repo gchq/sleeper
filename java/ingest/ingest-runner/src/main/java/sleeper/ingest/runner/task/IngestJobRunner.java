@@ -68,14 +68,12 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class IngestJobRunner implements IngestJobHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobRunner.class);
 
-    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final String fs;
     private final Configuration hadoopConfiguration;
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
-    private final SqsClient sqsClient;
     private final IngestFactory ingestFactory;
     private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
@@ -95,7 +93,6 @@ public class IngestJobRunner implements IngestJobHandler {
             SqsClient sqsClient,
             Configuration hadoopConfiguration,
             Supplier<Instant> timeSupplier) {
-        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.fs = instanceProperties.get(FILE_SYSTEM);
@@ -103,7 +100,6 @@ public class IngestJobRunner implements IngestJobHandler {
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
         this.tracker = tracker;
-        this.sqsClient = sqsClient;
         this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
                 .objectFactory(objectFactory)
