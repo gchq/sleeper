@@ -15,12 +15,12 @@
  */
 package sleeper.clients.table.partition;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 
 /**
@@ -47,13 +47,14 @@ public class ReinitialiseTableFromSplitPoints {
     private final String splitPointsFileLocation;
 
     public ReinitialiseTableFromSplitPoints(
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoDBClient,
+            S3Client s3Client,
+            S3TransferManager s3TransferManager,
+            DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             String splitPointsFileLocation,
             boolean splitPointStringsBase64Encoded) {
-        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(s3Client, s3TransferManager, dynamoClient, instanceId, tableName, true);
         this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.splitPointsFileLocation = splitPointsFileLocation;
     }
@@ -90,21 +91,16 @@ public class ReinitialiseTableFromSplitPoints {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-        try {
-            ReinitialiseTableFromSplitPoints reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client, dynamoDBClient, instanceId, tableName,
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
+            ReinitialiseTableFromSplitPoints reinitialiseTable = new ReinitialiseTableFromSplitPoints(
+                    s3Client, s3TransferManager, dynamoClient, instanceId, tableName,
                     splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException e) {
-            LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
-                    "The error message is as follows:\n\n" + e.getMessage()
-                    + "\n\nCause:" + e.getCause());
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 }

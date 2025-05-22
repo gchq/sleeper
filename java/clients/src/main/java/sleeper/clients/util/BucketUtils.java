@@ -25,7 +25,10 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +49,35 @@ public class BucketUtils {
         } catch (NoSuchBucketException e) {
             return false;
         }
+    }
+
+    public static void deleteObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix, Predicate<String> keyPredicate) {
+        LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);
+        int totalObjectsDeleted = 0;
+        for (ListObjectsV2Response response : s3Client.listObjectsV2Paginator(request -> request
+                .bucket(bucketName)
+                .prefix(prefix + "/")
+                //Keys set to 1000 as this is the maximum value permitted by S3 delete action
+                .maxKeys(1000))) {
+
+            List<ObjectIdentifier> toDelete = response.contents().stream()
+                    .map(software.amazon.awssdk.services.s3.model.S3Object::key)
+                    .filter(keyPredicate)
+                    .map(key -> ObjectIdentifier.builder()
+                            .key(key)
+                            .build())
+                    .toList();
+
+            if (!toDelete.isEmpty()) {
+                DeleteObjectsResponse deleteResponse = s3Client.deleteObjects(request -> request
+                        .bucket(bucketName)
+                        .delete(delete -> delete.objects(toDelete)));
+                int successfulDeletes = deleteResponse.deleted().size();
+                LOGGER.info("{} objects successfully deleted from S3 bucket: {}", successfulDeletes, bucketName);
+                totalObjectsDeleted += successfulDeletes;
+            }
+        }
+        LOGGER.info("A total of {} objects were deleted", totalObjectsDeleted);
     }
 
     public static void deleteAllObjectsInBucketWithPrefix(AmazonS3 s3Client, String bucketName, String prefix) {

@@ -98,13 +98,13 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         String tableName = UUID.randomUUID().toString();
 
         // When
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoClient, "", tableName, false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3ClientV2, s3TransferManager, dynamoClientV2, "", tableName, false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldThrowExceptionIfTableNameIsEmpty() {
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoClient, instanceProperties.get(ID), "", false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3ClientV2, s3TransferManager, dynamoClientV2, instanceProperties.get(ID), "", false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -220,26 +220,26 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     }
 
     private void reinitialiseTableAndDeletePartitions(TableProperties tableProperties) throws IOException {
-        new ReinitialiseTable(s3Client,
-                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), true)
+        new ReinitialiseTable(s3ClientV2, s3TransferManager, dynamoClientV2,
+                instanceProperties.get(ID), tableProperties.get(TABLE_NAME), true)
                 .run();
     }
 
     private void reinitialiseTable(TableProperties tableProperties) throws IOException {
-        new ReinitialiseTable(s3Client,
-                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), false)
+        new ReinitialiseTable(s3ClientV2, s3TransferManager, dynamoClientV2,
+                instanceProperties.get(ID), tableProperties.get(TABLE_NAME), false)
                 .run();
     }
 
     private void reinitialiseTableFromSplitPoints(TableProperties tableProperties, String splitPointsFile) throws IOException {
-        new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, false)
+        new ReinitialiseTableFromSplitPoints(s3ClientV2, s3TransferManager, dynamoClientV2,
+                instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, false)
                 .run();
     }
 
     private void reinitialiseTableFromSplitPointsEncoded(TableProperties tableProperties, String splitPointsFile) throws IOException {
-        new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, true)
+        new ReinitialiseTableFromSplitPoints(s3ClientV2, s3TransferManager, dynamoClientV2,
+                instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, true)
                 .run();
     }
 
