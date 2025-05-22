@@ -39,9 +39,8 @@ public class EstimateSplitPoints {
     private final Iterable<Record> records;
     private final int numPartitions;
     private final int sketchSize;
-    private final long maxRecords;
 
-    public EstimateSplitPoints(Schema schema, Iterable<Record> records, int numPartitions, int sketchSize, long maxRecords) {
+    public EstimateSplitPoints(Schema schema, Iterable<Record> records, int numPartitions, int sketchSize) {
         if (numPartitions < 2) {
             throw new IllegalArgumentException("Number of partitions must be >= 2");
         }
@@ -49,7 +48,6 @@ public class EstimateSplitPoints {
         this.records = records;
         this.numPartitions = numPartitions;
         this.sketchSize = sketchSize;
-        this.maxRecords = maxRecords;
     }
 
     public List<Object> estimate() {
@@ -59,13 +57,8 @@ public class EstimateSplitPoints {
 
         // Add all the values to the sketch
         ItemsSketch sketch = Sketches.createSketch(rowKey1.getType(), sketchSize);
-        int readRecords = 0;
         for (Record record : records) {
             Sketches.update(sketch, record, rowKey1);
-            readRecords++;
-            if (readRecords >= maxRecords) {
-                break;
-            }
         }
 
         // The getQuantiles method returns the min and median and max given a value of 3; hence need to add one to get

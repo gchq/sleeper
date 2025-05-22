@@ -123,29 +123,7 @@ public class EstimateSplitPointsTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test
-    void shouldLimitNumberOfRecordsToRead() {
-        // Given
-        Schema schema = createSchemaWithKey("key", new IntType());
-        List<Record> records = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", i);
-            records.add(record);
-        }
-
-        // When
-        List<Object> splitPoints = estimateForPartitionsReadingMaxRecords(schema, records, 5, 10);
-
-        // Then
-        assertThat(splitPoints).containsExactly(2, 4, 6, 8);
-    }
-
     private List<Object> estimateForPartitions(Schema schema, List<Record> records, int numPartitions) {
-        return new EstimateSplitPoints(schema, records, numPartitions, 32768, 1000).estimate();
-    }
-
-    private List<Object> estimateForPartitionsReadingMaxRecords(Schema schema, List<Record> records, int numPartitions, long maxRecords) {
-        return new EstimateSplitPoints(schema, records, numPartitions, 32768, maxRecords).estimate();
+        return new EstimateSplitPoints(schema, records, numPartitions, 32768).estimate();
     }
 }

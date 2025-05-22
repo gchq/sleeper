@@ -92,6 +92,29 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
         assertThat(splitPoints).containsExactly(2, 4, 6, 8);
     }
 
+    @Test
+    void shouldLimitNumberOfRecordsToReadPerFileWithMultipleFiles() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key", new IntType());
+        List<Record> records = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            Record record = new Record();
+            record.put("key", i);
+            records.add(record);
+        }
+        Path dataFile1 = dataFilePath("file1.parquet");
+        Path dataFile2 = dataFilePath("file2.parquet");
+        writeRecords(dataFile1, schema, records);
+        writeRecords(dataFile2, schema, records.subList(10, records.size()));
+
+        // When
+        List<Object> splitPoints = EstimateSplitPointsClient.estimate(
+                schema, hadoopConf, 5, 32, 10, List.of(dataFile1, dataFile2));
+
+        // Then
+        assertThat(splitPoints).containsExactly(4, 8, 12, 16);
+    }
+
     private Path dataFilePath(String filename) {
         return new Path("s3a://" + bucketName + "/" + filename);
     }

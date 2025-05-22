@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
+import sleeper.core.iterator.LimitingIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
@@ -46,13 +47,13 @@ public class EstimateSplitPointsClient {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 6) {
-            throw new IllegalArgumentException("Usage: <schema-file> <num-partitions> <sketch-size> <read-max-records> <output-split-points-file> <parquet-paths-as-separate-args>");
+            throw new IllegalArgumentException("Usage: <schema-file> <num-partitions> <sketch-size> <read-max-records-per-file> <output-split-points-file> <parquet-paths-as-separate-args>");
         }
 
         Path schemaFile = Paths.get(args[0]);
         int numPartitions = Integer.parseInt(args[1]);
         int sketchSize = Integer.parseInt(args[2]);
-        long maxRecords = Long.parseLong(args[3]);
+        long recordsPerFile = Long.parseLong(args[3]);
         Path outputFile = Paths.get(args[4]);
         List<org.apache.hadoop.fs.Path> parquetPaths = List.of(args).subList(5, args.length).stream()
                 .map(org.apache.hadoop.fs.Path::new)
@@ -61,34 +62,35 @@ public class EstimateSplitPointsClient {
         String schemaJson = Files.readString(schemaFile);
         Schema schema = new SchemaSerDe().fromJson(schemaJson);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-        List<Object> splitPoints = estimate(schema, conf, numPartitions, sketchSize, maxRecords, parquetPaths);
+        List<Object> splitPoints = estimate(schema, conf, numPartitions, sketchSize, recordsPerFile, parquetPaths);
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
             writeSplitPoints(splitPoints, writer, false);
         }
     }
 
     public static List<Object> estimate(
-            Schema schema, Configuration conf, int numPartitions, int sketchSize, long maxRecords,
+            Schema schema, Configuration conf, int numPartitions, int sketchSize, long recordsPerFile,
             List<org.apache.hadoop.fs.Path> parquetPaths) throws IOException {
-        try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, parquetPaths)) {
-            return new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize, maxRecords).estimate();
+        try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, recordsPerFile, parquetPaths)) {
+            return new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
         }
     }
 
     private static ConcatenatingIterator openRecordIterator(
-            Schema schema, Configuration conf, List<org.apache.hadoop.fs.Path> parquetPaths) {
+            Schema schema, Configuration conf, long recordsPerFile, List<org.apache.hadoop.fs.Path> parquetPaths) {
         return new ConcatenatingIterator(parquetPaths.stream()
-                .map(path -> recordIteratorSupplier(schema, conf, path))
+                .map(path -> recordIteratorSupplier(schema, conf, recordsPerFile, path))
                 .collect(toUnmodifiableList()));
     }
 
     private static Supplier<CloseableIterator<Record>> recordIteratorSupplier(
-            Schema schema, Configuration conf, org.apache.hadoop.fs.Path dataFile) {
+            Schema schema, Configuration conf, long maxRecords, org.apache.hadoop.fs.Path dataFile) {
         return () -> {
             try {
-                return new ParquetReaderIterator(new ParquetRecordReader.Builder(dataFile, schema)
-                        .withConf(conf)
-                        .build());
+                return new LimitingIterator<>(maxRecords,
+                        new ParquetReaderIterator(new ParquetRecordReader.Builder(dataFile, schema)
+                                .withConf(conf)
+                                .build()));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
