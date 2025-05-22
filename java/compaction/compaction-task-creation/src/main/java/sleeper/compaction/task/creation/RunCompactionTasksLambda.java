@@ -17,18 +17,16 @@ package sleeper.compaction.task.creation;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.taskv2.RunCompactionTasks;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.task.common.QueueMessageCount;
-import sleeper.task.common.RunCompactionTasks;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -41,9 +39,9 @@ public class RunCompactionTasksLambda {
 
     public RunCompactionTasksLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        SqsClient sqsClient = SqsClient.create();
         EcsClient ecsClient = EcsClient.create();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        S3Client s3Client = S3Client.create();
         AutoScalingClient asClient = AutoScalingClient.create();
         Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
