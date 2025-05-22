@@ -32,8 +32,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.configurationv2.ReadSplitPoints.readSplitPoints;
 import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 
 /**
  * Initialises a state store. If a file of split points is provided then these are used to create the initial
