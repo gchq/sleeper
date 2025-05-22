@@ -27,7 +27,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.store.S3SketchesStore;
 
@@ -45,13 +44,11 @@ public class FindPartitionSplitPoint {
     public static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
 
     private final Schema schema;
-    private final List<PrimitiveType> rowKeyTypes;
     private final List<String> fileNames;
     private final SketchesLoader sketchesLoader;
 
     public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesLoader sketchesLoader) {
         this.schema = schema;
-        this.rowKeyTypes = schema.getRowKeyTypes();
         this.fileNames = fileNames;
         this.sketchesLoader = sketchesLoader;
     }
@@ -110,12 +107,8 @@ public class FindPartitionSplitPoint {
         Sketches load(String filename) throws IOException;
     }
 
-    public static SketchesLoader loadSketchesFromFile(Schema schema) {
-        return (filename) -> new S3SketchesStore(S3Client.create(), S3TransferManager.create()).loadFileSketches(filename, schema);
-    }
-
-    public static SketchesLoader loadSketchesFromFile(TableProperties tableProperties) {
-        return (filename) -> new S3SketchesStore(S3Client.create(), S3TransferManager.create()).loadFileSketches(filename, tableProperties.getSchema());
+    public static SketchesLoader loadSketchesFromFile(S3Client s3Client, S3TransferManager s3TransferManager, TableProperties tableProperties) {
+        return (filename) -> new S3SketchesStore(s3Client, s3TransferManager).loadFileSketches(filename, tableProperties.getSchema());
     }
 
 }
