@@ -63,7 +63,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
 
         // When
         List<Object> splitPoints = EstimateSplitPointsClient.estimate(
-                schema, hadoopConf, 4, 32, List.of(dataFile));
+                schema, hadoopConf, 4, 32, 100, List.of(dataFile));
 
         // Then
         assertThat(splitPoints).containsExactly(3L, 6L, 8L);
