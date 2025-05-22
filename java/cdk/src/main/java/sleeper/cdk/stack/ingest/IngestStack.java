@@ -55,9 +55,8 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
@@ -220,9 +219,9 @@ public class IngestStack extends NestedStack {
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
-                .actions(Collections.singletonList("cloudwatch:PutMetricData"))
-                .resources(Collections.singletonList("*"))
-                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
+                .actions(List.of("cloudwatch:PutMetricData"))
+                .resources(List.of("*"))
+                .conditions(Map.of("StringEquals", Map.of("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
                 .build());
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()
@@ -265,8 +264,8 @@ public class IngestStack extends NestedStack {
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
-                .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole"))
+                .resources(List.of("*"))
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole"))
                 .build();
         IRole role = Objects.requireNonNull(handler.getRole());
         role.addToPrincipalPolicy(policyStatement);
@@ -279,7 +278,7 @@ public class IngestStack extends NestedStack {
                 .description(SleeperScheduleRule.INGEST_TASK_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(new LambdaFunction(handler)))
+                .targets(List.of(new LambdaFunction(handler)))
                 .build();
         instanceProperties.set(INGEST_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(INGEST_CLOUDWATCH_RULE, rule.getRuleName());

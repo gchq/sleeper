@@ -35,6 +35,7 @@ on:
       - 'java/common/common-jobv2/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
+      - 'java/sketchesv2/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/statestorev2/**'
