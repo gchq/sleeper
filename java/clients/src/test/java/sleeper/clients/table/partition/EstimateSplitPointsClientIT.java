@@ -22,11 +22,13 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +49,6 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldEstimateSplitPointsFromFileInS3() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        Path dataFile = dataFilePath("file.parquet");
         List<Record> records = List.of(
                 new Record(Map.of("key", 1L)),
                 new Record(Map.of("key", 2L)),
@@ -59,6 +60,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
                 new Record(Map.of("key", 8L)),
                 new Record(Map.of("key", 9L)),
                 new Record(Map.of("key", 10L)));
+        Path dataFile = dataFilePath("file.parquet");
         writeRecords(dataFile, schema, records);
 
         // When
@@ -67,6 +69,27 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
 
         // Then
         assertThat(splitPoints).containsExactly(3L, 6L, 8L);
+    }
+
+    @Test
+    void shouldLimitNumberOfRecordsToRead() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key", new IntType());
+        List<Record> records = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            Record record = new Record();
+            record.put("key", i);
+            records.add(record);
+        }
+        Path dataFile = dataFilePath("file.parquet");
+        writeRecords(dataFile, schema, records);
+
+        // When
+        List<Object> splitPoints = EstimateSplitPointsClient.estimate(
+                schema, hadoopConf, 5, 32, 10, List.of(dataFile));
+
+        // Then
+        assertThat(splitPoints).containsExactly(2, 4, 6, 8);
     }
 
     private Path dataFilePath(String filename) {
