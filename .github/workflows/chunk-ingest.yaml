@@ -28,6 +28,7 @@ on:
       - 'java/statestore/**'
       - 'java/statestorev2/**'
       - 'java/common/common-job/**'
+      - 'java/common/common-jobv2/**'
       - 'java/configuration/**'
       - 'java/configurationv2/**'
       - 'java/common/dynamodb-tools/**'
