@@ -18,12 +18,10 @@ package sleeper.clients.table.partition;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
@@ -31,27 +29,23 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class EstimateSplitPointsTest {
-
-    private Schema schemaWithSingleKeyOfType(PrimitiveType type) {
-        return Schema.builder().rowKeyFields(new Field("key", type)).build();
-    }
 
     @Test
     public void shouldEstimateCorrectlyWithIntKey() {
         // Given
-        Schema schema = schemaWithSingleKeyOfType(new IntType());
+        Schema schema = createSchemaWithKey("key", new IntType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", 100 - i - 1); // Reverse order because the method shouldn't assume that the records are sorted
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimateForPartitions(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly(10, 20, 30, 40, 50, 60, 70, 80, 90);
@@ -60,17 +54,16 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldEstimateCorrectlyWithLongKey() {
         // Given
-        Schema schema = schemaWithSingleKeyOfType(new LongType());
+        Schema schema = createSchemaWithKey("key", new LongType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i * 100L);
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimateForPartitions(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L);
@@ -79,17 +72,16 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldEstimateCorrectlyWithStringKey() {
         // Given
-        Schema schema = schemaWithSingleKeyOfType(new StringType());
+        Schema schema = createSchemaWithKey("key", new StringType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", String.format("%04d", i * 100L));
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimateForPartitions(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly("1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000");
@@ -98,17 +90,16 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldEstimateCorrectlyWithByteArrayKey() {
         // Given
-        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", new byte[]{(byte) i});
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
 
         // When
-        List<Object> splitPoints = estimateSplitPoints.estimate();
+        List<Object> splitPoints = estimateForPartitions(schema, records, 10);
 
         // Then
         assertThat(splitPoints).containsExactly(new byte[]{10},
@@ -119,7 +110,7 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldRefuseToSplitIntoOnePartition() {
         // Given
-        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
+        Schema schema = createSchemaWithKey("key", new ByteArrayType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -128,7 +119,11 @@ public class EstimateSplitPointsTest {
         }
 
         // When / Then
-        assertThatThrownBy(() -> new EstimateSplitPoints(schema, records, 1))
+        assertThatThrownBy(() -> estimateForPartitions(schema, records, 1))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private List<Object> estimateForPartitions(Schema schema, List<Record> records, int numPartitions) {
+        return new EstimateSplitPoints(schema, records, numPartitions, 32768).estimate();
     }
 }
