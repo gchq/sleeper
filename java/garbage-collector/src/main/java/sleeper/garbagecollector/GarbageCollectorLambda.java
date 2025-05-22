@@ -66,7 +66,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoDBClient = DynamoDbClient.create();
         SqsClient sqsClient = SqsClient.create();
-        S3AsyncClient s3AsyncClient = S3AsyncClient.create();
+        S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
         S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
 
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
