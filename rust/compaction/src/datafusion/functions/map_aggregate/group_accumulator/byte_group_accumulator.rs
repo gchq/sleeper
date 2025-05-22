@@ -583,7 +583,7 @@ mod tests {
             &mut map,
             &mut key_cache,
             &mut klist,
-            &mut &MapAggregatorOp::Sum,
+            &MapAggregatorOp::Sum,
         );
 
         // Then
