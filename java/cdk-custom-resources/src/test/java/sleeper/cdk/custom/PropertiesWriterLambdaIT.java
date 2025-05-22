@@ -18,7 +18,7 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -72,7 +72,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV2, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
     }
@@ -100,7 +100,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV2, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("bar");
     }
 
@@ -128,7 +128,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, alternativeBucket);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV2, alternativeBucket);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
     }
 

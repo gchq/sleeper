@@ -30,7 +30,7 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.List;

@@ -16,10 +16,8 @@
 
 package sleeper.clients.report;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.report.query.JsonQueryTrackerReporter;
 import sleeper.clients.report.query.QueryTrackerReporter;
@@ -27,17 +25,17 @@ import sleeper.clients.report.query.StandardQueryTrackerReporter;
 import sleeper.clients.report.query.TrackerQuery;
 import sleeper.clients.report.query.TrackerQueryPrompt;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.tracker.QueryTrackerStore;
-import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class QueryTrackerReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -69,9 +67,8 @@ public class QueryTrackerReport {
     }
 
     public static void main(String[] args) {
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             if (args.length < 2 || args.length > 3) {
                 throw new IllegalArgumentException("Wrong number of arguments");
             }
@@ -81,15 +78,12 @@ public class QueryTrackerReport {
                     .map(QueryTrackerReport::readTypeArgument)
                     .orElseGet(QueryTrackerReport::promptForQueryType);
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+            QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
             new QueryTrackerReport(queryTrackerStore, queryType, reporter).run();
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             printUsage();
             System.exit(1);
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 

@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -72,7 +71,7 @@ public class AthenaStack extends NestedStack {
                 .bucketName(bucketName)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
-                .lifecycleRules(Lists.newArrayList(LifecycleRule.builder()
+                .lifecycleRules(List.of(LifecycleRule.builder()
                         .expiration(Duration.days(instanceProperties.getInt(SPILL_BUCKET_AGE_OFF_IN_DAYS)))
                         .build()))
                 .removalPolicy(RemovalPolicy.DESTROY)
@@ -137,25 +136,25 @@ public class AthenaStack extends NestedStack {
         return List.of(
                 // Required when spill bucket changes
                 Policy.Builder.create(scope, "ListAllBucketsPolicy")
-                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                                .resources(Lists.newArrayList("*"))
-                                .actions(Lists.newArrayList("S3:ListAllMyBuckets"))
+                        .statements(List.of(PolicyStatement.Builder.create()
+                                .resources(List.of("*"))
+                                .actions(List.of("S3:ListAllMyBuckets"))
                                 .build()))
                         .build(),
                 // Required for creating an encryption data key
                 Policy.Builder.create(scope, "KeyGenerationPolicy")
-                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                                .resources(Lists.newArrayList("*"))
-                                .actions(Lists.newArrayList("kms:GenerateRandom"))
+                        .statements(List.of(PolicyStatement.Builder.create()
+                                .resources(List.of("*"))
+                                .actions(List.of("kms:GenerateRandom"))
                                 .build()))
                         .build(),
                 // Allow connectors to get the status of the query. Allowed to query all workgroups within this account
                 // and region
                 Policy.Builder.create(scope, "GetAthenaQueryStatusPolicy")
-                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                                .resources(Lists.newArrayList("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
+                        .statements(List.of(PolicyStatement.Builder.create()
+                                .resources(List.of("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
                                         + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
-                                .actions(Lists.newArrayList("athena:getQueryExecution"))
+                                .actions(List.of("athena:getQueryExecution"))
                                 .build()))
                         .build());
     }

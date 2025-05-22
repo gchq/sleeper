@@ -15,14 +15,13 @@
  */
 package sleeper.clients.admin;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
@@ -37,15 +36,14 @@ import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
-import sleeper.clients.util.AwsV2ClientHelper;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.configuration.utils.AwsV1ClientHelper;
+import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.utils.AwsV2ClientHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
-import sleeper.task.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -93,35 +91,35 @@ public class AdminClient {
 
         ConsoleOutput out = new ConsoleOutput(System.out);
         ConsoleInput in = new ConsoleInput(System.console());
-        AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         int errorCode;
-        try (EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
+        try (S3Client s3Client = AwsV2ClientHelper.buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = AwsV2ClientHelper.buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = AwsV2ClientHelper.buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = AwsV2ClientHelper.buildAwsV2Client(SqsClient.builder());
+                EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
             UploadDockerImages uploadDockerImages = UploadDockerImages.builder()
                     .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
                     .baseDockerDirectory(baseDockerDir).jarsDirectory(jarsDir).build();
-            errorCode = start(instanceId, s3Client, dynamoClient, cdk, generatedDir, uploadDockerImages, out, in,
+            errorCode = start(instanceId, s3Client, s3TransferManager, dynamoClient,
+                    cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
                     properties -> PersistentEMRStepCount.byStatus(properties, emrClient));
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-            sqsClient.shutdown();
         }
         System.exit(errorCode);
     }
 
-    public static int start(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB,
+    public static int start(String instanceId,
+            S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient,
             InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImages uploadDockerImages,
             ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
         AdminClientPropertiesStore store = new AdminClientPropertiesStore(
-                s3Client, dynamoDB, cdk, generatedDir, uploadDockerImages);
+                s3Client, s3TransferManager, dynamoClient, cdk, generatedDir, uploadDockerImages);
         InstanceProperties instanceProperties;
         try {
             instanceProperties = store.loadInstanceProperties(instanceId);
@@ -130,9 +128,9 @@ public class AdminClient {
             return 1;
         }
         new AdminClient(
-                new DynamoDBTableIndex(instanceProperties, dynamoDB),
+                new DynamoDBTableIndex(instanceProperties, dynamoClient),
                 store,
-                AdminClientTrackerFactory.from(dynamoDB),
+                AdminClientTrackerFactory.from(dynamoClient),
                 editor,
                 out, in,
                 queueClient, getStepCount)

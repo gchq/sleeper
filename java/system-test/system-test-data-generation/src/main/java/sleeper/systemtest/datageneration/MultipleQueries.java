@@ -47,8 +47,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**

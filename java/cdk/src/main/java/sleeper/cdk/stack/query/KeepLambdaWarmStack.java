@@ -36,7 +36,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Collections;
+import java.util.List;
 
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
@@ -84,7 +84,7 @@ public class KeepLambdaWarmStack extends NestedStack {
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties
                         .getInt(QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(LambdaFunction.Builder
+                .targets(List.of(LambdaFunction.Builder
                         .create(handler)
                         .build()))
                 .build();

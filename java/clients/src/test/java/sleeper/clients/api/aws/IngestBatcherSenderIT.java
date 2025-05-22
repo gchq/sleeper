@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.clients.api.aws;
 
 import com.amazonaws.services.sqs.model.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.api.IngestBatcherSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
@@ -45,7 +46,7 @@ public class IngestBatcherSenderIT extends LocalStackTestBase {
         IngestBatcherSubmitRequest request = new IngestBatcherSubmitRequest("test-table", List.of());
 
         // When
-        IngestBatcherSender.toSqs(instanceProperties, sqsClient)
+        IngestBatcherSender.toSqs(instanceProperties, sqsClientV2)
                 .submit(request);
 
         // Then

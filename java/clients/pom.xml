@@ -93,6 +93,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>query-runnerv2</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -108,17 +113,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-tracker</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>compaction-trackerV2</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -153,7 +148,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-task</artifactId>
+            <artifactId>common-taskv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -163,7 +158,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-batcher-store</artifactId>
+            <artifactId>ingest-batcher-storev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -181,7 +176,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -195,7 +190,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-task</artifactId>
+            <artifactId>common-taskv2</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -263,7 +258,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runner</artifactId>
+            <artifactId>query-runnerv2</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

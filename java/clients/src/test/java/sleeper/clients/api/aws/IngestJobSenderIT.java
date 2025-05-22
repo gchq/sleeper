@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.clients.api.aws;
 
 import com.amazonaws.services.sqs.model.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.api.IngestJobSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
@@ -49,7 +50,7 @@ public class IngestJobSenderIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        IngestJobSender.toSqs(instanceProperties, sqsClient)
+        IngestJobSender.toSqs(instanceProperties, sqsClientV2)
                 .sendFilesToIngest(job);
         assertThat(recieveIngestJobs()).containsExactly(job);
     }

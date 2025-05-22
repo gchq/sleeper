@@ -16,10 +16,8 @@
 
 package sleeper.clients.report;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
@@ -27,9 +25,9 @@ import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -40,7 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -100,19 +98,14 @@ public class CompactionJobStatusReport {
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-            AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-            AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-
-            try {
+            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
                 InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+                CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
                 new CompactionJobStatusReport(tracker, reporter, table, queryType, queryParameters).run();
-            } finally {
-                s3Client.shutdown();
-                dynamoDBClient.shutdown();
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());

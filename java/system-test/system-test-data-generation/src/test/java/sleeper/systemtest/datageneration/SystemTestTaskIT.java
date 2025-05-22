@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.clients.api.AwsSleeperClientBuilder;
 import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -111,11 +110,13 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     SleeperClient createSleeperClient() {
-        return new AwsSleeperClientBuilder()
+        return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
-                .sqsClient(sqsClient)
+                .awsClients(clients -> clients
+                        .s3Client(s3ClientV2)
+                        .s3TransferManager(s3TransferManager)
+                        .dynamoClient(dynamoClientV2)
+                        .sqsClient(sqsClientV2))
                 .hadoopConf(hadoopConf)
                 .build();
     }

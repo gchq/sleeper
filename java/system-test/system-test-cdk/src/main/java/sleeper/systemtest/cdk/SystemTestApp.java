@@ -25,12 +25,12 @@ import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configurationv2.SystemTestProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
  * Deploys Sleeper and additional stacks used for large-scale system tests.
