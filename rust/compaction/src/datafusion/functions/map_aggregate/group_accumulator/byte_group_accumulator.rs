@@ -272,10 +272,11 @@ mod tests {
     use std::sync::Arc;
 
     use arrow::{
-        array::{Int64Builder, UInt16Builder},
+        array::{BinaryBuilder, Int64Builder, StructBuilder, UInt16Builder},
         datatypes::{DataType, Field, Fields},
     };
     use datafusion::{common::HashMap, error::DataFusionError};
+    use nohash::BuildNoHashHasher;
 
     use crate::{
         assert_error,
@@ -283,11 +284,20 @@ mod tests {
             MapAggregatorOp,
             map_aggregate::{
                 aggregator::map_test_common::make_map_datatype,
-                group_accumulator::byte_group_accumulator::ByteGroupMapAccumulator,
+                group_accumulator::byte_group_accumulator::{
+                    ByteGroupMapAccumulator, update_byte_map_group,
+                },
                 state::MapNullState,
             },
         },
     };
+
+    // Macro to convert a literal to owned bytes
+    macro_rules! s {
+        ($l:literal) => {
+            String::from($l).into_bytes()
+        };
+    }
 
     #[test]
     fn try_new_should_succeed() {
@@ -393,5 +403,242 @@ mod tests {
         // Then
         assert_eq!(*array.key_type(), DataType::Binary);
         assert_eq!(*array.value_type(), DataType::UInt16);
+    }
+
+    #[test]
+    fn update_byte_map_none() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        map.insert(0, 2);
+        map.insert(1, 4);
+        let expected_map = map.clone();
+
+        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        key_cache.insert(s!["1"], 0);
+        key_cache.insert(s!["3"], 1);
+        let expected_key_cache = key_cache.clone();
+
+        let mut klist = vec![s!["1"], s!["3"]];
+        let expected_klist = klist.clone();
+
+        // When
+        update_byte_map_group::<Int64Builder>(
+            None,
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then - expect no changes
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    fn update_byte_map_empty_values() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        map.insert(0, 2);
+        map.insert(1, 4);
+        let expected_map = map.clone();
+
+        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        key_cache.insert(s!["1"], 0);
+        key_cache.insert(s!["3"], 1);
+        let expected_key_cache = key_cache.clone();
+
+        let mut klist = vec![s!["1"], s!["3"]];
+        let expected_klist = klist.clone();
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Binary, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![
+                Box::new(BinaryBuilder::new()),
+                Box::new(Int64Builder::new()),
+            ],
+        );
+
+        // When
+        update_byte_map_group::<Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then - expect no changes
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    fn update_byte_map_enters_first_values() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        let mut expected_map = map.clone();
+        expected_map.insert(0, 2);
+        expected_map.insert(1, 4);
+        expected_map.insert(2, -10);
+
+        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut expected_key_cache = key_cache.clone();
+        expected_key_cache.insert(s!["1"], 0);
+        expected_key_cache.insert(s!["3"], 1);
+        expected_key_cache.insert(s!["8"], 2);
+
+        let mut klist = vec![];
+        let expected_klist = vec![s!["1"], s!["3"], s!["8"]];
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Binary, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![
+                Box::new(BinaryBuilder::new()),
+                Box::new(Int64Builder::new()),
+            ],
+        );
+        for (k, v) in &[(s!["1"], 2), (s!["3"], 4), (s!["8"], -10)] {
+            entry_builder
+                .field_builder::<BinaryBuilder>(0)
+                .unwrap()
+                .append_value(k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(*v);
+            entry_builder.append(true);
+        }
+
+        // When
+        update_byte_map_group::<Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    fn update_byte_map_enters_values_and_sums() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        map.insert(0, 2);
+        map.insert(1, 4);
+        let mut expected_map = map.clone();
+        expected_map.insert(0, 6);
+        expected_map.insert(1, 8);
+        expected_map.insert(2, 2);
+
+        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        key_cache.insert(s!["1"], 0);
+        key_cache.insert(s!["3"], 1);
+        let mut expected_key_cache = key_cache.clone();
+        expected_key_cache.insert(s!["1"], 0);
+        expected_key_cache.insert(s!["3"], 1);
+        expected_key_cache.insert(s!["4"], 2);
+
+        let mut klist = vec![s!["1"], s!["3"]];
+        let expected_klist = vec![s!["1"], s!["3"], s!["4"]];
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Binary, false),
+                Field::new("value", DataType::Int64, false),
+            ]),
+            vec![
+                Box::new(BinaryBuilder::new()),
+                Box::new(Int64Builder::new()),
+            ],
+        );
+        for (k, v) in [(s!["1"], 2), (s!["1"], 2), (s!["3"], 4), (s!["4"], 2)] {
+            entry_builder
+                .field_builder::<BinaryBuilder>(0)
+                .unwrap()
+                .append_value(k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(v);
+            entry_builder.append(true);
+        }
+
+        // When
+        update_byte_map_group::<Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &mut &MapAggregatorOp::Sum,
+        );
+
+        // Then
+        assert_eq!(map, expected_map);
+        assert_eq!(key_cache, expected_key_cache);
+        assert_eq!(klist, expected_klist);
+    }
+
+    #[test]
+    #[should_panic(expected = "Nullable entries aren't supported")]
+    fn update_byte_map_panics_on_null() {
+        // Given
+        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut klist = vec![];
+
+        let mut entry_builder = StructBuilder::new(
+            Fields::from(vec![
+                Field::new("key", DataType::Binary, true),
+                Field::new("value", DataType::Int64, true),
+            ]),
+            vec![
+                Box::new(BinaryBuilder::new()),
+                Box::new(Int64Builder::new()),
+            ],
+        );
+        for (k, v) in [(s!["1"], 2), (s!["1"], 2), (s!["3"], 4), (s!["4"], 2)] {
+            entry_builder
+                .field_builder::<BinaryBuilder>(0)
+                .unwrap()
+                .append_value(k);
+            entry_builder
+                .field_builder::<Int64Builder>(1)
+                .unwrap()
+                .append_value(v);
+            entry_builder.append(true);
+        }
+        // Add null elements
+        entry_builder
+            .field_builder::<BinaryBuilder>(0)
+            .unwrap()
+            .append_null();
+        entry_builder
+            .field_builder::<Int64Builder>(1)
+            .unwrap()
+            .append_null();
+        entry_builder.append(true);
+
+        // When - panic
+        update_byte_map_group::<Int64Builder>(
+            Some(&entry_builder.finish()),
+            &mut map,
+            &mut key_cache,
+            &mut klist,
+            &MapAggregatorOp::Sum,
+        );
     }
 }
