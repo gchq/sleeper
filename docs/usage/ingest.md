@@ -26,6 +26,19 @@ URLs in instance properties like `sleeper.ingest.job.queue.url`, documented
 under [ingest](properties/instance/cdk/ingest.md) and [bulk import](properties/instance/cdk/bulk_import.md).
 Which queues are available will depend on which optional stacks are deployed.
 
+Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
+that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
+the cost, with lower latency generally costing more.
+
+You can get started by using the script `sendToIngestBatcher.sh` to send your files to the SQS queue,
+and `ingestBatcherReport.sh` and `ingestJobStatusReport.sh` to follow progress:
+
+```bash
+./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> <parquet-paths-as-separate-args>
+./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
+```
+
 Here's an example of an SQS message for an ingest or bulk import job:
 
 ```json
@@ -39,26 +52,8 @@ Here's an example of an SQS message for an ingest or bulk import job:
 }
 ```
 
-Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
-that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
-the cost, with lower latency generally costing more.
-
-You can also submit your files to the ingest batcher, which will group larger batches of data into ingest or bulk import
-jobs. In this case you won't be able to use the ingest job tracker directly, but you can find which jobs are created
-from which files by querying the ingest batcher store. The SQS queue URL can be find in the instance
-property `sleeper.ingest.batcher.submit.queue.url`. The ingest batcher can be configured in table properties
-documented [here](properties/table/ingest_batcher.md). Here's an example of an SQS message to submit to the ingest
-batcher:
-
-```json
-{
-  "tableName": "myTable",
-  "files": [
-    "databucket/file.parquet",
-    "databucket/directory/path"
-  ]
-}
-```
+Files are submitted to the ingest batcher with the same format, but without the `id` field. You can configure the
+batcher in table properties documented [here](properties/table/ingest_batcher.md).
 
 ## Choosing an ingest system
 
