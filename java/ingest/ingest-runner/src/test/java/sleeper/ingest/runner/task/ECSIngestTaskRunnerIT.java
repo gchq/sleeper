@@ -137,8 +137,8 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     }
 
     private void sendJobs(List<IngestJob> jobs) {
-        jobs.forEach(job -> sqsClient.sendMessage(
-                instanceProperties.get(INGEST_JOB_QUEUE_URL),
-                new IngestJobSerDe().toJson(job)));
+        jobs.forEach(job -> sqsClientV2.sendMessage(builder -> builder
+                .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+                .messageBody(new IngestJobSerDe().toJson(job))));
     }
 }
