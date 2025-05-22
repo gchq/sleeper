@@ -82,7 +82,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
 
         DynamoDbClient dynamoDBClient = DynamoDbClient.create();
         SqsClient sqsClient = SqsClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.create()).build();
+        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
 
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);

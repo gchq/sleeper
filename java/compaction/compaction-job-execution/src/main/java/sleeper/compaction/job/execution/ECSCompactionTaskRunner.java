@@ -81,11 +81,10 @@ public class ECSCompactionTaskRunner {
 
         Instant startTime = Instant.now();
 
-        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-        SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
-        S3Client s3Client = buildAwsV2Client(S3Client.builder());
-
         try (EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
@@ -116,12 +115,6 @@ public class ECSCompactionTaskRunner {
                     waitForFiles, committerOrLambda, jobTracker, taskTracker, compactionSelector, taskId);
             task.run();
         } finally {
-            sqsClient.close();
-            LOGGER.info("Shut down sqsClient");
-            dynamoDBClient.close();
-            LOGGER.info("Shut down dynamoDBClient");
-            s3Client.close();
-            LOGGER.info("Shut down s3Client");
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
     }

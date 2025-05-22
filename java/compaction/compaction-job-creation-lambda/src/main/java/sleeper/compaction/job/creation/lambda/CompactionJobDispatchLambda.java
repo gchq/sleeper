@@ -52,7 +52,7 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
         S3Client s3 = S3Client.create();
         DynamoDbClient dynamoDB = DynamoDbClient.create();
         SqsClient sqs = SqsClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.create()).build();
+        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         String configBucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, configBucket);
         dispatcher = AwsCompactionJobDispatcher.from(s3, dynamoDB, sqs, s3TransferManager, instanceProperties, Instant::now);
