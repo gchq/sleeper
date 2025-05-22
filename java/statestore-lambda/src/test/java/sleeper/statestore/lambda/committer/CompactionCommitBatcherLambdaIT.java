@@ -53,7 +53,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrlV2());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
     }
 
     @Test
