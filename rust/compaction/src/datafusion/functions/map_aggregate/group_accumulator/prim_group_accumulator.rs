@@ -295,10 +295,14 @@ mod tests {
         },
     };
     use arrow::{
-        array::{Int64Builder, StructBuilder, UInt16Builder},
-        datatypes::{DataType, Field, Fields},
+        array::{AsArray, Int64Array, Int64Builder, StructBuilder, UInt16Builder},
+        datatypes::{DataType, Field, Fields, Int64Type},
     };
-    use datafusion::{common::HashMap, error::DataFusionError};
+    use datafusion::{
+        common::HashMap,
+        error::DataFusionError,
+        logical_expr::{EmitTo, GroupsAccumulator},
+    };
     use nohash::BuildNoHashHasher;
     use std::sync::Arc;
 
@@ -664,7 +668,7 @@ mod tests {
         // When
         let arr1 = Int64Array::from_value(1, 1);
         let arr2 = arr1.clone();
-        let result = acc.update_batch(&[Arc::new(arr1), Arc::new(arr2)]);
+        let result = acc.update_batch(&[Arc::new(arr1), Arc::new(arr2)], &[1], None, 1);
 
         // Then
         assert_error!(
@@ -676,161 +680,195 @@ mod tests {
         Ok(())
     }
 
-    // #[test]
-    // fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
-    //     // Given
-    //     let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-    //     let mut acc =
-    //         PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
-    //     let mut builder = acc.make_map_builder(10);
+    #[test]
+    fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+        let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        )?;
+        let mut builder = acc.make_map_builder(10);
 
-    //     // When
-    //     let array = builder.finish();
-    //     acc.update_batch(&[Arc::new(array)])?;
+        // When
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[], None, 0)?;
 
-    //     // Then
-    //     assert!(acc.values.is_empty());
+        // Then
+        assert!(acc.word_cache.is_empty());
+        assert!(acc.words.is_empty());
+        assert_eq!(acc.group_maps.len(), 0);
+        Ok(())
+    }
 
-    //     Ok(())
-    // }
+    #[test]
+    fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+        let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        )?;
+        let mut builder = acc.make_map_builder(10);
 
-    // #[test]
-    // fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
-    //     // Given
-    //     let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-    //     let mut acc =
-    //         PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
-    //     let mut builder = acc.make_map_builder(10);
+        // When
+        builder.append(true)?;
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
 
-    //     // When
-    //     builder.append(true)?;
-    //     let array = builder.finish();
-    //     acc.update_batch(&[Arc::new(array)])?;
+        // Then
+        assert!(acc.word_cache.is_empty());
+        assert!(acc.words.is_empty());
+        assert_eq!(acc.group_maps.len(), 1);
+        assert!(acc.group_maps[0].is_empty());
+        Ok(())
+    }
 
-    //     // Then
-    //     assert!(acc.values.is_empty());
+    #[test]
+    fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+        let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        )?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<i64, usize>::from([(3, 0)]);
+        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_group_map.insert(0, 10);
+        let expected_group_maps = vec![expected_group_map];
+        let expected_klist = vec![3];
 
-    //     Ok(())
-    // }
+        // When
+        builder.keys().append_value(3);
+        builder.values().append_value(10);
+        builder.append(true)?;
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
 
-    // #[test]
-    // fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
-    //     // Given
-    //     let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-    //     let mut acc =
-    //         PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
-    //     let mut builder = acc.make_map_builder(10);
-    //     let expected = HashMap::from([(3, 10)]);
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
+        Ok(())
+    }
 
-    //     // When
-    //     builder.keys().append_value(3);
-    //     builder.values().append_value(10);
-    //     builder.append(true)?;
-    //     let array = builder.finish();
-    //     acc.update_batch(&[Arc::new(array)])?;
+    #[test]
+    fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+        let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        )?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<i64, usize>::from([(3, 0), (2, 1)]);
+        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_group_map.insert(0, 10);
+        expected_group_map.insert(1, 5);
+        let expected_group_maps = vec![expected_group_map];
+        let expected_klist = vec![3, 2];
 
-    //     // Then
-    //     assert_eq!(acc.values, expected);
+        // When
+        builder.keys().append_value(3);
+        builder.values().append_value(10);
+        builder.append(true)?;
+        builder.keys().append_value(2);
+        builder.values().append_value(5);
+        builder.append(true)?;
 
-    //     Ok(())
-    // }
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0, 0], None, 1)?;
 
-    // #[test]
-    // fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
-    //     // Given
-    //     let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-    //     let mut acc =
-    //         PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
-    //     let mut builder = acc.make_map_builder(10);
-    //     let expected = HashMap::from([(3, 10), (2, 5)]);
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
 
-    //     // When
-    //     builder.keys().append_value(3);
-    //     builder.values().append_value(10);
-    //     builder.append(true)?;
-    //     builder.keys().append_value(2);
-    //     builder.values().append_value(5);
-    //     builder.append(true)?;
+        Ok(())
+    }
 
-    //     let array = builder.finish();
-    //     acc.update_batch(&[Arc::new(array)])?;
+    #[test]
+    fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+        let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        )?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<i64, usize>::from([(3, 0), (1, 1), (2, 2), (4, 3)]);
+        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_group_map.insert(0, 10);
+        expected_group_map.insert(1, 13);
+        expected_group_map.insert(2, 7);
+        expected_group_map.insert(3, 10);
+        let expected_group_maps = vec![expected_group_map];
+        let expected_klist = vec![3, 1, 2, 4];
 
-    //     // Then
-    //     assert_eq!(acc.values, expected);
+        // When
+        for (k, v) in [(3, 10), (1, 4), (1, 3), (2, 7)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
 
-    //     Ok(())
-    // }
+        builder.keys().append_value(1);
+        builder.values().append_value(3);
 
-    // #[test]
-    // fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
-    //     // Given
-    //     let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-    //     let mut acc =
-    //         PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
-    //     let mut builder = acc.make_map_builder(10);
-    //     let expected = HashMap::from([(3, 10), (1, 13), (2, 7), (4, 10)]);
+        builder.append(true)?;
 
-    //     // When
-    //     for (k, v) in [(3, 10), (1, 4), (1, 3), (2, 7)] {
-    //         builder.keys().append_value(k);
-    //         builder.values().append_value(v);
-    //     }
-    //     builder.append(true)?;
+        for (k, v) in [(1, 3), (4, 10)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
 
-    //     builder.keys().append_value(1);
-    //     builder.values().append_value(3);
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0, 0, 0], None, 1)?;
 
-    //     builder.append(true)?;
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
 
-    //     for (k, v) in [(1, 3), (4, 10)] {
-    //         builder.keys().append_value(k);
-    //         builder.values().append_value(v);
-    //     }
-    //     builder.append(true)?;
+        Ok(())
+    }
 
-    //     let array = builder.finish();
-    //     acc.update_batch(&[Arc::new(array)])?;
+    #[test]
+    fn evaluate_should_produce_results() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Int64, DataType::Int64);
+        let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            MapAggregatorOp::Sum,
+        )?;
+        let mut builder = acc.make_map_builder(10);
+        let expected = HashMap::from([(3, 10), (1, 9), (2, 7)]);
 
-    //     // Then
-    //     assert_eq!(acc.values, expected);
+        // When
+        for (k, v) in [(3, 10), (1, 4), (1, 3), (2, 7), (1, 2)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
 
-    //     Ok(())
-    // }
+        builder.append(true)?;
+        acc.update_batch(&[Arc::new(builder.finish())], &[0], None, 1)?;
+        let result = acc.evaluate(EmitTo::All)?;
 
-    // #[test]
-    // fn evaluate_should_produce_results() -> Result<(), DataFusionError> {
-    //     // Given
-    //     let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-    //     let mut acc =
-    //         PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
-    //     let mut builder = acc.make_map_builder(10);
-    //     let expected = HashMap::from([(3, 10), (1, 9), (2, 7)]);
+        // Then
+        // Iteration order of maps is not guaranteed, so read the scalar value results into a new map
+        let result_map = result.as_map();
+        let keys = result_map.keys().as_primitive::<Int64Type>();
+        let values = result_map.values().as_primitive::<Int64Type>();
+        let mut accumulated_map = HashMap::new();
+        for item in keys.iter().zip(values.iter()) {
+            if let (Some(opt_k), Some(opt_v)) = item {
+                accumulated_map.insert(opt_k, opt_v);
+            }
+        }
 
-    //     // When
-    //     for (k, v) in [(3, 10), (1, 4), (1, 3), (2, 7), (1, 2)] {
-    //         builder.keys().append_value(k);
-    //         builder.values().append_value(v);
-    //     }
-
-    //     builder.append(true)?;
-    //     acc.update_batch(&[Arc::new(builder.finish())])?;
-    //     let result = acc.evaluate()?;
-
-    //     // Then
-    //     // Iteration order of maps is not guaranteed, so read the scalar value results into a new map
-    //     let ScalarValue::Map(result_map) = result else {
-    //         panic!("result type not a map");
-    //     };
-    //     let keys = result_map.keys().as_primitive::<Int64Type>();
-    //     let values = result_map.values().as_primitive::<Int64Type>();
-    //     let mut accumulated_map = HashMap::new();
-    //     for item in keys.iter().zip(values.iter()) {
-    //         if let (Some(opt_k), Some(opt_v)) = item {
-    //             accumulated_map.insert(opt_k, opt_v);
-    //         }
-    //     }
-
-    //     assert_eq!(expected, accumulated_map);
-    //     Ok(())
-    // }
+        assert_eq!(expected, accumulated_map);
+        Ok(())
+    }
 }
