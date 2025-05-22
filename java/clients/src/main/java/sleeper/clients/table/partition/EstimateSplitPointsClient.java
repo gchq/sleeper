@@ -47,13 +47,13 @@ public class EstimateSplitPointsClient {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 6) {
-            throw new IllegalArgumentException("Usage: <schema-file> <num-partitions> <sketch-size> <read-max-records-per-file> <output-split-points-file> <parquet-paths-as-separate-args>");
+            throw new IllegalArgumentException("Usage: <schema-file> <num-partitions> <read-max-records-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>");
         }
 
         Path schemaFile = Paths.get(args[0]);
         int numPartitions = Integer.parseInt(args[1]);
-        int sketchSize = Integer.parseInt(args[2]);
-        long recordsPerFile = Long.parseLong(args[3]);
+        long recordsPerFile = Long.parseLong(args[2]);
+        int sketchSize = Integer.parseInt(args[3]);
         Path outputFile = Paths.get(args[4]);
         List<org.apache.hadoop.fs.Path> parquetPaths = List.of(args).subList(5, args.length).stream()
                 .map(org.apache.hadoop.fs.Path::new)
@@ -62,14 +62,14 @@ public class EstimateSplitPointsClient {
         String schemaJson = Files.readString(schemaFile);
         Schema schema = new SchemaSerDe().fromJson(schemaJson);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-        List<Object> splitPoints = estimate(schema, conf, numPartitions, sketchSize, recordsPerFile, parquetPaths);
+        List<Object> splitPoints = estimate(schema, conf, numPartitions, recordsPerFile, sketchSize, parquetPaths);
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
             writeSplitPoints(splitPoints, writer, false);
         }
     }
 
     public static List<Object> estimate(
-            Schema schema, Configuration conf, int numPartitions, int sketchSize, long recordsPerFile,
+            Schema schema, Configuration conf, int numPartitions, long recordsPerFile, int sketchSize,
             List<org.apache.hadoop.fs.Path> parquetPaths) throws IOException {
         try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, recordsPerFile, parquetPaths)) {
             return new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
