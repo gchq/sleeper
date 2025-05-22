@@ -72,7 +72,7 @@ public class EstimateSplitPoints {
         // the correct number of split points, and need to remove the first and last entries.
         Object[] splitPoints = sketch.getQuantiles(getRanks());
         if (splitPoints.length != numPartitions - 1) {
-            throw new RuntimeException("There should have been " + (numPartitions - 1) + "partitions; got " + splitPoints.length);
+            throw new RuntimeException("There should have been " + (numPartitions - 1) + " split points; got " + splitPoints.length);
         }
 
         // Remove any duplicate values (which means the number of split points returned may be less than that requested.
