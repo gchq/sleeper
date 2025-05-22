@@ -12,11 +12,19 @@ To write data to Sleeper, you can either create a custom ingest process by inter
 or:
 
 1. Write your data to Parquet files in S3, in the data bucket or the configured ingest source bucket
-2. Send a message to an ingest queue as a job pointing to those files
+2. Send a message to an SQS queue for an ingest system, as a job pointing to those files
 3. Poll the ingest job tracker until the ingest is complete
 
-The ingest system will sort your data and write it to one or more Parquet files in the Sleeper table. You can choose
-which ingest system to use for this by which ingest queue you send your message to.
+The ingest system will sort your data and write it to one or more Parquet files in the Sleeper table.
+
+The data bucket name can be found in the instance property `sleeper.data.bucket`,
+documented [here](properties/instance/cdk/common.md). You can set your own source bucket name in the instance
+property `sleeper.ingest.source.bucket`, documented [here](properties/instance/user/ingest.md).
+
+You can choose which ingest system to use for this by which SQS queue you send your message to. You can find the queue
+URLs in instance properties like `sleeper.ingest.job.queue.url`, documented
+under [ingest](properties/instance/cdk/ingest.md) and [bulk import](properties/instance/cdk/bulk_import.md). Which
+queues are available will depend on which optional stacks are deployed.
 
 Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
