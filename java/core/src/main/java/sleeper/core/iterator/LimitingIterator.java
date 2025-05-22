@@ -17,6 +17,11 @@ package sleeper.core.iterator;
 
 import java.io.IOException;
 
+/**
+ * An iterator that will stop reading elements once it has processed a certain number.
+ *
+ * @param <T> the element type
+ */
 public class LimitingIterator<T> implements CloseableIterator<T> {
     private final long limit;
     private final CloseableIterator<T> iterator;
