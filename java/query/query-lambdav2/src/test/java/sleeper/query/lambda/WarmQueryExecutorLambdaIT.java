@@ -134,9 +134,9 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(CONFIG_BUCKET, "testing");
-        instanceProperties.set(QUERY_QUEUE_URL, createSqsQueueGetUrlV2());
-        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, createSqsQueueGetUrlV2());
-        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, createSqsQueueGetUrlV2());
+        instanceProperties.set(QUERY_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));

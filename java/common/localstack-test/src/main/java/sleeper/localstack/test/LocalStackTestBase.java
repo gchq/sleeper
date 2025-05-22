@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -31,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
@@ -79,17 +79,13 @@ public abstract class LocalStackTestBase {
     }
 
     public static String createFifoQueueGetUrl() {
-        return SQS_CLIENT.createQueue(new CreateQueueRequest()
+        return SQS_CLIENT.createQueue(new com.amazonaws.services.sqs.model.CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
     public static String createSqsQueueGetUrl() {
-        return SQS_CLIENT.createQueue(UUID.randomUUID().toString()).getQueueUrl();
-    }
-
-    public static String createSqsQueueGetUrlV2() {
-        return SQS_CLIENT_V2.createQueue(software.amazon.awssdk.services.sqs.model.CreateQueueRequest.builder()
+        return SQS_CLIENT_V2.createQueue(CreateQueueRequest.builder()
                 .queueName(UUID.randomUUID().toString())
                 .build())
                 .queueUrl();
