@@ -16,11 +16,11 @@
 
 package sleeper.systemtest.drivers.query;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -31,7 +31,7 @@ import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
 import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -51,7 +51,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
 
     private final SystemTestInstanceContext instance;
     private final AmazonSQS sqsClient;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final DynamoDbClient dynamoClient;
     private final AmazonS3 s3Client;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(1));
@@ -61,7 +61,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
             SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.sqsClient = clients.getSqs();
-        this.dynamoDBClient = clients.getDynamoDB();
+        this.dynamoClient = clients.getDynamoV2();
         this.s3Client = clients.getS3();
         this.clients = clients;
     }
@@ -80,7 +80,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
 
     @Override
     public void waitFor(Query query) {
-        QueryTrackerStore queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDBClient);
+        QueryTrackerStore queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoClient);
         try {
             poll.pollUntil("query is finished: " + query.getQueryId(), () -> {
                 try {

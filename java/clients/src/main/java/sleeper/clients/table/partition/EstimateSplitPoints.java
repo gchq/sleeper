@@ -22,7 +22,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.sketches.Sketches;
+import sleeper.sketchesv2.Sketches;
 
 import java.util.Arrays;
 import java.util.Collections;

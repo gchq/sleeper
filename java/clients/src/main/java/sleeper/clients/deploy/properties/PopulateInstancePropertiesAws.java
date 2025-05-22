@@ -16,9 +16,8 @@
 
 package sleeper.clients.deploy.properties;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.core.deploy.PopulateInstanceProperties;
 
@@ -27,9 +26,9 @@ public class PopulateInstancePropertiesAws {
     private PopulateInstancePropertiesAws() {
     }
 
-    public static PopulateInstanceProperties.Builder builder(AWSSecurityTokenService sts, AwsRegionProvider regionProvider) {
+    public static PopulateInstanceProperties.Builder builder(StsClient stsClient, AwsRegionProvider regionProvider) {
         return PopulateInstanceProperties.builder()
-                .accountSupplier(sts.getCallerIdentity(new GetCallerIdentityRequest())::getAccount)
+                .accountSupplier(stsClient.getCallerIdentity()::account)
                 .regionIdSupplier(() -> regionProvider.getRegion().id());
     }
 }

@@ -15,11 +15,6 @@
  */
 package sleeper.clients.query;
 
-import com.amazonaws.DefaultRequest;
-import com.amazonaws.auth.AWS4Signer;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.http.HttpMethodName;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -30,6 +25,11 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
+import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
 import sleeper.clients.query.exception.MessageMalformedException;
 import sleeper.clients.query.exception.MessageMissingFieldException;
@@ -44,14 +44,12 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -142,32 +140,25 @@ public class QueryWebSocketClient {
         }
 
         private void initialiseConnection(URI serverUri) throws InterruptedException {
-            try {
-                Map<String, String> authHeaders = this.getAwsIamAuthHeaders(serverUri);
-                for (Entry<String, String> header : authHeaders.entrySet()) {
-                    this.addHeader(header.getKey(), header.getValue());
-                }
-            } catch (URISyntaxException e) {
-                System.err.println(e);
-            }
+            setAwsIamAuthHeaders(serverUri);
             LOGGER.info("Connecting to WebSocket API at " + serverUri);
             connectBlocking();
         }
 
-        private Map<String, String> getAwsIamAuthHeaders(URI serverUri) throws URISyntaxException {
+        private void setAwsIamAuthHeaders(URI serverUri) {
             LOGGER.info("Obtaining AWS IAM creds...");
-            AWSCredentials creds = DefaultAWSCredentialsProviderChain.getInstance().getCredentials();
-
-            DefaultRequest<Object> request = new DefaultRequest<>("execute-api");
-            request.setHttpMethod(HttpMethodName.GET);
-            request.setEndpoint(new URI(serverUri.getScheme() + "://" + serverUri.getAuthority()));
-            request.setResourcePath(serverUri.getPath());
-
-            AWS4Signer signer = new AWS4Signer();
-            signer.setServiceName("execute-api");
-            signer.sign(request, creds);
-
-            return request.getHeaders();
+            AwsV4HttpSigner signer = AwsV4HttpSigner.create();
+            SignedRequest signed = signer.sign(request -> request
+                    .identity(DefaultCredentialsProvider.create().resolveCredentials())
+                    .request(SdkHttpRequest.builder()
+                            .uri(serverUri)
+                            .method(SdkHttpMethod.GET)
+                            .build()));
+            signed.request().forEachHeader((header, values) -> {
+                for (String value : values) {
+                    addHeader(header, value);
+                }
+            });
         }
 
         public boolean hasQueryFinished() {

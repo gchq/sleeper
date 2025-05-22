@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,8 +32,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -53,7 +53,7 @@ public class AddTableIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
 
     @TempDir
     private Path tempDir;
@@ -62,8 +62,8 @@ public class AddTableIT extends LocalStackTestBase {
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
     }
 
     @Test
@@ -78,8 +78,7 @@ public class AddTableIT extends LocalStackTestBase {
         TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
         assertThat(foundProperties).isEqualTo(tableProperties);
         assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(foundProperties);
-        assertThat(stateStore.getAllPartitions())
+        assertThat(stateStore(foundProperties).getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
                         .buildList());
@@ -118,8 +117,7 @@ public class AddTableIT extends LocalStackTestBase {
         addTable(tableProperties);
 
         // Then
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
-        assertThat(stateStore.getAllPartitions())
+        assertThat(stateStore(tableProperties).getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -127,7 +125,14 @@ public class AddTableIT extends LocalStackTestBase {
                         .buildList());
     }
 
+    private StateStore stateStore(TableProperties tableProperties) {
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+    }
+
     private void addTable(TableProperties tableProperties) throws IOException {
-        new AddTable(s3Client, dynamoClient, instanceProperties, tableProperties, hadoopConf).run();
+        new AddTable(instanceProperties, tableProperties,
+                S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2),
+                StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
+                .run();
     }
 }
