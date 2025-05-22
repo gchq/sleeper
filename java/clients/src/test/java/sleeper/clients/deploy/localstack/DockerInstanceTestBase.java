@@ -75,15 +75,6 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         return new IngestJobSerDe().fromJson(json);
     }
 
-    protected IngestJob receiveIngestJobV1(String queueUrl) {
-        List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
-        if (messages.size() != 1) {
-            throw new IllegalStateException("Expected to receive one message, found: " + messages);
-        }
-        String json = messages.get(0).getBody();
-        return new IngestJobSerDe().fromJson(json);
-    }
-
     private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
         return Query.builder()
                 .tableName(tableName)
