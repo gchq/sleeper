@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
@@ -40,7 +41,6 @@ import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
-import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
 import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT_V2;
 
 /**
@@ -79,9 +79,9 @@ public abstract class LocalStackTestBase {
     }
 
     public static String createFifoQueueGetUrl() {
-        return SQS_CLIENT.createQueue(new com.amazonaws.services.sqs.model.CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
+        return SQS_CLIENT_V2.createQueue(CreateQueueRequest.builder()
+                .queueName(UUID.randomUUID().toString() + ".fifo")
+                .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build()).queueUrl();
     }
 
     public static String createSqsQueueGetUrl() {
