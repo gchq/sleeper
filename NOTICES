@@ -203,7 +203,7 @@ Slice (io.airlift:slice:0.*)
 
 - Apache License, Version 2.0
 
-Google Guice (com.google.inject:guice:5.*)
+Google Guice (com.google.inject:guice:7.*)
 
 - Apache License, Version 2.0
 
