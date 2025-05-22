@@ -269,15 +269,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use arrow::{
-        array::{BinaryBuilder, Int64Builder, StructBuilder, UInt16Builder},
-        datatypes::{DataType, Field, Fields},
-    };
-    use datafusion::{common::HashMap, error::DataFusionError};
-    use nohash::BuildNoHashHasher;
-
     use crate::{
         assert_error,
         datafusion::functions::{
@@ -291,6 +282,20 @@ mod tests {
             },
         },
     };
+    use arrow::{
+        array::{
+            AsArray, BinaryArray, BinaryBuilder, Int64Array, Int64Builder, StructBuilder,
+            UInt16Builder,
+        },
+        datatypes::{DataType, Field, Fields, Int64Type},
+    };
+    use datafusion::{
+        common::HashMap,
+        error::DataFusionError,
+        logical_expr::{EmitTo, GroupsAccumulator},
+    };
+    use nohash::BuildNoHashHasher;
+    use std::sync::Arc;
 
     // Macro to convert a literal to owned bytes
     macro_rules! s {
@@ -640,5 +645,352 @@ mod tests {
             &mut klist,
             &MapAggregatorOp::Sum,
         );
+    }
+
+    #[test]
+    fn update_batch_should_fail_on_zero_or_multi_column() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+
+        // When
+        let result = acc.update_batch(&[], &[1], None, 1);
+
+        // Then
+        assert_error!(
+            result,
+            DataFusionError::Execution,
+            "ByteGroupMapAccumulator only accepts single column input"
+        );
+
+        // When
+        let arr1 = BinaryArray::from_vec(vec![b"test", b"test2"]);
+        let arr2 = Int64Array::from_value(1, 1);
+        let result = acc.update_batch(&[Arc::new(arr1), Arc::new(arr2)], &[1], None, 1);
+
+        // Then
+        assert_error!(
+            result,
+            DataFusionError::Execution,
+            "ByteGroupMapAccumulator only accepts single column input"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+
+        // When
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[], None, 0)?;
+
+        // Then
+        assert!(acc.word_cache.is_empty());
+        assert!(acc.words.is_empty());
+        assert_eq!(acc.group_maps.len(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+
+        // When
+        builder.append(true)?;
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
+
+        // Then
+        assert!(acc.word_cache.is_empty());
+        assert!(acc.words.is_empty());
+        assert_eq!(acc.group_maps.len(), 1);
+        assert!(acc.group_maps[0].is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<Vec<u8>, usize>::from([(s!["3"], 0)]);
+        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_group_map.insert(0, 10);
+        let expected_group_maps = vec![expected_group_map];
+        let expected_klist = vec![s!["3"]];
+
+        // When
+        builder.keys().append_value(s!["3"]);
+        builder.values().append_value(10);
+        builder.append(true)?;
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
+
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
+        Ok(())
+    }
+
+    #[test]
+    fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<Vec<u8>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
+        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_group_map.insert(0, 10);
+        expected_group_map.insert(1, 5);
+        let expected_group_maps = vec![expected_group_map];
+        let expected_klist = vec![s!["3"], s!["2"]];
+
+        // When
+        builder.keys().append_value(s!["3"]);
+        builder.values().append_value(10);
+        builder.append(true)?;
+        builder.keys().append_value(s!["2"]);
+        builder.values().append_value(5);
+        builder.append(true)?;
+
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0, 0], None, 1)?;
+
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<Vec<u8>, usize>::from([
+            (s!["3"], 0),
+            (s!["1"], 1),
+            (s!["2"], 2),
+            (s!["4"], 3),
+        ]);
+        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_group_map.insert(0, 10);
+        expected_group_map.insert(1, 13);
+        expected_group_map.insert(2, 7);
+        expected_group_map.insert(3, 10);
+        let expected_group_maps = vec![expected_group_map];
+        let expected_klist = vec![s!["3"], s!["1"], s!["2"], s!["4"]];
+
+        // When
+        for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+
+        builder.keys().append_value(s!["1"]);
+        builder.values().append_value(3);
+
+        builder.append(true)?;
+
+        for (k, v) in [(s!["1"], 3), (s!["4"], 10)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0, 0, 0], None, 1)?;
+
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_batch_should_update_multiple_maps_multiple_groups() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_cache = HashMap::<Vec<u8>, usize>::from([
+            (s!["3"], 0),
+            (s!["1"], 1),
+            (s!["2"], 2),
+            (s!["4"], 3),
+            (s!["5"], 4),
+        ]);
+        let mut expected_first_group_map =
+            HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+
+        expected_first_group_map.insert(0, 10);
+        expected_first_group_map.insert(1, 10);
+        expected_first_group_map.insert(2, 7);
+        expected_first_group_map.insert(3, 11);
+        let mut expected_second_group_map =
+            HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+
+        expected_second_group_map.insert(0, 5);
+        expected_second_group_map.insert(1, 11);
+        expected_second_group_map.insert(4, 13);
+
+        let expected_group_maps = vec![expected_first_group_map, expected_second_group_map];
+        let expected_klist = vec![s!["3"], s!["1"], s!["2"], s!["4"], s!["5"]];
+
+        // When
+        // Create values for first group
+        for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+        for (k, v) in [(s!["1"], 3), (s!["4"], 11)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+
+        // Create values for second group
+        for (k, v) in [(s!["3"], 5), (s!["1"], 3), (s!["1"], 5), (s!["5"], 9)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+        for (k, v) in [(s!["1"], 3), (s!["5"], 4)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0, 0, 1, 1], None, 2)?;
+
+        // Then
+        assert_eq!(acc.word_cache, expected_cache);
+        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.group_maps, expected_group_maps);
+
+        Ok(())
+    }
+
+    #[test]
+    fn evaluate_should_produce_results_single_map() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+        let expected = HashMap::from([(s!["3"], 10), (s!["1"], 9), (s!["2"], 7)]);
+
+        // When
+        for (k, v) in [
+            (s!["3"], 10),
+            (s!["1"], 4),
+            (s!["1"], 3),
+            (s!["2"], 7),
+            (s!["1"], 2),
+        ] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+
+        builder.append(true)?;
+        acc.update_batch(&[Arc::new(builder.finish())], &[0], None, 1)?;
+        let result = acc.evaluate(EmitTo::All)?;
+
+        // Then
+        // Iteration order of maps is not guaranteed, so read the scalar value results into a new map
+        let result_map = result.as_map();
+        let keys = result_map.keys().as_binary::<i32>();
+        let values = result_map.values().as_primitive::<Int64Type>();
+        let mut accumulated_map = HashMap::new();
+        for item in keys.iter().zip(values.iter()) {
+            if let (Some(opt_k), Some(opt_v)) = item {
+                accumulated_map.insert(opt_k.into(), opt_v);
+            }
+        }
+
+        assert_eq!(expected, accumulated_map);
+        Ok(())
+    }
+
+    #[test]
+    fn evaluate_should_produce_results_multiple_groups() -> Result<(), DataFusionError> {
+        // Given
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut builder = acc.make_map_builder(10);
+        let expected_first_group =
+            HashMap::from([(s!["3"], 10), (s!["1"], 10), (s!["2"], 7), (s!["4"], 11)]);
+        let expected_second_group = HashMap::from([(s!["3"], 5), (s!["1"], 11), (s!["5"], 13)]);
+
+        // When
+        // Create values for first group
+        for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+        for (k, v) in [(s!["1"], 3), (s!["4"], 11)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+
+        // Create values for second group
+        for (k, v) in [(s!["3"], 5), (s!["1"], 3), (s!["1"], 5), (s!["5"], 9)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+        for (k, v) in [(s!["1"], 3), (s!["5"], 4)] {
+            builder.keys().append_value(k);
+            builder.values().append_value(v);
+        }
+        builder.append(true)?;
+
+        let array = builder.finish();
+        acc.update_batch(&[Arc::new(array)], &[0, 0, 1, 1], None, 2)?;
+        let result = acc.evaluate(EmitTo::All)?;
+
+        // Then
+        // Iteration order of maps is not guaranteed, so read the scalar value results into a new map
+        let result_map = result.as_map();
+        // Iterate for each map group
+        for (expected_map, map_array) in [expected_first_group, expected_second_group]
+            .into_iter()
+            .zip(result_map.iter())
+        {
+            let Some(inner_struct) = map_array else {
+                panic!("inner_struct should never be null in this test");
+            };
+            // Read inner map array into a HashMap, then compare against expected values
+            let keys = inner_struct.column(0).as_binary::<i32>();
+            let values = inner_struct.column(1).as_primitive::<Int64Type>();
+            let mut accumulated_map = HashMap::new();
+            for item in keys.iter().zip(values.iter()) {
+                if let (Some(opt_k), Some(opt_v)) = item {
+                    accumulated_map.insert(opt_k.into(), opt_v);
+                }
+            }
+            assert_eq!(expected_map, accumulated_map);
+        }
+
+        Ok(())
     }
 }
