@@ -157,7 +157,7 @@
         <zstd-jni.version>1.5.7-3</zstd-jni.version>
         <airlift-units.version>1.10</airlift-units.version>
         <airlift-slice.version>0.41</airlift-slice.version>
-        <guice.version>5.0.1</guice.version>
+        <guice.version>6.0.0</guice.version>
         <jol.version>0.2</jol.version>
         <zookeeper.version>3.9.3</zookeeper.version>
         <jackson.version>2.19.0</jackson.version>
