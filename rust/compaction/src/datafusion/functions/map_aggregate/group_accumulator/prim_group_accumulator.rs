@@ -30,9 +30,17 @@ use datafusion::{
     error::Result,
     logical_expr::{EmitTo, GroupsAccumulator},
 };
-use nohash::BuildNoHashHasher;
+use nohash::{BuildNoHashHasher, IsEnabled};
 use num_traits::NumAssign;
 use std::{hash::Hash, sync::Arc};
+
+use super::INITIAL_GROUP_MAP_SIZE;
+
+type PrimitiveMap<KBuilder, VBuilder> = HashMap<
+    <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
+    BuildNoHashHasher<<<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+>;
 
 /// An enhanced accumulator for maps of primitive values that implements [`GroupAccumulator`].
 #[derive(Debug)]
@@ -42,16 +50,7 @@ where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
     inner_field_type: DataType,
-    word_cache:
-        HashMap<<<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native, usize>,
-    words: Vec<<<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
-    group_maps: Vec<
-        HashMap<
-            usize,
-            <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-            BuildNoHashHasher<usize>,
-        >,
-    >,
+    group_maps: Vec<PrimitiveMap<KBuilder, VBuilder>>,
     nulls: MapNullState,
     op: MapAggregatorOp,
 }
@@ -78,10 +77,8 @@ where
             };
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
-                group_maps: Vec::with_capacity(1000),
-                words: Vec::with_capacity(200),
+                group_maps: Vec::with_capacity(INITIAL_GROUP_MAP_SIZE),
                 nulls: MapNullState::new(),
-                word_cache: HashMap::with_capacity(200),
                 op,
             })
         } else {
@@ -125,21 +122,12 @@ where
 /// All nulls keys/values are skipped over.
 fn update_prim_map_group<KBuilder, VBuilder>(
     input: Option<&StructArray>,
-    map: &mut HashMap<
-        usize,
-        <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        BuildNoHashHasher<usize>,
-    >,
-    word_cache: &mut HashMap<
-        <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
-        usize,
-    >,
-    words: &mut Vec<<<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+    map: &mut PrimitiveMap<KBuilder, VBuilder>,
     op: &MapAggregatorOp,
 ) where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq,
+    <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq + IsEnabled,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     if let Some(entries) = input {
@@ -152,11 +140,7 @@ fn update_prim_map_group<KBuilder, VBuilder>(
         for (k, v) in map_keys.iter().zip(map_vals) {
             match (k, v) {
                 (Some(key), Some(value)) => {
-                    let i = word_cache.entry(key).or_insert_with(|| {
-                        words.push(key);
-                        words.len() - 1
-                    });
-                    map.entry(*i)
+                    map.entry(key)
                         .and_modify(|current_value| *current_value = op.op(*current_value, value))
                         .or_insert(value);
                 }
@@ -170,7 +154,7 @@ impl<KBuilder, VBuilder> GroupsAccumulator for PrimGroupMapAccumulator<KBuilder,
 where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
-    <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq,
+    <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: Hash + Eq + IsEnabled,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     fn update_batch(
@@ -193,13 +177,7 @@ where
             total_num_groups,
             |g_idx, val| {
                 let agg_map = &mut self.group_maps[g_idx];
-                update_prim_map_group::<KBuilder, VBuilder>(
-                    Some(val).as_ref(),
-                    agg_map,
-                    &mut self.word_cache,
-                    &mut self.words,
-                    &self.op,
-                );
+                update_prim_map_group::<KBuilder, VBuilder>(Some(val).as_ref(), agg_map, &self.op);
             },
         );
         Ok(())
@@ -214,7 +192,7 @@ where
         for (v, is_valid) in result.into_iter().zip(nulls.iter()) {
             if is_valid {
                 for (key, val) in &v {
-                    builder.keys().append_value(&self.words[*key]);
+                    builder.keys().append_value(key);
                     builder.values().append_value(val);
                 }
                 builder.append(true).expect("Can't finish MapBuilder");
@@ -363,9 +341,7 @@ mod tests {
         let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder> {
             inner_field_type: DataType::Int16,
             group_maps: Vec::with_capacity(1000),
-            words: Vec::with_capacity(200),
             nulls: MapNullState::new(),
-            word_cache: HashMap::with_capacity(200),
             op: MapAggregatorOp::Sum,
         };
 
@@ -382,9 +358,7 @@ mod tests {
                 Field::new("value1_name", DataType::Int64, false),
             ])),
             group_maps: Vec::with_capacity(1000),
-            words: Vec::with_capacity(200),
             nulls: MapNullState::new(),
-            word_cache: HashMap::with_capacity(200),
             op: MapAggregatorOp::Sum,
         };
 
@@ -407,9 +381,7 @@ mod tests {
                 Field::new("value1_name", DataType::UInt16, false),
             ])),
             group_maps: Vec::with_capacity(1000),
-            words: Vec::with_capacity(200),
             nulls: MapNullState::new(),
-            word_cache: HashMap::with_capacity(200),
             op: MapAggregatorOp::Sum,
         };
 
@@ -424,49 +396,25 @@ mod tests {
     #[test]
     fn update_prim_map_none() {
         // Given
-        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        map.insert(0, 2);
-        map.insert(1, 4);
+        let mut map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
+        map.insert(1, 2);
+        map.insert(3, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<i64, usize>::new();
-        key_cache.insert(1, 0);
-        key_cache.insert(3, 1);
-        let expected_key_cache = key_cache.clone();
-
-        let mut klist = vec![1, 3];
-        let expected_klist = klist.clone();
-
         // When
-        update_prim_map_group::<Int64Builder, Int64Builder>(
-            None,
-            &mut map,
-            &mut key_cache,
-            &mut klist,
-            &MapAggregatorOp::Sum,
-        );
+        update_prim_map_group::<Int64Builder, Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
 
         // Then - expect no changes
         assert_eq!(map, expected_map);
-        assert_eq!(key_cache, expected_key_cache);
-        assert_eq!(klist, expected_klist);
     }
 
     #[test]
     fn update_prim_map_empty_values() {
         // Given
-        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        map.insert(0, 2);
-        map.insert(1, 4);
+        let mut map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
+        map.insert(1, 2);
+        map.insert(3, 4);
         let expected_map = map.clone();
-
-        let mut key_cache = HashMap::<i64, usize>::new();
-        key_cache.insert(1, 0);
-        key_cache.insert(3, 1);
-        let expected_key_cache = key_cache.clone();
-
-        let mut klist = vec![1, 3];
-        let expected_klist = klist.clone();
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
@@ -480,34 +428,21 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &mut key_cache,
-            &mut klist,
             &MapAggregatorOp::Sum,
         );
 
         // Then - expect no changes
         assert_eq!(map, expected_map);
-        assert_eq!(key_cache, expected_key_cache);
-        assert_eq!(klist, expected_klist);
     }
 
     #[test]
     fn update_prim_map_enters_first_values() {
         // Given
-        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        let mut map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
         let mut expected_map = map.clone();
-        expected_map.insert(0, 2);
-        expected_map.insert(1, 4);
-        expected_map.insert(2, -10);
-
-        let mut key_cache = HashMap::<i64, usize>::new();
-        let mut expected_key_cache = key_cache.clone();
-        expected_key_cache.insert(1, 0);
-        expected_key_cache.insert(3, 1);
-        expected_key_cache.insert(8, 2);
-
-        let mut klist = vec![];
-        let expected_klist = vec![1, 3, 8];
+        expected_map.insert(1, 2);
+        expected_map.insert(3, 4);
+        expected_map.insert(8, -10);
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
@@ -532,38 +467,23 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &mut key_cache,
-            &mut klist,
             &MapAggregatorOp::Sum,
         );
 
         // Then
         assert_eq!(map, expected_map);
-        assert_eq!(key_cache, expected_key_cache);
-        assert_eq!(klist, expected_klist);
     }
 
     #[test]
     fn update_prim_map_enters_values_and_sums() {
         // Given
-        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        map.insert(0, 2);
-        map.insert(1, 4);
+        let mut map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
+        map.insert(1, 2);
+        map.insert(3, 4);
         let mut expected_map = map.clone();
-        expected_map.insert(0, 6);
-        expected_map.insert(1, 8);
-        expected_map.insert(2, 2);
-
-        let mut key_cache = HashMap::<i64, usize>::new();
-        key_cache.insert(1, 0);
-        key_cache.insert(3, 1);
-        let mut expected_key_cache = key_cache.clone();
-        expected_key_cache.insert(1, 0);
-        expected_key_cache.insert(3, 1);
-        expected_key_cache.insert(4, 2);
-
-        let mut klist = vec![1, 3];
-        let expected_klist = vec![1, 3, 4];
+        expected_map.insert(1, 6);
+        expected_map.insert(3, 8);
+        expected_map.insert(4, 2);
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
@@ -588,24 +508,18 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &mut key_cache,
-            &mut klist,
             &MapAggregatorOp::Sum,
         );
 
         // Then
         assert_eq!(map, expected_map);
-        assert_eq!(key_cache, expected_key_cache);
-        assert_eq!(klist, expected_klist);
     }
 
     #[test]
     #[should_panic(expected = "Nullable entries aren't supported")]
     fn update_prim_map_panics_on_null() {
         // Given
-        let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        let mut key_cache = HashMap::<i64, usize>::new();
-        let mut klist = vec![];
+        let mut map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
@@ -640,8 +554,6 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &mut key_cache,
-            &mut klist,
             &MapAggregatorOp::Sum,
         );
     }
@@ -695,8 +607,6 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[], None, 0)?;
 
         // Then
-        assert!(acc.word_cache.is_empty());
-        assert!(acc.words.is_empty());
         assert_eq!(acc.group_maps.len(), 0);
         Ok(())
     }
@@ -717,8 +627,6 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
 
         // Then
-        assert!(acc.word_cache.is_empty());
-        assert!(acc.words.is_empty());
         assert_eq!(acc.group_maps.len(), 1);
         assert!(acc.group_maps[0].is_empty());
         Ok(())
@@ -733,11 +641,9 @@ mod tests {
             MapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<i64, usize>::from([(3, 0)]);
-        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        expected_group_map.insert(0, 10);
+        let mut expected_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
+        expected_group_map.insert(3, 10);
         let expected_group_maps = vec![expected_group_map];
-        let expected_klist = vec![3];
 
         // When
         builder.keys().append_value(3);
@@ -747,8 +653,6 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
         Ok(())
     }
@@ -762,12 +666,10 @@ mod tests {
             MapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<i64, usize>::from([(3, 0), (2, 1)]);
-        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        expected_group_map.insert(0, 10);
-        expected_group_map.insert(1, 5);
+        let mut expected_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
+        expected_group_map.insert(3, 10);
+        expected_group_map.insert(2, 5);
         let expected_group_maps = vec![expected_group_map];
-        let expected_klist = vec![3, 2];
 
         // When
         builder.keys().append_value(3);
@@ -781,8 +683,6 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0, 0], None, 1)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
 
         Ok(())
@@ -797,14 +697,12 @@ mod tests {
             MapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<i64, usize>::from([(3, 0), (1, 1), (2, 2), (4, 3)]);
-        let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        expected_group_map.insert(0, 10);
+        let mut expected_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
+        expected_group_map.insert(3, 10);
         expected_group_map.insert(1, 13);
         expected_group_map.insert(2, 7);
-        expected_group_map.insert(3, 10);
+        expected_group_map.insert(4, 10);
         let expected_group_maps = vec![expected_group_map];
-        let expected_klist = vec![3, 1, 2, 4];
 
         // When
         for (k, v) in [(3, 10), (1, 4), (1, 3), (2, 7)] {
@@ -828,8 +726,6 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0, 0, 0], None, 1)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
 
         Ok(())
@@ -844,23 +740,19 @@ mod tests {
             MapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<i64, usize>::from([(3, 0), (1, 1), (2, 2), (4, 3), (5, 4)]);
-        let mut expected_first_group_map =
-            HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        let mut expected_first_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
 
-        expected_first_group_map.insert(0, 10);
+        expected_first_group_map.insert(3, 10);
         expected_first_group_map.insert(1, 10);
         expected_first_group_map.insert(2, 7);
-        expected_first_group_map.insert(3, 11);
-        let mut expected_second_group_map =
-            HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
+        expected_first_group_map.insert(4, 11);
+        let mut expected_second_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
 
-        expected_second_group_map.insert(0, 5);
+        expected_second_group_map.insert(3, 5);
         expected_second_group_map.insert(1, 11);
-        expected_second_group_map.insert(4, 13);
+        expected_second_group_map.insert(5, 13);
 
         let expected_group_maps = vec![expected_first_group_map, expected_second_group_map];
-        let expected_klist = vec![3, 1, 2, 4, 5];
 
         // When
         // Create values for first group
@@ -891,8 +783,6 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0, 0, 1, 1], None, 2)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
 
         Ok(())

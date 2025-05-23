@@ -17,3 +17,8 @@
 pub mod byte_group_accumulator;
 pub mod prim_group_accumulator;
 pub mod string_group_accumulator;
+
+/// Initial sizes of aggregation key caches in string and byte group accumulators.
+const INITIAL_KEY_CACHE_SIZE: usize = 200;
+/// Initial size of the group map allocation.
+const INITIAL_GROUP_MAP_SIZE: usize = 1000;

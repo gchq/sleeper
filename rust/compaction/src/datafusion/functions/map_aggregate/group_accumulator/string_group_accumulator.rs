@@ -34,6 +34,20 @@ use nohash::BuildNoHashHasher;
 use num_traits::NumAssign;
 use std::sync::Arc;
 
+use super::{INITIAL_GROUP_MAP_SIZE, INITIAL_KEY_CACHE_SIZE};
+
+/* Implementation note:
+* This group accumulator implementation holds the maps for many aggregation groups at once. Since the same map keys
+* may be seen duplicated across many groups, we want to avoid that storage cost, e.g. if we are storing 10,000 aggregation
+* groups, each with the key "this long map key is being aggregated", we don't want to store that string 10,000 times.
+* Therefore, we use a cache to store each string key seen in "key_cache". The cache maps to an index number. This is the
+* index into the "keys" vector which contains the owned key string.
+*
+* When new values are placed into the group accumulator, lookups into the group_maps are exceedingly quick since we use
+* a [`NoHashHasher`] with a `usize` key, essentially making the hashing operation a no-op.
+*
+* When [`evaluate`] is called, the original key can be found using the group_maps key to index into the "keys" vector.
+*/
 /// An enhanced accumulator for maps of primitive values that implements [`GroupAccumulator`].
 #[derive(Debug)]
 pub struct StringGroupMapAccumulator<VBuilder>
@@ -41,8 +55,8 @@ where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
     inner_field_type: DataType,
-    word_cache: HashMap<String, usize>,
-    words: Vec<String>,
+    key_cache: HashMap<String, usize>,
+    keys: Vec<String>,
     group_maps: Vec<
         HashMap<
             usize,
@@ -75,10 +89,10 @@ where
             };
             Ok(Self {
                 inner_field_type: field.data_type().clone(),
-                group_maps: Vec::with_capacity(1000),
-                words: Vec::with_capacity(200),
+                group_maps: Vec::with_capacity(INITIAL_GROUP_MAP_SIZE),
+                keys: Vec::with_capacity(INITIAL_KEY_CACHE_SIZE),
                 nulls: MapNullState::new(),
-                word_cache: HashMap::with_capacity(200),
+                key_cache: HashMap::with_capacity(INITIAL_KEY_CACHE_SIZE),
                 op,
             })
         } else {
@@ -127,8 +141,8 @@ fn update_string_map_group<VBuilder>(
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         BuildNoHashHasher<usize>,
     >,
-    word_cache: &mut HashMap<String, usize>,
-    words: &mut Vec<String>,
+    key_cache: &mut HashMap<String, usize>,
+    keys: &mut Vec<String>,
     op: &MapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
@@ -142,9 +156,9 @@ fn update_string_map_group<VBuilder>(
         for (k, v) in map_keys.iter().zip(map_vals) {
             match (k, v) {
                 (Some(key), Some(value)) => {
-                    let i = word_cache.entry_ref(key).or_insert_with(|| {
-                        words.push(key.into());
-                        words.len() - 1
+                    let i = key_cache.entry_ref(key).or_insert_with(|| {
+                        keys.push(key.into());
+                        keys.len() - 1
                     });
                     map.entry(*i)
                         .and_modify(|current_value| *current_value = op.op(*current_value, value))
@@ -184,8 +198,8 @@ where
                 update_string_map_group::<VBuilder>(
                     Some(val).as_ref(),
                     agg_map,
-                    &mut self.word_cache,
-                    &mut self.words,
+                    &mut self.key_cache,
+                    &mut self.keys,
                     &self.op,
                 );
             },
@@ -202,7 +216,7 @@ where
         for (v, is_valid) in result.into_iter().zip(nulls.iter()) {
             if is_valid {
                 for (key, val) in &v {
-                    builder.keys().append_value(self.words[*key].clone());
+                    builder.keys().append_value(self.keys[*key].clone());
                     builder.values().append_value(val);
                 }
                 builder.append(true).expect("Can't finish MapBuilder");
@@ -352,9 +366,9 @@ mod tests {
         let acc = StringGroupMapAccumulator::<Int64Builder> {
             inner_field_type: DataType::Int16,
             group_maps: Vec::with_capacity(1000),
-            words: Vec::with_capacity(200),
+            keys: Vec::with_capacity(200),
             nulls: MapNullState::new(),
-            word_cache: HashMap::with_capacity(200),
+            key_cache: HashMap::with_capacity(200),
             op: MapAggregatorOp::Sum,
         };
 
@@ -371,9 +385,9 @@ mod tests {
                 Field::new("value1_name", DataType::Int64, false),
             ])),
             group_maps: Vec::with_capacity(1000),
-            words: Vec::with_capacity(200),
+            keys: Vec::with_capacity(200),
             nulls: MapNullState::new(),
-            word_cache: HashMap::with_capacity(200),
+            key_cache: HashMap::with_capacity(200),
             op: MapAggregatorOp::Sum,
         };
 
@@ -396,9 +410,9 @@ mod tests {
                 Field::new("value1_name", DataType::UInt16, false),
             ])),
             group_maps: Vec::with_capacity(1000),
-            words: Vec::with_capacity(200),
+            keys: Vec::with_capacity(200),
             nulls: MapNullState::new(),
-            word_cache: HashMap::with_capacity(200),
+            key_cache: HashMap::with_capacity(200),
             op: MapAggregatorOp::Sum,
         };
 
@@ -692,8 +706,8 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[], None, 0)?;
 
         // Then
-        assert!(acc.word_cache.is_empty());
-        assert!(acc.words.is_empty());
+        assert!(acc.key_cache.is_empty());
+        assert!(acc.keys.is_empty());
         assert_eq!(acc.group_maps.len(), 0);
         Ok(())
     }
@@ -712,8 +726,8 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
 
         // Then
-        assert!(acc.word_cache.is_empty());
-        assert!(acc.words.is_empty());
+        assert!(acc.key_cache.is_empty());
+        assert!(acc.keys.is_empty());
         assert_eq!(acc.group_maps.len(), 1);
         assert!(acc.group_maps[0].is_empty());
         Ok(())
@@ -740,8 +754,8 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0], None, 1)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.key_cache, expected_cache);
+        assert_eq!(acc.keys, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
         Ok(())
     }
@@ -772,8 +786,8 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0, 0], None, 1)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.key_cache, expected_cache);
+        assert_eq!(acc.keys, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
 
         Ok(())
@@ -822,8 +836,8 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0, 0, 0], None, 1)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.key_cache, expected_cache);
+        assert_eq!(acc.keys, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
 
         Ok(())
@@ -889,8 +903,8 @@ mod tests {
         acc.update_batch(&[Arc::new(array)], &[0, 0, 1, 1], None, 2)?;
 
         // Then
-        assert_eq!(acc.word_cache, expected_cache);
-        assert_eq!(acc.words, expected_klist);
+        assert_eq!(acc.key_cache, expected_cache);
+        assert_eq!(acc.keys, expected_klist);
         assert_eq!(acc.group_maps, expected_group_maps);
 
         Ok(())
