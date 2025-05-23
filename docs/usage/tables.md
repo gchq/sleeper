@@ -29,7 +29,8 @@ will consist of the following steps:
 All of these scripts will rely on a schema for your table, which should be created first.
 See [creating a schema](schema.md) for how to set up a schema for your table.
 
-We also have scripts to rename and delete a table, and to take it offline / online.
+We also have scripts to rename and delete a table, and to take it offline / online. You can also edit table properties
+with `adminClient.sh`.
 
 Here's an example of how you might use these together to create and add data to a table:
 

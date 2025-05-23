@@ -79,9 +79,10 @@ public interface IngestProperty {
             .defaultValue("120")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_SOURCE_BUCKET = Index.propertyBuilder("sleeper.ingest.source.bucket")
-            .description("A comma-separated list of buckets that contain files to be ingested via ingest jobs. The buckets should already " +
-                    "exist, i.e. they will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
-                    "and bulk import stacks will be given read access to these buckets so that they can consume data from them.")
+            .description("A comma-separated list of bucket names that contain files to be ingested in ingest or bulk " +
+                    "import jobs. Use this to specify your own buckets that already exist in the same AWS account. " +
+                    "Sleeper will not create these. The Sleeper CDK deployment will assign permissions to the ingest " +
+                    "and bulk import systems so that they can consume data from these buckets.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
 
