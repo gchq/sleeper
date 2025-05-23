@@ -13,31 +13,43 @@ or:
 
 1. Write your data to Parquet files in S3, in the data bucket or the configured ingest source bucket
 2. Send a message to an SQS queue for an ingest system, as a job pointing to those files
-3. Poll the ingest job tracker until the ingest is complete
+3. Poll the ingest job tracker, and the ingest batcher store if you use the batcher, until the ingest is complete
 
 The ingest system will sort your data and write it to one or more Parquet files in the Sleeper table.
-
-The data bucket name can be found in the instance property `sleeper.data.bucket`,
-documented [here](properties/instance/cdk/common.md). You can set your own source bucket name in the instance
-property `sleeper.ingest.source.bucket`, documented [here](properties/instance/user/ingest.md).
-
-You can choose which ingest system to use for this by which SQS queue you send your message to. You can find the queue
-URLs in instance properties like `sleeper.ingest.job.queue.url`, documented
-under [ingest](properties/instance/cdk/ingest.md) and [bulk import](properties/instance/cdk/bulk_import.md).
-Which queues are available will depend on which optional stacks are deployed.
 
 Note that all ingest into Sleeper is done in batches - there is currently no option to ingest the data in a way
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
 the cost, with lower latency generally costing more.
 
-You can get started by using the script `sendToIngestBatcher.sh` to send your files to the SQS queue,
-and `ingestBatcherReport.sh` and `ingestJobStatusReport.sh` to follow progress:
+## Getting started
+
+You can get started by using the script `sendToIngestBatcher.sh` to send your files to the SQS queue for the ingest
+batcher, and `ingestBatcherReport.sh` and `ingestJobStatusReport.sh` to follow progress.
+
+Your files will need to be in the correct S3 bucket. The data bucket name can be found in the instance
+property `sleeper.data.bucket`, documented [here](properties/instance/cdk/common.md). You can set your own source bucket
+name in the instance property `sleeper.ingest.source.bucket`, documented [here](properties/instance/user/ingest.md). You
+can use `./scripts/utility/adminClient.sh` to find and set the values of these properties.
+
+Here's an example of how to use the scripts to ingest with the batcher:
 
 ```bash
 ./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> <parquet-paths-as-separate-args>
 ./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a
 ./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
 ```
+
+The batcher will wait until enough data is present in the files to create an ingest or bulk import job. You can
+configure the batcher in table properties documented [here](properties/table/ingest_batcher.md), using `adminClient.sh`.
+
+The files should show up in the ingest batcher report fairly quickly. Once the batcher has created jobs you can see
+job IDs against the files in the batcher report. Once the jobs are picked up by ingest or bulk import, you can follow
+them in the ingest job status report.
+
+You can also submit files or jobs directly to an SQS queue, either for the ingest batcher or to ingest or bulk import.
+You can find the queue URLs in instance properties documented under [ingest](properties/instance/cdk/ingest.md)
+and [bulk import](properties/instance/cdk/bulk_import.md), using `adminClient.sh`. Which queues are available will
+depend on which optional stacks are deployed.
 
 Here's an example of an SQS message for an ingest or bulk import job:
 
@@ -52,10 +64,17 @@ Here's an example of an SQS message for an ingest or bulk import job:
 }
 ```
 
-Files are submitted to the ingest batcher with the same format, but without the `id` field. You can configure the
-batcher in table properties documented [here](properties/table/ingest_batcher.md).
+Files are submitted to the ingest batcher with the same format, but without the `id` field.
 
-## Choosing an ingest system
+## Ingest systems
+
+You can find details of the available ingest systems in the following documents:
+
+- [Standard Ingest](standard-ingest.md)
+- [Bulk Import](bulk-import.md)
+- [Ingest Batcher](ingest-batcher.md)
+
+### Choosing an ingest system
 
 There are two types of system for ingesting data: standard ingest and bulk import. The former refers to a process that
 reads data and partitions and sorts it locally before writing it to files in S3. Bulk import means using
@@ -84,12 +103,6 @@ jobs will be submitted to either standard ingest or bulk import, based on the co
 
 By default, a new Sleeper instance includes `EmrServerlessBulkImportStack`, `IngestStack` and `IngestBatcherStack`.
 
-You can find details of the available ingest systems in the following documents:
-
-- [Standard Ingest](standard-ingest.md)
-- [Bulk Import](bulk-import.md)
-- [Ingest Batcher](ingest-batcher.md)
-
 ## What ingest rate does Sleeper support?
 
 In theory, an arbitrary number of ingest jobs can run simultaneously. If the limits on your AWS account allowed
@@ -113,12 +126,55 @@ import jobs is better than a large number of small jobs.
 ## Job tracker
 
 If you submit your files to an ingest queue as a job, the progress is tracked in DynamoDB. This updates each time your
-job progresses to the next step of the process. In Java you can query this with an `IngestJobTracker` object, created
-by `IngestJobTrackerFactory`. You can set an ID for your job in the message on the ingest queue, and then call
-`IngestJobTracker.getJob` to check its status. This API is not currently stable. We may add a REST API to serve
-this purpose in the future. At time of writing, you can check the status of the job by calling
-`getFurthestRunStatusType` on the status object.
+job progresses to the next step of the process.
+
+In Java you can query this with an `IngestJobTracker` object, created by `IngestJobTrackerFactory`. You can set an ID
+for your job in the message on the ingest queue, and then call `IngestJobTracker.getJob` to check its status. This API
+is not currently stable. At time of writing, you can check the status of the job by calling `getFurthestRunStatusType`
+on the status object.
+
+We may add a REST API to serve this purpose in the future. You can also use the following script to check the status
+of jobs manually:
+
+```bash
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters>
+```
+
+For example:
+
+```bash
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> # Prompt for report type
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a # All jobs
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -u # Unfinished jobs
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -n # Rejected jobs
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -r 20250523090000,20250523100000 # Date range in format yyyyMMddhhmmss
+./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -d <job-id> # Job details
+```
 
 Note that if a run of the job has finished, it may still be uncommitted. This means the data has been sorted and written
 to files in S3, but it is not yet in the Sleeper table. The result is then committed to the state store to add the files
 to the Sleeper table.
+
+## Ingest batcher store
+
+If you use the ingest batcher, files are submitted without any attachment to a job, and the batcher groups them into
+jobs later on. The batcher store tracks these files in DynamoDB, including any job they have been added to. You can then
+look up jobs in the job tracker by the IDs held against your files.
+
+In Java you can query this with an `IngestBatcherStore` object, created by `IngestBatcherStoreFactory`. When your files
+are added to a job you can find a job ID on the `IngestBatcherTrackedFile` object.
+
+We may add a REST API to serve this purpose in the future. You can also use the following script to check the status
+of files manually:
+
+```bash
+./scripts/utility/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+```
+
+For example:
+
+```bash
+./scripts/utility/ingestBatcherReport.sh <instance-id> # Prompt for report type
+./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a # All files
+./scripts/utility/ingestBatcherReport.sh <instance-id> standard -p # Pending files (not yet in a job)
+```
