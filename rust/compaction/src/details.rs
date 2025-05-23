@@ -57,6 +57,8 @@ pub struct CompactionInput<'a> {
     pub dict_enc_values: bool,
     // Ranges for each column to filter input files
     pub region: HashMap<String, ColRange<'a>>,
+    // Iterator config. Filters, aggregators, etc.
+    pub iterator_config: Option<String>,
 }
 
 impl Default for CompactionInput<'_> {
@@ -77,6 +79,7 @@ impl Default for CompactionInput<'_> {
             dict_enc_sort_keys: true,
             dict_enc_values: true,
             region: HashMap::default(),
+            iterator_config: Option::default(),
         }
     }
 }

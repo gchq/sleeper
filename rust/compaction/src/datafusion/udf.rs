@@ -33,7 +33,7 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{DFSchema, Result, internal_err},
+    common::{DFSchema, Result, exec_err, internal_err},
     logical_expr::{
         ColumnarValue, ReturnInfo, ReturnTypeArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature,
         Volatility,
@@ -184,7 +184,7 @@ impl ScalarUDFImpl for SketchUDF {
                             sketch,
                             &array.as_binary_view(),
                         ),
-                        _ => return internal_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
+                        _ => return exec_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
                     }
                 }
 
@@ -209,7 +209,7 @@ impl ScalarUDFImpl for SketchUDF {
                     sketch.update(value);
                 }
                 x @ ColumnarValue::Scalar(_) => {
-                    return internal_err!(
+                    return exec_err!(
                         "Row type {} not supported for Sleeper row key field",
                         x.data_type()
                     );
