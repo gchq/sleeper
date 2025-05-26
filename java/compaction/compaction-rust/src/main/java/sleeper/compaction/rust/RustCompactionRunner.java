@@ -123,7 +123,7 @@ public class RustCompactionRunner implements CompactionRunner {
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         // Is there a DataFusion iterator set?
-        if (job.getIteratorClassName().equals(CompactionJob.DATAFUSION_ITERATOR_NAME)) {
+        if (CompactionJob.DATAFUSION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
             params.iterator_config.set(job.getIteratorConfig());
         }
         // Extra braces: Make sure wrong array isn't populated to wrong pointers

@@ -57,7 +57,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
 
         // Has an experimental DataFusion only iterator been specified? If so, make sure
         // we are using the DataFusion compactor
-        if (job.getIteratorClassName().equals(CompactionJob.DATAFUSION_ITERATOR_NAME) && !(runner instanceof RustCompactionRunner)) {
+        if (CompactionJob.DATAFUSION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof RustCompactionRunner)) {
             throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
                     + job.getId() + " table ID " + job.getTableId());
         }
