@@ -15,24 +15,21 @@
  */
 package sleeper.clients.compaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
-import sleeper.invoke.tables.InvokeForTables;
+import sleeper.invoke.tablesv2.InvokeForTables;
 
 import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 
 /**
@@ -49,18 +46,14 @@ public class TriggerGarbageCollectionClient {
         }
         String instanceId = args[0];
         List<String> tableNames = Stream.of(args).skip(1).collect(toUnmodifiableList());
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
             String queueUrl = instanceProperties.get(GARBAGE_COLLECTOR_QUEUE_URL);
             InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex, tableNames);
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-            sqsClient.shutdown();
         }
     }
 }

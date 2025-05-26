@@ -15,17 +15,15 @@
  */
 package sleeper.clients.table;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -33,13 +31,13 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
 
 import static sleeper.clients.util.BucketUtils.deleteObjectsInBucketWithPrefix;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -50,20 +48,23 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  */
 public class ReinitialiseTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class);
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final S3Client s3Client;
+    private final S3TransferManager s3TransferManager;
+    private final DynamoDbClient dynamoClient;
     private final boolean deletePartitions;
     private final String instanceId;
     private final String tableName;
 
     public ReinitialiseTable(
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoDBClient,
+            S3Client s3Client,
+            S3TransferManager s3TransferManager,
+            DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             boolean deletePartitions) {
         this.s3Client = s3Client;
-        this.dynamoDBClient = dynamoDBClient;
+        this.s3TransferManager = s3TransferManager;
+        this.dynamoClient = dynamoClient;
         this.deletePartitions = deletePartitions;
         this.instanceId = Objects.requireNonNull(instanceId, "instanceId must not be null");
         this.tableName = Objects.requireNonNull(tableName, "tableName must not be null");
@@ -79,13 +80,10 @@ public class ReinitialiseTable {
 
     public void run(Function<TableProperties, InitialisePartitionsTransaction> buildPartitions) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager)
                 .getStateStore(tableProperties);
 
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
@@ -122,20 +120,18 @@ public class ReinitialiseTable {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-        try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, deletePartitions);
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, s3TransferManager, dynamoClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 }

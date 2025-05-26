@@ -22,7 +22,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.sketches.Sketches;
+import sleeper.sketchesv2.Sketches;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,10 +50,6 @@ public class EstimateSplitPoints {
         this.sketchSize = sketchSize;
     }
 
-    public EstimateSplitPoints(Schema schema, Iterable<Record> records, int numPartitions) {
-        this(schema, records, numPartitions, 32768);
-    }
-
     public List<Object> estimate() {
         if (1 == numPartitions) {
             return Collections.emptyList();
@@ -69,7 +65,7 @@ public class EstimateSplitPoints {
         // the correct number of split points, and need to remove the first and last entries.
         Object[] splitPoints = sketch.getQuantiles(getRanks());
         if (splitPoints.length != numPartitions - 1) {
-            throw new RuntimeException("There should have been " + (numPartitions - 1) + "partitions; got " + splitPoints.length);
+            throw new RuntimeException("There should have been " + (numPartitions - 1) + " split points; got " + splitPoints.length);
         }
 
         // Remove any duplicate values (which means the number of split points returned may be less than that requested.

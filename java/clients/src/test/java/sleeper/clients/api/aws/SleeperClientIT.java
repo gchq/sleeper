@@ -20,14 +20,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.api.SleeperClient;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.List;
 
@@ -49,9 +49,9 @@ public class SleeperClientIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         sleeperClient = createClient();
     }
 

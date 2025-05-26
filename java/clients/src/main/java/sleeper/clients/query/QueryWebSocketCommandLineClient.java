@@ -15,16 +15,14 @@
  */
 package sleeper.clients.query;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -100,19 +98,14 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-
-        try {
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
-                    new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient),
+                    new DynamoDBTableIndex(instanceProperties, dynamoClient),
+                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out));
             client.run();
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 }

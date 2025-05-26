@@ -15,31 +15,28 @@
  */
 package sleeper.clients.compaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
-import sleeper.compaction.job.creation.AwsCompactionJobDispatcher;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.compaction.job.creationv2.AwsCompactionJobDispatcher;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Instant;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 
 public class DispatchCompactionJobsClient {
@@ -54,24 +51,20 @@ public class DispatchCompactionJobsClient {
             return;
         }
         String instanceId = args[0];
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
-            CompactionJobDispatcher dispatcher = AwsCompactionJobDispatcher.from(s3Client, dynamoDBClient, sqsClient, conf, instanceProperties, Instant::now);
+            CompactionJobDispatcher dispatcher = AwsCompactionJobDispatcher.from(s3Client, dynamoClient, sqsClient, s3TransferManager, instanceProperties, Instant::now);
             CompactionJobDispatchRequestSerDe requestSerDe = new CompactionJobDispatchRequestSerDe();
 
-            ReceiveMessageResult result = sqsClient.receiveMessage(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL));
-            for (Message message : result.getMessages()) {
-                CompactionJobDispatchRequest request = requestSerDe.fromJson(message.getBody());
+            ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request.queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL)));
+            for (Message message : response.messages()) {
+                CompactionJobDispatchRequest request = requestSerDe.fromJson(message.body());
                 dispatcher.dispatch(request);
             }
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
-            sqsClient.shutdown();
         }
     }
 }

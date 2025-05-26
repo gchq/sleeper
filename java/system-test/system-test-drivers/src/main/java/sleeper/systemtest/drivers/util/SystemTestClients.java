@@ -208,6 +208,10 @@ public class SystemTestClients {
         return sts;
     }
 
+    public StsClient getStsV2() {
+        return stsV2;
+    }
+
     public AwsRegionProvider getRegionProvider() {
         return regionProvider;
     }

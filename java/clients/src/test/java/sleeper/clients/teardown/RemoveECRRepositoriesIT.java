@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.stream.Stream;
 
-import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
@@ -78,7 +77,7 @@ class RemoveECRRepositoriesIT {
 
     private ResponseDefinitionBuilder repositoryNotFound(String repositoryName) {
         return aResponse()
-                .withHeader(CONTENT_TYPE, "application/json")
+                .withHeader("Content-Type", "application/json")
                 .withHeader("x-amzn-ErrorType", "RepositoryNotFoundException")
                 .withBody("{\"message\":\"The repository with name '" + repositoryName + "' " +
                         "does not exist in the registry with id '123'.\"}")

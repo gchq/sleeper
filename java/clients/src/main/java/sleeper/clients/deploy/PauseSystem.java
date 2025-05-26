@@ -15,12 +15,11 @@
  */
 package sleeper.clients.deploy;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchevents.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -35,12 +34,10 @@ public class PauseSystem {
         }
         String instanceId = args[0];
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try (CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
+        try (S3Client s3Client = S3Client.create();
+                CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             pause(cwClient, instanceProperties);
-        } finally {
-            s3Client.shutdown();
         }
     }
 

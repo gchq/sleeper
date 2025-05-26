@@ -19,8 +19,8 @@ package sleeper.clients.table;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -44,12 +44,12 @@ public class RenameTableIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
 
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
     }
 
     @Test

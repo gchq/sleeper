@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy.localstack;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -106,7 +105,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         }
 
-        private void assertTablesExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) throws AmazonDynamoDBException {
+        private void assertTablesExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) {
             for (InstanceProperty tableNameProperty : tableNameProperties) {
                 assertThatCode(() -> dynamoClientV2.describeTable(request -> request.tableName(instanceProperties.get(tableNameProperty))))
                         .describedAs("Table should exist: " + tableNameProperty)
