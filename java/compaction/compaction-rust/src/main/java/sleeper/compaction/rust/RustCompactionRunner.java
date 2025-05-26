@@ -125,6 +125,8 @@ public class RustCompactionRunner implements CompactionRunner {
         // Is there a DataFusion iterator set?
         if (CompactionJob.DATAFUSION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
             params.iterator_config.set(job.getIteratorConfig());
+        } else {
+            params.iterator_config.set("");
         }
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
