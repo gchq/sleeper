@@ -32,7 +32,7 @@ use datafusion::{
 };
 use nohash::BuildNoHashHasher;
 use num_traits::NumAssign;
-use std::sync::Arc;
+use std::{hash::BuildHasher, sync::Arc};
 
 use super::{INITIAL_GROUP_MAP_SIZE, INITIAL_KEY_CACHE_SIZE};
 
@@ -55,8 +55,8 @@ where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
     inner_field_type: DataType,
-    key_cache: HashMap<String, usize>,
-    keys: Vec<String>,
+    key_cache: HashMap<Arc<String>, usize>,
+    keys: Vec<Arc<String>>,
     group_maps: Vec<
         HashMap<
             usize,
@@ -72,7 +72,7 @@ impl<VBuilder> StringGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
-    // Creates a new accumulator.
+    // Creates a new group accumulator.
     //
     // The type of the map must be specified so that the correct sort
     // of map builder can be created.
@@ -141,8 +141,8 @@ fn update_string_map_group<VBuilder>(
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         BuildNoHashHasher<usize>,
     >,
-    key_cache: &mut HashMap<String, usize>,
-    keys: &mut Vec<String>,
+    key_cache: &mut HashMap<Arc<String>, usize>,
+    keys: &mut Vec<Arc<String>>,
     op: &MapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
@@ -156,10 +156,20 @@ fn update_string_map_group<VBuilder>(
         for (k, v) in map_keys.iter().zip(map_vals) {
             match (k, v) {
                 (Some(key), Some(value)) => {
-                    let i = key_cache.entry_ref(key).or_insert_with(|| {
-                        keys.push(key.into());
-                        keys.len() - 1
-                    });
+                    // Compute hash key for raw lookup
+                    let key_hash = key_cache.hasher().hash_one(key);
+                    let (_, i) = key_cache
+                        .raw_entry_mut()
+                        // Use raw lookup to avoid having to create new Arc from string reference
+                        .from_hash(key_hash, |stored_key| stored_key.as_ref() == key)
+                        .or_insert_with(|| {
+                            // Only pay cost to create string if needed
+                            let owned_key = Arc::new(key.to_owned());
+                            // Clone pointer into word list
+                            keys.push(owned_key.clone());
+                            (owned_key, keys.len() - 1)
+                        });
+                    // Do no-op hash lookup into group map
                     map.entry(*i)
                         .and_modify(|current_value| *current_value = op.op(*current_value, value))
                         .or_insert(value);
@@ -216,7 +226,7 @@ where
         for (v, is_valid) in result.into_iter().zip(nulls.iter()) {
             if is_valid {
                 for (key, val) in &v {
-                    builder.keys().append_value(self.keys[*key].clone());
+                    builder.keys().append_value(self.keys[*key].as_ref());
                     builder.values().append_value(val);
                 }
                 builder.append(true).expect("Can't finish MapBuilder");
@@ -314,7 +324,7 @@ mod tests {
     // Macro to stringify a literal
     macro_rules! s {
         ($l:literal) => {
-            String::from($l)
+            Arc::new(String::from($l))
         };
     }
 
@@ -432,7 +442,7 @@ mod tests {
         map.insert(1, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<String, usize>::new();
+        let mut key_cache = HashMap::<Arc<String>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let expected_key_cache = key_cache.clone();
@@ -463,7 +473,7 @@ mod tests {
         map.insert(1, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<String, usize>::new();
+        let mut key_cache = HashMap::<Arc<String>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let expected_key_cache = key_cache.clone();
@@ -506,7 +516,7 @@ mod tests {
         expected_map.insert(1, 4);
         expected_map.insert(2, -10);
 
-        let mut key_cache = HashMap::<String, usize>::new();
+        let mut key_cache = HashMap::<Arc<String>, usize>::new();
         let mut expected_key_cache = key_cache.clone();
         expected_key_cache.insert(s!["1"], 0);
         expected_key_cache.insert(s!["3"], 1);
@@ -529,7 +539,7 @@ mod tests {
             entry_builder
                 .field_builder::<StringBuilder>(0)
                 .unwrap()
-                .append_value(k);
+                .append_value(k.as_ref());
             entry_builder
                 .field_builder::<Int64Builder>(1)
                 .unwrap()
@@ -563,7 +573,7 @@ mod tests {
         expected_map.insert(1, 8);
         expected_map.insert(2, 2);
 
-        let mut key_cache = HashMap::<String, usize>::new();
+        let mut key_cache = HashMap::<Arc<String>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let mut expected_key_cache = key_cache.clone();
@@ -588,7 +598,7 @@ mod tests {
             entry_builder
                 .field_builder::<StringBuilder>(0)
                 .unwrap()
-                .append_value(k);
+                .append_value(k.as_ref());
             entry_builder
                 .field_builder::<Int64Builder>(1)
                 .unwrap()
@@ -616,7 +626,7 @@ mod tests {
     fn update_string_map_panics_on_null() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        let mut key_cache = HashMap::<String, usize>::new();
+        let mut key_cache = HashMap::<Arc<String>, usize>::new();
         let mut klist = vec![];
 
         let mut entry_builder = StructBuilder::new(
@@ -633,7 +643,7 @@ mod tests {
             entry_builder
                 .field_builder::<StringBuilder>(0)
                 .unwrap()
-                .append_value(k);
+                .append_value(k.as_ref());
             entry_builder
                 .field_builder::<Int64Builder>(1)
                 .unwrap()
@@ -740,14 +750,14 @@ mod tests {
         let mut acc =
             StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<String, usize>::from([(s!["3"], 0)]);
+        let expected_cache = HashMap::<Arc<String>, usize>::from([(s!["3"], 0)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         expected_group_map.insert(0, 10);
         let expected_group_maps = vec![expected_group_map];
         let expected_klist = vec![s!["3"]];
 
         // When
-        builder.keys().append_value(s!["3"]);
+        builder.keys().append_value(s!["3"].as_ref());
         builder.values().append_value(10);
         builder.append(true)?;
         let array = builder.finish();
@@ -767,7 +777,7 @@ mod tests {
         let mut acc =
             StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<String, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
+        let expected_cache = HashMap::<Arc<String>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         expected_group_map.insert(0, 10);
         expected_group_map.insert(1, 5);
@@ -775,10 +785,10 @@ mod tests {
         let expected_klist = vec![s!["3"], s!["2"]];
 
         // When
-        builder.keys().append_value(s!["3"]);
+        builder.keys().append_value(s!["3"].as_ref());
         builder.values().append_value(10);
         builder.append(true)?;
-        builder.keys().append_value(s!["2"]);
+        builder.keys().append_value(s!["2"].as_ref());
         builder.values().append_value(5);
         builder.append(true)?;
 
@@ -800,7 +810,7 @@ mod tests {
         let mut acc =
             StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<String, usize>::from([
+        let expected_cache = HashMap::<Arc<String>, usize>::from([
             (s!["3"], 0),
             (s!["1"], 1),
             (s!["2"], 2),
@@ -816,18 +826,18 @@ mod tests {
 
         // When
         for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
 
-        builder.keys().append_value(s!["1"]);
+        builder.keys().append_value(s!["1"].as_ref());
         builder.values().append_value(3);
 
         builder.append(true)?;
 
         for (k, v) in [(s!["1"], 3), (s!["4"], 10)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
@@ -850,7 +860,7 @@ mod tests {
         let mut acc =
             StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<String, usize>::from([
+        let expected_cache = HashMap::<Arc<String>, usize>::from([
             (s!["3"], 0),
             (s!["1"], 1),
             (s!["2"], 2),
@@ -877,24 +887,24 @@ mod tests {
         // When
         // Create values for first group
         for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["4"], 11)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
 
         // Create values for second group
         for (k, v) in [(s!["3"], 5), (s!["1"], 3), (s!["1"], 5), (s!["5"], 9)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["5"], 4)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
@@ -927,7 +937,7 @@ mod tests {
             (s!["2"], 7),
             (s!["1"], 2),
         ] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
 
@@ -943,7 +953,7 @@ mod tests {
         let mut accumulated_map = HashMap::new();
         for item in keys.iter().zip(values.iter()) {
             if let (Some(opt_k), Some(opt_v)) = item {
-                accumulated_map.insert(opt_k.into(), opt_v);
+                accumulated_map.insert(Arc::new(opt_k.into()), opt_v);
             }
         }
 
@@ -965,24 +975,24 @@ mod tests {
         // When
         // Create values for first group
         for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["4"], 11)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
 
         // Create values for second group
         for (k, v) in [(s!["3"], 5), (s!["1"], 3), (s!["1"], 5), (s!["5"], 9)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["5"], 4)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
@@ -1008,7 +1018,7 @@ mod tests {
             let mut accumulated_map = HashMap::new();
             for item in keys.iter().zip(values.iter()) {
                 if let (Some(opt_k), Some(opt_v)) = item {
-                    accumulated_map.insert(opt_k.into(), opt_v);
+                    accumulated_map.insert(Arc::new(opt_k.into()), opt_v);
                 }
             }
             assert_eq!(expected_map, accumulated_map);

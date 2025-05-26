@@ -60,7 +60,7 @@ where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
-    // Creates a new accumulator.
+    // Creates a new group accumulator.
     //
     // The type of the map must be specified so that the correct sort
     // of map builder can be created.

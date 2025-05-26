@@ -32,16 +32,16 @@ use datafusion::{
 };
 use nohash::BuildNoHashHasher;
 use num_traits::NumAssign;
-use std::sync::Arc;
+use std::{hash::BuildHasher, sync::Arc};
 
 use super::{INITIAL_GROUP_MAP_SIZE, INITIAL_KEY_CACHE_SIZE};
 
 /* Implementation note:
 * This group accumulator implementation holds the maps for many aggregation groups at once. Since the same map keys
 * may be seen duplicated across many groups, we want to avoid that storage cost, e.g. if we are storing 10,000 aggregation
-* groups, each with the key "this long map key is being aggregated", we don't want to store that binary array 10,000 times.
-* Therefore, we use a cache to store each binary array key seen in "key_cache". The cache maps to an index number. This is the
-* index into the "keys" vector which contains the owned key binary array.
+* groups, each with the key "this long map key is being aggregated", we don't want to store that binary 10,000 times.
+* Therefore, we use a cache to store each binary key seen in "key_cache". The cache maps to an index number. This is the
+* index into the "keys" vector which contains the owned key binary.
 *
 * When new values are placed into the group accumulator, lookups into the group_maps are exceedingly quick since we use
 * a [`NoHashHasher`] with a `usize` key, essentially making the hashing operation a no-op.
@@ -55,8 +55,8 @@ where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
     inner_field_type: DataType,
-    key_cache: HashMap<Vec<u8>, usize>,
-    keys: Vec<Vec<u8>>,
+    key_cache: HashMap<Arc<Vec<u8>>, usize>,
+    keys: Vec<Arc<Vec<u8>>>,
     group_maps: Vec<
         HashMap<
             usize,
@@ -72,7 +72,7 @@ impl<VBuilder> ByteGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
-    // Creates a new accumulator.
+    // Creates a new group accumulator.
     //
     // The type of the map must be specified so that the correct sort
     // of map builder can be created.
@@ -131,18 +131,18 @@ where
 
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
-/// This implementation is for maps with byte keys and primitive values.
+/// This implementation is for maps with binary keys and primitive values.
 ///
 /// All nulls keys/values are skipped over.
-fn update_byte_map_group<VBuilder>(
+fn update_binary_map_group<VBuilder>(
     input: Option<&StructArray>,
     map: &mut HashMap<
         usize,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         BuildNoHashHasher<usize>,
     >,
-    key_cache: &mut HashMap<Vec<u8>, usize>,
-    keys: &mut Vec<Vec<u8>>,
+    key_cache: &mut HashMap<Arc<Vec<u8>>, usize>,
+    keys: &mut Vec<Arc<Vec<u8>>>,
     op: &MapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
@@ -156,10 +156,20 @@ fn update_byte_map_group<VBuilder>(
         for (k, v) in map_keys.iter().zip(map_vals) {
             match (k, v) {
                 (Some(key), Some(value)) => {
-                    let i = key_cache.entry_ref(key).or_insert_with(|| {
-                        keys.push(key.into());
-                        keys.len() - 1
-                    });
+                    // Compute hash key for raw lookup
+                    let key_hash = key_cache.hasher().hash_one(key);
+                    let (_, i) = key_cache
+                        .raw_entry_mut()
+                        // Use raw lookup to avoid having to create new Arc from string reference
+                        .from_hash(key_hash, |stored_key| stored_key.as_ref() == key)
+                        .or_insert_with(|| {
+                            // Only pay cost to create binary if needed
+                            let owned_key = Arc::new(key.to_owned());
+                            // Clone pointer into word list
+                            keys.push(owned_key.clone());
+                            (owned_key, keys.len() - 1)
+                        });
+                    // Do no-op hash lookup into group map
                     map.entry(*i)
                         .and_modify(|current_value| *current_value = op.op(*current_value, value))
                         .or_insert(value);
@@ -195,7 +205,7 @@ where
             total_num_groups,
             |g_idx, val| {
                 let agg_map = &mut self.group_maps[g_idx];
-                update_byte_map_group::<VBuilder>(
+                update_binary_map_group::<VBuilder>(
                     Some(val).as_ref(),
                     agg_map,
                     &mut self.key_cache,
@@ -216,7 +226,7 @@ where
         for (v, is_valid) in result.into_iter().zip(nulls.iter()) {
             if is_valid {
                 for (key, val) in &v {
-                    builder.keys().append_value(self.keys[*key].clone());
+                    builder.keys().append_value(self.keys[*key].as_ref());
                     builder.values().append_value(val);
                 }
                 builder.append(true).expect("Can't finish MapBuilder");
@@ -244,7 +254,7 @@ where
     fn size(&self) -> usize {
         (std::mem::size_of::<
             HashMap<
-                Vec<u8>,
+                String,
                 <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
             >,
         >() * self.group_maps.capacity())
@@ -290,7 +300,7 @@ mod tests {
             map_aggregate::{
                 aggregator::map_test_common::make_map_datatype,
                 group_accumulator::byte_group_accumulator::{
-                    ByteGroupMapAccumulator, update_byte_map_group,
+                    ByteGroupMapAccumulator, update_binary_map_group,
                 },
                 state::MapNullState,
             },
@@ -311,10 +321,10 @@ mod tests {
     use nohash::BuildNoHashHasher;
     use std::sync::Arc;
 
-    // Macro to convert a literal to owned bytes
+    // Macro to stringify a literal
     macro_rules! s {
         ($l:literal) => {
-            String::from($l).into_bytes()
+            Arc::new(String::from($l).into_bytes())
         };
     }
 
@@ -432,7 +442,7 @@ mod tests {
         map.insert(1, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let expected_key_cache = key_cache.clone();
@@ -441,7 +451,7 @@ mod tests {
         let expected_klist = klist.clone();
 
         // When
-        update_byte_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             None,
             &mut map,
             &mut key_cache,
@@ -463,7 +473,7 @@ mod tests {
         map.insert(1, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let expected_key_cache = key_cache.clone();
@@ -483,7 +493,7 @@ mod tests {
         );
 
         // When
-        update_byte_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -506,7 +516,7 @@ mod tests {
         expected_map.insert(1, 4);
         expected_map.insert(2, -10);
 
-        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         let mut expected_key_cache = key_cache.clone();
         expected_key_cache.insert(s!["1"], 0);
         expected_key_cache.insert(s!["3"], 1);
@@ -529,7 +539,7 @@ mod tests {
             entry_builder
                 .field_builder::<BinaryBuilder>(0)
                 .unwrap()
-                .append_value(k);
+                .append_value(k.as_ref());
             entry_builder
                 .field_builder::<Int64Builder>(1)
                 .unwrap()
@@ -538,7 +548,7 @@ mod tests {
         }
 
         // When
-        update_byte_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -563,7 +573,7 @@ mod tests {
         expected_map.insert(1, 8);
         expected_map.insert(2, 2);
 
-        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let mut expected_key_cache = key_cache.clone();
@@ -588,7 +598,7 @@ mod tests {
             entry_builder
                 .field_builder::<BinaryBuilder>(0)
                 .unwrap()
-                .append_value(k);
+                .append_value(k.as_ref());
             entry_builder
                 .field_builder::<Int64Builder>(1)
                 .unwrap()
@@ -597,7 +607,7 @@ mod tests {
         }
 
         // When
-        update_byte_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -616,7 +626,7 @@ mod tests {
     fn update_byte_map_panics_on_null() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        let mut key_cache = HashMap::<Vec<u8>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         let mut klist = vec![];
 
         let mut entry_builder = StructBuilder::new(
@@ -633,7 +643,7 @@ mod tests {
             entry_builder
                 .field_builder::<BinaryBuilder>(0)
                 .unwrap()
-                .append_value(k);
+                .append_value(k.as_ref());
             entry_builder
                 .field_builder::<Int64Builder>(1)
                 .unwrap()
@@ -652,7 +662,7 @@ mod tests {
         entry_builder.append(true);
 
         // When - panic
-        update_byte_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -736,14 +746,14 @@ mod tests {
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
         let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Vec<u8>, usize>::from([(s!["3"], 0)]);
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([(s!["3"], 0)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         expected_group_map.insert(0, 10);
         let expected_group_maps = vec![expected_group_map];
         let expected_klist = vec![s!["3"]];
 
         // When
-        builder.keys().append_value(s!["3"]);
+        builder.keys().append_value(s!["3"].as_ref());
         builder.values().append_value(10);
         builder.append(true)?;
         let array = builder.finish();
@@ -762,7 +772,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
         let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Vec<u8>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         expected_group_map.insert(0, 10);
         expected_group_map.insert(1, 5);
@@ -770,10 +780,10 @@ mod tests {
         let expected_klist = vec![s!["3"], s!["2"]];
 
         // When
-        builder.keys().append_value(s!["3"]);
+        builder.keys().append_value(s!["3"].as_ref());
         builder.values().append_value(10);
         builder.append(true)?;
-        builder.keys().append_value(s!["2"]);
+        builder.keys().append_value(s!["2"].as_ref());
         builder.values().append_value(5);
         builder.append(true)?;
 
@@ -794,7 +804,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
         let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Vec<u8>, usize>::from([
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([
             (s!["3"], 0),
             (s!["1"], 1),
             (s!["2"], 2),
@@ -810,18 +820,18 @@ mod tests {
 
         // When
         for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
 
-        builder.keys().append_value(s!["1"]);
+        builder.keys().append_value(s!["1"].as_ref());
         builder.values().append_value(3);
 
         builder.append(true)?;
 
         for (k, v) in [(s!["1"], 3), (s!["4"], 10)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
@@ -843,7 +853,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
         let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Vec<u8>, usize>::from([
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([
             (s!["3"], 0),
             (s!["1"], 1),
             (s!["2"], 2),
@@ -870,24 +880,24 @@ mod tests {
         // When
         // Create values for first group
         for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["4"], 11)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
 
         // Create values for second group
         for (k, v) in [(s!["3"], 5), (s!["1"], 3), (s!["1"], 5), (s!["5"], 9)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["5"], 4)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
@@ -919,7 +929,7 @@ mod tests {
             (s!["2"], 7),
             (s!["1"], 2),
         ] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
 
@@ -935,7 +945,7 @@ mod tests {
         let mut accumulated_map = HashMap::new();
         for item in keys.iter().zip(values.iter()) {
             if let (Some(opt_k), Some(opt_v)) = item {
-                accumulated_map.insert(opt_k.into(), opt_v);
+                accumulated_map.insert(Arc::new(opt_k.into()), opt_v);
             }
         }
 
@@ -956,24 +966,24 @@ mod tests {
         // When
         // Create values for first group
         for (k, v) in [(s!["3"], 10), (s!["1"], 4), (s!["1"], 3), (s!["2"], 7)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["4"], 11)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
 
         // Create values for second group
         for (k, v) in [(s!["3"], 5), (s!["1"], 3), (s!["1"], 5), (s!["5"], 9)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
         for (k, v) in [(s!["1"], 3), (s!["5"], 4)] {
-            builder.keys().append_value(k);
+            builder.keys().append_value(k.as_ref());
             builder.values().append_value(v);
         }
         builder.append(true)?;
@@ -999,7 +1009,7 @@ mod tests {
             let mut accumulated_map = HashMap::new();
             for item in keys.iter().zip(values.iter()) {
                 if let (Some(opt_k), Some(opt_v)) = item {
-                    accumulated_map.insert(opt_k.into(), opt_v);
+                    accumulated_map.insert(Arc::new(opt_k.into()), opt_v);
                 }
             }
             assert_eq!(expected_map, accumulated_map);
