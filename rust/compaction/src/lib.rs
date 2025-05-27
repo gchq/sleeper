@@ -129,6 +129,16 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             .collect::<Vec<_>>();
         let region = compute_region(params, &row_key_cols)?;
 
+        if params.output_file.is_null() {
+            error!("FFICompactionParams output_file is NULL");
+        }
+        if params.compression.is_null() {
+            error!("FFICompactionParams compression is NULL");
+        }
+        if params.writer_version.is_null() {
+            error!("FFICompactionParams writer_version is NULL");
+        }
+
         Ok(Self {
             aws_config: unpack_aws_config(params)?,
             input_files: unpack_string_array(params.input_files, params.input_files_len)?
@@ -163,6 +173,18 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
 
 fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
     Ok(if params.override_aws_config {
+        if params.aws_region.is_null() {
+            error!("FFICompactionsParams aws_region pointer is NULL");
+        }
+        if params.aws_endpoint.is_null() {
+            error!("FFICompactionsParams aws_endpoint pointer is NULL");
+        }
+        if params.aws_access_key.is_null() {
+            error!("FFICompactionsParams aws_access_key pointer is NULL");
+        }
+        if params.aws_secret_key.is_null() {
+            error!("FFICompactionsParams aws_secret_key pointer is NULL");
+        }
         Some(AwsConfig {
             region: unsafe { CStr::from_ptr(params.aws_region) }
                 .to_str()?
@@ -344,6 +366,9 @@ fn unpack_string_array(
     array_base: *const *const c_char,
     len: usize,
 ) -> color_eyre::Result<Vec<&'static str>> {
+    if array_base.is_null() {
+        error!("NULL pointer for array_base in string array");
+    }
     unsafe {
         // create a slice from the pointer
         slice::from_raw_parts(array_base, len)
@@ -379,11 +404,14 @@ fn unpack_string_array(
 /// # Errors
 /// If the array length is invalid, then behaviour is undefined.
 fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> Vec<T> {
+    if array_base.is_null() {
+        error!("NULL pointer for array_base in primitive array");
+    }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .inspect(|p| {
             if p.is_null() {
-                error!("Found NULL pointer in string array");
+                error!("Found NULL pointer in primitive array");
             }
         })
         .map(|&bptr| unsafe { *bptr })
@@ -409,11 +437,14 @@ fn unpack_variant_array<'a>(
     nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>, Utf8Error> {
     assert_eq!(len, schema_types.len());
+    if array_base.is_null() {
+        error!("NULL pointer for array_base in variant array");
+    }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .inspect(|p| {
             if !nulls_present && p.is_null() {
-                error!("Found NULL pointer in string array");
+                error!("Found NULL pointer in variant array");
             }
         })
         .zip(schema_types.iter())
@@ -431,8 +462,8 @@ fn unpack_variant_array<'a>(
                     //unpack length (signed because it's from Java)
                     Some(str_len) => {
                         if *str_len < 0 {
-                            error!("Illegal string length in FFI array: {str_len}");
-                            panic!("Illegal string length in FFI array: {str_len}");
+                            error!("Illegal variant length in FFI array: {str_len}");
+                            panic!("Illegal variant length in FFI array: {str_len}");
                         }
                         std::str::from_utf8(unsafe {
                             #[allow(clippy::cast_sign_loss)]
