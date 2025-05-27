@@ -33,8 +33,8 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -152,7 +152,7 @@ public class FileWritingIterator implements Iterator<Row> {
             return;
         }
         parquetWriter.close();
-        new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), sketches, conf);
+        new LocalFileSystemSketchesStore().saveFileSketches(path, schema, sketches);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Overall written {} records in {} (rate was {} per second)",
