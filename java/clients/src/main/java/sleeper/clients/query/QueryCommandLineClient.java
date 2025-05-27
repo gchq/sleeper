@@ -15,14 +15,14 @@
  */
 package sleeper.clients.query;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -60,13 +60,13 @@ public abstract class QueryCommandLineClient {
     protected ConsoleInput in;
     protected ConsoleOutput out;
 
-    protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
-        this(s3Client, dynamoDBClient, instanceProperties, new ConsoleInput(System.console()), new ConsoleOutput(System.out));
+    protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties) {
+        this(s3Client, dynamoClient, instanceProperties, new ConsoleInput(System.console()), new ConsoleOutput(System.out));
     }
 
-    protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties,
+    protected QueryCommandLineClient(S3Client s3Client, DynamoDbClient dynamoClient, InstanceProperties instanceProperties,
             ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoDBClient), S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient), in, out);
+        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoClient), S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient), in, out);
     }
 
     protected QueryCommandLineClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,

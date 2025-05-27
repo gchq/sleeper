@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -236,7 +235,7 @@ class CleanUpLogGroupsIT {
 
     private static MappingBuilder listActiveStacksRequest() {
         return post("/")
-                .withHeader(CONTENT_TYPE, equalTo("application/x-www-form-urlencoded; charset=UTF-8"))
+                .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded; charset=UTF-8"))
                 .withRequestBody(containing("Action=ListStacks")
                         .and(containing("StackStatusFilter.member.1=CREATE_COMPLETE" +
                                 "&StackStatusFilter.member.2=UPDATE_COMPLETE")));
@@ -259,7 +258,7 @@ class CleanUpLogGroupsIT {
 
     private static MappingBuilder describeLogGroupsRequest() {
         return post("/")
-                .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
                 .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DescribeLogGroups$"));
     }
 
@@ -269,7 +268,7 @@ class CleanUpLogGroupsIT {
 
     private static MappingBuilder deleteLogGroupRequestWithName(StringValuePattern pattern) {
         return post("/")
-                .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
                 .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DeleteLogGroup$"))
                 .withRequestBody(matchingJsonPath("$.logGroupName", pattern));
     }
@@ -281,7 +280,7 @@ class CleanUpLogGroupsIT {
 
     private static RequestPatternBuilder deleteLogGroupRequested() {
         return postRequestedFor(urlEqualTo("/"))
-                .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
                 .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DeleteLogGroup$"));
     }
 }

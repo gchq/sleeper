@@ -38,8 +38,9 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -81,13 +82,13 @@ public class CompactionRunnerTestBase {
     }
 
     protected RecordsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
-        DefaultCompactionRunnerFactory selector = createCompactionSelector(conf);
+        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 
-    private DefaultCompactionRunnerFactory createCompactionSelector(Configuration conf) throws Exception {
-        return new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf);
+    protected SketchesStore createSketchesStore() {
+        return new LocalFileSystemSketchesStore();
     }
 
     protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
@@ -112,11 +113,6 @@ public class CompactionRunnerTestBase {
     }
 
     protected Sketches readSketches(Schema schema, String filename) throws IOException {
-        return readSketches(schema, filename, new Configuration());
-    }
-
-    protected Sketches readSketches(Schema schema, String filename, Configuration configuration) throws IOException {
-        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, configuration);
+        return createSketchesStore().loadFileSketches(filename, schema);
     }
 }

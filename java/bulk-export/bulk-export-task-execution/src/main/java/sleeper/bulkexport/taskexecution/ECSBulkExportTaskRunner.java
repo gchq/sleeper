@@ -45,6 +45,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketchesv2.store.NoSketchesStore;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -170,7 +171,8 @@ public class ECSBulkExportTaskRunner {
 
         ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
         DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
+                new NoSketchesStore());
 
         CompactionJob job = CompactionJob.builder()
                 .jobId(bulkExportLeafPartitionQuery.getSubExportId())
