@@ -52,7 +52,7 @@ public class LocalFileSystemSketchesStoreIT {
     }
 
     @Test
-    void shouldWriteSketchesToFile() {
+    void shouldWriteSketchesToFile() throws Exception {
         Sketches sketches = SketchesTestData.createExampleSketches();
         String filename = filePaths().constructPartitionParquetFilePath("test-partition", "test-file");
 
@@ -62,6 +62,7 @@ public class LocalFileSystemSketchesStoreIT {
 
         // Then
         assertThat(SketchesDeciles.from(found)).isEqualTo(SketchesTestData.createExampleDeciles());
+        assertThat(tempDir).isDirectoryRecursivelyContaining("glob:**/test-file.sketches");
     }
 
     private TableFilePaths filePaths() {
