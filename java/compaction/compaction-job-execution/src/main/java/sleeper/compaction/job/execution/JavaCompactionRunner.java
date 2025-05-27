@@ -41,14 +41,12 @@ import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
@@ -100,10 +98,8 @@ public class JavaCompactionRunner implements CompactionRunner {
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 
-        // Remove the extension (if present), then add one
-        Path sketchesPath = sketchesPathForDataFile(compactionJob.getOutputFile());
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, configuration);
-        LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
+        new LocalFileSystemSketchesStore().saveFileSketches(compactionJob.getOutputFile(), schema, sketches);
+        LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), compactionJob.getOutputFile());
 
         for (CloseableIterator<Record> iterator : inputIterators) {
             iterator.close();

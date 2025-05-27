@@ -38,8 +38,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -116,7 +116,6 @@ public class CompactionRunnerTestBase {
     }
 
     protected Sketches readSketches(Schema schema, String filename, Configuration configuration) throws IOException {
-        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, configuration);
+        return new LocalFileSystemSketchesStore().loadFileSketches(filename, schema);
     }
 }

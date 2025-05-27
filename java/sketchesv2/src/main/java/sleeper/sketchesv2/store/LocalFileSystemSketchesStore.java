@@ -55,7 +55,7 @@ public class LocalFileSystemSketchesStore implements SketchesStore {
     }
 
     public static Path readPath(String filename) {
-        return Path.of(stripScheme(filename));
+        return Path.of(stripScheme(filename).replace(".parquet", ".sketches"));
     }
 
     private static String stripScheme(String filename) {
