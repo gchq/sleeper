@@ -62,8 +62,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.deadLetterQueue = new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClient);
-        this.submitter = new IngestBatcherSubmitter(instanceProperties,
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+        this.submitter = new IngestBatcherSubmitter(new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
                 new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider),
                 deadLetterQueue, s3Client);
     }
@@ -73,7 +72,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             TableIndex tableIndex, IngestBatcherSubmitDeadLetterQueue dlQueue, S3Client s3Client) {
         this.propertiesReloader = PropertiesReloader.neverReload();
         this.deadLetterQueue = dlQueue;
-        this.submitter = new IngestBatcherSubmitter(instanceProperties, tableIndex, store, deadLetterQueue, s3Client);
+        this.submitter = new IngestBatcherSubmitter(tableIndex, store, deadLetterQueue, s3Client);
     }
 
     @Override

@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
@@ -39,15 +38,13 @@ import java.util.List;
 public class IngestBatcherSubmitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitter.class);
 
-    private final InstanceProperties properties;
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
     private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
     private final S3Client s3Client;
 
-    public IngestBatcherSubmitter(InstanceProperties properties, TableIndex tableIndex, IngestBatcherStore store,
+    public IngestBatcherSubmitter(TableIndex tableIndex, IngestBatcherStore store,
             IngestBatcherSubmitDeadLetterQueue deadLetterQueue, S3Client s3Client) {
-        this.properties = properties;
         this.tableIndex = tableIndex;
         this.store = store;
         this.deadLetterQueue = deadLetterQueue;
