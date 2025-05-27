@@ -247,6 +247,9 @@ public class SleeperClient implements AutoCloseable {
      * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
      * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
      * ingested.
+     * <p>
+     * It is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless there are a
+     * minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param  tableName the name of the Sleeper table to write to
      * @param  platform  the platform the import should run on
@@ -273,6 +276,9 @@ public class SleeperClient implements AutoCloseable {
      * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
      * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
      * ingested.
+     * <p>
+     * It is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless there are a
+     * minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param platform the platform the import should run on
      * @param job      the job listing files in S3 to ingest
@@ -293,6 +299,11 @@ public class SleeperClient implements AutoCloseable {
      * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
      * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
      * ingested.
+     * <p>
+     * The ingest batcher can be configured in table properties in the ingest batcher property group. If it is set to
+     * use bulk import, it is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless
+     * there are a minimum number of partitions defined, set in the table
+     * property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param tableName the name of the Sleeper table to write to
      * @param files     a list of files containing the records to ingest
