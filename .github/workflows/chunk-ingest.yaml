@@ -26,6 +26,7 @@ on:
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-task/**'
       - 'java/statestore/**'
+      - 'java/statestorev2/**'
       - 'java/common/common-job/**'
       - 'java/configuration/**'
       - 'java/configurationV2/**'
@@ -34,6 +35,7 @@ on:
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
       - 'java/sketches/**'
+      - 'java/sketchesv2/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
 
