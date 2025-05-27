@@ -16,7 +16,6 @@
 package sleeper.bulkimport.runner;
 
 import com.google.gson.JsonSyntaxException;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -53,7 +52,6 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -194,14 +192,6 @@ public class BulkImportJobDriver {
                 LOGGER.error("Failed to load instance properties", e);
                 logPermissions();
                 throw e;
-            }
-            Configuration configuration;
-            if (bulkImportMode.equals("EKS")) {
-                configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
-            } else if (bulkImportMode.equals("EMR")) {
-                configuration = HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties);
-            } else {
-                throw new IllegalArgumentException("Unknown bulk import mode: " + bulkImportMode);
             }
 
             BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
