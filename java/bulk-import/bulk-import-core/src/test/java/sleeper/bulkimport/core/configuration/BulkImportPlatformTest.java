@@ -67,7 +67,7 @@ public class BulkImportPlatformTest {
     void shouldFindPlatformIsNotEnabled() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.setEnumList(OPTIONAL_STACKS, List.of());
+        instanceProperties.setEnumList(OPTIONAL_STACKS, List.<OptionalStack>of());
 
         // When
         boolean enabled = BulkImportPlatform.EMRServerless.isDeployed(instanceProperties);
