@@ -52,7 +52,7 @@ public class LocalFileSystemSketchesStoreIT {
     }
 
     @Test
-    void shouldWriteSketchesToFile() throws Exception {
+    void shouldWriteSketchesToFile() {
         Sketches sketches = SketchesTestData.createExampleSketches();
         String filename = filePaths().constructPartitionParquetFilePath("test-partition", "test-file");
 
