@@ -3,8 +3,8 @@ Bulk Import
 
 Bulk importing data into a Sleeper table means importing data by using Apache Spark to run a MapReduce-like job to
 take a batch of data then partition, sort and write it out so that the resulting files can be added into a Sleeper
-table. The advantage of bulk import over the standard ingest process described above is that it reduces the number of
-writes to S3.
+table. One advantage of bulk import over the [standard ingest process](standard-ingest.md) is that it reduces the number
+of writes to S3.
 
 For example, suppose there are currently 100 leaf partitions for a table, and suppose that we have 1000
 files of data to ingest. With the standard approach, if we create one ingest job per file and send it to the SQS queue,
@@ -34,7 +34,11 @@ There are several stacks that allow data to be imported using the bulk import pr
   as Fargate tasks. Future work will allow them to run on EC2 instances. This stack is experimental.
 
 These can all be deployed independently of each other. Each stack has its own queue from which it pulls jobs. The
-`sleeper.optional.stacks` instance property needs to include `EmrServerlessBulkImportStack`, `EmrBulkImportStack`, `PersistentEmrBulkImportStack` or `EksBulkImportStack` respectively.
+`sleeper.optional.stacks` instance property needs to include `EmrServerlessBulkImportStack`, `EmrBulkImportStack`,
+`PersistentEmrBulkImportStack` or `EksBulkImportStack` respectively.
+
+If you have occasional bulk import jobs, or you just want to get started, then we recommend the serverless EMR approach.
+If you will have a lot of jobs running fairly constantly, then the persistent EMR approach is recommended.
 
 #### Bulk import on EMR Serverless
 
