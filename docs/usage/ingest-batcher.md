@@ -10,8 +10,8 @@ This is deployed when `IngestBatcherStack` is in the list of optional stacks in 
 By default this will use bulk import on EMR Serverless. Note that it is vital that a table is pre-split before data is
 bulk imported ([see here](../usage/tables.md#pre-split-partitions)).
 
-Files to be ingested must be accessible to the ingest system you will use. See above for ways to provide access to an
-ingest source bucket, e.g. by setting the property `sleeper.ingest.source.bucket`.
+Files to be ingested must be accessible to the ingest system you will use. See the [ingest guide](ingest.md) for ways to
+set this up.
 
 Files can be submitted as messages to the batcher submission SQS queue. A script is available to do this:
 
@@ -20,7 +20,7 @@ Files can be submitted as messages to the batcher submission SQS queue. A script
 ```
 
 Paths to the files must be in an S3 bucket, specified with the bucket name and object key like
-this: `source-bucket-name/folder-prefix/file.parquet`. If you provide a directory in S3 instead of a file, the batcher
+this: `bucket-name/folder-prefix/file.parquet`. If you provide a directory in S3 instead of a file, the batcher
 will look in all subdirectories and track any files found in them.
 
 You can also submit requests to the queue manually as described [below](#manually-sending-files-to-the-batcher-queue).
@@ -50,16 +50,17 @@ You can query the files being processed by the ingest batcher by using the follo
 ./scripts/utility/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
 ```
 
-If you do not provide a query type as a parameter to the script you will be prompted to select one of the query
-types below:
+The query type can be one of the following options:
 
-- ALL, which will show you files waiting to be batched, and files that have been batched.
-- PENDING, which will only show you files that are waiting to be batched.
+- `-a` shows all files, whether waiting to be batched, or already in jobs
+- `-p` shows pending files, which have not yet been added to a job
+
+If you do not provide a query type as a parameter to the script you will be prompted to select one.
 
 ### Manually sending files to the batcher queue
 
 You can find the URL of the ingest batcher submission queue in the system-defined
-property `sleeper.ingest.batcher.submit.queue.url`.
+property `sleeper.ingest.batcher.submit.queue.url`, documented [here](properties/instance/cdk/ingest.md).
 
 An example message is shown below:
 
