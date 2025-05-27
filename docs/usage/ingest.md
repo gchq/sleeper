@@ -60,6 +60,8 @@ You can find the queue URLs in instance properties documented under [ingest](pro
 and [bulk import](properties/instance/cdk/bulk_import.md), using `adminClient.sh`. Which queues are available will
 depend on which optional stacks are deployed.
 
+In Java or Python, the class `SleeperClient` includes methods to read these properties and submit to a queue for you.
+
 Here's an example of an SQS message for an ingest or bulk import job:
 
 ```json
