@@ -130,7 +130,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             .collect::<Vec<_>>();
         let region = compute_region(params, &row_key_cols)?;
         // Extract iterator config
-        if iterator_config.is_null() {
+        if params.iterator_config.is_null() {
             error!("FFICompactionsParams iterator_config pointer is NULL");
         }
         let iterator_config = Some(
