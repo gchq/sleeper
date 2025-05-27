@@ -41,7 +41,7 @@ properties.
 Here's an example of how to use the scripts to ingest with the batcher:
 
 ```bash
-./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/file.parquet bucket-name/path/to/folder
+./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/path/to/file.parquet bucket-name/path/to/folder
 ./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a
 ./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
 ```
@@ -66,11 +66,11 @@ Here's an example of an SQS message for an ingest or bulk import job:
 
 ```json
 {
-  "id": "a_unique_id",
-  "tableName": "myTable",
+  "id": "a-unique-id",
+  "tableName": "my-table",
   "files": [
-    "databucket/file.parquet",
-    "databucket/directory/path"
+    "bucket-name/path/to/file.parquet",
+    "bucket-name/path/to/directory"
   ]
 }
 ```
