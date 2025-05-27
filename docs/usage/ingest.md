@@ -34,7 +34,7 @@ can use `./scripts/utility/adminClient.sh` to find and set the values of these p
 Here's an example of how to use the scripts to ingest with the batcher:
 
 ```bash
-./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> <parquet-paths-as-separate-args>
+./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/file.parquet bucket-name/path/to/folder
 ./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a
 ./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
 ```
