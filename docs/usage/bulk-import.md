@@ -17,6 +17,9 @@ imported ([see here](../usage/tables.md#pre-split-partitions)). Bulk import jobs
 minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
 documented [here](properties/table/bulk_import.md).
 
+Files to be ingested must be accessible to the EMR cluster, and to the lambda that receives the job to submit to the
+cluster. See the [ingest guide](ingest.md#prepare-files) for how to prepare your files for access.
+
 There are several stacks that allow data to be imported using the bulk import process:
 
 - `EmrServerlessBulkImportStack` - this causes an EMR Serverless application to be created when the Sleeper instance is deployed.

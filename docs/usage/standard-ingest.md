@@ -47,13 +47,16 @@ to Sleeper's ingest queue telling it that the data should be ingested. This mess
 Here the items listed under `files` can be either files or directories. If they are directories, then Sleeper
 will recursively look for files ending in `.parquet` within them.
 
+Files to be ingested must be accessible to the ECS tasks that run the jobs. See
+the [ingest guide](ingest.md#prepare-files) for how to prepare your files for access.
+
 It is up to you to spread the data you want to ingest over an appropriate number of jobs. As a general rule,
 aim for at least 10s of millions of records per job.
 
 The id field will be used in logging so that users can see the progress of particular ingest jobs by viewing the
 logs. The URL of the SQS queue that the message should be sent to can be found from the `sleeper.ingest.job.queue.url`
 property. This will be populated in the config object in the `sleeper-<instance-id>-config` S3 bucket. It can also
-be found using the [admininstration client](../deployment-guide.md#sleeper-administration-client).
+be found using the [administration client](../usage-guide.md#sleeper-administration-client).
 
 You will need to ensure that the role with the ARN given by the `IngestContainerRoleARN` property has read access
 to the files you wish to ingest. This ARN is exported as a named export from CloudFormation with name
