@@ -52,7 +52,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestBatcherSubmitDeadLetterQueue dlQueue = new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClientV2);
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tableIndex, hadoopConf, dlQueue);
+            store, instanceProperties, tableIndex, dlQueue, s3ClientV2);
 
     @BeforeEach
     void setup() {
