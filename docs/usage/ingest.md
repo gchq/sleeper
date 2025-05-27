@@ -26,10 +26,12 @@ the cost, with lower latency generally costing more.
 You can get started by using the script `sendToIngestBatcher.sh` to send your files to the SQS queue for the ingest
 batcher, and `ingestBatcherReport.sh` and `ingestJobStatusReport.sh` to follow progress.
 
-Your files will need to be in the correct S3 bucket. The data bucket name can be found in the instance
-property `sleeper.data.bucket`, documented [here](properties/instance/cdk/common.md). You can set your own source bucket
-name in the instance property `sleeper.ingest.source.bucket`, documented [here](properties/instance/user/ingest.md). You
-can use `./scripts/utility/adminClient.sh` to find and set the values of these properties.
+Your files will need to be in the correct S3 bucket. To write your files to the data bucket deployed as part of Sleeper,
+you can find the bucket name in the instance property `sleeper.data.bucket`,
+documented [here](properties/instance/cdk/common.md). To use your own S3 bucket in the same AWS account, you can give
+Sleeper access to it by setting its name in the instance property `sleeper.ingest.source.bucket`,
+documented [here](properties/instance/user/ingest.md). You can use `./scripts/utility/adminClient.sh` to find and set
+the values of these properties.
 
 Here's an example of how to use the scripts to ingest with the batcher:
 
