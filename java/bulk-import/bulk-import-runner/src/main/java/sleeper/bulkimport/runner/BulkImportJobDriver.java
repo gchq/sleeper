@@ -177,7 +177,6 @@ public class BulkImportJobDriver {
         String jobId = args[1];
         String taskId = args[2];
         String jobRunId = args[3];
-        String bulkImportMode = args[4];
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
