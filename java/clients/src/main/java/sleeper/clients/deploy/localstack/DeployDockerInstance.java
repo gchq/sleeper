@@ -29,6 +29,7 @@ import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
 import sleeper.clients.deploy.localstack.stack.TableDockerStack;
 import sleeper.clients.table.AddTable;
 import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
@@ -37,6 +38,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -119,7 +121,10 @@ public class DeployDockerInstance {
 
         for (TableProperties tableProperties : tables) {
             try {
-                new AddTable(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient).run();
+                new AddTable(instanceProperties, tableProperties,
+                        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
+                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager))
+                        .run();
             } catch (IOException e) {
                 throw new RuntimeIOException(e);
             }

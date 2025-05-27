@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.core.properties.local;
 
 import com.facebook.collections.ByteArray;
 import org.junit.jupiter.api.Test;

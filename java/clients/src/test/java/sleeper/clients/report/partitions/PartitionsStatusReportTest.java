@@ -32,7 +32,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.splitter.core.status.PartitionsStatus;
+import sleeper.splitterv2.core.status.PartitionsStatus;
 
 import java.util.List;
 

@@ -15,12 +15,12 @@
  */
 package sleeper.clients.table.partition;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
@@ -37,7 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * A utility class to reinitialise a table. It deletes all the data in the table
@@ -51,12 +51,13 @@ public class ReinitialiseTableFromExportedPartitions {
     private final String partitionsFile;
 
     public ReinitialiseTableFromExportedPartitions(
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoDBClient,
+            S3Client s3Client,
+            S3TransferManager s3TransferManager,
+            DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             String partitionsFile) {
-        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(s3Client, s3TransferManager, dynamoClient, instanceId, tableName, true);
         this.partitionsFile = partitionsFile;
     }
 
@@ -99,21 +100,15 @@ public class ReinitialiseTableFromExportedPartitions {
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             ReinitialiseTableFromExportedPartitions reinitialiseTable = new ReinitialiseTableFromExportedPartitions(
-                    s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
+                    s3Client, s3TransferManager, dynamoClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException e) {
-            LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
-                    "The error message is as follows:\n\n" + e.getMessage()
-                    + "\n\nCause:" + e.getCause());
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
     }
 }

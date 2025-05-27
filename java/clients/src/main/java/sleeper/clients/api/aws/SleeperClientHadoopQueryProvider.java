@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
