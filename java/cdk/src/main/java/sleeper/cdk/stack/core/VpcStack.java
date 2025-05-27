@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.core;
 
-import com.google.common.collect.Lists;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.CustomResourceProps;
 import software.amazon.awscdk.NestedStack;
@@ -36,7 +35,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -61,9 +60,9 @@ public class VpcStack extends NestedStack {
                 .logGroup(logging.getLogGroup(LogGroupRef.VPC_CHECK)));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
-                .actions(Lists.newArrayList("ec2:DescribeVpcEndpoints"))
+                .actions(List.of("ec2:DescribeVpcEndpoints"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
+                .resources(List.of("*"))
                 .build()));
 
         //  Provider
@@ -74,13 +73,11 @@ public class VpcStack extends NestedStack {
                         .build());
 
         // Custom resource to check whether VPC is valid
-        Map<String, String> vpcCheckProperties = new HashMap<>();
-        vpcCheckProperties.put("vpcId", instanceProperties.get(VPC_ID));
-        vpcCheckProperties.put("region", instanceProperties.get(REGION));
-
         new CustomResource(this, "VpcCheck", new CustomResourceProps.Builder()
                 .resourceType("Custom::VpcCheck")
-                .properties(vpcCheckProperties)
+                .properties(Map.of(
+                        "vpcId", instanceProperties.get(VPC_ID),
+                        "region", instanceProperties.get(REGION)))
                 .serviceToken(provider.getServiceToken())
                 .build());
 

@@ -15,13 +15,12 @@
  */
 package sleeper.clients.teardown;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
@@ -55,7 +54,7 @@ public class TearDownInstance {
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
         instanceProperties = Optional.ofNullable(builder.instanceProperties)
-                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
+                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3v2(), builder.instanceId, scriptsDir));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -124,7 +123,7 @@ public class TearDownInstance {
         return new Builder();
     }
 
-    private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId, Path scriptsDir) {
+    private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId, Path scriptsDir) {
         if (instanceId == null) {
             InstanceProperties instanceProperties = LoadLocalProperties
                     .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
@@ -133,11 +132,11 @@ public class TearDownInstance {
         return loadInstancePropertiesOrGenerateDefaults(s3, instanceId);
     }
 
-    public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(AmazonS3 s3, String instanceId) {
+    public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId) {
         LOGGER.info("Loading configuration for instance {}", instanceId);
         try {
             return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
-        } catch (AmazonS3Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.info("Failed to download configuration, using default properties");
             return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
         }

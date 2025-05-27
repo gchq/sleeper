@@ -30,12 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.BODY;
-import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.BODY_S3_KEY;
-import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.TABLE_ID;
-import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.TRANSACTION_NUMBER;
-import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.TYPE;
-import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.UPDATE_TIME;
+import static sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore.BODY;
+import static sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore.BODY_S3_KEY;
+import static sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore.TABLE_ID;
+import static sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore.TRANSACTION_NUMBER;
+import static sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore.TYPE;
+import static sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore.UPDATE_TIME;
 
 /**
  * Maps between transaction log entries and their DynamoDB Stream event objects.

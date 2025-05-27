@@ -1,0 +1,4 @@
+| Property Name          | Description                                                                                                                                                                |
+|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sleeper.version        | The version of Sleeper that is being used. This property is used to identify the correct jars in the S3 jars bucket and to select the correct tag in the ECR repositories. |
+| sleeper.admin.role.arn | The ARN of a role that has permissions to administer the instance.                                                                                                         |

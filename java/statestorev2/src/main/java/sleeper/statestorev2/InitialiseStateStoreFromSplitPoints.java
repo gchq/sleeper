@@ -32,8 +32,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.configurationv2.ReadSplitPoints.readSplitPoints;
 import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 
 /**
  * Initialises a state store. If a file of split points is provided then these are used to create the initial
@@ -82,7 +82,7 @@ public class InitialiseStateStoreFromSplitPoints {
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
                 S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);

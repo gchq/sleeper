@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
@@ -215,9 +214,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
     private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("elasticmapreduce:*", "elasticmapreduce:ListClusters"))
+                .actions(List.of("elasticmapreduce:*", "elasticmapreduce:ListClusters"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
+                .resources(List.of("*"))
                 .build());
     }
 

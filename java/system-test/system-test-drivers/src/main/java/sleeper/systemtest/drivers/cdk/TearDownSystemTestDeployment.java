@@ -47,8 +47,8 @@ public class TearDownSystemTestDeployment {
         this.properties = properties;
     }
 
-    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, String deploymentId) {
-        return new TearDownSystemTestDeployment(clients, loadOrDefaultProperties(clients.getS3(), deploymentId));
+    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, AmazonS3 s3Client, String deploymentId) {
+        return new TearDownSystemTestDeployment(clients, loadOrDefaultProperties(s3Client, deploymentId));
     }
 
     public void deleteStack() {

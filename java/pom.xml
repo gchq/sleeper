@@ -84,11 +84,13 @@
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
         -->
         <wildfly-openssl.version>2.2.5.Final</wildfly-openssl.version>
+        <wildfly-common.version>2.0.1</wildfly-common.version>
         <!--
         Hadoop client uses an old version of woodstox-core.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
         <woodstox.version>7.1.0</woodstox.version>
+        <stax2.version>4.2.2</stax2.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
         <ivy.version>2.5.3</ivy.version>
         <!--
@@ -108,6 +110,7 @@
         <kerby.version>2.1.0</kerby.version>
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
+        <jboss-logging.version>3.6.1.Final</jboss-logging.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
         <dnsjava.version>3.6.3</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. Managed from 1.9. -->
@@ -127,12 +130,12 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.42</aws-java-sdk-v2.version>
+        <aws-java-sdk.version>1.12.783</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.31.50</aws-java-sdk-v2.version>
         <aws-crt.version>0.38.3</aws-crt.version>
         <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
-        <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>1.20.1</aws-lambda-powertools.version>
+        <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
+        <aws-lambda-powertools.version>1.20.2</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.18.0</commons-codec.version>
@@ -143,15 +146,31 @@
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
+        <commons-logging.version>1.3.5</commons-logging.version>
+        <commons-beanutils.version>1.10.1</commons-beanutils.version>
+        <httpcore4.version>4.4.16</httpcore4.version>
+        <httpclient4.version>4.5.14</httpclient4.version>
+        <jaxb.version>2.3.1</jaxb.version>
+        <jline.version>3.30.3</jline.version>
+        <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
+        <paranamer.version>2.8.3</paranamer.version>
+        <zstd-jni.version>1.5.7-3</zstd-jni.version>
+        <airlift-units.version>1.10</airlift-units.version>
+        <airlift-slice.version>0.41</airlift-slice.version>
+        <guice.version>5.1.0</guice.version>
+        <jol.version>0.2</jol.version>
+        <zookeeper.version>3.9.3</zookeeper.version>
         <jackson.version>2.19.0</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
-        <cdk.version>2.195.0</cdk.version>
+        <google.errorprone.version>2.38.0</google.errorprone.version>
+        <cdk.version>2.198.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
+        <jsii.version>1.112.0</jsii.version>
         <gson.version>2.13.1</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
@@ -183,15 +202,16 @@
         <!-- Testing -->
         <junit.version>5.12.2</junit.version>
         <junit.platform.version>1.12.2</junit.platform.version>
-        <mockito.version>5.17.0</mockito.version>
+        <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.0</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
-        <approvaltests.version>24.21.1</approvaltests.version>
+        <hamcrest.version>1.3</hamcrest.version>
+        <approvaltests.version>24.22.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
-        <xmlunit.version>2.10.0</xmlunit.version>
+        <xmlunit.version>2.10.2</xmlunit.version>
         <jsonunit.version>4.1.1</jsonunit.version>
-        <checkstyle.version>10.23.1</checkstyle.version>
+        <checkstyle.version>10.24.0</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -216,6 +236,7 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.9.3</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
+        <findbugs.version>3.0.2</findbugs.version>
         <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>12.1.1</dependency-check.plugin.version>
@@ -249,6 +270,11 @@
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>${spotbugs.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${findbugs.version}</version>
+            </dependency>
             <!-- AWS CDK -->
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
@@ -265,7 +291,47 @@
                 <artifactId>constructs</artifactId>
                 <version>${constructs.version}</version>
             </dependency>
+            <dependency>
+                <groupId>software.amazon.jsii</groupId>
+                <artifactId>jsii-runtime</artifactId>
+                <version>${jsii.version}</version>
+            </dependency>
             <!-- AWS SDK -->
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-lambda-java-core</artifactId>
+                <version>${aws-lambda-java-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-lambda-java-events</artifactId>
+                <version>${aws-lambda-java-events.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.lambda</groupId>
+                <artifactId>powertools-metrics</artifactId>
+                <version>${aws-lambda-powertools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-kms</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>jmespath-java</artifactId>
+                <version>${aws-java-sdk.version}</version>
+            </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>s3</artifactId>
@@ -532,6 +598,11 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-transport-classes-epoll</artifactId>
                 <version>${netty.version}</version>
             </dependency>
@@ -735,9 +806,19 @@
                 <version>${wildfly-openssl.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly-common.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
                 <version>${woodstox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>stax2-api</artifactId>
+                <version>${stax2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ivy</groupId>
@@ -795,6 +876,11 @@
                 <version>${xnio.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${jboss-logging.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
                 <version>${dnsjava.version}</version>
@@ -843,6 +929,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${google.errorprone.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -954,6 +1045,76 @@
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
                 <version>${commons-fileupload.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons-logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${httpcore4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient4</artifactId>
+                <version>${httpclient4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.thoughtworks.paranamer</groupId>
+                <artifactId>paranamer</artifactId>
+                <version>${paranamer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>${zstd-jni.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>units</artifactId>
+                <version>${airlift-units.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>slice</artifactId>
+                <version>${airlift-slice.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>${guice.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jol</groupId>
+                <artifactId>jol-core</artifactId>
+                <version>${jol.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
             </dependency>
             <!-- GSON -->
             <dependency>
@@ -1100,6 +1261,11 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.approvaltests</groupId>
@@ -1305,6 +1471,7 @@
                             </includes>
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
+                        <dependencyConvergence/>
                     </rules>
                 </configuration>
             </plugin>

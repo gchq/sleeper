@@ -16,20 +16,18 @@
 
 package sleeper.clients.table;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class PutTableOnline {
@@ -37,8 +35,8 @@ public class PutTableOnline {
 
     private final TablePropertiesStore tablePropertiesStore;
 
-    public PutTableOnline(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
+    public PutTableOnline(TablePropertiesStore tablePropertiesStore) {
+        this.tablePropertiesStore = tablePropertiesStore;
     }
 
     public void putOnline(String tableName) {
@@ -52,14 +50,12 @@ public class PutTableOnline {
         if (args.length != 2) {
             System.out.println("Usage: <instance-id> <table-name>");
         }
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            new PutTableOnline(s3Client, dynamoDBClient, instanceProperties).putOnline(args[1]);
-        } finally {
-            dynamoDBClient.shutdown();
-            s3Client.shutdown();
+            TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+            new PutTableOnline(tablePropertiesStore).putOnline(args[1]);
         }
     }
 }

@@ -20,6 +20,8 @@ import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFiles;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 
+import java.util.List;
+
 public class InMemoryGeneratedIngestSourceFilesDriver implements GeneratedIngestSourceFilesDriver {
     private final InMemoryRecordStore sourceFiles;
 
@@ -29,7 +31,7 @@ public class InMemoryGeneratedIngestSourceFilesDriver implements GeneratedIngest
 
     @Override
     public GeneratedIngestSourceFiles findGeneratedFiles() {
-        throw new UnsupportedOperationException();
+        return new GeneratedIngestSourceFiles("in-memory", List.of());
     }
 
     @Override

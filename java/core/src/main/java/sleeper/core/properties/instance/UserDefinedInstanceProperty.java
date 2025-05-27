@@ -17,6 +17,7 @@ package sleeper.core.properties.instance;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
 
 import java.util.List;
@@ -32,6 +33,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
+    }
+
+    /**
+     * Retrieves a list of user defined instance properties in the given group.
+     *
+     * @param  group the group
+     * @return       the properties
+     */
+    static List<UserDefinedInstanceProperty> getAllInGroup(PropertyGroup group) {
+        return Index.INSTANCE.getAllInGroup(group);
     }
 
     /**

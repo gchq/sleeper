@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
-import com.amazonaws.auth.policy.actions.DynamoDBv2Actions;
-import com.amazonaws.auth.policy.actions.S3Actions;
-import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
@@ -236,22 +233,24 @@ public class BulkExportStack extends NestedStack {
     private void attachPolicy(IFunction lambda, String id, InstanceProperties instanceProperties,
             List<String> s3Buckets, List<String> dynamoTables) {
         List<String> s3Arns = buildS3Arns(s3Buckets);
-        List<String> dynamoArns = buildDynamoDbArns(dynamoTables, instanceProperties.get(REGION), instanceProperties.get(ACCOUNT));
+        List<String> dynamoArns = buildDynamoDbArns(dynamoTables, instanceProperties.get(REGION),
+                instanceProperties.get(ACCOUNT));
 
         List<String> resources = new ArrayList<>();
-        resources.add(String.format("arn:aws:sqs:%s:%s:*", instanceProperties.get(REGION), instanceProperties.get(ACCOUNT)));
+        resources.add(
+                String.format("arn:aws:sqs:%s:%s:*", instanceProperties.get(REGION), instanceProperties.get(ACCOUNT)));
         resources.addAll(s3Arns);
         resources.addAll(dynamoArns);
 
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
                 .effect(Effect.ALLOW)
-                .actions(Arrays.asList(
-                        SQSActions.SendMessage.getActionName(),
-                        SQSActions.ReceiveMessage.getActionName(),
-                        S3Actions.PutObject.getActionName(),
-                        S3Actions.GetObject.getActionName(),
-                        DynamoDBv2Actions.Query.getActionName()))
-                .resources(resources)
+                .actions(List.of(
+                        "sqs:SendMessage",
+                        "sqs:ReceiveMessage",
+                        "s3:PutObject",
+                        "s3:GetObject",
+                        "dynamodb:Query"))
+                .resources(Collections.singletonList("*"))
                 .build();
 
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);

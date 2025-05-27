@@ -26,6 +26,7 @@ import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.report.job.query.RangeJobsQuery;
+import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
@@ -36,7 +37,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
 import sleeper.systemtest.dsl.reporting.SystemTestReport;
-import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
 import java.util.List;
@@ -50,7 +50,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     public AwsIngestReportsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDB = clients.getDynamoDB();
-        this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqs());
+        this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqsV2());
         this.emr = clients.getEmr();
     }
 

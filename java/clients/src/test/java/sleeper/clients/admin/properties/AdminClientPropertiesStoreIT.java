@@ -25,7 +25,7 @@ import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.OptionalStack;
@@ -252,7 +252,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             assertThatThrownBy(() -> updateInstanceProperty(
                     instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveInstanceProperties.class)
-                    .hasCauseReference(thrown);
+                    .cause().isSameAs(thrown);
         }
 
         @Test

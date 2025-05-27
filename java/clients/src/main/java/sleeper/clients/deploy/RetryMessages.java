@@ -15,22 +15,20 @@
  */
 package sleeper.clients.deploy;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
@@ -106,12 +104,9 @@ public class RetryMessages {
         }
         int maxMessages = Integer.parseInt(args[2]);
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         InstanceProperties instanceProperties;
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder())) {
             instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-        } finally {
-            s3Client.shutdown();
         }
 
         try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {

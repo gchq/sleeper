@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
@@ -87,7 +88,7 @@ class UpdatePropertiesWithTextEditorIT {
 
             // When / Then
             assertThat(helper.updateProperties(before, after).getDiff())
-                    .extracting(PropertiesDiff::getChanges).asList()
+                    .extracting(PropertiesDiff::getChanges).asInstanceOf(LIST)
                     .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
         }
 
@@ -137,7 +138,7 @@ class UpdatePropertiesWithTextEditorIT {
 
             // Then
             assertThat(diff)
-                    .extracting(PropertiesDiff::getChanges).asList()
+                    .extracting(PropertiesDiff::getChanges).asInstanceOf(LIST)
                     .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
         }
 

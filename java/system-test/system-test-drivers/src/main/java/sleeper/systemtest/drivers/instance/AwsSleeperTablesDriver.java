@@ -54,7 +54,10 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
 
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         try {
-            new AddTable(s3, dynamoDB, instanceProperties, properties, hadoopConfiguration).run();
+            new AddTable(instanceProperties, properties,
+                    S3TableProperties.createStore(instanceProperties, s3, dynamoDB),
+                    StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration))
+                    .run();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

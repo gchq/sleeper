@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -78,7 +78,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table");
 
         // When

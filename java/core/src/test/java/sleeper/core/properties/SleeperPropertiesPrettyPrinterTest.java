@@ -253,55 +253,55 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyGroupDescriptions() {
             assertThat(output)
-                    .contains("## The following properties are commonly used throughout Sleeper.\n\n")
-                    .contains("## The following properties relate to standard ingest.\n\n")
-                    .contains("## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
-                            "## or EKS.\n" +
+                    .contains("## The following instance properties are commonly used throughout Sleeper.\n\n")
+                    .contains("## The following instance properties relate to standard ingest.\n\n")
+                    .contains("## The following instance properties relate to bulk import, i.e. ingesting data using Spark jobs\n" +
+                            "## running on EMR or EKS.\n" +
                             "## \n" +
                             "## Note that on EMR, the total resource allocation must align with the instance types used for the\n" +
                             "## cluster.")
-                    .contains("## The following properties relate to the splitting of partitions.\n\n")
-                    .contains("## The following properties relate to compactions.\n\n")
-                    .contains("## The following properties relate to queries.\n\n");
+                    .contains("## The following instance properties relate to the splitting of partitions.\n\n")
+                    .contains("## The following instance properties relate to compactions.\n\n")
+                    .contains("## The following instance properties relate to queries.\n\n");
         }
 
         @Test
         void shouldPrintPropertyGroupsInTheCorrectOrder() {
             assertThat(output).containsSubsequence(
-                    "The following properties are commonly used throughout Sleeper",
-                    "The following properties relate to standard ingest",
-                    "The following properties relate to bulk import",
-                    "The following properties relate to garbage collection",
-                    "The following properties relate to compactions",
-                    "The following properties relate to queries");
+                    "The following instance properties are commonly used throughout Sleeper",
+                    "The following instance properties relate to standard ingest",
+                    "The following instance properties relate to bulk import",
+                    "The following instance properties relate to garbage collection",
+                    "The following instance properties relate to compactions",
+                    "The following instance properties relate to queries");
         }
 
         @Test
         void shouldDisplayUserDefinedPropertyInTheCorrectGroup() {
             assertThat(output).containsSubsequence(
-                    "The following properties are commonly used throughout Sleeper",
+                    "The following instance properties are commonly used throughout Sleeper",
                     "sleeper.id",
-                    "The following properties relate to standard ingest");
+                    "The following instance properties relate to standard ingest");
         }
 
         @Test
         void shouldDisplaySystemDefinedPropertyInTheCorrectGroup() {
             assertThat(output).containsSubsequence(
-                    "The following properties are commonly used throughout Sleeper",
+                    "The following instance properties are commonly used throughout Sleeper",
                     "sleeper.config.bucket",
-                    "The following properties relate to standard ingest");
+                    "The following instance properties relate to standard ingest");
         }
 
         @Test
         void shouldPrintOneNewLineBeforeFirstHeader() {
             assertThat(output).startsWith("\n" +
-                    "## The following properties are commonly used throughout Sleeper");
+                    "## The following instance properties are commonly used throughout Sleeper");
         }
 
         @Test
         void shouldPrintTwoNewLinesBeforeOtherHeaders() {
             assertThat(output).contains("\n\n" +
-                    "## The following properties relate to standard ingest");
+                    "## The following instance properties relate to standard ingest");
         }
     }
 

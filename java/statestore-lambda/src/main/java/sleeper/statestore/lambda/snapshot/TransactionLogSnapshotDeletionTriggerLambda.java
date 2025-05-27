@@ -15,28 +15,25 @@
  */
 package sleeper.statestore.lambda.snapshot;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.invoke.tables.InvokeForTables;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -53,14 +50,14 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationTriggerLambda.class);
 
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private final AmazonSQS sqsClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
+    private final SqsClient sqsClient;
 
     public TransactionLogSnapshotDeletionTriggerLambda() {
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        this.sqsClient = AmazonSQSClientBuilder.defaultClient();
+        this.s3Client = S3Client.create();
+        this.dynamoClient = DynamoDbClient.create();
+        this.sqsClient = SqsClient.create();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
     }
@@ -82,7 +79,7 @@ public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandl
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient), Instant::now);
         return tableIndex.streamOnlineTables()
-                .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getName()
+                .filter(tableStatus -> DynamoDBTransactionLogStateStore.class.getSimpleName()
                         .equals(tablePropertiesProvider.getById(tableStatus.getTableUniqueId()).get(STATESTORE_CLASSNAME)));
     }
 }

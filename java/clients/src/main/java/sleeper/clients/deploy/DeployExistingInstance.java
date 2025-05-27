@@ -16,12 +16,9 @@
 
 package sleeper.clients.deploy;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -35,8 +32,8 @@ import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
@@ -86,19 +83,15 @@ public class DeployExistingInstance {
                 .map(Boolean::parseBoolean)
                 .orElse(false);
 
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-        try (S3Client s3v2 = S3Client.create();
-                EcrClient ecr = EcrClient.create()) {
-            builder().clients(s3v2, ecr)
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
+                EcrClient ecrClient = EcrClient.create()) {
+            builder().clients(s3Client, ecrClient)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
                     .deployCommand(deployPaused ? deployExistingPaused() : deployExisting())
-                    .loadPropertiesFromS3(s3, dynamoDB)
+                    .loadPropertiesFromS3(s3Client, dynamoClient)
                     .build().update();
-        } finally {
-            s3.shutdown();
-            dynamoDB.shutdown();
         }
     }
 
@@ -193,9 +186,9 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder loadPropertiesFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB) {
-            properties = S3InstanceProperties.loadGivenInstanceId(s3, instanceId);
-            tablePropertiesList = S3TableProperties.createStore(properties, s3, dynamoDB)
+        public Builder loadPropertiesFromS3(S3Client s3Client, DynamoDbClient dynamoCient) {
+            properties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            tablePropertiesList = S3TableProperties.createStore(properties, s3Client, dynamoCient)
                     .streamAllTables().collect(Collectors.toList());
             return this;
         }
