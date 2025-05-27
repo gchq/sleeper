@@ -73,6 +73,7 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
@@ -459,15 +460,11 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
-    private CompactionTask createTask(String taskId, StateStoreProvider stateStoreProvider) {
-        return createTask(taskId, stateStoreProvider, () -> UUID.randomUUID().toString(), Instant::now);
-    }
-
     private CompactionTask createTask(
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
-                ObjectFactory.noUserJars(), hadoopConf);
+                ObjectFactory.noUserJars(), hadoopConf, new S3SketchesStore(s3ClientV2, s3TransferManager));
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
                 instanceProperties, sqsClientV2);

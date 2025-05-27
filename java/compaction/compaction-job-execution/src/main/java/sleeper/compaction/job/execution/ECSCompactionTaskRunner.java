@@ -50,6 +50,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
@@ -105,7 +106,8 @@ public class ECSCompactionTaskRunner {
             ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
 
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
-                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                    HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
+                    new S3SketchesStore(s3Client, s3TransferManager));
 
             StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
 

@@ -36,6 +36,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.sketchesv2.testutils.SketchesDeciles;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
@@ -113,5 +115,10 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
         stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager)
                 .getStateStore(tableProperties);
+    }
+
+    @Override
+    protected SketchesStore createSketchesStore() {
+        return new S3SketchesStore(s3Client, s3TransferManager);
     }
 }

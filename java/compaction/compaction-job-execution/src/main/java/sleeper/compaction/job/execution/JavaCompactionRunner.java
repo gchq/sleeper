@@ -42,7 +42,7 @@ import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,12 +54,14 @@ import java.util.List;
 public class JavaCompactionRunner implements CompactionRunner {
     private final ObjectFactory objectFactory;
     private final Configuration configuration;
+    private final SketchesStore sketchesStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaCompactionRunner.class);
 
-    public JavaCompactionRunner(ObjectFactory objectFactory, Configuration configuration) {
+    public JavaCompactionRunner(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
         this.objectFactory = objectFactory;
         this.configuration = configuration;
+        this.sketchesStore = sketchesStore;
     }
 
     @Override
@@ -98,7 +100,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 
-        new LocalFileSystemSketchesStore().saveFileSketches(compactionJob.getOutputFile(), schema, sketches);
+        sketchesStore.saveFileSketches(compactionJob.getOutputFile(), schema, sketches);
         LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), compactionJob.getOutputFile());
 
         for (CloseableIterator<Record> iterator : inputIterators) {
