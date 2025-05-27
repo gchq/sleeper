@@ -61,11 +61,6 @@
             <artifactId>ingest-batcher-storev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
