@@ -39,15 +39,13 @@
             <artifactId>scala-reflect</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sqs</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
         <!-- STS is required to use the IAM role associated with the Service Account -->
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sts</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
         </dependency>
         <!-- Spark -->
         <dependency>
@@ -63,7 +61,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-tracker</artifactId>
+            <artifactId>ingest-trackerV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -73,17 +71,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>sketchesv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
+            <artifactId>statestorev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
