@@ -47,6 +47,7 @@ import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 import sleeper.statestore.StateStoreArrowFileStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
@@ -123,7 +124,7 @@ public class CheckTransactionLogs {
         Path tempDir = Files.createTempDirectory("sleeper-test");
         String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
         CompactionJob compactionJob = job.asCompactionJobToNewFile(tableId, outputFile);
-        JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf);
+        JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf, new LocalFileSystemSketchesStore());
         RecordsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
         long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
         LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);

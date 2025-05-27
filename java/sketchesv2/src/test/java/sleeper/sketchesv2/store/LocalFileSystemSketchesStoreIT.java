@@ -62,6 +62,7 @@ public class LocalFileSystemSketchesStoreIT {
 
         // Then
         assertThat(SketchesDeciles.from(found)).isEqualTo(SketchesTestData.createExampleDeciles());
+        assertThat(tempDir).isDirectoryRecursivelyContaining("glob:**/test-file.sketches");
     }
 
     private TableFilePaths filePaths() {

@@ -15,6 +15,8 @@
  */
 package sleeper.sketchesv2.store;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.async.BlockingOutputStreamAsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 
 public class S3SketchesStore implements SketchesStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(S3SketchesStore.class);
 
     private final S3Client s3Client;
     private final S3TransferManager s3TransferManager;
@@ -56,6 +59,8 @@ public class S3SketchesStore implements SketchesStore {
             throw new UncheckedIOException(e);
         }
         upload.completionFuture().join();
+        LOGGER.info("Wrote sketches file to bucket {}, object key {}",
+                s3Filename.bucketName(), s3Filename.sketchesObjectKey());
     }
 
     @Override
