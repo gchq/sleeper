@@ -15,6 +15,9 @@
  */
 package sleeper.sketchesv2.store;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.schema.Schema;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.SketchesSerDe;
@@ -27,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class LocalFileSystemSketchesStore implements SketchesStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(LocalFileSystemSketchesStore.class);
 
     @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
@@ -42,6 +46,7 @@ public class LocalFileSystemSketchesStore implements SketchesStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        LOGGER.info("Wrote sketches to local file {}", path);
     }
 
     @Override

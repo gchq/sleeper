@@ -101,7 +101,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
 
         sketchesStore.saveFileSketches(compactionJob.getOutputFile(), schema, sketches);
-        LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), compactionJob.getOutputFile());
+        LOGGER.info("Compaction job {}: Wrote sketches file for {}", compactionJob.getId(), compactionJob.getOutputFile());
 
         for (CloseableIterator<Record> iterator : inputIterators) {
             iterator.close();
