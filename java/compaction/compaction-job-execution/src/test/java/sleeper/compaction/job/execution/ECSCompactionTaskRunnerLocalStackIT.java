@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
@@ -98,7 +99,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -182,8 +182,8 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                     "value2", 123456789L)));
 
             // - Create two compaction jobs and put on queue
-            CompactionJob job1 = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
-            CompactionJob job2 = compactionJobForFiles("job2", "output2.parquet", fileReference3, fileReference4);
+            CompactionJob job1 = compactionJobForFiles("job1", fileReference1, fileReference2);
+            CompactionJob job2 = compactionJobForFiles("job2", fileReference3, fileReference4);
             assignJobIdsToInputFiles(stateStore, job1, job2);
             sendJob(job1);
             sendJob(job2);
@@ -249,7 +249,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             configureJobQueuesWithMaxReceiveCount(2);
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
+            CompactionJob job = compactionJobForFiles("job1", fileReference1, fileReference2);
             assignJobIdsToInputFiles(getStateStore(), job);
             String jobJson = sendJob(job);
             inMemoryFilesLogStore().atStartOfAddTransaction(() -> {
@@ -273,7 +273,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             configureJobQueuesWithMaxReceiveCount(1);
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
+            CompactionJob job = compactionJobForFiles("job1", fileReference1, fileReference2);
             assignJobIdsToInputFiles(getStateStore(), job);
             String jobJson = sendJob(job);
             inMemoryFilesLogStore().atStartOfAddTransaction(() -> {
@@ -305,7 +305,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         List<Record> expectedRecords = IntStream.range(0, 100)
                 .mapToObj(defaultRecordCreator()::apply)
                 .collect(Collectors.toList());
-        CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
+        CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
         Supplier<Instant> times = supplyTimes(
@@ -331,7 +331,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))));
         // - Check new output file has been created with the correct records
-        assertThat(readRecords("output1.parquet", schema))
+        assertThat(readRecords(job.getOutputFile(), schema))
                 .containsExactlyElementsOf(expectedRecords);
         // - Check DynamoDBStateStore does not yet have correct file references
         assertThat(stateStore.getFileReferences())
@@ -351,7 +351,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         List<Record> expectedRecords = IntStream.range(0, 100)
                 .mapToObj(defaultRecordCreator()::apply)
                 .collect(Collectors.toList());
-        CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
+        CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
         Supplier<Instant> times = supplyTimes(
@@ -378,7 +378,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                                         Instant.parse("2024-05-09T12:56:00Z"))),
                         tableId));
         // - Check new output file has been created with the correct records
-        assertThat(readRecords("output1.parquet", schema))
+        assertThat(readRecords(job.getOutputFile(), schema))
                 .containsExactlyElementsOf(expectedRecords);
         // - Check DynamoDBStateStore does not yet have correct file references
         assertThat(stateStore.getFileReferences())
@@ -388,7 +388,6 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(COMPACTION_TASK_WAIT_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
@@ -503,14 +502,8 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return coordinator.closeReturningResult().getFileReferenceList().get(0);
     }
 
-    private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, FileReference... fileReferences) throws IOException {
-        return sendJob(compactionJobForFiles(jobId, outputFilename, List.of(fileReferences).stream()
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList())));
-    }
-
     private String sendCompactionJobForFilesGetJson(String jobId, String outputFilename, String... inputFilenames) throws IOException {
-        return sendJob(compactionJobForFiles(jobId, outputFilename, List.of(inputFilenames)));
+        return sendJob(compactionJobForFiles(jobId, List.of(inputFilenames)));
     }
 
     private String sendJob(CompactionJob job) throws IOException {
@@ -522,20 +515,16 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return jobJson;
     }
 
-    private CompactionJob compactionJobForFiles(String jobId, String outputFilename, FileReference... fileReferences) {
-        return compactionJobForFiles(jobId, outputFilename, List.of(fileReferences).stream()
+    private CompactionJob compactionJobForFiles(String jobId, FileReference... fileReferences) {
+        return compactionJobForFiles(jobId, List.of(fileReferences).stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList()));
 
     }
 
-    private CompactionJob compactionJobForFiles(String jobId, String outputFilename, List<String> inputFilenames) {
-        return CompactionJob.builder()
-                .tableId(tableId)
-                .jobId(jobId)
-                .partitionId("root")
-                .inputFiles(inputFilenames)
-                .outputFile(tempDir + "/" + outputFilename).build();
+    private CompactionJob compactionJobForFiles(String jobId, List<String> inputFilenames) {
+        CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
+        return factory.createCompactionJobWithFilenames(jobId, inputFilenames, "root");
     }
 
     private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
@@ -562,7 +551,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(tempDir.resolve(filename).toString()), schema)) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> records = new ArrayList<>();
             for (Record record = reader.read(); record != null; record = reader.read()) {
                 records.add(new Record(record));
