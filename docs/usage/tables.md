@@ -57,7 +57,7 @@ ID=my-instance-id
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
 ```
 
-We'll look at the table scripts below. See the [ingest documentation](ingest.md#ingest-batcher) for more information on
+We'll look at the table scripts below. See the [ingest batcher documentation](ingest-batcher.md) for more information on
 `sendToIngestBatcher.sh`.
 
 ### Pre-split partitions

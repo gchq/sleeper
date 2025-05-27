@@ -10,8 +10,8 @@ This is deployed when `IngestBatcherStack` is in the list of optional stacks in 
 By default this will use bulk import on EMR Serverless. Note that it is vital that a table is pre-split before data is
 bulk imported ([see here](../usage/tables.md#pre-split-partitions)).
 
-Files to be ingested must be accessible to the ingest system you will use. See the [ingest guide](ingest.md) for ways to
-set this up.
+Files to be ingested must be accessible to the ingest system you will use, and to the ingest batcher as well in order to
+expand directories and check the size of files. See the [ingest guide](ingest.md) for ways to set this up.
 
 Files can be submitted as messages to the batcher submission SQS queue. A script is available to do this:
 

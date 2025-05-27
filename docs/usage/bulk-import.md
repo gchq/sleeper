@@ -13,7 +13,9 @@ of `sleeper.ingest.max.local.records`). Using the bulk import method, there will
 the 1000 files are all imported in the same bulk import job).
 
 Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](../usage/tables.md#pre-split-partitions)).
+imported ([see here](../usage/tables.md#pre-split-partitions)). Bulk import jobs will be refused unless there are a
+minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`,
+documented [here](properties/table/bulk_import.md).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
