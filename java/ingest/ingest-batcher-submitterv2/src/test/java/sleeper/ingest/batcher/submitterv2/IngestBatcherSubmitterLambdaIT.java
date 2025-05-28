@@ -84,7 +84,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldStoreFileEvenWithNoFileExtension() {
+        void shouldStoreFileFindFileEvenWithoutFileExtension() {
             // Given
             uploadFileToS3("test-file-1.parquet");
             String json = "{" +
@@ -99,6 +99,25 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"));
+            assertThat(receiveDeadLetters()).isEmpty();
+        }
+
+        @Test
+        void shouldStoreFileEvenWithNoFileExtension() {
+            // Given
+            uploadFileToS3("test-file-1");
+            String json = "{" +
+                    "\"files\":[\"" + testBucket + "/test-file-1\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest(testBucket + "/test-file-1"));
             assertThat(receiveDeadLetters()).isEmpty();
         }
 
