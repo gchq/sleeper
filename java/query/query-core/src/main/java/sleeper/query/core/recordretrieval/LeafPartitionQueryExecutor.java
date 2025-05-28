@@ -62,6 +62,11 @@ public class LeafPartitionQueryExecutor {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
+        // TODO: Remove this when a proper compaction iterator specification is present
+        if ("DATAFUSION".equals(compactionIteratorClassName)) {
+            throw new QueryException(new UnsupportedOperationException("Queries are not currently possible on tables with a DATAFUSION iterator specified."));
+        }
+
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
         SortedRecordIterator compactionIterator;
         SortedRecordIterator queryIterator;
