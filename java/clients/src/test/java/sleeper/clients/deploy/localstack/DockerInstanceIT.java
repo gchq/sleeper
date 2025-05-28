@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy.localstack;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,8 +32,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -106,7 +105,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         }
 
-        private void assertTablesExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) throws AmazonDynamoDBException {
+        private void assertTablesExist(InstanceProperties instanceProperties, InstanceProperty... tableNameProperties) {
             for (InstanceProperty tableNameProperty : tableNameProperties) {
                 assertThatCode(() -> dynamoClientV2.describeTable(request -> request.tableName(instanceProperties.get(tableNameProperty))))
                         .describedAs("Table should exist: " + tableNameProperty)
@@ -157,7 +156,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(tempDir.toString())
                     .hadoopConfiguration(hadoopConf)
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
                     .s3AsyncClient(s3AsyncClient)
                     .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
         }

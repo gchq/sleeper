@@ -16,30 +16,24 @@
 
 package sleeper.clients.table;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class RenameTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RenameTable.class);
 
     private final TablePropertiesStore tablePropertiesStore;
-
-    public RenameTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB));
-    }
 
     public RenameTable(TablePropertiesStore tablePropertiesStore) {
         this.tablePropertiesStore = tablePropertiesStore;
@@ -56,14 +50,12 @@ public class RenameTable {
         if (args.length != 3) {
             System.out.println("Usage: <instance-id> <old-table-name> <new-table-name>");
         }
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            new RenameTable(s3Client, dynamoDBClient, instanceProperties).rename(args[1], args[2]);
-        } finally {
-            dynamoDBClient.shutdown();
-            s3Client.shutdown();
+            TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+            new RenameTable(tablePropertiesStore).rename(args[1], args[2]);
         }
     }
 }

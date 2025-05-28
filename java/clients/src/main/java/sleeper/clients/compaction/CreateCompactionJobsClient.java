@@ -16,35 +16,33 @@
 
 package sleeper.clients.compaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.configuration.jars.S3UserJarsLoader;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.compaction.job.creationv2.AwsCreateCompactionJobs;
+import sleeper.configurationv2.jars.S3UserJarsLoader;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Command line client to create compaction jobs to be run for specified Sleeper tables.
@@ -73,28 +71,24 @@ public class CreateCompactionJobsClient {
             return;
         }
         String instanceId = args[1];
-        List<String> tableNames = Stream.of(args).skip(2).collect(toUnmodifiableList());
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        try {
+        List<String> tableNames = Stream.of(args).skip(2).toList();
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             List<TableProperties> tables = tableNames.stream()
                     .map(name -> tablePropertiesProvider.getByName(name))
                     .collect(toUnmodifiableList());
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
-            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);
             CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
-                    new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
+                    new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory(),
                     instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client, sqsClient);
             for (TableProperties table : tables) {
                 mode.createJobs(jobCreator, table);
             }
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
-            sqsClient.shutdown();
         }
     }
 }

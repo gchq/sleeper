@@ -28,9 +28,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-dynamodb</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
@@ -40,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-tracker</artifactId>
+            <artifactId>compaction-trackerV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -50,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-job</artifactId>
+            <artifactId>common-jobv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -65,17 +64,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
+            <artifactId>statestorev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>sketchesv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
@@ -100,7 +99,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>sketchesv2</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

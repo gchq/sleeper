@@ -50,7 +50,7 @@ cat schema.json
   ]
 }
 ID=my-instance-id
-./scripts/utility/estimateSplitPoints.sh schema.json 128 32768 splits.file s3a://my-bucket/file.parquet
+./scripts/utility/estimateSplitPoints.sh schema.json 128 100000 32768 splits.file s3a://my-bucket/file.parquet
 ./scripts/utility/addTable.sh $ID table1
 ./scripts/utility/reinitialiseTable.sh $ID table1 true splits.file
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
@@ -68,11 +68,18 @@ large-scale use of Sleeper, and is essential for running bulk import jobs.
 One way to do this is by taking a sample of your data to generate a split points file:
 
 ```bash
-./scripts/utility/estimateSplitPoints.sh <schema-file> <num-partitions> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
+./scripts/utility/estimateSplitPoints.sh <schema-file> <num-partitions> <read-max-records-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
 ```
 
-The schema file should be the `schema.json` file you created for your table. You can calculate the number of partitions
-by dividing the total number of rows you expect for your table by the average number of rows you want per partition.
+The schema file should be the `schema.json` file you created for your table.
+
+You can calculate the number of partitions by dividing the total number of rows you expect for your table by the average
+number of rows you want per partition.
+
+The estimate will be based on the given number of records from the start of each input file. If your data is such that
+the beginning of a file will not be representative of the distribution of row keys, you can either read more records,
+or prepare a representative sample first.
+
 The sketch size controls the size and accuracy of the data sketches used to estimate the split points. It should be a
 power of 2 greater than 2 and less than 65536. See the Apache DataSketches documentation for more information:
 

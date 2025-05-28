@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import sleeper.core.util.PollWithRetries;
 
-import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -95,7 +94,7 @@ class WaitForStackToDeleteIT {
 
     private static MappingBuilder describeStacksRequestWithStackName(String stackName) {
         return post("/")
-                .withHeader(CONTENT_TYPE, equalTo("application/x-www-form-urlencoded; charset=UTF-8"))
+                .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded; charset=UTF-8"))
                 .withRequestBody(containing("Action=DescribeStacks")
                         .and(containing("StackName=" + stackName)));
     }
