@@ -32,6 +32,9 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
  * Each one is deployed as an optional stack, which may or may not be enabled for a given Sleeper instance. A bulk
  * import job is always submitted for a specific platform, to a queue associated with that platform.
  * <p>
+ * <strong>If you have occasional bulk import jobs, or you just want to get started, then we recommend EMR Serverless.
+ * If you will have a lot of jobs running fairly constantly, then the persistent EMR approach is recommended.</strong>
+ * <p>
  * Every platform deployment includes an SQS queue to submit bulk import jobs, and a lambda to receive jobs and start
  * them with Spark.
  * <p>
@@ -50,9 +53,6 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
  * The {@link #EKS} platform creates a Kubernetes cluster in EKS when its optional stack is deployed, and jobs are run
  * as Kubernetes tasks that drive Spark. This is enabled by the optional stack {@link OptionalStack#EksBulkImportStack}.
  * See configuration in {@link sleeper.core.properties.instance.EKSProperty}.
- * <p>
- * If you have occasional bulk import jobs, or you just want to get started, then we recommend EMR Serverless.
- * If you will have a lot of jobs running fairly constantly, then the persistent EMR approach is recommended.
  */
 public enum BulkImportPlatform {
 
