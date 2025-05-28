@@ -36,6 +36,7 @@ import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -125,7 +126,7 @@ public class IngestFactory {
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
-            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties, fileNameGenerator);
+            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties, new LocalFileSystemSketchesStore(), fileNameGenerator);
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");

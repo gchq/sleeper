@@ -28,7 +28,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
@@ -49,9 +48,9 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final String partitionParquetFileName;
     private final String quantileSketchesFileName;
     private final ParquetWriter<Record> parquetWriter;
+    private final SketchesStore sketchesStore;
     private final Sketches sketches;
     private long recordsWrittenToCurrentPartition;
-    private final SketchesStore store;
 
     /**
      * Create an instance. The final file store is specified as the prefix to the filePathPrefix argument.
@@ -74,7 +73,8 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             TableFilePaths filePaths,
-            String fileName) throws IOException {
+            String fileName,
+            SketchesStore sketchesStore) throws IOException {
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
@@ -82,9 +82,9 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesFileName = filePaths.constructQuantileSketchesFilePath(partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
+        this.sketchesStore = sketchesStore;
         this.sketches = Sketches.from(sleeperSchema);
         this.recordsWrittenToCurrentPartition = 0L;
-        this.store = new LocalFileSystemSketchesStore();
     }
 
     /**
@@ -115,7 +115,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         parquetWriter.close();
         LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), recordsWrittenToCurrentPartition);
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
-        store.saveFileSketches(partitionParquetFileName, sleeperSchema, sketches);
+        sketchesStore.saveFileSketches(partitionParquetFileName, sleeperSchema, sketches);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
         FileReference fileReference = PartitionFileWriterUtils.createFileReference(
                 partitionParquetFileName,

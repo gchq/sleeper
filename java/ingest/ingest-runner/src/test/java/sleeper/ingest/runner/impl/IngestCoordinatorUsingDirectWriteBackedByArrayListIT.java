@@ -35,7 +35,8 @@ import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterF
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.sketchesv2.testutils.SketchesDeciles;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
@@ -79,6 +80,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
             .rootFirst("root")
             .splitToNewChildren("root", "left", "right", 0L)
             .buildTree();
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
     private StateStore stateStore;
 
     @BeforeEach
@@ -120,7 +122,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 .containsExactly(LongStream.range(-100, 0).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(0, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -150,7 +152,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 .containsExactly(-90L, -79L, -68L, -50L, -2L);
         assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(12L, 14L, 41L, 47L, 83L);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -172,6 +174,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
+                        sketchesStore,
                         fileNames.iterator()::next))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
                 .build()) {

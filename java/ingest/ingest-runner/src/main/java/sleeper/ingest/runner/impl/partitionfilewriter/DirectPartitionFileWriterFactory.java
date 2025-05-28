@@ -20,6 +20,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -35,40 +36,45 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     private final ParquetConfiguration parquetConfiguration;
     private final TableFilePaths filePaths;
     private final Supplier<String> fileNameGenerator;
+    private final SketchesStore sketchesStore;
 
     private DirectPartitionFileWriterFactory(
             ParquetConfiguration parquetConfiguration, TableFilePaths filePaths,
-            Supplier<String> fileNameGenerator) {
+            Supplier<String> fileNameGenerator, SketchesStore sketchesStore) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
         this.filePaths = Objects.requireNonNull(filePaths, "filePaths must not be null");
         this.fileNameGenerator = Objects.requireNonNull(fileNameGenerator, "fileNameGenerator must not be null");
+        this.sketchesStore = Objects.requireNonNull(sketchesStore, "sketchesStore must not be null");
     }
 
-    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix) {
-        return from(configuration, filePathPrefix, () -> UUID.randomUUID().toString());
+    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix, SketchesStore sketchesStore) {
+        return from(configuration, filePathPrefix, sketchesStore, () -> UUID.randomUUID().toString());
     }
 
     public static DirectPartitionFileWriterFactory from(
-            ParquetConfiguration configuration, String filePathPrefix,
+            ParquetConfiguration configuration, String filePathPrefix, SketchesStore sketchesStore,
             Supplier<String> fileNameGenerator) {
-        return new DirectPartitionFileWriterFactory(configuration, TableFilePaths.fromPrefix(filePathPrefix), fileNameGenerator);
-    }
-
-    public static DirectPartitionFileWriterFactory from(
-            ParquetConfiguration configuration,
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties) {
-        return from(configuration, instanceProperties, tableProperties, () -> UUID.randomUUID().toString());
+        return new DirectPartitionFileWriterFactory(configuration, TableFilePaths.fromPrefix(filePathPrefix), fileNameGenerator, sketchesStore);
     }
 
     public static DirectPartitionFileWriterFactory from(
             ParquetConfiguration configuration,
             InstanceProperties instanceProperties,
             TableProperties tableProperties,
+            SketchesStore sketchesStore) {
+        return from(configuration, instanceProperties, tableProperties, sketchesStore, () -> UUID.randomUUID().toString());
+    }
+
+    public static DirectPartitionFileWriterFactory from(
+            ParquetConfiguration configuration,
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            SketchesStore sketchesStore,
             Supplier<String> fileNameGenerator) {
         return from(configuration,
                 instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) +
                         "/" + tableProperties.get(TABLE_ID),
+                sketchesStore,
                 fileNameGenerator);
     }
 
@@ -79,7 +85,8 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
                     partition,
                     parquetConfiguration,
                     filePaths,
-                    fileNameGenerator.get());
+                    fileNameGenerator.get(),
+                    sketchesStore);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
