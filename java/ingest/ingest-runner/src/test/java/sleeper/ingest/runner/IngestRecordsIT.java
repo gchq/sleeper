@@ -33,7 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.example.iterator.AdditionIterator;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -96,7 +96,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(rightFile))
                 .containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(1L)
@@ -104,7 +104,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
                                 .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(3L).max(3L)
@@ -151,7 +151,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(2, 2)
@@ -159,7 +159,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 .rankBytes(0.4, 1, 1).rankBytes(0.5, 2, 2).rankBytes(0.6, 2, 2)
                                 .rankBytes(0.7, 2, 2).rankBytes(0.8, 2, 2).rankBytes(0.9, 2, 2))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .minBytes(64, 65).maxBytes(64, 65)
@@ -209,7 +209,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         getRecords2DimByteArrayKey().get(2),
                         getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key1", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(5)
@@ -222,7 +222,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 .rankBytes(0.4, 2, 3).rankBytes(0.5, 99).rankBytes(0.6, 99)
                                 .rankBytes(0.7, 99).rankBytes(0.8, 99).rankBytes(0.9, 99))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key1", deciles -> deciles
                                 .minBytes(11, 2).maxBytes(64, 65)
@@ -303,7 +303,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         getRecordsOscillatingBetween2Partitions().get(1),
                         getRecordsOscillatingBetween2Partitions().get(3));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key1", deciles -> deciles
                                 .min(0).max(100)
@@ -316,7 +316,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
                                 .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key1", deciles -> deciles
                                 .min(0).max(100)
@@ -359,7 +359,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         getRecordsInFirstPartitionOnly().get(1),
                         getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(0L).max(1L)
@@ -399,7 +399,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         getRecords().get(1),
                         getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReference))
+        assertThat(SketchesDeciles.fromFile(schema, fileReference, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(3L)
@@ -450,7 +450,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactlyInAnyOrderElementsOf(rightRecords);
 
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(-198L).max(1L)
@@ -458,7 +458,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 .rank(0.4, -118L).rank(0.5, -98L).rank(0.6, -78L)
                                 .rank(0.7, -58L).rank(0.8, -38L).rank(0.9, -18L))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(2L).max(201L)
@@ -495,7 +495,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("L").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedLeftRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("L")))
+        assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("L"), store))
                 .isEqualTo(SketchesDeciles.from(schema, expectedLeftRecords));
         List<Record> expectedRightRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
@@ -503,7 +503,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(readRecords(partitionToFileMapping.get("R").stream()))
                 .containsExactlyInAnyOrderElementsOf(expectedRightRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
-        assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("R")))
+        assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("R"), store))
                 .isEqualTo(SketchesDeciles.from(schema, expectedRightRecords));
     }
 
@@ -532,7 +532,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                         .sorted(Comparator.comparing(o -> ((Long) o.get("key"))))
                         .collect(Collectors.toList()));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(10L)
@@ -580,7 +580,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 "value", 4L)));
 
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .minBytes(1, 1).maxBytes(11, 2)

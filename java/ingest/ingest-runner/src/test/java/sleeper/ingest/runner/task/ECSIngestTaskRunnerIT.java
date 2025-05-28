@@ -32,7 +32,8 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.trackerv2.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTrackerCreator;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -76,6 +77,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+
         sendJobs(List.of(createJobWithTableAndFiles("job", tableProperties.getStatus(), files)));
 
         // When
@@ -90,7 +92,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -112,6 +114,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+
         sendJobs(ingestJobs);
 
         // When
@@ -132,7 +135,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .containsExactlyElementsOf(Collections.nCopies(10,
                         fileReferenceFactory.rootFile("anyfilename", 800)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 

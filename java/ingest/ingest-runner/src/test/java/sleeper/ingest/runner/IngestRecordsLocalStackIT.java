@@ -21,7 +21,8 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -59,7 +60,7 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
         //  - Local files should have been deleted
         assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), new LocalFileSystemSketchesStore()))
                 .isEqualTo(SketchesDeciles.from(schema, records));
     }
 

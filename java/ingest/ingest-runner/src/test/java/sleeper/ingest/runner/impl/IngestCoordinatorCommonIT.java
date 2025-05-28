@@ -44,7 +44,9 @@ import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.ResultVerifier;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
@@ -85,6 +87,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private StateStore stateStore;
+    private SketchesStore store;
 
     private static Stream<Arguments> parameterObjsForTests() {
         return Stream.of(
@@ -105,6 +108,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         createBucket(dataBucketName);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
+        store = new LocalFileSystemSketchesStore();
     }
 
     private void setSchema(Schema schema) {
@@ -146,7 +150,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -191,7 +195,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactly(IntStream.range(-100, 2).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(2, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -234,7 +238,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactly(LongStream.range(-100, 2).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(2, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -282,7 +286,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactlyElementsOf(keys.subList(0, 102));
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(102, 200));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -330,7 +334,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactly(new byte[]{1, 1}, new byte[]{2, 2});
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{64, 65});
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -389,7 +393,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactlyElementsOf(stringKeys.subList(306, 600));
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(306, 600));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -443,7 +447,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(rightRecords)
                 .extracting(record -> record.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -491,7 +495,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(rightRecords)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 20L), List.of(100, 50L));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -545,7 +549,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -582,7 +586,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactly(List.of(0L), List.of(1L));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -625,7 +629,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .flatMap(longValue -> Stream.of(longValue, longValue))
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -695,7 +699,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, store))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, expectedRecords));
     }
 

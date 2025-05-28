@@ -25,7 +25,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,7 +74,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(readRecords(rightFile))
                 .containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(1L)
@@ -82,7 +82,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
                                 .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(3L).max(3L)
@@ -119,7 +119,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(readRecords(fileReferences.get(0)))
                 .containsExactly(getSingleRecord().get(0));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), store))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(1L)

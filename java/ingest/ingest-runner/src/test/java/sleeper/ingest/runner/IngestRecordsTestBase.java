@@ -31,6 +31,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -55,6 +57,7 @@ public class IngestRecordsTestBase {
     protected String dataFolderName;
     protected InstanceProperties instanceProperties;
     protected TableProperties tableProperties;
+    protected SketchesStore store;
 
     @BeforeEach
     public void setUpBase() throws Exception {
@@ -62,6 +65,7 @@ public class IngestRecordsTestBase {
         dataFolderName = createTempDirectory(tempDir, null).toString();
         instanceProperties = defaultInstanceProperties(dataFolderName);
         tableProperties = defaultTableProperties(schema, instanceProperties);
+        store = new LocalFileSystemSketchesStore();
     }
 
     protected void setSchema(Schema schema) {
