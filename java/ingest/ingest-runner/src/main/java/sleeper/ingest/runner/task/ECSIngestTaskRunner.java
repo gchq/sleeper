@@ -41,7 +41,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.core.IngestTask;
-import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.partitionfilewriter.S3TransferManagerWrapper;
 import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -88,7 +88,7 @@ public class ECSIngestTaskRunner {
 
             IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
                     taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
-                    AsyncS3PartitionFileWriterFactory.s3AsyncClientFromProperties(instanceProperties),
+                    S3TransferManagerWrapper.s3AsyncClientFromProperties(instanceProperties),
                     ingestHadoopConfiguration(instanceProperties), s3TransferManager);
             ingestTask.run();
 

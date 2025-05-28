@@ -15,12 +15,7 @@
  */
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
-import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.partition.Partition;
@@ -28,18 +23,14 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CLIENT_TYPE;
-import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
-import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -51,6 +42,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final String localWorkingDirectory;
     private final Supplier<String> fileNameGenerator;
     private final S3TransferManagerWrapper s3TransferManager;
+    private final SketchesStore sketchesStore;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
@@ -59,6 +51,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
         s3TransferManager = Optional.ofNullable(builder.s3TransferManager).orElseGet(S3TransferManagerWrapper::create);
+        sketchesStore = Objects.requireNonNull(builder.sketchesStore, "sketchesStore must not be null");
     }
 
     public static Builder builder() {
@@ -70,55 +63,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                 .filePathPrefix(tableProperties.get(TABLE_ID));
     }
 
-    public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
-        String clientType = properties.get(ASYNC_INGEST_CLIENT_TYPE).toLowerCase(Locale.ROOT);
-        if ("java".equals(clientType)) {
-            return buildS3Client(S3AsyncClient.builder());
-        } else if ("crt".equals(clientType)) {
-            return buildCrtClient(S3AsyncClient.crtBuilder()
-                    .minimumPartSizeInBytes(properties.getLong(ASYNC_INGEST_CRT_PART_SIZE_BYTES))
-                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS)));
-        } else {
-            throw new IllegalArgumentException("Unrecognised async client type: " + clientType);
-        }
-    }
-
-    private static S3AsyncClient buildCrtClient(S3CrtAsyncClientBuilder builder) {
-        URI customEndpoint = getCustomEndpoint();
-        if (customEndpoint != null) {
-            return builder
-                    .endpointOverride(customEndpoint)
-                    .region(Region.US_EAST_1)
-                    .forcePathStyle(true)
-                    .build();
-        } else {
-            return builder.build();
-        }
-    }
-
-    private static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
-        URI customEndpoint = getCustomEndpoint();
-        if (customEndpoint != null) {
-            return builder
-                    .endpointOverride(customEndpoint)
-                    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                            "test-access-key", "test-secret-key")))
-                    .region(Region.US_EAST_1)
-                    .forcePathStyle(true)
-                    .build();
-        } else {
-            return builder.build();
-        }
-    }
-
-    private static URI getCustomEndpoint() {
-        String endpoint = System.getenv("AWS_ENDPOINT_URL");
-        if (endpoint != null) {
-            return URI.create(endpoint);
-        }
-        return null;
-    }
-
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
@@ -128,7 +72,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     s3BucketName, filePaths,
                     s3TransferManager.get(),
                     localWorkingDirectory,
-                    fileNameGenerator.get());
+                    fileNameGenerator.get(),
+                    sketchesStore);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -146,6 +91,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         private TableFilePaths filePaths;
         private String localWorkingDirectory;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
+        private SketchesStore sketchesStore;
 
         private Builder() {
         }
@@ -188,6 +134,11 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder fileNameGenerator(Supplier<String> fileNameGenerator) {
             this.fileNameGenerator = fileNameGenerator;
+            return this;
+        }
+
+        public Builder sketchesStore(SketchesStore sketchesStore) {
+            this.sketchesStore = sketchesStore;
             return this;
         }
 

@@ -31,7 +31,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.File;
@@ -73,9 +72,9 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final String quantileSketchesLocalFileName;
     private final String quantileSketchesS3Key;
     private final ParquetWriter<Record> parquetWriter;
+    private final SketchesStore sketchesStore;
     private final Sketches sketches;
     private long recordsWrittenToCurrentPartition;
-    private final SketchesStore store;
 
     /**
      * Creates an instance. Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will
@@ -101,7 +100,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             TableFilePaths filePaths,
             S3TransferManager s3TransferManager,
             String localWorkingDirectory,
-            String fileName) throws IOException {
+            String fileName,
+            SketchesStore sketchesStore) throws IOException {
         this.s3TransferManager = requireNonNull(s3TransferManager);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
@@ -113,9 +113,9 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesS3Key = filePaths.constructQuantileSketchesFilePath(partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
+        this.sketchesStore = sketchesStore;
         this.sketches = Sketches.from(sleeperSchema);
         this.recordsWrittenToCurrentPartition = 0L;
-        this.store = new LocalFileSystemSketchesStore();
     }
 
     /**
@@ -188,7 +188,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 recordsWrittenToCurrentPartition,
                 partitionParquetLocalFileName);
         // Write sketches to a local file
-        store.saveFileSketches(quantileSketchesLocalFileName, sleeperSchema, sketches);
+        sketchesStore.saveFileSketches(quantileSketchesLocalFileName, sleeperSchema, sketches);
         LOGGER.debug("Wrote sketches to local file {}", quantileSketchesLocalFileName);
         FileReference fileReference = createFileReference(
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
