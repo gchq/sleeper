@@ -49,7 +49,8 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.sketchesv2.testutils.SketchesDeciles;
 
 import java.io.IOException;
@@ -88,6 +89,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final String ingestSourceBucketName = "ingest-source-" + UUID.randomUUID().toString();
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
     @TempDir
     public java.nio.file.Path localDir;
     private Supplier<Instant> timeSupplier = Instant::now;
@@ -127,7 +129,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(doubledRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -159,7 +161,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 200));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -199,7 +201,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 160));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -240,7 +242,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(records1.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(records1.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(records1.sleeperSchema, expectedRecords));
         assertThat(tracker.getAllJobs(tableId)).containsExactly(
                 ingestJobStatus(ingestJob, jobRunOnTask("test-task",
@@ -280,7 +282,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 10));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, new LocalFileSystemSketchesStore()))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         assertThat(commitRequests).containsExactly(StateStoreCommitRequest.create(tableId,
                 AddFilesTransaction.builder()
