@@ -16,8 +16,6 @@
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.sketchesv2.store.SketchesStore;
@@ -26,10 +24,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -47,42 +41,6 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix, SketchesStore sketchesStore) {
-        return from(configuration, filePathPrefix, sketchesStore, () -> UUID.randomUUID().toString());
-    }
-
-    public static DirectPartitionFileWriterFactory from(
-            ParquetConfiguration configuration, String filePathPrefix, SketchesStore sketchesStore,
-            Supplier<String> fileNameGenerator) {
-        return builder()
-                .parquetConfiguration(configuration)
-                .filePaths(TableFilePaths.fromPrefix(filePathPrefix))
-                .fileNameGenerator(fileNameGenerator)
-                .sketchesStore(sketchesStore)
-                .build();
-    }
-
-    public static DirectPartitionFileWriterFactory from(
-            ParquetConfiguration configuration,
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            SketchesStore sketchesStore) {
-        return from(configuration, instanceProperties, tableProperties, sketchesStore, () -> UUID.randomUUID().toString());
-    }
-
-    public static DirectPartitionFileWriterFactory from(
-            ParquetConfiguration configuration,
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            SketchesStore sketchesStore,
-            Supplier<String> fileNameGenerator) {
-        return from(configuration,
-                instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) +
-                        "/" + tableProperties.get(TABLE_ID),
-                sketchesStore,
-                fileNameGenerator);
     }
 
     @Override

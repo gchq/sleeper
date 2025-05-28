@@ -25,6 +25,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -126,7 +127,12 @@ public class IngestFactory {
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
-            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties, new LocalFileSystemSketchesStore(), fileNameGenerator);
+            return DirectPartitionFileWriterFactory.builder()
+                    .parquetConfiguration(parquetConfiguration)
+                    .filePaths(TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties))
+                    .sketchesStore(new LocalFileSystemSketchesStore())
+                    .fileNameGenerator(fileNameGenerator)
+                    .build();
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");

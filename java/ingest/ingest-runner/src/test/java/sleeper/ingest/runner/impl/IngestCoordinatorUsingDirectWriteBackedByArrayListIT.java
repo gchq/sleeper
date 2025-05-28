@@ -31,6 +31,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
@@ -171,11 +172,12 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                         .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
                         .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
                         .buildAcceptingRecords(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration,
-                        "s3a://" + dataBucketName,
-                        sketchesStore,
-                        fileNames.iterator()::next))
+                DirectPartitionFileWriterFactory.builder()
+                        .parquetConfiguration(parquetConfiguration)
+                        .filePaths(TableFilePaths.fromPrefix("s3a://" + dataBucketName))
+                        .sketchesStore(sketchesStore)
+                        .fileNameGenerator(fileNames.iterator()::next)
+                        .build())
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {
