@@ -38,13 +38,15 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     private final Supplier<String> fileNameGenerator;
     private final SketchesStore sketchesStore;
 
-    private DirectPartitionFileWriterFactory(
-            ParquetConfiguration parquetConfiguration, TableFilePaths filePaths,
-            Supplier<String> fileNameGenerator, SketchesStore sketchesStore) {
-        this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
-        this.filePaths = Objects.requireNonNull(filePaths, "filePaths must not be null");
-        this.fileNameGenerator = Objects.requireNonNull(fileNameGenerator, "fileNameGenerator must not be null");
-        this.sketchesStore = Objects.requireNonNull(sketchesStore, "sketchesStore must not be null");
+    private DirectPartitionFileWriterFactory(Builder builder) {
+        this.parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
+        this.filePaths = Objects.requireNonNull(builder.filePaths, "filePaths must not be null");
+        this.fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
+        this.sketchesStore = Objects.requireNonNull(builder.sketchesStore, "sketchesStore must not be null");
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix, SketchesStore sketchesStore) {
@@ -54,7 +56,12 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     public static DirectPartitionFileWriterFactory from(
             ParquetConfiguration configuration, String filePathPrefix, SketchesStore sketchesStore,
             Supplier<String> fileNameGenerator) {
-        return new DirectPartitionFileWriterFactory(configuration, TableFilePaths.fromPrefix(filePathPrefix), fileNameGenerator, sketchesStore);
+        return builder()
+                .parquetConfiguration(configuration)
+                .filePaths(TableFilePaths.fromPrefix(filePathPrefix))
+                .fileNameGenerator(fileNameGenerator)
+                .sketchesStore(sketchesStore)
+                .build();
     }
 
     public static DirectPartitionFileWriterFactory from(
@@ -91,4 +98,40 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
             throw new RuntimeException(e);
         }
     }
+
+    public static final class Builder {
+        private ParquetConfiguration parquetConfiguration;
+        private TableFilePaths filePaths;
+        private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
+        private SketchesStore sketchesStore;
+
+        private Builder() {
+        }
+
+        public Builder parquetConfiguration(ParquetConfiguration parquetConfiguration) {
+            this.parquetConfiguration = parquetConfiguration;
+            return this;
+        }
+
+        public Builder filePaths(TableFilePaths filePaths) {
+            this.filePaths = filePaths;
+            return this;
+        }
+
+        public Builder sketchesStore(SketchesStore sketchesStore) {
+            this.sketchesStore = sketchesStore;
+            return this;
+        }
+
+        public Builder fileNameGenerator(Supplier<String> fileNameGenerator) {
+            this.fileNameGenerator = fileNameGenerator;
+            return this;
+        }
+
+        public DirectPartitionFileWriterFactory build() {
+            return new DirectPartitionFileWriterFactory(this);
+        }
+
+    }
+
 }
