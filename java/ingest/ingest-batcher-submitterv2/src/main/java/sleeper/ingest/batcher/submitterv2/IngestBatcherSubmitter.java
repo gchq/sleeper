@@ -18,7 +18,7 @@ package sleeper.ingest.batcher.submitterv2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -62,6 +62,9 @@ public class IngestBatcherSubmitter {
         } catch (TableNotFoundException e) {
             LOGGER.info("Table not found, sending request: {} to dead letter queue", request);
             deadLetterQueue.submit(request);
+            return;
+        } catch (Exception e) {
+            LOGGER.info(e.getMessage(), e);
             return;
         }
         files.forEach(store::addFile);
@@ -114,12 +117,12 @@ public class IngestBatcherSubmitter {
     }
 
     private Long getFileSizeBites(String bucket, String key) {
-        return s3Client.getObject(
-                GetObjectRequest.builder()
+        return s3Client.headObject(
+                HeadObjectRequest.builder()
                         .bucket(bucket)
                         .key(key)
                         .build())
-                .response().contentLength();
+                .contentLength();
     }
 
     private IngestBatcherTrackedFile buildTrackedFile(String filename, Long fileSizeBytes, String tableID, Instant receivedTime) {
