@@ -32,6 +32,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
@@ -61,6 +63,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
+    protected final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
     private final String ingestQueueName = instanceId + "-ingestqueue";
     private final String configBucketName = instanceProperties.get(CONFIG_BUCKET);
     private final String ingestDataBucketName = instanceId + "-ingestdata";

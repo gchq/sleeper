@@ -57,7 +57,7 @@ public class IngestRecordsTestBase {
     protected String dataFolderName;
     protected InstanceProperties instanceProperties;
     protected TableProperties tableProperties;
-    protected SketchesStore sketchesStore;
+    protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeEach
     public void setUpBase() throws Exception {
@@ -65,7 +65,6 @@ public class IngestRecordsTestBase {
         dataFolderName = createTempDirectory(tempDir, null).toString();
         instanceProperties = defaultInstanceProperties(dataFolderName);
         tableProperties = defaultTableProperties(schema, instanceProperties);
-        sketchesStore = new LocalFileSystemSketchesStore();
     }
 
     protected void setSchema(Schema schema) {
