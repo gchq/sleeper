@@ -34,4 +34,4 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar"sleeper.clients.deploy.PauseSystem "${INSTANCE_ID}"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.PauseSystem "${INSTANCE_ID}"
