@@ -25,7 +25,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -37,7 +36,6 @@ import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -129,8 +127,7 @@ public class IngestFactory {
         if (fileWriterType.equals("direct")) {
             return DirectPartitionFileWriterFactory.builder()
                     .parquetConfiguration(parquetConfiguration)
-                    .filePaths(TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties))
-                    .sketchesStore(new LocalFileSystemSketchesStore())
+                    .filePathsAndSketchesStoreFromPropertiesAndClientOrDefault(instanceProperties, tableProperties, s3AsyncClient)
                     .fileNameGenerator(fileNameGenerator)
                     .build();
         } else if (fileWriterType.equals("async")) {
