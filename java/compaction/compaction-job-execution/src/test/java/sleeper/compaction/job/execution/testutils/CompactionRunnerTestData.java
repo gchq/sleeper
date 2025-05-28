@@ -16,7 +16,6 @@
 package sleeper.compaction.job.execution.testutils;
 
 import com.facebook.collections.ByteArray;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
@@ -28,8 +27,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,7 +42,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class CompactionRunnerTestData {
 
@@ -162,8 +160,7 @@ public class CompactionRunnerTestData {
                 sketches.update(record);
             }
         }
-        Path sketchesPath = sketchesPathForDataFile(filename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
+        new LocalFileSystemSketchesStore().saveFileSketches(filename, schema, sketches);
         FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records.size());
         update(stateStore).addFile(fileReference);
         return fileReference;

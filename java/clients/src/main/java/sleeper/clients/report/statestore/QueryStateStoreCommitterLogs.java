@@ -15,17 +15,16 @@
  */
 package sleeper.clients.report.statestore;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetQueryResultsResponse;
 import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
@@ -107,8 +106,8 @@ public class QueryStateStoreCommitterLogs {
         Input input = gson.fromJson(Files.readString(inputFile), Input.class);
         LOGGER.info("{}", input);
 
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        try (CloudWatchLogsClient cw = CloudWatchLogsClient.create()) {
+        try (S3Client s3 = S3Client.create();
+                CloudWatchLogsClient cw = CloudWatchLogsClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3, input.instanceId);
             QueryStateStoreCommitterLogs queryLogs = new QueryStateStoreCommitterLogs(instanceProperties, cw);
             List<StateStoreCommitterLogEntry> entries = queryLogs.getLogsInPeriod(input.startTime, input.endTime);
@@ -117,8 +116,6 @@ public class QueryStateStoreCommitterLogs {
             LOGGER.info("Found {} runs", runs.size());
             LOGGER.info("Commits by table ID: {}", StateStoreCommitSummary.countNumCommitsByTableId(entries));
             LOGGER.info("Throughput by table ID: {}", StateStoreCommitterRequestsPerSecond.byTableIdFromRuns(runs));
-        } finally {
-            s3.shutdown();
         }
     }
 
