@@ -21,6 +21,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -151,6 +152,11 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder parquetConfiguration(ParquetConfiguration parquetConfiguration) {
             this.parquetConfiguration = parquetConfiguration;
+            return this;
+        }
+
+        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
+            this.s3TransferManager = S3TransferManagerWrapper.wrap(s3TransferManager);
             return this;
         }
 
