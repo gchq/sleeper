@@ -21,7 +21,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -49,9 +49,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final TableFilePaths filePaths;
     private final String localWorkingDirectory;
     private final Supplier<String> fileNameGenerator;
-    private final S3TransferManager s3TransferManager;
-    private final S3AsyncClient s3AsyncClient;
-    private final boolean closeS3AsyncClient;
+    private final S3TransferManagerWrapper s3TransferManager;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
@@ -59,13 +57,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         filePaths = Objects.requireNonNull(builder.filePaths, "filePaths must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
-        s3AsyncClient = builder.s3AsyncClient;
-        closeS3AsyncClient = builder.closeS3AsyncClient;
-        if (s3AsyncClient != null) {
-            s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
-        } else {
-            s3TransferManager = S3TransferManager.create();
-        }
+        s3TransferManager = Optional.ofNullable(builder.s3TransferManager).orElseGet(S3TransferManagerWrapper::create);
     }
 
     public static Builder builder() {
@@ -133,7 +125,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     partition,
                     parquetConfiguration,
                     s3BucketName, filePaths,
-                    s3TransferManager,
+                    s3TransferManager.get(),
                     localWorkingDirectory,
                     fileNameGenerator.get());
         } catch (IOException e) {
@@ -143,19 +135,15 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     @Override
     public void close() {
-        if (s3AsyncClient != null && closeS3AsyncClient) {
-            s3AsyncClient.close();
-        }
         s3TransferManager.close();
     }
 
     public static final class Builder {
         private ParquetConfiguration parquetConfiguration;
-        private S3AsyncClient s3AsyncClient;
+        private S3TransferManagerWrapper s3TransferManager;
         private String s3BucketName;
         private TableFilePaths filePaths;
         private String localWorkingDirectory;
-        private boolean closeS3AsyncClient;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
 
         private Builder() {
@@ -167,18 +155,13 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         }
 
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
-            this.s3AsyncClient = s3AsyncClient;
+            this.s3TransferManager = S3TransferManagerWrapper.fromClient(s3AsyncClient);
             return this;
         }
 
         public Builder s3AsyncClientOrDefaultFromProperties(
                 S3AsyncClient s3AsyncClient, InstanceProperties properties) {
-            if (s3AsyncClient == null) {
-                this.s3AsyncClient = s3AsyncClientFromProperties(properties);
-                closeS3AsyncClient = true;
-            } else {
-                this.s3AsyncClient = s3AsyncClient;
-            }
+            this.s3TransferManager = S3TransferManagerWrapper.s3AsyncClientOrDefaultFromProperties(s3AsyncClient, properties);
             return this;
         }
 
