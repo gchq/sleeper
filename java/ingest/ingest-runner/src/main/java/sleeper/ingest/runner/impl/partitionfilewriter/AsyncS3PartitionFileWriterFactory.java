@@ -23,6 +23,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
+import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
         s3TransferManager = Optional.ofNullable(builder.s3TransferManager).orElseGet(S3TransferManagerWrapper::create);
-        sketchesStore = Objects.requireNonNull(builder.sketchesStore, "sketchesStore must not be null");
+        sketchesStore = S3SketchesStore.createWriteOnly(s3TransferManager.get());
     }
 
     public static Builder builder() {
@@ -91,7 +92,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         private TableFilePaths filePaths;
         private String localWorkingDirectory;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
-        private SketchesStore sketchesStore;
 
         private Builder() {
         }
@@ -134,11 +134,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder fileNameGenerator(Supplier<String> fileNameGenerator) {
             this.fileNameGenerator = fileNameGenerator;
-            return this;
-        }
-
-        public Builder sketchesStore(SketchesStore sketchesStore) {
-            this.sketchesStore = sketchesStore;
             return this;
         }
 
