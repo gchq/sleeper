@@ -68,8 +68,8 @@ public class TableSelectHelper {
 
     private Chosen<ConsoleChoice> chooseTable(String message) {
         out.clearScreen(message);
-        //tableNamesReport.print();
-        out.println("Which TABLE do you want to select?\n");
+        tableNamesReport.print(false);
+        out.println("\nWhich TABLE do you want to select?\n");
         return chooseOne.chooseWithMessageFrom(
                 "Please enter the TABLE NAME now or use the following options:",
                 RETURN_TO_MAIN_MENU);

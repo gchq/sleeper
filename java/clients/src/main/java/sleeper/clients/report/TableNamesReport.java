@@ -39,10 +39,14 @@ public class TableNamesReport {
     }
 
     public void print() {
-        print(tableIndex.streamAllTables().collect(Collectors.toList()));
+        print(tableIndex.streamAllTables().collect(Collectors.toList()), true);
     }
 
-    private void print(List<TableStatus> allTables) {
+    public void print(boolean confirmReturn) {
+        print(tableIndex.streamAllTables().collect(Collectors.toList()), confirmReturn);
+    }
+
+    private void print(List<TableStatus> allTables, boolean confirmReturn) {
         out.println("\n\nTable Names\n----------------------------------");
         allTables.stream()
                 .filter(TableStatus::isOnline)
@@ -53,6 +57,8 @@ public class TableNamesReport {
                 .filter(not(TableStatus::isOnline))
                 .map(TableStatus::getTableName)
                 .forEach(tableName -> out.println(tableName + " (offline)"));
-        confirmReturnToMainScreen(out, in);
+        if (confirmReturn) {
+            confirmReturnToMainScreen(out, in);
+        }
     }
 }
