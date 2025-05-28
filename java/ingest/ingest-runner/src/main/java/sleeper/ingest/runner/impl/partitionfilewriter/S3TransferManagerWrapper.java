@@ -62,6 +62,10 @@ public class S3TransferManagerWrapper implements AutoCloseable {
         return new S3TransferManagerWrapper(S3TransferManager.builder().s3Client(s3AsyncClient).build(), null);
     }
 
+    public static S3TransferManagerWrapper wrap(S3TransferManager s3TransferManager) {
+        return new S3TransferManagerWrapper(s3TransferManager, null);
+    }
+
     public static S3TransferManagerWrapper s3AsyncClientOrDefaultFromProperties(
             S3AsyncClient s3AsyncClient, InstanceProperties properties) {
         if (s3AsyncClient == null) {
