@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.properties.validation;
+package sleeper.core.properties.model;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.EmrInstanceArchitecture;
-import sleeper.core.properties.model.EmrInstanceTypeConfig;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
