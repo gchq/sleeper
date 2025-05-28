@@ -19,6 +19,7 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.util.console.UserExitedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +72,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
     }
 
     private String runTableSelectHelperGetOutput() {
-        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store)
+        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store, new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex))
                 .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> out.consoleOut().println("\n" +
                         "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();

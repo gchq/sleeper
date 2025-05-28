@@ -143,7 +143,7 @@ public class AdminClient {
     }
 
     public InstanceConfigurationScreen instanceConfigurationScreen() {
-        return new InstanceConfigurationScreen(out, in, store, editor);
+        return new InstanceConfigurationScreen(out, in, store, editor, tableNamesReport());
     }
 
     public TableNamesReport tableNamesReport() {
@@ -151,19 +151,19 @@ public class AdminClient {
     }
 
     public PartitionsStatusReportScreen partitionsStatusReportScreen() {
-        return new PartitionsStatusReportScreen(out, in, store);
+        return new PartitionsStatusReportScreen(out, in, store, tableNamesReport());
     }
 
     public FilesStatusReportScreen filesStatusReportScreen() {
-        return new FilesStatusReportScreen(out, in, store);
+        return new FilesStatusReportScreen(out, in, store, tableNamesReport());
     }
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {
-        return new CompactionStatusReportScreen(out, in, store, trackers);
+        return new CompactionStatusReportScreen(out, in, store, trackers, tableNamesReport());
     }
 
     public IngestStatusReportScreen ingestStatusReportScreen() {
-        return new IngestStatusReportScreen(out, in, store, trackers, queueClient, getStepCount);
+        return new IngestStatusReportScreen(out, in, store, trackers, queueClient, getStepCount, tableNamesReport());
     }
 
     public IngestBatcherReportScreen ingestBatcherReportScreen() {

@@ -17,6 +17,7 @@
 package sleeper.clients.admin;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
@@ -37,12 +38,14 @@ public class TableSelectHelper {
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
     private final AdminClientPropertiesStore store;
+    private final TableNamesReport tableNamesReport;
 
-    public TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
+    public TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, TableNamesReport tableNamesReport) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
+        this.tableNamesReport = tableNamesReport;
     }
 
     public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
@@ -65,6 +68,7 @@ public class TableSelectHelper {
 
     private Chosen<ConsoleChoice> chooseTable(String message) {
         out.clearScreen(message);
+        //tableNamesReport.print();
         out.println("Which TABLE do you want to select?\n");
         return chooseOne.chooseWithMessageFrom(
                 "Please enter the TABLE NAME now or use the following options:",

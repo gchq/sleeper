@@ -21,6 +21,7 @@ import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.CompactionJobStatusReport;
 import sleeper.clients.report.CompactionTaskStatusReport;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
@@ -51,13 +52,13 @@ public class CompactionStatusReportScreen {
 
     public CompactionStatusReportScreen(
             ConsoleOutput out, ConsoleInput in,
-            AdminClientPropertiesStore store, AdminClientTrackerFactory trackers) {
+            AdminClientPropertiesStore store, AdminClientTrackerFactory trackers, TableNamesReport tableNamesReport) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
         this.trackers = trackers;
-        this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store, tableNamesReport);
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
