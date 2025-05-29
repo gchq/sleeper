@@ -39,9 +39,11 @@ import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -84,16 +86,17 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
     private final TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile();
     private final Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
     private StateStore stateStore;
+    private final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     private void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
     }
 
     @BeforeEach
     public void before() {
         createBucket(dataBucketName);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
     }
 
     @Nested
@@ -131,7 +134,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -164,7 +167,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(lFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -206,7 +209,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llFile, lrFile, rlFile, rrFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -254,7 +257,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
     }
@@ -295,7 +298,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -329,7 +332,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(lReference);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -369,7 +372,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llReference, lrReference, rlReference, rrReference);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -413,7 +416,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
     }
