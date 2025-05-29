@@ -102,12 +102,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>sketchesv2</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
