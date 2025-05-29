@@ -61,11 +61,7 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
-                "Table Names\n" +
-                "----------------------------------\n" +
-                "test-table-1\n" +
-                "test-table-2\n" +
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + generateExpectedTableNamesOutput("test-table-1", "test-table-2") +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock);
@@ -91,13 +87,8 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
-                "Table Names\n" +
-                "----------------------------------\n" +
-                "test-table-1\n" +
-                "test-table-2\n" +
-                "test-table-3 (offline)\n" +
-                "test-table-4 (offline)\n" +
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
+                generateExpectedTableNamesOutput("test-table-1", "test-table-2", "test-table-3 (offline)", "test-table-4 (offline)") +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock);

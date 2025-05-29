@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
+import static sleeper.clients.admin.TableNamesReportTest.generateExpectedTableNamesOutput;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
@@ -545,7 +546,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .exitGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    generateExpectedTableNamesOutput(TABLE_NAME_VALUE) + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
@@ -614,7 +616,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .exitGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    generateExpectedTableNamesOutput(TABLE_NAME_VALUE) + TABLE_SELECT_SCREEN)
                     .contains("Found changes to properties:\n" +
                             "\n" +
                             "sleeper.table.rowgroup.size\n" +
@@ -708,7 +711,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + "\n" +
+                    generateExpectedTableNamesOutput(TABLE_NAME_VALUE) + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);

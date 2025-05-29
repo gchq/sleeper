@@ -37,6 +37,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
+import static sleeper.clients.admin.TableNamesReportTest.generateExpectedTableNamesOutput;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.FILES_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
@@ -45,6 +46,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -55,6 +57,7 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+    private final String tableName = tableProperties.get(TABLE_NAME);
 
     @BeforeEach
     void setUp() {
@@ -77,7 +80,8 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput(tableName)
+                + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("No value entered, defaulting to 1000")
                 .contains("" +
@@ -99,7 +103,8 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput(tableName)
+                + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("No value entered, defaulting to 1000")
                 .contains("" +
@@ -125,7 +130,8 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput(tableName)
+                + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .doesNotContain("defaulting to 1000")
                 .contains("" +
@@ -152,8 +158,8 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE +
-                TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput(tableName)
+                + TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock, times(3)).promptLine(any());
         order.verifyNoMoreInteractions();
