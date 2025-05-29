@@ -15,12 +15,12 @@
  */
 package sleeper.splitter.lambda;
 
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -81,8 +81,8 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         String queueName = UUID.randomUUID().toString();
-        CreateQueueResult queue = sqsClient.createQueue(queueName);
-        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, queue.getQueueUrl());
+        CreateQueueResponse queue = sqsClient.createQueue(queueName);
+        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, queue.queueUrl());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).getBody());
+                .fromJson(messages.get(0).body());
 
         assertThat(job.getFileNames()).hasSize(10);
         assertThat(job.getTableId()).isEqualTo(tableId);
@@ -136,7 +136,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).getBody());
+                .fromJson(messages.get(0).body());
 
         assertThat(job.getFileNames()).hasSize(5);
         assertThat(job.getTableId()).isEqualTo(tableId);
@@ -158,7 +158,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).getBody());
+                .fromJson(messages.get(0).body());
 
         assertThat(job.getFileNames()).hasSize(5);
         assertThat(job.getTableId()).isEqualTo(tableId);
