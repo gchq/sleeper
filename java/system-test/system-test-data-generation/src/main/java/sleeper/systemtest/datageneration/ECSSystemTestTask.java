@@ -52,12 +52,12 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QU
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
     private final SystemTestPropertyValues properties;
-    private final SqsClient sqsClientV2;
+    private final SqsClient sqsClient;
     private final Consumer<SystemTestDataGenerationJob> jobRunner;
 
-    public ECSSystemTestTask(SystemTestPropertyValues properties, SqsClient sqsClientV2, Consumer<SystemTestDataGenerationJob> jobRunner) {
+    public ECSSystemTestTask(SystemTestPropertyValues properties, SqsClient sqsClient, Consumer<SystemTestDataGenerationJob> jobRunner) {
         this.properties = properties;
-        this.sqsClientV2 = sqsClientV2;
+        this.sqsClient = sqsClient;
         this.jobRunner = jobRunner;
     }
 
@@ -65,7 +65,7 @@ public class ECSSystemTestTask {
         AWSSecurityTokenService stsClientV1 = AWSSecurityTokenServiceClientBuilder.defaultClient();
         try (StsClient stsClientV2 = StsClient.create(); SqsClient sqsClientV2 = SqsClient.create()) {
             CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2, sqsClientV2);
-            if (args.length > 4 || args.length < 3) {
+            if (args.length > 3 || args.length < 2) {
                 throw new RuntimeException("Wrong number of arguments detected. Usage: ECSSystemTestTask <standalone-or-combined> <config bucket> <optional role ARN to load combined config as>");
             }
             String deployType = args[0];
@@ -92,7 +92,7 @@ public class ECSSystemTestTask {
                 .maxNumberOfMessages(1)
                 .waitTimeSeconds(20)
                 .build();
-        ReceiveMessageResponse receiveMessageResult = sqsClientV2.receiveMessage(receiveMessageRequest);
+        ReceiveMessageResponse receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
         List<Message> messages = receiveMessageResult.messages();
         if (messages.isEmpty()) {
             LOGGER.info("Finishing as no jobs have been received");
@@ -102,7 +102,7 @@ public class ECSSystemTestTask {
         LOGGER.info("Received message {}", message.body());
         SystemTestDataGenerationJob job = new SystemTestDataGenerationJobSerDe().fromJson(message.body());
 
-        MessageReference messageReference = new MessageReference(sqsClientV2, queueUrl,
+        MessageReference messageReference = new MessageReference(sqsClient, queueUrl,
                 "Data generation job " + job.getJobId(), message.receiptHandle());
         // Create background thread to keep messages alive
         PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
