@@ -192,7 +192,7 @@ public class BulkExportTaskResources {
                         "ecs:DescribeTasks",
                         "ecs:ListContainerInstances"))
                 .resources(List.of(
-                        String.format("arn:aws:ecs:%s:%s:task-definition/%s", instanceProperties.get(REGION),
+                        String.format("arn:aws:ecs:%s:%s:task-definition/%s:*", instanceProperties.get(REGION),
                                 instanceProperties.get(ACCOUNT), taskDefinitionName),
                         String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
                                 instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
