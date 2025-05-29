@@ -188,7 +188,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             // Given
             uploadFileToS3("test-directory/another-test-directory/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"" + testBucket + "/another-test-directory\"]," +
+                    "\"files\":[\"" + testBucket + "/test-directory/another-test-directory\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
