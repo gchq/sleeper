@@ -40,7 +40,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final TableFilePaths filePaths;
     private final String localWorkingDirectory;
     private final Supplier<String> fileNameGenerator;
-    private final S3TransferManagerWrapper s3TransferManager;
+    private final IngestS3TransferManager s3TransferManager;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
@@ -48,7 +48,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         filePaths = Objects.requireNonNull(builder.filePaths, "filePaths must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
-        s3TransferManager = Optional.ofNullable(builder.s3TransferManager).orElseGet(S3TransferManagerWrapper::create);
+        s3TransferManager = Optional.ofNullable(builder.s3TransferManager).orElseGet(IngestS3TransferManager::create);
     }
 
     public static Builder builder() {
@@ -82,7 +82,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     public static final class Builder {
         private ParquetConfiguration parquetConfiguration;
-        private S3TransferManagerWrapper s3TransferManager;
+        private IngestS3TransferManager s3TransferManager;
         private String s3BucketName;
         private TableFilePaths filePaths;
         private String localWorkingDirectory;
@@ -97,18 +97,18 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         }
 
         public Builder s3TransferManager(S3TransferManager s3TransferManager) {
-            this.s3TransferManager = S3TransferManagerWrapper.wrap(s3TransferManager);
+            this.s3TransferManager = IngestS3TransferManager.wrap(s3TransferManager);
             return this;
         }
 
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
-            this.s3TransferManager = S3TransferManagerWrapper.fromClient(s3AsyncClient);
+            this.s3TransferManager = IngestS3TransferManager.fromClient(s3AsyncClient);
             return this;
         }
 
         public Builder s3AsyncClientOrDefaultFromProperties(
                 S3AsyncClient s3AsyncClient, InstanceProperties properties) {
-            this.s3TransferManager = S3TransferManagerWrapper.s3AsyncClientOrDefaultFromProperties(s3AsyncClient, properties);
+            this.s3TransferManager = IngestS3TransferManager.s3AsyncClientOrDefaultFromProperties(s3AsyncClient, properties);
             return this;
         }
 

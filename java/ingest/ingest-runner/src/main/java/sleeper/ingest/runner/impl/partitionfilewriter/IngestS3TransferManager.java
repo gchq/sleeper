@@ -32,12 +32,12 @@ import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterPro
 import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
 import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 
-public class S3TransferManagerWrapper implements AutoCloseable {
+public class IngestS3TransferManager implements AutoCloseable {
 
     private final S3TransferManager s3TransferManager;
     private final S3AsyncClient closeS3AsyncClient;
 
-    private S3TransferManagerWrapper(S3TransferManager s3TransferManager, S3AsyncClient s3AsyncClient) {
+    private IngestS3TransferManager(S3TransferManager s3TransferManager, S3AsyncClient s3AsyncClient) {
         this.s3TransferManager = s3TransferManager;
         this.closeS3AsyncClient = s3AsyncClient;
     }
@@ -54,19 +54,19 @@ public class S3TransferManagerWrapper implements AutoCloseable {
         s3TransferManager.close();
     }
 
-    public static S3TransferManagerWrapper create() {
-        return new S3TransferManagerWrapper(S3TransferManager.create(), null);
+    public static IngestS3TransferManager create() {
+        return new IngestS3TransferManager(S3TransferManager.create(), null);
     }
 
-    public static S3TransferManagerWrapper fromClient(S3AsyncClient s3AsyncClient) {
-        return new S3TransferManagerWrapper(S3TransferManager.builder().s3Client(s3AsyncClient).build(), null);
+    public static IngestS3TransferManager fromClient(S3AsyncClient s3AsyncClient) {
+        return new IngestS3TransferManager(S3TransferManager.builder().s3Client(s3AsyncClient).build(), null);
     }
 
-    public static S3TransferManagerWrapper wrap(S3TransferManager s3TransferManager) {
-        return new S3TransferManagerWrapper(s3TransferManager, null);
+    public static IngestS3TransferManager wrap(S3TransferManager s3TransferManager) {
+        return new IngestS3TransferManager(s3TransferManager, null);
     }
 
-    public static S3TransferManagerWrapper s3AsyncClientOrDefaultFromProperties(
+    public static IngestS3TransferManager s3AsyncClientOrDefaultFromProperties(
             S3AsyncClient s3AsyncClient, InstanceProperties properties) {
         if (s3AsyncClient == null) {
             return fromProperties(properties);
@@ -75,9 +75,9 @@ public class S3TransferManagerWrapper implements AutoCloseable {
         }
     }
 
-    public static S3TransferManagerWrapper fromProperties(InstanceProperties properties) {
+    public static IngestS3TransferManager fromProperties(InstanceProperties properties) {
         S3AsyncClient s3AsyncClient = s3AsyncClientFromProperties(properties);
-        return new S3TransferManagerWrapper(S3TransferManager.builder().s3Client(s3AsyncClient).build(), s3AsyncClient);
+        return new IngestS3TransferManager(S3TransferManager.builder().s3Client(s3AsyncClient).build(), s3AsyncClient);
     }
 
     public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {

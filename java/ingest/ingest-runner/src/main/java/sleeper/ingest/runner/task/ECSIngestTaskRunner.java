@@ -41,7 +41,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.core.IngestTask;
-import sleeper.ingest.runner.impl.partitionfilewriter.S3TransferManagerWrapper;
+import sleeper.ingest.runner.impl.partitionfilewriter.IngestS3TransferManager;
 import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -77,8 +77,7 @@ public class ECSIngestTaskRunner {
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 CloudWatchClient cloudWatchClient = buildAwsV2Client(CloudWatchClient.builder());
                 S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
+                S3TransferManager stateStoreS3TransferManager = S3TransferManager.create()) {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
@@ -86,11 +85,12 @@ public class ECSIngestTaskRunner {
             String localDir = "/mnt/scratch";
             String taskId = UUID.randomUUID().toString();
 
-            IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
-                    taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
-                    S3TransferManagerWrapper.s3AsyncClientFromProperties(instanceProperties),
-                    ingestHadoopConfiguration(instanceProperties), s3TransferManager);
-            ingestTask.run();
+            try (S3AsyncClient s3AsyncClient = IngestS3TransferManager.s3AsyncClientFromProperties(instanceProperties)) {
+                IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
+                        taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, s3AsyncClient,
+                        ingestHadoopConfiguration(instanceProperties), stateStoreS3TransferManager);
+                ingestTask.run();
+            }
 
         } finally {
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));

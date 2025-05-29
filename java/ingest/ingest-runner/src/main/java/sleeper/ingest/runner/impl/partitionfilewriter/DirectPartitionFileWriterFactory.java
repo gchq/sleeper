@@ -37,7 +37,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     private final TableFilePaths filePaths;
     private final Supplier<String> fileNameGenerator;
     private final SketchesStore sketchesStore;
-    private final S3TransferManagerWrapper s3TransferManager;
+    private final IngestS3TransferManager s3TransferManager;
 
     private DirectPartitionFileWriterFactory(Builder builder) {
         this.parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
@@ -77,7 +77,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
         private TableFilePaths filePaths;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
         private SketchesStore sketchesStore;
-        private S3TransferManagerWrapper s3TransferManager;
+        private IngestS3TransferManager s3TransferManager;
 
         private Builder() {
         }
@@ -91,7 +91,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
                 InstanceProperties instanceProperties, TableProperties tableProperties, S3AsyncClient s3AsyncClient) {
             filePaths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
             if (filePaths.getFilePathPrefix().startsWith("s3a://")) {
-                s3TransferManager = S3TransferManagerWrapper.s3AsyncClientOrDefaultFromProperties(s3AsyncClient, instanceProperties);
+                s3TransferManager = IngestS3TransferManager.s3AsyncClientOrDefaultFromProperties(s3AsyncClient, instanceProperties);
                 sketchesStore = S3SketchesStore.createWriteOnly(s3TransferManager.get());
             } else {
                 sketchesStore = new LocalFileSystemSketchesStore();
