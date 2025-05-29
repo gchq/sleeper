@@ -41,7 +41,7 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
     public static String generateExpectedTableNamesOutput(List<String> tableNames) {
         return "\n\n" +
                 "Table Names\n" +
-                "----------------------------------\n" + tableNames.stream().collect(Collectors.joining("\n")) + "\n";
+                "----------------------------------\n" + tableNames.stream().map(s -> s + "\n").collect(Collectors.joining(""));
     }
 
     public static String generateExpectedTableNamesOutput(String... tableNames) {
