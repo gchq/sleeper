@@ -63,11 +63,9 @@ public class IngestBatcherSubmitter {
             LOGGER.info("Table not found, sending request: {} to dead letter queue", request);
             deadLetterQueue.submit(request);
             return;
-        } catch (Exception e) {
-            LOGGER.info(e.getMessage(), e);
-            return;
         }
         files.forEach(store::addFile);
+        LOGGER.info("Added {} files to the ingest batcher store", files.size());
     }
 
     private List<IngestBatcherTrackedFile> toTrackedFiles(IngestBatcherSubmitRequest request, Instant receivedTime) {
@@ -96,7 +94,7 @@ public class IngestBatcherSubmitter {
     }
 
     private List<IngestBatcherTrackedFile> getFilesByDirectory(String bucket, String directory, String tableID, Instant receivedTime) {
-        List<IngestBatcherTrackedFile> list = new ArrayList<IngestBatcherTrackedFile>();
+        List<IngestBatcherTrackedFile> list = new ArrayList<>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(
                 ListObjectsV2Request.builder()
                         .bucket(bucket)
@@ -107,6 +105,10 @@ public class IngestBatcherSubmitter {
             page.contents().forEach((S3Object object) -> {
                 list.add(getIndividualFile(bucket, object.key(), tableID, receivedTime));
             });
+        }
+
+        if (list.isEmpty()) {
+            LOGGER.warn("Found no files at path {}/{}", bucket, directory);
         }
 
         return list;
