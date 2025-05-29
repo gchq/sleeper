@@ -202,6 +202,24 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldStoreFilesInDeepDirectoryEvenWhenCalledByFileName() {
+            // Given
+            uploadFileToS3("test-directory/another-test-directory/test-file-1.parquet");
+            String json = "{" +
+                    "\"files\":[\"" + testBucket + "/test-directory/another-test-directory/test-file-1.parquet\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest(testBucket + "/test-directory/another-test-directory/test-file-1.parquet"));
+        }
+
+        @Test
         void shouldStoreMultipleFilesInDirectory() {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
