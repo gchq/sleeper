@@ -30,14 +30,19 @@ TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+
 if [[ -z $3 ]]; then
-  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar \
+  java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
     --add-opens java.base/java.nio=ALL-UNNAMED \
     sleeper.clients.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
 else
   VERBOSE=$3
   echo "Optional Parameter for <Verbose> recognised and set to" "${VERBOSE}"
-  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar \
+  java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
     --add-opens java.base/java.nio=ALL-UNNAMED \
     sleeper.clients.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}" "${VERBOSE}"
 fi
