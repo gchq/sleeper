@@ -60,6 +60,9 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LA
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
@@ -92,6 +95,16 @@ public class BulkExportStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export_planner");
 
+        List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
+        Queue bulkExportQ = bulkExportQueues.get(0);
+        Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
+        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
+
+        List<Queue> leafPartitionQueues = createQueueAndDeadLetterQueue("BulkExportLeafPartition", instanceProperties);
+        Queue leafPartitionQueuesQ = leafPartitionQueues.get(0);
+        Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
+        setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
+
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
@@ -109,20 +122,18 @@ public class BulkExportStack extends NestedStack {
 
         List<String> s3Buckets = List.of(String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-export-results"),
-                instanceProperties.get(CONFIG_BUCKET));
+                instanceProperties.get(CONFIG_BUCKET),
+                instanceProperties.get(DATA_BUCKET));
 
         List<String> dynamoTables = List.of(
                 instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
                 instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
                 instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME),
-                instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME));
+                instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME),
+                instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME),
+                instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME));
 
         attachPolicy(bulkExportLambda, "BulkExportPlanner", instanceProperties, s3Buckets, dynamoTables);
-
-        List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
-        Queue bulkExportQ = bulkExportQueues.get(0);
-        Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
-        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -130,11 +141,6 @@ public class BulkExportStack extends NestedStack {
                 .build();
 
         bulkExportLambda.addEventSource(new SqsEventSource(bulkExportQ, eventSourceProps));
-
-        List<Queue> leafPartitionQueues = createQueueAndDeadLetterQueue("BulkExportLeafPartition", instanceProperties);
-        Queue leafPartitionQueuesQ = leafPartitionQueues.get(0);
-        Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
-        setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
 
         /*
          * Output the role arn of the lambda as a property so that clients that want the
@@ -250,7 +256,7 @@ public class BulkExportStack extends NestedStack {
                         "s3:PutObject",
                         "s3:GetObject",
                         "dynamodb:Query"))
-                .resources(Collections.singletonList("*"))
+                .resources(resources)
                 .build();
 
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);

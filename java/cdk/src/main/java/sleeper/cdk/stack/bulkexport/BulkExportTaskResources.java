@@ -78,8 +78,8 @@ public class BulkExportTaskResources {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
         this.jobsQueue = jobsQueue;
-        lambdaToCreateTasks(coreStacks, lambdaCode, instanceProperties);
         ecsClusterForBulkExportTasks(coreStacks, jarsBucket, lambdaCode, resultsBucket);
+        lambdaToCreateTasks(coreStacks, lambdaCode, instanceProperties);
     }
 
     private void lambdaToCreateTasks(
@@ -143,7 +143,7 @@ public class BulkExportTaskResources {
                 .build();
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
 
-        IRepository repository = Repository.fromRepositoryName(stack, "BE- ECR1",
+        IRepository repository = Repository.fromRepositoryName(stack, "BE-ECR1",
                 DockerDeployment.BULK_EXPORT.getEcrRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
@@ -179,12 +179,25 @@ public class BulkExportTaskResources {
         new CfnOutput(stack, BULK_EXPORT_CLUSTER_NAME, bulkExportClusterProps);
     }
 
-    private static PolicyStatement runTasksPolicyStatement() {
+    private PolicyStatement runTasksPolicyStatement() {
+        String taskDefinitionName = String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "BulkExportTaskOnFargate");
+
         return PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
-                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances"))
-                .resources(List.of("*")) // ToDo
+                .actions(List.of(
+                        "ecs:DescribeClusters",
+                        "ecs:RunTask",
+                        "iam:PassRole",
+                        "ecs:DescribeContainerInstances",
+                        "ecs:DescribeTasks",
+                        "ecs:ListContainerInstances"))
+                .resources(List.of(
+                        String.format("arn:aws:ecs:%s:%s:task-definition/%s", instanceProperties.get(REGION),
+                                instanceProperties.get(ACCOUNT), taskDefinitionName),
+                        String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
+                                instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
+                        String.format("arn:aws:iam::%s:role/*",
+                                instanceProperties.get(ACCOUNT))))
                 .build();
     }
 }
