@@ -22,6 +22,7 @@ on:
       - 'java/ingest/ingest-batcher-job-creator/**'
       - 'java/bulk-import/bulk-import-core/**'
       - 'java/bulk-import/bulk-import-starter/**'
+      - 'java/bulk-import/bulk-import-starterv2/**'
       - 'java/bulk-import/bulk-import-runner/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-task/**'
