@@ -17,7 +17,6 @@
 package sleeper.ingest.batcher.submitterv2;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,6 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -35,6 +33,7 @@ import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStoreCreator;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
@@ -50,7 +49,6 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-@Disabled
 public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
     private static final String TEST_TABLE_ID = "test-table-id";
@@ -59,16 +57,12 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
-    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-    private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoClientV2, instanceProperties, tablePropertiesProvider);
-    private final IngestBatcherSubmitDeadLetterQueue dlQueue = new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClientV2);
-    private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tableIndex, dlQueue, s3ClientV2);
 
     @BeforeEach
     void setup() {
         tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         createBucket(testBucket);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
         tableProperties.set(TABLE_ID, TEST_TABLE_ID);
         tableProperties.set(TABLE_NAME, "test-table");
@@ -76,7 +70,6 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
     @Nested
     @DisplayName("Store single file")
-
     class StoreSingleFile {
         @Test
         void shouldStoreFileIngestRequestFromJson() {
@@ -88,10 +81,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"));
             assertThat(receiveDeadLetters()).isEmpty();
@@ -107,10 +100,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"));
             assertThat(receiveDeadLetters()).isEmpty();
@@ -126,10 +119,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1"));
             assertThat(receiveDeadLetters()).isEmpty();
@@ -145,10 +138,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(IngestBatcherTrackedFile.builder()
                             .file(testBucket + "/test-file-1.parquet")
                             .fileSizeBytes(123)
@@ -171,10 +164,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/test-file-1.parquet"));
         }
@@ -189,10 +182,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/test-file-1.parquet"));
         }
@@ -207,10 +200,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/another-test-directory/test-file-1.parquet"));
         }
@@ -225,10 +218,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/another-test-directory/test-file-1.parquet"));
         }
@@ -244,10 +237,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/test-file-1.parquet"),
                             fileRequest(testBucket + "/test-directory/test-file-2.parquet"));
@@ -263,10 +256,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/nested/test-file-1.parquet"));
         }
@@ -282,10 +275,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/nested-1/test-file-1.parquet"),
                             fileRequest(testBucket + "/test-directory/nested-2/test-file-2.parquet"));
@@ -302,10 +295,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"),
                             fileRequest(testBucket + "/test-file-2.parquet"));
@@ -320,10 +313,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
             assertThat(receiveDeadLetters())
                     .isEmpty();
         }
@@ -346,10 +339,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"),
                             fileRequest(testBucket + "/test-file-2.parquet"));
@@ -368,10 +361,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(batcherStore().getAllFilesNewestFirst())
                     .isEmpty();
         }
     }
@@ -386,10 +379,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             String json = "{";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
             assertThat(receiveDeadLetters()).singleElement().isEqualTo(json);
         }
 
@@ -402,10 +395,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
             assertThat(receiveDeadLetters())
                     .singleElement()
                     .satisfies(deadLetter -> assertThatJson(deadLetter).isEqualTo(json));
@@ -420,10 +413,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
             assertThat(receiveDeadLetters())
                     .singleElement()
                     .satisfies(deadLetter -> assertThatJson(deadLetter).isEqualTo(json));
@@ -438,10 +431,10 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                     "}";
 
             // When
-            lambda.handleMessage(json, RECEIVED_TIME);
+            lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
             assertThat(receiveDeadLetters()).isEmpty();
         }
     }
@@ -469,4 +462,15 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                 .toList();
     }
 
+    private IngestBatcherSubmitterLambda lambda() {
+        return new IngestBatcherSubmitterLambda(
+                batcherStore(), instanceProperties, tableIndex,
+                new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClientV2),
+                s3ClientV2);
+    }
+
+    private IngestBatcherStore batcherStore() {
+        return new DynamoDBIngestBatcherStore(dynamoClientV2, instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties));
+    }
 }
