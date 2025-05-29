@@ -303,23 +303,6 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                             fileRequest(testBucket + "/test-file-1.parquet"),
                             fileRequest(testBucket + "/test-file-2.parquet"));
         }
-
-        @Test
-        void shouldStoreNoFilesButPassWhenDirectoryEmpty() {
-            // Given
-            String json = "{" +
-                    "\"files\":[\"" + testBucket + "/not-exists\"]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            lambda().handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
-            assertThat(receiveDeadLetters())
-                    .isEmpty();
-        }
     }
 
     @Nested
@@ -409,6 +392,24 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             // Given
             String json = "{" +
                     "\"files\":[\"" + testBucket + "/not-exists.parquet\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda().handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
+            assertThat(receiveDeadLetters())
+                    .singleElement()
+                    .satisfies(deadLetter -> assertThatJson(deadLetter).isEqualTo(json));
+        }
+
+        @Test
+        void shouldLogMessageIfDirectoryDoesNotExistAndSendToDeadLetterQueue() {
+            // Given
+            String json = "{" +
+                    "\"files\":[\"" + testBucket + "/not-exists\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 

@@ -55,12 +55,12 @@ public class IngestBatcherSubmitter {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
-        } catch (NoSuchKeyException e) {
-            LOGGER.info("File not found, sending request: {} to dead letter queue", request);
+        } catch (FileNotFoundException | NoSuchKeyException e) {
+            LOGGER.info("File not found, sending request to dead letter queue: {}", request, e);
             deadLetterQueue.submit(request);
             return;
         } catch (TableNotFoundException e) {
-            LOGGER.info("Table not found, sending request: {} to dead letter queue", request);
+            LOGGER.info("Table not found, sending request to dead letter queue: {}", request);
             deadLetterQueue.submit(request);
             return;
         }
@@ -79,26 +79,22 @@ public class IngestBatcherSubmitter {
             } else {
                 String bucket = filename.substring(0, filename.indexOf("/"));
                 String objectKey = filename.substring(filename.indexOf("/") + 1);
-                if (objectKey.contains(".")) {
-                    list.add(getIndividualFile(bucket, objectKey, tableID, receivedTime));
-                } else {
-                    list.addAll(getFilesByDirectory(bucket, objectKey, tableID, receivedTime));
-                }
+                list.addAll(getFilesByPath(bucket, objectKey, tableID, receivedTime));
             }
         }
         return list;
     }
 
     private List<IngestBatcherTrackedFile> getFilesByBucket(String bucket, String tableID, Instant receivedTime) {
-        return getFilesByDirectory(bucket, "", tableID, receivedTime);
+        return getFilesByPath(bucket, "", tableID, receivedTime);
     }
 
-    private List<IngestBatcherTrackedFile> getFilesByDirectory(String bucket, String directory, String tableID, Instant receivedTime) {
+    private List<IngestBatcherTrackedFile> getFilesByPath(String bucket, String path, String tableID, Instant receivedTime) {
         List<IngestBatcherTrackedFile> list = new ArrayList<>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(
                 ListObjectsV2Request.builder()
                         .bucket(bucket)
-                        .prefix(directory)
+                        .prefix(path)
                         .build());
 
         for (ListObjectsV2Response page : response) {
@@ -108,7 +104,7 @@ public class IngestBatcherSubmitter {
         }
 
         if (list.isEmpty()) {
-            LOGGER.warn("Found no files at path {}/{}", bucket, directory);
+            throw new FileNotFoundException(bucket, path);
         }
 
         return list;
