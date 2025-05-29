@@ -41,14 +41,14 @@ public interface PersistentEMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.instance.architecture")
             .description("(Persistent EMR mode only) Which architecture to be used for EC2 instance types " +
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .defaultValue("arm64")
             .validationPredicate(EmrInstanceArchitecture::isValid)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.x86.instance.types")
             .description("(Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the master " +
                     "node of the persistent EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES.getDefaultValue())
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -56,7 +56,7 @@ public interface PersistentEMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.executor.x86.instance.types")
             .description("(Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the executor " +
                     "nodes of the persistent EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getDefaultValue())
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -64,7 +64,7 @@ public interface PersistentEMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.arm.instance.types")
             .description("(Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the master " +
                     "node of the persistent EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES.getDefaultValue())
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -72,7 +72,7 @@ public interface PersistentEMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.executor.arm.instance.types")
             .description("(Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the executor " +
                     "nodes of the persistent EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES.getDefaultValue())
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
