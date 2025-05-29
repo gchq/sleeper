@@ -29,7 +29,8 @@ will consist of the following steps:
 All of these scripts will rely on a schema for your table, which should be created first.
 See [creating a schema](schema.md) for how to set up a schema for your table.
 
-We also have scripts to rename and delete a table, and to take it offline / online.
+We also have scripts to rename and delete a table, and to take it offline / online. You can also edit table properties
+with `adminClient.sh`.
 
 Here's an example of how you might use these together to create and add data to a table:
 
@@ -56,7 +57,7 @@ ID=my-instance-id
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
 ```
 
-We'll look at the table scripts below. See the [ingest documentation](ingest.md#ingest-batcher) for more information on
+We'll look at the table scripts below. See the [ingest batcher documentation](ingest-batcher.md) for more information on
 `sendToIngestBatcher.sh`.
 
 ### Pre-split partitions

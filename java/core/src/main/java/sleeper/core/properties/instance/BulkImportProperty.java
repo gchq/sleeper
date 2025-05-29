@@ -24,7 +24,8 @@ import java.util.List;
 import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 
 /**
- * Definitions of instance properties relating to bulk import.
+ * Definitions of instance properties relating to bulk import. Also see {@link EMRProperty},
+ * {@link EMRServerlessProperty}, {@link PersistentEMRProperty}, {@link EKSProperty}.
  */
 public interface BulkImportProperty {
     UserDefinedInstanceProperty BULK_IMPORT_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.class.name")
