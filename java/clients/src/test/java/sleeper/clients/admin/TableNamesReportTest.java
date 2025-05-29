@@ -22,6 +22,9 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.core.table.TableStatus;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +37,16 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 class TableNamesReportTest extends AdminClientMockStoreBase {
+
+    public static String generateExpectedTableNamesOutput(List<String> tableNames) {
+        return "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" + tableNames.stream().collect(Collectors.joining("\n")) + "\n";
+    }
+
+    public static String generateExpectedTableNamesOutput(String... tableNames) {
+        return generateExpectedTableNamesOutput(Arrays.asList(tableNames));
+    }
 
     @Test
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
