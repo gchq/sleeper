@@ -17,7 +17,6 @@ package sleeper.ingest.batcher.submitterv2;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -81,11 +80,11 @@ public class IngestBatcherSubmitter {
                 list.addAll(getFilesByBucket(filename, tableID, receivedTime));
             } else {
                 String bucket = filename.substring(0, filename.indexOf("/"));
-                String fileOrDirName = filename.substring(filename.indexOf("/") + 1);
-                if (fileOrDirName.contains(".")) {
-                    list.add(getIndividualFile(bucket, fileOrDirName, tableID, receivedTime));
+                String objectKey = filename.substring(filename.indexOf("/") + 1);
+                if (objectKey.contains(".")) {
+                    list.add(getIndividualFile(bucket, objectKey, tableID, receivedTime));
                 } else {
-                    list.addAll(getFilesByDirectory(bucket, fileOrDirName, tableID, receivedTime));
+                    list.addAll(getFilesByDirectory(bucket, objectKey, tableID, receivedTime));
                 }
             }
         }
@@ -110,9 +109,6 @@ public class IngestBatcherSubmitter {
             });
         }
 
-        if (list.isEmpty()) {
-            throwErrorForNoDirectoryFound(bucket, directory);
-        }
         return list;
     }
 
@@ -136,12 +132,5 @@ public class IngestBatcherSubmitter {
                 .tableId(tableID)
                 .receivedTime(receivedTime)
                 .build();
-    }
-
-    private void throwErrorForNoDirectoryFound(String bucket, String directory) {
-        throw NoSuchKeyException.builder().awsErrorDetails(AwsErrorDetails.builder()
-                .errorMessage(String.format("Could not find populated directory with bucket [%s] and directory [%s]",
-                        bucket, directory))
-                .build()).build();
     }
 }

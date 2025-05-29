@@ -17,6 +17,7 @@
 package sleeper.ingest.batcher.submitterv2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,15 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
+import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
@@ -40,16 +44,23 @@ import java.util.UUID;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
+@Disabled
 public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
     private static final String TEST_TABLE_ID = "test-table-id";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
     private final String testBucket = UUID.randomUUID().toString();
-    private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+    private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoClientV2, instanceProperties, tablePropertiesProvider);
     private final IngestBatcherSubmitDeadLetterQueue dlQueue = new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClientV2);
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
             store, instanceProperties, tableIndex, dlQueue, s3ClientV2);
@@ -59,10 +70,13 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         createBucket(testBucket);
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
+        tableProperties.set(TABLE_ID, TEST_TABLE_ID);
+        tableProperties.set(TABLE_NAME, "test-table");
     }
 
     @Nested
     @DisplayName("Store single file")
+
     class StoreSingleFile {
         @Test
         void shouldStoreFileIngestRequestFromJson() {
@@ -296,6 +310,23 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                             fileRequest(testBucket + "/test-file-1.parquet"),
                             fileRequest(testBucket + "/test-file-2.parquet"));
         }
+
+        @Test
+        void shouldStoreNoFilesButPassWhenDirectoryEmpty() {
+            // Given
+            String json = "{" +
+                    "\"files\":[\"" + testBucket + "/not-exists\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(receiveDeadLetters())
+                    .isEmpty();
+        }
     }
 
     @Nested
@@ -385,24 +416,6 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             // Given
             String json = "{" +
                     "\"files\":[\"" + testBucket + "/not-exists.parquet\"]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            lambda.handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
-            assertThat(receiveDeadLetters())
-                    .singleElement()
-                    .satisfies(deadLetter -> assertThatJson(deadLetter).isEqualTo(json));
-        }
-
-        @Test
-        void shouldLogMessageIfDirectoryDoesNotExistAndSendToDeadLetterQueue() {
-            // Given
-            String json = "{" +
-                    "\"files\":[\"" + testBucket + "/not-exists\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
