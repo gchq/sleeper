@@ -21,11 +21,11 @@ use datafusion::{
     error::{DataFusionError, Result},
     execution::FunctionRegistry,
     functions_aggregate::expr_fn::{count, max, min, sum},
-    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col, expr::AggregateFunction},
+    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
 };
 use map_aggregate::MapAggregator;
-use nonnull::NonNullable;
+use nonnull::non_nullable;
 use num_traits::NumAssign;
 use regex::Regex;
 use std::sync::Arc;
@@ -75,30 +75,7 @@ impl Aggregate {
     pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.1 {
             AggOp::Count => count(col(&self.0)),
-            AggOp::Sum => {
-                let expr = sum(col(&self.0));
-                let wrapped_expr = match expr {
-                    Expr::AggregateFunction(udf) => {
-                        let f = udf.func;
-                        let g = f.inner().to_owned();
-                        let nonnull = NonNullable::new(g);
-                        let p = AggregateUDF::new_from_impl(nonnull);
-                        let foo = AggregateFunction::new_udf(
-                            Arc::new(p),
-                            udf.params.args,
-                            udf.params.distinct,
-                            udf.params.filter,
-                            udf.params.order_by,
-                            udf.params.null_treatment,
-                        );
-                        Expr::AggregateFunction(foo)
-                    }
-                    _ => {
-                        unimplemented!();
-                    }
-                };
-                wrapped_expr
-            }
+            AggOp::Sum => non_nullable(sum(col(&self.0)))?,
             AggOp::Min => min(col(&self.0)),
             AggOp::Max => max(col(&self.0)),
             AggOp::MapSum(op) => {

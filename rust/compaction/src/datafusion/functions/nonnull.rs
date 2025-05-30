@@ -20,12 +20,13 @@ use arrow::{
     datatypes::{DataType, Field},
 };
 use datafusion::{
-    common::exec_err,
+    common::{exec_err, plan_err},
     error::Result,
+    functions_aggregate::sum::Sum,
     logical_expr::{
         Accumulator, AggregateUDF, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator,
         ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
-        expr::AggregateFunction,
+        expr::{AggregateFunction, AggregateFunctionParams},
         function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
         simplify::SimplifyInfo,
         utils::AggregateOrderSensitivity,
@@ -34,6 +35,65 @@ use datafusion::{
     scalar::ScalarValue,
 };
 use std::{any::Any, sync::Arc};
+
+/// Wraps an aggregate expression in a non-nullable version of it.
+///
+/// Some aggregate expression like [`Sum`] always return nullable results. This can change the result when summed
+/// on a non-nullable column to include nullable columns. This may not be desirable, so this function will wrap a
+/// non-nullable wrapper around it.
+///
+/// The returned [`Accumulator`] and [`GroupsAccumulator`] implementations perform a null-check on input values to ensure
+/// the non-nullability of the input.
+///
+/// # Errors
+/// This function must only be called on [`Expr::AggregateFunction`] variants.
+pub fn non_nullable(expression: Expr) -> Result<Expr> {
+    match expression {
+        Expr::AggregateFunction(AggregateFunction { func, params }) => {
+            let AggregateFunctionParams {
+                args,
+                distinct,
+                filter,
+                null_treatment,
+                order_by,
+            } = params;
+            Ok(Expr::AggregateFunction(AggregateFunction::new_udf(
+                Arc::new(AggregateUDF::new_from_impl(NonNullable::new(
+                    func.inner().clone(),
+                ))),
+                args,
+                distinct,
+                filter,
+                order_by,
+                null_treatment,
+            )))
+        }
+        _ => {
+            plan_err!("Invalid aggregate expression {:?}", expression)
+        }
+    }
+}
+
+/// Checks the arrays for null values.
+///
+/// This is based on the result of calling [`Array::is_nullable`].
+///
+/// # Errors
+/// If any array in the given slice reports nullable values.
+pub fn nullable_check(arrays: &[ArrayRef]) -> Result<&[ArrayRef]> {
+    for (index, array) in arrays.iter().enumerate() {
+        if array.is_nullable() {
+            return exec_err!(
+                "Null found in array index {index} in an non-nullable aggregation operator. Array datatype is {:?}, length {:?}, logical null count {:?}, null count {:?}",
+                array.data_type(),
+                array.len(),
+                array.logical_null_count(),
+                array.null_count()
+            );
+        }
+    }
+    Ok(arrays)
+}
 
 /// Wraps an aggregate UDF function, but makes it non-nullable. If any nulls are found
 /// during execution, an error is raised.
@@ -54,14 +114,6 @@ impl NonNullable {
 impl From<Arc<dyn AggregateUDFImpl>> for NonNullable {
     fn from(value: Arc<dyn AggregateUDFImpl>) -> Self {
         Self { inner: value }
-    }
-}
-
-pub fn nullable_check(array: &ArrayRef) -> Result<()> {
-    if array.is_nullable() {
-        exec_err!("Null found in array in an Non-nullable aggregation")
-    } else {
-        Ok(())
     }
 }
 
@@ -137,26 +189,8 @@ impl AggregateUDFImpl for NonNullable {
         self.inner.simplify().map(|inner_func| {
             Box::new(
                 move |func: AggregateFunction, simplify_info: &dyn SimplifyInfo| {
-                    inner_func(func, simplify_info).map(|original_expr| match original_expr {
-                        Expr::AggregateFunction(udf) => {
-                            let f = udf.func;
-                            let g = f.inner().to_owned();
-                            let nonnull = NonNullable::new(g);
-                            let p = AggregateUDF::new_from_impl(nonnull);
-                            let foo = AggregateFunction::new_udf(
-                                Arc::new(p),
-                                udf.params.args,
-                                udf.params.distinct,
-                                udf.params.filter,
-                                udf.params.order_by,
-                                udf.params.null_treatment,
-                            );
-                            Expr::AggregateFunction(foo)
-                        }
-                        _ => {
-                            unimplemented!();
-                        }
-                    })
+                    inner_func(func, simplify_info)
+                        .and_then(|original_expr| non_nullable(original_expr))
                 },
             ) as Box<dyn Fn(AggregateFunction, &dyn SimplifyInfo) -> Result<Expr>>
         })
@@ -202,10 +236,7 @@ impl Accumulator for NonNullableAccumulator {
     /// # Errors
     /// Will produce an error if there are null values present.
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
-        for v in values {
-            nullable_check(v)?;
-        }
-        self.0.update_batch(values)
+        self.0.update_batch(nullable_check(values)?)
     }
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
@@ -229,10 +260,7 @@ impl Accumulator for NonNullableAccumulator {
     /// # Errors
     /// Will produce an error if there are null values present.
     fn retract_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
-        for v in values {
-            nullable_check(v)?;
-        }
-        self.0.retract_batch(values)
+        self.0.retract_batch(nullable_check(values)?)
     }
 
     fn supports_retract_batch(&self) -> bool {
@@ -256,11 +284,12 @@ impl GroupsAccumulator for NonNullableGroupAccumulator {
         opt_filter: Option<&BooleanArray>,
         total_num_groups: usize,
     ) -> Result<()> {
-        for v in values {
-            nullable_check(v)?;
-        }
-        self.0
-            .update_batch(values, group_indices, opt_filter, total_num_groups)
+        self.0.update_batch(
+            nullable_check(values)?,
+            group_indices,
+            opt_filter,
+            total_num_groups,
+        )
     }
 
     fn evaluate(&mut self, emit_to: EmitTo) -> Result<ArrayRef> {
@@ -295,10 +324,7 @@ impl GroupsAccumulator for NonNullableGroupAccumulator {
         values: &[ArrayRef],
         opt_filter: Option<&BooleanArray>,
     ) -> Result<Vec<ArrayRef>> {
-        for v in values {
-            nullable_check(v)?;
-        }
-        self.0.convert_to_state(values, opt_filter)
+        self.0.convert_to_state(nullable_check(values)?, opt_filter)
     }
 
     fn supports_convert_to_state(&self) -> bool {
