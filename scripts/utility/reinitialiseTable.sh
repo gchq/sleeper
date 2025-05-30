@@ -29,10 +29,16 @@ INSTANCE_ID=$1
 TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+
 ARROW_FLAGS="--add-opens java.base/java.nio=ALL-UNNAMED"
 
 if [[ -z $3 ]]; then
-  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}"
+  java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" $ARROW_FLAGS sleeper.clients.table.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}"
 else
   DELETE_PARTITIONS=$3
   echo "Optional parameter for <delete-partitions> recognised and set to" "${DELETE_PARTITIONS}"
@@ -42,11 +48,11 @@ else
     if [[ -n $5 ]]; then
       SPLIT_POINTS_FILE_ENCODED=$5
       echo "Optional parameter for <split-points-file-base64-encoded> recognised and set to" "${SPLIT_POINTS_FILE_ENCODED}"
-      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}" "${SPLIT_POINTS_FILE_ENCODED}"
+      java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" $ARROW_FLAGS sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}" "${SPLIT_POINTS_FILE_ENCODED}"
     else
-      java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}"
+      java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" $ARROW_FLAGS sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints "${INSTANCE_ID}" "${TABLE_NAME}" "${SPLIT_POINT_FILE_LOCATION}"
     fi
   else
-    java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar $ARROW_FLAGS sleeper.clients.table.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}" "${DELETE_PARTITIONS}"
+    java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" $ARROW_FLAGS sleeper.clients.table.ReinitialiseTable "${INSTANCE_ID}" "${TABLE_NAME}" "${DELETE_PARTITIONS}"
   fi
 fi
