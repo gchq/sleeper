@@ -22,11 +22,11 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 public class TestIngestType {
 
     private final CoordinatorFactory coordinatorFactory;
-    private final GetFilePrefix getFilePrefix;
+    private final WriteTarget writeTarget;
 
-    private TestIngestType(CoordinatorFactory coordinatorFactory, GetFilePrefix getFilePrefix) {
+    private TestIngestType(CoordinatorFactory coordinatorFactory, WriteTarget writeTarget) {
         this.coordinatorFactory = coordinatorFactory;
-        this.getFilePrefix = getFilePrefix;
+        this.writeTarget = writeTarget;
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters) {
@@ -34,44 +34,53 @@ public class TestIngestType {
     }
 
     public String getFilePrefix(IngestCoordinatorTestParameters parameters) {
-        return getFilePrefix.getFilePrefix(parameters);
+        if (writeTarget == WriteTarget.S3) {
+            return parameters.getS3Prefix();
+        } else {
+            return parameters.getLocalFilePrefix();
+        }
+    }
+
+    public WriteTarget getWriteTarget() {
+        return writeTarget;
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile() {
         return new TestIngestType(
                 parameters -> parameters.toBuilder().localDirectWrite().backedByArrow().buildCoordinator(),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
+                WriteTarget.LOCAL);
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToS3() {
         return new TestIngestType(
                 parameters -> parameters.toBuilder().s3DirectWrite().backedByArrow().buildCoordinator(),
-                IngestCoordinatorTestParameters::getS3Prefix);
+                WriteTarget.S3);
     }
 
     public static TestIngestType asyncWriteBackedByArrow() {
         return new TestIngestType(
                 parameters -> parameters.toBuilder().s3AsyncWrite().backedByArrow().buildCoordinator(),
-                IngestCoordinatorTestParameters::getS3Prefix);
+                WriteTarget.S3);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToLocalFile() {
         return new TestIngestType(
                 parameters -> parameters.toBuilder().localDirectWrite().backedByArrayList().buildCoordinator(),
-                IngestCoordinatorTestParameters::getLocalFilePrefix);
+                WriteTarget.LOCAL);
     }
 
     public static TestIngestType directWriteBackedByArrayListWriteToS3() {
         return new TestIngestType(
                 parameters -> parameters.toBuilder().s3DirectWrite().backedByArrayList().buildCoordinator(),
-                IngestCoordinatorTestParameters::getS3Prefix);
+                WriteTarget.S3);
     }
 
     private interface CoordinatorFactory {
         IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
     }
 
-    private interface GetFilePrefix {
-        String getFilePrefix(IngestCoordinatorTestParameters parameters);
+    public enum WriteTarget {
+        LOCAL,
+        S3
     }
 }

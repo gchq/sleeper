@@ -80,8 +80,8 @@
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]runner[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]runner[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]starter[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]starter[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]taskrunner[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]taskrunner[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocMethod"/>

@@ -141,7 +141,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-starter</artifactId>
+            <artifactId>ingest-taskrunner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
