@@ -33,7 +33,7 @@ on:
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
       - 'java/common/common-jobv2/**'
-      - 'java/ingest/ingest-tracker/**'
+      - 'java/ingest/ingest-trackerV2/**'
       - 'java/sketches/**'
       - 'java/sketchesv2/**'
       - 'java/ingest/ingest-core/**'

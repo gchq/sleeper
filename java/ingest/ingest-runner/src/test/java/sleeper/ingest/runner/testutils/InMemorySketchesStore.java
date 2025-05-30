@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.runner.testutils;
 
-import sleeper.sketches.Sketches;
+import sleeper.sketchesv2.Sketches;
 
 import java.util.HashMap;
 import java.util.Map;

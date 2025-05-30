@@ -49,7 +49,7 @@ import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
-import sleeper.sketches.Sketches;
+import sleeper.sketchesv2.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

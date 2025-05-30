@@ -297,7 +297,7 @@ public class QueryClientIT {
                     .startsWith("The system contains the following tables:\n" +
                             "test-table-1\n" +
                             "test-table-2\n" +
-                            "Which table do you wish to query?\n")
+                            "Which table do you wish to query? \n")
                     .contains(PROMPT_QUERY_TYPE +
                             PROMPT_MIN_INCLUSIVE +
                             PROMPT_MAX_INCLUSIVE +

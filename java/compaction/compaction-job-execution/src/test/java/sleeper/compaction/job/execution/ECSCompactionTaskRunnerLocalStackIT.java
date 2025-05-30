@@ -494,6 +494,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .localDir(tempDir.toString())
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, getStateStore()))
                 .instanceProperties(instanceProperties)
+                .s3AsyncClient(s3AsyncClient)
                 .build();
         IngestCoordinator<Record> coordinator = ingestFactory.createIngestCoordinator(tableProperties);
         for (int i = 0; i < 100; i++) {

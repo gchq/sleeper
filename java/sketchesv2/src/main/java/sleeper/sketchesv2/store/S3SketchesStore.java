@@ -43,6 +43,10 @@ public class S3SketchesStore implements SketchesStore {
         this.s3TransferManager = s3TransferManager;
     }
 
+    public static S3SketchesStore createWriteOnly(S3TransferManager s3TransferManager) {
+        return new S3SketchesStore(null, s3TransferManager);
+    }
+
     @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
         S3Filename s3Filename = S3Filename.parse(filename);
