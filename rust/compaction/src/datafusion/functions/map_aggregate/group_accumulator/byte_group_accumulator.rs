@@ -48,7 +48,7 @@ use super::{INITIAL_GROUP_MAP_SIZE, INITIAL_KEY_CACHE_SIZE};
 *
 * When [`evaluate`] is called, the original key can be found using the group_maps key to index into the "keys" vector.
 */
-/// An enhanced accumulator for maps of primitive values that implements [`GroupAccumulator`].
+/// An enhanced accumulator for maps of primitive values that implements [`GroupsAccumulator`].
 #[derive(Debug)]
 pub struct ByteGroupMapAccumulator<VBuilder>
 where

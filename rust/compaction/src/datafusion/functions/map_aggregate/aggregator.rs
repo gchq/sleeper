@@ -133,7 +133,7 @@ macro_rules! value_only_helper {
  * has both the key and value types available so can expand into the final Rust code.
  */
 
-/// Used by [`key_type_helper`], this expands into creating a class specified with `$acc` with key type `$key_type` and value
+/// Used by `key_type_helper`, this expands into creating a class specified with `$acc` with key type `$key_type` and value
 /// type `$value_type`. `$acc` should be either [`PrimMapAccumulator`] or [`PrimGroupMapAccumulator`].
 macro_rules! value_type_helper {
     ($value_type: ty, $key_type: ty, $acc: ident, $dt: expr, $op: expr) => {{

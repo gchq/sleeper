@@ -16,13 +16,12 @@
 * limitations under the License.
 */
 use arrow::{
-    array::{ArrayRef, BooleanArray},
+    array::{Array, ArrayRef, BooleanArray},
     datatypes::{DataType, Field},
 };
 use datafusion::{
     common::{exec_err, plan_err},
     error::Result,
-    functions_aggregate::sum::Sum,
     logical_expr::{
         Accumulator, AggregateUDF, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator,
         ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
@@ -38,7 +37,7 @@ use std::{any::Any, sync::Arc};
 
 /// Wraps an aggregate expression in a non-nullable version of it.
 ///
-/// Some aggregate expression like [`Sum`] always return nullable results. This can change the result when summed
+/// Some aggregate expression like [`datafusion::functions_aggregate::sum::Sum`] always return nullable results. This can change the result when summed
 /// on a non-nullable column to include nullable columns. This may not be desirable, so this function will wrap a
 /// non-nullable wrapper around it.
 ///

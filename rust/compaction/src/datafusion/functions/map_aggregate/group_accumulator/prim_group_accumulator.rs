@@ -42,7 +42,7 @@ type PrimitiveMap<KBuilder, VBuilder> = HashMap<
     BuildNoHashHasher<<<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
 >;
 
-/// An enhanced accumulator for maps of primitive values that implements [`GroupAccumulator`].
+/// An enhanced accumulator for maps of primitive values that implements [`GroupsAccumulator`].
 #[derive(Debug)]
 pub struct PrimGroupMapAccumulator<KBuilder, VBuilder>
 where
