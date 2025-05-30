@@ -22,7 +22,8 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 
 /**
- * Definitions of instance properties relating to bulk import on AWS EMR.
+ * Definitions of instance properties relating to bulk import on AWS EMR. Also see {@link BulkImportProperty},
+ * {@link EMRServerlessProperty}, {@link PersistentEMRProperty}.
  */
 public interface EMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory")

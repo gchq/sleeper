@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.properties.validation;
+package sleeper.core.properties.model;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.OptionalStack;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
