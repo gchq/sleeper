@@ -30,8 +30,9 @@ import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRe
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestFilesAndRecords;
-import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.sketches.testutils.SketchesDecilesComparator;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketchesv2.testutils.SketchesDecilesComparator;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -90,7 +91,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), configuration))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
                 .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
@@ -140,7 +141,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                                 data.getRecordsInFile(file),
                                 "key0", LongStream.range(0, 10_000))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), configuration))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
                 .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }

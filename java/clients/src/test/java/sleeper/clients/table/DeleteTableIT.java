@@ -223,6 +223,7 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
+                .s3AsyncClient(s3AsyncClient)
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConf)
                 .build();

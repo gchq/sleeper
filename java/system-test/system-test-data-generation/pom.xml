@@ -50,6 +50,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>localstack-test</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
