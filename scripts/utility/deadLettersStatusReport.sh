@@ -26,6 +26,11 @@ if [[ -z $1 ]]; then
 fi
 
 INSTANCE_ID=$1
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.report.DeadLettersStatusReport "${INSTANCE_ID}"
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.DeadLettersStatusReport "${INSTANCE_ID}"

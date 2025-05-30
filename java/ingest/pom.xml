@@ -28,7 +28,7 @@
 
     <modules>
         <module>ingest-core</module>
-        <module>ingest-starter</module>
+        <module>ingest-taskrunner</module>
         <module>ingest-runner</module>
         <module>ingest-tracker</module>
         <module>ingest-trackerV2</module>

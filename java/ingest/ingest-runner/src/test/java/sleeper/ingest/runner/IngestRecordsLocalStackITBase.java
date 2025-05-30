@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
@@ -29,12 +29,12 @@ public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
 
     @BeforeEach
     void setUp() {
-        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT).create();
+        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT_V2).create();
     }
 
     protected StateStore initialiseStateStore() {
         StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
-                SleeperLocalStackClients.DYNAMO_CLIENT, SleeperLocalStackClients.S3_CLIENT, SleeperLocalStackClients.HADOOP_CONF).build();
+                SleeperLocalStackClients.DYNAMO_CLIENT_V2, SleeperLocalStackClients.S3_CLIENT_V2, SleeperLocalStackClients.S3_TRANSFER_MANAGER).build();
         update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }

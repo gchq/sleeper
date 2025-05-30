@@ -402,16 +402,15 @@ sleeper.ingest.arrow.max.single.write.to.file.records=1024
 # "The provided S3AsyncClient is not an instance of S3CrtAsyncClient, and thus multipart
 # upload/download feature is not enabled and resumable file upload is not supported. To benefit from
 # maximum throughput, consider using S3AsyncClient.crtBuilder().build() instead."
-# (async partition file writer only)
 sleeper.ingest.async.client.type=crt
 
 # The part size in bytes to use for multipart uploads.
-# (CRT async ingest only) [128MB]
+# (CRT client type only) [128MB]
 sleeper.ingest.async.crt.part.size.bytes=134217728
 
 # The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded
 # simultaneously.
-# (CRT async ingest only)
+# (CRT client type only)
 sleeper.ingest.async.crt.target.throughput.gbps=10
 
 # The amount of memory in MB for the lambda that receives submitted requests to ingest files.

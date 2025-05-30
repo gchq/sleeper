@@ -23,7 +23,8 @@ fi
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+JAR_DIR=${SCRIPTS_DIR}/jars
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" \
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
   --add-opens java.base/java.nio=ALL-UNNAMED \
   sleeper.clients.admin.AdminClient "${SCRIPTS_DIR}" "$@"

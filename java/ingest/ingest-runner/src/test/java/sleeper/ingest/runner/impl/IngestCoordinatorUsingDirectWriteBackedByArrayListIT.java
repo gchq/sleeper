@@ -31,13 +31,16 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -78,12 +81,13 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
             .rootFirst("root")
             .splitToNewChildren("root", "left", "right", 0L)
             .buildTree();
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
     private StateStore stateStore;
 
     @BeforeEach
     public void before() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         update(stateStore).initialise(tree.getAllPartitions());
@@ -92,7 +96,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
     }
 
     @Test
@@ -119,7 +123,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 .containsExactly(LongStream.range(-100, 0).boxed().toArray());
         assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(0, 100).boxed().toArray());
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -149,7 +153,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 .containsExactly(-90L, -79L, -68L, -50L, -2L);
         assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(12L, 14L, 41L, 47L, 83L);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -168,10 +172,12 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                         .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
                         .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
                         .buildAcceptingRecords(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration,
-                        "s3a://" + dataBucketName,
-                        fileNames.iterator()::next))
+                DirectPartitionFileWriterFactory.builder()
+                        .parquetConfiguration(parquetConfiguration)
+                        .filePaths(TableFilePaths.fromPrefix("s3a://" + dataBucketName))
+                        .sketchesStore(sketchesStore)
+                        .fileNameGenerator(fileNames.iterator()::next)
+                        .build())
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
                 .build()) {
             for (Record record : recordListAndSchema.recordList) {

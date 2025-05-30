@@ -24,6 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -62,6 +63,7 @@ public abstract class LocalStackTestBase {
     protected final SqsClient sqsClientV2 = SleeperLocalStackClients.SQS_CLIENT_V2;
     protected final StsClient stsClientV2 = SleeperLocalStackClients.STS_CLIENT_V2;
     protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
+    protected final CloudWatchClient cloudWatchClientV2 = SleeperLocalStackClients.CLOUDWATCH_CLIENT_V2;
 
     public static void createBucket(String bucketName) {
         S3_CLIENT_V2.createBucket(builder -> builder.bucket(bucketName));
