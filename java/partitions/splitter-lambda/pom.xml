@@ -61,7 +61,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-invoke-tables</artifactId>
+            <artifactId>common-invoke-tablesv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

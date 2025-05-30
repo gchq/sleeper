@@ -18,7 +18,6 @@ package sleeper.splitter.lambda;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -52,10 +51,9 @@ public class SqsSplitPartitionJobSender {
         String serialised = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).toJson(job);
 
         // Send definition to SQS queue
-        SendMessageRequest sendMessageRequest = (request -> request
+        SendMessageResponse sendMessageResult = sqs.sendMessage(request -> request
                 .queueUrl(sqsUrl)
                 .messageBody(serialised));
-        SendMessageResponse sendMessageResult = sqs.sendMessage(sendMessageRequest);
 
         LOGGER.info("Sent message for partition {} to SQS queue with url {} with result {}", job.getPartition(), sqsUrl, sendMessageResult);
     }
