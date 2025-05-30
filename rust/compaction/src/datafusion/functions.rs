@@ -1,5 +1,5 @@
-/// Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
-/// `DataFusion`.
+//! Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
+//! `DataFusion`.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -50,7 +50,7 @@ pub struct FilterAggregationConfig {
 /// Supported filters
 #[derive(Debug)]
 pub enum Filter {
-    // Skip any record where timestamp in named column is older than `max_age` seconds.
+    /// Skip any record where timestamp in named column is older than `max_age` seconds.
     Ageoff { column: String, max_age: i64 },
 }
 
@@ -112,7 +112,7 @@ impl MapAggregatorOp {
     }
 }
 
-// Supported aggregating operations.
+/// Supported aggregating operations.
 #[derive(Debug)]
 pub enum AggOp {
     Sum,

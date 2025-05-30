@@ -1,4 +1,4 @@
-//! Contains code and functions for implementation of a _non-nullable_ wrapper
+//! Contains code and functions for implementation of a non-nullable wrapper
 //! for aggregate UDF that may be nullable.
 /*
 * Copyright 2022-2025 Crown Copyright
