@@ -15,12 +15,12 @@
  */
 package sleeper.trino.testutils;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.SleeperConnector;
@@ -38,13 +38,13 @@ import static java.util.Objects.requireNonNull;
  */
 public class SleeperTestModule implements Module {
     private final SleeperConfig sleeperConfig;
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final S3AsyncClient s3AsyncClient;
-    private final AmazonDynamoDB dynamoDbClient;
+    private final DynamoDbClient dynamoDbClient;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
 
     public SleeperTestModule(
-            SleeperConfig sleeperConfig, AmazonS3 s3Client, S3AsyncClient s3AsyncClient, AmazonDynamoDB dynamoDbClient,
+            SleeperConfig sleeperConfig, S3Client s3Client, S3AsyncClient s3AsyncClient, DynamoDbClient dynamoDbClient,
             HadoopConfigurationProvider hadoopConfigurationProvider) {
         this.sleeperConfig = requireNonNull(sleeperConfig);
         this.s3Client = requireNonNull(s3Client);
@@ -71,9 +71,9 @@ public class SleeperTestModule implements Module {
 
         // Bind the supplied instances
         binder.bind(SleeperConfig.class).toInstance(sleeperConfig);
-        binder.bind(AmazonS3.class).toInstance(s3Client);
+        binder.bind(S3Client.class).toInstance(s3Client);
         binder.bind(S3AsyncClient.class).toInstance(s3AsyncClient);
-        binder.bind(AmazonDynamoDB.class).toInstance(dynamoDbClient);
+        binder.bind(DynamoDbClient.class).toInstance(dynamoDbClient);
         binder.bind(HadoopConfigurationProvider.class).toInstance(hadoopConfigurationProvider);
     }
 }

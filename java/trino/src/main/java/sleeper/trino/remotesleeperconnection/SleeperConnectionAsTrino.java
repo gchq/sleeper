@@ -15,8 +15,6 @@
  */
 package sleeper.trino.remotesleeperconnection;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -28,7 +26,9 @@ import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.BooleanType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.VarcharType;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
@@ -73,12 +73,11 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
 
     @Inject
     public SleeperConnectionAsTrino(SleeperConfig sleeperConfig,
-            AmazonS3 s3Client,
+            S3Client s3Client,
             S3AsyncClient s3AsyncClient,
-            AmazonDynamoDB dynamoDbClient,
-            HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
+            DynamoDbClient dynamoDbClient) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
-        this.sleeperRawAwsConnection = new SleeperRawAwsConnection(sleeperConfig, s3Client, s3AsyncClient, dynamoDbClient, hadoopConfigurationProvider);
+        this.sleeperRawAwsConnection = new SleeperRawAwsConnection(sleeperConfig, s3Client, s3AsyncClient, dynamoDbClient);
         this.tableHandleMap = this.sleeperRawAwsConnection.getAllSleeperTableNames().stream()
                 .collect(ImmutableMap.toImmutableMap(Function.identity(), this::constructSleeperTableHandle));
     }
