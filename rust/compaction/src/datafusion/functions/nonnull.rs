@@ -23,11 +23,14 @@ use datafusion::{
     common::exec_err,
     error::Result,
     logical_expr::{
-        Accumulator, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator, ReversedUDAF,
-        SetMonotonicity, Signature, StatisticsArgs,
+        Accumulator, AggregateUDF, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator,
+        ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
+        expr::AggregateFunction,
         function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
+        simplify::SimplifyInfo,
         utils::AggregateOrderSensitivity,
     },
+    prelude::Expr,
     scalar::ScalarValue,
 };
 use std::{any::Any, sync::Arc};
@@ -55,7 +58,7 @@ impl From<Arc<dyn AggregateUDFImpl>> for NonNullable {
 }
 
 pub fn nullable_check(array: &ArrayRef) -> Result<()> {
-    if !array.is_nullable() {
+    if array.is_nullable() {
         exec_err!("Null found in array in an Non-nullable aggregation")
     } else {
         Ok(())
@@ -87,7 +90,7 @@ impl AggregateUDFImpl for NonNullable {
 
     /// This aggregation function doesn't contain nullable values.
     fn is_nullable(&self) -> bool {
-        true
+        false
     }
 
     fn state_fields(&self, args: StateFieldsArgs) -> Result<Vec<Field>> {
@@ -131,7 +134,32 @@ impl AggregateUDFImpl for NonNullable {
     }
 
     fn simplify(&self) -> Option<AggregateFunctionSimplification> {
-        todo!()
+        self.inner.simplify().map(|inner_func| {
+            Box::new(
+                move |func: AggregateFunction, simplify_info: &dyn SimplifyInfo| {
+                    inner_func(func, simplify_info).map(|original_expr| match original_expr {
+                        Expr::AggregateFunction(udf) => {
+                            let f = udf.func;
+                            let g = f.inner().to_owned();
+                            let nonnull = NonNullable::new(g);
+                            let p = AggregateUDF::new_from_impl(nonnull);
+                            let foo = AggregateFunction::new_udf(
+                                Arc::new(p),
+                                udf.params.args,
+                                udf.params.distinct,
+                                udf.params.filter,
+                                udf.params.order_by,
+                                udf.params.null_treatment,
+                            );
+                            Expr::AggregateFunction(foo)
+                        }
+                        _ => {
+                            unimplemented!();
+                        }
+                    })
+                },
+            ) as Box<dyn Fn(AggregateFunction, &dyn SimplifyInfo) -> Result<Expr>>
+        })
     }
 
     fn reverse_expr(&self) -> ReversedUDAF {
