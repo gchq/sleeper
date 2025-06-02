@@ -48,12 +48,6 @@ public class FindPartitionSplitPoint {
     private final List<String> fileNames;
     private final SketchesLoader sketchesLoader;
 
-    public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesLoader sketchesLoader) {
-        this.schema = schema;
-        this.fileNames = fileNames;
-        this.sketchesLoader = sketchesLoader;
-    }
-
     public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
         this.schema = schema;
         this.fileNames = fileNames;
