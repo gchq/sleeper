@@ -116,13 +116,14 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     SleeperRawAwsConnection(SleeperConfig sleeperConfig,
             S3Client s3Client,
             S3AsyncClient s3AsyncClient,
+            HadoopConfigurationProvider hadoopConfigurationProvider,
             DynamoDbClient dynamoDbClient) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
         this.sleeperConfig = sleeperConfig;
         this.s3Client = requireNonNull(s3Client);
         this.s3AsyncClient = requireNonNull(s3AsyncClient);
         this.dynamoDbClient = requireNonNull(dynamoDbClient);
-        this.hadoopConfigurationProvider = null;
+        this.hadoopConfigurationProvider = hadoopConfigurationProvider;
         this.rootBufferAllocator = new RootAllocator(sleeperConfig.getMaxArrowRootAllocatorBytes());
         this.s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
 

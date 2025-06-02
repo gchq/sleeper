@@ -75,9 +75,10 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     public SleeperConnectionAsTrino(SleeperConfig sleeperConfig,
             S3Client s3Client,
             S3AsyncClient s3AsyncClient,
+            HadoopConfigurationProvider hadoopConfigurationProvider,
             DynamoDbClient dynamoDbClient) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
-        this.sleeperRawAwsConnection = new SleeperRawAwsConnection(sleeperConfig, s3Client, s3AsyncClient, dynamoDbClient);
+        this.sleeperRawAwsConnection = new SleeperRawAwsConnection(sleeperConfig, s3Client, s3AsyncClient, hadoopConfigurationProvider, dynamoDbClient);
         this.tableHandleMap = this.sleeperRawAwsConnection.getAllSleeperTableNames().stream()
                 .collect(ImmutableMap.toImmutableMap(Function.identity(), this::constructSleeperTableHandle));
     }
