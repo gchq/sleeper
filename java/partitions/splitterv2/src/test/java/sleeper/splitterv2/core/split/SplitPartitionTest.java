@@ -39,11 +39,10 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 import sleeper.sketchesv2.Sketches;
-import sleeper.splitterv2.core.split.FindPartitionSplitPoint.SketchesLoader;
+import sleeper.sketchesv2.testutils.InMemorySketchesStore;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -66,8 +65,8 @@ public class SplitPartitionTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
 
-    private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
     private final List<StateStoreCommitRequest> sentAsyncCommits = new ArrayList<>();
+    private final InMemorySketchesStore filenameToSketches = new InMemorySketchesStore();
 
     @Nested
     @DisplayName("Skip split")
@@ -558,14 +557,15 @@ public class SplitPartitionTest {
             recordCount.incrementAndGet();
         });
 
-        FileReference recordFileReference = FileReferenceFactory.from(stateStore).partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
+        FileReference recordFileReference = FileReferenceFactory.from(instanceProperties, tableProperties, stateStore)
+                .partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
         try {
             update(stateStore).addFile(recordFileReference);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
 
-        fileToSketchMap.put(recordFileReference.getFilename(), sketches);
+        filenameToSketches.saveFileSketches(recordFileReference.getFilename(), tableProperties.getSchema(), sketches);
         return recordFileReference.getFilename();
     }
 
@@ -590,11 +590,7 @@ public class SplitPartitionTest {
     }
 
     private SplitPartition partitionSplitter(StateStore stateStore, Supplier<String> generateIds) {
-        return new SplitPartition(stateStore, tableProperties, loadSketchesFromMap(), generateIds, sentAsyncCommits::add);
-    }
-
-    public SketchesLoader loadSketchesFromMap() {
-        return (filename) -> fileToSketchMap.get(filename);
+        return new SplitPartition(stateStore, tableProperties, filenameToSketches, generateIds, sentAsyncCommits::add);
     }
 
     private static Supplier<String> generateIds(String... ids) {

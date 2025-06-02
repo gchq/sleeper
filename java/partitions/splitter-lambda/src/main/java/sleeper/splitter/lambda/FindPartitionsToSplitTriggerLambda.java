@@ -15,26 +15,23 @@
  */
 package sleeper.splitter.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3PropertiesReloader;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3PropertiesReloader;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
-import sleeper.invoke.tables.InvokeForTables;
+import sleeper.invoke.tablesv2.InvokeForTables;
 
 import java.time.Instant;
 
@@ -47,14 +44,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_P
 public class FindPartitionsToSplitTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitTriggerLambda.class);
 
-    private final AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+    private final DynamoDbClient dynamoClient = DynamoDbClient.builder().build();
+    private final SqsClient sqsClient = SqsClient.builder().build();
     private final InstanceProperties instanceProperties;
     private final PropertiesReloader propertiesReloader;
 
     public FindPartitionsToSplitTriggerLambda() {
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        S3Client s3Client = S3Client.builder().build();
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties);
     }

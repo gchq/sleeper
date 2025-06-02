@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
+import sleeper.sketchesv2.testutils.InMemorySketchesStore;
 import sleeper.splitterv2.core.find.FindPartitionsToSplit;
 import sleeper.splitterv2.core.find.FindPartitionsToSplit.JobSender;
 import sleeper.splitterv2.core.split.SplitPartition;
@@ -52,7 +52,7 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
         return job -> {
             TableProperties tableProperties = instance.getTablePropertiesProvider().getById(job.getTableId());
             StateStore stateStore = instance.getStateStoreProvider().getStateStore(tableProperties);
-            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties, sketches::load, () -> UUID.randomUUID().toString(), null);
+            SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties, sketches, () -> UUID.randomUUID().toString(), null);
             splitPartition.splitPartition(job.getPartition(), job.getFileNames());
         };
     }

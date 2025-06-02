@@ -66,6 +66,23 @@ public class FileReferenceFactory {
     }
 
     /**
+     * Creates a factory to create files in the given partition tree, with file paths generated for the given
+     * properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @param  stateStore         the state store
+     * @return                    the factory
+     */
+    public static FileReferenceFactory from(
+            InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
+        return new FileReferenceFactory(
+                new PartitionTree(stateStore.getAllPartitions()),
+                null,
+                FilePathGenerator.fromProperties(instanceProperties, tableProperties));
+    }
+
+    /**
      * Creates a factory to create files in the given partition tree.
      *
      * @param  partitions the partitions in the tree
