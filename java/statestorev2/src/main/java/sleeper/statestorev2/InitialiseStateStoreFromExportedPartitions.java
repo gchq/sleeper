@@ -18,7 +18,6 @@ package sleeper.statestorev2;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -65,12 +64,11 @@ public class InitialiseStateStoreFromExportedPartitions {
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
+                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
-            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, s3TransferManager).getStateStore(tableProperties);
+            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient).getStateStore(tableProperties);
 
             PartitionSerDe partitionSerDe = new PartitionSerDe(tableProperties.getSchema());
             List<Partition> partitions = new ArrayList<>();

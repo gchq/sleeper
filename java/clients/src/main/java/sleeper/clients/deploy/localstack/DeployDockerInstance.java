@@ -123,7 +123,7 @@ public class DeployDockerInstance {
             try {
                 new AddTable(instanceProperties, tableProperties,
                         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
-                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager))
+                        StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                         .run();
             } catch (IOException e) {
                 throw new RuntimeIOException(e);

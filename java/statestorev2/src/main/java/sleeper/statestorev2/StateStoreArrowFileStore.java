@@ -20,11 +20,9 @@ import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
@@ -45,24 +43,12 @@ public class StateStoreArrowFileStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);
 
     private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
     private final S3Client s3Client;
-    private final S3TransferManager s3TransferManager;
-
-    public StateStoreArrowFileStore(
-            InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
-        this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
-        this.s3Client = s3Client;
-        this.s3TransferManager = s3TransferManager;
-    }
 
     public StateStoreArrowFileStore(
             InstanceProperties instanceProperties, S3Client s3Client) {
         this.instanceProperties = instanceProperties;
-        this.tableProperties = null;
         this.s3Client = s3Client;
-        this.s3TransferManager = null;
     }
 
     /**

@@ -17,7 +17,6 @@ package sleeper.statestorev2;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -39,18 +38,16 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     private final S3Client s3;
     private final DynamoDbClient dynamoDB;
     private final boolean committerProcess;
-    private final S3TransferManager s3TransferManager;
 
-    public StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, S3TransferManager s3TransferManager) {
-        this(instanceProperties, s3, dynamoDB, s3TransferManager, false);
+    public StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB) {
+        this(instanceProperties, s3, dynamoDB, false);
     }
 
-    private StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, S3TransferManager s3TransferManager, boolean committerProcess) {
+    private StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, boolean committerProcess) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.committerProcess = committerProcess;
-        this.s3TransferManager = s3TransferManager;
     }
 
     /**
@@ -66,11 +63,10 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3                 the S3 client
      * @param  dynamoDB           the DynamoDB client
-     * @param  s3TransferManager  the S3 transfer manager
      * @return                    the factory
      */
-    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, S3TransferManager s3TransferManager) {
-        return new StateStoreFactory(instanceProperties, s3, dynamoDB, s3TransferManager, true);
+    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB) {
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, true);
     }
 
     /**
@@ -79,12 +75,11 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3Client           the S3 client
      * @param  dynamoDBClient     the DynamoDB client
-     * @param  s3TransferManager  the s3 transfer manager
      * @return                    the state store provider
      */
-    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient, S3TransferManager s3TransferManager) {
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient) {
         return new StateStoreProvider(instanceProperties,
-                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, s3TransferManager));
+                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient));
     }
 
     /**

@@ -115,7 +115,6 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 .sqsClient(sqsClient)
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient)
-                .s3TransferManager(s3TransferManager)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
         lastUpdateTime = Instant.now();

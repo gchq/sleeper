@@ -57,7 +57,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,

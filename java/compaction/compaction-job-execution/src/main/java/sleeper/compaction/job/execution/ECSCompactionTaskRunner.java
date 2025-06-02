@@ -20,11 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.common.jobv2.EC2ContainerMetadata;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
@@ -85,9 +83,7 @@ public class ECSCompactionTaskRunner {
         try (EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
                 DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
-                S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
+                S3Client s3Client = buildAwsV2Client(S3Client.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
             // Log some basic data if running on EC2 inside ECS
@@ -95,8 +91,7 @@ public class ECSCompactionTaskRunner {
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
-                    s3TransferManager);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
             CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient,

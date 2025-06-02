@@ -18,7 +18,6 @@ package sleeper.clients.admin.testutils;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
@@ -45,7 +44,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
     protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT_V2;
-    protected final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
     protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
@@ -56,7 +54,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Override
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
-        AdminClient.start(instanceId, s3, s3TransferManager, dynamoDB, cdk, tempDir, uploadDockerImages,
+        AdminClient.start(instanceId, s3, dynamoDB, cdk, tempDir, uploadDockerImages,
                 out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of());
     }
 
@@ -65,7 +63,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
-        return new AdminClientPropertiesStore(s3, s3TransferManager, dynamoDB, cdk, path, uploadDockerImages);
+        return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImages);
     }
 
     @Override

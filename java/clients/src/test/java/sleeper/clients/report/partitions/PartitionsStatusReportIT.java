@@ -72,12 +72,12 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
     private String runReport() throws Exception {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
-                .runReport(s3ClientV2, s3TransferManager, dynamoClientV2, out.getPrintStream());
+                .runReport(s3ClientV2, dynamoClientV2, out.getPrintStream());
         return out.toString();
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
                 .getStateStore(tableProperties);
     }
 

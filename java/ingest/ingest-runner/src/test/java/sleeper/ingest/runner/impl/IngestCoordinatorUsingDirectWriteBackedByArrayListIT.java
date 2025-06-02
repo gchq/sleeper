@@ -96,7 +96,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
     }
 
     @Test

@@ -731,7 +731,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(createTempDirectory(tempDir, null).toString())
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConf)
                     .build();
@@ -776,7 +776,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
 
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
                 .getStateStore(tableProperties);
         try {
             update(stateStore).initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());

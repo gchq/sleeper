@@ -167,7 +167,7 @@ public class DeployNewInstance {
             LOGGER.info("Adding table " + tableProperties.getStatus());
             new AddTable(instanceProperties, tableProperties,
                     S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
-                    StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager))
+                    StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .run();
         }
         LOGGER.info("Finished deployment of new instance");

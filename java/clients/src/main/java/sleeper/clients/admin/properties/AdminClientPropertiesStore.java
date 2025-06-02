@@ -52,7 +52,6 @@ public class AdminClientPropertiesStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
 
     private final S3Client s3Client;
-    private final S3TransferManager s3TransferManager;
     private final DynamoDbClient dynamoClient;
     private final InvokeCdkForInstance cdk;
     private final DockerImageConfiguration dockerImageConfiguration;
@@ -63,7 +62,17 @@ public class AdminClientPropertiesStore {
             S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
             Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3Client = s3Client;
-        this.s3TransferManager = s3TransferManager;
+        this.dynamoClient = dynamoClient;
+        this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
+        this.uploadDockerImages = uploadDockerImages;
+        this.cdk = cdk;
+        this.generatedDirectory = generatedDirectory;
+    }
+
+    public AdminClientPropertiesStore(
+            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
+            Path generatedDirectory, UploadDockerImages uploadDockerImages) {
+        this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
         this.uploadDockerImages = uploadDockerImages;
@@ -154,7 +163,7 @@ public class AdminClientPropertiesStore {
 
     public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager);
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
         return stateStoreFactory.getStateStore(tableProperties);
     }
 

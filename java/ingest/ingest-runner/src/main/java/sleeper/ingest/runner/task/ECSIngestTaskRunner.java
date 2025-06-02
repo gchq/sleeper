@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.jars.S3UserJarsLoader;
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -76,8 +75,7 @@ public class ECSIngestTaskRunner {
         try (DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
                 CloudWatchClient cloudWatchClient = buildAwsV2Client(CloudWatchClient.builder());
-                S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3TransferManager stateStoreS3TransferManager = S3TransferManager.create()) {
+                S3Client s3Client = buildAwsV2Client(S3Client.builder())) {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
@@ -88,7 +86,7 @@ public class ECSIngestTaskRunner {
             try (S3AsyncClient s3AsyncClient = IngestS3TransferManager.s3AsyncClientFromProperties(instanceProperties)) {
                 IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
                         taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, s3AsyncClient,
-                        ingestHadoopConfiguration(instanceProperties), stateStoreS3TransferManager);
+                        ingestHadoopConfiguration(instanceProperties));
                 ingestTask.run();
             }
 
@@ -100,9 +98,9 @@ public class ECSIngestTaskRunner {
     public static IngestTask createIngestTask(
             ObjectFactory objectFactory, InstanceProperties instanceProperties, String localDir, String taskId,
             S3Client s3Client, DynamoDbClient dynamoDBClient, SqsClient sqsClient, CloudWatchClient cloudWatchClient,
-            S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration, S3TransferManager s3TransferManager) {
+            S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         IngestTaskTracker taskTracker = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(
