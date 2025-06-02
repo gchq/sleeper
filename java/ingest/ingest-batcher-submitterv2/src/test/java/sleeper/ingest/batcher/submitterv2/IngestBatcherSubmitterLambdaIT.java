@@ -69,8 +69,8 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     }
 
     @Nested
-    @DisplayName("Store single file")
-    class StoreSingleFile {
+    @DisplayName("Store files by their full path")
+    class StoreFileByFullPath {
         @Test
         void shouldStoreFileIngestRequestFromJson() {
             // Given
@@ -91,7 +91,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldStoreFileFindFileEvenWithoutFileExtension() {
+        void shouldStoreFileByPathNotIncludingItsExtension() {
             // Given
             uploadFileToS3("test-file-1.parquet");
             String json = "{" +
@@ -110,7 +110,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldStoreFileEvenWithNoFileExtension() {
+        void shouldStoreFileThatHasNoExtension() {
             // Given
             uploadFileToS3("test-file-1");
             String json = "{" +
@@ -149,31 +149,9 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
                             .receivedTime(RECEIVED_TIME)
                             .build());
         }
-    }
-
-    @Nested
-    @DisplayName("Store all files in directory")
-    class StoreFilesInDirectory {
-        @Test
-        void shouldStoreOneFileInDirectory() {
-            // Given
-            uploadFileToS3("test-directory/test-file-1.parquet");
-            String json = "{" +
-                    "\"files\":[\"" + testBucket + "/test-directory\"]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            lambda().handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(batcherStore().getAllFilesNewestFirst())
-                    .containsExactly(
-                            fileRequest(testBucket + "/test-directory/test-file-1.parquet"));
-        }
 
         @Test
-        void shouldStoreFilesInDirectoryWhenSubmittedByFullName() {
+        void shouldStoreFileInDirectory() {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
@@ -191,25 +169,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldStoreFilesInDeepDirectory() {
-            // Given
-            uploadFileToS3("test-directory/another-test-directory/test-file-1.parquet");
-            String json = "{" +
-                    "\"files\":[\"" + testBucket + "/test-directory/another-test-directory\"]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            lambda().handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(batcherStore().getAllFilesNewestFirst())
-                    .containsExactly(
-                            fileRequest(testBucket + "/test-directory/another-test-directory/test-file-1.parquet"));
-        }
-
-        @Test
-        void shouldStoreFilesInDeepDirectoryEvenWhenCalledByFileName() {
+        void shouldStoreFileInNestedDirectory() {
             // Given
             uploadFileToS3("test-directory/another-test-directory/test-file-1.parquet");
             String json = "{" +
@@ -224,6 +184,28 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             assertThat(batcherStore().getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-directory/another-test-directory/test-file-1.parquet"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Store files by a prefix/directory")
+    class StoreFilesByPrefix {
+        @Test
+        void shouldStoreOneFileInDirectory() {
+            // Given
+            uploadFileToS3("test-directory/test-file-1.parquet");
+            String json = "{" +
+                    "\"files\":[\"" + testBucket + "/test-directory\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda().handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(batcherStore().getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest(testBucket + "/test-directory/test-file-1.parquet"));
         }
 
         @Test
@@ -247,7 +229,25 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldStoreFileInNestedDirectories() {
+        void shouldStoreFileByNestedDirectory() {
+            // Given
+            uploadFileToS3("test-directory/another-test-directory/test-file-1.parquet");
+            String json = "{" +
+                    "\"files\":[\"" + testBucket + "/test-directory/another-test-directory\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda().handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(batcherStore().getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest(testBucket + "/test-directory/another-test-directory/test-file-1.parquet"));
+        }
+
+        @Test
+        void shouldStoreFileInNestedDirectory() {
             // Given
             uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
