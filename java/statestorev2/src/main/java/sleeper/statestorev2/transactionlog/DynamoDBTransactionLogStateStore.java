@@ -46,7 +46,6 @@ public class DynamoDBTransactionLogStateStore {
      * @param  tableProperties    the Sleeper table properties
      * @param  dynamoDB           the client for interacting with DynamoDB
      * @param  s3                 the client for interacting with S3
-     * @param  s3TransferManager  the transfer manager for interacting with async s3 actions
      * @return                    the builder
      */
     public static TransactionLogStateStore.Builder builderFrom(
