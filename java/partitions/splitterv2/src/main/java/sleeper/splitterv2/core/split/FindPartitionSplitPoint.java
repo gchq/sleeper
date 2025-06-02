@@ -20,19 +20,13 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -46,12 +40,12 @@ public class FindPartitionSplitPoint {
 
     private final Schema schema;
     private final List<String> fileNames;
-    private final SketchesLoader sketchesLoader;
+    private final SketchesStore sketchesStore;
 
     public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
         this.schema = schema;
         this.fileNames = fileNames;
-        this.sketchesLoader = loadSketchesFromFile(schema, sketchesStore);
+        this.sketchesStore = sketchesStore;
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
@@ -89,30 +83,9 @@ public class FindPartitionSplitPoint {
         ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
         for (String fileName : fileNames) {
             LOGGER.info("Loading sketches for file {}", fileName);
-            Sketches sketches = loadSketches(fileName);
+            Sketches sketches = sketchesStore.loadFileSketches(fileName, schema);
             union.update(sketches.getQuantilesSketch(field.getName()));
         }
         return union.getResult();
     }
-
-    private Sketches loadSketches(String filename) {
-        try {
-            return sketchesLoader.load(filename);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public interface SketchesLoader {
-        Sketches load(String filename) throws IOException;
-    }
-
-    public static SketchesLoader loadSketchesFromFile(S3Client s3Client, S3TransferManager s3TransferManager, TableProperties tableProperties) {
-        return (filename) -> new S3SketchesStore(s3Client, s3TransferManager).loadFileSketches(filename, tableProperties.getSchema());
-    }
-
-    public static SketchesLoader loadSketchesFromFile(Schema schema, SketchesStore sketchesStore) {
-        return (filename) -> sketchesStore.loadFileSketches(filename, schema);
-    }
-
 }
