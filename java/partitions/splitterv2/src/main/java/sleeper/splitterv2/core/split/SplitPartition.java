@@ -61,19 +61,6 @@ public class SplitPartition {
 
     public SplitPartition(StateStore stateStore,
             TableProperties tableProperties,
-            SketchesLoader sketchesLoader,
-            Supplier<String> idSupplier,
-            SendAsyncCommit sendAsyncCommit) {
-        this.stateStore = stateStore;
-        this.tableProperties = tableProperties;
-        this.schema = tableProperties.getSchema();
-        this.sketchesLoader = sketchesLoader;
-        this.idSupplier = idSupplier;
-        this.sendAsyncCommit = sendAsyncCommit;
-    }
-
-    public SplitPartition(StateStore stateStore,
-            TableProperties tableProperties,
             SketchesStore sketchesStore,
             Supplier<String> idSupplier,
             SendAsyncCommit sendAsyncCommit) {

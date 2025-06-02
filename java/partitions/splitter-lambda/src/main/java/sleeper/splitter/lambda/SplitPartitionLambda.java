@@ -37,6 +37,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
 import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.splitterv2.core.split.SplitPartition;
@@ -50,7 +52,6 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.splitterv2.core.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 /**
  * Triggered by an SQS event containing a partition splitting job to do.
@@ -61,10 +62,9 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final SketchesStore sketchesStore;
     private final SqsClient sqsClient;
     private final Supplier<String> idSupplier;
-    private final S3TransferManager s3TransferManager;
-    private final S3Client s3Client;
 
     public SplitPartitionLambda() {
         this(S3Client.builder().build(), DynamoDbClient.builder().build(), SqsClient.builder().build());
@@ -81,13 +81,12 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     public SplitPartitionLambda(InstanceProperties instanceProperties, S3TransferManager s3TransferManager, S3Client s3Client, DynamoDbClient dynamoDBClient, SqsClient sqsClient,
             Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
-        this.s3TransferManager = s3TransferManager;
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        this.sketchesStore = S3SketchesStore.createReadOnly(s3Client);
         this.sqsClient = sqsClient;
         this.idSupplier = idSupplier;
-        this.s3Client = s3Client;
     }
 
     @Override
@@ -111,8 +110,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
         LOGGER.info("Received partition splitting job {}", job);
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties,
-                loadSketchesFromFile(s3Client, s3TransferManager, tableProperties), idSupplier,
+        SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties, sketchesStore, idSupplier,
                 sendAsyncCommit(sqsClient, instanceProperties, tableProperties));
         splitPartition.splitPartition(job.getPartition(), job.getFileNames());
     }
