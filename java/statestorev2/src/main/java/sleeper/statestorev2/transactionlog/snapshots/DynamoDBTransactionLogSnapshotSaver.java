@@ -26,7 +26,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.StateStoreArrowUploadFileStore;
 import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
@@ -40,7 +40,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotSaver.class);
 
     private final SnapshotMetadataSaver metadataSaver;
-    private final StateStoreArrowFileStore fileStore;
+    private final StateStoreArrowUploadFileStore fileUploadStore;
     private final String basePath;
 
     public DynamoDBTransactionLogSnapshotSaver(
@@ -61,7 +61,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
             InstanceProperties instanceProperties, TableProperties tableProperties,
             S3Client s3Client, S3TransferManager s3TransferManager) {
         this.metadataSaver = metadataSaver;
-        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
+        this.fileUploadStore = new StateStoreArrowUploadFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
         this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
 
@@ -76,7 +76,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
                 basePath, snapshot.getTransactionNumber());
         StateStoreFiles state = snapshot.getState();
-        fileStore.saveFiles(metadata.getObjectKey(), state);
+        fileUploadStore.saveFiles(metadata.getObjectKey(), state);
         saveMetadata(metadata);
     }
 
@@ -92,7 +92,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
                 basePath, snapshot.getTransactionNumber());
         StateStorePartitions state = snapshot.getState();
-        fileStore.savePartitions(metadata.getObjectKey(), state.all());
+        fileUploadStore.savePartitions(metadata.getObjectKey(), state.all());
         saveMetadata(metadata);
     }
 
@@ -101,7 +101,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
             metadataSaver.save(metadata);
         } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot metadata to DynamoDB. Deleting snapshot file.");
-            fileStore.deleteSnapshotFile(metadata);
+            fileUploadStore.deleteSnapshotFile(metadata);
             throw e;
         }
     }

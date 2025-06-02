@@ -63,7 +63,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(basePath, 1);
 
         // When
-        store().savePartitions(metadata.getObjectKey(), partitions);
+        uploadStore().savePartitions(metadata.getObjectKey(), partitions);
 
         // Then
         assertThat(store().loadSnapshot(metadata)).isEqualTo(
@@ -82,7 +82,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(basePath, 1);
 
         // When
-        store().saveFiles(metadata.getObjectKey(), files);
+        uploadStore().saveFiles(metadata.getObjectKey(), files);
 
         // Then
         assertThat(store().loadSnapshot(metadata)).isEqualTo(new TransactionLogSnapshot(files, 1));
@@ -94,7 +94,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         StateStoreFiles files = new StateStoreFiles();
 
         // When
-        store().saveFiles("test/file-references.arrow", files);
+        uploadStore().saveFiles("test/file-references.arrow", files);
 
         // Then
         assertThat(store().isEmpty("test/file-references.arrow")).isTrue();
@@ -110,10 +110,10 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         StateStoreFiles files = new StateStoreFiles();
         files.add(StateStoreFile.from(fileWithOneReference(fileRef, updateTime)));
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(basePath, 1);
-        store().saveFiles(metadata.getObjectKey(), files);
+        uploadStore().saveFiles(metadata.getObjectKey(), files);
 
         // When
-        store().deleteSnapshotFile(metadata);
+        uploadStore().deleteSnapshotFile(metadata);
 
         // Then
         assertThat(filesInDataBucket()).isEmpty();
@@ -121,6 +121,10 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
 
     private StateStoreArrowFileStore store() {
         return new StateStoreArrowFileStore(instanceProperties, tableProperties, s3ClientV2, s3TransferManager);
+    }
+
+    private StateStoreArrowUploadFileStore uploadStore() {
+        return new StateStoreArrowUploadFileStore(instanceProperties, tableProperties, s3ClientV2, s3TransferManager);
     }
 
 }
