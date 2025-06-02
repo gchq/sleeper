@@ -22,6 +22,10 @@ use arrow::{
 use datafusion::{
     common::{exec_err, plan_err},
     error::Result,
+    functions_aggregate::{
+        min_max::{max_udaf, min_udaf},
+        sum::sum_udaf,
+    },
     logical_expr::{
         Accumulator, AggregateUDF, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator,
         ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
@@ -33,7 +37,61 @@ use datafusion::{
     prelude::Expr,
     scalar::ScalarValue,
 };
-use std::{any::Any, sync::Arc};
+use std::{
+    any::Any,
+    sync::{Arc, LazyLock},
+};
+
+static NON_NULL_SUM_UDAF: LazyLock<Arc<AggregateUDF>> = std::sync::LazyLock::new(|| {
+    std::sync::Arc::new(AggregateUDF::from(NonNullable::new(
+        sum_udaf().inner().clone(),
+    )))
+});
+
+static NON_NULL_MIN_UDAF: LazyLock<Arc<AggregateUDF>> = std::sync::LazyLock::new(|| {
+    std::sync::Arc::new(AggregateUDF::from(NonNullable::new(
+        min_udaf().inner().clone(),
+    )))
+});
+
+static NON_NULL_MAX_UDAF: LazyLock<Arc<AggregateUDF>> = std::sync::LazyLock::new(|| {
+    std::sync::Arc::new(AggregateUDF::from(NonNullable::new(
+        max_udaf().inner().clone(),
+    )))
+});
+
+pub fn non_null_sum(expression: Expr) -> Expr {
+    Expr::AggregateFunction(AggregateFunction::new_udf(
+        NON_NULL_SUM_UDAF.clone(),
+        vec![expression],
+        false,
+        None,
+        None,
+        None,
+    ))
+}
+
+pub fn non_null_min(expression: Expr) -> Expr {
+    Expr::AggregateFunction(AggregateFunction::new_udf(
+        NON_NULL_MIN_UDAF.clone(),
+        vec![expression],
+        false,
+        None,
+        None,
+        None,
+    ))
+}
+
+pub fn non_null_max(expression: Expr) -> Expr {
+    Expr::AggregateFunction(AggregateFunction::new_udf(
+        NON_NULL_MAX_UDAF.clone(),
+        vec![expression],
+        false,
+        None,
+        None,
+        None,
+    ))
+}
 
 /// Wraps an aggregate expression in a non-nullable version of it.
 ///
@@ -46,31 +104,9 @@ use std::{any::Any, sync::Arc};
 ///
 /// # Errors
 /// This function must only be called on [`Expr::AggregateFunction`] variants.
-pub fn non_nullable(expression: Expr) -> Result<Expr> {
-    match expression {
-        Expr::AggregateFunction(AggregateFunction { func, params }) => {
-            let AggregateFunctionParams {
-                args,
-                distinct,
-                filter,
-                null_treatment,
-                order_by,
-            } = params;
-            Ok(Expr::AggregateFunction(AggregateFunction::new_udf(
-                Arc::new(AggregateUDF::new_from_impl(NonNullable::new(
-                    func.inner().clone(),
-                ))),
-                args,
-                distinct,
-                filter,
-                order_by,
-                null_treatment,
-            )))
-        }
-        _ => {
-            plan_err!("Invalid aggregate expression {:?}", expression)
-        }
-    }
+pub fn non_nullable(func: Arc<AggregateUDF>) -> Arc<AggregateUDF> {
+    let non_null: Arc<NonNullable> = Arc::new(func.inner().clone().into());
+    Arc::new(AggregateUDF::new_from_shared_impl(non_null))
 }
 
 /// Checks the arrays for null values.
@@ -188,8 +224,30 @@ impl AggregateUDFImpl for NonNullable {
         self.inner.simplify().map(|inner_func| {
             Box::new(
                 move |func: AggregateFunction, simplify_info: &dyn SimplifyInfo| {
-                    inner_func(func, simplify_info)
-                        .and_then(|original_expr| non_nullable(original_expr))
+                    inner_func(func, simplify_info).and_then(|original_expr| match original_expr {
+                        Expr::AggregateFunction(AggregateFunction { func, params }) => {
+                            let AggregateFunctionParams {
+                                args,
+                                distinct,
+                                filter,
+                                null_treatment,
+                                order_by,
+                            } = params;
+                            Ok(Expr::AggregateFunction(AggregateFunction::new_udf(
+                                Arc::new(AggregateUDF::new_from_impl(NonNullable::new(
+                                    func.inner().clone(),
+                                ))),
+                                args,
+                                distinct,
+                                filter,
+                                order_by,
+                                null_treatment,
+                            )))
+                        }
+                        _ => {
+                            plan_err!("Invalid aggregate expression {:?}", original_expr)
+                        }
+                    })
                 },
             ) as Box<dyn Fn(AggregateFunction, &dyn SimplifyInfo) -> Result<Expr>>
         })

@@ -15,17 +15,18 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::datafusion::functions::nonnull::{
+    NonNullable, non_null_max, non_null_min, non_null_sum,
+};
 use ageoff::AgeOff;
 use datafusion::{
     common::{DFSchema, HashSet, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
-    execution::FunctionRegistry,
-    functions_aggregate::expr_fn::{count, max, min, sum},
+    functions_aggregate::expr_fn::count,
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
 };
 use map_aggregate::MapAggregator;
-use nonnull::non_nullable;
 use num_traits::NumAssign;
 use regex::Regex;
 use std::sync::Arc;
@@ -75,14 +76,13 @@ impl Aggregate {
     pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.1 {
             AggOp::Count => count(col(&self.0)),
-            AggOp::Sum => non_nullable(sum(col(&self.0)))?,
-            AggOp::Min => min(col(&self.0)),
-            AggOp::Max => max(col(&self.0)),
-            AggOp::MapSum(op) => {
+            AggOp::Sum => non_null_sum(col(&self.0)),
+            AggOp::Min => non_null_min(col(&self.0)),
+            AggOp::Max => non_null_max(col(&self.0)),
+            AggOp::MapAggregate(op) => {
                 let col_dt = col(&self.0).get_type(frame.schema())?;
-                let map_sum = AggregateUDF::from(MapAggregator::try_new(&col_dt, op.clone())?);
-                frame.task_ctx().register_udaf(Arc::new(map_sum.clone()))?;
-                map_sum.call(vec![col(&self.0)])
+                let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.clone())?);
+                AggregateUDF::new_from_impl(NonNullable::new(map_sum)).call(vec![col(&self.0)])
             }
         }
         // Rename column to original name
@@ -119,7 +119,7 @@ pub enum AggOp {
     Count,
     Min,
     Max,
-    MapSum(MapAggregatorOp),
+    MapAggregate(MapAggregatorOp),
 }
 
 impl TryFrom<&str> for AggOp {
@@ -130,9 +130,9 @@ impl TryFrom<&str> for AggOp {
             "count" => Ok(Self::Count),
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
-            "map_sum" => Ok(Self::MapSum(MapAggregatorOp::Sum)),
-            "map_min" => Ok(Self::MapSum(MapAggregatorOp::Min)),
-            "map_max" => Ok(Self::MapSum(MapAggregatorOp::Max)),
+            "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
+            "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
+            "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
             _ => Err(Self::Error::NotImplemented(format!(
                 "Aggregation operator {value} not recognised"
             ))),
