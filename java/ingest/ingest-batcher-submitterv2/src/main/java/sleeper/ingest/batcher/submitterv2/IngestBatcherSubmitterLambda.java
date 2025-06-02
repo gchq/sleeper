@@ -18,7 +18,6 @@ package sleeper.ingest.batcher.submitterv2;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -37,7 +36,6 @@ import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
 
@@ -64,19 +62,17 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.deadLetterQueue = new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClient);
-        this.submitter = new IngestBatcherSubmitter(instanceProperties,
-                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+        this.submitter = new IngestBatcherSubmitter(new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
                 new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider),
-                deadLetterQueue);
+                deadLetterQueue, s3Client);
     }
 
     public IngestBatcherSubmitterLambda(
             IngestBatcherStore store, InstanceProperties instanceProperties,
-            TableIndex tableIndex, Configuration conf, IngestBatcherSubmitDeadLetterQueue dlQueue) {
+            TableIndex tableIndex, IngestBatcherSubmitDeadLetterQueue dlQueue, S3Client s3Client) {
         this.propertiesReloader = PropertiesReloader.neverReload();
         this.deadLetterQueue = dlQueue;
-        this.submitter = new IngestBatcherSubmitter(instanceProperties, conf, tableIndex, store, deadLetterQueue);
+        this.submitter = new IngestBatcherSubmitter(tableIndex, store, deadLetterQueue, s3Client);
     }
 
     @Override
