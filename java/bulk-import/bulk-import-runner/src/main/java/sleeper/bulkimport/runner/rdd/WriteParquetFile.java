@@ -22,11 +22,11 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
 
+import sleeper.bulkimport.runner.HadoopSketchesStore;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.sketchesv2.store.NoSketchesStore;
 
 import java.util.Iterator;
 import java.util.List;
@@ -58,7 +58,7 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, Ma
 
         PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());
 
-        return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), new NoSketchesStore(), partitionTree);
+        return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), new HadoopSketchesStore(serializableConf.value()), partitionTree);
     }
 
 }

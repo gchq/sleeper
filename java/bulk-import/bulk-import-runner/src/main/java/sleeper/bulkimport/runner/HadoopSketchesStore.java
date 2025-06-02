@@ -1,0 +1,69 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.bulkimport.runner;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.core.schema.Schema;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.SketchesSerDe;
+import sleeper.sketchesv2.store.SketchesStore;
+
+import java.io.IOException;
+
+public class HadoopSketchesStore implements SketchesStore {
+
+    private final Configuration conf;
+
+    public HadoopSketchesStore(Configuration conf) {
+        this.conf = conf;
+    }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HadoopSketchesStore.class);
+
+    @Override
+    public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
+        Path path = new Path(filename);
+        try (FSDataOutputStream dataOutputStream = path.getFileSystem(conf).create(path)) {
+            new SketchesSerDe(schema).serialise(sketches, dataOutputStream);
+            LOGGER.info("Wrote sketches to {}", path);
+        } catch (IOException e) {
+            LOGGER.error("Failure when trying to save file sketches.", sketches, e);
+        }
+    }
+
+    @Override
+    public Sketches loadFileSketches(String filename, Schema schema) {
+        try {
+            Path path = new Path(filename);
+            Sketches sketches;
+
+            try (FSDataInputStream dataInputStream = path.getFileSystem(conf).open(path)) {
+                sketches = new SketchesSerDe(schema).deserialise(dataInputStream);
+            }
+            LOGGER.info("Loaded sketches from {}", path);
+            return sketches;
+        } catch (IOException e) {
+            LOGGER.error("Failure when trying to load file sketches", filename, e);
+            return null;
+        }
+    }
+}
