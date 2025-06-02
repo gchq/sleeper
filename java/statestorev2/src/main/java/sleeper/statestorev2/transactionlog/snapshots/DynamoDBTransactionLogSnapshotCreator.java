@@ -89,7 +89,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(
                 latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, s3Client, s3TransferManager);
-        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
+        this.fileStore = new StateStoreArrowFileStore(instanceProperties, s3Client);
     }
 
     /**

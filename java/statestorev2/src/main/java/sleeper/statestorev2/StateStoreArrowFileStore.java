@@ -57,6 +57,14 @@ public class StateStoreArrowFileStore {
         this.s3TransferManager = s3TransferManager;
     }
 
+    public StateStoreArrowFileStore(
+            InstanceProperties instanceProperties, S3Client s3Client) {
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = null;
+        this.s3Client = s3Client;
+        this.s3TransferManager = null;
+    }
+
     /**
      * Loads the state of a snapshot in a Sleeper table from an Arrow file.
      *

@@ -53,7 +53,7 @@ public class DynamoDBTransactionLogStateStore {
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamoDB, S3Client s3, S3TransferManager s3TransferManager) {
         DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
-        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3, s3TransferManager);
+        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(instanceProperties, s3);
         return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
                 .filesSnapshotLoader(new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, SnapshotType.FILES))
                 .partitionsSnapshotLoader(new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, SnapshotType.PARTITIONS));
