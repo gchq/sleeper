@@ -35,7 +35,6 @@ on:
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/bulk-import/bulk-import-core/**'
-      - 'java/partitions/splitter/**'
       - 'java/partitions/splitterv2/**'
       - 'java/compaction/compaction-job-execution/**'
       - 'java/statestore-committer-core/**'
