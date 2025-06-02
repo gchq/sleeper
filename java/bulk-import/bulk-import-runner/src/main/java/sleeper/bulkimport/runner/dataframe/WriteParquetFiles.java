@@ -19,9 +19,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.sketchesv2.store.S3SketchesStore;
 
 import java.util.Iterator;
 
@@ -50,6 +54,10 @@ public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
-        return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value());
+        try (S3Client s3Client = S3Client.create();
+                S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
+                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
+            return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), new S3SketchesStore(s3Client, s3TransferManager));
+        }
     }
 }
