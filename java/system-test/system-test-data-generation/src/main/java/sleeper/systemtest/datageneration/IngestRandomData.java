@@ -15,31 +15,30 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.api.role.AssumeSleeperRole;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.clients.api.role.AssumeSleeperRoleV2;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestIngestMode;
-import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestIngestMode;
+import sleeper.systemtest.configurationv2.SystemTestProperties;
+import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 
-import static sleeper.systemtest.configuration.SystemTestIngestMode.BATCHER;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
+import static sleeper.systemtest.configurationv2.SystemTestIngestMode.BATCHER;
+import static sleeper.systemtest.configurationv2.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configurationv2.SystemTestIngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configurationv2.SystemTestIngestMode.QUEUE;
 
 /**
  * Entrypoint for SystemTest image. Writes random data to Sleeper using the mechanism (ingestMode) defined in
@@ -148,37 +147,37 @@ public class IngestRandomData {
         }
 
         IngestRandomData noLoadConfigRole(String configBucket) {
-            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            S3Client s3Client = S3Client.builder().build();
             try {
                 return combinedInstance(configBucket, s3Client);
             } finally {
-                s3Client.shutdown();
+                s3Client.close();
             }
         }
 
         IngestRandomData withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
+            S3Client instanceS3Client = AssumeSleeperRoleV2.fromArn(loadConfigRoleArn).forAwsV2(stsClientV1).buildClient(S3Client.builder().build());
             try {
                 return combinedInstance(configBucket, instanceS3Client);
             } finally {
-                instanceS3Client.shutdown();
+                instanceS3Client.close();
             }
         }
 
         IngestRandomData standalone(String configBucket, String loadConfigRoleArn, String systemTestBucket) {
-            AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
-            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            S3Client instanceS3Client = AssumeSleeperRoleV2.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(S3Client.builder());
+            S3Client s3Client = S3Client.builder().build();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, configBucket);
                 return ingestRandomData(instanceProperties, systemTestProperties);
             } finally {
-                s3Client.shutdown();
-                instanceS3Client.shutdown();
+                s3Client.close();
+                instanceS3Client.close();
             }
         }
 
-        IngestRandomData combinedInstance(String configBucket, AmazonS3 s3Client) {
+        IngestRandomData combinedInstance(String configBucket, S3Client s3Client) {
             SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
             return ingestRandomData(properties, properties.testPropertiesOnly());
         }

@@ -16,20 +16,18 @@
 
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class GenerateRandomDataFiles {
@@ -64,8 +62,8 @@ public class GenerateRandomDataFiles {
             numberOfRecords = Long.parseLong(args[3]);
         }
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        S3Client s3Client = buildAwsV2Client(S3Client.builder());
+        DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
@@ -74,8 +72,8 @@ public class GenerateRandomDataFiles {
             new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
                     .run();
         } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
+            s3Client.close();
+            dynamoClient.close();
         }
     }
 }

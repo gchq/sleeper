@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
 
 import java.util.Collections;
 
@@ -43,6 +43,8 @@ public class IngestRandomDataViaQueue {
         String jsonJob = new IngestJobSerDe().toJson(ingestJob);
         String queueUrl = job.getIngestQueue().getJobQueueUrl(session.instanceProperties());
         LOGGER.debug("Sending message to ingest queue {}: {}", queueUrl, jsonJob);
-        session.sqs().sendMessage(queueUrl, jsonJob);
+        session.sqs().sendMessage(send -> send
+                .queueUrl(queueUrl)
+                .messageBody(jsonJob));
     }
 }

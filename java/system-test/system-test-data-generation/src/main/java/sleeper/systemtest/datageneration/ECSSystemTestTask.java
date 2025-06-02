@@ -15,12 +15,11 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
@@ -28,26 +27,27 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
+import sleeper.clients.api.role.AssumeSleeperRoleV2;
 import sleeper.common.jobv2.action.ActionException;
 import sleeper.common.jobv2.action.MessageReference;
 import sleeper.common.jobv2.action.thread.PeriodicActionRunnable;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configurationv2.SystemTestProperties;
+import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
@@ -131,29 +131,32 @@ public class ECSSystemTestTask {
         }
 
         ECSSystemTestTask noLoadConfigRole(String configBucket) {
-            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            S3Client s3Client = S3Client.builder().build();
             try {
                 return combinedInstance(configBucket, s3Client);
             } finally {
-                s3Client.shutdown();
+                s3Client.close();
             }
         }
 
         ECSSystemTestTask withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            AmazonS3 s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
+            AssumeSleeperRole assumeRole = AssumeSleeperRole.instanceAdmin(this.properties);
+            AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(StsClient.create());
+            S3Client s3Client = v2.buildClient(S3Client.builder());
             try {
                 return combinedInstance(configBucket, s3Client);
             } finally {
-                s3Client.shutdown();
+                s3Client.close();
             }
         }
 
         ECSSystemTestTask standalone(String systemTestBucket) {
-            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            S3Client s3Client = S3Client.builder().build();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
-                    AmazonS3 instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV1(stsClientV1).buildClient(AmazonS3ClientBuilder.standard());
+                    AssumeSleeperRoleV2 v2 = AssumeSleeperRole.forAwsV2(stsClientV2);
+                    S3Client instanceS3Client = v2.buildClient(S3Client.builder());
                     try {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
                         IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
@@ -161,15 +164,15 @@ public class ECSSystemTestTask {
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     } finally {
-                        instanceS3Client.shutdown();
+                        instanceS3Client.close();
                     }
                 });
             } finally {
-                s3Client.shutdown();
+                s3Client.close();
             }
         }
 
-        ECSSystemTestTask combinedInstance(String configBucket, AmazonS3 s3Client) {
+        ECSSystemTestTask combinedInstance(String configBucket, S3Client s3Client) {
             SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
             IngestRandomData ingestData = ingestRandomData(properties, properties.testPropertiesOnly());
             return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClientV2, job -> {

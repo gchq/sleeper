@@ -15,33 +15,29 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
-import sleeper.clients.api.role.AssumeSleeperRoleV1;
 import sleeper.clients.api.role.AssumeSleeperRoleV2;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 public class InstanceIngestSession implements AutoCloseable {
-    private final AmazonS3 s3;
-    private final AmazonDynamoDB dynamo;
-    private final AmazonSQS sqs;
+    private final S3Client s3;
+    private final DynamoDbClient dynamo;
+    private final SqsClient sqs;
     private final S3AsyncClient s3Async;
     private final Configuration hadoopConfiguration;
     private final InstanceProperties instanceProperties;
@@ -51,7 +47,7 @@ public class InstanceIngestSession implements AutoCloseable {
     private final String localDir;
 
     private InstanceIngestSession(InstanceProperties instanceProperties, String tableName,
-            AmazonS3 s3, AmazonDynamoDB dynamo, AmazonSQS sqs, S3AsyncClient s3Async, Configuration hadoopConfiguration,
+            S3Client s3, DynamoDbClient dynamo, SqsClient sqs, S3AsyncClient s3Async, Configuration hadoopConfiguration,
             String localDir) {
         this.s3 = s3;
         this.dynamo = dynamo;
@@ -78,18 +74,17 @@ public class InstanceIngestSession implements AutoCloseable {
     private static InstanceIngestSession assumeRole(
             AssumeSleeperRole assumeRole, AWSSecurityTokenService stsClientV1, StsClient stsClientV2,
             InstanceProperties instanceProperties, String tableName, String localDir) {
-        AssumeSleeperRoleV1 roleV1 = assumeRole.forAwsV1(stsClientV1);
         AssumeSleeperRoleV2 roleV2 = assumeRole.forAwsV2(stsClientV2);
         AssumeSleeperRoleHadoop roleHadoop = assumeRole.forHadoop();
-        AmazonS3 s3 = roleV1.buildClient(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamo = roleV1.buildClient(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqs = roleV1.buildClient(AmazonSQSClientBuilder.standard());
+        S3Client s3 = roleV2.buildClient(S3Client.builder());
+        DynamoDbClient dynamo = roleV2.buildClient(DynamoDbClient.builder());
+        SqsClient sqs = roleV2.buildClient(SqsClient.builder());
         S3AsyncClient s3Async = roleV2.buildClient(S3AsyncClient.builder());
         Configuration hadoopConfiguration = roleHadoop.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         return new InstanceIngestSession(instanceProperties, tableName, s3, dynamo, sqs, s3Async, hadoopConfiguration, localDir);
     }
 
-    public AmazonS3 s3() {
+    public S3Client s3() {
         return s3;
     }
 
@@ -97,7 +92,7 @@ public class InstanceIngestSession implements AutoCloseable {
         return s3Async;
     }
 
-    public AmazonSQS sqs() {
+    public SqsClient sqs() {
         return sqs;
     }
 
@@ -127,9 +122,9 @@ public class InstanceIngestSession implements AutoCloseable {
 
     @Override
     public void close() {
-        s3.shutdown();
-        dynamo.shutdown();
-        sqs.shutdown();
+        s3.close();
+        dynamo.close();
+        sqs.close();
         s3Async.close();
     }
 }
