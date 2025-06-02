@@ -35,12 +35,14 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
@@ -222,8 +224,11 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                                 .maxNoOfRecordsInMemory(1_000_000)
                                 .maxNoOfRecordsInLocalStore(1000L)
                                 .buildAcceptingRecords(),
-                        DirectPartitionFileWriterFactory.from(parquetConfiguration,
-                                "file://" + directory.getAbsolutePath()))) {
+                        DirectPartitionFileWriterFactory.builder()
+                                .parquetConfiguration(parquetConfiguration)
+                                .filePaths(TableFilePaths.fromPrefix("file://" + directory.getAbsolutePath()))
+                                .sketchesStore(new LocalFileSystemSketchesStore())
+                                .build())) {
                     new IngestRecordsFromIterator(coordinator, list.iterator()).write();
                 }
             } catch (Exception e) {

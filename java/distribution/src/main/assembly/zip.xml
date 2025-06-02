@@ -172,10 +172,10 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../ingest/ingest-starter/target/ingest-starter-${project.version}-utility.jar
+                ${project.basedir}/../ingest/ingest-taskrunner/target/ingest-taskrunner-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>ingest-starter-${project.version}.jar</destName>
+            <destName>ingest-taskrunner-${project.version}.jar</destName>
         </file>
         <file>
             <source>
