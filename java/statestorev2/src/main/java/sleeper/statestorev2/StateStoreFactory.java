@@ -98,7 +98,7 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
         String stateStoreClassName = readSimpleClassName(tableProperties);
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,
-                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, s3TransferManager)).build();
+                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)).build();
         }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,

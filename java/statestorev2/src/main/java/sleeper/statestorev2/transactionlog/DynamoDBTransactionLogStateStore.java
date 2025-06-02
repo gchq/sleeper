@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -51,7 +50,7 @@ public class DynamoDBTransactionLogStateStore {
      * @return                    the builder
      */
     public static TransactionLogStateStore.Builder builderFrom(
-            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamoDB, S3Client s3, S3TransferManager s3TransferManager) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamoDB, S3Client s3) {
         DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
         StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(instanceProperties, s3);
         return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)

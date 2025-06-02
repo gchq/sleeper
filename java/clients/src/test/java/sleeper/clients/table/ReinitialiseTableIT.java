@@ -266,7 +266,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         TransactionLogStateStore transctionLogStateStore = DynamoDBTransactionLogStateStore.builderFrom(
-                instanceProperties, tableProperties, dynamoClientV2, s3ClientV2, s3TransferManager).build();
+                instanceProperties, tableProperties, dynamoClientV2, s3ClientV2).build();
 
         update(transctionLogStateStore).initialise(tableProperties.getSchema());
         setupPartitionsAndAddFiles(transctionLogStateStore);
