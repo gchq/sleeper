@@ -15,17 +15,15 @@
  */
 package sleeper.trino.testutils;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.airlift.log.Logging;
 import io.trino.Session;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.SleeperPlugin;
@@ -47,9 +45,9 @@ public final class SleeperQueryRunner {
     public static DistributedQueryRunner createSleeperQueryRunner(
             Map<String, String> extraProperties,
             SleeperConfig sleeperConfig,
-            AmazonS3 s3Client,
+            S3Client s3Client,
             S3AsyncClient s3AsyncClient,
-            AmazonDynamoDB dynamoDBClient,
+            DynamoDbClient dynamoDBClient,
             HadoopConfigurationProvider hadoopConfigurationProvider) throws Exception {
         Session session = testSessionBuilder()
                 .setCatalog(CATALOG)
@@ -85,9 +83,9 @@ public final class SleeperQueryRunner {
         DistributedQueryRunner queryRunner = createSleeperQueryRunner(
                 ImmutableMap.of("http-server.http.port", "8080"),
                 sleeperConfig,
-                AmazonS3ClientBuilder.defaultClient(),
+                S3Client.create(),
                 S3AsyncClient.create(),
-                AmazonDynamoDBClientBuilder.defaultClient(),
+                DynamoDbClient.create(),
                 new HadoopConfigurationProviderForDeployedS3Instance());
         Thread.sleep(10);
 

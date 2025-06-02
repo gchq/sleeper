@@ -15,11 +15,6 @@
  */
 package sleeper.trino.testutils;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.Bucket;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -29,11 +24,17 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Bucket;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -46,8 +47,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
@@ -66,7 +67,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -86,9 +86,10 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
-    private final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
+    private final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT_V2;
     private final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private final AmazonDynamoDB dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    private final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
+    private final DynamoDbClient dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
     private QueryAssertions queryAssertions;
 
     public PopulatedSleeperExternalResource(List<TableDefinition> tableDefinitions) {
@@ -129,7 +130,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration);
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
         return stateStoreFactory.getStateStore(getTableProperties(tableName));
     }
 
@@ -140,8 +141,12 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        s3Client.createBucket(CreateBucketRequest.builder()
+                .bucket(instanceProperties.get(CONFIG_BUCKET))
+                .build());
+        s3Client.createBucket(CreateBucketRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .build());
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
@@ -152,7 +157,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, configuration);
+                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 update(stateStore).initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
@@ -162,20 +167,22 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         });
 
         System.out.println("--- My buckets ---");
-        List<Bucket> buckets = s3Client.listBuckets();
+        List<Bucket> buckets = s3Client.listBuckets().buckets();
         buckets.forEach(System.out::println);
         buckets.forEach(bucket -> {
             System.out.printf("--- Contents of bucket %s ---%n", bucket);
-            s3Client.listObjectsV2(bucket.getName()).getObjectSummaries().forEach(System.out::println);
+            s3Client.listObjectsV2(ListObjectsV2Request.builder()
+                    .bucket(bucket.name())
+                    .build()).contents().forEach(System.out::println);
         });
 
         sleeperConfig.setConfigBucket(instanceProperties.get(CONFIG_BUCKET));
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
                 extraPropertiesForQueryRunner,
                 sleeperConfig,
-                buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard()),
+                buildAwsV2Client(localStackContainer, Service.S3, S3Client.builder()),
                 buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder()),
-                buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard()),
+                buildAwsV2Client(localStackContainer, Service.DYNAMODB, DynamoDbClient.builder()),
                 hadoopConfigurationProvider);
         queryAssertions = new QueryAssertions(distributedQueryRunner);
     }

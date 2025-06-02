@@ -46,6 +46,9 @@ import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestorev2.StateStoreFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
@@ -71,8 +74,8 @@ public class QueryClient extends QueryCommandLineClient {
     public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(instanceProperties, s3Client, dynamoClient, in, out,
-                new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory(),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));
+                new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));               
     }
 
     public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
@@ -88,6 +91,16 @@ public class QueryClient extends QueryCommandLineClient {
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
         this.executorService = Executors.newFixedThreadPool(30);
+    }
+
+    public static Path makeTemporaryDirectory() {
+        try {
+            Path tempDir = Files.createTempDirectory(null);
+            tempDir.toFile().deleteOnExit();
+            return tempDir;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
