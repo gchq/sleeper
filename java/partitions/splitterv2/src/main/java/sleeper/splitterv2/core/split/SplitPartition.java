@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.splitterv2.core.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.List;
@@ -67,6 +68,19 @@ public class SplitPartition {
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
         this.sketchesLoader = sketchesLoader;
+        this.idSupplier = idSupplier;
+        this.sendAsyncCommit = sendAsyncCommit;
+    }
+
+    public SplitPartition(StateStore stateStore,
+            TableProperties tableProperties,
+            SketchesStore sketchesStore,
+            Supplier<String> idSupplier,
+            SendAsyncCommit sendAsyncCommit) {
+        this.stateStore = stateStore;
+        this.tableProperties = tableProperties;
+        this.schema = tableProperties.getSchema();
+        this.sketchesLoader = FindPartitionSplitPoint.loadSketchesFromFile(schema, sketchesStore);
         this.idSupplier = idSupplier;
         this.sendAsyncCommit = sendAsyncCommit;
     }

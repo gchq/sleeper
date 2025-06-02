@@ -29,6 +29,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -51,6 +52,12 @@ public class FindPartitionSplitPoint {
         this.schema = schema;
         this.fileNames = fileNames;
         this.sketchesLoader = sketchesLoader;
+    }
+
+    public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
+        this.schema = schema;
+        this.fileNames = fileNames;
+        this.sketchesLoader = loadSketchesFromFile(schema, sketchesStore);
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
@@ -109,6 +116,10 @@ public class FindPartitionSplitPoint {
 
     public static SketchesLoader loadSketchesFromFile(S3Client s3Client, S3TransferManager s3TransferManager, TableProperties tableProperties) {
         return (filename) -> new S3SketchesStore(s3Client, s3TransferManager).loadFileSketches(filename, tableProperties.getSchema());
+    }
+
+    public static SketchesLoader loadSketchesFromFile(Schema schema, SketchesStore sketchesStore) {
+        return (filename) -> sketchesStore.loadFileSketches(filename, schema);
     }
 
 }
