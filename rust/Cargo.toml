@@ -35,7 +35,7 @@ bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.19.2" } # Access cargo metadata programmtically
 chrono = { version = "0.4.41" } # Log helper
 clap = { version = "4.5.39" } # Cmd line args processing
-color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
+color-eyre = { version = "0.6.5" } # Colourised version of `anyhow`
 cxx = { version = "1.0.158" } # Exception handling for Rust
 cxx-build = { version = "1.0.158" }
 datafusion = { version = "46.0.1" }
@@ -47,7 +47,7 @@ libc = { version = "0.2.172" } # FFI type support
 log = { version = "0.4.27" } # Standard logging framework
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 object_store = { version = "0.11.2" } # Remote cloud storage access
-openssl = { version = "0.10.72" } # Use vendored feature to build from source for cross compilation
+openssl = { version = "0.10.73" } # Use vendored feature to build from source for cross compilation
 owo-colors = { version = "4.2.1" } # Colourised output
 predicates = { version = "3.1.3" } # Test assertions
 rand = { version = "0.9.1" }

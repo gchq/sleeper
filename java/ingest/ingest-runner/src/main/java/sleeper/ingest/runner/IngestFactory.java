@@ -125,7 +125,11 @@ public class IngestFactory {
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
-            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties, fileNameGenerator);
+            return DirectPartitionFileWriterFactory.builder()
+                    .parquetConfiguration(parquetConfiguration)
+                    .filePathsAndSketchesStoreFromPropertiesAndClientOrDefault(instanceProperties, tableProperties, s3AsyncClient)
+                    .fileNameGenerator(fileNameGenerator)
+                    .build();
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");

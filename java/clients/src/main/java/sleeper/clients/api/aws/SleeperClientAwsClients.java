@@ -69,7 +69,7 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
     @Override
     public void close() {
-        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
+        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, s3TransferManagerWrapper, dynamoClientWrapper, s3ClientWrapper));
     }
 
     public static class Builder {
