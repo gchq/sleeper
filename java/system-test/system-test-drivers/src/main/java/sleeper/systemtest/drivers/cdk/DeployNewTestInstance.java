@@ -38,7 +38,7 @@ import java.util.List;
 
 import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class DeployNewTestInstance {
 

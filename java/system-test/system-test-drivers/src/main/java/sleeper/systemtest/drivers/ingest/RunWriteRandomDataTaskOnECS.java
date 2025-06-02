@@ -30,15 +30,16 @@ import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestProperties;
+import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
 import sleeper.task.common.RunECSTasks;
 
@@ -52,11 +53,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.systemtest.configuration.SystemTestConstants.SYSTEM_TEST_CONTAINER;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
+import static sleeper.systemtest.configurationv2.SystemTestConstants.SYSTEM_TEST_CONTAINER;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
  * Runs ECS tasks to write random data.
@@ -133,8 +134,10 @@ public class RunWriteRandomDataTaskOnECS {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        try (EcsClient ecsClient = EcsClient.create(); SqsClient sqsClient = SqsClient.create()) {
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
+        try (S3Client s3ClientV2 = S3Client.create();
+                EcsClient ecsClient = EcsClient.create();
+                SqsClient sqsClient = SqsClient.create()) {
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3ClientV2, args[0]);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             SystemTestDataGenerationJobSender jobSender = new SystemTestDataGenerationJobSender(systemTestProperties.testPropertiesOnly(), sqsClient);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient);
