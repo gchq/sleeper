@@ -94,9 +94,8 @@ public class FindPartitionSplitPoint {
     private <T> ItemsSketch<T> unionSketches(Field field) {
         ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
         for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = loadSketches(sketchesFile);
+            LOGGER.info("Loading sketches for file {}", fileName);
+            Sketches sketches = loadSketches(fileName);
             union.update(sketches.getQuantilesSketch(field.getName()));
         }
         return union.getResult();

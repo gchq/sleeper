@@ -30,8 +30,8 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
+import sleeper.sketchesv2.testutils.InMemorySketchesStore;
 
 import java.util.HashMap;
 import java.util.LinkedList;

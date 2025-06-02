@@ -557,7 +557,8 @@ public class SplitPartitionTest {
             recordCount.incrementAndGet();
         });
 
-        FileReference recordFileReference = FileReferenceFactory.from(stateStore).partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
+        FileReference recordFileReference = FileReferenceFactory.from(instanceProperties, tableProperties, stateStore)
+                .partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
         try {
             update(stateStore).addFile(recordFileReference);
         } catch (Exception ex) {

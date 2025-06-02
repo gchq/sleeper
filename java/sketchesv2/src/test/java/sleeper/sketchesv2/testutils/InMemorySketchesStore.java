@@ -28,11 +28,19 @@ public class InMemorySketchesStore implements SketchesStore {
 
     @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
-        filenameToSketches.put(filename, sketches);
+        saveFileSketches(filename, sketches);
     }
 
     @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
+        return loadFileSketches(filename);
+    }
+
+    public void saveFileSketches(String filename, Sketches sketches) {
+        filenameToSketches.put(filename, sketches);
+    }
+
+    public Sketches loadFileSketches(String filename) {
         return filenameToSketches.get(filename);
     }
 
