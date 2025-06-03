@@ -507,7 +507,7 @@ mod tests {
     }
 
     #[test]
-    fn should_register_functions() -> Result<()> {
+    fn should_register_functions() {
         // Given
         let mut sc = SessionStateBuilder::new().build();
         let expected = HashMap::from([
@@ -522,11 +522,10 @@ mod tests {
 
         // Then
         assert_eq!(&expected, actual);
-        Ok(())
     }
 
     #[test]
-    fn non_nullable_wraps_function() -> Result<()> {
+    fn non_nullable_wraps_function() {
         // Given
         let aggregate = sum_udaf();
 
@@ -541,8 +540,6 @@ mod tests {
 
         // Then
         assert_eq!(&inner_func, &sum_udaf().inner().clone());
-
-        Ok(())
     }
 
     #[test]
@@ -571,7 +568,7 @@ mod tests {
     }
 
     #[test]
-    fn nullable_check_fail() -> Result<()> {
+    fn nullable_check_fail() {
         // Given
         let mut array_builder = Int64Builder::new();
         array_builder.append_values(&[1, 2, 3, 4, 5], &[true, true, true, true, true]);
@@ -597,6 +594,5 @@ mod tests {
             DataFusionError::Execution,
             "Null found in array index 1 in an non-nullable aggregation operator. Array datatype is Int64, length 3, logical null count 1, null count 1"
         );
-        Ok(())
     }
 }
