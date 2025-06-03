@@ -22,6 +22,7 @@ use arrow::{
 use datafusion::{
     common::{exec_err, plan_err},
     error::Result,
+    execution::FunctionRegistry,
     functions_aggregate::{
         min_max::{max_udaf, min_udaf},
         sum::sum_udaf,
@@ -42,24 +43,28 @@ use std::{
     sync::{Arc, LazyLock},
 };
 
+/// Lazily created user defined aggregate function (UDAF) for a non-nullable sum function.
 static NON_NULL_SUM_UDAF: LazyLock<Arc<AggregateUDF>> = std::sync::LazyLock::new(|| {
     std::sync::Arc::new(AggregateUDF::from(NonNullable::new(
         sum_udaf().inner().clone(),
     )))
 });
 
+/// Lazily created user defined aggregate function (UDAF) for a non-nullable min function.
 static NON_NULL_MIN_UDAF: LazyLock<Arc<AggregateUDF>> = std::sync::LazyLock::new(|| {
     std::sync::Arc::new(AggregateUDF::from(NonNullable::new(
         min_udaf().inner().clone(),
     )))
 });
 
+/// Lazily created user defined aggregate function (UDAF) for a non-nullable max function.
 static NON_NULL_MAX_UDAF: LazyLock<Arc<AggregateUDF>> = std::sync::LazyLock::new(|| {
     std::sync::Arc::new(AggregateUDF::from(NonNullable::new(
         max_udaf().inner().clone(),
     )))
 });
 
+/// Summing aggregate function that won't produce nulls. If a null value is found, an execution error will occur.
 pub fn non_null_sum(expression: Expr) -> Expr {
     Expr::AggregateFunction(AggregateFunction::new_udf(
         NON_NULL_SUM_UDAF.clone(),
@@ -71,6 +76,7 @@ pub fn non_null_sum(expression: Expr) -> Expr {
     ))
 }
 
+/// Minimum aggregate function that won't produce nulls. If a null value is found, an execution error will occur.
 pub fn non_null_min(expression: Expr) -> Expr {
     Expr::AggregateFunction(AggregateFunction::new_udf(
         NON_NULL_MIN_UDAF.clone(),
@@ -82,6 +88,7 @@ pub fn non_null_min(expression: Expr) -> Expr {
     ))
 }
 
+/// Maxmimum aggregate function that won't produce nulls. If a null value is found, an execution error will occur.
 pub fn non_null_max(expression: Expr) -> Expr {
     Expr::AggregateFunction(AggregateFunction::new_udf(
         NON_NULL_MAX_UDAF.clone(),
@@ -91,6 +98,14 @@ pub fn non_null_max(expression: Expr) -> Expr {
         None,
         None,
     ))
+}
+
+/// Register the non-nullable versions of some simple aggregators so they
+/// can be used within SQL queries.
+pub fn register_non_nullables(registry: &mut dyn FunctionRegistry) {
+    let _ = registry.register_udaf(NON_NULL_SUM_UDAF.clone());
+    let _ = registry.register_udaf(NON_NULL_MIN_UDAF.clone());
+    let _ = registry.register_udaf(NON_NULL_MAX_UDAF.clone());
 }
 
 /// Wraps an aggregate expression in a non-nullable version of it.
@@ -104,7 +119,8 @@ pub fn non_null_max(expression: Expr) -> Expr {
 ///
 /// # Errors
 /// This function must only be called on [`Expr::AggregateFunction`] variants.
-pub fn non_nullable(func: Arc<AggregateUDF>) -> Arc<AggregateUDF> {
+#[allow(dead_code)]
+pub fn non_nullable(func: &Arc<AggregateUDF>) -> Arc<AggregateUDF> {
     let non_null: Arc<NonNullable> = Arc::new(func.inner().clone().into());
     Arc::new(AggregateUDF::new_from_shared_impl(non_null))
 }
@@ -136,19 +152,21 @@ pub fn nullable_check(arrays: &[ArrayRef]) -> Result<&[ArrayRef]> {
 pub struct NonNullable {
     /// The aggregate UDF function that performs some computation.
     pub inner: Arc<dyn AggregateUDFImpl>,
+    pub func_name: String,
 }
 
 impl NonNullable {
     /// Wrap the given [`AggregateUDFImpl`] in a non-nullable
     /// wrapper.
     pub fn new(inner: Arc<dyn AggregateUDFImpl>) -> Self {
-        Self { inner }
+        let func_name = String::from("nonnullable_") + inner.name();
+        Self { inner, func_name }
     }
 }
 
 impl From<Arc<dyn AggregateUDFImpl>> for NonNullable {
     fn from(value: Arc<dyn AggregateUDFImpl>) -> Self {
-        Self { inner: value }
+        Self::new(value)
     }
 }
 
@@ -158,7 +176,7 @@ impl AggregateUDFImpl for NonNullable {
     }
 
     fn name(&self) -> &str {
-        "nonnullable"
+        &self.func_name
     }
 
     fn signature(&self) -> &Signature {

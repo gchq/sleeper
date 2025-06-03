@@ -19,7 +19,9 @@
 */
 use crate::{
     ColRange, CompactionInput, CompactionResult, PartitionBound,
-    datafusion::{sketch::serialise_sketches, udf::SketchUDF},
+    datafusion::{
+        functions::nonnull::register_non_nullables, sketch::serialise_sketches, udf::SketchUDF,
+    },
     details::create_sketch_path,
     s3::ObjectStoreFactory,
 };
@@ -68,7 +70,8 @@ pub async fn compact(
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
     let sf = create_session_cfg(input_data, input_paths);
-    let ctx = SessionContext::new_with_config(sf);
+    let mut ctx = SessionContext::new_with_config(sf);
+    register_non_nullables(&mut ctx);
 
     // Register object stores for input files and output file
     register_store(store_factory, input_paths, output_path, &ctx)?;
