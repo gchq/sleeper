@@ -29,7 +29,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.sketches.Sketches;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.testutils.InMemorySketchesStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +71,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     @Override
     public CompletableFuture<FileReference> close() {
         dataStore.addFile(filename, records);
-        sketchesStore.addSketchForFile(filename, sketches);
+        sketchesStore.saveFileSketches(filename, sketches);
         LOGGER.info("Wrote file with {} records: {}", records.size(), filename);
         return CompletableFuture.completedFuture(FileReference.builder()
                 .filename(filename)

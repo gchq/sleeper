@@ -13,21 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.testutils;
+package sleeper.ingest.batcher.submitterv2;
 
-import sleeper.sketches.Sketches;
+public class FileNotFoundException extends RuntimeException {
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class InMemorySketchesStore {
-    private final Map<String, Sketches> filenameToSketches = new HashMap<>();
-
-    public void addSketchForFile(String filename, Sketches sketches) {
-        filenameToSketches.put(filename.replace(".parquet", ".sketches"), sketches);
+    public FileNotFoundException(String bucket, String path) {
+        super("Found no files at path " + bucket + "/" + path);
     }
 
-    public Sketches load(String filename) {
-        return filenameToSketches.get(filename);
-    }
 }

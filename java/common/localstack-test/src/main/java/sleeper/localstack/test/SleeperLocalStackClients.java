@@ -28,6 +28,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -59,6 +60,7 @@ public class SleeperLocalStackClients {
     public static final DynamoDbClient DYNAMO_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
     public static final SqsClient SQS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
     public static final StsClient STS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.STS, StsClient.builder());
+    public static final CloudWatchClient CLOUDWATCH_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.CLOUDWATCH, CloudWatchClient.builder());
     public static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
 
 }

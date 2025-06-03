@@ -95,6 +95,7 @@ public class S3UserJarsLoader {
         GetObjectResponse response = s3Client.getObject(request -> request
                 .bucket(bucket).key(jar),
                 ResponseTransformer.toFile(outputFile));
+        outputFile.toFile().deleteOnExit();
         LOGGER.info("Loaded jar {} of size {} from {} and wrote to {}",
                 jar, response.contentLength(), bucket, outputFile);
         return outputFile.toString();

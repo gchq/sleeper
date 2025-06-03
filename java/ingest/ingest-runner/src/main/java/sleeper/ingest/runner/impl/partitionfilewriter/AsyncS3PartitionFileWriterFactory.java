@@ -15,12 +15,7 @@
  */
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
-import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.partition.Partition;
@@ -30,15 +25,11 @@ import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CLIENT_TYPE;
-import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
-import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -49,9 +40,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final TableFilePaths filePaths;
     private final String localWorkingDirectory;
     private final Supplier<String> fileNameGenerator;
-    private final S3TransferManager s3TransferManager;
-    private final S3AsyncClient s3AsyncClient;
-    private final boolean closeS3AsyncClient;
+    private final IngestS3TransferManager s3TransferManager;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
@@ -59,13 +48,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         filePaths = Objects.requireNonNull(builder.filePaths, "filePaths must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
-        s3AsyncClient = builder.s3AsyncClient;
-        closeS3AsyncClient = builder.closeS3AsyncClient;
-        if (s3AsyncClient != null) {
-            s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
-        } else {
-            s3TransferManager = S3TransferManager.create();
-        }
+        s3TransferManager = Optional.ofNullable(builder.s3TransferManager).orElseGet(IngestS3TransferManager::create);
     }
 
     public static Builder builder() {
@@ -77,55 +60,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                 .filePathPrefix(tableProperties.get(TABLE_ID));
     }
 
-    public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
-        String clientType = properties.get(ASYNC_INGEST_CLIENT_TYPE).toLowerCase(Locale.ROOT);
-        if ("java".equals(clientType)) {
-            return buildS3Client(S3AsyncClient.builder());
-        } else if ("crt".equals(clientType)) {
-            return buildCrtClient(S3AsyncClient.crtBuilder()
-                    .minimumPartSizeInBytes(properties.getLong(ASYNC_INGEST_CRT_PART_SIZE_BYTES))
-                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS)));
-        } else {
-            throw new IllegalArgumentException("Unrecognised async client type: " + clientType);
-        }
-    }
-
-    private static S3AsyncClient buildCrtClient(S3CrtAsyncClientBuilder builder) {
-        URI customEndpoint = getCustomEndpoint();
-        if (customEndpoint != null) {
-            return builder
-                    .endpointOverride(customEndpoint)
-                    .region(Region.US_EAST_1)
-                    .forcePathStyle(true)
-                    .build();
-        } else {
-            return builder.build();
-        }
-    }
-
-    private static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
-        URI customEndpoint = getCustomEndpoint();
-        if (customEndpoint != null) {
-            return builder
-                    .endpointOverride(customEndpoint)
-                    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                            "test-access-key", "test-secret-key")))
-                    .region(Region.US_EAST_1)
-                    .forcePathStyle(true)
-                    .build();
-        } else {
-            return builder.build();
-        }
-    }
-
-    private static URI getCustomEndpoint() {
-        String endpoint = System.getenv("AWS_ENDPOINT_URL");
-        if (endpoint != null) {
-            return URI.create(endpoint);
-        }
-        return null;
-    }
-
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
@@ -133,7 +67,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     partition,
                     parquetConfiguration,
                     s3BucketName, filePaths,
-                    s3TransferManager,
+                    s3TransferManager.get(),
                     localWorkingDirectory,
                     fileNameGenerator.get());
         } catch (IOException e) {
@@ -143,19 +77,15 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     @Override
     public void close() {
-        if (s3AsyncClient != null && closeS3AsyncClient) {
-            s3AsyncClient.close();
-        }
         s3TransferManager.close();
     }
 
     public static final class Builder {
         private ParquetConfiguration parquetConfiguration;
-        private S3AsyncClient s3AsyncClient;
+        private IngestS3TransferManager s3TransferManager;
         private String s3BucketName;
         private TableFilePaths filePaths;
         private String localWorkingDirectory;
-        private boolean closeS3AsyncClient;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
 
         private Builder() {
@@ -166,19 +96,19 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
             return this;
         }
 
+        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
+            this.s3TransferManager = IngestS3TransferManager.wrap(s3TransferManager);
+            return this;
+        }
+
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
-            this.s3AsyncClient = s3AsyncClient;
+            this.s3TransferManager = IngestS3TransferManager.fromClient(s3AsyncClient);
             return this;
         }
 
         public Builder s3AsyncClientOrDefaultFromProperties(
                 S3AsyncClient s3AsyncClient, InstanceProperties properties) {
-            if (s3AsyncClient == null) {
-                this.s3AsyncClient = s3AsyncClientFromProperties(properties);
-                closeS3AsyncClient = true;
-            } else {
-                this.s3AsyncClient = s3AsyncClient;
-            }
+            this.s3TransferManager = IngestS3TransferManager.s3AsyncClientOrDefaultFromProperties(s3AsyncClient, properties);
             return this;
         }
 
