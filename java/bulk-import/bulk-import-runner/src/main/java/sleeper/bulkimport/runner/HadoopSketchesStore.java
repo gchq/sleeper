@@ -41,7 +41,7 @@ public class HadoopSketchesStore implements SketchesStore {
 
     @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
-        Path path = new Path(filename);
+        Path path = configPath(filename);
         try (FSDataOutputStream dataOutputStream = path.getFileSystem(conf).create(path)) {
             new SketchesSerDe(schema).serialise(sketches, dataOutputStream);
             LOGGER.info("Wrote sketches to {}", path);
@@ -53,7 +53,7 @@ public class HadoopSketchesStore implements SketchesStore {
     @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
         try {
-            Path path = new Path(filename);
+            Path path = configPath(filename);
             Sketches sketches;
 
             try (FSDataInputStream dataInputStream = path.getFileSystem(conf).open(path)) {
@@ -65,5 +65,9 @@ public class HadoopSketchesStore implements SketchesStore {
             LOGGER.error("Failure when trying to load file sketches", filename, e);
             return null;
         }
+    }
+
+    private Path configPath(String filename) {
+        return new Path(filename.replace(".parquet", ".sketches"));
     }
 }
