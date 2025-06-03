@@ -62,6 +62,7 @@ thiserror = { version = "2.0.12" } # Derivable error enums
 tokio = { version = "1.45.1", features = ["full"] } # Async runtime
 tokio-test = { version = "0.4.4" } # Doc tests
 url = { version = "2.5.4" } # URL processing for S3
+mockall = { version = "0.13.1" } # Mock trait library
 
 [workspace.metadata.datasketches]
 git_repository_tag = "5.2.0"

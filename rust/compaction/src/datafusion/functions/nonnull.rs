@@ -409,27 +409,39 @@ impl GroupsAccumulator for NonNullableGroupAccumulator {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::Arc};
-
-    use crate::assert_error;
-    use crate::datafusion::functions::nonnull::{
-        NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable, non_null_max,
-        non_null_min, non_null_sum, non_nullable, nullable_check, register_non_nullables,
+    use crate::{
+        assert_error,
+        datafusion::functions::nonnull::{
+            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable, non_null_max,
+            non_null_min, non_null_sum, non_nullable, nullable_check, register_non_nullables,
+        },
     };
-    use arrow::array::Int64Builder;
-    use datafusion::common::arrow::array::Array;
-    use datafusion::error::DataFusionError;
+    use arrow::{
+        array::Int64Builder,
+        datatypes::{DataType, Field},
+    };
     use datafusion::{
-        common::internal_err,
-        error::Result,
+        common::{arrow::array::Array, internal_err},
+        error::{DataFusionError, Result},
         execution::SessionStateBuilder,
         functions_aggregate::{
             min_max::{max_udaf, min_udaf},
             sum::sum_udaf,
         },
-        logical_expr::lit,
+        logical_expr::{
+            Accumulator, AggregateUDFImpl, Documentation, GroupsAccumulator, ReversedUDAF,
+            SetMonotonicity, Signature, StatisticsArgs,
+            expr::{AggregateFunctionParams, WindowFunctionParams},
+            function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
+            lit,
+            utils::AggregateOrderSensitivity,
+        },
         prelude::Expr,
+        scalar::ScalarValue,
     };
+    use mockall::predicate::*;
+    use mockall::*;
+    use std::{any::Any, collections::HashMap, sync::Arc};
 
     #[test]
     fn non_null_sum_returns_correct_expr() -> Result<()> {
@@ -594,5 +606,70 @@ mod tests {
             DataFusionError::Execution,
             "Null found in array index 1 in an non-nullable aggregation operator. Array datatype is Int64, length 3, logical null count 1, null count 1"
         );
+    }
+
+    mock! {
+        #[derive(Debug)]
+        UDFImpl {}
+        impl AggregateUDFImpl for UDFImpl {
+            fn as_any(&self) -> &dyn Any;
+            fn name(&self) -> &str;
+            fn schema_name(&self, params: &AggregateFunctionParams) -> Result<String>;
+            fn window_function_schema_name(
+                &self,
+                params: &WindowFunctionParams,
+            ) -> Result<String>;
+            fn display_name(&self, params: &AggregateFunctionParams) -> Result<String>;
+            fn window_function_display_name(
+                &self,
+                params: &WindowFunctionParams,
+            ) -> Result<String>;
+            fn signature(&self) -> &Signature;
+            fn return_type(&self, arg_types: &[DataType]) -> Result<DataType>;
+            fn is_nullable(&self) -> bool;
+            fn accumulator<'a>(&self, acc_args: AccumulatorArgs<'a>) -> Result<Box<dyn Accumulator>>;
+            fn state_fields<'a>(&self, args: StateFieldsArgs<'a>) -> Result<Vec<Field>>;
+            fn groups_accumulator_supported<'a>(&self, _args: AccumulatorArgs<'a>) -> bool;
+            fn create_groups_accumulator<'a>(
+                &self,
+                _args: AccumulatorArgs<'a>,
+            ) -> Result<Box<dyn GroupsAccumulator>>;
+            fn aliases(&self) -> &[String];
+            fn create_sliding_accumulator<'a>(
+                &self,
+                args: AccumulatorArgs<'a>,
+            ) -> Result<Box<dyn Accumulator>> ;
+            fn with_beneficial_ordering(
+                self: Arc<Self>,
+                _beneficial_ordering: bool,
+            ) -> Result<Option<Arc<dyn AggregateUDFImpl>>> ;
+            fn order_sensitivity(&self) -> AggregateOrderSensitivity;
+            fn simplify(&self) -> Option<AggregateFunctionSimplification>;
+            fn reverse_expr(&self) -> ReversedUDAF;
+            fn coerce_types(&self, _arg_types: &[DataType]) -> Result<Vec<DataType>> ;
+            fn equals(&self, other: &dyn AggregateUDFImpl) -> bool;
+            fn hash_value(&self) -> u64 ;
+            fn is_descending(&self) -> Option<bool> ;
+            fn value_from_stats<'a>(&self, _statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
+            fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
+            fn documentation(&self) -> Option<&'static Documentation>;
+            fn set_monotonicity(&self, _data_type: &DataType) -> SetMonotonicity;
+        }
+        unsafe impl Send for UDFImpl {}
+        unsafe impl Sync for UDFImpl {}
+    }
+
+    #[test]
+    fn should_call_as_any() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf
+            .expect_as_any()
+            .return_const(Box::new(&mock_udf as &dyn Any));
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let any = nonnull.as_any();
     }
 }
