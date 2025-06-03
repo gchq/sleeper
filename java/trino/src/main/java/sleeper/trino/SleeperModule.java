@@ -15,14 +15,12 @@
  */
 package sleeper.trino;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProviderForDeployedS3Instance;
@@ -64,9 +62,9 @@ public class SleeperModule implements Module {
         //        binder.bind(S3AsyncClient.class).toInstance(s3AsyncClient);
         // This does not appear to offer any performance improvements. Note that an additional Maven dependency
         // is required to support this.
-        binder.bind(AmazonS3.class).toInstance(AmazonS3ClientBuilder.defaultClient());
+        binder.bind(S3Client.class).toInstance(S3Client.create());
         binder.bind(S3AsyncClient.class).toInstance(S3AsyncClient.create());
-        binder.bind(AmazonDynamoDB.class).toInstance(AmazonDynamoDBClientBuilder.defaultClient());
+        binder.bind(DynamoDbClient.class).toInstance(DynamoDbClient.create());
 
         // Bind the Hadoop configuration provider which is used when reading and writing Parquet files to S3
         binder.bind(HadoopConfigurationProvider.class).toInstance(new HadoopConfigurationProviderForDeployedS3Instance());

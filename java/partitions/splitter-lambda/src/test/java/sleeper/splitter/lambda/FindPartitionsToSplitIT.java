@@ -15,12 +15,12 @@
  */
 package sleeper.splitter.lambda;
 
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -43,9 +43,9 @@ import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterF
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.splitter.core.find.FindPartitionsToSplit;
-import sleeper.splitter.core.find.SplitPartitionJobDefinition;
-import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitterv2.core.find.FindPartitionsToSplit;
+import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
+import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,8 +81,9 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         String queueName = UUID.randomUUID().toString();
-        CreateQueueResult queue = sqsClient.createQueue(queueName);
-        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, queue.getQueueUrl());
+        CreateQueueResponse queue = sqsClientV2.createQueue(request -> request
+                .queueName(queueName));
+        instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, queue.queueUrl());
     }
 
     @Test
@@ -100,7 +101,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).getBody());
+                .fromJson(messages.get(0).body());
 
         assertThat(job.getFileNames()).hasSize(10);
         assertThat(job.getTableId()).isEqualTo(tableId);
@@ -136,7 +137,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).getBody());
+                .fromJson(messages.get(0).body());
 
         assertThat(job.getFileNames()).hasSize(5);
         assertThat(job.getTableId()).isEqualTo(tableId);
@@ -158,7 +159,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).getBody());
+                .fromJson(messages.get(0).body());
 
         assertThat(job.getFileNames()).hasSize(5);
         assertThat(job.getTableId()).isEqualTo(tableId);
@@ -176,7 +177,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     private FindPartitionsToSplit findPartitionsToSplit() {
         return new FindPartitionsToSplit(instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClientV2)::send);
     }
 
     private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
@@ -238,6 +239,8 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     }
 
     private List<Message> receivePartitionSplittingMessages() {
-        return sqsClient.receiveMessage(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL)).getMessages();
+        return sqsClientV2.receiveMessage(builder -> builder
+                .queueUrl(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL)))
+                .messages();
     }
 }

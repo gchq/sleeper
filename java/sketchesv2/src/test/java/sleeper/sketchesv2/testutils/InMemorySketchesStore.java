@@ -13,21 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.testutils;
+package sleeper.sketchesv2.testutils;
 
+import sleeper.core.schema.Schema;
 import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class InMemorySketchesStore {
-    private final Map<String, Sketches> filenameToSketches = new HashMap<>();
+public class InMemorySketchesStore implements SketchesStore {
 
-    public void addSketchForFile(String filename, Sketches sketches) {
-        filenameToSketches.put(filename.replace(".parquet", ".sketches"), sketches);
+    private Map<String, Sketches> filenameToSketches = new HashMap<>();
+
+    @Override
+    public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
+        saveFileSketches(filename, sketches);
     }
 
-    public Sketches load(String filename) {
+    @Override
+    public Sketches loadFileSketches(String filename, Schema schema) {
+        return loadFileSketches(filename);
+    }
+
+    public void saveFileSketches(String filename, Sketches sketches) {
+        filenameToSketches.put(filename, sketches);
+    }
+
+    public Sketches loadFileSketches(String filename) {
         return filenameToSketches.get(filename);
     }
+
 }

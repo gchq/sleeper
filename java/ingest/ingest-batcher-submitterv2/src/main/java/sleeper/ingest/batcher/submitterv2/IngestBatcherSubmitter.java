@@ -15,81 +15,120 @@
  */
 package sleeper.ingest.batcher.submitterv2;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
-import sleeper.core.util.NumberFormatUtils;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.parquet.utils.HadoopPathUtils;
 
-import java.io.FileNotFoundException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class IngestBatcherSubmitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitter.class);
 
-    private final InstanceProperties properties;
-    private final Configuration conf;
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
     private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
+    private final S3Client s3Client;
 
-    public IngestBatcherSubmitter(InstanceProperties properties, Configuration conf, TableIndex tableIndex, IngestBatcherStore store,
-            IngestBatcherSubmitDeadLetterQueue deadLetterQueue) {
-        this.properties = properties;
-        this.conf = conf;
+    public IngestBatcherSubmitter(TableIndex tableIndex, IngestBatcherStore store,
+            IngestBatcherSubmitDeadLetterQueue deadLetterQueue, S3Client s3Client) {
         this.tableIndex = tableIndex;
         this.store = store;
         this.deadLetterQueue = deadLetterQueue;
+        this.s3Client = s3Client;
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
-        } catch (UncheckedIOException uioe) {
-            if (uioe.getCause() instanceof FileNotFoundException) {
-                LOGGER.info("File not found, sending request: {} to dead letter queue", request, uioe);
-                deadLetterQueue.submit(request);
-                return;
-            }
-            throw uioe;
-        } catch (TableNotFoundException tnfe) {
-            LOGGER.info("Table not found, sending request: {} to dead letter queue", request, tnfe);
+        } catch (FileNotFoundException | NoSuchKeyException e) {
+            LOGGER.info("File not found, sending request to dead letter queue: {}", request, e);
+            deadLetterQueue.submit(request);
+            return;
+        } catch (TableNotFoundException e) {
+            LOGGER.info("Table not found, sending request to dead letter queue: {}", request);
             deadLetterQueue.submit(request);
             return;
         }
         files.forEach(store::addFile);
+        LOGGER.info("Added {} files to the ingest batcher store", files.size());
     }
 
     private List<IngestBatcherTrackedFile> toTrackedFiles(IngestBatcherSubmitRequest request, Instant receivedTime) {
-        TableStatus table = tableIndex.getTableByName(request.tableName())
-                .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName()));
-        return HadoopPathUtils.streamFiles(request.files(), conf, properties.get(FILE_SYSTEM))
-                .map(file -> {
-                    String filePath = HadoopPathUtils.getRequestPath(file);
-                    LOGGER.info("Deserialised ingest request for file {} with size {} to table {}",
-                            filePath, NumberFormatUtils.formatBytes(file.getLen()), table);
-                    return IngestBatcherTrackedFile.builder()
-                            .file(filePath)
-                            .fileSizeBytes(file.getLen())
-                            .tableId(table.getTableUniqueId())
-                            .receivedTime(receivedTime)
-                            .build();
-                })
-                .collect(Collectors.toList());
+        String tableID = tableIndex.getTableByName(request.tableName())
+                .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName())).getTableUniqueId();
+        List<IngestBatcherTrackedFile> list = new ArrayList<IngestBatcherTrackedFile>();
+
+        for (String filename : request.files()) {
+            if (!filename.contains("/")) {
+                list.addAll(getFilesByBucket(filename, tableID, receivedTime));
+            } else {
+                String bucket = filename.substring(0, filename.indexOf("/"));
+                String objectKey = filename.substring(filename.indexOf("/") + 1);
+                list.addAll(getFilesByPath(bucket, objectKey, tableID, receivedTime));
+            }
+        }
+        return list;
     }
 
+    private List<IngestBatcherTrackedFile> getFilesByBucket(String bucket, String tableID, Instant receivedTime) {
+        return getFilesByPath(bucket, "", tableID, receivedTime);
+    }
+
+    private List<IngestBatcherTrackedFile> getFilesByPath(String bucket, String path, String tableID, Instant receivedTime) {
+        List<IngestBatcherTrackedFile> list = new ArrayList<>();
+        ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(
+                ListObjectsV2Request.builder()
+                        .bucket(bucket)
+                        .prefix(path)
+                        .build());
+
+        for (ListObjectsV2Response page : response) {
+            page.contents().forEach((S3Object object) -> {
+                list.add(getIndividualFile(bucket, object.key(), tableID, receivedTime));
+            });
+        }
+
+        if (list.isEmpty()) {
+            throw new FileNotFoundException(bucket, path);
+        }
+
+        return list;
+    }
+
+    private IngestBatcherTrackedFile getIndividualFile(String bucket, String key, String tableID, Instant receivedTime) {
+        return buildTrackedFile(bucket + "/" + key, getFileSizeBites(bucket, key), tableID, receivedTime);
+    }
+
+    private Long getFileSizeBites(String bucket, String key) {
+        return s3Client.headObject(
+                HeadObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build())
+                .contentLength();
+    }
+
+    private IngestBatcherTrackedFile buildTrackedFile(String filename, Long fileSizeBytes, String tableID, Instant receivedTime) {
+        return IngestBatcherTrackedFile.builder()
+                .file(filename)
+                .fileSizeBytes(fileSizeBytes)
+                .tableId(tableID)
+                .receivedTime(receivedTime)
+                .build();
+    }
 }

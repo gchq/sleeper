@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
-import sleeper.splitterv2.core.split.FindPartitionSplitPoint.SketchesLoader;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,19 +54,19 @@ public class SplitPartition {
     private final StateStore stateStore;
     private final TableProperties tableProperties;
     private final Schema schema;
-    private final SketchesLoader sketchesLoader;
+    private final SketchesStore sketchesStore;
     private final Supplier<String> idSupplier;
     private final SendAsyncCommit sendAsyncCommit;
 
     public SplitPartition(StateStore stateStore,
             TableProperties tableProperties,
-            SketchesLoader sketchesLoader,
+            SketchesStore sketchesStore,
             Supplier<String> idSupplier,
             SendAsyncCommit sendAsyncCommit) {
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
-        this.sketchesLoader = sketchesLoader;
+        this.sketchesStore = sketchesStore;
         this.idSupplier = idSupplier;
         this.sendAsyncCommit = sendAsyncCommit;
     }
@@ -77,7 +77,7 @@ public class SplitPartition {
     }
 
     private Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, List<String> fileNames) {
-        FindPartitionSplitPoint findSplitPoint = new FindPartitionSplitPoint(schema, fileNames, sketchesLoader);
+        FindPartitionSplitPoint findSplitPoint = new FindPartitionSplitPoint(schema, fileNames, sketchesStore);
         return IntStream.range(0, schema.getRowKeyFields().size())
                 .mapToObj(dimension -> findSplitPoint.splitPointForDimension(dimension)
                         .map(splitPoint -> resultFactory().splitPartition(partition, splitPoint, dimension)))
