@@ -25,7 +25,6 @@ import sleeper.core.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static sleeper.clients.admin.TableNamesReportTest.generateExpectedTableNamesOutput;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
@@ -70,7 +69,11 @@ class AdminClientIT extends AdminClientITBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + generateExpectedTableNamesOutput("test-table-1", "test-table-2") +
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
     }
 
@@ -85,7 +88,10 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
-                CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput(TABLE_NAME_VALUE) + TABLE_SELECT_SCREEN +
+                CLEAR_CONSOLE + "\n\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table\n" + TABLE_SELECT_SCREEN +
                 CLEAR_CONSOLE + MAIN_SCREEN);
         verify(editor).openPropertiesFile(tableProperties);
     }

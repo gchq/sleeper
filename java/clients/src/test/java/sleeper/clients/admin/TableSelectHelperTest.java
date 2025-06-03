@@ -24,7 +24,6 @@ import sleeper.clients.util.console.UserExitedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.clients.admin.TableNamesReportTest.generateExpectedTableNamesOutput;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
@@ -43,7 +42,10 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput(TABLE_NAME_VALUE) + TABLE_SELECT_SCREEN + "\n" +
+                .isEqualTo(CLEAR_CONSOLE + "\n\n\n" +
+                        "Table Names\n" +
+                        "----------------------------------\n" + TABLE_NAME_VALUE + "\n" +
+                        TABLE_SELECT_SCREEN + "\n" +
                         "Found table " + TABLE_NAME_VALUE + "\n");
     }
 
@@ -58,7 +60,9 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput() + TABLE_SELECT_SCREEN);
+                .isEqualTo(CLEAR_CONSOLE + "\n\n\n" +
+                        "Table Names\n" +
+                        "----------------------------------\n" + TABLE_SELECT_SCREEN);
     }
 
     @Test

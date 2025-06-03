@@ -22,9 +22,6 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.core.table.TableStatus;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,16 +34,6 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 class TableNamesReportTest extends AdminClientMockStoreBase {
-
-    public static String generateExpectedTableNamesOutput(List<String> tableNames) {
-        return "\n\n" +
-                "Table Names\n" +
-                "----------------------------------\n" + tableNames.stream().map(s -> s + "\n").collect(Collectors.joining(""));
-    }
-
-    public static String generateExpectedTableNamesOutput(String... tableNames) {
-        return generateExpectedTableNamesOutput(Arrays.asList(tableNames));
-    }
 
     @Test
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
@@ -61,7 +48,11 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + generateExpectedTableNamesOutput("test-table-1", "test-table-2") +
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock);
@@ -87,8 +78,13 @@ class TableNamesReportTest extends AdminClientMockStoreBase {
                 .exitGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
-                generateExpectedTableNamesOutput("test-table-1", "test-table-2", "test-table-3 (offline)", "test-table-4 (offline)") +
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n" +
+                "test-table-3 (offline)\n" +
+                "test-table-4 (offline)\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock);

@@ -22,7 +22,6 @@ import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.report.TableNamesReport;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.admin.TableNamesReportTest.generateExpectedTableNamesOutput;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
@@ -59,7 +58,10 @@ class TableSelectHelperIT extends AdminClientITBase {
 
         // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + "\n" + generateExpectedTableNamesOutput() + TABLE_SELECT_SCREEN + "\n" +
+                .startsWith(CLEAR_CONSOLE + "\n\n\n" +
+                        "Table Names\n" +
+                        "----------------------------------\n" +
+                        TABLE_SELECT_SCREEN + "\n" +
                         "Could not load properties for table test-table in instance " + instanceId + "\n" +
                         "Cause: Table not found")
                 .endsWith(PROMPT_RETURN_TO_MAIN);
