@@ -406,3 +406,197 @@ impl GroupsAccumulator for NonNullableGroupAccumulator {
         self.0.supports_convert_to_state()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::HashMap, sync::Arc};
+
+    use crate::assert_error;
+    use crate::datafusion::functions::nonnull::{
+        NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable, non_null_max,
+        non_null_min, non_null_sum, non_nullable, nullable_check, register_non_nullables,
+    };
+    use arrow::array::Int64Builder;
+    use datafusion::common::arrow::array::Array;
+    use datafusion::error::DataFusionError;
+    use datafusion::{
+        common::internal_err,
+        error::Result,
+        execution::SessionStateBuilder,
+        functions_aggregate::{
+            min_max::{max_udaf, min_udaf},
+            sum::sum_udaf,
+        },
+        logical_expr::lit,
+        prelude::Expr,
+    };
+
+    #[test]
+    fn non_null_sum_returns_correct_expr() -> Result<()> {
+        // Given
+        let expr = non_null_sum(lit(2));
+
+        // When
+        let Expr::AggregateFunction(aggregate) = expr else {
+            return internal_err!("Expected a non nullable sum");
+        };
+
+        let expect_nonnullable = aggregate.func;
+        let inner_func = expect_nonnullable
+            .inner()
+            .as_any()
+            .downcast_ref::<NonNullable>()
+            .expect("Inner implementation should be NonNullable")
+            .inner
+            .clone();
+
+        // Then
+        assert_eq!(*expect_nonnullable, **NON_NULL_SUM_UDAF);
+        assert_eq!(&inner_func, &sum_udaf().inner().clone());
+        Ok(())
+    }
+
+    #[test]
+    fn non_null_max_returns_correct_expr() -> Result<()> {
+        // Given
+        let expr = non_null_max(lit(2));
+
+        // When
+        let Expr::AggregateFunction(aggregate) = expr else {
+            return internal_err!("Expected a non nullable sum");
+        };
+
+        let expect_nonnullable = aggregate.func;
+        let inner_func = expect_nonnullable
+            .inner()
+            .as_any()
+            .downcast_ref::<NonNullable>()
+            .expect("Inner implementation should be NonNullable")
+            .inner
+            .clone();
+
+        // Then
+        assert_eq!(*expect_nonnullable, **NON_NULL_MAX_UDAF);
+        assert_eq!(&inner_func, &max_udaf().inner().clone());
+        Ok(())
+    }
+
+    #[test]
+    fn non_null_min_returns_correct_expr() -> Result<()> {
+        // Given
+        let expr = non_null_min(lit(2));
+
+        // When
+        let Expr::AggregateFunction(aggregate) = expr else {
+            return internal_err!("Expected a non nullable sum");
+        };
+
+        let expect_nonnullable = aggregate.func;
+        let inner_func = expect_nonnullable
+            .inner()
+            .as_any()
+            .downcast_ref::<NonNullable>()
+            .expect("Inner implementation should be NonNullable")
+            .inner
+            .clone();
+
+        // Then
+        assert_eq!(*expect_nonnullable, **NON_NULL_MIN_UDAF);
+        assert_eq!(&inner_func, &min_udaf().inner().clone());
+        Ok(())
+    }
+
+    #[test]
+    fn should_register_functions() -> Result<()> {
+        // Given
+        let mut sc = SessionStateBuilder::new().build();
+        let expected = HashMap::from([
+            ("nonnullable_sum".to_owned(), NON_NULL_SUM_UDAF.clone()),
+            ("nonnullable_min".to_owned(), NON_NULL_MIN_UDAF.clone()),
+            ("nonnullable_max".to_owned(), NON_NULL_MAX_UDAF.clone()),
+        ]);
+
+        // When
+        register_non_nullables(&mut sc);
+        let actual = sc.aggregate_functions();
+
+        // Then
+        assert_eq!(&expected, actual);
+        Ok(())
+    }
+
+    #[test]
+    fn non_nullable_wraps_function() -> Result<()> {
+        // Given
+        let aggregate = sum_udaf();
+
+        // When
+        let actual = non_nullable(&aggregate);
+        let non_nullable = actual
+            .inner()
+            .as_any()
+            .downcast_ref::<NonNullable>()
+            .expect("Inner implementation should be NonNullable");
+        let inner_func = non_nullable.inner.clone();
+
+        // Then
+        assert_eq!(&inner_func, &sum_udaf().inner().clone());
+
+        Ok(())
+    }
+
+    #[test]
+    fn nullable_check_succeed() -> Result<()> {
+        // Given
+        let mut array_builder = Int64Builder::new();
+        array_builder.append_values(&[1, 2, 3, 4, 5], &[true, true, true, true, true]);
+
+        let array1 = array_builder.finish();
+
+        let mut array_builder = Int64Builder::new();
+        array_builder.append_values(&[7, 8], &[true, true]);
+
+        let array2 = array_builder.finish();
+
+        // When
+        let input = [
+            Arc::new(array1) as Arc<dyn Array>,
+            Arc::new(array2) as Arc<dyn Array>,
+        ];
+        let output = nullable_check(&input)?;
+
+        // Then
+        assert_eq!(input, output);
+        Ok(())
+    }
+
+    #[test]
+    fn nullable_check_fail() -> Result<()> {
+        // Given
+        let mut array_builder = Int64Builder::new();
+        array_builder.append_values(&[1, 2, 3, 4, 5], &[true, true, true, true, true]);
+
+        let array1 = array_builder.finish();
+
+        let mut array_builder = Int64Builder::new();
+        array_builder.append_values(&[7, 8], &[true, true]);
+        array_builder.append_null();
+
+        let array2 = array_builder.finish();
+
+        // When
+        let input = [
+            Arc::new(array1) as Arc<dyn Array>,
+            Arc::new(array2) as Arc<dyn Array>,
+        ];
+        let output = nullable_check(&input);
+
+        // Then
+        assert_error!(
+            output,
+            DataFusionError::Execution,
+            "Null found in array index 1 in an non-nullable aggregation operator. Array datatype is Int64, length 3, logical null count 1, null count 1"
+        );
+        Ok(())
+    }
+}
