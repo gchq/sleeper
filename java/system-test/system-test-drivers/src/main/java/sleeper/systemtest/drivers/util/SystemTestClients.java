@@ -18,8 +18,6 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -63,8 +61,7 @@ import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
     private final AwsRegionProvider regionProvider;
-    private final AmazonS3 s3;
-    private final S3Client s3V2;
+    private final S3Client s3;
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
     private final AmazonDynamoDB dynamoDB;
@@ -91,7 +88,6 @@ public class SystemTestClients {
     private SystemTestClients(Builder builder) {
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
-        s3V2 = builder.s3V2;
         s3Async = builder.s3Async;
         s3TransferManager = builder.s3TransferManager;
         dynamoDB = builder.dynamoDB;
@@ -123,8 +119,7 @@ public class SystemTestClients {
     public static SystemTestClients fromDefaults() {
         return builder()
                 .regionProvider(DefaultAwsRegionProviderChain.builder().build())
-                .s3(AmazonS3ClientBuilder.defaultClient())
-                .s3V2(S3Client.create())
+                .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
                 .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
                 .dynamoV2(DynamoDbClient.create())
@@ -155,8 +150,7 @@ public class SystemTestClients {
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
                 .regionProvider(regionProvider)
-                .s3(v1.buildClient(AmazonS3ClientBuilder.standard()))
-                .s3V2(v2.buildClient(S3Client.builder()))
+                .s3(v2.buildClient(S3Client.builder()))
                 .s3Async(v2.buildClient(S3AsyncClient.crtBuilder()))
                 .dynamoDB(v1.buildClient(AmazonDynamoDBClientBuilder.standard()))
                 .dynamoV2(v2.buildClient(DynamoDbClient.builder()))
@@ -180,12 +174,8 @@ public class SystemTestClients {
                 .build();
     }
 
-    public AmazonS3 getS3() {
+    public S3Client getS3() {
         return s3;
-    }
-
-    public S3Client getS3V2() {
-        return s3V2;
     }
 
     public S3AsyncClient getS3Async() {
@@ -291,8 +281,7 @@ public class SystemTestClients {
 
     public static class Builder {
         private AwsRegionProvider regionProvider;
-        private AmazonS3 s3;
-        private S3Client s3V2;
+        private S3Client s3;
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
         private AmazonDynamoDB dynamoDB;
@@ -324,13 +313,8 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder s3(AmazonS3 s3) {
+        public Builder s3(S3Client s3) {
             this.s3 = s3;
-            return this;
-        }
-
-        public Builder s3V2(S3Client s3V2) {
-            this.s3V2 = s3V2;
             return this;
         }
 

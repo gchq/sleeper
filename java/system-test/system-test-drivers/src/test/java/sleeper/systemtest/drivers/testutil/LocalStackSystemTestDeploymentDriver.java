@@ -36,7 +36,7 @@ public class LocalStackSystemTestDeploymentDriver implements SystemTestDeploymen
 
     public LocalStackSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        s3Client = clients.getS3V2();
+        s3Client = clients.getS3();
     }
 
     @Override

@@ -41,7 +41,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     private final DynamoDbClient dynamoDB;
 
     public AwsSleeperTablesDriver(SystemTestClients clients) {
-        this.s3 = clients.getS3V2();
+        this.s3 = clients.getS3();
         this.dynamoDB = clients.getDynamoV2();
     }
 

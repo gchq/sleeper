@@ -60,7 +60,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     public SQSQueryDriver(
             SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.s3Client = clients.getS3V2();
+        this.s3Client = clients.getS3();
         this.dynamoClient = clients.getDynamoV2();
         this.sqsClient = clients.getSqsV2();
         this.clients = clients;

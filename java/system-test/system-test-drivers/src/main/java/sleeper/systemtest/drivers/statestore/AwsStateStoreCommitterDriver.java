@@ -54,7 +54,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.s3Client = clients.getS3V2();
+        this.s3Client = clients.getS3();
         this.sqsClient = clients.getSqsV2();
         this.lambdaClient = clients.getLambda();
     }

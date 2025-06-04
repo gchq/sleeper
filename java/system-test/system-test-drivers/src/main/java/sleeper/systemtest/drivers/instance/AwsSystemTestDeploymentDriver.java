@@ -58,7 +58,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        this.s3 = clients.getS3V2();
+        this.s3 = clients.getS3();
         this.ecr = clients.getEcr();
         this.cloudFormation = clients.getCloudFormation();
     }

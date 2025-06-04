@@ -128,7 +128,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
-        return new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2());
+        return new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3());
     }
 
     @Override

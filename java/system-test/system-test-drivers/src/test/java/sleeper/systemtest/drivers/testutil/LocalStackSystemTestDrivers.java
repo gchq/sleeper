@@ -45,8 +45,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     public static LocalStackSystemTestDrivers fromContainer() {
         return new LocalStackSystemTestDrivers(SystemTestClients.builder()
                 .regionProvider(() -> Region.of(SleeperLocalStackContainer.INSTANCE.getRegion()))
-                .s3(SleeperLocalStackClients.S3_CLIENT)
-                .s3V2(SleeperLocalStackClients.S3_CLIENT_V2)
+                .s3(SleeperLocalStackClients.S3_CLIENT_V2)
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamoDB(SleeperLocalStackClients.DYNAMO_CLIENT)
                 .dynamoV2(SleeperLocalStackClients.DYNAMO_CLIENT_V2)

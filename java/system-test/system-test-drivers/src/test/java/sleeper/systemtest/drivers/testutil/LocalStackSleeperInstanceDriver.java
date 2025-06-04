@@ -53,18 +53,18 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     @Override
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        S3InstanceProperties.reloadGivenInstanceId(clients.getS3V2(), instanceProperties, instanceId);
+        S3InstanceProperties.reloadGivenInstanceId(clients.getS3(), instanceProperties, instanceId);
     }
 
     @Override
     public void saveInstanceProperties(InstanceProperties instanceProperties) {
         LOGGER.info("Saving properties with instance ID: {}", instanceProperties.get(ID));
-        S3InstanceProperties.saveToS3(clients.getS3V2(), instanceProperties);
+        S3InstanceProperties.saveToS3(clients.getS3(), instanceProperties);
     }
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        if (BucketUtils.doesBucketExist(clients.getS3V2(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
+        if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
@@ -74,7 +74,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         instanceProperties.set(VERSION, SleeperVersion.getVersion());
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()
-                .s3Client(clients.getS3V2())
+                .s3Client(clients.getS3())
                 .s3TransferManager(clients.getS3TransferManager())
                 .dynamoClient(clients.getDynamoV2())
                 .sqsClient(clients.getSqsV2())
