@@ -12,7 +12,7 @@ on:
       - 'java/compaction/pom.xml'
       - 'java/compaction/compaction-rust/**'
       - 'java/compaction/compaction-core/**'
-      - 'java/sketches/**'
+      - 'java/sketchesv2/**'
       - 'java/parquet/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
