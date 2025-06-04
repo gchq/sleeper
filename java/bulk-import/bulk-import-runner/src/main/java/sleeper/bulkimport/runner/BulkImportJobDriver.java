@@ -15,14 +15,11 @@
  */
 package sleeper.bulkimport.runner;
 
-import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest;
@@ -30,7 +27,6 @@ import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -62,7 +58,6 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 
 /**
@@ -193,7 +188,7 @@ public class BulkImportJobDriver {
                 throw e;
             }
 
-            BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
+            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);
@@ -204,31 +199,6 @@ public class BulkImportJobDriver {
                     runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
-        }
-    }
-
-    private static BulkImportJob loadJob(
-            InstanceProperties instanceProperties, String jobId, String jobRunId, S3Client s3Client) {
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        if (null == bulkImportBucket) {
-            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
-        }
-        String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
-        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
-        String jsonJob = s3Client.getObject(GetObjectRequest.builder()
-                .bucket(bulkImportBucket)
-                .key(jsonJobKey)
-                .build()).toString();
-        try {
-            return new BulkImportJobSerDe().fromJson(jsonJob);
-        } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed");
-            throw e;
-        } finally {
-            s3Client.deleteObject(DeleteObjectRequest.builder()
-                    .bucket(bulkImportBucket)
-                    .key(jsonJobKey)
-                    .build());
         }
     }
 
