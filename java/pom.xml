@@ -43,6 +43,7 @@
         <module>sketches</module>
         <module>sketchesv2</module>
         <module>athena</module>
+        <module>athenav2</module>
         <module>common</module>
         <module>bulk-import</module>
         <module>bulk-export</module>

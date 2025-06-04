@@ -1,0 +1,35 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.athenav2.composite;
+
+import com.amazonaws.athena.connector.lambda.handlers.CompositeHandler;
+
+import sleeper.athenav2.metadata.IteratorApplyingMetadataHandler;
+import sleeper.athenav2.record.IteratorApplyingRecordHandler;
+
+import java.io.IOException;
+
+/**
+ * A CompositeHandler allows us to combine the Metadata and Record Handler into a single Lambda function. This composite
+ * Handler delegates to the {@link IteratorApplyingMetadataHandler} and {@link IteratorApplyingRecordHandler} which
+ * allows the compaction time iterators to run against the data before it's returned.
+ */
+public class IteratorApplyingCompositeHandler extends CompositeHandler {
+
+    public IteratorApplyingCompositeHandler() throws IOException {
+        super(new IteratorApplyingMetadataHandler(), new IteratorApplyingRecordHandler());
+    }
+}

@@ -15,6 +15,7 @@ on:
       - 'java/query/query-lambda/**'
       - 'java/query/query-lambdav2/**'
       - 'java/athena/**'
+      - 'java/athenav2/**'
       - 'java/trino/**'
       - 'java/partitions/splitter/**'
       - 'java/ingest/ingest-runner/**'
