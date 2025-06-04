@@ -123,41 +123,29 @@ public class ECSSystemTestTask {
         }
 
         ECSSystemTestTask noLoadConfigRole(String configBucket) {
-            S3Client s3Client = S3Client.builder().build();
-            try {
+            try (S3Client s3Client = S3Client.builder().build()) {
                 return combinedInstance(configBucket, s3Client);
-            } finally {
-                s3Client.close();
             }
         }
 
         ECSSystemTestTask withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            S3Client s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(StsClient.create()).buildClient(S3Client.builder());
-            try {
+            try (S3Client s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder())) {
                 return combinedInstance(configBucket, s3Client);
-            } finally {
-                s3Client.close();
             }
         }
 
         ECSSystemTestTask standalone(String systemTestBucket) {
-            S3Client s3Client = S3Client.builder().build();
-            try {
+            try (S3Client s3Client = S3Client.builder().build()) {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
-                    S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV2(StsClient.create()).buildClient(S3Client.builder());
-                    try {
+                    try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV2(stsClient).buildClient(S3Client.builder())) {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
                         IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
                         ingestData.run(job);
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
-                    } finally {
-                        instanceS3Client.close();
                     }
                 });
-            } finally {
-                s3Client.close();
             }
         }
 

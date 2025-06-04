@@ -138,20 +138,14 @@ public class IngestRandomData {
         }
 
         IngestRandomData noLoadConfigRole(String configBucket) {
-            S3Client s3Client = S3Client.builder().build();
-            try {
+            try (S3Client s3Client = S3Client.builder().build()) {
                 return combinedInstance(configBucket, s3Client);
-            } finally {
-                s3Client.close();
             }
         }
 
         IngestRandomData withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder());
-            try {
+            try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder())) {
                 return combinedInstance(configBucket, instanceS3Client);
-            } finally {
-                instanceS3Client.close();
             }
         }
 
