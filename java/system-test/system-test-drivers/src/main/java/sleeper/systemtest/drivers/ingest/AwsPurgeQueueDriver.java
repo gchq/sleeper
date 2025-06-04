@@ -16,12 +16,13 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.PurgeQueueRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest;
 
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 
@@ -30,18 +31,18 @@ import java.util.List;
 public class AwsPurgeQueueDriver implements PurgeQueueDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsPurgeQueueDriver.class);
     private final SystemTestInstanceContext instance;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
 
-    public AwsPurgeQueueDriver(SystemTestInstanceContext instance, AmazonSQS sqsClient) {
+    public AwsPurgeQueueDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.sqsClient = sqsClient;
+        this.sqsClient = clients.getSqsV2();
     }
 
     public void purgeQueues(List<InstanceProperty> properties) {
         for (InstanceProperty property : properties) {
             String queueUrl = instance.getInstanceProperties().get(property);
             LOGGER.info("Purging queue: {}", queueUrl);
-            sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl));
+            sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queueUrl).build());
         }
         LOGGER.info("Waiting 60s for purge");
         try {

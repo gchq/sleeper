@@ -263,7 +263,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
-        return new AwsPurgeQueueDriver(context.instance(), clients.getSqs());
+        return new AwsPurgeQueueDriver(context.instance(), clients);
     }
 
     @Override
