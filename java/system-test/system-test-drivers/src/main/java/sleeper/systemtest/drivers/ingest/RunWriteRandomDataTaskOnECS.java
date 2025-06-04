@@ -15,12 +15,9 @@
  */
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
 import software.amazon.awssdk.services.ecs.model.ContainerOverride;
@@ -33,7 +30,8 @@ import software.amazon.awssdk.services.ecs.model.TaskOverride;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.common.taskv2.RunECSTasks;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
@@ -41,7 +39,6 @@ import sleeper.systemtest.configurationv2.SystemTestProperties;
 import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
 import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
-import sleeper.task.common.RunECSTasks;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -132,12 +129,11 @@ public class RunWriteRandomDataTaskOnECS {
             return;
         }
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        try (S3Client s3ClientV2 = S3Client.create();
-                EcsClient ecsClient = EcsClient.create();
-                SqsClient sqsClient = SqsClient.create()) {
-            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3ClientV2, args[0]);
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
+                SqsClient sqsClient = SqsClient.create();
+                EcsClient ecsClient = EcsClient.create()) {
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             SystemTestDataGenerationJobSender jobSender = new SystemTestDataGenerationJobSender(systemTestProperties.testPropertiesOnly(), sqsClient);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient);
@@ -147,9 +143,6 @@ public class RunWriteRandomDataTaskOnECS {
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
             }
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
         }
     }
 }
