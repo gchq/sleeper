@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.drivers.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +40,7 @@ public class TearDownMavenSystemTest {
 
     public static void tearDown(
             Path scriptsDir, List<String> shortIds, List<String> shortInstanceNames, List<String> standaloneInstanceIds,
-            TearDownClients clients, AmazonS3 s3Client) throws IOException, InterruptedException {
+            TearDownClients clients) throws IOException, InterruptedException {
         List<String> instanceIds = shortIds.stream()
                 .flatMap(shortId -> shortInstanceNames.stream()
                         .map(shortInstanceName -> shortId + "-" + shortInstanceName))
@@ -54,7 +52,7 @@ public class TearDownMavenSystemTest {
         LOGGER.info("Found instance IDs to tear down: {}", instanceIdsAndStandalone);
 
         List<TearDownSystemTestDeployment> tearDownSystemTestDeployments = shortIds.stream()
-                .map(deploymentId -> TearDownSystemTestDeployment.fromDeploymentId(clients, s3Client, deploymentId))
+                .map(deploymentId -> TearDownSystemTestDeployment.fromDeploymentId(clients, deploymentId))
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownMavenInstances = instanceIds.stream()
                 .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
@@ -100,11 +98,6 @@ public class TearDownMavenSystemTest {
         List<String> standaloneInstanceIds = optionalArgument(args, 3)
                 .map(names -> List.of(names.split(",")))
                 .orElse(List.of());
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
-            TearDownClients.withDefaults(clients -> tearDown(scriptsDir, shortIds, shortInstanceNames, standaloneInstanceIds, clients, s3Client));
-        } finally {
-            s3Client.shutdown();
-        }
+        TearDownClients.withDefaults(clients -> tearDown(scriptsDir, shortIds, shortInstanceNames, standaloneInstanceIds, clients));
     }
 }

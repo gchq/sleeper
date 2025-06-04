@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -48,7 +47,7 @@ public class TearDownSystemTestDeployment {
         this.properties = properties;
     }
 
-    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, AmazonS3 s3Client, String deploymentId) {
+    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, String deploymentId) {
         return new TearDownSystemTestDeployment(clients, loadOrDefaultProperties(clients.getS3(), deploymentId));
     }
 
