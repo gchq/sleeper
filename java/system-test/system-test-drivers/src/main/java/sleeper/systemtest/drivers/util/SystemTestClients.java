@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.drivers.util;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
@@ -43,7 +41,6 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
-import sleeper.clients.api.role.AssumeSleeperRoleV1;
 import sleeper.clients.api.role.AssumeSleeperRoleV2;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -61,8 +58,7 @@ public class SystemTestClients {
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
     private final DynamoDbClient dynamo;
-    private final AWSSecurityTokenService sts;
-    private final StsClient stsV2;
+    private final StsClient sts;
     private final SqsClient sqs;
     private final LambdaClient lambda;
     private final CloudFormationClient cloudFormation;
@@ -86,7 +82,6 @@ public class SystemTestClients {
         s3TransferManager = builder.s3TransferManager;
         dynamo = builder.dynamo;
         sts = builder.sts;
-        stsV2 = builder.stsV2;
         sqs = builder.sqs;
         lambda = builder.lambda;
         cloudFormation = builder.cloudFormation;
@@ -114,8 +109,7 @@ public class SystemTestClients {
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
                 .dynamo(DynamoDbClient.create())
-                .sts(AWSSecurityTokenServiceClientBuilder.defaultClient())
-                .stsV2(StsClient.create())
+                .sts(StsClient.create())
                 .sqs(SqsClient.create())
                 .lambda(systemTestLambdaClientBuilder().build())
                 .cloudFormation(CloudFormationClient.create())
@@ -135,16 +129,14 @@ public class SystemTestClients {
         if (skipAssumeRole) {
             return this;
         }
-        AssumeSleeperRoleV1 v1 = assumeRole.forAwsV1(sts);
-        AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(stsV2);
+        AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
                 .regionProvider(regionProvider)
                 .s3(v2.buildClient(S3Client.builder()))
                 .s3Async(v2.buildClient(S3AsyncClient.crtBuilder()))
                 .dynamo(v2.buildClient(DynamoDbClient.builder()))
-                .sts(v1.buildClient(AWSSecurityTokenServiceClientBuilder.standard()))
-                .stsV2(v2.buildClient(StsClient.builder()))
+                .sts(v2.buildClient(StsClient.builder()))
                 .sqs(v2.buildClient(SqsClient.builder()))
                 .lambda(v2.buildClient(systemTestLambdaClientBuilder()))
                 .cloudFormation(v2.buildClient(CloudFormationClient.builder()))
@@ -157,7 +149,7 @@ public class SystemTestClients {
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
-                .getAuthEnvVars(v1::authEnvVars)
+                .getAuthEnvVars(v2::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
     }
@@ -178,12 +170,8 @@ public class SystemTestClients {
         return dynamo;
     }
 
-    public AWSSecurityTokenService getSts() {
+    public StsClient getSts() {
         return sts;
-    }
-
-    public StsClient getStsV2() {
-        return stsV2;
     }
 
     public AwsRegionProvider getRegionProvider() {
@@ -265,8 +253,7 @@ public class SystemTestClients {
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
         private DynamoDbClient dynamo;
-        private AWSSecurityTokenService sts;
-        private StsClient stsV2;
+        private StsClient sts;
         private SqsClient sqs;
         private LambdaClient lambda;
         private CloudFormationClient cloudFormation;
@@ -307,13 +294,8 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder sts(AWSSecurityTokenService sts) {
+        public Builder sts(StsClient sts) {
             this.sts = sts;
-            return this;
-        }
-
-        public Builder stsV2(StsClient stsV2) {
-            this.stsV2 = stsV2;
             return this;
         }
 
