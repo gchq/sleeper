@@ -16,16 +16,16 @@
 
 package sleeper.systemtest.drivers.nightly;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.Objects;
 
 public class NightlyTestUploader {
     private static final Logger LOGGER = LoggerFactory.getLogger(NightlyTestUploader.class);
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final String bucketName;
     private final NightlyTestTimestamp timestamp;
     private final String prefix;
@@ -51,19 +51,21 @@ public class NightlyTestUploader {
 
     public void upload(NightlyTestUploadFile file) {
         LOGGER.info("Uploading {}", file);
-        s3Client.putObject(bucketName, prefix + "/" + file.getRelativeS3Key(), file.getFile().toFile());
+        s3Client.putObject(
+                request -> request.bucket(bucketName).key(prefix + "/" + file.getRelativeS3Key()),
+                file.getFile());
         LOGGER.info("Uploaded {}", file);
     }
 
     public static final class Builder {
-        private AmazonS3 s3Client;
+        private S3Client s3Client;
         private String bucketName;
         private NightlyTestTimestamp timestamp;
 
         private Builder() {
         }
 
-        public Builder s3Client(AmazonS3 s3Client) {
+        public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
             return this;
         }
