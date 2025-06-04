@@ -66,7 +66,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         uploadStore().savePartitions(metadata.getObjectKey(), partitions);
 
         // Then
-        assertThat(store().loadSnapshot(metadata)).isEqualTo(
+        assertThat(readStore().loadSnapshot(metadata)).isEqualTo(
                 new TransactionLogSnapshot(StateStorePartitions.from(partitions), 1));
     }
 
@@ -85,7 +85,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         uploadStore().saveFiles(metadata.getObjectKey(), files);
 
         // Then
-        assertThat(store().loadSnapshot(metadata)).isEqualTo(new TransactionLogSnapshot(files, 1));
+        assertThat(readStore().loadSnapshot(metadata)).isEqualTo(new TransactionLogSnapshot(files, 1));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         uploadStore().saveFiles("test/file-references.arrow", files);
 
         // Then
-        assertThat(store().isEmpty("test/file-references.arrow")).isTrue();
+        assertThat(readStore().isEmpty("test/file-references.arrow")).isTrue();
     }
 
     @Test
@@ -119,7 +119,7 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         assertThat(filesInDataBucket()).isEmpty();
     }
 
-    private StateStoreArrowReadFileStore store() {
+    private StateStoreArrowReadFileStore readStore() {
         return new StateStoreArrowReadFileStore(instanceProperties, s3ClientV2);
     }
 
