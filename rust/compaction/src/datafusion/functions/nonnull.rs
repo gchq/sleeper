@@ -660,16 +660,20 @@ mod tests {
     }
 
     #[test]
-    fn should_call_as_any() {
+    fn should_not_call_as_any() {
         // Given
         let mut mock_udf = MockUDFImpl::new();
-        mock_udf
-            .expect_as_any()
-            .return_const(Box::new(&mock_udf as &dyn Any));
+        let mock_any = Box::new("test") as Box<dyn Any>;
+        mock_udf.expect_as_any().never().return_const(mock_any);
+        mock_udf.expect_name().return_const("mockudf".to_owned());
 
         let nonnull = NonNullable::new(Arc::new(mock_udf));
 
         // When
         let any = nonnull.as_any();
+
+        // Then
+        any.downcast_ref::<NonNullable>()
+            .expect("Should downcast to NonNullable");
     }
 }
