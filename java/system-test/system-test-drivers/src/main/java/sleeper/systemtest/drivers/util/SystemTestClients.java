@@ -18,8 +18,6 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
@@ -65,8 +63,7 @@ public class SystemTestClients {
     private final DynamoDbClient dynamo;
     private final AWSSecurityTokenService sts;
     private final StsClient stsV2;
-    private final AmazonSQS sqs;
-    private final SqsClient sqsV2;
+    private final SqsClient sqs;
     private final LambdaClient lambda;
     private final CloudFormationClient cloudFormation;
     private final EmrServerlessClient emrServerless;
@@ -91,7 +88,6 @@ public class SystemTestClients {
         sts = builder.sts;
         stsV2 = builder.stsV2;
         sqs = builder.sqs;
-        sqsV2 = builder.sqsV2;
         lambda = builder.lambda;
         cloudFormation = builder.cloudFormation;
         emrServerless = builder.emrServerless;
@@ -120,8 +116,7 @@ public class SystemTestClients {
                 .dynamo(DynamoDbClient.create())
                 .sts(AWSSecurityTokenServiceClientBuilder.defaultClient())
                 .stsV2(StsClient.create())
-                .sqs(AmazonSQSClientBuilder.defaultClient())
-                .sqsV2(SqsClient.create())
+                .sqs(SqsClient.create())
                 .lambda(systemTestLambdaClientBuilder().build())
                 .cloudFormation(CloudFormationClient.create())
                 .emrServerless(EmrServerlessClient.create())
@@ -150,8 +145,7 @@ public class SystemTestClients {
                 .dynamo(v2.buildClient(DynamoDbClient.builder()))
                 .sts(v1.buildClient(AWSSecurityTokenServiceClientBuilder.standard()))
                 .stsV2(v2.buildClient(StsClient.builder()))
-                .sqs(v1.buildClient(AmazonSQSClientBuilder.standard()))
-                .sqsV2(v2.buildClient(SqsClient.builder()))
+                .sqs(v2.buildClient(SqsClient.builder()))
                 .lambda(v2.buildClient(systemTestLambdaClientBuilder()))
                 .cloudFormation(v2.buildClient(CloudFormationClient.builder()))
                 .emrServerless(v2.buildClient(EmrServerlessClient.builder()))
@@ -196,12 +190,8 @@ public class SystemTestClients {
         return regionProvider;
     }
 
-    public AmazonSQS getSqs() {
+    public SqsClient getSqs() {
         return sqs;
-    }
-
-    public SqsClient getSqsV2() {
-        return sqsV2;
     }
 
     public LambdaClient getLambda() {
@@ -277,8 +267,7 @@ public class SystemTestClients {
         private DynamoDbClient dynamo;
         private AWSSecurityTokenService sts;
         private StsClient stsV2;
-        private AmazonSQS sqs;
-        private SqsClient sqsV2;
+        private SqsClient sqs;
         private LambdaClient lambda;
         private CloudFormationClient cloudFormation;
         private EmrServerlessClient emrServerless;
@@ -328,13 +317,8 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder sqs(AmazonSQS sqs) {
+        public Builder sqs(SqsClient sqs) {
             this.sqs = sqs;
-            return this;
-        }
-
-        public Builder sqsV2(SqsClient sqsV2) {
-            this.sqsV2 = sqsV2;
             return this;
         }
 

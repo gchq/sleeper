@@ -33,7 +33,7 @@ public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
 
     public AwsPartitionSplittingDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
     }
 
     public void splitPartitions() {

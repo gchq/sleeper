@@ -76,7 +76,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             SystemTestClients clients) {
         this.instance = instance;
         this.reporting = reporting;
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
         this.cloudWatch = clients.getCloudWatch();
     }
 

@@ -35,7 +35,7 @@ public class AwsPurgeQueueDriver implements PurgeQueueDriver {
 
     public AwsPurgeQueueDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
     }
 
     public void purgeQueues(List<InstanceProperty> properties) {

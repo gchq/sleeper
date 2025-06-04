@@ -50,7 +50,7 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
             SystemTestClients clients) {
         this.instance = instance;
         this.dynamoClient = clients.getDynamo();
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
     }
 
     @Override

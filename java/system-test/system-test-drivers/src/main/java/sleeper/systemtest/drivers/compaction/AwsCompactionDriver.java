@@ -90,14 +90,14 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
-        this(instance, clients, AwsDrainSqsQueue.forSystemTests(clients.getSqsV2()));
+        this(instance, clients, AwsDrainSqsQueue.forSystemTests(clients.getSqs()));
     }
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients, AwsDrainSqsQueue drainQueue) {
         this.instance = instance;
         this.dynamoClient = clients.getDynamo();
         this.s3Client = clients.getS3();
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
         this.asClient = clients.getAutoScaling();
         this.ec2Client = clients.getEc2();
         this.drainQueue = drainQueue;

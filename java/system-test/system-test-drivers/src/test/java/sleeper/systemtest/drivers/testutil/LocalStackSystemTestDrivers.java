@@ -48,8 +48,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 .s3(SleeperLocalStackClients.S3_CLIENT_V2)
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT_V2)
-                .sqs(SleeperLocalStackClients.SQS_CLIENT)
-                .sqsV2(SleeperLocalStackClients.SQS_CLIENT_V2)
+                .sqs(SleeperLocalStackClients.SQS_CLIENT_V2)
                 .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
                 .skipAssumeRole(true)
                 .build());
@@ -68,7 +67,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     @Override
     public CompactionDriver compaction(SystemTestContext context) {
         return new AwsCompactionDriver(context.instance(), clients,
-                AwsDrainSqsQueue.forLocalStackTests(clients.getSqsV2()));
+                AwsDrainSqsQueue.forLocalStackTests(clients.getSqs()));
     }
 
     @Override

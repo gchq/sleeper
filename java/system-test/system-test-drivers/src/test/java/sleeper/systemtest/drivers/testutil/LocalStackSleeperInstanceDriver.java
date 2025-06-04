@@ -77,13 +77,13 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
                 .s3Client(clients.getS3())
                 .s3TransferManager(clients.getS3TransferManager())
                 .dynamoClient(clients.getDynamo())
-                .sqsClient(clients.getSqsV2())
+                .sqsClient(clients.getSqs())
                 .build().deploy(instanceProperties, deployConfig.getTableProperties());
         return true;
     }
 
     private CreateQueueResponse createStateStoreCommitterQueue(String instanceId) {
-        return clients.getSqsV2().createQueue(request -> request
+        return clients.getSqs().createQueue(request -> request
                 .queueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
                 .attributes(Map.of(
                         QueueAttributeName.FIFO_QUEUE, "true",

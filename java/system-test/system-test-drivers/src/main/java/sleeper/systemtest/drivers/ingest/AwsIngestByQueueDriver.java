@@ -35,7 +35,7 @@ public class AwsIngestByQueueDriver implements IngestByQueueDriver {
     private final SqsClient sqsClient;
 
     public AwsIngestByQueueDriver(SystemTestClients clients) {
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
     }
 
     public String sendJobGetId(String queueUrl, String tableName, List<String> files) {
