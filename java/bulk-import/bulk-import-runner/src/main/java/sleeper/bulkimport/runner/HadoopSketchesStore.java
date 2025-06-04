@@ -28,6 +28,7 @@ import sleeper.sketchesv2.SketchesSerDe;
 import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public class HadoopSketchesStore implements SketchesStore {
 
@@ -47,6 +48,7 @@ public class HadoopSketchesStore implements SketchesStore {
             LOGGER.info("Wrote sketches to {}", path);
         } catch (IOException e) {
             LOGGER.error("Failure when trying to save file sketches.", sketches, e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -63,7 +65,7 @@ public class HadoopSketchesStore implements SketchesStore {
             return sketches;
         } catch (IOException e) {
             LOGGER.error("Failure when trying to load file sketches", filename, e);
-            return null;
+            throw new UncheckedIOException(e);
         }
     }
 
