@@ -155,7 +155,8 @@ public class ECSSystemTestTask {
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
-                    AssumeSleeperRoleV2 v2 = AssumeSleeperRole.forAwsV2(stsClientV2);
+                    AssumeSleeperRole assumeRole = AssumeSleeperRole.instanceAdmin(systemTestProperties);
+                    AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(StsClient.create());
                     S3Client instanceS3Client = v2.buildClient(S3Client.builder());
                     try {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
