@@ -28,10 +28,12 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.table.TableIndex;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackClients;
 
@@ -50,6 +52,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
     protected TablePropertiesStore tablePropertiesStore;
+    protected TableIndex tableIndex;
 
     @TempDir
     protected Path tempDir;
@@ -75,6 +78,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         S3InstanceProperties.saveToS3(s3, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
+        tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
     }
 
     @Override
