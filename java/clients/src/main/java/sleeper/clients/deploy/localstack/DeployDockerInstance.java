@@ -64,14 +64,12 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DeployDockerInstance {
     private final S3Client s3Client;
-    private final S3TransferManager s3TransferManager;
     private final DynamoDbClient dynamoClient;
     private final SqsClient sqsClient;
     private final Consumer<TableProperties> extraTableProperties;
 
     private DeployDockerInstance(Builder builder) {
         s3Client = Objects.requireNonNull(builder.s3Client, "s3Client must not be null");
-        s3TransferManager = Objects.requireNonNull(builder.s3TransferManager, "s3TransferManager must not be null");
         dynamoClient = Objects.requireNonNull(builder.dynamoClient, "dynamoClient must not be null");
         sqsClient = Objects.requireNonNull(builder.sqsClient, "sqsClient must not be null");
         extraTableProperties = Objects.requireNonNull(builder.extraTableProperties, "extraTableProperties must not be null");
@@ -95,7 +93,7 @@ public class DeployDockerInstance {
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             DeployDockerInstance.builder()
-                    .s3Client(s3Client).s3TransferManager(s3TransferManager)
+                    .s3Client(s3Client)
                     .dynamoClient(dynamoClient).sqsClient(sqsClient).build()
                     .deploy(instanceId);
         }
@@ -157,7 +155,6 @@ public class DeployDockerInstance {
 
     public static final class Builder {
         private S3Client s3Client;
-        private S3TransferManager s3TransferManager;
         private DynamoDbClient dynamoClient;
         private SqsClient sqsClient;
         private Consumer<TableProperties> extraTableProperties = tableProperties -> {
@@ -168,11 +165,6 @@ public class DeployDockerInstance {
 
         public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
-            return this;
-        }
-
-        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
-            this.s3TransferManager = s3TransferManager;
             return this;
         }
 

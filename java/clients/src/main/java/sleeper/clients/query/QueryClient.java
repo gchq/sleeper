@@ -75,7 +75,7 @@ public class QueryClient extends QueryCommandLineClient {
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(instanceProperties, s3Client, dynamoClient, in, out,
                 new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));               
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));
     }
 
     public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,

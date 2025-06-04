@@ -49,7 +49,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder()
-                .s3Client(s3ClientV2).s3TransferManager(s3TransferManager)
+                .s3Client(s3ClientV2)
                 .dynamoClient(dynamoClientV2).sqsClient(sqsClientV2)
                 .extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
