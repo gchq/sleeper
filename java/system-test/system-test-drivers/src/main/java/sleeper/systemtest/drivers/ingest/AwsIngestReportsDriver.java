@@ -49,7 +49,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
 
     public AwsIngestReportsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoClient = clients.getDynamoV2();
+        this.dynamoClient = clients.getDynamo();
         this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqsV2());
         this.emr = clients.getEmr();
     }

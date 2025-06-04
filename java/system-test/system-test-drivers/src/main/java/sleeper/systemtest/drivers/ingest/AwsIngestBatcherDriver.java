@@ -49,7 +49,7 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
             IngestSourceFilesContext sourceFiles,
             SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoClient = clients.getDynamoV2();
+        this.dynamoClient = clients.getDynamo();
         this.sqsClient = clients.getSqsV2();
     }
 

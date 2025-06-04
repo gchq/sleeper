@@ -33,7 +33,7 @@ public class AwsIngestTasksDriver implements IngestTasksDriver {
 
     public AwsIngestTasksDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoClient = clients.getDynamoV2();
+        this.dynamoClient = clients.getDynamo();
     }
 
     @Override

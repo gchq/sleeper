@@ -66,7 +66,7 @@ public class AwsResetInstanceOnFirstConnect {
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients, AwsDrainSqsQueue drainSqsQueue) {
         this.s3 = clients.getS3();
-        this.dynamoDB = clients.getDynamoV2();
+        this.dynamoDB = clients.getDynamo();
         this.drainSqsQueue = drainSqsQueue;
     }
 

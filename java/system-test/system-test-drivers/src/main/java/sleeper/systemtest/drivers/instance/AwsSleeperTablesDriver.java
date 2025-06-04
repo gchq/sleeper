@@ -42,7 +42,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
 
     public AwsSleeperTablesDriver(SystemTestClients clients) {
         this.s3 = clients.getS3();
-        this.dynamoDB = clients.getDynamoV2();
+        this.dynamoDB = clients.getDynamo();
     }
 
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {

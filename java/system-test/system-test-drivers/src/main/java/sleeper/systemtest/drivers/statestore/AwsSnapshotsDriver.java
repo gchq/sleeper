@@ -58,7 +58,7 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
     }
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
-        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamoV2());
+        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamo());
         StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, clients.getS3(), clients.getS3TransferManager());
         return new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, snapshotType)
                 .loadLatestSnapshotInRange(fromMinimum(0));

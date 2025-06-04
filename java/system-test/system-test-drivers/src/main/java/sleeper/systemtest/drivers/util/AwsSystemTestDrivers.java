@@ -173,12 +173,12 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoV2(), pollWithRetries());
+        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamo(), pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoV2(), pollWithRetries());
+        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamo(), pollWithRetries());
     }
 
     @Override
@@ -208,7 +208,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoV2(), pollWithRetries());
+        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamo(), pollWithRetries());
     }
 
     @Override
@@ -228,7 +228,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public CompactionReportsDriver compactionReports(SystemTestContext context) {
-        return new AwsCompactionReportsDriver(context.instance(), clients.getDynamoV2());
+        return new AwsCompactionReportsDriver(context.instance(), clients.getDynamo());
     }
 
     @Override
