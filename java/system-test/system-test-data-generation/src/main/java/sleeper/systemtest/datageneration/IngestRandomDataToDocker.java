@@ -16,44 +16,41 @@
 
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.net.URI;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRandomDataToDocker {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
-    private final AmazonS3 s3;
-    private final AmazonDynamoDB dynamoDB;
+    private final S3Client s3;
+    private final DynamoDbClient dynamoDB;
     private final long numberOfRecords;
 
     public IngestRandomDataToDocker(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonS3 s3, AmazonDynamoDB dynamoDB, long numberOfRecords) {
+            S3Client s3, DynamoDbClient dynamoDB, long numberOfRecords) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.s3 = s3;
@@ -63,7 +60,7 @@ public class IngestRandomDataToDocker {
 
     private void run() throws IOException {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3,
-                dynamoDB, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                dynamoDB, null);
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .recordsPerIngest(numberOfRecords)
@@ -114,18 +111,14 @@ public class IngestRandomDataToDocker {
             numberOfRecords = Long.parseLong(args[2]);
         }
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
             new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
                     .run();
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
         }
     }
 }
