@@ -33,7 +33,6 @@ import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotMetad
 
 import java.io.IOException;
 import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
 
@@ -44,15 +43,15 @@ import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BA
 /**
  * Saves and deletes the state of a Sleeper table in Arrow files.
  */
-public class StateStoreArrowUploadFileStore {
-    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileReadStore.class);
+public class StateStoreArrowFileUploadStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileUploadStore.class);
 
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final S3Client s3Client;
     private final S3TransferManager s3TransferManager;
 
-    public StateStoreArrowUploadFileStore(
+    public StateStoreArrowFileUploadStore(
             InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
@@ -112,25 +111,6 @@ public class StateStoreArrowUploadFileStore {
                 .bucket(instanceProperties.get(DATA_BUCKET))
                 .key(metadata.getObjectKey())
                 .build());
-    }
-
-    /**
-     * Checks if a file contains no Sleeper files or partitions. This checks if the file is empty.
-     *
-     * @param  objectKey   object key in the data bucket of the file to read
-     * @return             true if the file is empty
-     * @throws IOException if the file could not be read
-     */
-    public boolean isEmpty(String objectKey) throws IOException {
-        return s3Client.getObject(get -> get
-                .bucket(instanceProperties.get(DATA_BUCKET))
-                .key(objectKey),
-                (response, inputStream) -> {
-                    try (BufferAllocator allocator = new RootAllocator();
-                            ReadableByteChannel channel = Channels.newChannel(inputStream)) {
-                        return ArrowFormatUtils.isEmpty(allocator, channel);
-                    }
-                });
     }
 
     private Upload startUpload(String objectKey, BlockingOutputStreamAsyncRequestBody requestBody) {
