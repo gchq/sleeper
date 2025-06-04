@@ -22,10 +22,7 @@ import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.util.Base64;
 import com.facebook.collections.Pair;
@@ -36,9 +33,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.athena.FilterTranslator;
-import sleeper.configuration.jars.S3UserJarsLoader;
+import sleeper.configurationv2.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.table.TableProperties;
@@ -56,6 +55,7 @@ import sleeper.query.core.recordretrieval.RecordRetrievalException;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,23 +86,23 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     private final ObjectFactory objectFactory;
 
     public IteratorApplyingRecordHandler() {
-        this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(),
+        this(S3Client.create(), DynamoDbClient.create(),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket) {
+    public IteratorApplyingRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket) {
         super(s3Client, dynamoDB, configBucket);
         objectFactory = createObjectFactory(s3Client);
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3Client, dynamoDB, configBucket, secretsManager, athena);
+    public IteratorApplyingRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
+        super(s3ClientV1, s3Client, dynamoDB, configBucket, secretsManager, athena);
         objectFactory = createObjectFactory(s3Client);
     }
 
-    private ObjectFactory createObjectFactory(AmazonS3 s3Client) {
+    private ObjectFactory createObjectFactory(S3Client s3Client) {
         try {
-            return new S3UserJarsLoader(getInstanceProperties(), s3Client, "/tmp").buildObjectFactory();
+            return new S3UserJarsLoader(getInstanceProperties(), s3Client, Path.of("/tmp")).buildObjectFactory();
         } catch (ObjectFactoryException e) {
             throw new RuntimeException("Failed to initialise Object Factory");
         }

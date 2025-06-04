@@ -27,17 +27,16 @@ import com.amazonaws.athena.connector.lambda.data.writers.extractors.VarCharExtr
 import com.amazonaws.athena.connector.lambda.handlers.RecordHandler;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -67,18 +66,18 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private final InstanceProperties instanceProperties;
 
     public SleeperRecordHandler() {
-        this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(),
+        this(S3Client.create(), DynamoDbClient.create(),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket) {
+    public SleeperRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket) {
         super(SOURCE_TYPE);
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }
 
-    public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3Client, secretsManager, athena, SOURCE_TYPE);
+    public SleeperRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
+        super(s3ClientV1, secretsManager, athena, SOURCE_TYPE);
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }

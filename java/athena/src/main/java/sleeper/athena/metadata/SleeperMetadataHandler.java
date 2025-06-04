@@ -38,22 +38,19 @@ import com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -74,7 +71,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -101,26 +98,26 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     private final StateStoreProvider stateStoreProvider;
 
     public SleeperMetadataHandler() {
-        this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        this(S3Client.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SleeperMetadataHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) {
+    public SleeperMetadataHandler(S3Client s3Client, DynamoDbClient dynamoClient, String configBucket) {
         super(SOURCE_TYPE);
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, null);
     }
 
     public SleeperMetadataHandler(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket,
+            S3Client s3Client, DynamoDbClient dynamoClient, String configBucket,
             EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
             AmazonAthena athena, String spillBucket, String spillPrefix) {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
-        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, null);
     }
 
     /**
