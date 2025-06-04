@@ -198,7 +198,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public ClearQueryResultsDriver clearQueryResults(SystemTestContext context) {
-        return new S3ResultsDriver(context.instance(), clients.getS3());
+        return new S3ResultsDriver(context.instance(), clients);
     }
 
     @Override
