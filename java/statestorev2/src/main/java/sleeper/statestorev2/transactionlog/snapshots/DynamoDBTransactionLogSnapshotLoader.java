@@ -18,7 +18,7 @@ package sleeper.statestorev2.transactionlog.snapshots;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
-import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.StateStoreArrowReadFileStore;
 
 import java.util.Optional;
 
@@ -29,11 +29,11 @@ import java.util.Optional;
 public class DynamoDBTransactionLogSnapshotLoader implements TransactionLogSnapshotLoader {
 
     private final DynamoDBTransactionLogSnapshotMetadataStore metadataStore;
-    private final StateStoreArrowFileStore fileStore;
+    private final StateStoreArrowReadFileStore fileStore;
     private final SnapshotType snapshotType;
 
     public DynamoDBTransactionLogSnapshotLoader(
-            DynamoDBTransactionLogSnapshotMetadataStore metadataStore, StateStoreArrowFileStore fileStore, SnapshotType snapshotType) {
+            DynamoDBTransactionLogSnapshotMetadataStore metadataStore, StateStoreArrowReadFileStore fileStore, SnapshotType snapshotType) {
         this.metadataStore = metadataStore;
         this.fileStore = fileStore;
         this.snapshotType = snapshotType;

@@ -119,8 +119,8 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
         assertThat(filesInDataBucket()).isEmpty();
     }
 
-    private StateStoreArrowFileStore store() {
-        return new StateStoreArrowFileStore(instanceProperties, s3ClientV2);
+    private StateStoreArrowReadFileStore store() {
+        return new StateStoreArrowReadFileStore(instanceProperties, s3ClientV2);
     }
 
     private StateStoreArrowUploadFileStore uploadStore() {
