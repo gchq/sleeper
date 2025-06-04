@@ -25,10 +25,10 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestore.StateStoreArrowFileStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.statestore.transactionlog.snapshots.SnapshotType;
+import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestorev2.transactionlog.snapshots.SnapshotType;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
@@ -58,8 +58,8 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
     }
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
-        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamoDB());
-        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(tableProperties, clients.createHadoopConf(instanceProperties, tableProperties));
+        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamoV2());
+        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, clients.getS3V2(), clients.getS3TransferManager());
         return new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, snapshotType)
                 .loadLatestSnapshotInRange(fromMinimum(0));
     }
