@@ -18,7 +18,6 @@ package sleeper.clients.table.partition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -84,7 +83,6 @@ public class ExportPartitions {
         String outputFile = args[2];
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);

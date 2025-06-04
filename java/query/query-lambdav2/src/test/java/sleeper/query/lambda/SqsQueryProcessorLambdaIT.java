@@ -139,7 +139,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
-        queryProcessorLambda = new SqsQueryProcessorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, s3TransferManager, instanceProperties.get(CONFIG_BUCKET));
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
         queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
     }
 

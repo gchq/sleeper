@@ -18,7 +18,6 @@ package sleeper.clients.table.partition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.table.ReinitialiseTable;
@@ -100,7 +99,6 @@ public class ReinitialiseTableFromExportedPartitions {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             ReinitialiseTableFromExportedPartitions reinitialiseTable = new ReinitialiseTableFromExportedPartitions(
                     s3Client, dynamoClient, instanceId, tableName, exportedPartitionsFile);

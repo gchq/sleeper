@@ -18,7 +18,6 @@ package sleeper.clients.table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -118,7 +117,6 @@ public class ReinitialiseTable {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
