@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestorev2.StateStoreArrowReadFileStore;
+import sleeper.statestorev2.StateStoreArrowFileReadStore;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestorev2.transactionlog.snapshots.SnapshotType;
@@ -51,7 +51,7 @@ public class DynamoDBTransactionLogStateStore {
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamoDB, S3Client s3) {
         DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
-        StateStoreArrowReadFileStore fileStore = new StateStoreArrowReadFileStore(instanceProperties, s3);
+        StateStoreArrowFileReadStore fileStore = new StateStoreArrowFileReadStore(instanceProperties, s3);
         return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
                 .filesSnapshotLoader(new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, SnapshotType.FILES))
                 .partitionsSnapshotLoader(new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, SnapshotType.PARTITIONS));

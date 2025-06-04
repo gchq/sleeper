@@ -39,13 +39,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 /**
  * Loads the state of a Sleeper table in Arrow files.
  */
-public class StateStoreArrowReadFileStore {
-    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowReadFileStore.class);
+public class StateStoreArrowFileReadStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileReadStore.class);
 
     private final InstanceProperties instanceProperties;
     private final S3Client s3Client;
 
-    public StateStoreArrowReadFileStore(
+    public StateStoreArrowFileReadStore(
             InstanceProperties instanceProperties, S3Client s3Client) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
