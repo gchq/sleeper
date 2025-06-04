@@ -21,7 +21,8 @@ import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import sleeper.clients.deploy.localstack.DeployDockerInstance;
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.clients.util.BucketUtils;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -52,18 +53,18 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     @Override
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
         LOGGER.info("Loading properties with instance ID: {}", instanceId);
-        S3InstanceProperties.reloadGivenInstanceId(clients.getS3(), instanceProperties, instanceId);
+        S3InstanceProperties.reloadGivenInstanceId(clients.getS3V2(), instanceProperties, instanceId);
     }
 
     @Override
     public void saveInstanceProperties(InstanceProperties instanceProperties) {
         LOGGER.info("Saving properties with instance ID: {}", instanceProperties.get(ID));
-        S3InstanceProperties.saveToS3(clients.getS3(), instanceProperties);
+        S3InstanceProperties.saveToS3(clients.getS3V2(), instanceProperties);
     }
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        if (clients.getS3().doesBucketExistV2(InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
+        if (BucketUtils.doesBucketExist(clients.getS3V2(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
