@@ -62,7 +62,6 @@ public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
     private final S3Client s3Client;
-    private final S3TransferManager s3TransferManager;
     private final DynamoDbClient dynamoClient;
     private final EcrClient ecrClient;
     private final Path scriptsDirectory;
@@ -74,7 +73,6 @@ public class DeployNewInstance {
 
     private DeployNewInstance(Builder builder) {
         s3Client = builder.s3Client;
-        s3TransferManager = builder.s3TransferManager;
         dynamoClient = builder.dynamoClient;
         ecrClient = builder.ecrClient;
         scriptsDirectory = builder.scriptsDirectory;
@@ -112,7 +110,7 @@ public class DeployNewInstance {
                             instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                    .deployWithClients(s3Client, s3TransferManager, dynamoClient, ecrClient);
+                    .deployWithClients(s3Client, dynamoClient, ecrClient);
         }
     }
 
@@ -182,7 +180,6 @@ public class DeployNewInstance {
 
     public static final class Builder {
         private S3Client s3Client;
-        private S3TransferManager s3TransferManager;
         private DynamoDbClient dynamoClient;
         private EcrClient ecrClient;
         private Path scriptsDirectory;
@@ -197,11 +194,6 @@ public class DeployNewInstance {
 
         public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
-            return this;
-        }
-
-        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
-            this.s3TransferManager = s3TransferManager;
             return this;
         }
 
@@ -250,9 +242,8 @@ public class DeployNewInstance {
         }
 
         public void deployWithClients(
-                S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, EcrClient ecrClient) throws IOException, InterruptedException {
+                S3Client s3Client, DynamoDbClient dynamoClient, EcrClient ecrClient) throws IOException, InterruptedException {
             s3Client(s3Client)
-                    .s3TransferManager(s3TransferManager)
                     .dynamoClient(dynamoClient)
                     .ecrClient(ecrClient)
                     .build().deploy();

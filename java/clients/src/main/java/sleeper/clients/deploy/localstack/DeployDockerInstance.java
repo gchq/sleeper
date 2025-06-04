@@ -18,10 +18,8 @@ package sleeper.clients.deploy.localstack;
 
 import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
 import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
@@ -88,8 +86,6 @@ public class DeployDockerInstance {
         }
         String instanceId = args[0];
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             DeployDockerInstance.builder()

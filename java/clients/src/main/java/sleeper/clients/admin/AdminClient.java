@@ -18,7 +18,6 @@ package sleeper.clients.admin;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
@@ -93,7 +92,6 @@ public class AdminClient {
 
         int errorCode;
         try (S3Client s3Client = AwsV2ClientHelper.buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = AwsV2ClientHelper.buildAwsV2Client(S3AsyncClient.crtBuilder());
                 DynamoDbClient dynamoClient = AwsV2ClientHelper.buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = AwsV2ClientHelper.buildAwsV2Client(SqsClient.builder());
                 EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());

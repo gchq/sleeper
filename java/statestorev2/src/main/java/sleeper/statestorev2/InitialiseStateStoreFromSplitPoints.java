@@ -16,7 +16,6 @@
 package sleeper.statestorev2;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -80,8 +79,7 @@ public class InitialiseStateStoreFromSplitPoints {
         String tableName = args[1];
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder())) {
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
