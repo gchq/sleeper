@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -57,17 +56,6 @@ public class AdminClientPropertiesStore {
     private final DockerImageConfiguration dockerImageConfiguration;
     private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
-
-    public AdminClientPropertiesStore(
-            S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
-            Path generatedDirectory, UploadDockerImages uploadDockerImages) {
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
-        this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
-        this.uploadDockerImages = uploadDockerImages;
-        this.cdk = cdk;
-        this.generatedDirectory = generatedDirectory;
-    }
 
     public AdminClientPropertiesStore(
             S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,

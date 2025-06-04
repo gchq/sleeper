@@ -37,7 +37,7 @@ import java.util.List;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 /**
- * Saves and loads the state of a Sleeper table in Arrow files.
+ * Loads the state of a Sleeper table in Arrow files.
  */
 public class StateStoreArrowFileStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);

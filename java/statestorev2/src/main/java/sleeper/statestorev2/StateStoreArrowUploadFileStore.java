@@ -42,7 +42,7 @@ import static sleeper.core.properties.table.TableProperty.FILES_SNAPSHOT_BATCH_S
 import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BATCH_SIZE;
 
 /**
- * Saves and loads the state of a Sleeper table in Arrow files.
+ * Saves and deletes the state of a Sleeper table in Arrow files.
  */
 public class StateStoreArrowUploadFileStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);
