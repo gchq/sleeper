@@ -412,13 +412,14 @@ mod tests {
     use crate::{
         assert_error,
         datafusion::functions::nonnull::{
-            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable, non_null_max,
-            non_null_min, non_null_sum, non_nullable, nullable_check, register_non_nullables,
+            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable,
+            NonNullableAccumulator, non_null_max, non_null_min, non_null_sum, non_nullable,
+            nullable_check, register_non_nullables,
         },
     };
     use arrow::{
-        array::Int64Builder,
-        datatypes::{DataType, Field},
+        array::{BooleanArray, Int64Builder},
+        datatypes::{DataType, Field, Schema},
     };
     use datafusion::{
         common::{arrow::array::Array, internal_err},
@@ -429,13 +430,14 @@ mod tests {
             sum::sum_udaf,
         },
         logical_expr::{
-            Accumulator, AggregateUDFImpl, Documentation, GroupsAccumulator, ReversedUDAF,
-            SetMonotonicity, Signature, StatisticsArgs,
+            Accumulator, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator, ReversedUDAF,
+            SetMonotonicity, Signature, StatisticsArgs, Volatility,
             expr::{AggregateFunctionParams, WindowFunctionParams},
             function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
             lit,
             utils::AggregateOrderSensitivity,
         },
+        physical_expr::LexOrdering,
         prelude::Expr,
         scalar::ScalarValue,
     };
@@ -659,6 +661,54 @@ mod tests {
         unsafe impl Sync for UDFImpl {}
     }
 
+    mock! {
+        #[derive(Debug)]
+        UDFAcc{}
+        impl Accumulator for UDFAcc{
+            fn update_batch(
+                &mut self,
+                values: &[Arc<dyn Array>],
+            ) -> Result<(), DataFusionError>;
+            fn evaluate(&mut self) -> Result<ScalarValue, DataFusionError>;
+            fn size(&self) -> usize;
+            fn state(&mut self) -> Result<Vec<ScalarValue>, DataFusionError>;
+            fn merge_batch(
+                &mut self,
+                states: &[Arc<dyn Array>],
+            ) -> Result<(), DataFusionError>;
+        }
+    }
+
+    mock! {
+        #[derive(Debug)]
+        UDFGroupAcc{}
+        impl GroupsAccumulator for UDFGroupAcc{
+            fn update_batch<'a>(
+                &mut self,
+                values: &[Arc<dyn Array>],
+                group_indices: &[usize],
+                opt_filter: Option<&'a BooleanArray>,
+                total_num_groups: usize,
+            ) -> Result<(), DataFusionError>;
+            fn evaluate(
+                &mut self,
+                emit_to: EmitTo,
+            ) -> Result<Arc<dyn Array>, DataFusionError>;
+            fn state(
+                &mut self,
+                emit_to: EmitTo,
+            ) -> Result<Vec<Arc<dyn Array>>, DataFusionError>;
+            fn merge_batch<'a>(
+                &mut self,
+                values: &[Arc<dyn Array>],
+                group_indices: &[usize],
+                opt_filter: Option<&'a BooleanArray>,
+                total_num_groups: usize,
+            ) -> Result<(), DataFusionError>;
+            fn size(&self) -> usize;
+        }
+    }
+
     #[test]
     fn should_not_call_as_any() {
         // Given
@@ -690,5 +740,252 @@ mod tests {
 
         // Then
         assert_eq!("nonnullable_mockudf", name);
+    }
+
+    #[test]
+    fn should_call_signature() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_signature()
+            .once()
+            .return_const(Signature::nullary(Volatility::Immutable));
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let sig = nonnull.signature();
+
+        // Then
+        assert_eq!(&Signature::nullary(Volatility::Immutable), sig);
+    }
+
+    #[test]
+    fn should_call_return_type() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_return_type()
+            .once()
+            .returning(|_| Ok(DataType::Int64));
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let ret = nonnull.return_type(&[]);
+
+        // Then
+        assert_eq!(DataType::Int64, ret.expect("Couldn't unwrap return type"));
+    }
+
+    #[test]
+    fn should_call_accumulator_with_wrapped_instance() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_accumulator()
+            .once()
+            .return_once(|_| Result::Ok(Box::new(MockUDFAcc::new()) as Box<dyn Accumulator>));
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        nonnull
+            .accumulator(AccumulatorArgs {
+                return_type: &DataType::Int64,
+                schema: &Schema::empty(),
+                ignore_nulls: false,
+                ordering_req: &LexOrdering::empty(),
+                is_reversed: false,
+                name: "test",
+                is_distinct: false,
+                exprs: &[],
+            })
+            .expect("No accumulator instance");
+
+        // Then - shouldn't fail
+    }
+
+    #[test]
+    fn is_nullable_should_be_false() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let f = nonnull.is_nullable();
+
+        // Then
+        assert!(!f);
+    }
+
+    #[test]
+    fn should_call_state_fields() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_state_fields()
+            .once()
+            .return_once(|_| Result::Ok(vec![]));
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let states = nonnull
+            .state_fields(StateFieldsArgs {
+                name: "test",
+                input_types: &[],
+                return_type: &DataType::Int64,
+                ordering_fields: &[],
+                is_distinct: false,
+            })
+            .expect("Couldn't unwrap");
+
+        // Then
+        assert_eq!(Vec::<Field>::new(), states);
+    }
+
+    #[test]
+    fn should_call_groups_accumulator_supported() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_groups_accumulator_supported()
+            .once()
+            .return_const(true);
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let group_supported = nonnull.groups_accumulator_supported(AccumulatorArgs {
+            return_type: &DataType::Int64,
+            schema: &Schema::empty(),
+            ignore_nulls: false,
+            ordering_req: &LexOrdering::empty(),
+            is_reversed: false,
+            name: "test",
+            is_distinct: false,
+            exprs: &[],
+        });
+
+        // Then
+        assert!(group_supported);
+    }
+
+    #[test]
+    fn should_call_create_groups_accumulator_with_wrapped_instance() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_create_groups_accumulator()
+            .once()
+            .return_once(|_| {
+                Result::Ok(Box::new(MockUDFGroupAcc::new()) as Box<dyn GroupsAccumulator>)
+            });
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        nonnull
+            .create_groups_accumulator(AccumulatorArgs {
+                return_type: &DataType::Int64,
+                schema: &Schema::empty(),
+                ignore_nulls: false,
+                ordering_req: &LexOrdering::empty(),
+                is_reversed: false,
+                name: "test",
+                is_distinct: false,
+                exprs: &[],
+            })
+            .expect("No group accumulator instance");
+
+        // Then - shouldn't fail
+    }
+
+    #[test]
+    fn should_return_no_aliases() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let aliases = nonnull.aliases();
+
+        // Then
+        assert_eq!(&[] as &[String], aliases);
+    }
+
+    #[test]
+    fn should_call_create_sliding_accumulator_with_wrapped_instance() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_create_sliding_accumulator()
+            .once()
+            .return_once(|_| Result::Ok(Box::new(MockUDFAcc::new()) as Box<dyn Accumulator>));
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        nonnull
+            .create_sliding_accumulator(AccumulatorArgs {
+                return_type: &DataType::Int64,
+                schema: &Schema::empty(),
+                ignore_nulls: false,
+                ordering_req: &LexOrdering::empty(),
+                is_reversed: false,
+                name: "test",
+                is_distinct: false,
+                exprs: &[],
+            })
+            .expect("No sliding accumulator instance");
+
+        // Then - shouldn't fail
+    }
+
+    #[test]
+    fn should_call_with_beneficial_ordering() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_with_beneficial_ordering()
+            .once()
+            .return_once(|_| Ok(None));
+
+        let nonnull = Arc::new(NonNullable::new(Arc::new(mock_udf)));
+
+        // When
+        let ordering = nonnull
+            .with_beneficial_ordering(false)
+            .expect("couldn't unwrap ordering result");
+        // Then
+        assert_eq!(None, ordering);
+    }
+
+    #[test]
+    fn should_call_order_sensitivity() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_order_sensitivity()
+            .once()
+            .return_const(AggregateOrderSensitivity::Insensitive);
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let ordering = nonnull.order_sensitivity();
+        // Then
+        assert_eq!(AggregateOrderSensitivity::Insensitive, ordering);
     }
 }
