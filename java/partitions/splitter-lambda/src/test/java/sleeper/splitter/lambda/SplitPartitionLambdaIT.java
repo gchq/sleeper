@@ -15,14 +15,13 @@
  */
 package sleeper.splitter.lambda;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.Message;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -41,10 +40,10 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.splitter.core.find.SplitPartitionJobDefinition;
-import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
+import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -100,7 +99,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     void shouldSendAsyncRequestToStateStoreCommitter() throws Exception {
         // Given
         tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
         List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> new Record(Map.of("key", i))));
 
@@ -127,35 +126,35 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         return instanceProperties;
     }
 
     private List<StateStoreCommitRequest> receiveSplitPartitionCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.body()))
                 .collect(Collectors.toList());
     }
 
     private List<Message> receiveCommitMessages() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest).getMessages();
+        return sqsClientV2.receiveMessage(request -> request
+                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .maxNumberOfMessages(10))
+                .messages();
     }
 
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).createTable(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).createTable(tableProperties);
         update(stateStoreProvider().getStateStore(tableProperties))
                 .initialise(partitionTree.getAllPartitions());
         return tableProperties;
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
-        return S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        return S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
     }
 
     private StateStore stateStore() {
@@ -163,11 +162,11 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        return StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
     }
 
     private SplitPartitionLambda lambdaWithNewPartitionIds(String... ids) {
-        return new SplitPartitionLambda(instanceProperties, hadoopConf, s3Client, dynamoClient, sqsClient, List.of(ids).iterator()::next);
+        return new SplitPartitionLambda(instanceProperties, s3TransferManager, s3ClientV2, dynamoClientV2, sqsClientV2, List.of(ids).iterator()::next);
     }
 
     private List<String> ingestRecordsGetFilenames(Stream<Record> records) throws Exception {

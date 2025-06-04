@@ -40,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runner</artifactId>
+            <artifactId>query-runnerv2</artifactId>
             <version>${project.parent.version}</version>
             <exclusions>
                 <exclusion>
@@ -78,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
+            <artifactId>statestorev2</artifactId>
             <version>${project.parent.version}</version>
             <exclusions>
                 <exclusion>
