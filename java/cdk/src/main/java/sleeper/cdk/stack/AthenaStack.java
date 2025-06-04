@@ -108,7 +108,9 @@ public class AthenaStack extends NestedStack {
         env.put("spill_bucket", spillBucket.getBucketName());
         env.put("kms_key_id", spillMasterKey.getKeyId());
 
-        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
+        // Athena is deployed with Docker because it uses AWS SDK v1, and when combined with AWS SDK v2 and Hadoop this
+        // makes the jar too big to deploy directly.
+        IFunction athenaCompositeHandler = lambdaCode.buildFunctionWithDockerDeploy(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)
                 .memorySize(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_MEMORY))
                 .timeout(Duration.seconds(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS)))

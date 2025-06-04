@@ -60,6 +60,17 @@ public class LambdaCode {
         } else {
             throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
         }
+        return buildFunction(builder, config);
+    }
+
+    public IVersion buildFunctionWithDockerDeploy(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
+        return buildFunction(
+                new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
+                        .code(containerCode(scope, handler, id))),
+                config);
+    }
+
+    private IVersion buildFunction(LambdaBuilder builder, Consumer<LambdaBuilder> config) {
         config.accept(builder);
         Function function = builder.build();
 
