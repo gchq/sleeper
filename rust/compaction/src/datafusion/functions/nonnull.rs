@@ -676,4 +676,19 @@ mod tests {
         any.downcast_ref::<NonNullable>()
             .expect("Should downcast to NonNullable");
     }
+
+    #[test]
+    fn should_build_name_appended() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let name = nonnull.name();
+
+        // Then
+        assert_eq!("nonnullable_mockudf", name);
+    }
 }
