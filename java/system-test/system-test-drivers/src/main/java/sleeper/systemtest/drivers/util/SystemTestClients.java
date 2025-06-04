@@ -62,7 +62,7 @@ public class SystemTestClients {
     private final S3Client s3;
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
-    private final DynamoDbClient dynamoV2;
+    private final DynamoDbClient dynamo;
     private final AWSSecurityTokenService sts;
     private final StsClient stsV2;
     private final AmazonSQS sqs;
@@ -87,7 +87,7 @@ public class SystemTestClients {
         s3 = builder.s3;
         s3Async = builder.s3Async;
         s3TransferManager = builder.s3TransferManager;
-        dynamoV2 = builder.dynamoV2;
+        dynamo = builder.dynamo;
         sts = builder.sts;
         stsV2 = builder.stsV2;
         sqs = builder.sqs;
@@ -117,7 +117,7 @@ public class SystemTestClients {
                 .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
-                .dynamoV2(DynamoDbClient.create())
+                .dynamo(DynamoDbClient.create())
                 .sts(AWSSecurityTokenServiceClientBuilder.defaultClient())
                 .stsV2(StsClient.create())
                 .sqs(AmazonSQSClientBuilder.defaultClient())
@@ -147,7 +147,7 @@ public class SystemTestClients {
                 .regionProvider(regionProvider)
                 .s3(v2.buildClient(S3Client.builder()))
                 .s3Async(v2.buildClient(S3AsyncClient.crtBuilder()))
-                .dynamoV2(v2.buildClient(DynamoDbClient.builder()))
+                .dynamo(v2.buildClient(DynamoDbClient.builder()))
                 .sts(v1.buildClient(AWSSecurityTokenServiceClientBuilder.standard()))
                 .stsV2(v2.buildClient(StsClient.builder()))
                 .sqs(v1.buildClient(AmazonSQSClientBuilder.standard()))
@@ -181,7 +181,7 @@ public class SystemTestClients {
     }
 
     public DynamoDbClient getDynamo() {
-        return dynamoV2;
+        return dynamo;
     }
 
     public AWSSecurityTokenService getSts() {
@@ -274,7 +274,7 @@ public class SystemTestClients {
         private S3Client s3;
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
-        private DynamoDbClient dynamoV2;
+        private DynamoDbClient dynamo;
         private AWSSecurityTokenService sts;
         private StsClient stsV2;
         private AmazonSQS sqs;
@@ -313,8 +313,8 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder dynamoV2(DynamoDbClient dynamoV2) {
-            this.dynamoV2 = dynamoV2;
+        public Builder dynamo(DynamoDbClient dynamo) {
+            this.dynamo = dynamo;
             return this;
         }
 
