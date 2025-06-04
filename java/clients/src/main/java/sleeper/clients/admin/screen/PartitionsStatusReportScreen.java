@@ -18,6 +18,7 @@ package sleeper.clients.admin.screen;
 
 import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -32,10 +33,10 @@ public class PartitionsStatusReportScreen {
     private final TableSelectHelper tableSelectHelper;
     private final AdminClientPropertiesStore store;
 
-    public PartitionsStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
+    public PartitionsStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, TableNamesReport tableNamesReport) {
         this.out = out;
         this.in = in;
-        this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store, tableNamesReport);
         this.store = store;
     }
 

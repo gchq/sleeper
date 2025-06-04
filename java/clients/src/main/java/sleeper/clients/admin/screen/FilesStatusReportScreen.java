@@ -19,6 +19,7 @@ package sleeper.clients.admin.screen;
 import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.FilesStatusReport;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -32,11 +33,11 @@ public class FilesStatusReportScreen {
     private final AdminClientPropertiesStore store;
     private final TableSelectHelper tableSelectHelper;
 
-    public FilesStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
+    public FilesStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, TableNamesReport tableNamesReport) {
         this.out = out;
         this.in = in;
         this.store = store;
-        this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store, tableNamesReport);
     }
 
     public void chooseTableAndPrint(String instanceId) {

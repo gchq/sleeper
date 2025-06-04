@@ -88,7 +88,10 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
-                CLEAR_CONSOLE + TABLE_SELECT_SCREEN +
+                CLEAR_CONSOLE + "\n\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table\n" + TABLE_SELECT_SCREEN +
                 CLEAR_CONSOLE + MAIN_SCREEN);
         verify(editor).openPropertiesFile(tableProperties);
     }

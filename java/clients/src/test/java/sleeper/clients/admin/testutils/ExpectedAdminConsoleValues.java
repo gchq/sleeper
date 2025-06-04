@@ -19,6 +19,7 @@ import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TablePropertyGroup;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,6 +73,17 @@ public class ExpectedAdminConsoleValues {
     public static String tablePropertyGroupOption(PropertyGroup group) {
         return "" + (TablePropertyGroup.getAll().indexOf(group) + TABLE_START_INDEX);
     }
+
+    public static String generateExpectedTableNamesOutput(String... tableNames) {
+        return "\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" + Arrays.stream(tableNames).map(s -> s + "\n").collect(Collectors.joining(""));
+    }
+
+    public static final String TEST_TABLE_REPORT_LIST = "\n\n" +
+            "Table Names\n" +
+            "----------------------------------\n" +
+            "test-table\n";
 
     public static final String TABLE_SELECT_SCREEN = "\n" +
             "Which TABLE do you want to select?\n" +

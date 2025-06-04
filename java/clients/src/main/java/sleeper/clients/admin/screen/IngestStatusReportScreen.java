@@ -21,6 +21,7 @@ import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.IngestJobStatusReport;
 import sleeper.clients.report.IngestTaskStatusReport;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
@@ -56,14 +57,14 @@ public class IngestStatusReportScreen {
 
     public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store,
             AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient,
-            Function<InstanceProperties, Map<String, Integer>> getStepCount) {
+            Function<InstanceProperties, Map<String, Integer>> getStepCount, TableNamesReport tableNamesReport) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
         this.trackers = trackers;
         this.queueClient = queueClient;
-        this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store, tableNamesReport);
         this.getStepCount = getStepCount;
     }
 
