@@ -42,7 +42,6 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -52,7 +51,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.splitter.core.split.SplitPartition;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.splitterv2.core.split.SplitPartition;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
@@ -69,7 +69,6 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.splitter.core.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
@@ -545,7 +544,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {
         return new SplitPartition(stateStore, tableProperties,
-                loadSketchesFromFile(tableProperties, new Configuration()),
+                new LocalFileSystemSketchesStore(),
                 () -> UUID.randomUUID().toString(), null);
     }
 

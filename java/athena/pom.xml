@@ -78,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitter</artifactId>
+            <artifactId>splitterv2</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
