@@ -16,13 +16,12 @@
 
 package sleeper.systemtest.drivers.compaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
@@ -34,17 +33,17 @@ import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
-import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.compaction.job.creation.CompactionBatchJobsWriterToS3;
-import sleeper.compaction.job.creation.CompactionBatchMessageSenderToSqs;
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.job.creationv2.AwsCreateCompactionJobs;
+import sleeper.compaction.job.creationv2.CompactionBatchJobsWriterToS3;
+import sleeper.compaction.job.creationv2.CompactionBatchMessageSenderToSqs;
+import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.SplitIntoBatches;
-import sleeper.invoke.tables.InvokeForTables;
+import sleeper.invoke.tablesv2.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -82,10 +81,9 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     private final SystemTestInstanceContext instance;
-    private final AmazonDynamoDB dynamoDBClient;
-    private final AmazonS3 s3Client;
-    private final AmazonSQS sqsClient;
-    private final SqsClient sqsClientV2;
+    private final DynamoDbClient dynamoClient;
+    private final S3Client s3Client;
+    private final SqsClient sqsClient;
     private final AutoScalingClient asClient;
     private final Ec2Client ec2Client;
     private final AwsDrainSqsQueue drainQueue;
@@ -97,10 +95,9 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients, AwsDrainSqsQueue drainQueue) {
         this.instance = instance;
-        this.dynamoDBClient = clients.getDynamoDB();
-        this.s3Client = clients.getS3();
-        this.sqsClient = clients.getSqs();
-        this.sqsClientV2 = clients.getSqsV2();
+        this.dynamoClient = clients.getDynamoV2();
+        this.s3Client = clients.getS3V2();
+        this.sqsClient = clients.getSqsV2();
         this.asClient = clients.getAutoScaling();
         this.ec2Client = clients.getEc2();
         this.drainQueue = drainQueue;
@@ -109,7 +106,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     @Override
     public CompactionJobTracker getJobTracker() {
         return CompactionJobTrackerFactory
-                .getTrackerWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
+                .getTrackerWithStronglyConsistentReads(dynamoClient, instance.getInstanceProperties());
     }
 
     @Override
@@ -159,7 +156,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                     .map(batch -> {
                         return EXECUTOR.submit(() -> {
                             CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
-                            sqsClientV2.sendMessageBatch(builder -> builder
+                            sqsClient.sendMessageBatch(builder -> builder
                                     .queueUrl(instance.getInstanceProperties().get(COMPACTION_COMMIT_QUEUE_URL))
                                     .entries(batch.stream()
                                             .map(commit -> SendMessageBatchRequestEntry.builder()
