@@ -412,9 +412,8 @@ mod tests {
     use crate::{
         assert_error,
         datafusion::functions::nonnull::{
-            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable,
-            NonNullableAccumulator, non_null_max, non_null_min, non_null_sum, non_nullable,
-            nullable_check, register_non_nullables,
+            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable, non_null_max,
+            non_null_min, non_null_sum, non_nullable, nullable_check, register_non_nullables,
         },
     };
     use arrow::{
@@ -422,7 +421,7 @@ mod tests {
         datatypes::{DataType, Field, Schema},
     };
     use datafusion::{
-        common::{arrow::array::Array, internal_err},
+        common::{Statistics, arrow::array::Array, internal_err},
         error::{DataFusionError, Result},
         execution::SessionStateBuilder,
         functions_aggregate::{
@@ -968,6 +967,7 @@ mod tests {
         let ordering = nonnull
             .with_beneficial_ordering(false)
             .expect("couldn't unwrap ordering result");
+
         // Then
         assert_eq!(None, ordering);
     }
@@ -985,7 +985,133 @@ mod tests {
 
         // When
         let ordering = nonnull.order_sensitivity();
+
         // Then
         assert_eq!(AggregateOrderSensitivity::Insensitive, ordering);
+    }
+
+    // TODO: Put simplify test here
+
+    #[test]
+    fn should_return_identical_reverse() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let reverse = nonnull.reverse_expr();
+
+        // Then
+        assert!(matches!(reverse, ReversedUDAF::Identical));
+    }
+
+    #[test]
+    fn should_call_coerce_types() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_coerce_types()
+            .once()
+            .return_once(|_| Ok(vec![]));
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let coerced = nonnull
+            .coerce_types(&[])
+            .expect("couldn't unwrap coerced_types result");
+
+        // Then
+        assert_eq!(Vec::<DataType>::new(), coerced);
+    }
+
+    #[test]
+    fn should_call_is_descending() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_is_descending()
+            .once()
+            .return_const(Some(false));
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let descending = nonnull.is_descending();
+
+        // Then
+        assert_eq!(Some(false), descending);
+    }
+
+    #[test]
+    fn should_call_value_from_stats() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf.expect_value_from_stats().once().return_const(None);
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let stats_value = nonnull.value_from_stats(&StatisticsArgs {
+            statistics: &Statistics::new_unknown(&Schema::empty()),
+            return_type: &DataType::Int64,
+            is_distinct: false,
+            exprs: &[],
+        });
+
+        // Then
+        assert_eq!(None, stats_value);
+    }
+
+    #[test]
+    fn should_call_default_value() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_default_value()
+            .once()
+            .returning(|_| Ok(ScalarValue::Null));
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let default = nonnull
+            .default_value(&DataType::Int64)
+            .expect("couldn't unwrap default value");
+
+        // Then
+        assert_eq!(ScalarValue::Null, default);
+    }
+
+    #[test]
+    fn should_call_documentation() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf.expect_documentation().once().return_const(None);
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let docs = nonnull.documentation();
+        // Then
+        assert!(docs.is_none());
+    }
+
+    #[test]
+    fn should_call_set_monotonicity() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_set_monotonicity()
+            .once()
+            .return_const(SetMonotonicity::NotMonotonic);
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let monotonicity = nonnull.set_monotonicity(&DataType::Int64);
+        // Then
+        assert_eq!(SetMonotonicity::NotMonotonic, monotonicity);
     }
 }
