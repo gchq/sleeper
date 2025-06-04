@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -27,7 +25,6 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
-import sleeper.clients.api.role.AssumeSleeperRoleV2;
 import sleeper.common.jobv2.action.ActionException;
 import sleeper.common.jobv2.action.MessageReference;
 import sleeper.common.jobv2.action.thread.PeriodicActionRunnable;
@@ -62,9 +59,9 @@ public class ECSSystemTestTask {
     }
 
     public static void main(String[] args) {
-        AWSSecurityTokenService stsClientV1 = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        try (StsClient stsClientV2 = StsClient.create(); SqsClient sqsClientV2 = SqsClient.create()) {
-            CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2, sqsClientV2);
+        try (StsClient stsClient = StsClient.create();
+                SqsClient sqsClient = SqsClient.create()) {
+            CommandLineFactory factory = new CommandLineFactory(stsClient, sqsClient);
             if (args.length > 3 || args.length < 2) {
                 throw new RuntimeException("Wrong number of arguments detected. Usage: ECSSystemTestTask <standalone-or-combined> <config bucket> <optional role ARN to load combined config as>");
             }
@@ -78,10 +75,7 @@ public class ECSSystemTestTask {
             } else {
                 ingestRandomData = factory.noLoadConfigRole(configBucket);
             }
-
             ingestRandomData.run();
-        } finally {
-            stsClientV1.shutdown();
         }
     }
 
@@ -120,14 +114,12 @@ public class ECSSystemTestTask {
     }
 
     private static class CommandLineFactory {
-        private final AWSSecurityTokenService stsClientV1;
-        private final StsClient stsClientV2;
-        private final SqsClient sqsClientV2;
+        private final StsClient stsClient;
+        private final SqsClient sqsClient;
 
-        CommandLineFactory(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, SqsClient sqsClientV2) {
-            this.stsClientV1 = stsClientV1;
-            this.stsClientV2 = stsClientV2;
-            this.sqsClientV2 = sqsClientV2;
+        CommandLineFactory(StsClient stsClient, SqsClient sqsClient) {
+            this.stsClient = stsClient;
+            this.sqsClient = sqsClient;
         }
 
         ECSSystemTestTask noLoadConfigRole(String configBucket) {
@@ -140,9 +132,7 @@ public class ECSSystemTestTask {
         }
 
         ECSSystemTestTask withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            AssumeSleeperRole assumeRole = AssumeSleeperRole.instanceAdmin(this.properties);
-            AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(StsClient.create());
-            S3Client s3Client = v2.buildClient(S3Client.builder());
+            S3Client s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(StsClient.create()).buildClient(S3Client.builder());
             try {
                 return combinedInstance(configBucket, s3Client);
             } finally {
@@ -154,10 +144,8 @@ public class ECSSystemTestTask {
             S3Client s3Client = S3Client.builder().build();
             try {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
-                return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
-                    AssumeSleeperRole assumeRole = AssumeSleeperRole.instanceAdmin(systemTestProperties);
-                    AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(StsClient.create());
-                    S3Client instanceS3Client = v2.buildClient(S3Client.builder());
+                return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
+                    S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV2(StsClient.create()).buildClient(S3Client.builder());
                     try {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
                         IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
@@ -176,7 +164,7 @@ public class ECSSystemTestTask {
         ECSSystemTestTask combinedInstance(String configBucket, S3Client s3Client) {
             SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
             IngestRandomData ingestData = ingestRandomData(properties, properties.testPropertiesOnly());
-            return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClientV2, job -> {
+            return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClient, job -> {
                 try {
                     ingestData.run(job);
                 } catch (IOException e) {
@@ -186,7 +174,7 @@ public class ECSSystemTestTask {
         }
 
         IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties) {
-            return new IngestRandomData(instanceProperties, systemTestProperties, stsClientV1, stsClientV2,
+            return new IngestRandomData(instanceProperties, systemTestProperties, stsClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties), "/mnt/scratch");
         }
     }

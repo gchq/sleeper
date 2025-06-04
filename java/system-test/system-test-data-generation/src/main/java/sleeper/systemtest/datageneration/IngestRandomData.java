@@ -15,15 +15,13 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.api.role.AssumeSleeperRoleV2;
+import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -50,18 +48,16 @@ public class IngestRandomData {
 
     private final InstanceProperties instanceProperties;
     private final SystemTestPropertyValues systemTestProperties;
-    private final AWSSecurityTokenService stsClientV1;
-    private final StsClient stsClientV2;
+    private final StsClient stsClient;
     private final Configuration hadoopConf;
     private final String localDir;
 
     public IngestRandomData(
             InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties,
-            AWSSecurityTokenService stsClientV1, StsClient stsClientV2, Configuration hadoopConf, String localDir) {
+            StsClient stsClient, Configuration hadoopConf, String localDir) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
-        this.stsClientV1 = stsClientV1;
-        this.stsClientV2 = stsClientV2;
+        this.stsClient = stsClient;
         this.hadoopConf = hadoopConf;
         this.localDir = localDir;
     }
@@ -85,9 +81,8 @@ public class IngestRandomData {
     }
 
     public static void main(String[] args) throws IOException {
-        AWSSecurityTokenService stsClientV1 = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        try (StsClient stsClientV2 = StsClient.create()) {
-            CommandLineFactory factory = new CommandLineFactory(stsClientV1, stsClientV2);
+        try (StsClient stsClient = StsClient.create()) {
+            CommandLineFactory factory = new CommandLineFactory(stsClient);
             IngestRandomData ingestRandomData;
             String s3Bucket = args[0];
             String tableName = args[1];
@@ -102,8 +97,6 @@ public class IngestRandomData {
             }
 
             ingestRandomData.run(tableName);
-        } finally {
-            stsClientV1.shutdown();
         }
     }
 
@@ -111,13 +104,13 @@ public class IngestRandomData {
         SystemTestIngestMode ingestMode = job.getIngestMode();
         if (ingestMode == DIRECT) {
             return () -> {
-                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClientV1, stsClientV2, instanceProperties, job.getTableName(), localDir)) {
+                try (InstanceIngestSession session = InstanceIngestSession.direct(stsClient, instanceProperties, job.getTableName(), localDir)) {
                     WriteRandomDataDirect.writeWithIngestFactory(job, session);
                 }
             };
         }
         return () -> {
-            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClientV1, stsClientV2, instanceProperties, job.getTableName(), localDir)) {
+            try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClient, instanceProperties, job.getTableName(), localDir)) {
                 String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, job);
 
                 if (ingestMode == QUEUE) {
@@ -138,12 +131,10 @@ public class IngestRandomData {
     }
 
     private static class CommandLineFactory {
-        private final AWSSecurityTokenService stsClientV1;
-        private final StsClient stsClientV2;
+        private final StsClient stsClient;
 
-        CommandLineFactory(AWSSecurityTokenService stsClientV1, StsClient stsClientV2) {
-            this.stsClientV1 = stsClientV1;
-            this.stsClientV2 = stsClientV2;
+        CommandLineFactory(StsClient stsClient) {
+            this.stsClient = stsClient;
         }
 
         IngestRandomData noLoadConfigRole(String configBucket) {
@@ -156,7 +147,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            S3Client instanceS3Client = AssumeSleeperRoleV2.fromArn(loadConfigRoleArn).forAwsV2(stsClientV1).buildClient(S3Client.builder().build());
+            S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder());
             try {
                 return combinedInstance(configBucket, instanceS3Client);
             } finally {
@@ -165,15 +156,11 @@ public class IngestRandomData {
         }
 
         IngestRandomData standalone(String configBucket, String loadConfigRoleArn, String systemTestBucket) {
-            S3Client instanceS3Client = AssumeSleeperRoleV2.fromArn(loadConfigRoleArn).forAwsV1(stsClientV1).buildClient(S3Client.builder());
-            S3Client s3Client = S3Client.builder().build();
-            try {
+            try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder());
+                    S3Client s3Client = S3Client.builder().build()) {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, configBucket);
                 return ingestRandomData(instanceProperties, systemTestProperties);
-            } finally {
-                s3Client.close();
-                instanceS3Client.close();
             }
         }
 
@@ -183,7 +170,7 @@ public class IngestRandomData {
         }
 
         IngestRandomData ingestRandomData(InstanceProperties instanceProperties, SystemTestPropertyValues systemTestProperties) {
-            return new IngestRandomData(instanceProperties, systemTestProperties, stsClientV1, stsClientV2,
+            return new IngestRandomData(instanceProperties, systemTestProperties, stsClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties), "/mnt/scratch");
         }
     }

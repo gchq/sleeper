@@ -93,7 +93,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     ECSSystemTestTask createTask() {
-        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, stsClientV2, hadoopConf, tempDir.toString());
+        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClientV2, hadoopConf, tempDir.toString());
         return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
             try {
                 ingestData.run(job);

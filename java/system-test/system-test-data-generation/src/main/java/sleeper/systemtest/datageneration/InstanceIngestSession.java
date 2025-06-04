@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -35,10 +34,10 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestorev2.StateStoreFactory;
 
 public class InstanceIngestSession implements AutoCloseable {
-    private final S3Client s3;
-    private final DynamoDbClient dynamo;
-    private final SqsClient sqs;
-    private final S3AsyncClient s3Async;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoDbClient;
+    private final SqsClient sqsClient;
+    private final S3AsyncClient s3AsyncClient;
     private final Configuration hadoopConfiguration;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -47,53 +46,53 @@ public class InstanceIngestSession implements AutoCloseable {
     private final String localDir;
 
     private InstanceIngestSession(InstanceProperties instanceProperties, String tableName,
-            S3Client s3, DynamoDbClient dynamo, SqsClient sqs, S3AsyncClient s3Async, Configuration hadoopConfiguration,
+            S3Client s3Client, DynamoDbClient dynamoDbClient, SqsClient sqsClient, S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration,
             String localDir) {
-        this.s3 = s3;
-        this.dynamo = dynamo;
-        this.sqs = sqs;
-        this.s3Async = s3Async;
+        this.s3Client = s3Client;
+        this.dynamoDbClient = dynamoDbClient;
+        this.sqsClient = sqsClient;
+        this.s3AsyncClient = s3AsyncClient;
         this.hadoopConfiguration = hadoopConfiguration;
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
         this.tableProperties = tablePropertiesProvider.getByName(tableName);
-        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDbClient, null);
         this.localDir = localDir;
     }
 
-    public static InstanceIngestSession direct(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName, String localDir) {
+    public static InstanceIngestSession direct(StsClient stsClient, InstanceProperties instanceProperties, String tableName, String localDir) {
         AssumeSleeperRole assumeRole = AssumeSleeperRole.directIngest(instanceProperties);
-        return assumeRole(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName, localDir);
+        return assumeRole(assumeRole, stsClient, instanceProperties, tableName, localDir);
     }
 
-    public static InstanceIngestSession byQueue(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName, String localDir) {
+    public static InstanceIngestSession byQueue(StsClient stsClient, InstanceProperties instanceProperties, String tableName, String localDir) {
         AssumeSleeperRole assumeRole = AssumeSleeperRole.ingestByQueue(instanceProperties);
-        return assumeRole(assumeRole, stsClientV1, stsClientV2, instanceProperties, tableName, localDir);
+        return assumeRole(assumeRole, stsClient, instanceProperties, tableName, localDir);
     }
 
     private static InstanceIngestSession assumeRole(
-            AssumeSleeperRole assumeRole, AWSSecurityTokenService stsClientV1, StsClient stsClientV2,
+            AssumeSleeperRole assumeRole, StsClient stsClient,
             InstanceProperties instanceProperties, String tableName, String localDir) {
-        AssumeSleeperRoleV2 roleV2 = assumeRole.forAwsV2(stsClientV2);
+        AssumeSleeperRoleV2 roleV2 = assumeRole.forAwsV2(stsClient);
         AssumeSleeperRoleHadoop roleHadoop = assumeRole.forHadoop();
-        S3Client s3 = roleV2.buildClient(S3Client.builder());
-        DynamoDbClient dynamo = roleV2.buildClient(DynamoDbClient.builder());
-        SqsClient sqs = roleV2.buildClient(SqsClient.builder());
-        S3AsyncClient s3Async = roleV2.buildClient(S3AsyncClient.builder());
+        S3Client s3Client = roleV2.buildClient(S3Client.builder());
+        DynamoDbClient dynamoDbClient = roleV2.buildClient(DynamoDbClient.builder());
+        SqsClient sqsClient = roleV2.buildClient(SqsClient.builder());
+        S3AsyncClient s3AsyncClient = roleV2.buildClient(S3AsyncClient.builder());
         Configuration hadoopConfiguration = roleHadoop.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        return new InstanceIngestSession(instanceProperties, tableName, s3, dynamo, sqs, s3Async, hadoopConfiguration, localDir);
+        return new InstanceIngestSession(instanceProperties, tableName, s3Client, dynamoDbClient, sqsClient, s3AsyncClient, hadoopConfiguration, localDir);
     }
 
     public S3Client s3() {
-        return s3;
+        return s3Client;
     }
 
     public S3AsyncClient s3Async() {
-        return s3Async;
+        return s3AsyncClient;
     }
 
     public SqsClient sqs() {
-        return sqs;
+        return sqsClient;
     }
 
     public Configuration hadoopConfiguration() {
@@ -122,9 +121,9 @@ public class InstanceIngestSession implements AutoCloseable {
 
     @Override
     public void close() {
-        s3.close();
-        dynamo.close();
-        sqs.close();
-        s3Async.close();
+        s3Client.close();
+        dynamoDbClient.close();
+        sqsClient.close();
+        s3AsyncClient.close();
     }
 }
