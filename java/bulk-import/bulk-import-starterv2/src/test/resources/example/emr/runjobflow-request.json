@@ -1,0 +1,239 @@
+{
+  "Name": "sleeper-test-instance-table-id-test-job",
+  "ReleaseLabel": "emr-7.2.0",
+  "Instances": {
+    "InstanceFleets": [
+      {
+        "Name": "Executors",
+        "InstanceFleetType": "CORE",
+        "TargetSpotCapacity": 2,
+        "InstanceTypeConfigs": [
+          {
+            "InstanceType": "m7g.4xlarge",
+            "EbsConfiguration": {
+              "EbsBlockDeviceConfigs": [
+                {
+                  "VolumeSpecification": {
+                    "VolumeType": "gp2",
+                    "SizeInGB": 256
+                  },
+                  "VolumesPerInstance": 4
+                }
+              ],
+              "EbsOptimized": true
+            },
+            "Configurations": [
+              {
+                "Classification": "spark",
+                "Properties": {
+                  "maximizeResourceAllocation": "false"
+                }
+              },
+              {
+                "Classification": "yarn-site",
+                "Properties": {
+                  "yarn.nodemanager.pmem-check-enabled": "false",
+                  "yarn.nodemanager.vmem-check-enabled": "false"
+                }
+              },
+              {
+                "Classification": "spark-defaults",
+                "Properties": {
+                  "spark.rdd.compress": "true",
+                  "spark.network.timeout": "800s",
+                  "spark.sql.shuffle.partitions": "290",
+                  "spark.shuffle.spill.compress": "true",
+                  "spark.shuffle.compress": "true",
+                  "spark.default.parallelism": "290",
+                  "spark.executor.memoryOverhead": "1706m",
+                  "spark.executor.instances": "29",
+                  "spark.executor.memory": "16g",
+                  "spark.driver.memory": "16g",
+                  "spark.yarn.scheduler.reporterThread.maxFailures": "5",
+                  "spark.speculation.quantile": "0.75",
+                  "spark.driver.cores": "5",
+                  "spark.executor.heartbeatInterval": "60s",
+                  "spark.executorEnv.JAVA_HOME": "/usr/lib/jvm/java-17-amazon-corretto.aarch64",
+                  "spark.executor.cores": "5",
+                  "spark.memory.storageFraction": "0.30",
+                  "spark.speculation": "false",
+                  "spark.shuffle.mapStatus.compression.codec": "lz4",
+                  "spark.storage.level": "MEMORY_AND_DISK_SER",
+                  "spark.driver.memoryOverhead": "1706m",
+                  "spark.hadoop.fs.s3a.connection.maximum": "5",
+                  "spark.memory.fraction": "0.80",
+                  "spark.executor.extraJavaOptions": "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'",
+                  "spark.dynamicAllocation.enabled": "false",
+                  "spark.driver.extraJavaOptions": "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'"
+                }
+              },
+              {
+                "Classification": "spark-env",
+                "Configurations": [
+                  {
+                    "Classification": "export",
+                    "Properties": {
+                      "JAVA_HOME": "/usr/lib/jvm/java-17-amazon-corretto.aarch64"
+                    }
+                  }
+                ]
+              },
+              {
+                "Classification": "mapred-site",
+                "Properties": {
+                  "mapreduce.map.output.compress": "true"
+                }
+              },
+              {
+                "Classification": "hadoop-env",
+                "Configurations": [
+                  {
+                    "Classification": "export",
+                    "Properties": {
+                      "JAVA_HOME": "/usr/lib/jvm/java-17-amazon-corretto.aarch64"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "Name": "Driver",
+        "InstanceFleetType": "MASTER",
+        "TargetOnDemandCapacity": 1,
+        "InstanceTypeConfigs": [
+          {
+            "InstanceType": "m7g.xlarge",
+            "EbsConfiguration": {
+              "EbsBlockDeviceConfigs": [
+                {
+                  "VolumeSpecification": {
+                    "VolumeType": "gp2",
+                    "SizeInGB": 256
+                  },
+                  "VolumesPerInstance": 4
+                }
+              ],
+              "EbsOptimized": true
+            },
+            "Configurations": [
+              {
+                "Classification": "spark",
+                "Properties": {
+                  "maximizeResourceAllocation": "false"
+                }
+              },
+              {
+                "Classification": "yarn-site",
+                "Properties": {
+                  "yarn.nodemanager.pmem-check-enabled": "false",
+                  "yarn.nodemanager.vmem-check-enabled": "false"
+                }
+              },
+              {
+                "Classification": "spark-defaults",
+                "Properties": {
+                  "spark.rdd.compress": "true",
+                  "spark.network.timeout": "800s",
+                  "spark.sql.shuffle.partitions": "290",
+                  "spark.shuffle.spill.compress": "true",
+                  "spark.shuffle.compress": "true",
+                  "spark.default.parallelism": "290",
+                  "spark.executor.memoryOverhead": "1706m",
+                  "spark.executor.instances": "29",
+                  "spark.executor.memory": "16g",
+                  "spark.driver.memory": "16g",
+                  "spark.yarn.scheduler.reporterThread.maxFailures": "5",
+                  "spark.speculation.quantile": "0.75",
+                  "spark.driver.cores": "5",
+                  "spark.executor.heartbeatInterval": "60s",
+                  "spark.executorEnv.JAVA_HOME": "/usr/lib/jvm/java-17-amazon-corretto.aarch64",
+                  "spark.executor.cores": "5",
+                  "spark.memory.storageFraction": "0.30",
+                  "spark.speculation": "false",
+                  "spark.shuffle.mapStatus.compression.codec": "lz4",
+                  "spark.storage.level": "MEMORY_AND_DISK_SER",
+                  "spark.driver.memoryOverhead": "1706m",
+                  "spark.hadoop.fs.s3a.connection.maximum": "5",
+                  "spark.memory.fraction": "0.80",
+                  "spark.executor.extraJavaOptions": "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'",
+                  "spark.dynamicAllocation.enabled": "false",
+                  "spark.driver.extraJavaOptions": "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'"
+                }
+              },
+              {
+                "Classification": "spark-env",
+                "Configurations": [
+                  {
+                    "Classification": "export",
+                    "Properties": {
+                      "JAVA_HOME": "/usr/lib/jvm/java-17-amazon-corretto.aarch64"
+                    }
+                  }
+                ]
+              },
+              {
+                "Classification": "mapred-site",
+                "Properties": {
+                  "mapreduce.map.output.compress": "true"
+                }
+              },
+              {
+                "Classification": "hadoop-env",
+                "Configurations": [
+                  {
+                    "Classification": "export",
+                    "Properties": {
+                      "JAVA_HOME": "/usr/lib/jvm/java-17-amazon-corretto.aarch64"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "Ec2SubnetIds": [
+      "test-subnet"
+    ]
+  },
+  "Steps": [
+    {
+      "Name": "Bulk Load (job id test-job)",
+      "HadoopJarStep": {
+        "Jar": "command-runner.jar",
+        "Args": [
+          "spark-submit",
+          "--deploy-mode",
+          "cluster",
+          "--class",
+          "sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
+          "s3a://jars-bucket/bulk-import-runner-1.2.3.jar",
+          "config-bucket",
+          "test-job",
+          "sleeper-test-instance-table-id-test-job-EMR",
+          "test-run",
+          "EMR"
+        ]
+      }
+    }
+  ],
+  "Applications": [
+    {
+      "Name": "Spark"
+    }
+  ],
+  "VisibleToAllUsers": true,
+  "Tags": [],
+  "ScaleDownBehavior": "TERMINATE_AT_TASK_COMPLETION",
+  "ManagedScalingPolicy": {
+    "ComputeLimits": {
+      "UnitType": "InstanceFleetUnits",
+      "MinimumCapacityUnits": 2,
+      "MaximumCapacityUnits": 10
+    }
+  }
+}
