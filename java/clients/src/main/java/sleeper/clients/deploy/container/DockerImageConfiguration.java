@@ -119,7 +119,6 @@ public class DockerImageConfiguration {
             return lambdaHandlers.stream()
                     .filter(LambdaHandler::isAlwaysDockerDeploy);
         }
-
     }
 
     /**
