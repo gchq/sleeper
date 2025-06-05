@@ -28,6 +28,7 @@
     <modules>
         <module>bulk-export-core</module>
         <module>bulk-export-planner</module>
+        <module>bulk-export-plannerV2</module>
         <module>bulk-export-task-creator</module>
         <module>bulk-export-task-execution</module>
     </modules>
