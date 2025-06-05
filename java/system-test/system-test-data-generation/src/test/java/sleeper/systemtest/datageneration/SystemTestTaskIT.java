@@ -114,7 +114,6 @@ public class SystemTestTaskIT extends LocalStackTestBase {
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients
                         .s3Client(s3ClientV2)
-                        .s3TransferManager(s3TransferManager)
                         .dynamoClient(dynamoClientV2)
                         .sqsClient(sqsClientV2))
                 .hadoopConf(hadoopConf)

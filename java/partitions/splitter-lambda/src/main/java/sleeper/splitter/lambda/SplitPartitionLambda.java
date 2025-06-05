@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3PropertiesReloader;
@@ -75,14 +74,14 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     }
 
     private SplitPartitionLambda(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient, SqsClient sqsClient) {
-        this(instanceProperties, S3TransferManager.create(), s3Client, dynamoDBClient, sqsClient, () -> UUID.randomUUID().toString());
+        this(instanceProperties, s3Client, dynamoDBClient, sqsClient, () -> UUID.randomUUID().toString());
     }
 
-    public SplitPartitionLambda(InstanceProperties instanceProperties, S3TransferManager s3TransferManager, S3Client s3Client, DynamoDbClient dynamoDBClient, SqsClient sqsClient,
+    public SplitPartitionLambda(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient, SqsClient sqsClient,
             Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.sketchesStore = S3SketchesStore.createReadOnly(s3Client);
         this.sqsClient = sqsClient;

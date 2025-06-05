@@ -20,6 +20,7 @@ import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
 
+import sleeper.bulkimport.runner.HadoopSketchesStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
@@ -50,6 +51,6 @@ public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
 
-        return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value());
+        return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), new HadoopSketchesStore(serializableConf.value()));
     }
 }

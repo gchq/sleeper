@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.jars.S3UserJarsLoader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -79,7 +78,7 @@ public class SqsQueryProcessor {
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
         objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, Path.of("/tmp")).buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
-        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, builder.s3Client, builder.dynamoClient, builder.s3TransferManager);
+        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, builder.s3Client, builder.dynamoClient);
     }
 
     public static Builder builder() {
@@ -138,7 +137,6 @@ public class SqsQueryProcessor {
         private SqsClient sqsClient;
         private S3Client s3Client;
         private DynamoDbClient dynamoClient;
-        private S3TransferManager s3TransferManager;
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
 
@@ -157,11 +155,6 @@ public class SqsQueryProcessor {
 
         public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
-            return this;
-        }
-
-        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
-            this.s3TransferManager = s3TransferManager;
             return this;
         }
 

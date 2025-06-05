@@ -162,11 +162,11 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
+        return StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
     }
 
     private SplitPartitionLambda lambdaWithNewPartitionIds(String... ids) {
-        return new SplitPartitionLambda(instanceProperties, s3TransferManager, s3ClientV2, dynamoClientV2, sqsClientV2, List.of(ids).iterator()::next);
+        return new SplitPartitionLambda(instanceProperties, s3ClientV2, dynamoClientV2, sqsClientV2, List.of(ids).iterator()::next);
     }
 
     private List<String> ingestRecordsGetFilenames(Stream<Record> records) throws Exception {

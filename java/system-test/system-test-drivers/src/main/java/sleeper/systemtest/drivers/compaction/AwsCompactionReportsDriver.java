@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.compaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.clients.report.CompactionJobStatusReport;
 import sleeper.clients.report.CompactionTaskStatusReport;
@@ -24,8 +24,8 @@ import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter
 import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.report.job.query.RangeJobsQuery;
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
-import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
+import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
@@ -40,11 +40,11 @@ import java.util.List;
 
 public class AwsCompactionReportsDriver implements CompactionReportsDriver {
     private final SystemTestInstanceContext instance;
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoClient;
 
-    public AwsCompactionReportsDriver(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDB) {
+    public AwsCompactionReportsDriver(SystemTestInstanceContext instance, DynamoDbClient dynamoClient) {
         this.instance = instance;
-        this.dynamoDB = dynamoDB;
+        this.dynamoClient = dynamoClient;
     }
 
     public SystemTestReport tasksAndJobsReport() {
@@ -72,10 +72,10 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
     }
 
     private CompactionJobTracker jobTracker() {
-        return CompactionJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
+        return CompactionJobTrackerFactory.getTracker(dynamoClient, instance.getInstanceProperties());
     }
 
     private CompactionTaskTracker taskTracker() {
-        return CompactionTaskTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
+        return CompactionTaskTrackerFactory.getTracker(dynamoClient, instance.getInstanceProperties());
     }
 }

@@ -27,7 +27,6 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
@@ -57,11 +56,11 @@ public class AwsCompactionJobDispatcher {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionJobDispatcher.class);
 
     public static CompactionJobDispatcher from(
-            S3Client s3, DynamoDbClient dynamoDB, SqsClient sqs, S3TransferManager s3TransferManager, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
+            S3Client s3, DynamoDbClient dynamoDB, SqsClient sqs, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe();
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
-                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, s3TransferManager),
+                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB),
                 CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 readBatch(s3, compactionJobSerDe),
                 sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,
