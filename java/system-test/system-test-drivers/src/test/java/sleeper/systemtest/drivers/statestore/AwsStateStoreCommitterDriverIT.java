@@ -57,7 +57,7 @@ public class AwsStateStoreCommitterDriverIT {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
-        sqs = drivers.clients().getSqsV2();
+        sqs = drivers.clients().getSqs();
         instance = context.instance();
     }
 

@@ -26,7 +26,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.PollWithRetries;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;

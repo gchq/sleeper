@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
 
 import java.util.List;
 

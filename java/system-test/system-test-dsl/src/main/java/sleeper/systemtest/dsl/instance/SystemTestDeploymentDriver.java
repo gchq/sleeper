@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 
 public interface SystemTestDeploymentDriver {
     void saveProperties(SystemTestStandaloneProperties properties);

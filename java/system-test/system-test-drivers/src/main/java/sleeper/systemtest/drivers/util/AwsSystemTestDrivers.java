@@ -118,7 +118,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
-        return new AwsStateStoreCommitterDriver(context.instance(), clients.getSqsV2(), clients.getS3(), clients.getLambda());
+        return new AwsStateStoreCommitterDriver(context.instance(), clients);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
-        return new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3V2());
+        return new AwsGeneratedIngestSourceFilesDriver(systemTest, clients.getS3());
     }
 
     @Override
@@ -173,12 +173,12 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamoDB(), pollWithRetries());
+        return AwsWaitForJobs.forIngest(context.instance(), clients.getDynamo(), pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamoDB(), pollWithRetries());
+        return AwsWaitForJobs.forBulkImport(context.instance(), clients.getDynamo(), pollWithRetries());
     }
 
     @Override
@@ -198,7 +198,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public ClearQueryResultsDriver clearQueryResults(SystemTestContext context) {
-        return new S3ResultsDriver(context.instance(), clients.getS3());
+        return new S3ResultsDriver(context.instance(), clients);
     }
 
     @Override
@@ -208,7 +208,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamoDB(), pollWithRetries());
+        return AwsWaitForJobs.forCompaction(context.instance(), clients.getDynamo(), pollWithRetries());
     }
 
     @Override
@@ -228,7 +228,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public CompactionReportsDriver compactionReports(SystemTestContext context) {
-        return new AwsCompactionReportsDriver(context.instance(), clients.getDynamoDB());
+        return new AwsCompactionReportsDriver(context.instance(), clients.getDynamo());
     }
 
     @Override
@@ -263,7 +263,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public PurgeQueueDriver purgeQueues(SystemTestContext context) {
-        return new AwsPurgeQueueDriver(context.instance(), clients.getSqs());
+        return new AwsPurgeQueueDriver(context.instance(), clients);
     }
 
     @Override

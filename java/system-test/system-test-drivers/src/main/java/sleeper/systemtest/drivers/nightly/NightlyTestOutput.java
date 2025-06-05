@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.drivers.nightly;
 
-import com.amazonaws.services.s3.AmazonS3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -45,7 +45,7 @@ public class NightlyTestOutput {
         this.tests = Objects.requireNonNull(tests, "tests must not be null");
     }
 
-    public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
+    public void uploadToS3(S3Client s3Client, String bucketName, NightlyTestTimestamp timestamp) {
         NightlyTestUploader.builder()
                 .s3Client(s3Client)
                 .bucketName(bucketName)

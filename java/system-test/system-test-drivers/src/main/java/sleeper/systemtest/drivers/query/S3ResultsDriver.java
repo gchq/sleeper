@@ -16,8 +16,11 @@
 
 package sleeper.systemtest.drivers.query;
 
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.ClearQueryResultsDriver;
 
@@ -25,15 +28,17 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 
 public class S3ResultsDriver implements ClearQueryResultsDriver {
     private final SystemTestInstanceContext instance;
-    private final AmazonS3 s3;
+    private final S3Client s3Client;
 
-    public S3ResultsDriver(SystemTestInstanceContext instance, AmazonS3 s3) {
+    public S3ResultsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.s3 = s3;
+        this.s3Client = clients.getS3();
     }
 
     public void deleteAllQueryResults() {
-        s3.listObjects(instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET)).getObjectSummaries()
-                .forEach(summary -> s3.deleteObject(summary.getBucketName(), summary.getKey()));
+        String bucketName = instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET);
+        s3Client.listObjectsV2(ListObjectsV2Request.builder().bucket(bucketName).build())
+                .contents().forEach(object -> s3Client.deleteObject(
+                        DeleteObjectRequest.builder().bucket(bucketName).key(object.key()).build()));
     }
 }
