@@ -15,6 +15,8 @@
  */
 package sleeper.clients.query;
 
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -41,19 +43,6 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final QueryWebSocketClient queryWebSocketClient;
     private final Supplier<Instant> timeSupplier;
-
-    private QueryWebSocketCommandLineClient(
-            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out) {
-        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out,
-                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider), Instant::now);
-    }
-
-    private QueryWebSocketCommandLineClient(
-            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, QueryWebSocketClient client, Supplier<Instant> timeSupplier) {
-        this(instanceProperties, tableIndex, tablePropertiesProvider, in, out, client, () -> UUID.randomUUID().toString(), timeSupplier);
-    }
 
     QueryWebSocketCommandLineClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -101,12 +90,15 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+            AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.create();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
-                    new DynamoDBTableIndex(instanceProperties, dynamoClient),
-                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
-                    new ConsoleInput(System.console()), new ConsoleOutput(System.out));
-            client.run();
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+            QueryWebSocketClient webSocketClient = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, credentialsProvider);
+            QueryWebSocketCommandLineClient commandLineClient = new QueryWebSocketCommandLineClient(instanceProperties,
+                    new DynamoDBTableIndex(instanceProperties, dynamoClient), tablePropertiesProvider,
+                    new ConsoleInput(System.console()), new ConsoleOutput(System.out),
+                    webSocketClient, () -> UUID.randomUUID().toString(), Instant::now);
+            commandLineClient.run();
         }
     }
 }

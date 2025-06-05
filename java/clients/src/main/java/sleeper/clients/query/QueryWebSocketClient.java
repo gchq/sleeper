@@ -26,7 +26,7 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
@@ -69,9 +69,9 @@ public class QueryWebSocketClient {
     private final Supplier<Client> clientSupplier;
 
     public QueryWebSocketClient(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
         this(instanceProperties, tablePropertiesProvider,
-                () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider));
+                clientSupplier(instanceProperties, tablePropertiesProvider, credentialsProvider));
     }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
@@ -115,21 +115,31 @@ public class QueryWebSocketClient {
         List<String> getResults(String queryId);
     }
 
+    private static Supplier<Client> clientSupplier(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
+        String region = instanceProperties.get(REGION);
+        URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
+        QuerySerDe serDe = new QuerySerDe(tablePropertiesProvider);
+        return () -> {
+            WebSocketMessageHandler messageHandler = new WebSocketMessageHandler(serDe);
+            LOGGER.info("Obtaining AWS IAM credentials...");
+            AwsCredentials credentials = credentialsProvider.resolveCredentials();
+            return new WebSocketQueryClient(region, serverUri, credentials, messageHandler);
+        };
+    }
+
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
-        private final WebSocketMessageHandler messageHandler;
-        private final InstanceProperties instanceProperties;
+        private final String region;
         private final URI serverUri;
+        private final AwsCredentials credentials;
+        private final WebSocketMessageHandler messageHandler;
         private Query query;
 
-        private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-            this(instanceProperties, URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL)),
-                    new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider)));
-        }
-
-        private WebSocketQueryClient(InstanceProperties instanceProperties, URI serverUri, WebSocketMessageHandler messageHandler) {
+        private WebSocketQueryClient(String region, URI serverUri, AwsCredentials credentials, WebSocketMessageHandler messageHandler) {
             super(serverUri);
-            this.instanceProperties = instanceProperties;
+            this.region = region;
             this.serverUri = serverUri;
+            this.credentials = credentials;
             this.messageHandler = messageHandler;
             messageHandler.setCloser(this::closeBlocking);
         }
@@ -149,14 +159,12 @@ public class QueryWebSocketClient {
         }
 
         private void setAwsIamAuthHeaders(URI serverUri) {
-            LOGGER.info("Obtaining AWS IAM creds...");
-            AwsCredentials credentials = DefaultCredentialsProvider.create().resolveCredentials();
             LOGGER.debug("Creating auth signature with server URI: {}", serverUri);
             AwsV4HttpSigner signer = AwsV4HttpSigner.create();
             SignedRequest signed = signer.sign(request -> request
                     .identity(credentials)
                     .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "execute-api")
-                    .putProperty(AwsV4HttpSigner.REGION_NAME, instanceProperties.get(REGION))
+                    .putProperty(AwsV4HttpSigner.REGION_NAME, region)
                     .request(SdkHttpRequest.builder()
                             .uri(serverUri)
                             .protocol("https")
