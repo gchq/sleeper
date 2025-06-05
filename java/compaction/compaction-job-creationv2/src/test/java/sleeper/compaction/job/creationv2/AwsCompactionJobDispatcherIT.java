@@ -63,7 +63,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
-    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
+    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
     Schema schema = createSchemaWithKey("key");
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     TableProperties tableProperties = addTable(instanceProperties, schema, partitions);
@@ -207,7 +207,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return AwsCompactionJobDispatcher.from(s3ClientV2, dynamoClientV2, sqsClientV2, s3TransferManager, instanceProperties, times.iterator()::next);
+        return AwsCompactionJobDispatcher.from(s3ClientV2, dynamoClientV2, sqsClientV2, instanceProperties, times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {

@@ -23,10 +23,8 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3PropertiesReloader;
@@ -66,8 +64,6 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoDBClient = DynamoDbClient.create();
         SqsClient sqsClient = SqsClient.create();
-        S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
 
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
@@ -79,7 +75,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
 
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         garbageCollector = new GarbageCollector(new S3DeleteFiles(s3Client),
                 instanceProperties, stateStoreProvider,
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));

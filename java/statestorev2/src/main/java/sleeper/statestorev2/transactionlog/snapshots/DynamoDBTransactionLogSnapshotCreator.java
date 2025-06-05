@@ -31,7 +31,7 @@ import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransacti
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
-import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.StateStoreArrowFileReadStore;
 import sleeper.statestorev2.transactionlog.DuplicateSnapshotException;
 import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
@@ -51,7 +51,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
     private final TransactionBodyStore transactionBodyStore;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final DynamoDBTransactionLogSnapshotSaver snapshotSaver;
-    private final StateStoreArrowFileStore fileStore;
+    private final StateStoreArrowFileReadStore fileStore;
 
     /**
      * Builds a snapshot creator for a given Sleeper table.
@@ -89,7 +89,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(
                 latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, s3Client, s3TransferManager);
-        this.fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
+        this.fileStore = new StateStoreArrowFileReadStore(instanceProperties, s3Client);
     }
 
     /**

@@ -17,9 +17,7 @@ package sleeper.clients.table.partition;
 
 import com.facebook.collections.ByteArray;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -123,13 +121,11 @@ public class ExportSplitPoints {
         Path outputFile = Paths.get(args[2]);
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-            StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager);
+            StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(tableName));
             ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, tableProperties.getSchema());
             List<Object> splitPoints = exportSplitPoints.getSplitPoints();

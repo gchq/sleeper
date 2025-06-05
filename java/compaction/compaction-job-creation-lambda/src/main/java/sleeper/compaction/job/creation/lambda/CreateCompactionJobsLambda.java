@@ -23,10 +23,8 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creationv2.AwsCreateCompactionJobs;
@@ -82,10 +80,9 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
 
         DynamoDbClient dynamoDBClient = DynamoDbClient.create();
         SqsClient sqsClient = SqsClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
 
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         createJobs = AwsCreateCompactionJobs.from(
                 objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client, sqsClient);
