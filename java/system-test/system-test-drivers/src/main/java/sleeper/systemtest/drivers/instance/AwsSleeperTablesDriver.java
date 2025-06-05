@@ -45,29 +45,34 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         this.dynamoDB = clients.getDynamo();
     }
 
+    @Override
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         tablePropertiesStore(instanceProperties).save(tableProperties);
     }
 
+    @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         try {
             new AddTable(instanceProperties, properties,
                     S3TableProperties.createStore(instanceProperties, s3, dynamoDB),
-                    StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, null))
+                    StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB))
                     .run();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
+    @Override
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties) {
         return S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     }
 
+    @Override
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
-        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, null);
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB);
     }
 
+    @Override
     public TableIndex tableIndex(InstanceProperties instanceProperties) {
         return new DynamoDBTableIndex(instanceProperties, dynamoDB);
     }

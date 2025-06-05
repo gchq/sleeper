@@ -25,7 +25,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestorev2.StateStoreArrowFileStore;
+import sleeper.statestorev2.StateStoreArrowFileReadStore;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestorev2.transactionlog.snapshots.SnapshotType;
@@ -59,7 +59,7 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
         DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamo());
-        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(instanceProperties, tableProperties, clients.getS3(), clients.getS3TransferManager());
+        StateStoreArrowFileReadStore fileStore = new StateStoreArrowFileReadStore(instanceProperties, clients.getS3());
         return new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, snapshotType)
                 .loadLatestSnapshotInRange(fromMinimum(0));
     }
