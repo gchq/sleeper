@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    public static final LambdaJar ATHENA = withFormatAndImage("athena-%s.jar", "athena-lambda");
+    public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
     public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
     public static final LambdaJar BULK_EXPORT_PLANNER = withFormatAndImage("bulk-export-planner-%s.jar", "bulk-export-planner");
     public static final LambdaJar BULK_EXPORT_TASK_CREATOR = withFormatAndImage("bulk-export-task-creator-%s.jar", "bulk-export-task-creator");
@@ -45,10 +45,12 @@ public class LambdaJar {
 
     private final String filename;
     private final String imageName;
+    private final boolean alwaysDockerDeploy;
 
-    private LambdaJar(String filename, String imageName) {
+    private LambdaJar(String filename, String imageName, boolean alwaysDockerDeploy) {
         this.filename = Objects.requireNonNull(filename, "filename must not be null");
         this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
+        this.alwaysDockerDeploy = Objects.requireNonNull(alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
     }
 
     /**
@@ -59,7 +61,20 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImage(String format, String imageName) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName);
+        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, false);
+    }
+
+    /**
+     * Creates a jar definition with a filename computed by adding the Sleeper version to the given format string.
+     * Lambdas using this jar will always be deployed with Docker. This should be used if the jar is too big to be
+     * deployed directly, and we cannot reduce the size.
+     *
+     * @param  format    the format string
+     * @param  imageName the name of the Docker image built from this jar
+     * @return           the jar definition
+     */
+    public static LambdaJar withFormatAndImageDeployWithDocker(String format, String imageName) {
+        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, true);
     }
 
     public String getFilename() {
@@ -68,6 +83,10 @@ public class LambdaJar {
 
     public String getImageName() {
         return imageName;
+    }
+
+    public boolean isAlwaysDockerDeploy() {
+        return alwaysDockerDeploy;
     }
 
     /**
