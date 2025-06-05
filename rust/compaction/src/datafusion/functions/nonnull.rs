@@ -146,8 +146,16 @@ pub fn nullable_check(arrays: &[ArrayRef]) -> Result<&[ArrayRef]> {
     Ok(arrays)
 }
 
-/// Wraps an aggregate UDF function, but makes it non-nullable. If any nulls are found
-/// during execution, an error is raised.
+/// Wraps an aggregate UDF function, but makes it non-nullable.
+///
+/// If any nulls are found during execution, an error is raised. Most functions are passed through to the wrapped
+/// implementation. Some are exempted since the default implementation computes results based on other functions in
+/// this trait. Specifically the following functions are not wrapped:
+///  * [`schema_name`]
+///  * [`window_function_schema_name`]
+///  * [`display_name`]
+///  * [`window_function_display_name`]
+///
 #[derive(Debug)]
 pub struct NonNullable {
     /// The aggregate UDF function that performs some computation.
@@ -444,6 +452,105 @@ mod tests {
     use mockall::*;
     use std::{any::Any, collections::HashMap, sync::Arc};
 
+    mock! {
+        #[derive(Debug)]
+        UDFImpl {}
+        impl AggregateUDFImpl for UDFImpl {
+            fn as_any(&self) -> &dyn Any;
+            fn name(&self) -> &str;
+            fn signature(&self) -> &Signature;
+            fn return_type(&self, arg_types: &[DataType]) -> Result<DataType>;
+            fn accumulator<'a>(&self, acc_args: AccumulatorArgs<'a>) -> Result<Box<dyn Accumulator>>;
+            fn schema_name(&self, params: &AggregateFunctionParams) -> Result<String>;
+            fn window_function_schema_name(
+                &self,
+                params: &WindowFunctionParams,
+            ) -> Result<String>;
+            fn display_name(&self, params: &AggregateFunctionParams) -> Result<String>;
+            fn window_function_display_name(
+                &self,
+                params: &WindowFunctionParams,
+            ) -> Result<String>;
+            fn is_nullable(&self) -> bool;
+            fn state_fields<'a>(&self, args: StateFieldsArgs<'a>) -> Result<Vec<Field>>;
+            fn groups_accumulator_supported<'a>(&self, _args: AccumulatorArgs<'a>) -> bool;
+            fn create_groups_accumulator<'a>(
+                &self,
+                _args: AccumulatorArgs<'a>,
+            ) -> Result<Box<dyn GroupsAccumulator>>;
+            fn aliases(&self) -> &[String];
+            fn create_sliding_accumulator<'a>(
+                &self,
+                args: AccumulatorArgs<'a>,
+            ) -> Result<Box<dyn Accumulator>> ;
+            fn with_beneficial_ordering(
+                self: Arc<Self>,
+                _beneficial_ordering: bool,
+            ) -> Result<Option<Arc<dyn AggregateUDFImpl>>> ;
+            fn order_sensitivity(&self) -> AggregateOrderSensitivity;
+            fn simplify(&self) -> Option<AggregateFunctionSimplification>;
+            fn reverse_expr(&self) -> ReversedUDAF;
+            fn coerce_types(&self, _arg_types: &[DataType]) -> Result<Vec<DataType>> ;
+            fn equals(&self, other: &dyn AggregateUDFImpl) -> bool;
+            fn hash_value(&self) -> u64 ;
+            fn is_descending(&self) -> Option<bool> ;
+            fn value_from_stats<'a>(&self, _statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
+            fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
+            fn documentation(&self) -> Option<&'static Documentation>;
+            fn set_monotonicity(&self, _data_type: &DataType) -> SetMonotonicity;
+        }
+        unsafe impl Send for UDFImpl {}
+        unsafe impl Sync for UDFImpl {}
+    }
+
+    mock! {
+        #[derive(Debug)]
+        UDFAcc{}
+        impl Accumulator for UDFAcc{
+            fn update_batch(
+                &mut self,
+                values: &[Arc<dyn Array>],
+            ) -> Result<(), DataFusionError>;
+            fn evaluate(&mut self) -> Result<ScalarValue, DataFusionError>;
+            fn size(&self) -> usize;
+            fn state(&mut self) -> Result<Vec<ScalarValue>, DataFusionError>;
+            fn merge_batch(
+                &mut self,
+                states: &[Arc<dyn Array>],
+            ) -> Result<(), DataFusionError>;
+        }
+    }
+
+    mock! {
+        #[derive(Debug)]
+        UDFGroupAcc{}
+        impl GroupsAccumulator for UDFGroupAcc{
+            fn update_batch<'a>(
+                &mut self,
+                values: &[Arc<dyn Array>],
+                group_indices: &[usize],
+                opt_filter: Option<&'a BooleanArray>,
+                total_num_groups: usize,
+            ) -> Result<(), DataFusionError>;
+            fn evaluate(
+                &mut self,
+                emit_to: EmitTo,
+            ) -> Result<Arc<dyn Array>, DataFusionError>;
+            fn state(
+                &mut self,
+                emit_to: EmitTo,
+            ) -> Result<Vec<Arc<dyn Array>>, DataFusionError>;
+            fn merge_batch<'a>(
+                &mut self,
+                values: &[Arc<dyn Array>],
+                group_indices: &[usize],
+                opt_filter: Option<&'a BooleanArray>,
+                total_num_groups: usize,
+            ) -> Result<(), DataFusionError>;
+            fn size(&self) -> usize;
+        }
+    }
+
     #[test]
     fn non_null_sum_returns_correct_expr() -> Result<()> {
         // Given
@@ -607,105 +714,6 @@ mod tests {
             DataFusionError::Execution,
             "Null found in array index 1 in an non-nullable aggregation operator. Array datatype is Int64, length 3, logical null count 1, null count 1"
         );
-    }
-
-    mock! {
-        #[derive(Debug)]
-        UDFImpl {}
-        impl AggregateUDFImpl for UDFImpl {
-            fn as_any(&self) -> &dyn Any;
-            fn name(&self) -> &str;
-            fn schema_name(&self, params: &AggregateFunctionParams) -> Result<String>;
-            fn window_function_schema_name(
-                &self,
-                params: &WindowFunctionParams,
-            ) -> Result<String>;
-            fn display_name(&self, params: &AggregateFunctionParams) -> Result<String>;
-            fn window_function_display_name(
-                &self,
-                params: &WindowFunctionParams,
-            ) -> Result<String>;
-            fn signature(&self) -> &Signature;
-            fn return_type(&self, arg_types: &[DataType]) -> Result<DataType>;
-            fn is_nullable(&self) -> bool;
-            fn accumulator<'a>(&self, acc_args: AccumulatorArgs<'a>) -> Result<Box<dyn Accumulator>>;
-            fn state_fields<'a>(&self, args: StateFieldsArgs<'a>) -> Result<Vec<Field>>;
-            fn groups_accumulator_supported<'a>(&self, _args: AccumulatorArgs<'a>) -> bool;
-            fn create_groups_accumulator<'a>(
-                &self,
-                _args: AccumulatorArgs<'a>,
-            ) -> Result<Box<dyn GroupsAccumulator>>;
-            fn aliases(&self) -> &[String];
-            fn create_sliding_accumulator<'a>(
-                &self,
-                args: AccumulatorArgs<'a>,
-            ) -> Result<Box<dyn Accumulator>> ;
-            fn with_beneficial_ordering(
-                self: Arc<Self>,
-                _beneficial_ordering: bool,
-            ) -> Result<Option<Arc<dyn AggregateUDFImpl>>> ;
-            fn order_sensitivity(&self) -> AggregateOrderSensitivity;
-            fn simplify(&self) -> Option<AggregateFunctionSimplification>;
-            fn reverse_expr(&self) -> ReversedUDAF;
-            fn coerce_types(&self, _arg_types: &[DataType]) -> Result<Vec<DataType>> ;
-            fn equals(&self, other: &dyn AggregateUDFImpl) -> bool;
-            fn hash_value(&self) -> u64 ;
-            fn is_descending(&self) -> Option<bool> ;
-            fn value_from_stats<'a>(&self, _statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
-            fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
-            fn documentation(&self) -> Option<&'static Documentation>;
-            fn set_monotonicity(&self, _data_type: &DataType) -> SetMonotonicity;
-        }
-        unsafe impl Send for UDFImpl {}
-        unsafe impl Sync for UDFImpl {}
-    }
-
-    mock! {
-        #[derive(Debug)]
-        UDFAcc{}
-        impl Accumulator for UDFAcc{
-            fn update_batch(
-                &mut self,
-                values: &[Arc<dyn Array>],
-            ) -> Result<(), DataFusionError>;
-            fn evaluate(&mut self) -> Result<ScalarValue, DataFusionError>;
-            fn size(&self) -> usize;
-            fn state(&mut self) -> Result<Vec<ScalarValue>, DataFusionError>;
-            fn merge_batch(
-                &mut self,
-                states: &[Arc<dyn Array>],
-            ) -> Result<(), DataFusionError>;
-        }
-    }
-
-    mock! {
-        #[derive(Debug)]
-        UDFGroupAcc{}
-        impl GroupsAccumulator for UDFGroupAcc{
-            fn update_batch<'a>(
-                &mut self,
-                values: &[Arc<dyn Array>],
-                group_indices: &[usize],
-                opt_filter: Option<&'a BooleanArray>,
-                total_num_groups: usize,
-            ) -> Result<(), DataFusionError>;
-            fn evaluate(
-                &mut self,
-                emit_to: EmitTo,
-            ) -> Result<Arc<dyn Array>, DataFusionError>;
-            fn state(
-                &mut self,
-                emit_to: EmitTo,
-            ) -> Result<Vec<Arc<dyn Array>>, DataFusionError>;
-            fn merge_batch<'a>(
-                &mut self,
-                values: &[Arc<dyn Array>],
-                group_indices: &[usize],
-                opt_filter: Option<&'a BooleanArray>,
-                total_num_groups: usize,
-            ) -> Result<(), DataFusionError>;
-            fn size(&self) -> usize;
-        }
     }
 
     #[test]
