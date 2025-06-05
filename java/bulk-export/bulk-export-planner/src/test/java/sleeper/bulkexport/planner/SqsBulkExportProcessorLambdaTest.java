@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
+import sleeper.bulkexport.plannerV2.SqsBulkExportProcessor;
+import sleeper.bulkexport.plannerV2.SqsBulkExportProcessorLambda;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactoryException;
 
@@ -36,7 +38,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 public class SqsBulkExportProcessorLambdaTest {
 
     private SqsBulkExportProcessor sqsBulkExportProcessor = mock(SqsBulkExportProcessor.class);
-    private BulkExportQuerySerDe bulkExportQuerySerDe = new BulkExportQuerySerDe(); //mock(BulkExportQuerySerDe.class);
+    private BulkExportQuerySerDe bulkExportQuerySerDe = new BulkExportQuerySerDe();
 
     private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
     private InstanceProperties instanceProperties;

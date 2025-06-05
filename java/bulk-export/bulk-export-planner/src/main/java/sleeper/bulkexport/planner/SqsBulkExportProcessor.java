@@ -15,12 +15,14 @@
  */
 package sleeper.bulkexport.planner;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
@@ -32,8 +34,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.List;
 
@@ -46,9 +47,9 @@ public class SqsBulkExportProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsBulkExportProcessor.class);
 
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final SqsClient sqsClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
 
@@ -58,9 +59,9 @@ public class SqsBulkExportProcessor {
         s3Client = builder.s3Client;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
-        Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client,
-                dynamoClient, confForStateStore);
+                dynamoClient, s3TransferManager);
     }
 
     /**
@@ -81,7 +82,9 @@ public class SqsBulkExportProcessor {
                 leafPartitionQueries.size(), bulkExportQuery.getExportId());
         leafPartitionQueries.forEach(query -> {
             LOGGER.debug("Sending leaf partition export query {} to queue {}.", query.getSubExportId(), sqsUrl);
-            sqsClient.sendMessage(sqsUrl, querySerDe.toJson(query));
+            SendMessageRequest request = SendMessageRequest.builder().queueUrl(sqsUrl)
+                    .messageBody(querySerDe.toJson(query)).build();
+            sqsClient.sendMessage(request);
         });
     }
 
@@ -105,9 +108,9 @@ public class SqsBulkExportProcessor {
      * }</pre>
      */
     public static final class Builder {
-        private AmazonSQS sqsClient;
-        private AmazonS3 s3Client;
-        private AmazonDynamoDB dynamoClient;
+        private SqsClient sqsClient;
+        private S3Client s3Client;
+        private DynamoDbClient dynamoClient;
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
 
@@ -120,7 +123,7 @@ public class SqsBulkExportProcessor {
          * @param  s3Client the S3 client
          * @return          the builder for method chaining
          */
-        public Builder s3Client(AmazonS3 s3Client) {
+        public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
             return this;
         }
@@ -131,7 +134,7 @@ public class SqsBulkExportProcessor {
          * @param  sqsClient the SQS client
          * @return           the builder for method chaining
          */
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }
@@ -142,7 +145,7 @@ public class SqsBulkExportProcessor {
          * @param  dynamoClient the DynamoDB client
          * @return              the builder for method chaining
          */
-        public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
             return this;
         }
