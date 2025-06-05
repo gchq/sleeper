@@ -16,16 +16,18 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
-import sleeper.bulkimport.starter.executor.BulkImportArguments;
-import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
+import sleeper.bulkimport.starterv2.executor.BulkImportArguments;
+import sleeper.bulkimport.starterv2.executor.EmrServerlessPlatformExecutor;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -37,14 +39,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 
 public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
     private final SystemTestInstanceContext instance;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
     private final EmrServerlessClient emrClient;
 
     public DirectEmrServerlessDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.s3Client = clients.getS3();
-        this.dynamoDBClient = clients.getDynamoDB();
+        this.dynamoClient = clients.getDynamo();
         this.emrClient = clients.getEmrServerless();
     }
 
@@ -52,9 +54,11 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
         String jobRunId = UUID.randomUUID().toString();
         jobTracker().jobValidated(job.toIngestJob().acceptedEventBuilder(Instant.now())
                 .jobRunId(jobRunId).build());
-        s3Client.putObject(instance.getInstanceProperties().get(BULK_IMPORT_BUCKET),
-                "bulk_import/" + job.getId() + "-" + jobRunId + ".json",
-                new BulkImportJobSerDe().toJson(job));
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(instance.getInstanceProperties().get(BULK_IMPORT_BUCKET))
+                .key("bulk_import/" + job.getId() + "-" + jobRunId + ".json")
+                .build(),
+                RequestBody.fromString(new BulkImportJobSerDe().toJson(job)));
         executor().runJobOnPlatform(BulkImportArguments.builder()
                 .bulkImportJob(job)
                 .jobRunId(jobRunId)
@@ -63,7 +67,7 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
     }
 
     private IngestJobTracker jobTracker() {
-        return IngestJobTrackerFactory.getTracker(dynamoDBClient, instance.getInstanceProperties());
+        return IngestJobTrackerFactory.getTracker(dynamoClient, instance.getInstanceProperties());
     }
 
     private EmrServerlessPlatformExecutor executor() {

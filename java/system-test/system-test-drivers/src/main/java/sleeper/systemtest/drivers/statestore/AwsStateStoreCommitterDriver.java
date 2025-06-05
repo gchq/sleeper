@@ -15,11 +15,11 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingResponse;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
@@ -28,8 +28,9 @@ import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
-import sleeper.statestore.commit.StateStoreCommitRequestUploader;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestorev2.commit.StateStoreCommitRequestUploader;
+import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
@@ -47,15 +48,15 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterDriver.class);
 
     private final SystemTestInstanceContext instance;
-    private final SqsClient sqs;
-    private final AmazonS3 s3;
-    private final LambdaClient lambda;
+    private final S3Client s3Client;
+    private final SqsClient sqsClient;
+    private final LambdaClient lambdaClient;
 
-    public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, SqsClient sqs, AmazonS3 s3, LambdaClient lambda) {
+    public AwsStateStoreCommitterDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.sqs = sqs;
-        this.s3 = s3;
-        this.lambda = lambda;
+        this.s3Client = clients.getS3();
+        this.sqsClient = clients.getSqs();
+        this.lambdaClient = clients.getLambda();
     }
 
     @Override
@@ -70,7 +71,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     private void sendMessageBatch(List<StateStoreCommitRequest> batch) {
         StateStoreCommitRequestUploader uploader = uploader();
-        sqs.sendMessageBatch(request -> request
+        sqsClient.sendMessageBatch(request -> request
                 .queueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
                 .entries(batch.stream()
                         .map(message -> SendMessageBatchRequestEntry.builder()
@@ -84,7 +85,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     private StateStoreCommitRequestUploader uploader() {
         TransactionSerDeProvider serDeProvider = TransactionSerDeProvider.from(instance.getTablePropertiesProvider());
-        TransactionBodyStore bodyStore = new S3TransactionBodyStore(instance.getInstanceProperties(), s3, serDeProvider);
+        TransactionBodyStore bodyStore = new S3TransactionBodyStore(instance.getInstanceProperties(), s3Client, serDeProvider);
         return new StateStoreCommitRequestUploader(bodyStore, serDeProvider);
     }
 
@@ -103,7 +104,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     private void setEventSourceEnabledWaitForState(GetEventSourceMappingResponse mapping, boolean enabled, String state) {
-        lambda.updateEventSourceMapping(builder -> builder
+        lambdaClient.updateEventSourceMapping(builder -> builder
                 .uuid(mapping.uuid())
                 .functionName(mapping.functionArn())
                 .batchSize(mapping.batchSize())
@@ -124,6 +125,6 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
 
     private GetEventSourceMappingResponse getEventSourceMapping() {
         String uuid = instance.getInstanceProperties().get(STATESTORE_COMMITTER_EVENT_SOURCE_ID);
-        return lambda.getEventSourceMapping(builder -> builder.uuid(uuid));
+        return lambdaClient.getEventSourceMapping(builder -> builder.uuid(uuid));
     }
 }

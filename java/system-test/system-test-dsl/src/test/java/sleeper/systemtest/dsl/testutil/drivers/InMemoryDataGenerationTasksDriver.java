@@ -23,7 +23,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.sketchesv2.testutils.InMemorySketchesStore;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
