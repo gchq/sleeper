@@ -75,7 +75,7 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
     public void createInstance() throws IOException {
         this.instanceProperties = TestUtils.createInstance(s3ClientV2, dynamoClientV2,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2);
     }
 
     protected InstanceProperties getInstanceProperties() {

@@ -539,7 +539,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
     }
 
     private StateStore stateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
     }
 
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {

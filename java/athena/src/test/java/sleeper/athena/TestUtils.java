@@ -85,7 +85,7 @@ public class TestUtils {
         tableProperties.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         S3TableProperties.createStore(instance, s3Client, dynamoClient).save(tableProperties);
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, null).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient).getStateStore(tableProperties);
         update(stateStore).initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
 
         return tableProperties;
@@ -98,7 +98,7 @@ public class TestUtils {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, null))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();
