@@ -52,7 +52,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
         ECSIngestTaskRunner.createIngestTask(
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
-                s3ClientV2, dynamoClientV2, sqsClientV2, cloudWatchClientV2, s3AsyncClient, hadoopConf, s3TransferManager)
+                s3ClientV2, dynamoClientV2, sqsClientV2, cloudWatchClientV2, s3AsyncClient, hadoopConf)
                 .run();
     }
 

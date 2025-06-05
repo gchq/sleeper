@@ -42,9 +42,10 @@ import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -66,6 +67,7 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
     @TempDir
     public Path tempDir;
 
@@ -128,8 +130,7 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 sketches.update(record);
             }
         }
-        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, hadoopConf);
+        sketchesStore.saveFileSketches(dataFile, schema, sketches);
         return dataFile;
     }
 
@@ -155,7 +156,6 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private Sketches readSketches(Schema schema, String filename) throws IOException {
-        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, hadoopConf);
+        return sketchesStore.loadFileSketches(filename, schema);
     }
 }
