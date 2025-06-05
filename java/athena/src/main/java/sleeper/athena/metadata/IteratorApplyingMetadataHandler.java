@@ -24,14 +24,14 @@ import com.amazonaws.athena.connector.lambda.metadata.GetSplitsResponse;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableLayoutRequest;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.util.Base64;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
@@ -62,10 +62,10 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
     }
 
     public IteratorApplyingMetadataHandler(
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket,
+            S3Client s3Client, DynamoDbClient dynamoClient, String configBucket,
             EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
             AmazonAthena athena, String spillBucket, String spillPrefix) {
-        super(s3Client, dynamoDBClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
+        super(s3Client, dynamoClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
     }
 
     @Override
