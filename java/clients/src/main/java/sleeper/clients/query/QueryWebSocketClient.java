@@ -30,6 +30,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
+import software.amazon.awssdk.http.auth.spi.internal.signer.DefaultSignRequest;
 import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
 import sleeper.clients.query.exception.MessageMalformedException;
@@ -161,15 +162,15 @@ public class QueryWebSocketClient {
         private void setAwsIamAuthHeaders() {
             LOGGER.debug("Creating auth signature with server URI: {}", serverUri);
             AwsV4HttpSigner signer = AwsV4HttpSigner.create();
-            SignedRequest signed = signer.sign(request -> request
-                    .identity(credentials)
+            SignedRequest signed = signer.sign(DefaultSignRequest.builder(credentials)
                     .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "execute-api")
                     .putProperty(AwsV4HttpSigner.REGION_NAME, region)
                     .request(SdkHttpRequest.builder()
                             .uri(serverUri)
                             .protocol("https")
                             .method(SdkHttpMethod.GET)
-                            .build()));
+                            .build())
+                    .build());
             LOGGER.debug("Setting auth headers...");
             signed.request().forEachHeader((header, values) -> {
                 for (String value : values) {
