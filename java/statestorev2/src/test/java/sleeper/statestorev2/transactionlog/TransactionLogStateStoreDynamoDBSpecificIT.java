@@ -295,7 +295,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStoreFactory stateStoreFactory() {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2);
     }
 
     private FileReferenceFactory fileFactory(PartitionTree tree) {

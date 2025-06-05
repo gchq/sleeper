@@ -74,7 +74,6 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()
                 .s3Client(clients.getS3V2())
-                .s3TransferManager(clients.getS3TransferManager())
                 .dynamoClient(clients.getDynamoV2())
                 .sqsClient(clients.getSqsV2())
                 .build().deploy(instanceProperties, deployConfig.getTableProperties());

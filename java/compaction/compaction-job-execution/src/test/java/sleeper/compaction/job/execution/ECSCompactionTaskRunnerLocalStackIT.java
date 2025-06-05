@@ -122,7 +122,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
     private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
-    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager);
+    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("key", new LongType()))
             .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))

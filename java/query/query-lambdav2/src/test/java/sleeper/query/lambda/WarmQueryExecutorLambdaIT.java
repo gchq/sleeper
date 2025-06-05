@@ -149,7 +149,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 
     private void createTable(TableProperties tableProperties) {
         S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(tableProperties.getSchema());
     }

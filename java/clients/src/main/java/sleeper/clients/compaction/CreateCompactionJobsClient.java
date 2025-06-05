@@ -17,10 +17,8 @@
 package sleeper.clients.compaction;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creationv2.AwsCreateCompactionJobs;
@@ -73,8 +71,6 @@ public class CreateCompactionJobsClient {
         String instanceId = args[1];
         List<String> tableNames = Stream.of(args).skip(2).toList();
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
@@ -82,7 +78,7 @@ public class CreateCompactionJobsClient {
             List<TableProperties> tables = tableNames.stream()
                     .map(name -> tablePropertiesProvider.getByName(name))
                     .collect(toUnmodifiableList());
-            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
             CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
                     new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory(),
                     instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client, sqsClient);

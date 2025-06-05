@@ -91,7 +91,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     protected StateStore createTable(Schema schema) throws IOException {
         tableProperties.setSchema(schema);
         tablePropertiesStore.save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(schema);
         return stateStore;

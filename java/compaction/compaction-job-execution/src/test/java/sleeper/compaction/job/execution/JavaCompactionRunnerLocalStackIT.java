@@ -113,7 +113,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
     private void createStateStore() {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager)
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
     }
 
