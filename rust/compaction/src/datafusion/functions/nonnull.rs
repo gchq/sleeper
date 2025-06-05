@@ -431,7 +431,7 @@ mod tests {
     use datafusion::{
         common::{Statistics, arrow::array::Array, internal_err},
         error::{DataFusionError, Result},
-        execution::SessionStateBuilder,
+        execution::{SessionStateBuilder, context::ExecutionProps},
         functions_aggregate::{
             min_max::{max_udaf, min_udaf},
             sum::{sum, sum_udaf},
@@ -439,9 +439,10 @@ mod tests {
         logical_expr::{
             Accumulator, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator, ReversedUDAF,
             SetMonotonicity, Signature, StatisticsArgs, Volatility,
-            expr::{AggregateFunctionParams, WindowFunctionParams},
+            expr::{AggregateFunction, AggregateFunctionParams, WindowFunctionParams},
             function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
             lit,
+            simplify::SimplifyContext,
             utils::AggregateOrderSensitivity,
         },
         physical_expr::LexOrdering,
@@ -453,6 +454,7 @@ mod tests {
     use std::{any::Any, collections::HashMap, sync::Arc};
 
     mock! {
+        #[allow(clippy::ref_option_ref)]
         #[derive(Debug)]
         UDFImpl {}
         impl AggregateUDFImpl for UDFImpl {
@@ -473,10 +475,10 @@ mod tests {
             ) -> Result<String>;
             fn is_nullable(&self) -> bool;
             fn state_fields<'a>(&self, args: StateFieldsArgs<'a>) -> Result<Vec<Field>>;
-            fn groups_accumulator_supported<'a>(&self, _args: AccumulatorArgs<'a>) -> bool;
+            fn groups_accumulator_supported<'a>(&self, args: AccumulatorArgs<'a>) -> bool;
             fn create_groups_accumulator<'a>(
                 &self,
-                _args: AccumulatorArgs<'a>,
+                args: AccumulatorArgs<'a>,
             ) -> Result<Box<dyn GroupsAccumulator>>;
             fn aliases(&self) -> &[String];
             fn create_sliding_accumulator<'a>(
@@ -485,19 +487,19 @@ mod tests {
             ) -> Result<Box<dyn Accumulator>> ;
             fn with_beneficial_ordering(
                 self: Arc<Self>,
-                _beneficial_ordering: bool,
+                beneficial_ordering: bool,
             ) -> Result<Option<Arc<dyn AggregateUDFImpl>>> ;
             fn order_sensitivity(&self) -> AggregateOrderSensitivity;
             fn simplify(&self) -> Option<AggregateFunctionSimplification>;
             fn reverse_expr(&self) -> ReversedUDAF;
-            fn coerce_types(&self, _arg_types: &[DataType]) -> Result<Vec<DataType>> ;
+            fn coerce_types(&self, arg_types: &[DataType]) -> Result<Vec<DataType>> ;
             fn equals(&self, other: &dyn AggregateUDFImpl) -> bool;
             fn hash_value(&self) -> u64 ;
             fn is_descending(&self) -> Option<bool> ;
-            fn value_from_stats<'a>(&self, _statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
+            fn value_from_stats<'a>(&self, statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
             fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
             fn documentation(&self) -> Option<&'static Documentation>;
-            fn set_monotonicity(&self, _data_type: &DataType) -> SetMonotonicity;
+            fn set_monotonicity(&self, data_type: &DataType) -> SetMonotonicity;
         }
         unsafe impl Send for UDFImpl {}
         unsafe impl Sync for UDFImpl {}
@@ -506,6 +508,7 @@ mod tests {
     mock! {
         #[derive(Debug)]
         UDFAcc{}
+        #[allow(clippy::ref_option_ref)]
         impl Accumulator for UDFAcc{
             fn update_batch(
                 &mut self,
@@ -524,6 +527,7 @@ mod tests {
     mock! {
         #[derive(Debug)]
         UDFGroupAcc{}
+        #[allow(clippy::ref_option_ref)]
         impl GroupsAccumulator for UDFGroupAcc{
             fn update_batch<'a>(
                 &mut self,
@@ -805,7 +809,7 @@ mod tests {
                 return_type: &DataType::Int64,
                 schema: &Schema::empty(),
                 ignore_nulls: false,
-                ordering_req: &LexOrdering::empty(),
+                ordering_req: LexOrdering::empty(),
                 is_reversed: false,
                 name: "test",
                 is_distinct: false,
@@ -874,7 +878,7 @@ mod tests {
             return_type: &DataType::Int64,
             schema: &Schema::empty(),
             ignore_nulls: false,
-            ordering_req: &LexOrdering::empty(),
+            ordering_req: LexOrdering::empty(),
             is_reversed: false,
             name: "test",
             is_distinct: false,
@@ -905,7 +909,7 @@ mod tests {
                 return_type: &DataType::Int64,
                 schema: &Schema::empty(),
                 ignore_nulls: false,
-                ordering_req: &LexOrdering::empty(),
+                ordering_req: LexOrdering::empty(),
                 is_reversed: false,
                 name: "test",
                 is_distinct: false,
@@ -948,7 +952,7 @@ mod tests {
                 return_type: &DataType::Int64,
                 schema: &Schema::empty(),
                 ignore_nulls: false,
-                ordering_req: &LexOrdering::empty(),
+                ordering_req: LexOrdering::empty(),
                 is_reversed: false,
                 name: "test",
                 is_distinct: false,
@@ -997,12 +1001,7 @@ mod tests {
         // Then
         assert_eq!(AggregateOrderSensitivity::Insensitive, ordering);
     }
-    /*pub type AggregateFunctionSimplification = Box<
-        dyn Fn(
-            crate::expr::AggregateFunction,
-            &dyn crate::simplify::SimplifyInfo,
-        ) -> Result<Expr>,
-    >; */
+
     #[test]
     fn should_call_simplify() {
         //Given
@@ -1013,9 +1012,31 @@ mod tests {
             .once()
             .returning(|| Some(Box::new(|_, _| Ok(sum(lit(1))))));
         let nonnull = NonNullable::new(Arc::new(mock_udf));
+        let test_agg_function =
+            AggregateFunction::new_udf(sum_udaf(), vec![], false, None, None, None);
 
         // When
         let simplified_expr = nonnull.simplify().expect("couldn't unwrap simplify result");
+        // call the function
+        let simplified_result = simplified_expr(
+            test_agg_function,
+            &SimplifyContext::new(&ExecutionProps::new()),
+        );
+
+        // Then - check called function returns a non-null with the correct inner expression
+        if let Ok(Expr::AggregateFunction(AggregateFunction { func, params: _ })) =
+            simplified_result
+        {
+            let nonnull = func
+                .inner()
+                .as_any()
+                .downcast_ref::<NonNullable>()
+                .expect("Should be a nonnullable intance");
+
+            assert_eq!(nonnull.inner.name(), "sum");
+        } else {
+            panic!("Incorrect result from call to simplify");
+        }
     }
 
     #[test]
