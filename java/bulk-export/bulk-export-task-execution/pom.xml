@@ -32,11 +32,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-job</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

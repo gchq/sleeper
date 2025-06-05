@@ -49,11 +49,6 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -65,11 +60,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>statestorev2</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>common-jobv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

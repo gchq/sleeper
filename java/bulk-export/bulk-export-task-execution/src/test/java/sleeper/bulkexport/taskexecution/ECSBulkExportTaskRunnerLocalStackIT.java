@@ -15,9 +15,10 @@
  */
 package sleeper.bulkexport.taskexecution;
 
-import com.amazonaws.services.sqs.model.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
@@ -81,7 +82,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         sqsClient.sendMessage(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL), messageBody);
 
         // Run the ECS bulk export task runner
-        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoClient, instanceProperties, tablePropertiesProvider);
+        ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(sqsClientV2, s3ClientV2, dynamoClientV2, instanceProperties, tablePropertiesProvider);
 
         // Then
         // Verify the queue is empty
@@ -108,10 +109,10 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<String> getMessagesFromQueue(String queueUrl) {
-        return sqsClient.receiveMessage(queueUrl)
-                .getMessages()
+        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder().queueUrl(queueUrl).build())
+                .messages()
                 .stream()
-                .map(Message::getBody)
+                .map(Message::body)
                 .toList();
     }
 }

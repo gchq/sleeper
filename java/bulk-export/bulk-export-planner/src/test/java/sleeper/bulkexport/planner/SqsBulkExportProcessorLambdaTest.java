@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
-import sleeper.bulkexport.plannerV2.SqsBulkExportProcessor;
-import sleeper.bulkexport.plannerV2.SqsBulkExportProcessorLambda;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactoryException;
 

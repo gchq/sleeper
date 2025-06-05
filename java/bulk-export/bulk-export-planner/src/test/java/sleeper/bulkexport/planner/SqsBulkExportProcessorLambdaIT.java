@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
-import sleeper.bulkexport.plannerV2.SqsBulkExportProcessorLambda;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
