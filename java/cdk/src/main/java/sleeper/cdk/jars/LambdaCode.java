@@ -49,28 +49,18 @@ public class LambdaCode {
     public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
         LambdaBuilder builder;
-        if (deployType == LambdaDeployType.JAR) {
+        if (deployType == LambdaDeployType.CONTAINER || handler.isAlwaysDockerDeploy()) {
+            builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
+                    .code(containerCode(scope, handler, id)));
+        } else if (deployType == LambdaDeployType.JAR) {
             builder = new FunctionBuilder(Function.Builder.create(scope, id)
                     .code(jarCode(handler.getJar()))
                     .handler(handler.getHandler())
                     .runtime(Runtime.JAVA_17));
-        } else if (deployType == LambdaDeployType.CONTAINER) {
-            builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
-                    .code(containerCode(scope, handler, id)));
         } else {
             throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
         }
-        return buildFunction(builder, config);
-    }
 
-    public IVersion buildFunctionWithDockerDeploy(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
-        return buildFunction(
-                new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
-                        .code(containerCode(scope, handler, id))),
-                config);
-    }
-
-    private IVersion buildFunction(LambdaBuilder builder, Consumer<LambdaBuilder> config) {
         config.accept(builder);
         Function function = builder.build();
 

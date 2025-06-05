@@ -19,7 +19,6 @@ package sleeper.clients.deploy.container;
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
@@ -107,14 +106,20 @@ public class DockerImageConfiguration {
     }
 
     private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
-        if (lambdaDeployType != LambdaDeployType.CONTAINER) {
-            return lambdaHandlers.stream().filter(checkUploadLambda)
-                    .map(LambdaHandler::getJar).filter(LambdaJar::isAlwaysDockerDeploy).distinct()
-                    .map(StackDockerImage::lambdaImage);
-        }
-        return lambdaHandlers.stream().filter(checkUploadLambda)
+        return dockerLambdaHandlers(lambdaDeployType)
+                .filter(checkUploadLambda)
                 .map(LambdaHandler::getJar).distinct()
                 .map(StackDockerImage::lambdaImage);
+    }
+
+    private Stream<LambdaHandler> dockerLambdaHandlers(LambdaDeployType lambdaDeployType) {
+        if (lambdaDeployType == LambdaDeployType.CONTAINER) {
+            return lambdaHandlers.stream();
+        } else {
+            return lambdaHandlers.stream()
+                    .filter(LambdaHandler::isAlwaysDockerDeploy);
+        }
+
     }
 
     /**

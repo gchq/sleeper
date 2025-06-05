@@ -214,6 +214,10 @@ public class LambdaHandler {
         return optionalStacks;
     }
 
+    public boolean isAlwaysDockerDeploy() {
+        return jar.isAlwaysDockerDeploy();
+    }
+
     /**
      * Checks if this lambda is deployed given the enabled optional stacks.
      *
