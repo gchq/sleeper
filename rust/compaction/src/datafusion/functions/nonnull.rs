@@ -420,8 +420,9 @@ mod tests {
     use crate::{
         assert_error,
         datafusion::functions::nonnull::{
-            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable, non_null_max,
-            non_null_min, non_null_sum, non_nullable, nullable_check, register_non_nullables,
+            NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable,
+            NonNullableAccumulator, non_null_max, non_null_min, non_null_sum, non_nullable,
+            nullable_check, register_non_nullables,
         },
     };
     use arrow::{
@@ -1141,6 +1142,7 @@ mod tests {
 
         // When
         let docs = nonnull.documentation();
+
         // Then
         assert!(docs.is_none());
     }
@@ -1158,7 +1160,42 @@ mod tests {
 
         // When
         let monotonicity = nonnull.set_monotonicity(&DataType::Int64);
+
         // Then
         assert_eq!(SetMonotonicity::NotMonotonic, monotonicity);
+    }
+
+    #[test]
+    fn accumulator_should_call_update() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc
+            .expect_update_batch()
+            .once()
+            .return_once(|_| Ok(()));
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let _ = acc.update_batch(&[]);
+
+        // Then - mock check
+    }
+
+    #[test]
+    fn accumulator_should_fail_on_nullable_entry() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc.expect_update_batch().never();
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+        let mut builder = Int64Builder::new();
+        builder.append_value(1);
+        builder.append_null();
+        let array = builder.finish();
+
+        // When
+        let result = acc.update_batch(&[Arc::new(array)]);
+
+        // Then
+        assert!(result.is_err());
     }
 }
