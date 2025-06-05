@@ -65,7 +65,10 @@ public abstract class UploadDockerImagesTestBase {
                     .optionalStack(OptionalStack.IngestStack).build(),
             LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("bulk-import-starter.jar", "bulk-import-starter-lambda"))
                     .handler("BulkImportStarterLambda")
-                    .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build());
+                    .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build(),
+            LambdaHandler.builder().jar(LambdaJar.withFormatAndImageDeployWithDocker("athena.jar", "athena-lambda"))
+                    .handler("AthenaLambda")
+                    .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
     protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final InstanceProperties properties = createTestInstanceProperties();
 

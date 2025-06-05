@@ -37,7 +37,7 @@ import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
@@ -89,10 +89,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -145,10 +142,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -204,10 +198,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -255,9 +246,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         // When
         List<String> partition2016Files = new ArrayList<>();
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
-                s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -302,10 +291,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         // When
         List<String> emptyFiles = new ArrayList<>();
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -342,7 +328,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
 
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
@@ -353,10 +339,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        IteratorApplyingRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -405,6 +388,13 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         // Third should be aggregated second plus third
         long thirdCount = secondCount + 2018 * 3 * 8;
         assertFieldContainedValue(records, 2, "count", thirdCount);
+    }
+
+    private IteratorApplyingRecordHandler handler(InstanceProperties instanceProperties) {
+        return new IteratorApplyingRecordHandler(
+                s3Client, s3ClientV2, dynamoClientV2,
+                instanceProperties.get(CONFIG_BUCKET),
+                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
     }
 
     private void assertRecordContainedDay(Block records, int position, int year, Month month, int day) {
