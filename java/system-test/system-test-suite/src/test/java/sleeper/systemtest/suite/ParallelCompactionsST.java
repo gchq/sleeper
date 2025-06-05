@@ -36,7 +36,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configurationv2.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create8192StringPartitions;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;

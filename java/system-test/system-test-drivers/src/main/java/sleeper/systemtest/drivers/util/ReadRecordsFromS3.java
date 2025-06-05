@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.drivers.util;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -36,8 +35,8 @@ public class ReadRecordsFromS3 {
     private ReadRecordsFromS3() {
     }
 
-    public static Stream<Record> getRecords(Schema schema, S3ObjectSummary s3ObjectSummary, Configuration conf) {
-        String path = "s3a://" + s3ObjectSummary.getBucketName() + "/" + s3ObjectSummary.getKey();
+    public static Stream<Record> getRecords(String bucketName, String objectKey, Schema schema, Configuration conf) {
+        String path = "s3a://" + bucketName + "/" + objectKey;
         List<Record> records = new ArrayList<>();
         try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(conf).build();

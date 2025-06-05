@@ -27,7 +27,7 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import java.time.Instant;
 
 public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogsDriver {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterDriver.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterLogsDriver.class);
 
     private final SystemTestInstanceContext instance;
     private final CloudWatchLogsClient cloudWatch;
