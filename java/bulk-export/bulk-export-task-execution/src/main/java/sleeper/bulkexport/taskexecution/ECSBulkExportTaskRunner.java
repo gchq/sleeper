@@ -18,10 +18,8 @@ package sleeper.bulkexport.taskexecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.compaction.core.job.CompactionJob;
@@ -158,9 +156,8 @@ public class ECSBulkExportTaskRunner {
             DynamoDbClient dynamoDBClient) throws IOException, IteratorCreationException, ObjectFactoryException {
         LOGGER.info("Starting compaction for table ID: {}, partition ID: {}",
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getLeafPartitionId());
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client,
-                dynamoDBClient, s3TransferManager);
+                dynamoDBClient);
 
         String exportBucket = instanceProperties.get(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET);
         String outputFile = String.format("s3a://%s/%s/%s/%s.parquet", exportBucket,

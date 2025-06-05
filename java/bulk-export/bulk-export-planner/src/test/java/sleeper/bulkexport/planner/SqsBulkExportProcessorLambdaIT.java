@@ -81,7 +81,7 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
         DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
         S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
-        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, null).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
         sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(sqsClientV2, s3ClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
     }
 
