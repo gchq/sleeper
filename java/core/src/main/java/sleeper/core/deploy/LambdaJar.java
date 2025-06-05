@@ -27,6 +27,8 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
+    // Athena is deployed with Docker because it uses AWS SDK v1, and when combined with AWS SDK v2 and Hadoop this
+    // makes the jar too big to deploy directly.
     public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
     public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
     public static final LambdaJar BULK_EXPORT_PLANNER = withFormatAndImage("bulk-export-planner-%s.jar", "bulk-export-planner");
