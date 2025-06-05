@@ -66,10 +66,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         String file = stateStore.getFileReferences().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        SimpleRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -111,10 +108,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         String file = stateStore.getFileReferences().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        SimpleRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -159,10 +153,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        SimpleRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -209,10 +200,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        SimpleRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -253,10 +241,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         String file = stateStore.getFileReferences().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        SimpleRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -306,10 +291,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+        SimpleRecordHandler sleeperRecordHandler = handler(instanceProperties);
 
         String tableName = tableProperties.get(TABLE_NAME);
         S3SpillLocation spillLocation = S3SpillLocation.newBuilder()
@@ -347,5 +329,12 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         // Just to show the difference
         assertThat(records.getFieldVector("month")).isNotNull();
         assertThat(records.getFieldVector("day")).isNull();
+    }
+
+    private SimpleRecordHandler handler(InstanceProperties instanceProperties) {
+        return new SimpleRecordHandler(
+                s3Client, s3ClientV2, dynamoClientV2,
+                instanceProperties.get(CONFIG_BUCKET),
+                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
     }
 }
