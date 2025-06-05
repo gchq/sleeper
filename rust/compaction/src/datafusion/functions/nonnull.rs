@@ -151,10 +151,10 @@ pub fn nullable_check(arrays: &[ArrayRef]) -> Result<&[ArrayRef]> {
 /// If any nulls are found during execution, an error is raised. Most functions are passed through to the wrapped
 /// implementation. Some are exempted since the default implementation computes results based on other functions in
 /// this trait. Specifically the following functions are not wrapped:
-///  * [`schema_name`]
-///  * [`window_function_schema_name`]
-///  * [`display_name`]
-///  * [`window_function_display_name`]
+///  * [`AggregateUDFImpl::schema_name`]
+///  * [`AggregateUDFImpl::window_function_schema_name`]
+///  * [`AggregateUDFImpl::display_name`]
+///  * [`AggregateUDFImpl::window_function_display_name`]
 ///
 #[derive(Debug)]
 pub struct NonNullable {

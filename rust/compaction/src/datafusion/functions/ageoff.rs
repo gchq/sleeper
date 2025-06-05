@@ -1,4 +1,4 @@
-//! Implementation of [`ScalarUDF`] for age off filtering.
+//! Implementation of [`ScalarUDFImpl`] for age off filtering.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
