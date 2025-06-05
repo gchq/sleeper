@@ -148,17 +148,17 @@ public class QueryWebSocketClient {
             CompletableFuture<List<String>> future = new CompletableFuture<>();
             messageHandler.setFuture(future);
             this.query = query;
-            initialiseConnection(serverUri);
+            initialiseConnection();
             return future;
         }
 
-        private void initialiseConnection(URI serverUri) throws InterruptedException {
-            setAwsIamAuthHeaders(serverUri);
+        private void initialiseConnection() throws InterruptedException {
+            setAwsIamAuthHeaders();
             LOGGER.info("Connecting to WebSocket API at " + serverUri);
             connectBlocking();
         }
 
-        private void setAwsIamAuthHeaders(URI serverUri) {
+        private void setAwsIamAuthHeaders() {
             LOGGER.debug("Creating auth signature with server URI: {}", serverUri);
             AwsV4HttpSigner signer = AwsV4HttpSigner.create();
             SignedRequest signed = signer.sign(request -> request
