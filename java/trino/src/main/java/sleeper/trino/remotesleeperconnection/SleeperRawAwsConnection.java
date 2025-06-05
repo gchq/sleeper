@@ -27,7 +27,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.jars.S3UserJarsLoader;
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -102,7 +101,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final S3Client s3Client;
     private final S3AsyncClient s3AsyncClient;
     private final DynamoDbClient dynamoDbClient;
-    private final S3TransferManager s3TransferManager;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
@@ -125,16 +123,13 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         this.dynamoDbClient = requireNonNull(dynamoDbClient);
         this.hadoopConfigurationProvider = hadoopConfigurationProvider;
         this.rootBufferAllocator = new RootAllocator(sleeperConfig.getMaxArrowRootAllocatorBytes());
-        this.s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
 
         // Member variables related to the Sleeper service
         // Note that the state-store provider is NOT thread-safe and so occasionally the state-store factory
         // will be used to create a new state store for each thread.
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, sleeperConfig.getConfigBucket());
-        this.stateStoreProvider = StateStoreFactory.createProvider(this.instanceProperties, this.s3Client, this.dynamoDbClient,
-                this.s3TransferManager);
-        this.stateStoreFactory = new StateStoreFactory(this.instanceProperties, this.s3Client, this.dynamoDbClient,
-                this.s3TransferManager);
+        this.stateStoreProvider = StateStoreFactory.createProvider(this.instanceProperties, this.s3Client, this.dynamoDbClient);
+        this.stateStoreFactory = new StateStoreFactory(this.instanceProperties, this.s3Client, this.dynamoDbClient);
 
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
@@ -188,7 +183,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         s3AsyncClient.close();
         dynamoDbClient.close();
         rootBufferAllocator.close();
-        s3TransferManager.close();
         LOGGER.info("AWS clients closed");
     }
 

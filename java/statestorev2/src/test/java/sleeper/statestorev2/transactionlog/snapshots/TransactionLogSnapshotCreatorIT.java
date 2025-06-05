@@ -333,7 +333,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2, s3TransferManager).build();
+        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2).build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;

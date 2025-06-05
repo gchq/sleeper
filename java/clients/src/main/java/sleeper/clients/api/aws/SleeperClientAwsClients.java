@@ -16,10 +16,8 @@
 package sleeper.clients.api.aws;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
@@ -36,13 +34,11 @@ import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
     private final ShutdownWrapper<S3Client> s3ClientWrapper;
-    private final ShutdownWrapper<S3TransferManager> s3TransferManagerWrapper;
     private final ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
     private final ShutdownWrapper<SqsClient> sqsClientWrapper;
 
     private SleeperClientAwsClients(Builder builder) {
         s3ClientWrapper = Objects.requireNonNull(builder.s3ClientWrapper, "s3Client must not be null");
-        s3TransferManagerWrapper = Objects.requireNonNull(builder.s3TransferManagerWrapper, "s3TransferManager must not be null");
         dynamoClientWrapper = Objects.requireNonNull(builder.dynamoClientWrapper, "dynamoClient must not be null");
         sqsClientWrapper = Objects.requireNonNull(builder.sqsClientWrapper, "sqsClient must not be null");
     }
@@ -55,10 +51,6 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
         return s3ClientWrapper.get();
     }
 
-    public S3TransferManager s3TransferManager() {
-        return s3TransferManagerWrapper.get();
-    }
-
     public DynamoDbClient dynamo() {
         return dynamoClientWrapper.get();
     }
@@ -69,12 +61,11 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
     @Override
     public void close() {
-        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, s3TransferManagerWrapper, dynamoClientWrapper, s3ClientWrapper));
+        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
     }
 
     public static class Builder {
         private ShutdownWrapper<S3Client> s3ClientWrapper;
-        private ShutdownWrapper<S3TransferManager> s3TransferManagerWrapper;
         private ShutdownWrapper<DynamoDbClient> dynamoClientWrapper;
         private ShutdownWrapper<SqsClient> sqsClientWrapper;
 
@@ -86,11 +77,6 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          */
         public Builder defaultClients() {
             s3ClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(S3Client.builder()), S3Client::close);
-            S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
-            S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
-            UncheckedAutoCloseables shutdownTransferManager = new UncheckedAutoCloseables(
-                    List.of(s3AsyncClient::close, s3TransferManager::close));
-            s3TransferManagerWrapper = ShutdownWrapper.shutdown(s3TransferManager, shutdownTransferManager);
             dynamoClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(DynamoDbClient.builder()), DynamoDbClient::close);
             sqsClientWrapper = ShutdownWrapper.shutdown(buildAwsV2Client(SqsClient.builder()), SqsClient::close);
             return this;
@@ -104,17 +90,6 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          */
         public Builder s3Client(S3Client s3Client) {
             this.s3ClientWrapper = ShutdownWrapper.noShutdown(s3Client);
-            return this;
-        }
-
-        /**
-         * Sets the AWS transfer manager to interact with S3.
-         *
-         * @param  s3TransferManager the transfer manager
-         * @return                   this builder
-         */
-        public Builder s3TransferManager(S3TransferManager s3TransferManager) {
-            this.s3TransferManagerWrapper = ShutdownWrapper.noShutdown(s3TransferManager);
             return this;
         }
 

@@ -18,9 +18,7 @@ package sleeper.clients.table.partition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
@@ -52,12 +50,11 @@ public class ReinitialiseTableFromExportedPartitions {
 
     public ReinitialiseTableFromExportedPartitions(
             S3Client s3Client,
-            S3TransferManager s3TransferManager,
             DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             String partitionsFile) {
-        this.reinitialiseTable = new ReinitialiseTable(s3Client, s3TransferManager, dynamoClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, true);
         this.partitionsFile = partitionsFile;
     }
 
@@ -102,11 +99,9 @@ public class ReinitialiseTableFromExportedPartitions {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             ReinitialiseTableFromExportedPartitions reinitialiseTable = new ReinitialiseTableFromExportedPartitions(
-                    s3Client, s3TransferManager, dynamoClient, instanceId, tableName, exportedPartitionsFile);
+                    s3Client, dynamoClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         }
