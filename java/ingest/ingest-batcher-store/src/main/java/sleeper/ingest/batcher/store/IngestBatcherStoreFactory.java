@@ -16,7 +16,7 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
@@ -32,7 +32,7 @@ public class IngestBatcherStoreFactory {
     }
 
     public static Optional<IngestBatcherStore> getStore(
-            AmazonDynamoDB dynamoDB, InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
+            DynamoDbClient dynamoDB, InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
         if (properties.getEnumList(OPTIONAL_STACKS, OptionalStack.class).contains(OptionalStack.IngestBatcherStack)) {
             return Optional.of(new DynamoDBIngestBatcherStore(dynamoDB, properties, tablePropertiesProvider));
         }

@@ -76,7 +76,6 @@ chunks:
       - ingest/ingest-taskrunner
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
-      - ingest/ingest-batcher-storev2
       - ingest/ingest-batcher-submitter
       - ingest/ingest-batcher-submitterv2
       - ingest/ingest-batcher-job-creator

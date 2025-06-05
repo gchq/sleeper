@@ -67,7 +67,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-batcher-storev2</artifactId>
+            <artifactId>ingest-batcher-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

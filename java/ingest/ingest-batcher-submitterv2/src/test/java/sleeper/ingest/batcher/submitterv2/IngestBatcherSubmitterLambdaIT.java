@@ -32,8 +32,8 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
-import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStoreCreator;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
