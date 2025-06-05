@@ -434,7 +434,7 @@ mod tests {
         execution::SessionStateBuilder,
         functions_aggregate::{
             min_max::{max_udaf, min_udaf},
-            sum::sum_udaf,
+            sum::{sum, sum_udaf},
         },
         logical_expr::{
             Accumulator, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator, ReversedUDAF,
@@ -997,8 +997,26 @@ mod tests {
         // Then
         assert_eq!(AggregateOrderSensitivity::Insensitive, ordering);
     }
+    /*pub type AggregateFunctionSimplification = Box<
+        dyn Fn(
+            crate::expr::AggregateFunction,
+            &dyn crate::simplify::SimplifyInfo,
+        ) -> Result<Expr>,
+    >; */
+    #[test]
+    fn should_call_simplify() {
+        //Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_simplify()
+            .once()
+            .returning(|| Some(Box::new(|_, _| Ok(sum(lit(1))))));
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
 
-    // TODO: Put simplify test here
+        // When
+        let simplified_expr = nonnull.simplify().expect("couldn't unwrap simplify result");
+    }
 
     #[test]
     fn should_return_identical_reverse() {
