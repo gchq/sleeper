@@ -56,7 +56,7 @@ public class InstanceIngestSession implements AutoCloseable {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
         this.tableProperties = tablePropertiesProvider.getByName(tableName);
-        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDbClient, null);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDbClient);
         this.localDir = localDir;
     }
 
