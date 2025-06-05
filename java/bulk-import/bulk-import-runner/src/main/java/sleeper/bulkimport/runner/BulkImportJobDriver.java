@@ -18,13 +18,11 @@ package sleeper.bulkimport.runner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -175,9 +173,7 @@ public class BulkImportJobDriver {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
-                SqsClient sqsClient = SqsClient.create();
-                S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
+                SqsClient sqsClient = SqsClient.create()) {
             InstanceProperties instanceProperties;
             try {
                 instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
@@ -191,7 +187,7 @@ public class BulkImportJobDriver {
             BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                     instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));

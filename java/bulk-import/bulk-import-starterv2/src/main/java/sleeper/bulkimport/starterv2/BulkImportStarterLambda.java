@@ -22,9 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
@@ -63,8 +61,6 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     public BulkImportStarterLambda() {
         S3Client s3 = S3Client.create();
         DynamoDbClient dynamo = DynamoDbClient.create();
-        S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
@@ -72,7 +68,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         IngestJobTracker ingestJobTracker = IngestJobTrackerFactory.getTracker(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
-                StateStoreFactory.createProvider(instanceProperties, s3, dynamo, s3TransferManager),
+                StateStoreFactory.createProvider(instanceProperties, s3, dynamo),
                 ingestJobTracker, new BulkImportJobWriterToS3(instanceProperties, s3),
                 platformExecutor, Instant::now);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
