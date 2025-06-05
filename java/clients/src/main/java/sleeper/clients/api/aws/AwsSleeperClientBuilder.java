@@ -65,7 +65,7 @@ public class AwsSleeperClientBuilder {
                 .tableIndex(tableIndex)
                 .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3()))
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo(), awsClients.s3TransferManager()))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordRetrieverProvider(recordRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))

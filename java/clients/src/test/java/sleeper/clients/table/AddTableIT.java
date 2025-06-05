@@ -126,13 +126,13 @@ public class AddTableIT extends LocalStackTestBase {
     }
 
     private StateStore stateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
     }
 
     private void addTable(TableProperties tableProperties) throws IOException {
         new AddTable(instanceProperties, tableProperties,
                 S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2),
-                StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
+                StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2))
                 .run();
     }
 }

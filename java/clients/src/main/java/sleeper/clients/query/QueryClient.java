@@ -17,9 +17,7 @@ package sleeper.clients.query;
 
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -72,11 +70,11 @@ public class QueryClient extends QueryCommandLineClient {
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient,
+    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(instanceProperties, s3Client, dynamoClient, in, out,
                 new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager));
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));
     }
 
     public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
@@ -155,12 +153,10 @@ public class QueryClient extends QueryCommandLineClient {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryClient queryClient = new QueryClient(
-                    instanceProperties, s3Client, s3TransferManager, dynamoClient,
+                    instanceProperties, s3Client, dynamoClient,
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out));
             queryClient.run();
         }

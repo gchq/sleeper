@@ -60,7 +60,7 @@ public class IngestRandomDataToDocker {
 
     private void run() throws IOException {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3,
-                dynamoDB, null);
+                dynamoDB);
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .recordsPerIngest(numberOfRecords)

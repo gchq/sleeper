@@ -30,7 +30,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -88,7 +87,6 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
     private final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT_V2;
     private final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
     private final DynamoDbClient dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
     private QueryAssertions queryAssertions;
 
@@ -130,7 +128,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient);
         return stateStoreFactory.getStateStore(getTableProperties(tableName));
     }
 
@@ -157,7 +155,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 update(stateStore).initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
