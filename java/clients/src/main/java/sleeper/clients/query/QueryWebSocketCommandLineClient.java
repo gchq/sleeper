@@ -85,7 +85,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
             recordsReturned = results.size();
         } catch (CompletionException e) {
             out.println("Query failed: " + e.getCause().getMessage());
-        } catch (InterruptedException e) {
+        } catch (RuntimeException | InterruptedException e) {
             out.println("Query failed: " + e.getMessage());
             throw e;
         } finally {
@@ -97,10 +97,11 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             QueryWebSocketCommandLineClient client = new QueryWebSocketCommandLineClient(instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
