@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.clients.report.IngestJobStatusReport;
@@ -30,8 +30,8 @@ import sleeper.common.taskv2.QueueMessageCount;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
+import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
@@ -43,14 +43,14 @@ import java.util.List;
 
 public class AwsIngestReportsDriver implements IngestReportsDriver {
     private final SystemTestInstanceContext instance;
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoClient;
     private final QueueMessageCount.Client queueMessages;
     private final EmrClient emr;
 
     public AwsIngestReportsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoDB = clients.getDynamoDB();
-        this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqsV2());
+        this.dynamoClient = clients.getDynamo();
+        this.queueMessages = QueueMessageCount.withSqsClient(clients.getSqs());
         this.emr = clients.getEmr();
     }
 
@@ -79,10 +79,10 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     }
 
     private IngestJobTracker jobTracker() {
-        return IngestJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
+        return IngestJobTrackerFactory.getTracker(dynamoClient, instance.getInstanceProperties());
     }
 
     private IngestTaskTracker taskTracker() {
-        return IngestTaskTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
+        return IngestTaskTrackerFactory.getTracker(dynamoClient, instance.getInstanceProperties());
     }
 }

@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3PropertiesReloader;
@@ -69,9 +68,8 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         DynamoDbClient dynamoDBClient = DynamoDbClient.builder().build();
         SqsClient sqsClient = SqsClient.builder().build();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().build();
 
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         findPartitionsToSplit = new FindPartitionsToSplit(instanceProperties, stateStoreProvider,

@@ -62,8 +62,8 @@ public class AwsCompactionDriverIT {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOfflineTable(DRAIN_COMPACTIONS);
-        s3 = drivers.clients().getS3V2();
-        sqs = drivers.clients().getSqsV2();
+        s3 = drivers.clients().getS3();
+        sqs = drivers.clients().getSqs();
         driver = drivers.compaction(context);
         instance = context.instance();
     }

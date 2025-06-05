@@ -16,10 +16,10 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class InMemorySystemTestDeploymentDriver implements SystemTestDeploymentDriver {
 

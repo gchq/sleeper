@@ -30,7 +30,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configurationv2.SystemTestIngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create512StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;

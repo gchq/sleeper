@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
@@ -57,7 +56,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     private final SystemTestParameters parameters;
     private final S3Client s3;
-    private final S3TransferManager s3TransferManager;
     private final DynamoDbClient dynamoDB;
     private final StsClient sts;
     private final AwsRegionProvider regionProvider;
@@ -67,10 +65,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        this.s3 = clients.getS3V2();
-        this.s3TransferManager = clients.getS3TransferManager();
-        this.dynamoDB = clients.getDynamoV2();
-        this.sts = clients.getStsV2();
+        this.s3 = clients.getS3();
+        this.dynamoDB = clients.getDynamo();
+        this.sts = clients.getSts();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
         this.ecr = clients.getEcr();
@@ -100,7 +97,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .deployInstanceConfiguration(deployConfig)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
-                    .deployWithClients(s3, s3TransferManager, dynamoDB, ecr);
+                    .deployWithClients(s3, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

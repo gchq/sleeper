@@ -19,10 +19,8 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
@@ -38,7 +36,7 @@ import java.util.List;
 
 import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class DeployNewTestInstance {
 
@@ -54,8 +52,6 @@ public class DeployNewTestInstance {
         }
         AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
-                S3AsyncClient s3AsyncClient = S3AsyncClient.crtCreate();
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
@@ -74,7 +70,7 @@ public class DeployNewTestInstance {
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
-                    .deployWithClients(s3Client, s3TransferManager, dynamoClient, ecrClient);
+                    .deployWithClients(s3Client, dynamoClient, ecrClient);
         }
     }
 

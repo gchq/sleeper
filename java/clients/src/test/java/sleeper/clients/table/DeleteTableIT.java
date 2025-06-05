@@ -202,7 +202,7 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(instanceProperties, s3ClientV2, s3TransferManager, dynamoClientV2)
+        new DeleteTable(instanceProperties, s3ClientV2, dynamoClientV2)
                 .delete(tableName);
     }
 
@@ -215,14 +215,14 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
     }
 
     private AllReferencesToAFile ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2))
                 .s3AsyncClient(s3AsyncClient)
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConf)

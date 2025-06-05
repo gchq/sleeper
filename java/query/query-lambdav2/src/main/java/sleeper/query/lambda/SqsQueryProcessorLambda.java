@@ -21,10 +21,8 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
@@ -56,23 +54,20 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private final SqsClient sqsClient;
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private final S3TransferManager s3TransferManager;
     private QueryMessageHandler messageHandler;
     private SqsQueryProcessor processor;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
         this(S3Client.create(), SqsClient.create(),
                 DynamoDbClient.create(),
-                S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build(),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
     public SqsQueryProcessorLambda(S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient,
-            S3TransferManager s3TransferManager, String configBucket) throws ObjectFactoryException {
+            String configBucket) throws ObjectFactoryException {
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
-        this.s3TransferManager = s3TransferManager;
         updateProperties(configBucket);
     }
 
@@ -115,7 +110,6 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 .sqsClient(sqsClient)
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient)
-                .s3TransferManager(s3TransferManager)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
         lastUpdateTime = Instant.now();

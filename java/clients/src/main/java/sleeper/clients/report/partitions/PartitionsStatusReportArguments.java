@@ -18,7 +18,6 @@ package sleeper.clients.report.partitions;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.report.PartitionsStatusReport;
 import sleeper.configurationv2.properties.S3InstanceProperties;
@@ -55,11 +54,11 @@ public class PartitionsStatusReportArguments {
         return new PartitionsStatusReportArguments(args[0], args[1], PartitionsStatusReporter::new);
     }
 
-    public void runReport(S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, PrintStream out) {
+    public void runReport(S3Client s3Client, DynamoDbClient dynamoClient, PrintStream out) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager);
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
 
         new PartitionsStatusReport(stateStore, tableProperties, reporter.apply(out)).run();

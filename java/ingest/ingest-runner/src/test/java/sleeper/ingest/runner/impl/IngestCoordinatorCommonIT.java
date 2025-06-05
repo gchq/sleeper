@@ -113,7 +113,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     private void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
     }
 
     @ParameterizedTest

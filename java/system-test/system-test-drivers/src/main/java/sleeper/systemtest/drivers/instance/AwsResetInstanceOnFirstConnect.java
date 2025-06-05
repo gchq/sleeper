@@ -15,24 +15,24 @@
  */
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.deploy.SqsQueues;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 
@@ -52,21 +52,21 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedResults;
 
 public class AwsResetInstanceOnFirstConnect {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsResetInstanceOnFirstConnect.class);
     private final S3Client s3;
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final AwsDrainSqsQueue drainSqsQueue;
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients) {
-        this(clients, AwsDrainSqsQueue.forSystemTests(clients.getSqsV2()));
+        this(clients, AwsDrainSqsQueue.forSystemTests(clients.getSqs()));
     }
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients, AwsDrainSqsQueue drainSqsQueue) {
-        this.s3 = clients.getS3V2();
-        this.dynamoDB = clients.getDynamoDB();
+        this.s3 = clients.getS3();
+        this.dynamoDB = clients.getDynamo();
         this.drainSqsQueue = drainSqsQueue;
     }
 
@@ -123,13 +123,14 @@ public class AwsResetInstanceOnFirstConnect {
 
     private void clearTable(String tableName, String... keyFields) {
         LOGGER.info("Clearing DynamoDB table: {}", tableName);
-        streamPagedResults(dynamoDB, new ScanRequest().withTableName(tableName))
-                .flatMap(result -> result.getItems().stream())
+        streamPagedResults(dynamoDB, ScanRequest.builder().tableName(tableName).build())
+                .flatMap(result -> result.items().stream())
                 .parallel()
                 .map(item -> getKey(item, List.of(keyFields)))
-                .forEach(key -> dynamoDB.deleteItem(new DeleteItemRequest()
-                        .withTableName(tableName)
-                        .withKey(key)));
+                .forEach(key -> dynamoDB.deleteItem(DeleteItemRequest.builder()
+                        .tableName(tableName)
+                        .key(key)
+                        .build()));
         LOGGER.info("Cleared DynamoDB table: {}", tableName);
     }
 
@@ -143,8 +144,9 @@ public class AwsResetInstanceOnFirstConnect {
         LOGGER.info("Waiting for DynamoDB table to empty: {}", tableName);
         try {
             PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
-                    .pollUntil("table is empty", () -> dynamoDB.scan(new ScanRequest().withTableName(tableName).withLimit(1))
-                            .getItems().isEmpty());
+                    .pollUntil("table is empty", () -> dynamoDB.scan(
+                            ScanRequest.builder().tableName(tableName).limit(1).build())
+                            .items().isEmpty());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while waiting for table to empty: " + tableName, e);

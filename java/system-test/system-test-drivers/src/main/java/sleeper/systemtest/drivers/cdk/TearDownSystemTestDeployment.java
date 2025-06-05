@@ -15,9 +15,9 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.teardown.RemoveECRRepositories;
 import sleeper.clients.teardown.RemoveJarsBucket;
@@ -25,16 +25,16 @@ import sleeper.clients.teardown.ShutdownSystemProcesses;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
 import sleeper.core.deploy.PopulateInstanceProperties;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class TearDownSystemTestDeployment {
     public static final Logger LOGGER = LoggerFactory.getLogger(TearDownSystemTestDeployment.class);
@@ -47,8 +47,8 @@ public class TearDownSystemTestDeployment {
         this.properties = properties;
     }
 
-    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, AmazonS3 s3Client, String deploymentId) {
-        return new TearDownSystemTestDeployment(clients, loadOrDefaultProperties(s3Client, deploymentId));
+    public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, String deploymentId) {
+        return new TearDownSystemTestDeployment(clients, loadOrDefaultProperties(clients.getS3(), deploymentId));
     }
 
     public void deleteStack() {
@@ -71,13 +71,13 @@ public class TearDownSystemTestDeployment {
 
     public void cleanupAfterAllInstancesAndStackDeleted() throws InterruptedException, IOException {
         LOGGER.info("Removing the Jars bucket and docker containers");
-        RemoveJarsBucket.remove(clients.getS3v2(), properties.get(SYSTEM_TEST_JARS_BUCKET));
+        RemoveJarsBucket.remove(clients.getS3(), properties.get(SYSTEM_TEST_JARS_BUCKET));
         RemoveECRRepositories.remove(clients.getEcr(),
                 PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(properties.get(SYSTEM_TEST_ID)),
                 List.of(properties.get(SYSTEM_TEST_REPO)));
     }
 
-    private static SystemTestStandaloneProperties loadOrDefaultProperties(AmazonS3 s3, String deploymentId) {
+    private static SystemTestStandaloneProperties loadOrDefaultProperties(S3Client s3, String deploymentId) {
         try {
             return SystemTestStandaloneProperties.fromS3GivenDeploymentId(s3, deploymentId);
         } catch (RuntimeException e) {

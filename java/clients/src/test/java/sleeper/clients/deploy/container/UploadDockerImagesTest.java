@@ -118,7 +118,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
         void shouldCreateRepositoryAndPushCoreImage() throws Exception {
             // Given
             properties.setList(OPTIONAL_STACKS, List.of());
-            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
             files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
 
             // When
@@ -142,7 +142,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
         void shouldPushImageForCoreAndOptionalLambdaInNewInstance() throws Exception {
             // Given
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack));
-            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
             files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
             files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
 
@@ -175,7 +175,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             properties.setList(OPTIONAL_STACKS, List.of());
             InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack));
-            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
             files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
 
             // When
@@ -201,7 +201,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             properties.setList(OPTIONAL_STACKS, List.of());
             InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack));
-            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
             files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
 
             // When
@@ -227,7 +227,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             properties.setList(OPTIONAL_STACKS, List.of());
             InstanceProperties propertiesBefore = InstanceProperties.copyOf(properties);
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EmrServerlessBulkImportStack, OptionalStack.EksBulkImportStack));
-            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER.toString());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
             files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
 
             // When
@@ -251,7 +251,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
         void shouldDoNothingWhenDeployingLambdasByJar() throws Exception {
             // Given
             properties.setList(OPTIONAL_STACKS, List.of());
-            properties.set(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR.toString());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
@@ -259,6 +259,30 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             // Then
             assertThat(commandsThatRan).isEmpty();
             assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldDeployLambdaByDockerWhenConfiguredToAlwaysDeployByDocker() throws Exception {
+            // Given
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.AthenaStack));
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR);
+            files.put(Path.of("./jars/athena.jar"), "athena-jar-content");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/athena-lambda:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    pushImageCommand(expectedTag));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/athena-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/athena.jar"), "athena-jar-content",
+                    Path.of("./docker/lambda/lambda.jar"), "athena-jar-content"));
         }
     }
 
@@ -268,7 +292,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
         @Test
         void shouldDoNothingWhenStackHasNoDockerImage() throws Exception {
             // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.AthenaStack);
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.QueryStack);
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));
@@ -281,7 +305,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
         @Test
         void shouldCreateRepositoryAndPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
             // Given
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.AthenaStack, OptionalStack.IngestStack));
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.IngestStack));
 
             // When
             List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties));

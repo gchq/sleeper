@@ -36,8 +36,8 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -55,6 +55,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private final List<Field> allSchemaFields;
     private final Configuration conf;
     private final PartitionTree partitionTree;
+    private final SketchesStore sketchesStore;
     private ParquetWriter<Record> parquetWriter;
     private Sketches sketches;
     private String path;
@@ -64,13 +65,13 @@ public class SingleFileWritingIterator implements Iterator<Row> {
 
     public SingleFileWritingIterator(
             Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
-            Configuration conf, PartitionTree partitionTree) {
-        this(input, instanceProperties, tableProperties, conf, partitionTree, UUID.randomUUID().toString());
+            Configuration conf, SketchesStore sketchesStore, PartitionTree partitionTree) {
+        this(input, instanceProperties, tableProperties, conf, partitionTree, sketchesStore, UUID.randomUUID().toString());
     }
 
     public SingleFileWritingIterator(
             Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
-            Configuration conf, PartitionTree partitionTree, String outputFilename) {
+            Configuration conf, PartitionTree partitionTree, SketchesStore sketchesStore, String outputFilename) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
@@ -78,6 +79,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
         this.partitionTree = partitionTree;
+        this.sketchesStore = sketchesStore;
         this.outputFilename = outputFilename;
         LOGGER.info("Initialised SingleFileWritingIterator");
         LOGGER.info("Schema is {}", schema);
@@ -135,7 +137,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             return;
         }
         parquetWriter.close();
-        new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), sketches, conf);
+        sketchesStore.saveFileSketches(path, schema, sketches);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Finished writing {} records to file {} in {} (rate was {} per second)",
