@@ -47,7 +47,6 @@ public class HadoopSketchesStore implements SketchesStore {
             new SketchesSerDe(schema).serialise(sketches, dataOutputStream);
             LOGGER.info("Wrote sketches to {}", path);
         } catch (IOException e) {
-            LOGGER.error("Failure when trying to save file sketches.", sketches, e);
             throw new UncheckedIOException(e);
         }
     }
@@ -64,7 +63,6 @@ public class HadoopSketchesStore implements SketchesStore {
             LOGGER.info("Loaded sketches from {}", path);
             return sketches;
         } catch (IOException e) {
-            LOGGER.error("Failure when trying to load file sketches", filename, e);
             throw new UncheckedIOException(e);
         }
     }
