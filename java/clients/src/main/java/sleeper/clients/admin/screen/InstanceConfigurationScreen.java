@@ -24,6 +24,7 @@ import sleeper.clients.admin.properties.PropertyGroupSelectHelper;
 import sleeper.clients.admin.properties.PropertyGroupWithCategory;
 import sleeper.clients.admin.properties.UpdatePropertiesRequest;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ChooseOne;
@@ -48,12 +49,12 @@ public class InstanceConfigurationScreen {
     private final AdminClientPropertiesStore store;
     private final UpdatePropertiesWithTextEditor editor;
 
-    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithTextEditor editor) {
+    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithTextEditor editor, TableNamesReport tableNamesReport) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.selectGroup = new PropertyGroupSelectHelper(out, in);
-        this.selectTable = new TableSelectHelper(out, in, store);
+        this.selectTable = new TableSelectHelper(out, in, store, tableNamesReport);
         this.store = store;
         this.editor = editor;
     }

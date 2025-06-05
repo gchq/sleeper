@@ -20,6 +20,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.report.TableNamesReport;
 import sleeper.core.table.TableStatus;
 
 import java.util.stream.Stream;
@@ -34,6 +35,46 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.table.TableStatus.uniqueIdAndName;
 
 class TableNamesReportTest extends AdminClientMockStoreBase {
+
+    @Test
+    void shouldPrintNoConfirm() throws Exception {
+        // Given
+        setInstanceTables(createValidInstanceProperties(),
+                onlineTable("test-table-1-id", "test-table-1"),
+                onlineTable("test-table-2-id", "test-table-2"));
+        TableNamesReport report = new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex);
+
+        // When
+        report.print(false);
+        String output = out.toString();
+
+        // Then
+        assertThat(output).isEqualTo("\n\nTable Names\n" + "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n");
+    }
+
+    @Test
+    void shouldPrintWithConfirm() throws Exception {
+        // Given
+        setInstanceTables(createValidInstanceProperties(),
+                onlineTable("test-table-1-id", "test-table-1"),
+                onlineTable("test-table-2-id", "test-table-2"));
+        TableNamesReport report = new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex);
+
+        // When
+        in.enterNextPrompt(CONFIRM_PROMPT);
+        report.print(true);
+
+        // Then
+        String output = out.toString();
+        assertThat(output).isEqualTo("\n\nTable Names\n" + "----------------------------------\n" +
+                "test-table-1\n" +
+                "test-table-2\n" +
+                "\n\n" +
+                "----------------------------------\n" +
+                "Hit enter to return to main screen\n");
+    }
 
     @Test
     void shouldPrintTableNamesReportWhenChosen() throws Exception {

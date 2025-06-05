@@ -39,6 +39,8 @@ public class IngestRandomDataViaBatcher {
         String jsonRequest = new IngestBatcherSubmitRequestSerDe().toJson(
                 new IngestBatcherSubmitRequest(session.tableProperties().get(TABLE_NAME), List.of(dir)));
         LOGGER.debug("Sending message to ingest batcher queue {}: {}", queueUrl, jsonRequest);
-        session.sqs().sendMessage(queueUrl, jsonRequest);
+        session.sqs().sendMessage(send -> send
+                .queueUrl(queueUrl)
+                .messageBody(jsonRequest));
     }
 }
