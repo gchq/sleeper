@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher.submitterv2;
+package sleeper.ingest.batcher.submitter;
 
 public class FileNotFoundException extends RuntimeException {
 
