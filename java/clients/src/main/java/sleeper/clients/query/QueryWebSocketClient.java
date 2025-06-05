@@ -154,7 +154,7 @@ public class QueryWebSocketClient {
 
         private void initialiseConnection() throws InterruptedException {
             setAwsIamAuthHeaders();
-            LOGGER.info("Connecting to WebSocket API at " + serverUri);
+            LOGGER.info("Connecting to WebSocket API at {}", serverUri);
             connectBlocking();
         }
 
