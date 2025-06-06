@@ -59,6 +59,9 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -120,6 +123,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private String dataDir;
+    protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -170,6 +174,14 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                     record = reader.read();
                 }
                 assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+                assertThat(SketchesDeciles.fromFile(schema, fileReference, sketchesStore))
+                        .isEqualTo(SketchesDeciles.builder()
+                                .field("key", deciles -> deciles
+                                        .min(0).max(99)
+                                        .rank(0.1, 10).rank(0.2, 20).rank(0.3, 30)
+                                        .rank(0.4, 40).rank(0.5, 50).rank(0.6, 60)
+                                        .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
+                                .build());
             }
         }
         assertThat(readRecords).hasSameSizeAs(records);
