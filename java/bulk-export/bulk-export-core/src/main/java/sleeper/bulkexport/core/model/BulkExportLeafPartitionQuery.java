@@ -134,6 +134,12 @@ public class BulkExportLeafPartitionQuery {
         return provider.getById(getTableId());
     }
 
+    /**
+     * Gets the path to the output file for this export.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the output file
+     */
     public String getOutputFile(InstanceProperties instanceProperties) {
         String exportBucket = instanceProperties.get(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET);
         return String.format("s3a://%s/%s/%s/%s.parquet",
