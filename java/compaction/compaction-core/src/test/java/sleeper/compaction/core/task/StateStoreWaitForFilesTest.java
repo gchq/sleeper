@@ -15,8 +15,10 @@
  */
 package sleeper.compaction.core.task;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -169,8 +171,11 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
         update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
 
-        AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
-        throttlingException.setErrorCode("ThrottlingException");
+        AwsServiceException throttlingException = DynamoDbException.builder()
+                .awsErrorDetails(AwsErrorDetails.builder()
+                        .errorCode("ThrottlingException")
+                        .build())
+                .build();
         StateStoreException exception = new StateStoreException("Throttled", throttlingException);
         Iterator<StateStoreException> exceptions = List.of(exception, exception).iterator();
         filesLogStore.atStartOfReadTransactions(() -> {

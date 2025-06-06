@@ -21,6 +21,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.ThreadSleep;
+import sleeper.dynamodb.toolsv2.DynamoDBUtils;
 
 import java.time.Instant;
 import java.util.function.DoubleSupplier;
@@ -60,6 +61,7 @@ public class StateStoreWaitForFilesTestHelper {
             int attempts, DoubleSupplier jitter, PollWithRetries throttlingRetries) {
         return new StateStoreWaitForFiles(attempts,
                 new ExponentialBackoffWithJitter(StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE, jitter, waiter),
+                DynamoDBUtils.retryOnThrottlingException(),
                 throttlingRetries.toBuilder()
                         .sleepInInterval(waiter::waitForMillis)
                         .build(),

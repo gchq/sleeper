@@ -49,6 +49,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.dynamodb.toolsv2.DynamoDBUtils;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.statestorev2.StateStoreFactory;
@@ -108,7 +109,8 @@ public class ECSCompactionTaskRunner {
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
                     new S3SketchesStore(s3Client, s3TransferManager));
 
-            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
+            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(
+                    tablePropertiesProvider, stateStoreProvider, jobTracker, DynamoDBUtils.retryOnThrottlingException());
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobTracker, instanceProperties, sqsClient);

@@ -28,7 +28,7 @@ import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
-import sleeper.dynamodb.tools.DynamoDBUtils;
+import sleeper.core.util.RetryOnDynamoDbThrottling;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -45,6 +45,7 @@ public class StateStoreWaitForFiles {
 
     private final int jobAssignmentWaitAttempts;
     private final ExponentialBackoffWithJitter jobAssignmentWaitBackoff;
+    private final RetryOnDynamoDbThrottling retryOnThrottling;
     private final PollWithRetries throttlingRetriesConfig;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
@@ -54,14 +55,17 @@ public class StateStoreWaitForFiles {
     public StateStoreWaitForFiles(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            CompactionJobTracker jobTracker) {
+            CompactionJobTracker jobTracker,
+            RetryOnDynamoDbThrottling retryOnThrottling) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
-                JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider, jobTracker, Instant::now);
+                retryOnThrottling, JOB_ASSIGNMENT_THROTTLING_RETRIES,
+                tablePropertiesProvider, stateStoreProvider, jobTracker, Instant::now);
     }
 
     public StateStoreWaitForFiles(
             int jobAssignmentWaitAttempts,
             ExponentialBackoffWithJitter jobAssignmentWaitBackoff,
+            RetryOnDynamoDbThrottling retryOnThrottling,
             PollWithRetries throttlingRetriesConfig,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
@@ -69,6 +73,7 @@ public class StateStoreWaitForFiles {
             Supplier<Instant> timeSupplier) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
+        this.retryOnThrottling = retryOnThrottling;
         this.throttlingRetriesConfig = throttlingRetriesConfig;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -105,7 +110,7 @@ public class StateStoreWaitForFiles {
             String taskId, String jobRunId, Instant startTime) throws InterruptedException {
         ResultTracker result = new ResultTracker();
         try {
-            DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
+            retryOnThrottling.retryOnThrottlingException(throttlingRetries, () -> {
                 result.set(stateStore.isAssigned(List.of(job.createInputFileAssignmentsCheck())));
             });
         } catch (RuntimeException e) {
