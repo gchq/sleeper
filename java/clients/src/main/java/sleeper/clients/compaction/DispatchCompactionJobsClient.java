@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
-import sleeper.compaction.job.creationv2.AwsCompactionJobDispatcher;
+import sleeper.compaction.job.creation.AwsCompactionJobDispatcher;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactoryException;

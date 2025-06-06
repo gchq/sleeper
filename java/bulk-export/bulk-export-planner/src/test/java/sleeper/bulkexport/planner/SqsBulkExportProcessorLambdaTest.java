@@ -36,7 +36,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 public class SqsBulkExportProcessorLambdaTest {
 
     private SqsBulkExportProcessor sqsBulkExportProcessor = mock(SqsBulkExportProcessor.class);
-    private BulkExportQuerySerDe bulkExportQuerySerDe = new BulkExportQuerySerDe(); //mock(BulkExportQuerySerDe.class);
+    private BulkExportQuerySerDe bulkExportQuerySerDe = new BulkExportQuerySerDe();
 
     private SqsBulkExportProcessorLambda sqsBulkExportProcessorLambda;
     private InstanceProperties instanceProperties;

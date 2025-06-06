@@ -33,8 +33,8 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.SketchesStore;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -50,6 +50,7 @@ public class FileWritingIterator implements Iterator<Row> {
     private final Schema schema;
     private final List<Field> allSchemaFields;
     private final Configuration conf;
+    private final SketchesStore sketchesStore;
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final Supplier<String> outputFilenameSupplier;
@@ -63,19 +64,20 @@ public class FileWritingIterator implements Iterator<Row> {
 
     public FileWritingIterator(
             Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
-            Configuration conf) {
-        this(input, instanceProperties, tableProperties, conf, () -> UUID.randomUUID().toString());
+            Configuration conf, SketchesStore sketchesStore) {
+        this(input, instanceProperties, tableProperties, conf, sketchesStore, () -> UUID.randomUUID().toString());
     }
 
     public FileWritingIterator(
             Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
-            Configuration conf, Supplier<String> outputFilenameSupplier) {
+            Configuration conf, SketchesStore sketchesStore, Supplier<String> outputFilenameSupplier) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
+        this.sketchesStore = sketchesStore;
         this.outputFilenameSupplier = outputFilenameSupplier;
         LOGGER.info("Initialised FileWritingIterator");
         LOGGER.info("Schema is {}", schema);
@@ -152,7 +154,7 @@ public class FileWritingIterator implements Iterator<Row> {
             return;
         }
         parquetWriter.close();
-        new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), sketches, conf);
+        sketchesStore.saveFileSketches(path, schema, sketches);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Overall written {} records in {} (rate was {} per second)",

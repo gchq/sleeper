@@ -16,11 +16,6 @@
 
 package sleeper.systemtest.drivers.metrics;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -30,15 +25,18 @@ import software.amazon.awssdk.services.cloudwatch.model.Metric;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDataQuery;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDataResult;
 import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
-import sleeper.invoke.tables.InvokeForTables;
+import sleeper.invoke.tablesv2.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -70,7 +68,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
 
     private final SystemTestInstanceContext instance;
     private final ReportingContext reporting;
-    private final AmazonSQS sqs;
+    private final SqsClient sqsClient;
     private final CloudWatchClient cloudWatch;
 
     public AwsTableMetricsDriver(SystemTestInstanceContext instance,
@@ -78,14 +76,14 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             SystemTestClients clients) {
         this.instance = instance;
         this.reporting = reporting;
-        this.sqs = clients.getSqs();
+        this.sqsClient = clients.getSqs();
         this.cloudWatch = clients.getCloudWatch();
     }
 
     @Override
     public void generateTableMetrics() {
         String queueUrl = instance.getInstanceProperties().get(TABLE_METRICS_QUEUE_URL);
-        InvokeForTables.sendOneMessagePerTable(sqs, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
     }
 
     @Override
@@ -147,17 +145,13 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         String instanceId = args[0];
         String tableName = args[1];
         Instant startTime = Instant.parse(args[2]);
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         Dimensions dimensions;
-        try {
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient)
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
             dimensions = new Dimensions(instanceProperties, tableProperties);
-        } finally {
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
         try (CloudWatchClient cloudWatch = CloudWatchClient.create()) {
             LOGGER.info("Found metrics: {}", getTableMetrics(cloudWatch, startTime, dimensions));

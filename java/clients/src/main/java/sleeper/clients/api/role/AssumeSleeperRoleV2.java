@@ -28,16 +28,16 @@ import java.util.Map;
 public class AssumeSleeperRoleV2 {
     private final String region;
     private final String endpointUrl;
-    private final AwsCredentialsProvider provider;
+    private final AwsCredentialsProvider credentialsProvider;
 
     AssumeSleeperRoleV2(String region, String endpointUrl, AwsCredentialsProvider provider) {
         this.region = region;
         this.endpointUrl = endpointUrl;
-        this.provider = provider;
+        this.credentialsProvider = provider;
     }
 
     public <T, B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>> T buildClient(B builder) {
-        builder.credentialsProvider(provider).region(Region.of(region));
+        builder.credentialsProvider(credentialsProvider).region(Region.of(region));
         if (endpointUrl != null) {
             builder.endpointOverride(URI.create(endpointUrl));
         }
@@ -45,7 +45,7 @@ public class AssumeSleeperRoleV2 {
     }
 
     public S3AsyncClient buildClient(S3CrtAsyncClientBuilder builder) {
-        builder.credentialsProvider(provider).region(Region.of(region));
+        builder.credentialsProvider(credentialsProvider).region(Region.of(region));
         if (endpointUrl != null) {
             builder.endpointOverride(URI.create(endpointUrl));
         }
@@ -56,8 +56,12 @@ public class AssumeSleeperRoleV2 {
         return () -> Region.of(region);
     }
 
+    public AwsCredentialsProvider credentialsProvider() {
+        return credentialsProvider;
+    }
+
     public Map<String, String> authEnvVars() {
-        AwsSessionCredentials credentials = (AwsSessionCredentials) provider.resolveCredentials();
+        AwsSessionCredentials credentials = (AwsSessionCredentials) credentialsProvider.resolveCredentials();
         return Map.of(
                 "AWS_ACCESS_KEY_ID", credentials.accessKeyId(),
                 "AWS_SECRET_ACCESS_KEY", credentials.secretAccessKey(),

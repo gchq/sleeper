@@ -65,9 +65,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
-        this.s3 = clients.getS3V2();
-        this.dynamoDB = clients.getDynamoV2();
-        this.sts = clients.getStsV2();
+        this.s3 = clients.getS3();
+        this.dynamoDB = clients.getDynamo();
+        this.sts = clients.getSts();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
         this.ecr = clients.getEcr();

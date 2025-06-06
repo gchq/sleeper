@@ -15,8 +15,8 @@
  */
 package sleeper.ingest.batcher.submitter;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
@@ -27,10 +27,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 public class IngestBatcherSubmitDeadLetterQueue {
 
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
 
-    public IngestBatcherSubmitDeadLetterQueue(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    public IngestBatcherSubmitDeadLetterQueue(InstanceProperties instanceProperties, SqsClient sqsClient) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
     }
@@ -40,9 +40,10 @@ public class IngestBatcherSubmitDeadLetterQueue {
     }
 
     void submit(String json) {
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
-                .withMessageBody(json);
+        SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
+                .queueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
+                .messageBody(json)
+                .build();
         sqsClient.sendMessage(sendMessageRequest);
     }
 

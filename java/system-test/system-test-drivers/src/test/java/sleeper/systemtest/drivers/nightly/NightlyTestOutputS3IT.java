@@ -15,12 +15,14 @@
  */
 package sleeper.systemtest.drivers.nightly;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.io.CharStreams;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -119,22 +121,29 @@ class NightlyTestOutputS3IT extends LocalStackTestBase {
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                 NightlyTestTimestamp.from(startTime),
                 outputWithStatusCodeByTest(statusCodeByTest));
-        s3Client.putObject(bucketName, "summary.json", summary.toJson());
-        s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
+        s3ClientV2.putObject(
+                request -> request.bucket(bucketName).key("summary.json"),
+                RequestBody.fromString(summary.toJson()));
+        s3ClientV2.putObject(
+                request -> request.bucket(bucketName).key("summary.txt"),
+                RequestBody.fromString(summary.toTableString()));
     }
 
     private Stream<String> streamS3ObjectKeys() {
-        return s3Client.listObjects(bucketName).getObjectSummaries()
-                .stream().map(S3ObjectSummary::getKey);
+        return s3ClientV2.listObjectsV2(request -> request.bucket(bucketName))
+                .contents().stream().map(S3Object::key);
     }
 
     private Stream<Tuple> streamS3Objects() {
         return streamS3ObjectKeys().map(key -> tuple(key,
-                s3Client.getObjectAsString(bucketName, key)));
+                s3ClientV2.getObject(
+                        request -> request.bucket(bucketName).key(key),
+                        ResponseTransformer.toBytes())
+                        .asUtf8String()));
     }
 
     private void uploadFromTempDir(Instant startTime) throws Exception {
-        NightlyTestOutput.from(tempDir).uploadToS3(s3Client, bucketName, NightlyTestTimestamp.from(startTime));
+        NightlyTestOutput.from(tempDir).uploadToS3(s3ClientV2, bucketName, NightlyTestTimestamp.from(startTime));
     }
 
     public static String example(String path) throws IOException {

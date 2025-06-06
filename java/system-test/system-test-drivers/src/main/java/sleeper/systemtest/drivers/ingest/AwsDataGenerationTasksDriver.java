@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.ecs.model.Task;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -44,7 +44,7 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = clients.getEcs();
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
     }
 
     @Override

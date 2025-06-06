@@ -19,13 +19,13 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.util.SplitIntoBatches;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configurationv2.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
 
 import java.util.List;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class SystemTestDataGenerationJobSender {
     private final SystemTestPropertyValues properties;

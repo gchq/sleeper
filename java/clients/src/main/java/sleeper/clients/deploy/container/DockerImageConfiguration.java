@@ -106,12 +106,19 @@ public class DockerImageConfiguration {
     }
 
     private Stream<StackDockerImage> lambdaImages(LambdaDeployType lambdaDeployType, Predicate<LambdaHandler> checkUploadLambda) {
-        if (lambdaDeployType != LambdaDeployType.CONTAINER) {
-            return Stream.empty();
-        }
-        return lambdaHandlers.stream().filter(checkUploadLambda)
+        return dockerLambdaHandlers(lambdaDeployType)
+                .filter(checkUploadLambda)
                 .map(LambdaHandler::getJar).distinct()
                 .map(StackDockerImage::lambdaImage);
+    }
+
+    private Stream<LambdaHandler> dockerLambdaHandlers(LambdaDeployType lambdaDeployType) {
+        if (lambdaDeployType == LambdaDeployType.CONTAINER) {
+            return lambdaHandlers.stream();
+        } else {
+            return lambdaHandlers.stream()
+                    .filter(LambdaHandler::isAlwaysDockerDeploy);
+        }
     }
 
     /**

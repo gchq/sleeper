@@ -16,9 +16,8 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
@@ -29,10 +28,15 @@ public class AwsSystemTestParameters {
 
     public static SystemTestParameters loadFromSystemProperties() {
         return SystemTestParameters.builder()
-                .account(AWSSecurityTokenServiceClientBuilder.defaultClient()
-                        .getCallerIdentity(new GetCallerIdentityRequest()).getAccount())
+                .account(getAccount())
                 .region(new DefaultAwsRegionProviderChain().getRegion().id())
                 .loadFromSystemProperties()
                 .build();
+    }
+
+    private static String getAccount() {
+        try (StsClient stsClient = StsClient.create()) {
+            return stsClient.getCallerIdentity().account();
+        }
     }
 }
