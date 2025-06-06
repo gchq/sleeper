@@ -36,7 +36,6 @@ on:
       - 'java/statestorev2/**'
       - 'java/common/common-invoke-tablesv2/**'
       - 'java/configurationV2/**'
-      - 'java/common/dynamodb-tools/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
