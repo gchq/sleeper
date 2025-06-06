@@ -49,6 +49,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 
 public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -114,7 +115,7 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        StateStoreWaitForFiles waiter = waiter().withAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS);
+        StateStoreWaitForFiles waiter = waiter().withAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS, fixJitterSeed());
         assertThatThrownBy(() -> waiter.wait(job, "test-task", "test-job-run"))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(

@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
 import static sleeper.core.util.RetryOnDynamoDbThrottlingTestHelper.noRetriesOnThrottling;
 import static sleeper.core.util.RetryOnDynamoDbThrottlingTestHelper.retryOnThrottlingException;
@@ -51,7 +52,7 @@ public class StateStoreWaitForFilesTestHelper {
     }
 
     public StateStoreWaitForFiles withAttempts(int attempts) {
-        return withAttempts(attempts, noJitter());
+        return withAttempts(attempts, constantJitterFraction(0.5));
     }
 
     public StateStoreWaitForFiles withAttempts(
