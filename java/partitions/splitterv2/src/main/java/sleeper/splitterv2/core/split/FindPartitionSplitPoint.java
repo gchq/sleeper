@@ -27,6 +27,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.store.SketchesStore;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -41,11 +42,13 @@ public class FindPartitionSplitPoint {
     private final Schema schema;
     private final List<String> fileNames;
     private final SketchesStore sketchesStore;
+    private static List<Sketches> sketches;
 
     public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
         this.schema = schema;
         this.fileNames = fileNames;
         this.sketchesStore = sketchesStore;
+        sketches = loadSketches();
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
@@ -81,11 +84,19 @@ public class FindPartitionSplitPoint {
 
     private <T> ItemsSketch<T> unionSketches(Field field) {
         ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
-        for (String fileName : fileNames) {
-            LOGGER.info("Loading sketches for file {}", fileName);
-            Sketches sketches = sketchesStore.loadFileSketches(fileName, schema);
-            union.update(sketches.getQuantilesSketch(field.getName()));
+        for (Sketches sketch : sketches) {
+            union.update(sketch.getQuantilesSketch(field.getName()));
         }
         return union.getResult();
     }
+
+    private List<Sketches> loadSketches() {
+        List<Sketches> sketches = new ArrayList<>();
+        for (String fileName : fileNames) {
+            LOGGER.info("Loading sketches for file {}", fileName);
+            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
+        }
+        return sketches;
+    }
+
 }
