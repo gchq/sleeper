@@ -92,7 +92,7 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", ContainerCredentialsProvider.class.getSimpleName());
+            conf.set("fs.s3a.aws.credentials.provider", ContainerCredentialsProvider.class.getName());
         }
         // See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise
         // Some quick experiments showed that the following setting increases the number of records processed per second
