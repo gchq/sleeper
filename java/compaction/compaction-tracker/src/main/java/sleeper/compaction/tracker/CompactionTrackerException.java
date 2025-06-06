@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2;
+package sleeper.compaction.tracker;
 
 public class CompactionTrackerException extends RuntimeException {
 

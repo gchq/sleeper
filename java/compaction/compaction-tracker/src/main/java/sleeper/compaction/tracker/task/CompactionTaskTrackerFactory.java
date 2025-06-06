@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.trackerv2.task;
+package sleeper.compaction.tracker.task;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
