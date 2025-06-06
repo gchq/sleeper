@@ -22,6 +22,7 @@ on:
       - 'java/system-test/system-test-drivers/**'
       - 'java/system-test/system-test-suite/**'
       - 'java/bulk-import/bulk-import-starterv2/**'
+      - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-tracker/**'
       - 'java/ingest/ingest-trackerV2/**'
       - 'java/statestorev2/**'
