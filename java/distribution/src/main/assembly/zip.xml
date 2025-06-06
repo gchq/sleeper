@@ -159,7 +159,7 @@
             <destName>lambda-splitter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../query/query-lambda/target/query-lambda-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../query/query-lambdav2/target/query-lambdav2-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>query-${project.version}.jar</destName>
         </file>
@@ -203,7 +203,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-import/bulk-import-starter/target/bulk-import-starter-${project.version}-utility.jar
+                ${project.basedir}/../bulk-import/bulk-import-starterv2/target/bulk-import-starterv2-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>bulk-import-starter-${project.version}.jar</destName>
