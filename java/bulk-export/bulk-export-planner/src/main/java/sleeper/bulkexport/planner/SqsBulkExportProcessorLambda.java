@@ -32,6 +32,7 @@ import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.Optional;
 
@@ -72,10 +73,9 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
                 S3InstanceProperties.loadFromBucket(s3Client, configBucket), s3Client, dynamoClient);
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .build();
     }
 
@@ -85,10 +85,9 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .build();
     }
 
