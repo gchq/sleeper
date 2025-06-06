@@ -220,7 +220,7 @@ impl AggregateUDFImpl for NonNullable {
     ) -> Result<Box<dyn GroupsAccumulator>> {
         self.inner
             .create_groups_accumulator(args)
-            .map(|acc| Box::new(NonNullableGroupAccumulator(acc)) as Box<dyn GroupsAccumulator>)
+            .map(|acc| Box::new(NonNullableGroupsAccumulator(acc)) as Box<dyn GroupsAccumulator>)
     }
 
     fn aliases(&self) -> &[String] {
@@ -353,9 +353,9 @@ impl Accumulator for NonNullableAccumulator {
 
 /// Wraps the accumulation function with an [`Accumulator`] that checks the incoming
 /// arrays for nulls.
-struct NonNullableGroupAccumulator(Box<dyn GroupsAccumulator>);
+struct NonNullableGroupsAccumulator(Box<dyn GroupsAccumulator>);
 
-impl GroupsAccumulator for NonNullableGroupAccumulator {
+impl GroupsAccumulator for NonNullableGroupsAccumulator {
     /// Performs a null check on the array.
     ///
     /// # Errors
@@ -421,8 +421,8 @@ mod tests {
         assert_error,
         datafusion::functions::nonnull::{
             NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable,
-            NonNullableAccumulator, non_null_max, non_null_min, non_null_sum, non_nullable,
-            nullable_check, register_non_nullables,
+            NonNullableAccumulator, NonNullableGroupsAccumulator, non_null_max, non_null_min,
+            non_null_sum, non_nullable, nullable_check, register_non_nullables,
         },
     };
     use arrow::{
@@ -1176,6 +1176,8 @@ mod tests {
         assert_eq!(SetMonotonicity::NotMonotonic, monotonicity);
     }
 
+    // NonNullableAccumulator tests
+
     #[test]
     fn accumulator_should_call_update_batch_success() {
         // Given
@@ -1267,23 +1269,6 @@ mod tests {
     }
 
     #[test]
-    fn accumulator_should_call_supports_merge_batch() {
-        // Given
-        let mut mock_acc = MockUDFAcc::new();
-        mock_acc
-            .expect_supports_retract_batch()
-            .once()
-            .return_const(true);
-        let acc = NonNullableAccumulator(Box::new(mock_acc));
-
-        // When
-        let result = acc.supports_retract_batch();
-
-        // Then
-        assert!(result);
-    }
-
-    #[test]
     fn accumulator_should_call_retract_batch_success() {
         // Given
         let mut mock_acc = MockUDFAcc::new();
@@ -1316,5 +1301,171 @@ mod tests {
 
         // Then
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn accumulator_should_call_supports_merge_batch_return_true() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc
+            .expect_supports_retract_batch()
+            .once()
+            .return_const(true);
+        let acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let result = acc.supports_retract_batch();
+
+        // Then
+        assert!(result);
+    }
+
+    // NonNullableGroupsAccumulator tests
+
+    #[test]
+    fn groups_accumulator_should_call_update_batch_success() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc
+            .expect_update_batch()
+            .once()
+            .return_once(|_, _, _, _| Ok(()));
+        let mut group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let result = group_acc.update_batch(&[], &[], None, 1);
+
+        // Then
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn groups_accumulator_should_fail_on_nullable_entry_update_batch() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc.expect_update_batch().never();
+        let mut group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+        let mut builder = Int64Builder::new();
+        builder.append_value(1);
+        builder.append_null();
+        let array = builder.finish();
+
+        // When
+        let result = group_acc.update_batch(&[Arc::new(array)], &[], None, 1);
+
+        // Then
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn groups_accumulator_should_call_evaluate() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc
+            .expect_evaluate()
+            .once()
+            .return_once(|_| Ok(Arc::new(Int64Builder::new().finish())));
+        let mut group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let _ = group_acc.evaluate(EmitTo::All);
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn groups_accumulator_should_call_state() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc
+            .expect_state()
+            .once()
+            .return_once(|_| Ok(vec![]));
+        let mut group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let _ = group_acc.state(EmitTo::All);
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn groups_accumulator_should_call_merge_batch() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc
+            .expect_merge_batch()
+            .once()
+            .return_once(|_, _, _, _| Ok(()));
+        let mut group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let _ = group_acc.merge_batch(&[], &[], None, 1);
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn groups_accumulator_should_call_size() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc.expect_size().once().return_const(32usize);
+        let group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let _ = group_acc.size();
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn groups_accumulator_should_call_convert_to_state_success() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc
+            .expect_convert_to_state()
+            .once()
+            .return_once(|_, _| Ok(vec![]));
+        let group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let result = group_acc.convert_to_state(&[], None);
+
+        // Then
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn groups_accumulator_should_fail_on_nullable_entry_convert_to_state() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc.expect_convert_to_state().never();
+        let group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+        let mut builder = Int64Builder::new();
+        builder.append_value(1);
+        builder.append_null();
+        let array = builder.finish();
+
+        // When
+        let result = group_acc.convert_to_state(&[Arc::new(array)], None);
+
+        // Then
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn groups_accumulator_should_call_supports_convert_to_state_return_true() {
+        // Given
+        let mut mock_group_acc = MockUDFGroupAcc::new();
+        mock_group_acc
+            .expect_supports_convert_to_state()
+            .once()
+            .return_const(true);
+        let group_acc = NonNullableGroupsAccumulator(Box::new(mock_group_acc));
+
+        // When
+        let result = group_acc.supports_convert_to_state();
+        // Then
+        assert!(result);
     }
 }
