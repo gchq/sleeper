@@ -426,7 +426,7 @@ mod tests {
         },
     };
     use arrow::{
-        array::{BooleanArray, Int64Builder},
+        array::{ArrayRef, BooleanArray, Int64Builder},
         datatypes::{DataType, Field, Schema},
     };
     use datafusion::{
@@ -522,6 +522,8 @@ mod tests {
                 &mut self,
                 states: &[Arc<dyn Array>],
             ) -> Result<(), DataFusionError>;
+            fn retract_batch(&mut self, values: &[ArrayRef]) -> Result<()>;
+            fn supports_retract_batch(&self) -> bool;
         }
     }
 
@@ -553,6 +555,12 @@ mod tests {
                 total_num_groups: usize,
             ) -> Result<(), DataFusionError>;
             fn size(&self) -> usize;
+            fn convert_to_state<'a>(
+                &self,
+                values: &[ArrayRef],
+                opt_filter: Option<&'a BooleanArray>,
+            ) -> Result<Vec<ArrayRef>>;
+            fn supports_convert_to_state(&self) -> bool;
         }
     }
 
@@ -736,7 +744,7 @@ mod tests {
 
         // Then
         any.downcast_ref::<NonNullable>()
-            .expect("Should downcast to NonNullable");
+            .expect("couldn't downcast to NonNullable");
     }
 
     #[test]
@@ -789,7 +797,10 @@ mod tests {
         let ret = nonnull.return_type(&[]);
 
         // Then
-        assert_eq!(DataType::Int64, ret.expect("Couldn't unwrap return type"));
+        assert_eq!(
+            DataType::Int64,
+            ret.expect("Couldn't unwrap return_type result")
+        );
     }
 
     #[test]
@@ -816,7 +827,7 @@ mod tests {
                 is_distinct: false,
                 exprs: &[],
             })
-            .expect("No accumulator instance");
+            .expect("No Accumulator instance");
 
         // Then - shouldn't fail
     }
@@ -856,7 +867,7 @@ mod tests {
                 ordering_fields: &[],
                 is_distinct: false,
             })
-            .expect("Couldn't unwrap");
+            .expect("Couldn't unwrap state_fields result");
 
         // Then
         assert_eq!(Vec::<Field>::new(), states);
@@ -916,7 +927,7 @@ mod tests {
                 is_distinct: false,
                 exprs: &[],
             })
-            .expect("No group accumulator instance");
+            .expect("No GroupsAccumulator instance");
 
         // Then - shouldn't fail
     }
@@ -979,7 +990,7 @@ mod tests {
         // When
         let ordering = nonnull
             .with_beneficial_ordering(false)
-            .expect("couldn't unwrap ordering result");
+            .expect("couldn't unwrap beneficial_ordering result");
 
         // Then
         assert_eq!(None, ordering);
@@ -1166,7 +1177,7 @@ mod tests {
     }
 
     #[test]
-    fn accumulator_should_call_update() {
+    fn accumulator_should_call_update_batch_success() {
         // Given
         let mut mock_acc = MockUDFAcc::new();
         mock_acc
@@ -1176,13 +1187,14 @@ mod tests {
         let mut acc = NonNullableAccumulator(Box::new(mock_acc));
 
         // When
-        let _ = acc.update_batch(&[]);
+        let result = acc.update_batch(&[]);
 
-        // Then - mock check
+        // Then
+        assert!(result.is_ok());
     }
 
     #[test]
-    fn accumulator_should_fail_on_nullable_entry() {
+    fn accumulator_should_fail_on_nullable_entry_update_batch() {
         // Given
         let mut mock_acc = MockUDFAcc::new();
         mock_acc.expect_update_batch().never();
@@ -1194,6 +1206,113 @@ mod tests {
 
         // When
         let result = acc.update_batch(&[Arc::new(array)]);
+
+        // Then
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn accumulator_should_call_evaluate() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc
+            .expect_evaluate()
+            .once()
+            .return_once(|| Ok(ScalarValue::Null));
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let _ = acc.evaluate();
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn accumulator_should_call_size() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc.expect_size().once().return_const(32usize);
+        let acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let _ = acc.size();
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn accumulator_should_call_state() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc.expect_state().once().return_once(|| Ok(vec![]));
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let _ = acc.state();
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn accumulator_should_call_merge_batch() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc.expect_merge_batch().once().return_once(|_| Ok(()));
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let _ = acc.merge_batch(&[]);
+
+        // Then - mock should report one call
+    }
+
+    #[test]
+    fn accumulator_should_call_supports_merge_batch() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc
+            .expect_supports_retract_batch()
+            .once()
+            .return_const(true);
+        let acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let result = acc.supports_retract_batch();
+
+        // Then
+        assert!(result);
+    }
+
+    #[test]
+    fn accumulator_should_call_retract_batch_success() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc
+            .expect_retract_batch()
+            .once()
+            .return_once(|_| Ok(()));
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+
+        // When
+        let result = acc.retract_batch(&[]);
+
+        // Then
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn accumulator_should_fail_on_nullable_entry_retract_batch() {
+        // Given
+        let mut mock_acc = MockUDFAcc::new();
+        mock_acc.expect_retract_batch().never();
+        let mut acc = NonNullableAccumulator(Box::new(mock_acc));
+        let mut builder = Int64Builder::new();
+        builder.append_value(1);
+        builder.append_null();
+        let array = builder.finish();
+
+        // When
+        let result = acc.retract_batch(&[Arc::new(array)]);
 
         // Then
         assert!(result.is_err());
