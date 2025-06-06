@@ -22,6 +22,14 @@ package sleeper.core.util;
 @FunctionalInterface
 public interface RetryOnDynamoDbThrottling {
 
+    /**
+     * Retries a given operation with wait time between retries, if it results in a throttling exception from the
+     * DynamoDB API.
+     *
+     * @param  pollWithRetries      the settings for retries and waits
+     * @param  runnable             the operation to retry
+     * @throws InterruptedException if the thread is interrupted during the retries
+     */
     void retryOnThrottlingException(PollWithRetries pollWithRetries, Runnable runnable) throws InterruptedException;
 
 }

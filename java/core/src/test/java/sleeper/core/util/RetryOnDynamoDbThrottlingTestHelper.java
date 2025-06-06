@@ -15,15 +15,30 @@
  */
 package sleeper.core.util;
 
+/**
+ * Helpers to create fake implementations of RetryOnDynamoDbThrottling for tests.
+ */
 public class RetryOnDynamoDbThrottlingTestHelper {
 
     private RetryOnDynamoDbThrottlingTestHelper() {
     }
 
+    /**
+     * Creates an instance of RetryOnDynamoDbThrottling that will never retry.
+     *
+     * @return the object
+     */
     public static RetryOnDynamoDbThrottling noRetriesOnThrottling() {
         return (poll, runnable) -> runnable.run();
     }
 
+    /**
+     * Creates an instance of RetryOnDynamoDbThrottling that will retry if a particular exception is thrown. This
+     * includes if an exception is thrown which was the cause of the given exception.
+     *
+     * @param  throttlingException the exception to treat as a throttling exception
+     * @return                     the object
+     */
     public static RetryOnDynamoDbThrottling retryOnThrottlingException(RuntimeException throttlingException) {
         return (poll, runnable) -> {
             poll.pollUntil("no throttling exception", () -> {
