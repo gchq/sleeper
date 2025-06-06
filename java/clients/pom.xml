@@ -98,12 +98,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-job-creationv2</artifactId>
+            <artifactId>compaction-job-creation</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-trackerV2</artifactId>
+            <artifactId>compaction-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
