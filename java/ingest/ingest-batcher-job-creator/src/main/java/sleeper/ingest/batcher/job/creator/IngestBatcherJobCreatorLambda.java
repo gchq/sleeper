@@ -28,7 +28,7 @@ import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.core.IngestBatcher;
-import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.time.Instant;
 import java.util.UUID;

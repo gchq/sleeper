@@ -15,11 +15,11 @@
  */
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
@@ -29,8 +29,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper.onJob;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;
 
@@ -340,7 +340,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.addFile(fileIngestRequest);
 
             // Then
-            assertThat(streamPagedItems(dynamoClient, new ScanRequest().withTableName(requestsTableName)))
+            assertThat(streamPagedItems(dynamoClientV2, ScanRequest.builder()
+                    .tableName(requestsTableName)
+                    .build()))
                     .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
                     .containsExactly(expectedExpiryTime.getEpochSecond());
         }
@@ -359,7 +361,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // Then
-            assertThat(streamPagedItems(dynamoClient, new ScanRequest().withTableName(requestsTableName)))
+            assertThat(streamPagedItems(dynamoClientV2, ScanRequest.builder()
+                    .tableName(requestsTableName)
+                    .build()))
                     .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
                     .containsExactly(expectedExpiryTime.getEpochSecond());
         }

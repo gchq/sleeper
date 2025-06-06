@@ -32,7 +32,7 @@ on:
       - 'java/statestore/**'
       - 'java/statestorev2/**'
       - 'java/metrics/**'
-      - 'java/compaction/compaction-trackerV2/**'
+      - 'java/compaction/compaction-tracker/**'
       - 'java/compaction/compaction-core/**'
       - 'java/ingest/ingest-trackerV2/**'
       - 'java/ingest/ingest-core/**'

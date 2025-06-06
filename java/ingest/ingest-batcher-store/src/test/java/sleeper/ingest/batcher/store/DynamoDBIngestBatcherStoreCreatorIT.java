@@ -16,8 +16,9 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -33,10 +34,12 @@ public class DynamoDBIngestBatcherStoreCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
 
         // Then
-        assertThat(dynamoClient.describeTable(tableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(tableName)
+                .build()))
+                .extracting(DescribeTableResponse::table).isNotNull();
     }
 }

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2;
+package sleeper.ingest.batcher.submitter;
 
-public class CompactionTrackerException extends RuntimeException {
+public class FileNotFoundException extends RuntimeException {
 
-    public CompactionTrackerException(String message, Throwable cause) {
-        super(message, cause);
+    public FileNotFoundException(String bucket, String path) {
+        super("Found no files at path " + bucket + "/" + path);
     }
+
 }
