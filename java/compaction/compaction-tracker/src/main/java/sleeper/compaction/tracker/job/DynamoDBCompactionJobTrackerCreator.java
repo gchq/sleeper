@@ -15,14 +15,15 @@
  */
 package sleeper.compaction.tracker.job;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -34,8 +35,8 @@ import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.jobLoo
 import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.jobUpdatesTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
-import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
-import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionJobTrackerCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobTrackerCreator.class);
@@ -43,37 +44,39 @@ public class DynamoDBCompactionJobTrackerCreator {
     private DynamoDBCompactionJobTrackerCreator() {
     }
 
-    public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
+    public static void create(InstanceProperties properties, DynamoDbClient dynamoDB) {
         if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String updatesTableName = jobUpdatesTableName(properties.get(ID));
         String jobsTableName = jobLookupTableName(properties.get(ID));
-        initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
-                .withTableName(updatesTableName)
-                .withAttributeDefinitions(
-                        new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(JOB_ID_AND_UPDATE, ScalarAttributeType.S))
-                .withKeySchema(
-                        new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                        new KeySchemaElement(JOB_ID_AND_UPDATE, KeyType.RANGE)));
-        initialiseTable(dynamoDB, properties.getTags(), new CreateTableRequest()
-                .withTableName(jobsTableName)
-                .withAttributeDefinitions(new AttributeDefinition(JOB_ID, ScalarAttributeType.S))
-                .withKeySchema(new KeySchemaElement(JOB_ID, KeyType.HASH)));
+        initialiseTable(dynamoDB, properties.getTags(), CreateTableRequest.builder()
+                .tableName(updatesTableName)
+                .attributeDefinitions(
+                        AttributeDefinition.builder().attributeName(TABLE_ID).attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName(JOB_ID_AND_UPDATE).attributeType(ScalarAttributeType.S).build())
+                .keySchema(
+                        KeySchemaElement.builder().attributeName(TABLE_ID).keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName(JOB_ID_AND_UPDATE).keyType(KeyType.RANGE).build())
+                .build());
+        initialiseTable(dynamoDB, properties.getTags(), CreateTableRequest.builder()
+                .tableName(jobsTableName)
+                .attributeDefinitions(AttributeDefinition.builder().attributeName(JOB_ID).attributeType(ScalarAttributeType.S).build())
+                .keySchema(KeySchemaElement.builder().attributeName(JOB_ID).keyType(KeyType.HASH).build())
+                .build());
         configureTimeToLive(dynamoDB, updatesTableName, EXPIRY_DATE);
         configureTimeToLive(dynamoDB, jobsTableName, EXPIRY_DATE);
     }
 
-    public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
+    public static void tearDown(InstanceProperties properties, DynamoDbClient dynamoDBClient) {
         if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String jobsTableName = jobLookupTableName(properties.get(ID));
         String updatesTableName = jobUpdatesTableName(properties.get(ID));
         LOGGER.info("Deleting table: {}", jobsTableName);
-        dynamoDBClient.deleteTable(jobsTableName);
+        dynamoDBClient.deleteTable(DeleteTableRequest.builder().tableName(jobsTableName).build());
         LOGGER.info("Deleting table: {}", updatesTableName);
-        dynamoDBClient.deleteTable(updatesTableName);
+        dynamoDBClient.deleteTable(DeleteTableRequest.builder().tableName(updatesTableName).build());
     }
 }

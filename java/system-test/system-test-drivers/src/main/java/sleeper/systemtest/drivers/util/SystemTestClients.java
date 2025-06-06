@@ -17,6 +17,8 @@
 package sleeper.systemtest.drivers.util;
 
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -53,6 +55,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
+    private final AwsCredentialsProvider credentialsProvider;
     private final AwsRegionProvider regionProvider;
     private final S3Client s3;
     private final S3AsyncClient s3Async;
@@ -76,6 +79,7 @@ public class SystemTestClients {
     private final boolean skipAssumeRole;
 
     private SystemTestClients(Builder builder) {
+        credentialsProvider = builder.credentialsProvider;
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
         s3Async = builder.s3Async;
@@ -105,6 +109,7 @@ public class SystemTestClients {
 
     public static SystemTestClients fromDefaults() {
         return builder()
+                .credentialsProvider(DefaultCredentialsProvider.create())
                 .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
@@ -132,6 +137,7 @@ public class SystemTestClients {
         AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
+                .credentialsProvider(v2.credentialsProvider())
                 .regionProvider(regionProvider)
                 .s3(v2.buildClient(S3Client.builder()))
                 .s3Async(v2.buildClient(S3AsyncClient.crtBuilder()))
@@ -154,6 +160,14 @@ public class SystemTestClients {
                 .build();
     }
 
+    public AwsCredentialsProvider getCredentialsProvider() {
+        return credentialsProvider;
+    }
+
+    public AwsRegionProvider getRegionProvider() {
+        return regionProvider;
+    }
+
     public S3Client getS3() {
         return s3;
     }
@@ -172,10 +186,6 @@ public class SystemTestClients {
 
     public StsClient getSts() {
         return sts;
-    }
-
-    public AwsRegionProvider getRegionProvider() {
-        return regionProvider;
     }
 
     public SqsClient getSqs() {
@@ -248,6 +258,7 @@ public class SystemTestClients {
     }
 
     public static class Builder {
+        private AwsCredentialsProvider credentialsProvider;
         private AwsRegionProvider regionProvider;
         private S3Client s3;
         private S3AsyncClient s3Async;
@@ -271,6 +282,11 @@ public class SystemTestClients {
         private boolean skipAssumeRole = false;
 
         private Builder() {
+        }
+
+        public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
+            this.credentialsProvider = credentialsProvider;
+            return this;
         }
 
         public Builder regionProvider(AwsRegionProvider regionProvider) {

@@ -193,7 +193,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public QueryAllTablesDriver queryByWebSocket(SystemTestContext context) {
-        return WebSocketQueryDriver.allTablesDriver(context.instance());
+        return WebSocketQueryDriver.allTablesDriver(context.instance(), clients);
     }
 
     @Override
