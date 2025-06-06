@@ -271,7 +271,7 @@ Reload4j (ch.qos.reload4j:reload4j:1.*)
 
 - Apache License, Version 2.0
 
-Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.*)
+Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.*, org.bouncycastle:bcutil-jdk18on:1.*, org.bouncycastle:bcprov-jdk18on:1.*)
 
 - Bouncy Castle License
 
