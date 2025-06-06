@@ -26,7 +26,7 @@ on:
       - 'java/compaction/compaction-tracker/**'
       - 'java/ingest/ingest-trackerV2/**'
       - 'java/statestorev2/**'
-      - 'java/ingest/ingest-batcher-storev2/**'
+      - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-taskv2/**'
       - 'java/query/query-runnerv2/**'
       - 'java/configurationV2/**'

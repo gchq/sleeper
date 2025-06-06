@@ -16,20 +16,20 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Duration;
 import java.util.Map;
 
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBIngestRequestFormat {
     private DynamoDBIngestRequestFormat() {

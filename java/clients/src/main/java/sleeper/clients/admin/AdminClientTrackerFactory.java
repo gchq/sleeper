@@ -26,7 +26,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.batcher.storev2.IngestBatcherStoreFactory;
+import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 
