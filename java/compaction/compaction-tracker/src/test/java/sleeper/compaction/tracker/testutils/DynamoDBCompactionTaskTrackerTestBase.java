@@ -18,6 +18,7 @@ package sleeper.compaction.tracker.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker;
@@ -46,21 +47,21 @@ public class DynamoDBCompactionTaskTrackerTestBase extends LocalStackTestBase {
             .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    protected final CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoClient.deleteTable(taskStatusTableName);
+        dynamoClientV2.deleteTable(DeleteTableRequest.builder().tableName(taskStatusTableName).build());
     }
 
     protected CompactionTaskTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBCompactionTaskTracker(dynamoClient, instanceProperties,
+        return new DynamoDBCompactionTaskTracker(dynamoClientV2, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

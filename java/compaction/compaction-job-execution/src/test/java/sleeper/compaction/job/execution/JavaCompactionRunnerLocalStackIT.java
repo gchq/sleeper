@@ -27,7 +27,7 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
-import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;

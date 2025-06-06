@@ -18,6 +18,7 @@ package sleeper.compaction.tracker.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -77,16 +78,16 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoClient.deleteTable(jobStatusTableName);
+        dynamoClientV2.deleteTable(DeleteTableRequest.builder().tableName(jobStatusTableName).build());
     }
 
     protected CompactionJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
@@ -99,7 +100,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
     }
 
     protected CompactionJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
-        return new DynamoDBCompactionJobTracker(dynamoClient, instanceProperties,
+        return new DynamoDBCompactionJobTracker(dynamoClientV2, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
 

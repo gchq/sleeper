@@ -17,8 +17,8 @@ package sleeper.clients.admin;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
-import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -26,7 +26,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.batcher.storev2.IngestBatcherStoreFactory;
+import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
 
