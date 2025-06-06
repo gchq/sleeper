@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.creationv2;
+package sleeper.compaction.job.creation;
 
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;

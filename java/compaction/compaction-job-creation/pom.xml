@@ -23,7 +23,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>compaction-job-creationv2</artifactId>
+    <artifactId>compaction-job-creation</artifactId>
 
     <dependencies>
         <dependency>
