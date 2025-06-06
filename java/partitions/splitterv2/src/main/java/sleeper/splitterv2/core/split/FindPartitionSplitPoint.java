@@ -42,13 +42,13 @@ public class FindPartitionSplitPoint {
     private final Schema schema;
     private final List<String> fileNames;
     private final SketchesStore sketchesStore;
-    private static List<Sketches> sketches;
+    private final List<Sketches> sketches;
 
     public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
         this.schema = schema;
         this.fileNames = fileNames;
         this.sketchesStore = sketchesStore;
-        sketches = loadSketches();
+        this.sketches = loadSketches();
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
