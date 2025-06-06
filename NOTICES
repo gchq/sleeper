@@ -69,14 +69,6 @@ Apache Kerby (org.apache.kerby:*:2.*)
 
 - Apache License, Version 2.0
 
-XNIO (org.jboss.xnio:xnio-api:3.*)
-
-- Apache License, Version 2.0
-
-JBoss Logging (org.jboss.logging:jboss-logging:3.*)
-
-- Apache License, Version 2.0
-
 dnsjava (dnsjava:dnsjava:3.*)
 
 - The 3-Clause BSD License
