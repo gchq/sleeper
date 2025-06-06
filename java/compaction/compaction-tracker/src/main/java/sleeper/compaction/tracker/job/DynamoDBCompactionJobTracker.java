@@ -15,17 +15,17 @@
  */
 package sleeper.compaction.tracker.job;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 import sleeper.compaction.tracker.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -37,7 +37,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.util.LoggedDuration;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -55,10 +55,10 @@ import static sleeper.compaction.tracker.job.DynamoDBCompactionJobStatusFormat.c
 import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobTracker.class);
@@ -70,19 +70,19 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
     private static final String JOB_LAST_UPDATE_TIME = "LastUpdateTime";
     private static final String JOB_LAST_UPDATE_TYPE = "LastUpdateType";
 
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final String updatesTableName;
     private final String jobsTableName;
     private final int timeToLiveInSeconds;
     private final boolean stronglyConsistentReads;
     private final Supplier<Instant> getTimeNow;
 
-    private DynamoDBCompactionJobTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads) {
+    private DynamoDBCompactionJobTracker(DynamoDbClient dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads) {
         this(dynamoDB, properties, stronglyConsistentReads, Instant::now);
     }
 
     public DynamoDBCompactionJobTracker(
-            AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads, Supplier<Instant> getTimeNow) {
+            DynamoDbClient dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.updatesTableName = jobUpdatesTableName(properties.get(ID));
         this.jobsTableName = jobLookupTableName(properties.get(ID));
@@ -92,12 +92,12 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
     }
 
     public static DynamoDBCompactionJobTracker stronglyConsistentReads(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+            DynamoDbClient dynamoDB, InstanceProperties instanceProperties) {
         return new DynamoDBCompactionJobTracker(dynamoDB, instanceProperties, true);
     }
 
     public static DynamoDBCompactionJobTracker eventuallyConsistentReads(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+            DynamoDbClient dynamoDB, InstanceProperties instanceProperties) {
         return new DynamoDBCompactionJobTracker(dynamoDB, instanceProperties, false);
     }
 
@@ -161,42 +161,44 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
 
     private void addStatusUpdate(Map<String, AttributeValue> statusUpdate) {
         Instant startTime = Instant.now();
-        PutItemResult result = dynamoDB.putItem(new PutItemRequest()
-                .withTableName(updatesTableName)
-                .withItem(statusUpdate)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        PutItemResponse result = dynamoDB.putItem(PutItemRequest.builder()
+                .tableName(updatesTableName)
+                .item(statusUpdate)
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .build());
         LOGGER.debug("Added {} for job {}, capacity consumed = {}, took {}",
                 getStringAttribute(statusUpdate, UPDATE_TYPE), getStringAttribute(statusUpdate, JOB_ID),
-                result.getConsumedCapacity().getCapacityUnits(),
+                result.consumedCapacity().capacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     private void updateJobStatus(Map<String, AttributeValue> statusUpdate) {
         Instant startTime = Instant.now();
-        UpdateItemResult result = dynamoDB.updateItem(new UpdateItemRequest()
-                .withTableName(jobsTableName)
-                .withKey(Map.of(JOB_ID, statusUpdate.get(JOB_ID)))
-                .withUpdateExpression("SET " +
+        UpdateItemResponse result = dynamoDB.updateItem(UpdateItemRequest.builder()
+                .tableName(jobsTableName)
+                .key(Map.of(JOB_ID, statusUpdate.get(JOB_ID)))
+                .updateExpression("SET " +
                         "#Table = :table, " +
                         "#FirstUpdate = if_not_exists(#FirstUpdate, :update_time), " +
                         "#LastUpdate = :update_time, " +
                         "#LastUpdateType = :update_type, " +
                         "#Expiry = if_not_exists(#Expiry, :expiry)")
-                .withExpressionAttributeNames(Map.of(
+                .expressionAttributeNames(Map.of(
                         "#Table", TABLE_ID,
                         "#FirstUpdate", JOB_FIRST_UPDATE_TIME,
                         "#LastUpdate", JOB_LAST_UPDATE_TIME,
                         "#LastUpdateType", JOB_LAST_UPDATE_TYPE,
                         "#Expiry", EXPIRY_DATE))
-                .withExpressionAttributeValues(Map.of(
+                .expressionAttributeValues(Map.of(
                         ":table", statusUpdate.get(TABLE_ID),
                         ":update_time", statusUpdate.get(UPDATE_TIME),
                         ":update_type", statusUpdate.get(UPDATE_TYPE),
                         ":expiry", statusUpdate.get(EXPIRY_DATE)))
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .build());
         LOGGER.debug("Updated status for job {}, capacity consumed = {}, took {}",
                 getStringAttribute(statusUpdate, JOB_ID),
-                result.getConsumedCapacity().getCapacityUnits(),
+                result.consumedCapacity().capacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
@@ -208,39 +210,42 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
 
     @Override
     public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
-                .withTableName(updatesTableName)
-                .withKeyConditionExpression("#TableId = :table_id")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                .withExpressionAttributeValues(
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(streamPagedItems(dynamoDB, QueryRequest.builder()
+                .tableName(updatesTableName)
+                .keyConditionExpression("#TableId = :table_id")
+                .expressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                .expressionAttributeValues(
                         Map.of(":table_id", createStringAttribute(tableId)))
-                .withConsistentRead(stronglyConsistentReads)));
+                .consistentRead(stronglyConsistentReads)
+                .build()));
     }
 
     @Override
     public Optional<CompactionJobStatus> getJob(String jobId) {
         return lookupJobTableId(jobId).flatMap(tableId -> DynamoDBCompactionJobStatusFormat
-                .streamJobStatuses(streamPagedItems(dynamoDB, new QueryRequest()
-                        .withTableName(updatesTableName)
-                        .withKeyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
-                        .withExpressionAttributeNames(Map.of(
+                .streamJobStatuses(streamPagedItems(dynamoDB, QueryRequest.builder()
+                        .tableName(updatesTableName)
+                        .keyConditionExpression("#TableId = :table_id AND begins_with(#JobAndUpdate, :job_id)")
+                        .expressionAttributeNames(Map.of(
                                 "#TableId", TABLE_ID,
                                 "#JobAndUpdate", JOB_ID_AND_UPDATE))
-                        .withExpressionAttributeValues(Map.of(
+                        .expressionAttributeValues(Map.of(
                                 ":table_id", createStringAttribute(tableId),
                                 ":job_id", createStringAttribute(jobId + "|")))
-                        .withConsistentRead(stronglyConsistentReads)))
+                        .consistentRead(stronglyConsistentReads)
+                        .build()))
                 .findFirst());
     }
 
     private Optional<String> lookupJobTableId(String jobId) {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(jobsTableName)
-                .withKeyConditionExpression("#JobId = :job_id")
-                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))
-                .withConsistentRead(stronglyConsistentReads));
-        return result.getItems().stream()
+        QueryResponse result = dynamoDB.query(QueryRequest.builder()
+                .tableName(jobsTableName)
+                .keyConditionExpression("#JobId = :job_id")
+                .expressionAttributeNames(Map.of("#JobId", JOB_ID))
+                .expressionAttributeValues(Map.of(":job_id", createStringAttribute(jobId)))
+                .consistentRead(stronglyConsistentReads)
+                .build());
+        return result.items().stream()
                 .map(item -> getStringAttribute(item, TABLE_ID))
                 .findFirst();
     }

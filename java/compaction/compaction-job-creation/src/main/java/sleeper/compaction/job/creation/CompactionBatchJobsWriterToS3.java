@@ -15,7 +15,9 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
@@ -25,16 +27,17 @@ import java.util.List;
 
 public class CompactionBatchJobsWriterToS3 implements CreateCompactionJobs.BatchJobsWriter {
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
-    public CompactionBatchJobsWriterToS3(AmazonS3 s3Client) {
+    public CompactionBatchJobsWriterToS3(S3Client s3Client) {
         this.s3Client = s3Client;
     }
 
     @Override
     public void writeJobs(String bucketName, String key, List<CompactionJob> compactionJobs) {
-        s3Client.putObject(bucketName, key, serDe.toJson(compactionJobs));
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bucketName).key(key).build(), RequestBody.fromString(serDe.toJson(compactionJobs)));
     }
 
 }
