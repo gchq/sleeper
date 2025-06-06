@@ -42,12 +42,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>dynamodb-toolsv2</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>example-iterators</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>

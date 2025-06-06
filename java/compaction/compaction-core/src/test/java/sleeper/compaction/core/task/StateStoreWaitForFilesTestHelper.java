@@ -20,14 +20,16 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.RetryOnDynamoDbThrottling;
 import sleeper.core.util.ThreadSleep;
-import sleeper.dynamodb.toolsv2.DynamoDBUtils;
 
 import java.time.Instant;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.noJitter;
+import static sleeper.core.util.RetryOnDynamoDbThrottlingTestHelper.noRetriesOnThrottling;
+import static sleeper.core.util.RetryOnDynamoDbThrottlingTestHelper.retryOnThrottlingException;
 
 public class StateStoreWaitForFilesTestHelper {
 
@@ -49,19 +51,23 @@ public class StateStoreWaitForFilesTestHelper {
     }
 
     public StateStoreWaitForFiles withAttempts(int attempts) {
-        return waitWithAttempts(attempts, noJitter(), PollWithRetries.noRetries());
+        return withAttempts(attempts, noJitter());
     }
 
-    public StateStoreWaitForFiles withAttemptsAndThrottlingRetries(
+    public StateStoreWaitForFiles withAttempts(
             int attempts, DoubleSupplier jitter) {
-        return waitWithAttempts(attempts, jitter, StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES);
+        return withAttempts(attempts, jitter, noRetriesOnThrottling(), PollWithRetries.noRetries());
     }
 
-    private StateStoreWaitForFiles waitWithAttempts(
-            int attempts, DoubleSupplier jitter, PollWithRetries throttlingRetries) {
+    public StateStoreWaitForFiles withThrottlingRetriesOnException(RuntimeException throttlingException) {
+        return withAttempts(1, noJitter(), retryOnThrottlingException(throttlingException), StateStoreWaitForFiles.JOB_ASSIGNMENT_THROTTLING_RETRIES);
+    }
+
+    private StateStoreWaitForFiles withAttempts(
+            int attempts, DoubleSupplier jitter, RetryOnDynamoDbThrottling retryOnThrottling, PollWithRetries throttlingRetries) {
         return new StateStoreWaitForFiles(attempts,
                 new ExponentialBackoffWithJitter(StateStoreWaitForFiles.JOB_ASSIGNMENT_WAIT_RANGE, jitter, waiter),
-                DynamoDBUtils.retryOnThrottlingException(),
+                retryOnThrottling,
                 throttlingRetries.toBuilder()
                         .sleepInInterval(waiter::waitForMillis)
                         .build(),
