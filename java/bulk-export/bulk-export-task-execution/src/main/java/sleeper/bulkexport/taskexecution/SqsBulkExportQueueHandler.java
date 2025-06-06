@@ -75,7 +75,7 @@ public class SqsBulkExportQueueHandler {
                 .maxNumberOfMessages(1)
                 .waitTimeSeconds(waitTimeSeconds).build(); // Must be >= 0 and <= 20
         ReceiveMessageResponse receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        if (!receiveMessageResult.hasMessages()) {
+        if (receiveMessageResult.messages().isEmpty()) {
             LOGGER.info("Received no messages in {} seconds", waitTimeSeconds);
             return Optional.empty();
         } else {
