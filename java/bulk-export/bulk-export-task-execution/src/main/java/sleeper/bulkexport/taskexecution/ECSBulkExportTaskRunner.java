@@ -85,24 +85,15 @@ public class ECSBulkExportTaskRunner {
 
         String s3Bucket = args[0];
         Instant startTime = Instant.now();
-        DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
-        SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
-        S3Client s3Client = buildAwsV2Client(S3Client.builder());
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
-                dynamoDBClient);
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoDBClient, instanceProperties, tablePropertiesProvider);
         } finally {
-            // Shutdown the clients to release resources
-            sqsClient.close();
-            LOGGER.info("Shut down sqsClient");
-            dynamoDBClient.close();
-            LOGGER.info("Shut down dynamoDBClient");
-            s3Client.close();
-            LOGGER.info("Shut down s3Client");
+            LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
-        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     /**
