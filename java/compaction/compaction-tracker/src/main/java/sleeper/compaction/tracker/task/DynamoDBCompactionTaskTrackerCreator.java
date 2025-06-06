@@ -28,10 +28,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;

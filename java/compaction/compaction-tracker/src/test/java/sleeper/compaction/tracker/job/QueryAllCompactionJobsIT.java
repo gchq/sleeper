@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2.job;
+package sleeper.compaction.tracker.job;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.trackerv2.testutils.DynamoDBCompactionJobTrackerTestBase;
+import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
@@ -26,12 +26,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
-import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 
-public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTrackerTestBase {
+public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
-    public void shouldReturnCompactionJobById() {
+    public void shouldReturnMultipleCompactionJobsSortedMostRecentFirst() {
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
@@ -41,41 +40,46 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTracker
         CompactionJob job2 = jobFactory.createCompactionJob(
                 List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
+        CompactionJob job3 = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile("file3", 789L)),
+                partition.getId());
+
+        // When
+        storeJobsCreated(job1, job2, job3);
+
+        // Then
+        assertThat(tracker.getAllJobs(tableId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(
+                        compactionJobCreated(job3, ignoredUpdateTime()),
+                        compactionJobCreated(job2, ignoredUpdateTime()),
+                        compactionJobCreated(job1, ignoredUpdateTime()));
+    }
+
+    @Test
+    public void shouldExcludeCompactionJobInOtherTable() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job1 = jobFactory.createCompactionJob(
+                List.of(fileFactory.rootFile("file1", 123L)),
+                partition.getId());
+        CompactionJob job2 = jobFactoryForOtherTable().createCompactionJob(
+                List.of(fileFactory.rootFile("file2", 456L)),
+                partition.getId());
 
         // When
         storeJobsCreated(job1, job2);
 
         // Then
-        assertThat(getJobStatus(job1.getId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(compactionJobCreated(job1, ignoredUpdateTime()));
+        assertThat(tracker.getAllJobs(tableId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
-    public void shouldReturnFinishedCompactionJobById() {
-        // Given
-        Partition partition = singlePartition();
-        FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob(
-                List.of(fileFactory.rootFile("file", 123L)),
-                partition.getId());
-
-        // When
-        storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId("test-task").jobRunId("test-run").build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId("test-task").jobRunId("test-run").build());
-        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId("test-task").jobRunId("test-run").build());
-
-        // Then
-        assertThat(getJobStatus(job.getId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(compactionJobCreated(job, ignoredUpdateTime(),
-                        finishedCompactionRun("test-task", defaultSummary(), defaultCommitTime())));
-    }
-
-    @Test
-    public void shouldReturnNoCompactionJobById() {
+    public void shouldReturnNoCompactionJobs() {
         // When / Then
-        assertThat(tracker.getJob("not-present")).isNotPresent();
+        assertThat(tracker.getAllJobs(tableId)).isEmpty();
     }
 }

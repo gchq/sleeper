@@ -33,8 +33,8 @@ import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQu
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
-import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.configurationv2.jars.S3UserJarsLoader;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3PropertiesReloader;

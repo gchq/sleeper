@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2.job;
+package sleeper.compaction.tracker.job;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

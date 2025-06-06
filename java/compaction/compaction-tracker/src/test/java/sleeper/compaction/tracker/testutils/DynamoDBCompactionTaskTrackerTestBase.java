@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2.testutils;
+package sleeper.compaction.tracker.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
-import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
-import sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTracker;
-import sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTrackerCreator;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
@@ -36,7 +36,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;

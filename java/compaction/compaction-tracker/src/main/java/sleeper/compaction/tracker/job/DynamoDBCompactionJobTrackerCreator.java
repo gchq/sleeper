@@ -27,12 +27,12 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker.EXPIRY_DATE;
-import static sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker.JOB_ID;
-import static sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker.JOB_ID_AND_UPDATE;
-import static sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker.TABLE_ID;
-import static sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker.jobLookupTableName;
-import static sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker.jobUpdatesTableName;
+import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.EXPIRY_DATE;
+import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.JOB_ID;
+import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.JOB_ID_AND_UPDATE;
+import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.TABLE_ID;
+import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.jobLookupTableName;
+import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.jobUpdatesTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;

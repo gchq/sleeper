@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.job.creationv2.AwsCreateCompactionJobs;
+import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.configurationv2.jars.S3UserJarsLoader;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;

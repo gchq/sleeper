@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2.task;
+package sleeper.compaction.tracker.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.trackerv2.testutils.DynamoDBCompactionTaskTrackerTestBase;
+import sleeper.compaction.tracker.testutils.DynamoDBCompactionTaskTrackerTestBase;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;

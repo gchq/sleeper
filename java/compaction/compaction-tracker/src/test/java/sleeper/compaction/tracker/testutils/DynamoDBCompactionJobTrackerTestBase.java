@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2.testutils;
+package sleeper.compaction.tracker.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterEach;
@@ -22,9 +22,9 @@ import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
-import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTracker;
-import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;

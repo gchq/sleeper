@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.trackerv2.job;
+package sleeper.compaction.tracker.job;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.trackerv2.testutils.DynamoDBCompactionJobTrackerTestBase;
+import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 

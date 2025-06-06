@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
-import sleeper.compaction.trackerv2.CompactionTrackerException;
+import sleeper.compaction.tracker.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -40,8 +40,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
-import static sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
+import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;

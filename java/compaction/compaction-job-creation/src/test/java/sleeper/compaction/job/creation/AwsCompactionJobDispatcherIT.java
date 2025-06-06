@@ -26,7 +26,7 @@ import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
-import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
