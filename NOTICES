@@ -93,6 +93,10 @@ Okio (com.squareup.okio:*:3.*)
 
 - Apache License, Version 2.0
 
+RoaringBitmap (org.roaringbitmap:RoaringBitmap:1.*)
+
+- Apache License, Version 2.0
+
 Kotlin Stdlib (org.jetbrains.kotlin:*:2.*)
 
 - Apache License, Version 2.0
@@ -591,3 +595,4 @@ docker/login-action (https://github.com/marketplace/actions/docker-login)
 docker/build-push-action (https://github.com/marketplace/actions/build-and-push-docker-images)
 
 - Apache License, Version 2.0
+
