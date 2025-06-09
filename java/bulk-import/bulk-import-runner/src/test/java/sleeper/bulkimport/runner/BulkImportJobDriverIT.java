@@ -174,17 +174,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         });
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -220,17 +212,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -407,17 +391,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 

@@ -68,9 +68,12 @@ public class BulkImportDataframeLocalSortDriver {
                 new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
-
-        Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
-                .explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
+        Dataset<Row> repartitionedData = dataWithPartition;
+        /*
+         * Dataset<Row> repartitionedData = new
+         * com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
+         * .explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
+         */
         LOGGER.info("After repartitioning data, there are {} partitions", repartitionedData.rdd().getNumPartitions());
 
         Column[] sortColumns = Lists.newArrayList(schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
