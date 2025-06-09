@@ -309,4 +309,11 @@
         <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/shims@.*$</packageUrl>
         <cve>CVE-2018-17073</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: aws-json-protocol-2.31.59.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$</packageUrl>
+        <cve>CVE-2023-5072</cve>
+    </suppress>
 </suppressions>
