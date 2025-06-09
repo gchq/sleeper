@@ -269,10 +269,11 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This library used as part of Spark, to get a fixed version we'd need a significant upgrade to Spark.
+        These libraries are dependencies of spark-sql. Awaiting versions of libraries without the vulnerability.
         file name: RoaringBitmap-1.3.0.jar
+        file name: shims-0.9.45.jar
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/RoaringBitmap@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/(RoaringBitmap|shims)@.*$</packageUrl>
         <cve>CVE-2018-17073</cve>
     </suppress>
     <suppress>
@@ -285,19 +286,5 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
-    </suppress>
-    <!--<suppress>
-        <notes><![CDATA[
-        file name: netty-tcnative-boringssl-static-2.0.66.Final-osx-x86_64.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.netty/netty-tcnative-boringssl-static@.*$</packageUrl>
-        <cve>CVE-2011-1797</cve>
-    </suppress> -->
-    <suppress>
-        <notes><![CDATA[
-        file name: shims-0.9.45.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/shims@.*$</packageUrl>
-        <cve>CVE-2018-17073</cve>
     </suppress>
 </suppressions>
