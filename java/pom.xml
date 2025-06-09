@@ -127,7 +127,12 @@
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
         -->
         <okio.version>3.12.0</okio.version>
-        <!-- Trino testing declares an old version. Managed from 1.2.3. -->
+        <!--
+        Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
+        ahead of the spark to address deteced vunerabilities.
+        -->
+        <roaringbitmap.version>1.3.0</roaringbitmap.version>
+         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.785</aws-java-sdk.version>
@@ -924,6 +929,11 @@
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio-jvm</artifactId>
                 <version>${okio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>${roaringbitmap.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>

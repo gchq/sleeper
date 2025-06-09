@@ -267,13 +267,14 @@
         <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
     </suppress>
-    <suppress>
+    <!-- <suppress>
         <notes><![CDATA[
+        This library used as part of Spark, to get a fixed version we'd need a significant upgrade to Spark.
         file name: RoaringBitmap-0.9.45.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/RoaringBitmap@.*$</packageUrl>
         <cve>CVE-2018-17073</cve>
-    </suppress>
+    </suppress> -->
     <suppress>
         <notes><![CDATA[
         file name: aws-json-protocol-2.31.59.jar
