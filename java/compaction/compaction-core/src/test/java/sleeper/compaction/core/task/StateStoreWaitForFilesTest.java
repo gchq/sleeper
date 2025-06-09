@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.task;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -27,7 +26,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
@@ -41,7 +39,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.DoubleSupplier;
 
 import static java.util.stream.Collectors.reducing;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,7 +115,7 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        StateStoreWaitForFiles waiter = waiterWithAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS);
+        StateStoreWaitForFiles waiter = waiter().withAttempts(JOB_ASSIGNMENT_WAIT_ATTEMPTS, fixJitterSeed());
         assertThatThrownBy(() -> waiter.wait(job, "test-task", "test-job-run"))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
         assertThat(foundWaits).containsExactly(
@@ -143,7 +140,7 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
-        StateStoreWaitForFiles waiter = waiterWithAttempts(
+        StateStoreWaitForFiles waiter = waiter().withAttempts(
                 JOB_ASSIGNMENT_WAIT_ATTEMPTS, constantJitterFraction(0.5));
         assertThatThrownBy(() -> waiter.wait(job, "test-task", "test-job-run"))
                 .isInstanceOf(TimedOutWaitingForFileAssignmentsException.class);
@@ -169,10 +166,8 @@ public class StateStoreWaitForFilesTest {
         CompactionJob job = jobForFileAtRoot(file);
         update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
 
-        AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
-        throttlingException.setErrorCode("ThrottlingException");
-        StateStoreException exception = new StateStoreException("Throttled", throttlingException);
-        Iterator<StateStoreException> exceptions = List.of(exception, exception).iterator();
+        RuntimeException exception = new RuntimeException("Throttled");
+        Iterator<RuntimeException> exceptions = List.of(exception, exception).iterator();
         filesLogStore.atStartOfReadTransactions(() -> {
             if (exceptions.hasNext()) {
                 throw exceptions.next();
@@ -180,7 +175,7 @@ public class StateStoreWaitForFilesTest {
         });
 
         // When
-        waiterWithAttempts(1).wait(job, "test-task", "test-job-run");
+        waiter().withThrottlingRetriesOnException(exception).wait(job, "test-task", "test-job-run");
 
         // Then
         assertThat(foundWaits).containsExactly(
@@ -199,19 +194,14 @@ public class StateStoreWaitForFilesTest {
     }
 
     private void waitForFilesWithAttempts(int attempts, CompactionJob job) throws Exception {
-        waiterWithAttempts(attempts).wait(job, "test-task", "test-job-run");
+        waiter().withAttempts(attempts).wait(job, "test-task", "test-job-run");
     }
 
-    private StateStoreWaitForFiles waiterWithAttempts(int attempts) {
-        return waiterWithAttempts(attempts, fixJitterSeed());
-    }
-
-    private StateStoreWaitForFiles waiterWithAttempts(int attempts, DoubleSupplier jitter) {
+    private StateStoreWaitForFilesTestHelper waiter() {
         return new StateStoreWaitForFilesTestHelper(
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                CompactionJobTracker.NONE, waiter, Instant::now)
-                .withAttemptsAndThrottlingRetries(attempts, jitter);
+                CompactionJobTracker.NONE, waiter, Instant::now);
     }
 
     protected void actionAfterWait(ThreadSleepTestHelper.WaitAction action) throws Exception {

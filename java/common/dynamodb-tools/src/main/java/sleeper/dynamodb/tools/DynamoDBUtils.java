@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.RetryOnDynamoDbThrottling;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -228,6 +229,10 @@ public class DynamoDBUtils {
             e = e.getCause();
         } while (e != null);
         return false;
+    }
+
+    public static RetryOnDynamoDbThrottling retryOnThrottlingException() {
+        return DynamoDBUtils::retryOnThrottlingException;
     }
 
     public static void retryOnThrottlingException(PollWithRetries pollWithRetries, Runnable runnable) throws InterruptedException {

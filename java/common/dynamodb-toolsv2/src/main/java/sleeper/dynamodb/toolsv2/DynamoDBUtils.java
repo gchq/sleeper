@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledExcepti
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.RetryOnDynamoDbThrottling;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -237,6 +238,10 @@ public class DynamoDBUtils {
             e = e.getCause();
         } while (e != null);
         return false;
+    }
+
+    public static RetryOnDynamoDbThrottling retryOnThrottlingException() {
+        return DynamoDBUtils::retryOnThrottlingException;
     }
 
     public static void retryOnThrottlingException(PollWithRetries pollWithRetries, Runnable runnable) throws InterruptedException {
