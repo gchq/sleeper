@@ -267,4 +267,46 @@
         <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: RoaringBitmap-0.9.45.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/RoaringBitmap@.*$</packageUrl>
+        <cve>CVE-2018-17073</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: aws-json-protocol-2.31.59.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: json-unit-core-2.36.0.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: json-utils-2.31.59.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: netty-tcnative-boringssl-static-2.0.66.Final-osx-x86_64.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty-tcnative-boringssl-static@.*$</packageUrl>
+        <cve>CVE-2011-1797</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: shims-0.9.45.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/shims@.*$</packageUrl>
+        <cve>CVE-2018-17073</cve>
+    </suppress>
 </suppressions>
