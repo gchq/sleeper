@@ -27,6 +27,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketchesv2.Sketches;
 import sleeper.sketchesv2.store.SketchesStore;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -39,13 +40,20 @@ public class FindPartitionSplitPoint {
     public static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
 
     private final Schema schema;
-    private final List<String> fileNames;
-    private final SketchesStore sketchesStore;
+    private final List<Sketches> sketches;
 
-    public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
+    private FindPartitionSplitPoint(Schema schema, List<Sketches> sketches) {
         this.schema = schema;
-        this.fileNames = fileNames;
-        this.sketchesStore = sketchesStore;
+        this.sketches = sketches;
+    }
+
+    public static FindPartitionSplitPoint loadSketches(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
+        List<Sketches> sketches = new ArrayList<>();
+        for (String fileName : fileNames) {
+            LOGGER.info("Loading sketches for file {}", fileName);
+            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
+        }
+        return new FindPartitionSplitPoint(schema, sketches);
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
@@ -81,11 +89,10 @@ public class FindPartitionSplitPoint {
 
     private <T> ItemsSketch<T> unionSketches(Field field) {
         ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
-        for (String fileName : fileNames) {
-            LOGGER.info("Loading sketches for file {}", fileName);
-            Sketches sketches = sketchesStore.loadFileSketches(fileName, schema);
-            union.update(sketches.getQuantilesSketch(field.getName()));
+        for (Sketches sketch : sketches) {
+            union.update(sketch.getQuantilesSketch(field.getName()));
         }
         return union.getResult();
     }
+
 }
