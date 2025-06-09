@@ -316,4 +316,18 @@
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$</packageUrl>
         <cve>CVE-2023-5072</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: json-unit-core-2.36.0.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$</packageUrl>
+        <cve>CVE-2023-5072</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: json-utils-2.31.59.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
+        <cve>CVE-2023-5072</cve>
+    </suppress>
 </suppressions>
