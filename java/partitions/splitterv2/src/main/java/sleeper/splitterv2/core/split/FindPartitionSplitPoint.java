@@ -40,15 +40,19 @@ public class FindPartitionSplitPoint {
     public static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
 
     private final Schema schema;
-    private final List<String> fileNames;
-    private final SketchesStore sketchesStore;
-    private final List<Sketches> sketches;
+    private static List<Sketches> sketches = new ArrayList<>();
 
-    public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
+    private FindPartitionSplitPoint(Schema schema) {
         this.schema = schema;
-        this.fileNames = fileNames;
-        this.sketchesStore = sketchesStore;
-        this.sketches = loadSketches();
+    }
+
+    public static FindPartitionSplitPoint loadSketches(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
+        sketches.clear();
+        for (String fileName : fileNames) {
+            LOGGER.info("Loading sketches for file {}", fileName);
+            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
+        }
+        return new FindPartitionSplitPoint(schema);
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
@@ -88,15 +92,6 @@ public class FindPartitionSplitPoint {
             union.update(sketch.getQuantilesSketch(field.getName()));
         }
         return union.getResult();
-    }
-
-    private List<Sketches> loadSketches() {
-        List<Sketches> sketches = new ArrayList<>();
-        for (String fileName : fileNames) {
-            LOGGER.info("Loading sketches for file {}", fileName);
-            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
-        }
-        return sketches;
     }
 
 }

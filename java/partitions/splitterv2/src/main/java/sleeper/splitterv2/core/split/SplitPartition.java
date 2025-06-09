@@ -77,7 +77,7 @@ public class SplitPartition {
     }
 
     private Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, List<String> fileNames) {
-        FindPartitionSplitPoint findSplitPoint = new FindPartitionSplitPoint(schema, fileNames, sketchesStore);
+        FindPartitionSplitPoint findSplitPoint = FindPartitionSplitPoint.loadSketches(schema, fileNames, sketchesStore);
         return IntStream.range(0, schema.getRowKeyFields().size())
                 .mapToObj(dimension -> findSplitPoint.splitPointForDimension(dimension)
                         .map(splitPoint -> resultFactory().splitPartition(partition, splitPoint, dimension)))
