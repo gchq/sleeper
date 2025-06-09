@@ -59,6 +59,9 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketchesv2.testutils.SketchesDeciles;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
@@ -120,6 +123,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private String dataDir;
+    protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -158,19 +162,21 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> fileReferences = stateStore.getFileReferences();
+        assertThat(fileReferences).singleElement().satisfies(fileReference -> {
+            SketchesDeciles.fromFile(schema, fileReference, sketchesStore)
+                    .equals(SketchesDeciles.builder()
+                            .field("key", deciles -> deciles
+                                    .min(0).max(99)
+                                    .rank(0.1, 10).rank(0.2, 20).rank(0.3, 30)
+                                    .rank(0.4, 40).rank(0.5, 50).rank(0.6, 60)
+                                    .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
+                            .build());
+        });
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -206,17 +212,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -393,17 +391,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
