@@ -27,8 +27,8 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    // Athena is deployed with Docker because it uses AWS SDK v1, and when combined with AWS SDK v2 and Hadoop this
-    // makes the jar too big to deploy directly.
+    // The Athena plugin includes Hadoop, which makes the jar too big to deploy directly.
+    // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
     public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
     // The bulk import starter includes Hadoop, which makes the jar too big to deploy directly.
     // Hadoop will be removed from this module in the following issue: https://github.com/gchq/sleeper/issues/4993
