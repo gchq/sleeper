@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.taskrunner;
+package sleeper.compaction.task.creation;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,12 +21,18 @@ import sleeper.core.deploy.LambdaHandler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RunIngestTasksLambdaTest {
+public class CompactionTaskCreationLambdaHandlerTest {
 
     @Test
-    void shouldMatchLambdaHandlerDeclaration() {
-        assertThat(LambdaHandler.INGEST_TASK_CREATOR.getHandler())
-                .isEqualTo(RunIngestTasksLambda.class.getName() + "::eventHandler");
+    void shouldMatchCreationLambdaHandlerDeclaration() {
+        assertThat(LambdaHandler.COMPACTION_TASK_CREATOR.getHandler())
+                .isEqualTo(RunCompactionTasksLambda.class.getName() + "::eventHandler");
+    }
+
+    @Test
+    void shouldMatchTerminationLambdaHandlerDeclaration() {
+        assertThat(LambdaHandler.COMPACTION_TASK_TERMINATOR.getHandler())
+                .isEqualTo(SafeTerminationLambda.class.getName() + "::handleRequest");
     }
 
 }
