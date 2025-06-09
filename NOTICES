@@ -97,6 +97,10 @@ RoaringBitmap (org.roaringbitmap:RoaringBitmap:1.*)
 
 - Apache License, Version 2.0
 
+Shims (org.roaringbitmap:shims:0.*)
+
+- Apache License, Version 2.0
+
 Kotlin Stdlib (org.jetbrains.kotlin:*:2.*)
 
 - Apache License, Version 2.0
