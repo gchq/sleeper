@@ -1452,7 +1452,7 @@
                 <version>${enforcer.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>enforce-banned-dependencies</id>
+                        <id>enforcer-checks</id>
                         <phase>install</phase>
                         <goals>
                             <goal>enforce</goal>
@@ -1472,6 +1472,7 @@
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
                         <dependencyConvergence/>
+                        <banDuplicatePomDependencyVersions/>
                     </rules>
                 </configuration>
             </plugin>
