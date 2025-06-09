@@ -170,6 +170,14 @@ public class BulkImportJobDriver {
         String jobId = args[1];
         String taskId = args[2];
         String jobRunId = args[3];
+        String bulkImportMode = args[4];
+
+        LOGGER.info("Starting bulk import job driver");
+        LOGGER.info("Config bucket: {}", configBucket);
+        LOGGER.info("Job ID: {}", jobId);
+        LOGGER.info("Task ID: {}", taskId);
+        LOGGER.info("Job run ID: {}", jobRunId);
+        LOGGER.info("Bulk import mode: {}", bulkImportMode);
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
