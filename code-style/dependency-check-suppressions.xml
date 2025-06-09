@@ -286,13 +286,13 @@
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
     </suppress>
-    <suppress>
+    <!--<suppress>
         <notes><![CDATA[
         file name: netty-tcnative-boringssl-static-2.0.66.Final-osx-x86_64.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/io\.netty/netty-tcnative-boringssl-static@.*$</packageUrl>
         <cve>CVE-2011-1797</cve>
-    </suppress>
+    </suppress> -->
     <suppress>
         <notes><![CDATA[
         file name: shims-0.9.45.jar
