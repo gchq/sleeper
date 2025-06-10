@@ -148,6 +148,11 @@
                             <pattern>org.apache.parquet</pattern>
                             <shadedPattern>sleeper.shaded.apache.parquet</shadedPattern>
                         </relocation>
+                        <!-- EMR Serverless includes AWS SDK in its runners, and the version conflicts. We had an error like this: -->
+                        <!-- java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE -->
+	                    <!-- at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75) -->
+                        <!-- It looked as though it was using our version of AuthSchemePreferenceResolver, but the -->
+                        <!-- built in version of SdkSystemSetting. -->
                         <relocation>
                             <pattern>software.amazon.awssdk</pattern>
                             <shadedPattern>sleeper.shaded.amazon.awssdk</shadedPattern>
