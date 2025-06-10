@@ -18,5 +18,5 @@ USER root
 RUN mkdir /workdir
 COPY ./bulk-import-runner.jar /workdir
 
-# EMR Severless will run the image as hadoop
+# EMR Serverless will run the image as hadoop
 USER hadoop:hadoop

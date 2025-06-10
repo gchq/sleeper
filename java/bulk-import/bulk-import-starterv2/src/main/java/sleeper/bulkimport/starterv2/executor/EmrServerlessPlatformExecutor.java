@@ -31,6 +31,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
  * Starts a bulk import job on EMR Serverless.
@@ -57,7 +59,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 .executionRoleArn(
                         instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN))
                 .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
-                        .entryPoint("/workdir/bulk-import-runner.jar")
+                        .entryPoint("s3://" + instanceProperties.get(JARS_BUCKET) + "/bulk-import-runner-" + instanceProperties.get(VERSION) + ".jar")
                         .entryPointArguments(instanceProperties.get(CONFIG_BUCKET),
                                 bulkImportJob.getId(), applicationName + "-EMRS", arguments.getJobRunId(), "EMR")
                         .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless())
