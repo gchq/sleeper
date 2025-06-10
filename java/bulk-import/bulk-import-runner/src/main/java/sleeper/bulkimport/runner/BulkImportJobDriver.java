@@ -17,6 +17,7 @@ package sleeper.bulkimport.runner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.util.VersionInfo;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -178,6 +179,7 @@ public class BulkImportJobDriver {
         LOGGER.info("Task ID: {}", taskId);
         LOGGER.info("Job run ID: {}", jobRunId);
         LOGGER.info("Bulk import mode: {}", bulkImportMode);
+        LOGGER.info("AWS SDK version, from sdk-core module: {}", VersionInfo.SDK_VERSION);
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
