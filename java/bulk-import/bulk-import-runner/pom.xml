@@ -148,6 +148,10 @@
                             <pattern>org.apache.parquet</pattern>
                             <shadedPattern>sleeper.shaded.apache.parquet</shadedPattern>
                         </relocation>
+                        <relocation>
+                            <pattern>software.amazon.awssdk</pattern>
+                            <shadedPattern>sleeper.shaded.amazon.awssdk</shadedPattern>
+                        </relocation>
                     </relocations>
                 </configuration>
             </plugin>
