@@ -500,7 +500,10 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
     // sure the target partitions as at least as big as number of input files.
     sf.options_mut().execution.target_partitions =
         std::cmp::max(sf.options().execution.target_partitions, input_paths.len());
+    // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
     sf.options_mut().execution.parquet.enable_page_index = false;
+    // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
+    // together in wrong order.
     sf.options_mut().optimizer.repartition_aggregations = false;
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;

@@ -22,7 +22,6 @@ use ageoff::AgeOff;
 use datafusion::{
     common::{DFSchema, HashSet, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
-    functions_aggregate::expr_fn::count,
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
 };
@@ -38,9 +37,12 @@ pub mod nonnull;
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 
 /// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
+///
+/// Aggregation must be performed on all value columns, or none at all. This condition will be validated by the
+/// [`validate_aggregations`] function.
 #[derive(Debug, Default)]
 pub struct FilterAggregationConfig {
-    /// Extra columns beyons row key columns to aggregate
+    /// Extra columns beyond row key columns to aggregate
     pub agg_cols: Option<Vec<String>>,
     /// Single filtering option
     pub filter: Option<Filter>,
@@ -75,7 +77,6 @@ impl Aggregate {
     // Create a DataFusion logical expression to represent this aggregation operation.
     pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.1 {
-            AggOp::Count => count(col(&self.0)),
             AggOp::Sum => non_null_sum(col(&self.0)),
             AggOp::Min => non_null_min(col(&self.0)),
             AggOp::Max => non_null_max(col(&self.0)),
@@ -116,7 +117,6 @@ impl MapAggregatorOp {
 #[derive(Debug)]
 pub enum AggOp {
     Sum,
-    Count,
     Min,
     Max,
     MapAggregate(MapAggregatorOp),
@@ -127,7 +127,6 @@ impl TryFrom<&str> for AggOp {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
             "sum" => Ok(Self::Sum),
-            "count" => Ok(Self::Count),
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
             "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
