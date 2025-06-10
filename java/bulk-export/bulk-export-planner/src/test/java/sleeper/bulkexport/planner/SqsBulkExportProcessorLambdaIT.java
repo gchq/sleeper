@@ -18,14 +18,15 @@ package sleeper.bulkexport.planner;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -38,8 +39,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -75,13 +76,13 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
         tableProperties.set(TABLE_NAME, "test-table");
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
-        sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(sqsClient, s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        s3ClientV2.createBucket(CreateBucketRequest.builder().bucket(instanceProperties.get(CONFIG_BUCKET)).build());
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(sqsClientV2, s3ClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test

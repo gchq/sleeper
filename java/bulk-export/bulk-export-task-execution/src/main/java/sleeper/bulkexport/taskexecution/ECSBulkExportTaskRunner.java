@@ -15,23 +15,21 @@
  */
 package sleeper.bulkexport.taskexecution;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
+import sleeper.bulkexport.taskexecution.SqsBulkExportQueueHandler.SqsMessageHandle;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
-import sleeper.configuration.jars.S3UserJarsLoader;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.jars.S3UserJarsLoader;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -46,12 +44,14 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketchesv2.store.NoSketchesStore;
-import sleeper.statestore.StateStoreFactory;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Optional;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Main class to run the ECS bulk export task.
@@ -88,24 +88,16 @@ public class ECSBulkExportTaskRunner {
 
         String s3Bucket = args[0];
         Instant startTime = Instant.now();
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
-                dynamoDBClient);
-        try {
-            runECSBulkExportTaskRunner(sqsClient, s3Client, dynamoDBClient, instanceProperties, tablePropertiesProvider);
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
+            TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+            Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
+            runECSBulkExportTaskRunner(instanceProperties, tablePropertiesProvider, sqsClient, s3Client, dynamoDBClient, hadoopConf);
         } finally {
-            // Shutdown the clients to release resources
-            sqsClient.shutdown();
-            LOGGER.info("Shut down sqsClient");
-            dynamoDBClient.shutdown();
-            LOGGER.info("Shut down dynamoDBClient");
-            s3Client.shutdown();
-            LOGGER.info("Shut down s3Client");
+            LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
-        LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 
     /**
@@ -113,66 +105,61 @@ public class ECSBulkExportTaskRunner {
      * This method initialises the SQS bulk export queue handler and processes
      * messages from the SQS queue for bulk export tasks.
      *
-     * @param  sqsClient                 an AmazonSQS client
-     * @param  instanceProperties        an InstanceProperties object
-     * @param  tablePropertiesProvider   a TablePropertiesProvider object
+     * @param  instanceProperties        the instance properties
+     * @param  tablePropertiesProvider   a table properties provider
+     * @param  sqsClient                 an SQS client
+     * @param  s3Client                  an S3 client
+     * @param  dynamoDBClient            a DynamoDB client
+     * @param  hadoopConf                a Hadoop configuration
      * @throws IOException               if there is an error interacting with S3
      * @throws IteratorCreationException if there is an error creating iterators
      * @throws ObjectFactoryException    if there is an error creating objects
      */
-    public static void runECSBulkExportTaskRunner(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient,
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) throws IOException, IteratorCreationException, ObjectFactoryException {
+    public static void runECSBulkExportTaskRunner(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
                 instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
 
-        exportQueueHandler.receiveMessage().ifPresent(messageHandle -> {
+        Optional<SqsMessageHandle> messageHandleOpt = exportQueueHandler.receiveMessage();
+        if (messageHandleOpt.isPresent()) {
+            SqsMessageHandle messageHandle = messageHandleOpt.get();
             try {
                 BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
 
-                runCompaction(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient);
+                runCompaction(exportTask, instanceProperties, tablePropertiesProvider, s3Client, dynamoDBClient, hadoopConf);
                 messageHandle.deleteFromQueue();
                 LOGGER.info("Successfully processed and deleted message from queue");
-            } catch (IOException e) {
-                LOGGER.error("I/O error while processing bulk export job", e);
-                messageHandle.returnToQueue();
-                LOGGER.warn("Returned message to queue due to I/O error");
-            } catch (ObjectFactoryException | IteratorCreationException e) {
-                LOGGER.error("Error creating objects or iterators for bulk export job", e);
-                messageHandle.returnToQueue();
-                LOGGER.info("Returned message to queue due to object/iterator creation error");
-            } catch (Exception e) {
+            } catch (RuntimeException | IOException | ObjectFactoryException | IteratorCreationException e) {
                 LOGGER.error("Unexpected error processing bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
+                throw e;
             }
-        });
+        }
     }
 
     private static void runCompaction(BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery,
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoDBClient) throws IOException, IteratorCreationException, ObjectFactoryException {
+            S3Client s3Client,
+            DynamoDbClient dynamoDBClient,
+            Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
         LOGGER.info("Starting compaction for table ID: {}, partition ID: {}",
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getLeafPartitionId());
-
-        Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client,
-                dynamoDBClient, confForStateStore);
+                dynamoDBClient);
 
-        String exportBucket = instanceProperties.get(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET);
-        String outputFile = String.format("s3a://%s/%s/%s/%s.parquet", exportBucket,
-                bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getExportId(), bulkExportLeafPartitionQuery.getSubExportId());
+        String outputFile = bulkExportLeafPartitionQuery.getOutputFile(instanceProperties);
         LOGGER.debug("Output file path: {}", outputFile);
 
-        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
-        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
-                new NoSketchesStore());
+        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
+        DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(
+                objectFactory, hadoopConf, new NoSketchesStore());
 
         CompactionJob job = CompactionJob.builder()
                 .jobId(bulkExportLeafPartitionQuery.getSubExportId())
