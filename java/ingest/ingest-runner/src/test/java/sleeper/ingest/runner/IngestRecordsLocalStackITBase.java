@@ -17,25 +17,103 @@
 package sleeper.ingest.runner;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
+import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
-import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
+import static java.nio.file.Files.createTempDirectory;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+
+public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
+    @TempDir
+    private static Path tempDir;
+
+    protected final Field field = new Field("key", new LongType());
+    protected Schema schema = schemaWithRowKeys(field);
+    protected String inputFolderName;
+    protected String dataFolderName;
+    protected InstanceProperties instanceProperties;
+    protected TableProperties tableProperties;
+    protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeEach
-    void setUp() {
-        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT_V2).create();
+    void setUp() throws Exception {
+        inputFolderName = createTempDirectory(tempDir, null).toString();
+        dataFolderName = createTempDirectory(tempDir, null).toString();
+        instanceProperties = defaultInstanceProperties(dataFolderName);
+        tableProperties = defaultTableProperties(schema, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
     }
 
     protected StateStore initialiseStateStore() {
         StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
-                SleeperLocalStackClients.DYNAMO_CLIENT_V2, SleeperLocalStackClients.S3_CLIENT_V2).build();
+                dynamoClientV2, s3ClientV2).build();
         update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }
+
+    protected IngestResult ingestRecords(StateStore stateStore, List<Record> records) throws Exception {
+        IngestFactory factory = createIngestFactory(stateStore);
+
+        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
+        ingestRecords.init();
+        for (Record record : records) {
+            ingestRecords.write(record);
+        }
+        return ingestRecords.close();
+    }
+
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
+        IngestFactory factory = createIngestFactory(stateStore);
+        return factory.ingestFromRecordIterator(tableProperties, iterator);
+    }
+
+    private IngestFactory createIngestFactory(StateStore stateStore) {
+        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName,
+                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+    }
+
+    protected List<Record> readRecords(FileReference... fileReferences) {
+        return readRecords(Stream.of(fileReferences).map(FileReference::getFilename));
+    }
+
+    protected List<Record> readRecords(Stream<String> filenames) {
+        return filenames.map(filename -> {
+            try {
+                return readRecordsFromParquetFile(filename, schema);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        })
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+    }
+
 }
