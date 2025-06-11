@@ -32,7 +32,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
@@ -41,16 +41,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     @TempDir
@@ -61,7 +59,7 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     protected String ingestLocalFiles;
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
+    protected final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
 
     @BeforeEach
     void setUp() throws Exception {
@@ -103,20 +101,7 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
                 .build();
     }
 
-    protected List<Record> readRecords(FileReference... fileReferences) {
-        return readRecords(Stream.of(fileReferences).map(FileReference::getFilename));
+    protected List<Record> readRecords(List<FileReference> fileReferences) {
+        return readMergedRecordsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
     }
-
-    protected List<Record> readRecords(Stream<String> filenames) {
-        return filenames.map(filename -> {
-            try {
-                return readRecordsFromParquetFile(filename, schema);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        })
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-    }
-
 }
