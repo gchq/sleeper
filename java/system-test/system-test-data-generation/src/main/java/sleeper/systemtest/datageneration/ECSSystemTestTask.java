@@ -25,9 +25,9 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
-import sleeper.common.jobv2.action.ActionException;
-import sleeper.common.jobv2.action.MessageReference;
-import sleeper.common.jobv2.action.thread.PeriodicActionRunnable;
+import sleeper.common.job.action.ActionException;
+import sleeper.common.job.action.MessageReference;
+import sleeper.common.job.action.thread.PeriodicActionRunnable;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;

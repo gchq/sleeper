@@ -27,7 +27,7 @@ on:
       - 'java/compaction/compaction-rust/**'
       - 'java/common/common-task/**'
       - 'java/ingest/ingest-runner/**'
-      - 'java/common/common-jobv2/**'
+      - 'java/common/common-job/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/ingest/ingest-core/**'

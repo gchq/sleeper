@@ -24,7 +24,6 @@ chunks:
       - sketches
       - parquet
       - common/common-job
-      - common/common-jobv2
       - common/common-task
       - common/common-invoke-tables
       - common/common-invoke-tablesv2

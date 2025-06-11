@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common.action;
+package sleeper.common.job.action;
 
-public class ActionException extends Exception {
+/**
+ * An interface used to abstract out the functionality used in jobs to keep messages alive and to delete them.
+ */
+public interface Action {
 
-    public ActionException(Throwable cause) {
-        super(cause);
-    }
-
-    public ActionException(String message, Throwable e) {
-        super(message, e);
-    }
-
-    public ActionException(String message) {
-        super(message);
-    }
+    void call() throws ActionException;
 }

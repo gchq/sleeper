@@ -23,7 +23,7 @@ on:
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-task/**'
       - 'java/statestore/**'
-      - 'java/common/common-jobv2/**'
+      - 'java/common/common-job/**'
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/parquet/**'

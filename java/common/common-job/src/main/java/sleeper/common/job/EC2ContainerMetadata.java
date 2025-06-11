@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.common.jobv2;
+package sleeper.common.job;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

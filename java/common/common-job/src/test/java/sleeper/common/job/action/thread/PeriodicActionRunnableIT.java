@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common.action.thread;
+package sleeper.common.job.action.thread;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.job.common.action.Action;
+import sleeper.common.job.action.Action;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

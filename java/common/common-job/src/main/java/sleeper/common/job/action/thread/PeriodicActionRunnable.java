@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.common.jobv2.action.thread;
+package sleeper.common.job.action.thread;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.common.jobv2.action.Action;
-import sleeper.common.jobv2.action.ActionException;
+import sleeper.common.job.action.Action;
+import sleeper.common.job.action.ActionException;
 
 /**
  * Calls an action every N seconds, sleeping in between calls. Used for keep-alive calls to SQS.

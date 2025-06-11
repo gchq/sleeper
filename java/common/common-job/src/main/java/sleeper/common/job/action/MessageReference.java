@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.job.common.action;
+package sleeper.common.job.action;
 
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 public class MessageReference {
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final String sqsJobQueueUrl;
     private final String jobDescription;
     private final String receiptHandle;
 
-    public MessageReference(AmazonSQS sqsClient, String sqsJobQueueUrl, String jobDescription, String receiptHandle) {
+    public MessageReference(SqsClient sqsClient, String sqsJobQueueUrl, String jobDescription, String receiptHandle) {
         this.sqsClient = sqsClient;
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.jobDescription = jobDescription;
@@ -39,7 +39,7 @@ public class MessageReference {
         return new ChangeMessageVisibilityTimeoutAction(this, messageVisibilityTimeout);
     }
 
-    public AmazonSQS getSqsClient() {
+    public SqsClient getSqsClient() {
         return sqsClient;
     }
 

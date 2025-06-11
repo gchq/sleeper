@@ -41,7 +41,7 @@ on:
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-invoke-tablesv2/**'
       - 'java/compaction/compaction-core/**'
-      - 'java/common/common-jobv2/**'
+      - 'java/common/common-job/**'
       - 'java/sketches/**'
       - 'java/example-iterators/**'
       - 'java/parquet/**'

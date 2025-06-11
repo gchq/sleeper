@@ -17,7 +17,7 @@ on:
       - 'java/partitions/splitter/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/statestore/**'
-      - 'java/common/common-jobv2/**'
+      - 'java/common/common-job/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
