@@ -189,7 +189,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-import/bulk-import-starterv2/target/bulk-import-starterv2-${project.version}-utility.jar
+                ${project.basedir}/../bulk-import/bulk-import-starter/target/bulk-import-starter-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>bulk-import-starter-${project.version}.jar</destName>

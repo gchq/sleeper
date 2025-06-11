@@ -59,12 +59,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestore</artifactId>
+            <artifactId>statestorev2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-tracker</artifactId>
+            <artifactId>ingest-trackerV2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>parquet</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Test dependencies -->
