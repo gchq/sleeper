@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -35,9 +35,9 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.util.LoggedDuration;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
-import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
+import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -121,15 +121,15 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
         return instanceProperties;
     }
 
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).createTable(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).createTable(tableProperties);
         update(stateStoreProvider().getStateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
@@ -139,15 +139,15 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
         return new StateStoreCommitter(
                 tablePropertiesProvider,
                 stateStoreProvider(),
-                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
+                new S3TransactionBodyStore(instanceProperties, s3ClientV2, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
-        return S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        return S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        return StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
     }
 
 }

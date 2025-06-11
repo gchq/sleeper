@@ -54,8 +54,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransa
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
+import sleeper.statestorev2.StateStoreFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
