@@ -38,12 +38,13 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-aws</artifactId>
         </dependency>
-        <!-- Hadoop uses AWS SDK v1 -->
+        <!-- We exclude the AWS SDK as a dependency of hadoop-aws because it uses the bundle, so add just S3 back in -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- We use this to set the credentials provider in the Hadoop configuration. -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>auth</artifactId>
