@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketchesv2.testutils.InMemorySketchesStore;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.splitter.core.find.FindPartitionsToSplit.JobSender;
 import sleeper.splitter.core.split.SplitPartition;

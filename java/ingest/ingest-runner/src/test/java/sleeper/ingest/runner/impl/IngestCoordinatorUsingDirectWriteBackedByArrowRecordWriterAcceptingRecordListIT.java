@@ -30,9 +30,9 @@ import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRe
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestFilesAndRecords;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
-import sleeper.sketchesv2.testutils.SketchesDecilesComparator;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDecilesComparator;
 
 import java.util.ArrayList;
 import java.util.HashSet;

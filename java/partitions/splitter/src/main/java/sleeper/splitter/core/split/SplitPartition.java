@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.store.SketchesStore;
 
 import java.util.List;
 import java.util.Optional;

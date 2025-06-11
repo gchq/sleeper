@@ -25,7 +25,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.Collections;
 import java.util.Comparator;

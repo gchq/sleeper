@@ -29,8 +29,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.testutils.InMemorySketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 
 import java.util.ArrayList;
 import java.util.List;

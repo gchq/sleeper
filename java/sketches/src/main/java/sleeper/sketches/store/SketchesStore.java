@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.sketchesv2.store;
+package sleeper.sketches.store;
 
 import sleeper.core.schema.Schema;
-import sleeper.sketchesv2.Sketches;
+import sleeper.sketches.Sketches;
 
 public interface SketchesStore {
 

@@ -32,7 +32,7 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.trackerv2.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTrackerCreator;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
 import java.time.Instant;

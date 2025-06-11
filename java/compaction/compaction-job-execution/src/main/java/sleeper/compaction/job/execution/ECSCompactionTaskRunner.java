@@ -51,7 +51,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.dynamodb.toolsv2.DynamoDBUtils;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;

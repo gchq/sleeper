@@ -13,35 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.sketchesv2.testutils;
+package sleeper.sketches.store;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.schema.Schema;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.Sketches;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class InMemorySketchesStore implements SketchesStore {
-
-    private Map<String, Sketches> filenameToSketches = new HashMap<>();
+public class NoSketchesStore implements SketchesStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(NoSketchesStore.class);
 
     @Override
     public void saveFileSketches(String filename, Schema schema, Sketches sketches) {
-        saveFileSketches(filename, sketches);
+        LOGGER.warn("Attempted to save file sketches with no sketches store, filename {}", filename);
     }
 
     @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
-        return loadFileSketches(filename);
-    }
-
-    public void saveFileSketches(String filename, Sketches sketches) {
-        filenameToSketches.put(filename, sketches);
-    }
-
-    public Sketches loadFileSketches(String filename) {
-        return filenameToSketches.get(filename);
+        throw new UnsupportedOperationException("No sketches store specified");
     }
 
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.sketchesv2.store;
+package sleeper.sketches.store;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,9 +23,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableFilePaths;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
-import sleeper.sketchesv2.testutils.SketchesTestData;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesTestData;
 
 import java.nio.file.Path;
 
