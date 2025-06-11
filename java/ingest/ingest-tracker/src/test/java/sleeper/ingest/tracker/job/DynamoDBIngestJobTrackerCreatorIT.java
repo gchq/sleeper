@@ -16,9 +16,10 @@
 
 package sleeper.ingest.tracker.job;
 
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -34,15 +35,17 @@ public class DynamoDBIngestJobTrackerCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
 
         // Then
-        assertThat(dynamoClient.describeTable(tableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+                .tableName(tableName)
+                .build()))
+                .extracting(DescribeTableResponse::table).isNotNull();
     }
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClientV2);
     }
 }

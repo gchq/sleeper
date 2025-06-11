@@ -28,7 +28,7 @@ on:
       - 'java/common/common-taskv2/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-jobv2/**'
-      - 'java/ingest/ingest-trackerV2/**'
+      - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestorev2/**'

@@ -37,7 +37,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.stream.Stream;

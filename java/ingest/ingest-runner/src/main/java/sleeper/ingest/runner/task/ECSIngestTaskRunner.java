@@ -41,8 +41,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.runner.impl.partitionfilewriter.IngestS3TransferManager;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
-import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestorev2.StateStoreFactory;
 

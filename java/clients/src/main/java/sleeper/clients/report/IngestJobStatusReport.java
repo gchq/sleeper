@@ -36,7 +36,7 @@ import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
 import java.time.Clock;
 import java.util.HashMap;

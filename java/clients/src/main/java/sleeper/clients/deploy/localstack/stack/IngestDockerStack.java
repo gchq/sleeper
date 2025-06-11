@@ -19,8 +19,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.trackerv2.job.DynamoDBIngestJobTrackerCreator;
-import sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTrackerCreator;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
