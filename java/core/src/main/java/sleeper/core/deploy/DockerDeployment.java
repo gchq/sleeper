@@ -49,11 +49,6 @@ public class DockerDeployment {
             .optionalStack(OptionalStack.CompactionStack)
             .multiplatform(true)
             .add();
-    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT = builder()
-            .deploymentName("bulk-import-runner-emr-serverless")
-            .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
-            .createEmrServerlessPolicy(true)
-            .add();
     public static final DockerDeployment BULK_EXPORT = builder()
             .deploymentName("bulk-export-task-execution")
             .optionalStack(OptionalStack.BulkExportStack)
