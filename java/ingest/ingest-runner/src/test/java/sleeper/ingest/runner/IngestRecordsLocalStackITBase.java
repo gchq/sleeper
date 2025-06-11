@@ -91,6 +91,10 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
+    protected List<Record> readRecords(List<FileReference> fileReferences) {
+        return readMergedRecordsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
+    }
+
     private IngestFactory createIngestFactory(StateStore stateStore) {
         return IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -101,7 +105,4 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
                 .build();
     }
 
-    protected List<Record> readRecords(List<FileReference> fileReferences) {
-        return readMergedRecordsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
-    }
 }
