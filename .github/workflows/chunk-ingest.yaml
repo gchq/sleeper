@@ -33,7 +33,7 @@ on:
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
-      - 'java/sketchesv2/**'
+      - 'java/sketches/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
 

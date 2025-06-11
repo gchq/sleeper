@@ -46,8 +46,6 @@
     <suppress files="[\\/]sleeper[\\/]parquet[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]sketchesv2[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]sketchesv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]job[\\/]common[\\/].*" id="missingJavadocMethod"/>
