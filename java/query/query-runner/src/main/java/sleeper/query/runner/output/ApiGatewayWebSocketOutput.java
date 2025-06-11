@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runnerv2.output;
+package sleeper.query.runner.output;
 
 import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;

@@ -29,8 +29,8 @@ import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.runnerv2.output.SQSResultsOutput;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;

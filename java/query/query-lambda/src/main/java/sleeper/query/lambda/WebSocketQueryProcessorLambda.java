@@ -39,7 +39,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runnerv2.output.WebSocketOutput;
+import sleeper.query.runner.output.WebSocketOutput;
 
 import java.net.URI;
 import java.nio.ByteBuffer;

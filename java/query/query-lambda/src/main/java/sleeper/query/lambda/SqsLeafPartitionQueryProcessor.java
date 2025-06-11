@@ -39,14 +39,14 @@ import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.query.runnerv2.output.NoResultsOutput;
-import sleeper.query.runnerv2.output.S3ResultsOutput;
-import sleeper.query.runnerv2.output.SQSResultsOutput;
-import sleeper.query.runnerv2.output.WebSocketOutput;
-import sleeper.query.runnerv2.output.WebSocketResultsOutput;
-import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
-import sleeper.query.runnerv2.tracker.QueryStatusReportListeners;
+import sleeper.query.runner.output.NoResultsOutput;
+import sleeper.query.runner.output.S3ResultsOutput;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.output.WebSocketOutput;
+import sleeper.query.runner.output.WebSocketResultsOutput;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -58,7 +58,7 @@ import java.util.concurrent.Executors;
 
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.query.runnerv2.output.NoResultsOutput.NO_RESULTS_OUTPUT;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);

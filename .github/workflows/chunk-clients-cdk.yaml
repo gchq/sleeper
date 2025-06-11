@@ -28,7 +28,7 @@ on:
       - 'java/statestorev2/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-taskv2/**'
-      - 'java/query/query-runnerv2/**'
+      - 'java/query/query-runner/**'
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/bulk-import/bulk-import-core/**'

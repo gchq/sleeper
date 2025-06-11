@@ -28,7 +28,7 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.tracker.QueryTrackerStore;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.HashMap;
 import java.util.Locale;

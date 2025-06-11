@@ -39,7 +39,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 
@@ -63,7 +63,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.query.runnerv2.output.NoResultsOutput.NO_RESULTS_OUTPUT;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 

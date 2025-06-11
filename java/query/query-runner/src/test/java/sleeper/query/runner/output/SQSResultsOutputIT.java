@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runnerv2.output;
+package sleeper.query.runner.output;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

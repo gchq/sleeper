@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runnerv2</artifactId>
+            <artifactId>query-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

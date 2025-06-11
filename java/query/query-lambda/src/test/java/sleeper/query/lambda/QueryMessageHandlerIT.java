@@ -32,8 +32,8 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTrackerCreator;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 
 import java.util.List;
 import java.util.Optional;

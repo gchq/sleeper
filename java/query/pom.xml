@@ -30,6 +30,5 @@
         <module>query-core</module>
         <module>query-runner</module>
         <module>query-lambda</module>
-        <module>query-runnerv2</module>
     </modules>
 </project>

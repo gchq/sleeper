@@ -30,11 +30,11 @@ import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.getSta
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.mixedQueries;
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.query.runnerv2.tracker.TrackedQueryTestHelper.queryCompleted;
-import static sleeper.query.runnerv2.tracker.TrackedQueryTestHelper.queryFailed;
-import static sleeper.query.runnerv2.tracker.TrackedQueryTestHelper.queryInProgress;
-import static sleeper.query.runnerv2.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
-import static sleeper.query.runnerv2.tracker.TrackedQueryTestHelper.queryQueued;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryCompleted;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryFailed;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryInProgress;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
+import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryQueued;
 
 public class StandardQueryTrackerReporterTest {
     @Nested

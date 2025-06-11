@@ -40,9 +40,9 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
-import sleeper.query.runnerv2.tracker.QueryStatusReportListeners;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.QueryStatusReportListeners;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.nio.file.Path;

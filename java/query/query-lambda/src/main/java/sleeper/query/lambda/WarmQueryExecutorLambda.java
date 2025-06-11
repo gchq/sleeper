@@ -41,7 +41,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +51,7 @@ import java.util.UUID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.query.runnerv2.output.NoResultsOutput.NO_RESULTS_OUTPUT;
+import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 /*
  * A Lambda that is triggered when an {@link ScheduledEvent} is received. A processor executes, creates a new

@@ -83,7 +83,6 @@ chunks:
     modules:
       - query/query-core
       - query/query-runner
-      - query/query-runnerv2
       - query/query-lambda
       - athena
       - trino
