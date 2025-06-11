@@ -17,7 +17,6 @@ package sleeper.bulkimport.runner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.core.util.VersionInfo;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -183,10 +182,9 @@ public class BulkImportJobDriver {
         LOGGER.info("Task ID: {}", taskId);
         LOGGER.info("Job run ID: {}", jobRunId);
         LOGGER.info("Bulk import mode: {}", bulkImportMode);
-        LOGGER.info("AWS SDK version, from sdk-core module VersionInfo: {}", VersionInfo.SDK_VERSION);
+        LOGGER.info("AWS SDK version, from VersionInfo: {}", VersionInfo.SDK_VERSION);
         logCodeSource(VersionInfo.class);
         logCodeSource(SdkSystemSetting.class);
-        logCodeSource(AuthSchemePreferenceResolver.class);
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
