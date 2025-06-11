@@ -112,10 +112,16 @@ public class CommonEmrBulkImportHelper {
     public IFunction createJobStarterFunction(
             Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
             List<IRole> passRoles) {
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        env.put("BULK_IMPORT_PLATFORM", platform.toString());
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        return createJobStarterFunction(jobQueue, lambdaCode, importBucket, logGroupRef, passRoles);
+    }
+
+    public IFunction createJobStarterFunction(
+            Queue jobQueue, LambdaCode lambdaCode, IBucket importBucket, LogGroupRef logGroupRef,
+            List<IRole> passRoles) {
+        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        env.put("BULK_IMPORT_PLATFORM", platform.toString());
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-import", platform.toString(), "start");

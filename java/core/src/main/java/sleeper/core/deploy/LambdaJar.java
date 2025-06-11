@@ -27,10 +27,12 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    // Athena is deployed with Docker because it uses AWS SDK v1, and when combined with AWS SDK v2 and Hadoop this
-    // makes the jar too big to deploy directly.
+    // The Athena plugin includes Hadoop, which makes the jar too big to deploy directly.
+    // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
     public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
-    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
+    // The bulk import starter includes Hadoop, which makes the jar too big to deploy directly.
+    // Hadoop will be removed from this module in the following issue: https://github.com/gchq/sleeper/issues/4993
+    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImageDeployWithDocker("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
     public static final LambdaJar BULK_EXPORT_PLANNER = withFormatAndImage("bulk-export-planner-%s.jar", "bulk-export-planner");
     public static final LambdaJar BULK_EXPORT_TASK_CREATOR = withFormatAndImage("bulk-export-task-creator-%s.jar", "bulk-export-task-creator");
     public static final LambdaJar INGEST_TASK_CREATOR = withFormatAndImage("ingest-taskrunner-%s.jar", "ingest-task-creator-lambda");
@@ -40,7 +42,10 @@ public class LambdaJar {
     public static final LambdaJar COMPACTION_JOB_CREATOR = withFormatAndImage("lambda-jobSpecCreationLambda-%s.jar", "compaction-job-creator-lambda");
     public static final LambdaJar COMPACTION_TASK_CREATOR = withFormatAndImage("runningjobs-%s.jar", "compaction-task-creator-lambda");
     public static final LambdaJar PARTITION_SPLITTER = withFormatAndImage("lambda-splitter-%s.jar", "partition-splitter-lambda");
-    public static final LambdaJar QUERY = withFormatAndImage("query-%s.jar", "query-lambda");
+    // The query module includes Hadoop, which makes the jar too big to deploy directly.
+    // It seems difficult to reduce this significantly, but this may be unnecessary if we switch to using DataFusion
+    // for queries.
+    public static final LambdaJar QUERY = withFormatAndImageDeployWithDocker("query-%s.jar", "query-lambda");
     public static final LambdaJar CUSTOM_RESOURCES = withFormatAndImage("cdk-custom-resources-%s.jar", "custom-resources-lambda");
     public static final LambdaJar METRICS = withFormatAndImage("metrics-%s.jar", "metrics-lambda");
     public static final LambdaJar STATESTORE = withFormatAndImage("statestore-lambda-%s.jar", "statestore-lambda");

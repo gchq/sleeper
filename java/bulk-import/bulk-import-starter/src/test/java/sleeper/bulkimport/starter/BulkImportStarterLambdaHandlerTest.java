@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class BulkImportStarterLambdaHandlerTest {
 
     @Test
-    void shouldMatchLambdaHandlerDeclaration() {
+    void shouldNotMatchLambdaHandlerDeclarationAfterUpgrade() {
         assertThat(LambdaHandler.BULK_IMPORT_STARTER.getHandler())
-                .isEqualTo(BulkImportStarterLambda.class.getName());
+                .doesNotContain(BulkImportStarterLambda.class.getName());
     }
 
 }

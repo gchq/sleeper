@@ -28,7 +28,7 @@
     "--conf",
     "spark.kubernetes.authenticate.driver.serviceAccountName=spark",
     "--conf",
-    "spark.hadoop.fs.s3a.aws.credentials.provider=com.amazonaws.auth.WebIdentityTokenCredentialsProvider",
+    "spark.hadoop.fs.s3a.aws.credentials.provider=software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider",
     "--conf",
     "spark.executor.instances=3",
     "--conf",

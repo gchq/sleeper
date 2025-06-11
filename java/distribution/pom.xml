@@ -86,7 +86,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-starter</artifactId>
+            <artifactId>bulk-import-starterv2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -151,7 +151,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-lambda</artifactId>
+            <artifactId>query-lambdav2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

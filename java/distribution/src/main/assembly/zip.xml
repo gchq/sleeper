@@ -80,13 +80,6 @@
             <outputDirectory>scripts/docker/bulk-import-runner/spark</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emr-serverless</directory>
-            <outputDirectory>scripts/docker/bulk-import-runner-emr-serverless</outputDirectory>
-            <excludes>
-                <exclude>*.jar</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../bulk-export/bulk-export-task-execution/docker</directory>
             <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
             <excludes>
@@ -115,13 +108,6 @@
                 ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/docker/bulk-import-runner</outputDirectory>
-            <destName>bulk-import-runner.jar</destName>
-        </file>
-        <file>
-            <source>
-                ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
-            </source>
-            <outputDirectory>scripts/docker/bulk-import-runner-emr-serverless</outputDirectory>
             <destName>bulk-import-runner.jar</destName>
         </file>
         <file>
@@ -159,7 +145,7 @@
             <destName>lambda-splitter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../query/query-lambda/target/query-lambda-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../query/query-lambdav2/target/query-lambdav2-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>query-${project.version}.jar</destName>
         </file>
@@ -203,7 +189,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-import/bulk-import-starter/target/bulk-import-starter-${project.version}-utility.jar
+                ${project.basedir}/../bulk-import/bulk-import-starterv2/target/bulk-import-starterv2-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>bulk-import-starter-${project.version}.jar</destName>
