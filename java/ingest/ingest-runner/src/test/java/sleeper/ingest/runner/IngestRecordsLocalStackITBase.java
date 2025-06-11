@@ -45,9 +45,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
@@ -58,7 +58,6 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     private final Field field = new Field("key", new LongType());
     protected Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
-    private String dataFolderName;
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
@@ -66,9 +65,8 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     @BeforeEach
     void setUp() throws Exception {
         inputFolderName = createTempDirectory(tempDir, null).toString();
-        dataFolderName = createTempDirectory(tempDir, null).toString();
-        instanceProperties = defaultInstanceProperties(dataFolderName);
-        tableProperties = defaultTableProperties(schema, instanceProperties);
+        instanceProperties = createTestInstanceProperties();
+        tableProperties = createTestTableProperties(instanceProperties, schema);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
     }
 
