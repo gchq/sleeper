@@ -41,11 +41,39 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sqs</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
         </dependency>
         <!-- STS is required to use the IAM role associated with the Service Account -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sts</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
+        </dependency>
+        <!-- The following AWS SDK dependencies are only declared to fix the versions to match EMR. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3-transfer-manager</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+            <version>${aws-java-sdk-v2.bulk-import.version}</version>
         </dependency>
         <!-- Spark -->
         <dependency>

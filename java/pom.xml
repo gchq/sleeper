@@ -134,6 +134,17 @@
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.785</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.31.59</aws-java-sdk-v2.version>
+        <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
+        <!-- At the time of writing it's not compatible with the latest version. -->
+        <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
+        <!-- BulkImportJobDriver.start tries to create an SqsClient: -->
+        <!-- java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE -->
+        <!-- at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75) -->
+        <!-- The old version of the library is coming from this file in the EMR Serverless Docker image: -->
+        <!-- /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar -->
+        <!-- To find the version below, we logged out the code location for the class in the Spark driver, then -->
+        <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class. -->
+        <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.38.4</aws-crt.version>
         <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
