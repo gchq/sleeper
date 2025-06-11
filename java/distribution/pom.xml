@@ -151,7 +151,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-lambdav2</artifactId>
+            <artifactId>query-lambda</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
