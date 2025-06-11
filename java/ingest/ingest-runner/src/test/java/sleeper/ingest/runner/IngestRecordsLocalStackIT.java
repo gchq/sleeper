@@ -57,7 +57,7 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
         assertThat(readRecords(fileReferences.get(0)))
                 .containsExactlyElementsOf(records);
         //  - Local files should have been deleted
-        assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
+        assertThat(Paths.get(ingestLocalFiles)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
                 .isEqualTo(SketchesDeciles.from(schema, records));

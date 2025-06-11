@@ -29,8 +29,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
-import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -57,17 +58,16 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
 
     private final Field field = new Field("key", new LongType());
     protected Schema schema = schemaWithRowKeys(field);
-    protected String inputFolderName;
-    private InstanceProperties instanceProperties;
-    private TableProperties tableProperties;
+    protected String ingestLocalFiles;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeEach
     void setUp() throws Exception {
-        inputFolderName = createTempDirectory(tempDir, null).toString();
-        instanceProperties = createTestInstanceProperties();
-        tableProperties = createTestTableProperties(instanceProperties, schema);
+        ingestLocalFiles = createTempDirectory(tempDir, null).toString();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     protected StateStore initialiseStateStore() {
@@ -94,8 +94,13 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     }
 
     private IngestFactory createIngestFactory(StateStore stateStore) {
-        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName,
-                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+        return IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(ingestLocalFiles)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .instanceProperties(instanceProperties)
+                .s3AsyncClient(s3AsyncClient)
+                .build();
     }
 
     protected List<Record> readRecords(FileReference... fileReferences) {
