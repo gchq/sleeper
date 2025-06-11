@@ -129,7 +129,7 @@ public class ECSSystemTestTask {
         }
 
         ECSSystemTestTask withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            try (S3Client s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder())) {
+            try (S3Client s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
                 return combinedInstance(configBucket, s3Client);
             }
         }
@@ -138,7 +138,7 @@ public class ECSSystemTestTask {
             try (S3Client s3Client = S3Client.builder().build()) {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
-                    try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsV2(stsClient).buildClient(S3Client.builder())) {
+                    try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
                         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
                         IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
                         ingestData.run(job);
