@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 

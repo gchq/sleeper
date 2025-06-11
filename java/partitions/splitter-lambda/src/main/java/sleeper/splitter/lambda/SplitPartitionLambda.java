@@ -38,10 +38,10 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
-import sleeper.splitterv2.core.split.SplitPartition;
-import sleeper.splitterv2.core.split.SplitPartition.SendAsyncCommit;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.splitter.core.split.SplitPartition;
+import sleeper.splitter.core.split.SplitPartition.SendAsyncCommit;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.ArrayList;

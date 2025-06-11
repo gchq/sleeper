@@ -49,7 +49,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.splitterv2.core.split.SplitPartition;
+import sleeper.splitter.core.split.SplitPartition;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.util.ArrayList;

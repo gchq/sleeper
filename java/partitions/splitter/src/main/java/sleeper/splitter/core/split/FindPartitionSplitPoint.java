@@ -18,21 +18,16 @@ package sleeper.splitter.core.split;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketchesv2.Sketches;
+import sleeper.sketchesv2.store.SketchesStore;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -45,15 +40,20 @@ public class FindPartitionSplitPoint {
     public static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionSplitPoint.class);
 
     private final Schema schema;
-    private final List<PrimitiveType> rowKeyTypes;
-    private final List<String> fileNames;
-    private final SketchesLoader sketchesLoader;
+    private final List<Sketches> sketches;
 
-    public FindPartitionSplitPoint(Schema schema, List<String> fileNames, SketchesLoader sketchesLoader) {
+    private FindPartitionSplitPoint(Schema schema, List<Sketches> sketches) {
         this.schema = schema;
-        this.rowKeyTypes = schema.getRowKeyTypes();
-        this.fileNames = fileNames;
-        this.sketchesLoader = sketchesLoader;
+        this.sketches = sketches;
+    }
+
+    public static FindPartitionSplitPoint loadSketches(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
+        List<Sketches> sketches = new ArrayList<>();
+        for (String fileName : fileNames) {
+            LOGGER.info("Loading sketches for file {}", fileName);
+            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
+        }
+        return new FindPartitionSplitPoint(schema, sketches);
     }
 
     public Optional<Object> splitPointForDimension(int dimension) {
@@ -89,34 +89,10 @@ public class FindPartitionSplitPoint {
 
     private <T> ItemsSketch<T> unionSketches(Field field) {
         ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
-        for (String fileName : fileNames) {
-            String sketchesFile = fileName.replace(".parquet", ".sketches");
-            LOGGER.info("Loading Sketches from {}", sketchesFile);
-            Sketches sketches = loadSketches(sketchesFile);
-            union.update(sketches.getQuantilesSketch(field.getName()));
+        for (Sketches sketch : sketches) {
+            union.update(sketch.getQuantilesSketch(field.getName()));
         }
         return union.getResult();
-    }
-
-    private Sketches loadSketches(String filename) {
-        try {
-            return sketchesLoader.load(filename);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public interface SketchesLoader {
-        Sketches load(String filename) throws IOException;
-    }
-
-    public static SketchesLoader loadSketchesFromFile(Schema schema, Configuration conf) {
-        return (filename) -> new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(filename), conf);
-    }
-
-    public static SketchesLoader loadSketchesFromFile(TableProperties tableProperties, Configuration conf) {
-        SketchesSerDeToS3 serDe = new SketchesSerDeToS3(tableProperties.getSchema());
-        return (filename) -> serDe.loadFromHadoopFS(new Path(filename), conf);
     }
 
 }
