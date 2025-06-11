@@ -26,7 +26,7 @@ on:
       - 'java/ingest/ingest-tracker/**'
       - 'java/statestore/**'
       - 'java/ingest/ingest-batcher-store/**'
-      - 'java/common/common-taskv2/**'
+      - 'java/common/common-task/**'
       - 'java/query/query-runner/**'
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'

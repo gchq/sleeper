@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.common.taskv2.QueueMessageCount;
-import sleeper.common.taskv2.RunCompactionTasks;
+import sleeper.common.task.QueueMessageCount;
+import sleeper.common.task.RunCompactionTasks;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 

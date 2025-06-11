@@ -26,7 +26,7 @@ import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.report.job.query.RangeJobsQuery;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;

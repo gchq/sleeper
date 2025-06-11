@@ -21,7 +21,7 @@ on:
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/bulk-import/bulk-import-runner/**'
       - 'java/ingest/ingest-runner/**'
-      - 'java/common/common-taskv2/**'
+      - 'java/common/common-task/**'
       - 'java/statestore/**'
       - 'java/common/common-jobv2/**'
       - 'java/configurationV2/**'

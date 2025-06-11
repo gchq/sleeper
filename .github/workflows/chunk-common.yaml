@@ -18,7 +18,6 @@ on:
       - 'java/common/common-job/**'
       - 'java/common/common-jobv2/**'
       - 'java/common/common-task/**'
-      - 'java/common/common-taskv2/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/common/common-invoke-tablesv2/**'
       - 'java/build/**'

@@ -16,7 +16,7 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientTrackerFactory;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 

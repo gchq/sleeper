@@ -30,7 +30,7 @@ import sleeper.clients.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;

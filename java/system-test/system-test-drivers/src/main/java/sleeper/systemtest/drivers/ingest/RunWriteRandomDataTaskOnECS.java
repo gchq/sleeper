@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.ecs.model.TaskOverride;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.common.taskv2.RunECSTasks;
+import sleeper.common.task.RunECSTasks;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

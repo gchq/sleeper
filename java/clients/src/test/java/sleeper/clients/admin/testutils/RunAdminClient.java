@@ -20,7 +20,7 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.common.taskv2.InMemoryQueueMessageCounts.noQueues;
+import static sleeper.common.task.InMemoryQueueMessageCounts.noQueues;
 
 public class RunAdminClient {
     private final ToStringConsoleOutput out;

@@ -24,7 +24,7 @@ import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.configurationv2.properties.S3InstanceProperties;

@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;

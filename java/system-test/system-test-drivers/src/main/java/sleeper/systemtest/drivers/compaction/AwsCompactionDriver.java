@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
-import sleeper.common.taskv2.EC2Scaler;
+import sleeper.common.task.EC2Scaler;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;

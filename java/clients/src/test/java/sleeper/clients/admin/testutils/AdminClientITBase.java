@@ -24,7 +24,7 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.configurationv2.table.index.DynamoDBTableIndex;
