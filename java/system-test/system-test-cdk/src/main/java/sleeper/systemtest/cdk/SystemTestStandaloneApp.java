@@ -24,14 +24,14 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
 
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 
 public class SystemTestStandaloneApp extends Stack {
 

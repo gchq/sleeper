@@ -22,8 +22,8 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.configurationv2.SystemTestProperty;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestProperty;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,16 +37,16 @@ import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUP
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ID_MAX_LEN;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REGION;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_VPC_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ECS_SECURITY_GROUPS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID_MAX_LEN;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 
 public class SystemTestParameters {
 

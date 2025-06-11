@@ -33,7 +33,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.statestorev2.StateStoreFactory;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.net.URI;

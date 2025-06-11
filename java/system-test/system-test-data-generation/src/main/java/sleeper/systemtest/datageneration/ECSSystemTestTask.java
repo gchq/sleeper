@@ -31,20 +31,20 @@ import sleeper.common.jobv2.action.thread.PeriodicActionRunnable;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configurationv2.SystemTestProperties;
-import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);

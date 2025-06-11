@@ -26,10 +26,11 @@
     </parent>
 
     <artifactId>system-test-configuration</artifactId>
+
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
+            <artifactId>configurationV2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

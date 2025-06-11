@@ -25,18 +25,18 @@ import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
-import sleeper.systemtest.configurationv2.SystemTestIngestMode;
-import sleeper.systemtest.configurationv2.SystemTestProperties;
-import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestIngestMode;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 
-import static sleeper.systemtest.configurationv2.SystemTestIngestMode.BATCHER;
-import static sleeper.systemtest.configurationv2.SystemTestIngestMode.DIRECT;
-import static sleeper.systemtest.configurationv2.SystemTestIngestMode.GENERATE_ONLY;
-import static sleeper.systemtest.configurationv2.SystemTestIngestMode.QUEUE;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.BATCHER;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 
 /**
  * Entrypoint for SystemTest image. Writes random data to Sleeper using the mechanism (ingestMode) defined in
