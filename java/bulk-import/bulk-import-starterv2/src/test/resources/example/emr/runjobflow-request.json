@@ -1,6 +1,6 @@
 {
   "Name": "sleeper-test-instance-table-id-test-job",
-  "ReleaseLabel": "emr-7.2.0",
+  "ReleaseLabel": "emr-7.9.0",
   "Instances": {
     "InstanceFleets": [
       {

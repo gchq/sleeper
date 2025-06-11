@@ -17,6 +17,8 @@ package sleeper.bulkimport.runner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.core.util.VersionInfo;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -53,6 +55,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -170,6 +174,17 @@ public class BulkImportJobDriver {
         String jobId = args[1];
         String taskId = args[2];
         String jobRunId = args[3];
+        String bulkImportMode = args[4];
+
+        LOGGER.info("Starting bulk import job driver");
+        LOGGER.info("Config bucket: {}", configBucket);
+        LOGGER.info("Job ID: {}", jobId);
+        LOGGER.info("Task ID: {}", taskId);
+        LOGGER.info("Job run ID: {}", jobRunId);
+        LOGGER.info("Bulk import mode: {}", bulkImportMode);
+        LOGGER.info("AWS SDK version, from VersionInfo: {}", VersionInfo.SDK_VERSION);
+        logCodeSource(VersionInfo.class);
+        logCodeSource(SdkSystemSetting.class);
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
@@ -214,6 +229,16 @@ public class BulkImportJobDriver {
         try (StsClient sts = StsClient.create()) {
             GetCallerIdentityResponse callerIdentity = sts.getCallerIdentity(GetCallerIdentityRequest.builder().build());
             LOGGER.info("Logged in as: {}", callerIdentity.arn());
+        }
+    }
+
+    private static void logCodeSource(Class<?> clazz) {
+        ProtectionDomain domain = clazz.getProtectionDomain();
+        CodeSource codeSource = domain.getCodeSource();
+        if (codeSource != null) {
+            LOGGER.info("Code location for class {}: {}", clazz.getName(), codeSource.getLocation());
+        } else {
+            LOGGER.info("Code source is null for class {}", clazz.getName());
         }
     }
 }

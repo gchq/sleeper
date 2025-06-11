@@ -15,8 +15,8 @@
  */
 package sleeper.trino.remotesleeperconnection;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -39,7 +39,7 @@ public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopC
     public Configuration getHadoopConfiguration(InstanceProperties instanceProperties) {
         Configuration configuration = getConfigurationForECS(instanceProperties);
         configuration.setClassLoader(HadoopConfigurationProviderForDeployedS3Instance.class.getClassLoader());
-        configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        configuration.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         configuration.set("fs.s3a.impl", org.apache.hadoop.fs.s3a.S3AFileSystem.class.getName());
         configuration.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
         return configuration;

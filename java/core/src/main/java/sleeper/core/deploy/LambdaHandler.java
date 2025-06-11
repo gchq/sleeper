@@ -44,7 +44,7 @@ public class LambdaHandler {
             .optionalStack(OptionalStack.AthenaStack).add();
     public static final LambdaHandler BULK_IMPORT_STARTER = builder()
             .jar(LambdaJar.BULK_IMPORT_STARTER)
-            .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
+            .handler("sleeper.bulkimport.starterv2.BulkImportStarterLambda")
             .optionalStacks(OptionalStack.BULK_IMPORT_STACKS).add();
     public static final LambdaHandler INGEST_TASK_CREATOR = builder()
             .jar(LambdaJar.INGEST_TASK_CREATOR)
