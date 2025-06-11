@@ -25,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;

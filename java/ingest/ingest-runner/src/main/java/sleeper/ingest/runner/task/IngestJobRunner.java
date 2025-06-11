@@ -50,7 +50,7 @@ import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.HadoopPathUtils;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
 import java.time.Instant;

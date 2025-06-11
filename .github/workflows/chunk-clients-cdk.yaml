@@ -24,7 +24,7 @@ on:
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-tracker/**'
       - 'java/ingest/ingest-tracker/**'
-      - 'java/statestorev2/**'
+      - 'java/statestore/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-taskv2/**'
       - 'java/query/query-runner/**'

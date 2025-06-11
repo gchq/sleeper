@@ -27,8 +27,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.statestorev2.InitialiseStateStoreFromSplitPoints;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;

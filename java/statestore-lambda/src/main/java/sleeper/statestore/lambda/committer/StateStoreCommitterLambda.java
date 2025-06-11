@@ -36,11 +36,11 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.toolsv2.DynamoDBUtils;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 import sleeper.statestore.committer.StateStoreCommitter.RetryOnThrottling;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Duration;
 import java.time.Instant;

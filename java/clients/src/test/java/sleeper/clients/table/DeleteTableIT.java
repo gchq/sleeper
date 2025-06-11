@@ -42,12 +42,12 @@ import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecords;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.statestorev2.transactionlog.snapshots.LatestSnapshots;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 
 import java.io.IOException;
 import java.nio.file.Path;

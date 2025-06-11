@@ -43,7 +43,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;

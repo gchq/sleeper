@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.localstack.TearDownBucket;
 import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Locale;
 

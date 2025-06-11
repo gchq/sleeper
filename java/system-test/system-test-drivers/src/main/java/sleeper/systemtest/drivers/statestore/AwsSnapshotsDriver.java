@@ -25,10 +25,10 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestorev2.StateStoreArrowFileReadStore;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.statestorev2.transactionlog.snapshots.SnapshotType;
+import sleeper.statestore.StateStoreArrowFileReadStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.SnapshotType;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 

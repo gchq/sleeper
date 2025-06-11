@@ -15,21 +15,17 @@
  */
 package sleeper.statestore;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Initialises a state store with a single root partition.
@@ -52,20 +48,15 @@ public class InitialiseStateStore {
         String instanceId = args[0];
         String tableName = args[1];
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient).getByName(tableName);
 
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
+            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient).getStateStore(tableProperties);
 
             InitialisePartitionsTransaction.singlePartition(tableProperties.getSchema()).synchronousCommit(stateStore);
-        } finally {
-            dynamoDBClient.shutdown();
-            s3Client.shutdown();
         }
     }
 }

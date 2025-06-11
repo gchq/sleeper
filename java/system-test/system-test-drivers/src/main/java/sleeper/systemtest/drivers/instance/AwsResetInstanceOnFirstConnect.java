@@ -31,8 +31,8 @@ import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.deploy.SqsQueues;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 

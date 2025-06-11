@@ -32,7 +32,7 @@ import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.Optional;
 

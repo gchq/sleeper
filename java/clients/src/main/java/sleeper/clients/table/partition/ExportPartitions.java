@@ -28,7 +28,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;

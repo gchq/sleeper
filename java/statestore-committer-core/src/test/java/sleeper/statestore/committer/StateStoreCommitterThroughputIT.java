@@ -35,9 +35,9 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.util.LoggedDuration;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Duration;
 import java.time.Instant;

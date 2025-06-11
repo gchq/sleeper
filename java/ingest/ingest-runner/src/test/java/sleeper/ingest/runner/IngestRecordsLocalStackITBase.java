@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;

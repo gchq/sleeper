@@ -29,7 +29,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.Objects;
 import java.util.function.Function;

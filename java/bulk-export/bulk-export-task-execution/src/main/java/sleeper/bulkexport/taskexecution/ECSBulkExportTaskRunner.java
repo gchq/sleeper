@@ -44,7 +44,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.NoSketchesStore;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;

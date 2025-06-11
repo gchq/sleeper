@@ -62,9 +62,9 @@ import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

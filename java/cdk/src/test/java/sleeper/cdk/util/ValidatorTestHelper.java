@@ -18,7 +18,7 @@ package sleeper.cdk.util;
 
 import org.apache.commons.io.FileUtils;
 
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.io.File;
 import java.io.IOException;

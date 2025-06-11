@@ -15,25 +15,25 @@
  */
 package sleeper.statestore.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
+import software.amazon.awssdk.services.dynamodb.model.Update;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.table.TableStatus;
-import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
+import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;
@@ -47,13 +47,13 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.hasConditionalCheckFailure;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedResults;
 
 /**
  * Stores an index of snapshots derived from a transaction log. The index is backed by DynamoDB.
@@ -76,14 +76,14 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     private final String latestSnapshotsTable;
     private final TableStatus sleeperTable;
     private final String sleeperTableId;
-    private final AmazonDynamoDB dynamo;
+    private final DynamoDbClient dynamo;
     private final Supplier<Instant> timeSupplier;
 
-    public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo) {
+    public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo) {
         this(instanceProperties, tableProperties, dynamo, Instant::now);
     }
 
-    public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
+    public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo, Supplier<Instant> timeSupplier) {
         this.allSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME);
         this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
         this.sleeperTable = tableProperties.getStatus();
@@ -102,13 +102,13 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         Instant updateTime = timeSupplier.get();
         try {
             List<TransactWriteItem> writes = List.of(
-                    new TransactWriteItem()
-                            .withPut(putNewSnapshot(snapshot, updateTime)),
-                    new TransactWriteItem()
-                            .withUpdate(updateLatestSnapshot(snapshot, updateTime)));
-            TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-                    .withTransactItems(writes)
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+                    TransactWriteItem.builder()
+                            .put(putNewSnapshot(snapshot, updateTime)).build(),
+                    TransactWriteItem.builder()
+                            .update(updateLatestSnapshot(snapshot, updateTime)).build());
+            TransactWriteItemsRequest transactWriteItemsRequest = TransactWriteItemsRequest.builder()
+                    .transactItems(writes)
+                    .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build();
             dynamo.transactWriteItems(transactWriteItemsRequest);
         } catch (TransactionCanceledException e) {
             if (hasConditionalCheckFailure(e)) {
@@ -118,16 +118,17 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     private Put putNewSnapshot(TransactionLogSnapshotMetadata snapshot, Instant updateTime) {
-        return new Put()
-                .withTableName(allSnapshotsTable)
-                .withItem(new DynamoDBRecordBuilder()
+        return Put.builder()
+                .tableName(allSnapshotsTable)
+                .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID_AND_SNAPSHOT_TYPE, tableAndType(sleeperTableId, snapshot.getType()))
                         .string(TABLE_ID, sleeperTableId)
                         .string(PATH, snapshot.getPath())
                         .number(TRANSACTION_NUMBER, snapshot.getTransactionNumber())
                         .number(UPDATE_TIME, updateTime.toEpochMilli())
                         .string(SNAPSHOT_TYPE, snapshot.getType().name())
-                        .build());
+                        .build())
+                .build();
     }
 
     private Update updateLatestSnapshot(TransactionLogSnapshotMetadata snapshot, Instant updateTime) {
@@ -140,22 +141,23 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
             pathKey = PARTITIONS_SNAPSHOT_PATH;
             transactionNumberKey = PARTITIONS_TRANSACTION_NUMBER;
         }
-        return new Update()
-                .withTableName(latestSnapshotsTable)
-                .withKey(Map.of(TABLE_ID, createStringAttribute(sleeperTableId)))
-                .withUpdateExpression("SET " +
+        return Update.builder()
+                .tableName(latestSnapshotsTable)
+                .key(Map.of(TABLE_ID, createStringAttribute(sleeperTableId)))
+                .updateExpression("SET " +
                         "#Path = :path, " +
                         "#TransactionNumber = :transaction_number, " +
                         "#UpdateTime = :update_time")
-                .withConditionExpression("#TransactionNumber <> :transaction_number")
-                .withExpressionAttributeNames(Map.of(
+                .conditionExpression("#TransactionNumber <> :transaction_number")
+                .expressionAttributeNames(Map.of(
                         "#Path", pathKey,
                         "#TransactionNumber", transactionNumberKey,
                         "#UpdateTime", UPDATE_TIME))
-                .withExpressionAttributeValues(Map.of(
+                .expressionAttributeValues(Map.of(
                         ":path", createStringAttribute(snapshot.getPath()),
                         ":transaction_number", createNumberAttribute(snapshot.getTransactionNumber()),
-                        ":update_time", createNumberAttribute(updateTime.toEpochMilli())));
+                        ":update_time", createNumberAttribute(updateTime.toEpochMilli())))
+                .build();
     }
 
     public List<TransactionLogSnapshotMetadata> getFilesSnapshots() {
@@ -169,15 +171,15 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     private Stream<TransactionLogSnapshotMetadata> getSnapshots(SnapshotType type) {
-        return streamPagedItems(dynamo, new QueryRequest()
-                .withTableName(allSnapshotsTable)
-                .withConsistentRead(true)
-                .withKeyConditionExpression("#TableIdAndType = :table_and_type")
-                .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+        return streamPagedItems(dynamo, QueryRequest.builder()
+                .tableName(allSnapshotsTable)
+                .consistentRead(true)
+                .keyConditionExpression("#TableIdAndType = :table_and_type")
+                .expressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
+                .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_and_type", tableAndType(sleeperTableId, type))
                         .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
                 .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem);
     }
 
@@ -187,15 +189,16 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
      * @return metadata describing the latest snapshots for the Sleeper table
      */
     public LatestSnapshots getLatestSnapshots() {
-        QueryResult result = dynamo.query(new QueryRequest()
-                .withTableName(latestSnapshotsTable)
-                .withKeyConditionExpression("#TableId = :table_id")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+        QueryResponse response = dynamo.query(QueryRequest.builder()
+                .tableName(latestSnapshotsTable)
+                .keyConditionExpression("#TableId = :table_id")
+                .expressionAttributeNames(Map.of("#TableId", TABLE_ID))
+                .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTableId)
-                        .build()));
-        if (result.getCount() > 0) {
-            return getLatestSnapshotsFromItem(result.getItems().get(0));
+                        .build())
+                .build());
+        if (response.count() > 0) {
+            return getLatestSnapshotsFromItem(response.items().get(0));
         } else {
             return LatestSnapshots.empty();
         }
@@ -210,17 +213,18 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
      */
     public Optional<TransactionLogSnapshotMetadata> getLatestSnapshotInRange(SnapshotType type, TransactionLogRange range) {
         if (range.isMaxTransactionBounded()) {
-            QueryResult result = dynamo.query(new QueryRequest()
-                    .withTableName(allSnapshotsTable)
-                    .withKeyConditionExpression("#TableIdAndType = :table_id_and_type AND #Number BETWEEN :startInclusive AND :endInclusive")
-                    .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE, "#Number", TRANSACTION_NUMBER))
-                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+            QueryResponse response = dynamo.query(QueryRequest.builder()
+                    .tableName(allSnapshotsTable)
+                    .keyConditionExpression("#TableIdAndType = :table_id_and_type AND #Number BETWEEN :startInclusive AND :endInclusive")
+                    .expressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE, "#Number", TRANSACTION_NUMBER))
+                    .expressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id_and_type", tableAndType(sleeperTableId, type))
                             .number(":startInclusive", range.startInclusive())
                             .number(":endInclusive", range.endExclusive() - 1)
                             .build())
-                    .withScanIndexForward(false));
-            return result.getItems().stream().findFirst().map(item -> getSnapshotFromItem(item));
+                    .scanIndexForward(false)
+                    .build());
+            return response.items().stream().findFirst().map(item -> getSnapshotFromItem(item));
         } else {
             return getLatestSnapshots().getSnapshot(type)
                     .filter(metadata -> metadata.getTransactionNumber() >= range.startInclusive());
@@ -248,7 +252,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     }
 
     private static TransactionLogSnapshotMetadata getSnapshotFromItem(Map<String, AttributeValue> item) {
-        SnapshotType type = SnapshotType.valueOf(item.get(SNAPSHOT_TYPE).getS());
+        SnapshotType type = SnapshotType.valueOf(item.get(SNAPSHOT_TYPE).s());
         return new TransactionLogSnapshotMetadata(getStringAttribute(item, PATH), type, getLongAttribute(item, TRANSACTION_NUMBER, 0));
     }
 
@@ -289,26 +293,33 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     public void deleteAllSnapshots() {
         deleteAllSnapshots(SnapshotType.FILES);
         deleteAllSnapshots(SnapshotType.PARTITIONS);
-        dynamo.deleteItem(latestSnapshotsTable, new DynamoDBRecordBuilder()
-                .string(TABLE_ID, sleeperTableId)
-                .build());
+        dynamo.deleteItem(
+                DeleteItemRequest.builder()
+                        .tableName(latestSnapshotsTable)
+                        .key(new DynamoDBRecordBuilder()
+                                .string(TABLE_ID, sleeperTableId)
+                                .build())
+                        .build());
     }
 
     private void deleteAllSnapshots(SnapshotType type) {
-        streamPagedResults(dynamo, new QueryRequest().withTableName(allSnapshotsTable)
-                .withKeyConditionExpression("#TableIdAndType = :table_and_type")
-                .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+        streamPagedResults(dynamo, QueryRequest.builder()
+                .tableName(allSnapshotsTable)
+                .keyConditionExpression("#TableIdAndType = :table_and_type")
+                .expressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
+                .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_and_type", tableAndType(sleeperTableId, type))
-                        .build()))
-                .flatMap(result -> result.getItems().stream())
+                        .build())
+                .build())
+                .flatMap(response -> response.items().stream())
                 .parallel()
                 .map(item -> Map.of(
                         TABLE_ID_AND_SNAPSHOT_TYPE, item.get(TABLE_ID_AND_SNAPSHOT_TYPE),
                         TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER)))
-                .forEach(key -> dynamo.deleteItem(new DeleteItemRequest()
-                        .withTableName(allSnapshotsTable)
-                        .withKey(key)));
+                .forEach(key -> dynamo.deleteItem(DeleteItemRequest.builder()
+                        .tableName(allSnapshotsTable)
+                        .key(key)
+                        .build()));
     }
 
     private Stream<TransactionLogSnapshotMetadata> getExpiredSnapshotsExcludingLatest(long latestSnapshotNumber, SnapshotType type, Instant time) {
@@ -318,35 +329,38 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
 
     private Optional<TransactionLogSnapshotMetadata> getLatestSnapshotBefore(SnapshotType type, Instant time) {
         return getSnapshotsBefore(type, time, request -> request
-                .withScanIndexForward(false)
-                .withLimit(1))
+                .scanIndexForward(false)
+                .limit(1))
                 .findFirst();
     }
 
-    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, Instant time, Consumer<QueryRequest> config) {
-        QueryRequest request = new QueryRequest()
-                .withTableName(allSnapshotsTable)
-                .withKeyConditionExpression("#TableIdAndType = :table_id_and_type")
-                .withFilterExpression("#UpdateTime < :expiry_time")
-                .withExpressionAttributeNames(Map.of(
+    private Stream<TransactionLogSnapshotMetadata> getSnapshotsBefore(SnapshotType type, Instant time, Consumer<QueryRequest.Builder> config) {
+        QueryRequest.Builder request = QueryRequest.builder()
+                .tableName(allSnapshotsTable)
+                .keyConditionExpression("#TableIdAndType = :table_id_and_type")
+                .filterExpression("#UpdateTime < :expiry_time")
+                .expressionAttributeNames(Map.of(
                         "#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE,
                         "#UpdateTime", UPDATE_TIME))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id_and_type", tableAndType(sleeperTableId, type))
                         .number(":expiry_time", time.toEpochMilli())
                         .build());
         config.accept(request);
-        return streamPagedItems(dynamo, request)
+        return streamPagedItems(dynamo, request.build())
                 .map(DynamoDBTransactionLogSnapshotMetadataStore::getSnapshotFromItem);
     }
 
     void deleteSnapshot(TransactionLogSnapshotMetadata snapshot) {
-        dynamo.deleteItem(allSnapshotsTable, getKeyFromSnapshot(snapshot));
+        dynamo.deleteItem(DeleteItemRequest.builder()
+                .tableName(allSnapshotsTable)
+                .key(getKeyFromSnapshot(snapshot))
+                .build());
     }
 
     private Map<String, AttributeValue> getKeyFromSnapshot(TransactionLogSnapshotMetadata snapshot) {
-        return Map.of(TABLE_ID_AND_SNAPSHOT_TYPE, new AttributeValue().withS(tableAndType(sleeperTableId, snapshot.getType())),
-                TRANSACTION_NUMBER, new AttributeValue().withN(snapshot.getTransactionNumber() + ""));
+        return Map.of(TABLE_ID_AND_SNAPSHOT_TYPE, AttributeValue.builder().s(tableAndType(sleeperTableId, snapshot.getType())).build(),
+                TRANSACTION_NUMBER, AttributeValue.builder().n(snapshot.getTransactionNumber() + "").build());
     }
 
 }

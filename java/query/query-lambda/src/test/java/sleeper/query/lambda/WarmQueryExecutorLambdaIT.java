@@ -40,8 +40,8 @@ import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;

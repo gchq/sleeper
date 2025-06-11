@@ -39,8 +39,8 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;

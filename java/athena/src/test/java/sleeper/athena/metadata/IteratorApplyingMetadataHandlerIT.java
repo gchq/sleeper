@@ -50,7 +50,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.split.SplitPartition;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

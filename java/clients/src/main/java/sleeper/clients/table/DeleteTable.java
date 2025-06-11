@@ -28,8 +28,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;

@@ -31,7 +31,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.Objects;

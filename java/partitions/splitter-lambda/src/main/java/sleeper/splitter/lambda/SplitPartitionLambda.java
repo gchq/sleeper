@@ -42,7 +42,7 @@ import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.splitter.core.split.SplitPartition;
 import sleeper.splitter.core.split.SplitPartition.SendAsyncCommit;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
 import java.util.List;

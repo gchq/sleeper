@@ -34,9 +34,9 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
-import sleeper.statestorev2.transactionlog.TransactionLogTransactionDeleter;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
