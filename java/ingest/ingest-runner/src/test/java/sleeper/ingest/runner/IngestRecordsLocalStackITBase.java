@@ -55,12 +55,12 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     @TempDir
     private static Path tempDir;
 
-    protected final Field field = new Field("key", new LongType());
+    private final Field field = new Field("key", new LongType());
     protected Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
-    protected String dataFolderName;
-    protected InstanceProperties instanceProperties;
-    protected TableProperties tableProperties;
+    private String dataFolderName;
+    private InstanceProperties instanceProperties;
+    private TableProperties tableProperties;
     protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeEach
