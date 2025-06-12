@@ -205,8 +205,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
 ///  1. All columns that are NOT query aggregation columns have an aggregation operation specified for them,
 ///  2. No query aggregation columns have aggregations specified,
 ///  3. No query aggregation column is duplicated.
-///  4. No aggregation column is specified multiple times,
-///  5. Aggregation columns must be valid in schema.
+///  4. Aggregation columns must be valid in schema.
 ///
 /// Raise an error if this is not the case.
 pub fn validate_aggregations(
