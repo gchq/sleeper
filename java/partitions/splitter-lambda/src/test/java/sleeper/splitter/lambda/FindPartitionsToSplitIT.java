@@ -42,10 +42,10 @@ import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.splitterv2.core.find.FindPartitionsToSplit;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.splitter.core.find.FindPartitionsToSplit;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 
 import java.io.File;
 import java.io.IOException;

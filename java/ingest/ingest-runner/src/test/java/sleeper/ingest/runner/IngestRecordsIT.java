@@ -33,7 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.example.iterator.AdditionIterator;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.ArrayList;
 import java.util.Comparator;

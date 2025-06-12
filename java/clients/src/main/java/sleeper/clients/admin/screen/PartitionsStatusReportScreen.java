@@ -23,7 +23,7 @@ import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
-import sleeper.splitterv2.core.status.PartitionsStatus;
+import sleeper.splitter.core.status.PartitionsStatus;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 

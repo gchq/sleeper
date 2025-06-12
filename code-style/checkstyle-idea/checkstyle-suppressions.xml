@@ -46,8 +46,6 @@
     <suppress files="[\\/]sleeper[\\/]parquet[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]sketchesv2[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]sketchesv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]job[\\/]common[\\/].*" id="missingJavadocMethod"/>
@@ -72,8 +70,6 @@
     <suppress files="[\\/]sleeper[\\/]compaction[\\/]tracker[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]splitterv2[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]splitterv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocMethod"/>

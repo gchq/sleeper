@@ -38,9 +38,9 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
 import java.nio.file.Path;

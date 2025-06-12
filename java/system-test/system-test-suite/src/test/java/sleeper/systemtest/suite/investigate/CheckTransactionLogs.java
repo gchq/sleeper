@@ -48,7 +48,7 @@ import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.statestorev2.StateStoreArrowFileReadStore;
 import sleeper.statestorev2.StateStorePartitionsArrowFormat;
 import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;

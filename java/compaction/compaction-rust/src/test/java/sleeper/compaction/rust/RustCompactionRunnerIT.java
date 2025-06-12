@@ -45,10 +45,10 @@ import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.nio.file.Path;

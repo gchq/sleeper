@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.starter;
+package sleeper.sketches.store;
 
-import org.junit.jupiter.api.Test;
+import sleeper.core.schema.Schema;
+import sleeper.sketches.Sketches;
 
-import sleeper.core.deploy.LambdaHandler;
+public interface SketchesStore {
 
-import static org.assertj.core.api.Assertions.assertThat;
+    void saveFileSketches(String filename, Schema schema, Sketches sketches);
 
-public class BulkImportStarterLambdaHandlerTest {
-
-    @Test
-    void shouldMatchLambdaHandlerDeclaration() {
-        assertThat(LambdaHandler.BULK_IMPORT_STARTER.getHandler())
-                .isEqualTo(BulkImportStarterLambda.class.getName());
-    }
+    Sketches loadFileSketches(String filename, Schema schema);
 
 }
