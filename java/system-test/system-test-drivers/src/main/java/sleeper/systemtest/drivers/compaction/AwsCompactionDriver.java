@@ -44,7 +44,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.SplitIntoBatches;
-import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;

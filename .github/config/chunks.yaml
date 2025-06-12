@@ -26,7 +26,6 @@ chunks:
       - common/common-job
       - common/common-task
       - common/common-invoke-tables
-      - common/common-invoke-tablesv2
       - build
       - common/dynamodb-tools
       - common/dynamodb-toolsv2

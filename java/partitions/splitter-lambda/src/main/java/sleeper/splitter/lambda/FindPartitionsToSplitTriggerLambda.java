@@ -31,7 +31,7 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
-import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.invoke.tables.InvokeForTables;
 
 import java.time.Instant;
 

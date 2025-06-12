@@ -36,7 +36,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
-import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;

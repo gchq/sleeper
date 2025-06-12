@@ -39,7 +39,7 @@ on:
       - 'java/query/query-core/**'
       - 'java/compaction/compaction-rust/**'
       - 'java/ingest/ingest-runner/**'
-      - 'java/common/common-invoke-tablesv2/**'
+      - 'java/common/common-invoke-tables/**'
       - 'java/compaction/compaction-core/**'
       - 'java/common/common-job/**'
       - 'java/sketches/**'

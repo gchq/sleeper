@@ -23,7 +23,7 @@ import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.configurationv2.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
-import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.invoke.tables.InvokeForTables;
 
 import java.util.List;
 import java.util.stream.Stream;

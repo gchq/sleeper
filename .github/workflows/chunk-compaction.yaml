@@ -32,7 +32,7 @@ on:
       - 'java/sketches/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
-      - 'java/common/common-invoke-tablesv2/**'
+      - 'java/common/common-invoke-tables/**'
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/parquet/**'

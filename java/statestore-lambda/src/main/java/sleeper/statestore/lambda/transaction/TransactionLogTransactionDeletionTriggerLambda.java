@@ -32,7 +32,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.time.Instant;
