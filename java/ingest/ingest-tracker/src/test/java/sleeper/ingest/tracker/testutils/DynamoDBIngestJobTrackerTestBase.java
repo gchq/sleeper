@@ -16,7 +16,6 @@
 package sleeper.ingest.tracker.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -40,7 +39,6 @@ import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
-import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -51,7 +49,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -79,7 +76,6 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_JOB_RUN_ID = "run-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String jobStatusTableName = DynamoDBIngestJobTracker.jobUpdatesTableName(instanceProperties.get(ID));
     protected final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
@@ -91,11 +87,6 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
     @BeforeEach
     public void setUp() {
         DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
-    }
-
-    @AfterEach
-    public void tearDown() {
-        dynamoClient.deleteTable(jobStatusTableName);
     }
 
     protected IngestJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {

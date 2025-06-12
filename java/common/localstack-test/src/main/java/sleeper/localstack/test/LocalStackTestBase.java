@@ -16,7 +16,6 @@
 package sleeper.localstack.test;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -53,7 +52,6 @@ public abstract class LocalStackTestBase {
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
     protected final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
-    protected final AmazonDynamoDB dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final AmazonSQS sqsClient = SleeperLocalStackClients.SQS_CLIENT;
     protected final AWSSecurityTokenService stsClient = SleeperLocalStackClients.STS_CLIENT;
     protected final AmazonCloudWatch cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;

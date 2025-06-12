@@ -17,8 +17,6 @@ package sleeper.localstack.test;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -50,7 +48,6 @@ public class SleeperLocalStackClients {
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
     public static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    public static final AmazonDynamoDB DYNAMO_CLIENT = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     public static final AmazonSQS SQS_CLIENT = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
     public static final AWSSecurityTokenService STS_CLIENT = buildAwsV1Client(CONTAINER, Service.STS, AWSSecurityTokenServiceClientBuilder.standard());
     public static final AmazonCloudWatch CLOUDWATCH_CLIENT = buildAwsV1Client(CONTAINER, Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
