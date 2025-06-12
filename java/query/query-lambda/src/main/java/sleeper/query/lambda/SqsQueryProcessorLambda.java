@@ -18,6 +18,7 @@ package sleeper.query.lambda;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -102,6 +103,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         }
     }
 
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private void updateProperties(String configBucket) throws ObjectFactoryException {
         // Refresh properties and caches
         if (null == configBucket) {
