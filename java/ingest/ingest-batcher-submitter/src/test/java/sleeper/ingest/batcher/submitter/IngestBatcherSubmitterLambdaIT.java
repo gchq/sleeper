@@ -16,16 +16,10 @@
 
 package sleeper.ingest.batcher.submitter;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
@@ -42,14 +36,10 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 import sleeper.localstack.test.LocalStackTestBase;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
@@ -67,8 +57,6 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
-    public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
-    public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
     @BeforeEach
     void setup() {
@@ -78,51 +66,6 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
         tableProperties.set(TABLE_ID, TEST_TABLE_ID);
         tableProperties.set(TABLE_NAME, "test-table");
-    }
-
-    //In Progress
-    //Been trying to understand how to make the s3Client call, I think I'm on the right track here but could be wrong
-    //I've taken code from BuildUptimeLambdaIt and WiremockTestHelper to create a mocked object to go in the builder
-    //Those didnt mock the s3Client though so it may not work for it
-    //I havent found how to add a retry mechanic into the sqs for this test, over riding the default behaviour.
-    @Nested
-    @DisplayName("Network Error test")
-    @WireMockTest
-    class NetworkErrorTest {
-        @Test
-        void shouldHandleNetworkErrorCorrectly(WireMockRuntimeInfo runtimeInfo) {
-            uploadFileToS3("test-file-1.parquet");
-            //Mock Network error
-
-            S3Client client = S3Client.builder().endpointOverride(URI.create(runtimeInfo.getHttpBaseUrl())) //This code was taken from BuildUptimeLambdaIt and WiremockTestHelper
-                    .region(Region.US_EAST_1)
-                    .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY)))
-                    .build();
-
-            final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-                    batcherStore(), instanceProperties, tableIndex,
-                    new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClientV2),
-                    client);
-            stubFor(post("/").willReturn(aResponse().withStatus(200)));
-            //Setup custom retry sqs for tests
-
-            //Send job
-            String json = "{" +
-                    "\"files\":[\"" + testBucket + "/test-file-1.parquet\"]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-
-            lambda.handleMessage(json, RECEIVED_TIME);
-
-            //Assert retry attempted
-            assertThat(batcherStore().getAllFilesNewestFirst())
-                    .containsExactly(
-                            fileRequest(testBucket + "/test-file-1.parquet"));
-            assertThat(receiveDeadLetters()).isEmpty();
-        }
     }
 
     @Nested
