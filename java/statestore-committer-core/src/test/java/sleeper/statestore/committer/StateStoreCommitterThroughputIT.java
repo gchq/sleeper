@@ -121,15 +121,15 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         return instanceProperties;
     }
 
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).createTable(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).createTable(tableProperties);
         update(stateStoreProvider().getStateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
@@ -139,15 +139,15 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
         return new StateStoreCommitter(
                 tablePropertiesProvider,
                 stateStoreProvider(),
-                new S3TransactionBodyStore(instanceProperties, s3ClientV2, TransactionSerDeProvider.from(tablePropertiesProvider)));
+                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
-        return S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+        return S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
 }

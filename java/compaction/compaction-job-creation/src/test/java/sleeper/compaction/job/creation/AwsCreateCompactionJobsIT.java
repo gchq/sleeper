@@ -71,7 +71,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
-    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = createAndInitialiseStateStore(tableProperties);
 
@@ -133,7 +133,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
     }
 
     private List<CompactionJobDispatchRequest> receivePendingBatches() {
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .build());
@@ -144,7 +144,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
     }
 
     private List<CompactionJob> loadBatchJobs(CompactionJobDispatchRequest batch) {
-        return new CompactionJobSerDe().batchFromJson(s3ClientV2.getObject(
+        return new CompactionJobSerDe().batchFromJson(s3Client.getObject(
                 GetObjectRequest.builder()
                         .bucket(instanceProperties.get(DATA_BUCKET))
                         .key(batch.getBatchKey())
@@ -159,7 +159,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
     }
 
     private ReceiveMessageResponse receiveAssignJobIdQueueMessage() {
-        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .build());
@@ -172,18 +172,18 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createInstanceProperties();
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClient.createQueue(CreateQueueRequest.builder()
                 .queueName(UUID.randomUUID().toString()).build()).queueUrl());
         instanceProperties.set(FILE_SYSTEM, "");
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(COMPACTION_PENDING_QUEUE_URL,
-                sqsClientV2.createQueue(CreateQueueRequest.builder()
+                sqsClient.createQueue(CreateQueueRequest.builder()
                         .queueName(UUID.randomUUID().toString()).build()).queueUrl());
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         return instanceProperties;
     }
@@ -200,6 +200,6 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
         return AwsCreateCompactionJobs.from(ObjectFactory.noUserJars(),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties), stateStoreProvider, s3ClientV2, sqsClientV2);
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties), stateStoreProvider, s3Client, sqsClient);
     }
 }

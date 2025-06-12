@@ -299,14 +299,14 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
     }
 
     private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {
-        return new IteratorApplyingMetadataHandler(s3ClientV2, dynamoClientV2,
+        return new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
                 "spillBucket", "spillPrefix");
     }
 
     private StateStore stateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {

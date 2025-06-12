@@ -34,7 +34,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
         String queueUrl = createSqsQueueGetUrl();
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -46,14 +46,14 @@ class QueueMessageCountIT extends LocalStackTestBase {
         // Given
         String queueUrl = createSqsQueueGetUrl();
         for (int i = 1; i <= 10; i++) {
-            sqsClientV2.sendMessage(SendMessageRequest.builder()
+            sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody("{testMessageId:" + i + "}")
                     .build());
         }
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -65,19 +65,19 @@ class QueueMessageCountIT extends LocalStackTestBase {
         // Given
         String queueUrl = createSqsQueueGetUrl();
         for (int i = 1; i <= 10; i++) {
-            sqsClientV2.sendMessage(SendMessageRequest.builder()
+            sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody("{testMessageId:" + i + "}")
                     .build());
         }
         for (int i = 1; i <= 3; i++) {
-            sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+            sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .build());
         }
 
         // When
-        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClientV2).getQueueMessageCount(queueUrl)
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
                 .getApproximateNumberOfMessages();
 
         // Then
@@ -87,7 +87,7 @@ class QueueMessageCountIT extends LocalStackTestBase {
     @Test
     void shouldFailWhenQueueDoesNotExist() {
         // Given
-        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClientV2);
+        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClient);
 
         // When / Then
         assertThatThrownBy(() -> queueClient.getQueueMessageCount("non-existent-queue"))

@@ -67,7 +67,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(CreateQueueRequest.builder()
                 .queueName(UUID.randomUUID().toString() + ".fifo")
                 .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
                 .queueUrl());
@@ -133,7 +133,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private StateStoreCommitRequestSender sender() {
         return new SqsFifoStateStoreCommitRequestSender(
-                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClientV2);
+                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClient);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
@@ -146,7 +146,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .maxNumberOfMessages(10).build();
-        return sqsClientV2.receiveMessage(receiveMessageRequest);
+        return sqsClient.receiveMessage(receiveMessageRequest);
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {

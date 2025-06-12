@@ -85,9 +85,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
-    private final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT_V2;
+    private final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
     private final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private final DynamoDbClient dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
+    private final DynamoDbClient dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT;
     private QueryAssertions queryAssertions;
 
     public PopulatedSleeperExternalResource(List<TableDefinition> tableDefinitions) {

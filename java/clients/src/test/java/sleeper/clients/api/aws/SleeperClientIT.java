@@ -49,9 +49,9 @@ public class SleeperClientIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         sleeperClient = createClient();
     }
 
@@ -73,9 +73,9 @@ public class SleeperClientIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceId(instanceProperties.get(ID))
                 .awsClients(clients -> clients
-                        .s3Client(s3ClientV2)
-                        .dynamoClient(dynamoClientV2)
-                        .sqsClient(sqsClientV2))
+                        .s3Client(s3Client)
+                        .dynamoClient(dynamoClient)
+                        .sqsClient(sqsClient))
                 .hadoopConf(hadoopConf)
                 .build();
     }

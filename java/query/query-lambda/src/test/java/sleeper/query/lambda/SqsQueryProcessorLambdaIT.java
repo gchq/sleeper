@@ -138,9 +138,9 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     void setUp() throws IOException, ObjectFactoryException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         instanceProperties = createInstance(dataDir);
-        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
-        queryProcessorLambda = new SqsQueryProcessorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
-        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
+        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test
@@ -665,7 +665,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         int lastReceiveCount = -1;
         while (lastReceiveCount != 0) {
-            ReceiveMessageResponse response = sqsClientV2.receiveMessage(request);
+            ReceiveMessageResponse response = sqsClient.receiveMessage(request);
             lastReceiveCount = response.messages().size();
             recordCount += lastReceiveCount;
         }
@@ -693,7 +693,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private void processQuery(Query query) {
-        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2));
+        QuerySerDe querySerDe = new QuerySerDe(S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         processQuery(jsonQuery);
     }
@@ -708,7 +708,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private void processLeafPartitionQuery(int maxMessages) {
         List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClientV2.receiveMessage(
+        sqsClient.receiveMessage(
                 ReceiveMessageRequest.builder().queueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
                         .maxNumberOfMessages(maxMessages).build())
                 .messages().forEach(message -> {
@@ -731,7 +731,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(createTempDirectory(tempDir, null).toString())
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConf)
                     .build();
@@ -774,9 +774,9 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
     private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         try {
             update(stateStore).initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
@@ -793,7 +793,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
 
         instanceProperties.set(QUERY_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, createSqsQueueGetUrl());
@@ -801,10 +801,10 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;
     }

@@ -41,14 +41,14 @@ public class SleeperLocalStackClients {
     }
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
-    public static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    public static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
+    public static final AmazonS3 S3_CLIENT_V1 = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
+    public static final S3Client S3_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
     public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3AsyncClient.crtBuilder());
     public static final S3TransferManager S3_TRANSFER_MANAGER = S3TransferManager.builder().s3Client(S3_ASYNC_CLIENT).build();
-    public static final DynamoDbClient DYNAMO_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
-    public static final SqsClient SQS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
-    public static final StsClient STS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.STS, StsClient.builder());
-    public static final CloudWatchClient CLOUDWATCH_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.CLOUDWATCH, CloudWatchClient.builder());
+    public static final DynamoDbClient DYNAMO_CLIENT = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
+    public static final SqsClient SQS_CLIENT = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
+    public static final StsClient STS_CLIENT = buildAwsV2Client(CONTAINER, Service.STS, StsClient.builder());
+    public static final CloudWatchClient CLOUDWATCH_CLIENT = buildAwsV2Client(CONTAINER, Service.CLOUDWATCH, CloudWatchClient.builder());
     public static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
 
 }

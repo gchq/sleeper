@@ -81,7 +81,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         String queueName = UUID.randomUUID().toString();
-        CreateQueueResponse queue = sqsClientV2.createQueue(request -> request
+        CreateQueueResponse queue = sqsClient.createQueue(request -> request
                 .queueName(queueName));
         instanceProperties.set(PARTITION_SPLITTING_JOB_QUEUE_URL, queue.queueUrl());
     }
@@ -177,7 +177,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     private FindPartitionsToSplit findPartitionsToSplit() {
         return new FindPartitionsToSplit(instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClientV2)::send);
+                new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
     private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
@@ -239,7 +239,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     }
 
     private List<Message> receivePartitionSplittingMessages() {
-        return sqsClientV2.receiveMessage(builder -> builder
+        return sqsClient.receiveMessage(builder -> builder
                 .queueUrl(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL)))
                 .messages();
     }

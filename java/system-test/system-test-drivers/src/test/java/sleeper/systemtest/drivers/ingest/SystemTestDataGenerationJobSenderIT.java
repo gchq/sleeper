@@ -59,12 +59,12 @@ public class SystemTestDataGenerationJobSenderIT extends LocalStackTestBase {
     }
 
     private SystemTestDataGenerationJobSender sender() {
-        return new SystemTestDataGenerationJobSender(testProperties, sqsClientV2);
+        return new SystemTestDataGenerationJobSender(testProperties, sqsClient);
     }
 
     private List<SystemTestDataGenerationJob> receiveJobs() {
         SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(request -> request
+        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
                 .queueUrl(testProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
                 .waitTimeSeconds(1));
         return response.messages().stream()

@@ -82,11 +82,11 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final TableStatus table = tableProperties.getStatus();
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     protected IngestJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
@@ -95,7 +95,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
     }
 
     protected IngestJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
-        return IngestJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties,
+        return IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

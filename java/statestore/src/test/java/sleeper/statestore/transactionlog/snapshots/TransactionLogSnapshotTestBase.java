@@ -58,7 +58,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     @BeforeEach
     public void setup() throws IOException {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     protected void createSnapshots(TableProperties table) {
@@ -79,7 +79,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
 
     protected void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
-                instanceProperties, table, dynamoClientV2, () -> creationTime);
+                instanceProperties, table, dynamoClient, () -> creationTime);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
@@ -90,20 +90,20 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
-                s3ClientV2, s3TransferManager,
+                s3Client, s3TransferManager,
                 latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClientV2, s3ClientV2)
+                instanceProperties, table, dynamoClient, s3Client)
                 .deleteSnapshots(deletionTime);
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoClientV2, fileDeleter)
+                instanceProperties, table, dynamoClient, fileDeleter)
                 .deleteSnapshots(deletionTime);
     }
 
@@ -119,7 +119,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClientV2);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClient);
     }
 
     protected TableProperties createTable(String tableId, String tableName) {
@@ -150,7 +150,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         // Will only return object if it exists, otherwise throws an exception.
         // HeadObjectRequest used as light weight request for just metadata
         try {
-            s3ClientV2.headObject(HeadObjectRequest.builder()
+            s3Client.headObject(HeadObjectRequest.builder()
                     .bucket(instanceProperties.get(DATA_BUCKET))
                     .key(filesSnapshot(table, transactionNumber).getObjectKey())
                     .build());
@@ -164,7 +164,7 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
         // Will only return object if it exists, otherwise throws an exception.
         // HeadObjectRequest used as light weight request for just metadata
         try {
-            s3ClientV2.headObject(HeadObjectRequest.builder()
+            s3Client.headObject(HeadObjectRequest.builder()
                     .bucket(instanceProperties.get(DATA_BUCKET))
                     .key(partitionsSnapshot(table, transactionNumber).getObjectKey())
                     .build());
@@ -175,14 +175,14 @@ public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     }
 
     protected void deleteFilesSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+        s3Client.deleteObject(DeleteObjectRequest.builder()
                 .bucket(instanceProperties.get(DATA_BUCKET))
                 .key(filesSnapshot(table, transactionNumber).getObjectKey())
                 .build());
     }
 
     protected void deletePartitionsSnapshotFile(TableProperties table, long transactionNumber) throws Exception {
-        s3ClientV2.deleteObject(DeleteObjectRequest.builder()
+        s3Client.deleteObject(DeleteObjectRequest.builder()
                 .bucket(instanceProperties.get(DATA_BUCKET))
                 .key(partitionsSnapshot(table, transactionNumber).getObjectKey())
                 .build());

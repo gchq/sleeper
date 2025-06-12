@@ -50,13 +50,13 @@ public class IngestJobSenderIT extends LocalStackTestBase {
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
 
-        IngestJobSender.toSqs(instanceProperties, sqsClientV2)
+        IngestJobSender.toSqs(instanceProperties, sqsClient)
                 .sendFilesToIngest(job);
         assertThat(recieveIngestJobs()).containsExactly(job);
     }
 
     private List<IngestJob> recieveIngestJobs() {
-        return sqsClientV2.receiveMessage(request -> request
+        return sqsClient.receiveMessage(request -> request
                 .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .waitTimeSeconds(1))

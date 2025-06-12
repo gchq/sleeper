@@ -29,12 +29,12 @@ public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
 
     @BeforeEach
     void setUp() {
-        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT_V2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT).create();
     }
 
     protected StateStore initialiseStateStore() {
         StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
-                SleeperLocalStackClients.DYNAMO_CLIENT_V2, SleeperLocalStackClients.S3_CLIENT_V2).build();
+                SleeperLocalStackClients.DYNAMO_CLIENT, SleeperLocalStackClients.S3_CLIENT).build();
         update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }

@@ -44,14 +44,14 @@ public abstract class TablePropertiesITBase extends LocalStackTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createValidTableProperties();
-    protected final TablePropertiesStore store = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+    protected final TablePropertiesStore store = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final String tableId = tableProperties.get(TABLE_ID);
 
     @BeforeEach
     void setUp() {
-        s3ClientV2.createBucket(builder -> builder.bucket(instanceProperties.get(CONFIG_BUCKET)));
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        s3Client.createBucket(builder -> builder.bucket(instanceProperties.get(CONFIG_BUCKET)));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     protected TableProperties createValidTableProperties() {

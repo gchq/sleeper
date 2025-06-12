@@ -53,7 +53,7 @@ public class AddTableIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
 
     @TempDir
     private Path tempDir;
@@ -62,8 +62,8 @@ public class AddTableIT extends LocalStackTestBase {
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test
@@ -126,13 +126,13 @@ public class AddTableIT extends LocalStackTestBase {
     }
 
     private StateStore stateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     private void addTable(TableProperties tableProperties) throws IOException {
         new AddTable(instanceProperties, tableProperties,
-                S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2),
-                StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2))
+                S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient),
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .run();
     }
 }

@@ -49,10 +49,10 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
                 .files(List.of("/load-job.parquet"))
                 .build();
 
-        BulkImportJobWriterToS3 bulkImportJobWriterToS3 = new BulkImportJobWriterToS3(instanceProperties, s3ClientV2);
+        BulkImportJobWriterToS3 bulkImportJobWriterToS3 = new BulkImportJobWriterToS3(instanceProperties, s3Client);
         bulkImportJobWriterToS3.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
 
         // When / Then
-        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3ClientV2)).isEqualTo(bulkImportJob);
+        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client)).isEqualTo(bulkImportJob);
     }
 }

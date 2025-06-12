@@ -36,7 +36,7 @@ public class S3SketchesStoreIT extends LocalStackTestBase {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = SketchesTestData.SCHEMA;
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    SketchesStore store = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    SketchesStore store = new S3SketchesStore(s3Client, s3TransferManager);
 
     @BeforeEach
     void setUp() {

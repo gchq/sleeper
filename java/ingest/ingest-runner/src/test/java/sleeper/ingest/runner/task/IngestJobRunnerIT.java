@@ -89,7 +89,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final String ingestSourceBucketName = "ingest-source-" + UUID.randomUUID().toString();
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
-    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     @TempDir
     public java.nio.file.Path localDir;
     private Supplier<Instant> timeSupplier = Instant::now;
@@ -294,7 +294,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private List<StateStoreCommitRequest> getCommitRequestsFromQueue(TableProperties tableProperties) {
         String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(request -> request
+        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
                 .queueUrl(commitQueueUrl));
 
         StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
@@ -341,7 +341,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 stateStoreProvider, tracker,
                 "test-task",
                 localDir.toString(),
-                s3ClientV2, s3AsyncClient, sqsClientV2,
+                s3Client, s3AsyncClient, sqsClient,
                 hadoopConf,
                 timeSupplier);
     }

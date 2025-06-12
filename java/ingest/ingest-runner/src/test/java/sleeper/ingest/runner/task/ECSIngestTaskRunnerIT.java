@@ -52,14 +52,14 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
         ECSIngestTaskRunner.createIngestTask(
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
-                s3ClientV2, dynamoClientV2, sqsClientV2, cloudWatchClientV2, s3AsyncClient, hadoopConf)
+                s3Client, dynamoClient, sqsClient, cloudWatchClient, s3AsyncClient, hadoopConf)
                 .run();
     }
 
     @BeforeEach
     void setUp() {
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @Test
@@ -139,7 +139,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     }
 
     private void sendJobs(List<IngestJob> jobs) {
-        jobs.forEach(job -> sqsClientV2.sendMessage(builder -> builder
+        jobs.forEach(job -> sqsClient.sendMessage(builder -> builder
                 .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
                 .messageBody(new IngestJobSerDe().toJson(job))));
     }

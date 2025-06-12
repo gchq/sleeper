@@ -35,15 +35,15 @@ public class DynamoDBIngestTaskTrackerCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
 
         // Then
-        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder().tableName(tableName).build()))
+        assertThat(dynamoClient.describeTable(DescribeTableRequest.builder().tableName(tableName).build()))
                 .extracting(DescribeTableResponse::table).isNotNull();
     }
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoClientV2);
+        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }

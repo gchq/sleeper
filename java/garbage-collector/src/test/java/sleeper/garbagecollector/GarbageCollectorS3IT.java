@@ -231,14 +231,14 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void collectGarbageAtTimeWithS3BatchSize(Instant time, int s3BatchSize) throws Exception {
-        createGarbageCollector(new S3DeleteFiles(s3ClientV2, s3BatchSize, refuseWaits()))
+        createGarbageCollector(new S3DeleteFiles(s3Client, s3BatchSize, refuseWaits()))
                 .runAtTime(time, List.of(tableProperties));
     }
 
     private GarbageCollector createGarbageCollector(DeleteFiles deleteFiles) {
         return new GarbageCollector(deleteFiles, instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClientV2, s3ClientV2, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
 
     private static Schema getSchema() {

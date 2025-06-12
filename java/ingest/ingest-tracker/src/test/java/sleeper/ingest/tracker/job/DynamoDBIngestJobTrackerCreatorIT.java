@@ -35,10 +35,10 @@ public class DynamoDBIngestJobTrackerCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
 
         // Then
-        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+        assertThat(dynamoClient.describeTable(DescribeTableRequest.builder()
                 .tableName(tableName)
                 .build()))
                 .extracting(DescribeTableResponse::table).isNotNull();
@@ -46,6 +46,6 @@ public class DynamoDBIngestJobTrackerCreatorIT extends LocalStackTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClientV2);
+        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }

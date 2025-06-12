@@ -59,11 +59,11 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
-    protected final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    protected final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     private final String configBucketName = instanceProperties.get(CONFIG_BUCKET);
     private final String ingestDataBucketName = instanceId + "-ingestdata";
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
@@ -82,14 +82,14 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(DEFAULT_INGEST_FILES_COMMIT_ASYNC, "false");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     protected StateStore createTable(Schema schema) throws IOException {
         tableProperties.setSchema(schema);
         tablePropertiesStore.save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(schema);
         return stateStore;

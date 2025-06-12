@@ -45,10 +45,10 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     public static LocalStackSystemTestDrivers fromContainer() {
         return new LocalStackSystemTestDrivers(SystemTestClients.builder()
                 .regionProvider(() -> Region.of(SleeperLocalStackContainer.INSTANCE.getRegion()))
-                .s3(SleeperLocalStackClients.S3_CLIENT_V2)
+                .s3(SleeperLocalStackClients.S3_CLIENT)
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
-                .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT_V2)
-                .sqs(SleeperLocalStackClients.SQS_CLIENT_V2)
+                .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT)
+                .sqs(SleeperLocalStackClients.SQS_CLIENT)
                 .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
                 .skipAssumeRole(true)
                 .build());

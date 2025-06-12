@@ -94,11 +94,11 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
     }
 
     private ObjectFactory objectFactory() throws Exception {
-        return new S3UserJarsLoader(instanceProperties, s3ClientV2, tempDir).buildObjectFactory();
+        return new S3UserJarsLoader(instanceProperties, s3Client, tempDir).buildObjectFactory();
     }
 
     private void writeJarToBucket(String objectKey, byte[] data) {
-        s3ClientV2.putObject(request -> request
+        s3Client.putObject(request -> request
                 .bucket(instanceProperties.get(JARS_BUCKET))
                 .key(objectKey),
                 RequestBody.fromBytes(data));

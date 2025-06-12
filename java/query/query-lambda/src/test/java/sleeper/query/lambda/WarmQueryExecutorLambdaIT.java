@@ -78,7 +78,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
     void setUp() throws IOException, ObjectFactoryException {
         String dataDir = createTempDirectory(tempDir, null).toString();
         createInstanceProperties(dataDir);
-        lambda = new WarmQueryExecutorLambda(s3ClientV2, sqsClientV2, dynamoClientV2, instanceProperties.get(CONFIG_BUCKET));
+        lambda = new WarmQueryExecutorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
-        ReceiveMessageResponse result = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        ReceiveMessageResponse result = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(QUERY_QUEUE_URL))
                 .build());
 
@@ -140,16 +140,16 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     private void createTable(TableProperties tableProperties) {
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(tableProperties.getSchema());
     }

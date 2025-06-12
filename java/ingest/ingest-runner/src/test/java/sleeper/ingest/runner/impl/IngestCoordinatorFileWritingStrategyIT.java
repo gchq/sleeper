@@ -90,13 +90,13 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
 
     private void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     @BeforeEach
     public void before() {
         createBucket(dataBucketName);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @Nested
