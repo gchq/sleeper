@@ -19,13 +19,12 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
@@ -38,9 +37,7 @@ import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
-import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -56,22 +53,21 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
+@WireMockTest
 public class IngestBatcherSubmitterLambdaWireMockIT {
 
     private S3Client s3Client;
     private SqsClient sqsClient;
-    private DynamoDbClient dynamoClient;
+    //private DynamoDbClient dynamoClient;
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
     private final String testBucket = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private static final String TEST_TABLE_ID = "test-table-id";
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
-    protected final IngestBatcherStore store = new InMemoryIngestBatcherStore();
-
-    public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
-    public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
+    private final IngestBatcherStore ingestBatcherStore = new InMemoryIngestBatcherStore();
 
     //In Progress
     //Been trying to understand how to make the s3Client call, I think I'm on the right track here but could be wrong
@@ -79,22 +75,19 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
     //Those didnt mock the s3Client though so it may not work for it
     //I havent found how to add a retry mechanic into the sqs for this test, over riding the default behaviour.
 
+    @Nested
     @DisplayName("Network Error test")
-    @WireMockTest
     class NetworkErrorTest {
 
         @BeforeEach
         void setUp(WireMockRuntimeInfo runtimeInfo) {
             s3Client = wiremockAwsV2Client(runtimeInfo, S3Client.builder());
-            sqsClient = wiremockAwsV2Client(runtimeInfo, SqsClient.builder());
-            dynamoClient = wiremockAwsV2Client(runtimeInfo, DynamoDbClient.builder());
+            sqsClient = wiremockAwsV2ClientWithRetryAttempts(10, runtimeInfo, SqsClient.builder());
 
             tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
-            DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
-            instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
+            instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, "ingest-batcher-dlq");
             tableProperties.set(TABLE_ID, TEST_TABLE_ID);
             tableProperties.set(TABLE_NAME, "test-table");
-
         }
 
         @Test
@@ -103,11 +96,10 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
 
             //Mock Network error
             final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-                    store, instanceProperties, tableIndex,
+                    ingestBatcherStore, instanceProperties, tableIndex,
                     new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClient),
                     s3Client);
             stubFor(post("/").willReturn(aResponse().withStatus(200)));
-            //Setup custom retry sqs for tests
 
             //Send job
             String json = "{" +
@@ -116,11 +108,10 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
                     "}";
 
             // When
-
             lambda.handleMessage(json, RECEIVED_TIME);
 
             //Assert retry attempted
-            assertThat(store.getAllFilesNewestFirst())
+            assertThat(ingestBatcherStore.getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"));
             assertThat(receiveDeadLetters()).isEmpty();
@@ -130,9 +121,9 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
         private void uploadFileToS3(String filePath) {
             s3Client.putObject(PutObjectRequest.builder()
                     .bucket(testBucket)
-                    .key("test")
+                    .key(filePath)
                     .build(),
-                    RequestBody.fromFile(Path.of(filePath)));
+                    RequestBody.fromString("test"));
         }
 
         private static IngestBatcherTrackedFile fileRequest(String filePath) {
@@ -152,13 +143,6 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
             return result.messages().stream()
                     .map(Message::body)
                     .toList();
-        }
-
-        private String createSqsQueueGetUrl() {
-            return sqsClient.createQueue(CreateQueueRequest.builder()
-                    .queueName(UUID.randomUUID().toString())
-                    .build())
-                    .queueUrl();
         }
 
     }
