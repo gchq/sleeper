@@ -35,8 +35,8 @@ import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.jobLoo
 import static sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker.jobUpdatesTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
+import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionJobTrackerCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobTrackerCreator.class);

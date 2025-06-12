@@ -22,8 +22,8 @@ import sleeper.core.table.TableStatus;
 
 import java.util.Map;
 
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
 /**
  * Reads and writes DynamoDB items in the Sleeper table index. Converts to and from {@link TableStatus}.

@@ -23,7 +23,7 @@ on:
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/ingest/ingest-core/**'
-      - 'java/common/dynamodb-toolsv2/**'
+      - 'java/common/dynamodb-tools/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.dynamodb.toolsv2;
+package sleeper.dynamodb.tools;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
@@ -25,7 +25,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.Map;
 
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 public class DynamoDBToolsTestBase extends LocalStackTestBase {
     public static final String TEST_KEY = "test-key";

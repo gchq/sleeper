@@ -29,7 +29,7 @@ on:
       - 'java/common/common-task/**'
       - 'java/query/query-runner/**'
       - 'java/configuration/**'
-      - 'java/common/dynamodb-toolsv2/**'
+      - 'java/common/dynamodb-tools/**'
       - 'java/bulk-import/bulk-import-core/**'
       - 'java/partitions/splitter/**'
       - 'java/compaction/compaction-job-execution/**'

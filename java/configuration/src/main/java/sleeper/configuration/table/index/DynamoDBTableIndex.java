@@ -50,8 +50,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 /**
  * The DynamoDB implementation of the Sleeper table index. Records which tables exist in a Sleeper instance, their

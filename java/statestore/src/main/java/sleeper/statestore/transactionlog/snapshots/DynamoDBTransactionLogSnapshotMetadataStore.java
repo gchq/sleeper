@@ -33,7 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.table.TableStatus;
-import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;
@@ -47,13 +47,13 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.hasConditionalCheckFailure;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedResults;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
 /**
  * Stores an index of snapshots derived from a transaction log. The index is backed by DynamoDB.

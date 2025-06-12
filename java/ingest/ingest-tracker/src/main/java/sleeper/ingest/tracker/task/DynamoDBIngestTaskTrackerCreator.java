@@ -30,8 +30,8 @@ import java.util.Arrays;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
+import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
 import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;

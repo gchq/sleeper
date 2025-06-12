@@ -38,7 +38,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.table.TableStatus;
-import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.Map;
@@ -46,11 +46,11 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getNumberAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 /**
  * Stores a transaction log in DynamoDB and S3. If a transaction is too big to fit in a DynamoDB item, the body of the

@@ -27,7 +27,6 @@ chunks:
       - common/common-invoke-tables
       - build
       - common/dynamodb-tools
-      - common/dynamodb-toolsv2
       - common/localstack-test
       - statestore
       - statestore-committer-core

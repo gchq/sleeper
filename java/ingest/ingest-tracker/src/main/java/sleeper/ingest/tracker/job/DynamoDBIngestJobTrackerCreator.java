@@ -32,8 +32,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
+import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.EXPIRY_DATE;
 import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.JOB_ID;
 import static sleeper.ingest.tracker.job.DynamoDBIngestJobTracker.JOB_ID_AND_UPDATE;

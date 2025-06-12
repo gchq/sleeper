@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.dynamodb.toolsv2.DynamoDBUtils;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.List;
 import java.util.Objects;

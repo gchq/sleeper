@@ -39,7 +39,7 @@ import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
-import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.List;

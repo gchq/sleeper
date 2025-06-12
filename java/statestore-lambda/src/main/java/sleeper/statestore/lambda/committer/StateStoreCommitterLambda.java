@@ -35,7 +35,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
-import sleeper.dynamodb.toolsv2.DynamoDBUtils;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;

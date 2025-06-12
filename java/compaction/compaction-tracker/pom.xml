@@ -43,7 +43,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>dynamodb-toolsv2</artifactId>
+            <artifactId>dynamodb-tools</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

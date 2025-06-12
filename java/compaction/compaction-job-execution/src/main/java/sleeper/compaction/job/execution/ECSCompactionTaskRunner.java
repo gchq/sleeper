@@ -49,7 +49,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.dynamodb.toolsv2.DynamoDBUtils;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
