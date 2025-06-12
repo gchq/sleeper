@@ -144,13 +144,13 @@ public class IngestRandomData {
         }
 
         IngestRandomData withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder())) {
+            try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
                 return combinedInstance(configBucket, instanceS3Client);
             }
         }
 
         IngestRandomData standalone(String configBucket, String loadConfigRoleArn, String systemTestBucket) {
-            try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsV2(stsClient).buildClient(S3Client.builder());
+            try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsSdk(stsClient).buildClient(S3Client.builder());
                     S3Client s3Client = S3Client.builder().build()) {
                 SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
                 InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, configBucket);

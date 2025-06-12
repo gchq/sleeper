@@ -42,8 +42,8 @@ import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
+import sleeper.clients.api.role.AssumeSleeperRoleAwsSdk;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
-import sleeper.clients.api.role.AssumeSleeperRoleV2;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -134,28 +134,28 @@ public class SystemTestClients {
         if (skipAssumeRole) {
             return this;
         }
-        AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(sts);
+        AssumeSleeperRoleAwsSdk aws = assumeRole.forAwsSdk(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
-                .credentialsProvider(v2.credentialsProvider())
+                .credentialsProvider(aws.credentialsProvider())
                 .regionProvider(regionProvider)
-                .s3(v2.buildClient(S3Client.builder()))
-                .s3Async(v2.buildClient(S3AsyncClient.crtBuilder()))
-                .dynamo(v2.buildClient(DynamoDbClient.builder()))
-                .sts(v2.buildClient(StsClient.builder()))
-                .sqs(v2.buildClient(SqsClient.builder()))
-                .lambda(v2.buildClient(systemTestLambdaClientBuilder()))
-                .cloudFormation(v2.buildClient(CloudFormationClient.builder()))
-                .emrServerless(v2.buildClient(EmrServerlessClient.builder()))
-                .emr(v2.buildClient(EmrClient.builder()))
-                .ecs(v2.buildClient(EcsClient.builder()))
-                .autoScaling(v2.buildClient(AutoScalingClient.builder()))
-                .ecr(v2.buildClient(EcrClient.builder()))
-                .ec2(v2.buildClient(Ec2Client.builder()))
-                .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
-                .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
-                .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
-                .getAuthEnvVars(v2::authEnvVars)
+                .s3(aws.buildClient(S3Client.builder()))
+                .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
+                .dynamo(aws.buildClient(DynamoDbClient.builder()))
+                .sts(aws.buildClient(StsClient.builder()))
+                .sqs(aws.buildClient(SqsClient.builder()))
+                .lambda(aws.buildClient(systemTestLambdaClientBuilder()))
+                .cloudFormation(aws.buildClient(CloudFormationClient.builder()))
+                .emrServerless(aws.buildClient(EmrServerlessClient.builder()))
+                .emr(aws.buildClient(EmrClient.builder()))
+                .ecs(aws.buildClient(EcsClient.builder()))
+                .autoScaling(aws.buildClient(AutoScalingClient.builder()))
+                .ecr(aws.buildClient(EcrClient.builder()))
+                .ec2(aws.buildClient(Ec2Client.builder()))
+                .cloudWatch(aws.buildClient(CloudWatchClient.builder()))
+                .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
+                .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
+                .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
     }
