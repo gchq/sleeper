@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-starterv2</artifactId>
+            <artifactId>bulk-import-starter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

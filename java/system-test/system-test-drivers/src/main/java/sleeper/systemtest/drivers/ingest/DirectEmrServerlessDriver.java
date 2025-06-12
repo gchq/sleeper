@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
-import sleeper.bulkimport.starterv2.executor.BulkImportArguments;
-import sleeper.bulkimport.starterv2.executor.EmrServerlessPlatformExecutor;
+import sleeper.bulkimport.starter.executor.BulkImportArguments;
+import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;

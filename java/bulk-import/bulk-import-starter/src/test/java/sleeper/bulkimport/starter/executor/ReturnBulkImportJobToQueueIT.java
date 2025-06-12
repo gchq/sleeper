@@ -15,10 +15,10 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
@@ -64,11 +64,13 @@ public class ReturnBulkImportJobToQueueIT extends LocalStackTestBase {
     }
 
     private List<BulkImportJob> receiveBulkImportJobsWithWaitTimeSeconds(int waitTimeSeconds) {
-        return sqsClient.receiveMessage(
-                new ReceiveMessageRequest(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
-                        .withWaitTimeSeconds(waitTimeSeconds))
-                .getMessages().stream()
-                .map(Message::getBody)
+        return sqsClientV2.receiveMessage(
+                ReceiveMessageRequest.builder()
+                        .queueUrl(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
+                        .waitTimeSeconds(waitTimeSeconds)
+                        .build())
+                .messages().stream()
+                .map(Message::body)
                 .map(new BulkImportJobSerDe()::fromJson)
                 .toList();
     }
