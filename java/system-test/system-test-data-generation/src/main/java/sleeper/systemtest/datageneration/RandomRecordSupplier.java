@@ -32,7 +32,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.systemtest.configurationv2.SystemTestRandomDataSettings;
+import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
 import java.util.ArrayList;
 import java.util.HashMap;

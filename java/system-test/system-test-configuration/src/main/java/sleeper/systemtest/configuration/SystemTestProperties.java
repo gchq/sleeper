@@ -15,9 +15,11 @@
  */
 package sleeper.systemtest.configuration;
 
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
@@ -41,13 +43,22 @@ public class SystemTestProperties extends InstanceProperties {
         super(properties);
     }
 
-    public static SystemTestProperties loadFromBucket(AmazonS3 s3Client, String bucket) {
+    public static SystemTestProperties loadFromBucket(S3Client s3Client, String bucket) {
         SystemTestProperties properties = new SystemTestProperties();
-        properties.resetAndValidate(loadProperties(s3Client.getObjectAsString(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)));
+
+        properties.resetAndValidate(
+                loadProperties(
+                        s3Client.getObject(
+                                GetObjectRequest.builder()
+                                        .bucket(bucket)
+                                        .key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)
+                                        .build(),
+                                ResponseTransformer.toBytes()).asUtf8String()));
+
         return properties;
     }
 
-    public static SystemTestProperties loadFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
+    public static SystemTestProperties loadFromS3GivenInstanceId(S3Client s3Client, String instanceId) {
         return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
     }
 

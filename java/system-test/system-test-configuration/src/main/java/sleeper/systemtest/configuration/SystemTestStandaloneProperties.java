@@ -16,11 +16,15 @@
 
 package sleeper.systemtest.configuration;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configurationv2.properties.S3InstanceProperties;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
@@ -74,14 +78,22 @@ public class SystemTestStandaloneProperties
         return new SystemTestStandaloneProperties(loadProperties(properties.saveAsString()));
     }
 
-    public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) {
+    public static SystemTestStandaloneProperties fromS3(S3Client s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        String propertiesString = s3Client.getObjectAsString(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
-        properties.resetAndValidate(loadProperties(propertiesString));
+
+        properties.resetAndValidate(
+                loadProperties(
+                        s3Client.getObject(
+                                GetObjectRequest.builder()
+                                        .bucket(bucket)
+                                        .key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE)
+                                        .build(),
+                                ResponseTransformer.toBytes()).asUtf8String()));
+
         return properties;
     }
 
-    public static SystemTestStandaloneProperties fromS3GivenDeploymentId(AmazonS3 s3Client, String deploymentId) {
+    public static SystemTestStandaloneProperties fromS3GivenDeploymentId(S3Client s3Client, String deploymentId) {
         return fromS3(s3Client, buildSystemTestBucketName(deploymentId));
     }
 
@@ -89,10 +101,12 @@ public class SystemTestStandaloneProperties
         return new SystemTestStandaloneProperties(loadProperties(propertiesFile));
     }
 
-    public void saveToS3(AmazonS3 s3Client) {
+    public void saveToS3(S3Client s3Client) {
         String bucket = get(SYSTEM_TEST_BUCKET_NAME);
         LOGGER.debug("Uploading config to bucket {}", bucket);
-        s3Client.putObject(bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, saveAsString());
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bucket).key(S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE).build(),
+                RequestBody.fromString(saveAsString()));
         LOGGER.info("Saved system test properties to bucket {}, key {}",
                 bucket, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }

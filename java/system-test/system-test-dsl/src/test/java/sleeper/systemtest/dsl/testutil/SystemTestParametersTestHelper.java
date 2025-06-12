@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.testutil;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 public class SystemTestParametersTestHelper {

@@ -36,8 +36,8 @@ import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
-import sleeper.systemtest.configurationv2.SystemTestProperties;
-import sleeper.systemtest.configurationv2.SystemTestRandomDataSettings;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
 import java.time.Instant;
 import java.util.ArrayList;

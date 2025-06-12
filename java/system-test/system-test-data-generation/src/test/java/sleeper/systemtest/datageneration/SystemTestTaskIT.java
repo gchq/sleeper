@@ -26,9 +26,9 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,8 +45,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.systemtest.configurationv2.SystemTestIngestMode.DIRECT;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class SystemTestTaskIT extends LocalStackTestBase {
 
