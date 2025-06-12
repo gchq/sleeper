@@ -47,7 +47,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
 

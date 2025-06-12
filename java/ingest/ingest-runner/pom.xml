@@ -81,7 +81,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-trackerV2</artifactId>
+            <artifactId>ingest-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Arrow dependencies -->

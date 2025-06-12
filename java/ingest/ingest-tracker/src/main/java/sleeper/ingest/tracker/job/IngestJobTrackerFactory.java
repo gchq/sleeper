@@ -16,7 +16,7 @@
 
 package sleeper.ingest.tracker.job;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -31,11 +31,11 @@ public class IngestJobTrackerFactory {
     private IngestJobTrackerFactory() {
     }
 
-    public static IngestJobTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static IngestJobTracker getTracker(DynamoDbClient dynamoDB, InstanceProperties properties) {
         return getTracker(dynamoDB, properties, Instant::now);
     }
 
-    public static IngestJobTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+    public static IngestJobTracker getTracker(DynamoDbClient dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         if (properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return new DynamoDBIngestJobTracker(dynamoDB, properties, getTimeNow);
         } else {

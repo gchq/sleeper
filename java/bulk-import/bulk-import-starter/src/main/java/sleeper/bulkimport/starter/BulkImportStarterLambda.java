@@ -38,7 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.parquet.utils.HadoopPathUtils;
 import sleeper.statestorev2.StateStoreFactory;

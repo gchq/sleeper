@@ -50,11 +50,11 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
             .build();
     private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    protected final IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
     }
 
     @AfterEach
@@ -64,7 +64,7 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
 
     protected IngestTaskTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(INGEST_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBIngestTaskTracker(dynamoClient, instanceProperties,
+        return new DynamoDBIngestTaskTracker(dynamoClientV2, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

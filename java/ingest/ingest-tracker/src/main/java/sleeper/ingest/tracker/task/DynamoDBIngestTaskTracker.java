@@ -16,18 +16,18 @@
 
 package sleeper.ingest.tracker.task;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
@@ -43,24 +43,24 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
 import static sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat.UPDATE_TYPE;
 
 public class DynamoDBIngestTaskTracker implements IngestTaskTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskTracker.class);
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final String statusTableName;
     private final DynamoDBIngestTaskStatusFormat format;
 
-    public DynamoDBIngestTaskTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBIngestTaskTracker(DynamoDbClient dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
     public DynamoDBIngestTaskTracker(
-            AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+            DynamoDbClient dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
         int timeToLiveInSeconds = properties.getInt(INGEST_TASK_STATUS_TTL_IN_SECONDS);
@@ -91,26 +91,28 @@ public class DynamoDBIngestTaskTracker implements IngestTaskTracker {
 
     @Override
     public IngestTaskStatus getTask(String taskId) {
-        QueryResult result = dynamoDB.query(new QueryRequest()
-                .withTableName(statusTableName)
-                .addKeyConditionsEntry(TASK_ID, new Condition()
-                        .withAttributeValueList(createStringAttribute(taskId))
-                        .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(result.getItems().stream())
+        QueryResponse response = dynamoDB.query(QueryRequest.builder()
+                .tableName(statusTableName)
+                .keyConditions(Map.of(TASK_ID, Condition.builder()
+                        .attributeValueList(createStringAttribute(taskId))
+                        .comparisonOperator(ComparisonOperator.EQ)
+                        .build()))
+                .build());
+        return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(response.items().stream())
                 .findFirst().orElse(null);
     }
 
     @Override
     public List<IngestTaskStatus> getAllTasks() {
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
-                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, ScanRequest.builder().tableName(statusTableName).build()))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
-                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, ScanRequest.builder().tableName(statusTableName).build()))
                 .filter(task -> task.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
@@ -118,21 +120,22 @@ public class DynamoDBIngestTaskTracker implements IngestTaskTracker {
     @Override
     public List<IngestTaskStatus> getTasksInProgress() {
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(
-                streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                streamPagedItems(dynamoDB, ScanRequest.builder().tableName(statusTableName).build()))
                 .filter(task -> !task.isFinished())
                 .collect(Collectors.toList());
     }
 
     private void putItem(Map<String, AttributeValue> item) {
         Instant startTime = Instant.now();
-        PutItemRequest putItemRequest = new PutItemRequest()
-                .withItem(item)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTableName(statusTableName);
-        PutItemResult result = dynamoDB.putItem(putItemRequest);
+        PutItemRequest putItemRequest = PutItemRequest.builder()
+                .item(item)
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .tableName(statusTableName)
+                .build();
+        PutItemResponse result = dynamoDB.putItem(putItemRequest);
         LOGGER.debug("Put {} event for task {} to table {}, capacity consumed = {}, took {}",
-                item.get(UPDATE_TYPE).getS(), item.get(TASK_ID).getS(),
-                statusTableName, result.getConsumedCapacity().getCapacityUnits(),
+                item.get(UPDATE_TYPE).s(), item.get(TASK_ID).s(),
+                statusTableName, result.consumedCapacity().capacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
     }
 }

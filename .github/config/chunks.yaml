@@ -68,7 +68,6 @@ chunks:
     modules:
       - ingest/ingest-core
       - ingest/ingest-tracker
-      - ingest/ingest-trackerV2
       - ingest/ingest-taskrunner
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store

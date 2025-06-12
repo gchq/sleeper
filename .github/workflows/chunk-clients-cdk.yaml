@@ -24,7 +24,7 @@ on:
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-tracker/**'
-      - 'java/ingest/ingest-trackerV2/**'
+      - 'java/ingest/ingest-tracker/**'
       - 'java/statestorev2/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-taskv2/**'
