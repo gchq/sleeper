@@ -117,6 +117,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
 
     private List<String> receiveTableIdMessages(String queueUrl, int maxMessages) {
         ReceiveMessageResponse result = sqsClient.receiveMessage(request -> request
+                .queueUrl(queueUrl)
                 .maxNumberOfMessages(maxMessages)
                 .waitTimeSeconds(0));
         return result.messages().stream()
