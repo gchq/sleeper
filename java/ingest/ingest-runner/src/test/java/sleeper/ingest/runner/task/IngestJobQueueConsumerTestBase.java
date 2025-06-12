@@ -64,7 +64,6 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
-    private final String ingestQueueName = instanceId + "-ingestqueue";
     private final String configBucketName = instanceProperties.get(CONFIG_BUCKET);
     private final String ingestDataBucketName = instanceId + "-ingestdata";
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
@@ -77,8 +76,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
         createBucket(configBucketName);
         createBucket(dataBucketName);
         createBucket(ingestDataBucketName);
-        sqsClient.createQueue(ingestQueueName);
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqsClient.getQueueUrl(ingestQueueName).getQueueUrl());
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");

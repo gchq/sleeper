@@ -18,6 +18,8 @@ package sleeper.common.task;
 
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
@@ -44,7 +46,10 @@ class QueueMessageCountIT extends LocalStackTestBase {
         // Given
         String queueUrl = createSqsQueueGetUrl();
         for (int i = 1; i <= 10; i++) {
-            sqsClient.sendMessage(queueUrl, "{testMessageId:" + i + "}");
+            sqsClientV2.sendMessage(SendMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .messageBody("{testMessageId:" + i + "}")
+                    .build());
         }
 
         // When
@@ -60,10 +65,15 @@ class QueueMessageCountIT extends LocalStackTestBase {
         // Given
         String queueUrl = createSqsQueueGetUrl();
         for (int i = 1; i <= 10; i++) {
-            sqsClient.sendMessage(queueUrl, "{testMessageId:" + i + "}");
+            sqsClientV2.sendMessage(SendMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .messageBody("{testMessageId:" + i + "}")
+                    .build());
         }
         for (int i = 1; i <= 3; i++) {
-            sqsClient.receiveMessage(queueUrl);
+            sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+                    .queueUrl(queueUrl)
+                    .build());
         }
 
         // When

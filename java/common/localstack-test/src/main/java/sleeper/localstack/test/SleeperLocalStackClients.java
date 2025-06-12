@@ -21,8 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
@@ -48,7 +46,6 @@ public class SleeperLocalStackClients {
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
     public static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    public static final AmazonSQS SQS_CLIENT = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
     public static final AWSSecurityTokenService STS_CLIENT = buildAwsV1Client(CONTAINER, Service.STS, AWSSecurityTokenServiceClientBuilder.standard());
     public static final AmazonCloudWatch CLOUDWATCH_CLIENT = buildAwsV1Client(CONTAINER, Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
     public static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());

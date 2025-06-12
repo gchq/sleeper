@@ -18,7 +18,6 @@ package sleeper.localstack.test;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.sqs.AmazonSQS;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -52,7 +51,6 @@ public abstract class LocalStackTestBase {
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
     protected final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
-    protected final AmazonSQS sqsClient = SleeperLocalStackClients.SQS_CLIENT;
     protected final AWSSecurityTokenService stsClient = SleeperLocalStackClients.STS_CLIENT;
     protected final AmazonCloudWatch cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
     protected final S3Client s3ClientV2 = SleeperLocalStackClients.S3_CLIENT_V2;
