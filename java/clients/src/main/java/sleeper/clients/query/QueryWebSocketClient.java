@@ -56,6 +56,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -66,22 +67,31 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
+    public static final long DEFAULT_TIMEOUT_MS = 120000L;
+
     private final String apiUrl;
     private final Supplier<Client> clientSupplier;
+    private final long timeoutMs;
 
     public QueryWebSocketClient(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
+        this(instanceProperties, tablePropertiesProvider, credentialsProvider, DEFAULT_TIMEOUT_MS);
+    }
+
+    public QueryWebSocketClient(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider, long timeoutMs) {
         this(instanceProperties, tablePropertiesProvider,
-                clientSupplier(instanceProperties, tablePropertiesProvider, credentialsProvider));
+                clientSupplier(instanceProperties, tablePropertiesProvider, credentialsProvider), timeoutMs);
     }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            Supplier<Client> clientSupplier) {
+            Supplier<Client> clientSupplier, long timeoutMs) {
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
         this.clientSupplier = clientSupplier;
+        this.timeoutMs = timeoutMs;
     }
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
@@ -89,23 +99,21 @@ public class QueryWebSocketClient {
         try {
             Instant startTime = Instant.now();
             return client.startQueryFuture(query)
+                    .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((records, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
                         long recordsReturned = client.getTotalRecordsReturned();
                         LOGGER.info("Query took {} to return {} records", duration, recordsReturned);
+                        client.close();
                     });
         } catch (RuntimeException | InterruptedException e) {
-            try {
-                client.close();
-            } catch (InterruptedException e2) {
-                throw e2;
-            }
+            client.close();
             throw e;
         }
     }
 
     public interface Client {
-        void close() throws InterruptedException;
+        void close();
 
         CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
 

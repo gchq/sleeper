@@ -90,7 +90,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.create();
+            AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.builder().build();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             QueryWebSocketClient webSocketClient = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, credentialsProvider);
