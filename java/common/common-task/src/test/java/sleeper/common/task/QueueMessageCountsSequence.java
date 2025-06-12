@@ -15,7 +15,7 @@
  */
 package sleeper.common.task;
 
-import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
+import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +35,7 @@ public class QueueMessageCountsSequence implements QueueMessageCount.Client {
     @Override
     public QueueMessageCount getQueueMessageCount(String queueUrl) {
         if (!iterator.hasNext()) {
-            throw new QueueDoesNotExistException("Queue does not exist: " + queueUrl);
+            throw QueueDoesNotExistException.builder().message("Queue does not exist: " + queueUrl).build();
         }
         return iterator.next().getQueueMessageCount(queueUrl);
     }
