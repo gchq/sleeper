@@ -25,12 +25,12 @@ import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import java.net.URI;
 import java.util.Map;
 
-public class AssumeSleeperRoleV2 {
+public class AssumeSleeperRoleAwsSdk {
     private final String region;
     private final String endpointUrl;
     private final AwsCredentialsProvider credentialsProvider;
 
-    AssumeSleeperRoleV2(String region, String endpointUrl, AwsCredentialsProvider provider) {
+    AssumeSleeperRoleAwsSdk(String region, String endpointUrl, AwsCredentialsProvider provider) {
         this.region = region;
         this.endpointUrl = endpointUrl;
         this.credentialsProvider = provider;

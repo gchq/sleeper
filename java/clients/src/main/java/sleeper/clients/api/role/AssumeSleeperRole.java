@@ -15,8 +15,6 @@
  */
 package sleeper.clients.api.role;
 
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -80,20 +78,12 @@ public class AssumeSleeperRole {
         return new AssumeSleeperRole(region, null, roleArn);
     }
 
-    public AssumeSleeperRoleV1 forAwsV1(AWSSecurityTokenService sts) {
-        STSAssumeRoleSessionCredentialsProvider provider = new STSAssumeRoleSessionCredentialsProvider.Builder(
-                roleArn, roleSessionName)
-                .withStsClient(sts)
-                .build();
-        return new AssumeSleeperRoleV1(region, endpointUrl, provider);
-    }
-
-    public AssumeSleeperRoleV2 forAwsV2(StsClient sts) {
+    public AssumeSleeperRoleAwsSdk forAwsSdk(StsClient sts) {
         StsAssumeRoleCredentialsProvider provider = StsAssumeRoleCredentialsProvider.builder()
                 .refreshRequest(builder -> builder.roleArn(roleArn).roleSessionName(roleSessionName))
                 .stsClient(sts)
                 .build();
-        return new AssumeSleeperRoleV2(region, endpointUrl, provider);
+        return new AssumeSleeperRoleAwsSdk(region, endpointUrl, provider);
     }
 
     public AssumeSleeperRoleHadoop forHadoop() {
