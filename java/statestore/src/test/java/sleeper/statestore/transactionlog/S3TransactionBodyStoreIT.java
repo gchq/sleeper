@@ -55,7 +55,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     @Nested
@@ -168,15 +168,15 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     }
 
     private TransactionBodyStore storeAllTransactions() {
-        return new S3TransactionBodyStore(instanceProperties, s3ClientV2, TransactionSerDeProvider.forOneTable(tableProperties), 0);
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), 0);
     }
 
     private TransactionBodyStore storeAllFileTransactions() {
-        return new S3TransactionBodyStore(instanceProperties, s3ClientV2, TransactionSerDeProvider.forFileTransactions(), 0);
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions(), 0);
     }
 
     private TransactionBodyStore storeTransactionsWithJsonLength(int jsonLengthToStore) {
-        return new S3TransactionBodyStore(instanceProperties, s3ClientV2, TransactionSerDeProvider.forOneTable(tableProperties), jsonLengthToStore);
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), jsonLengthToStore);
     }
 
     private StateStoreTransaction<?> saveAndLoad(TransactionBodyStore store, StateStoreTransaction<?> transaction) {

@@ -120,11 +120,11 @@ public class StateStoreArrowFileStoreIT extends TransactionLogSnapshotTestBase {
     }
 
     private StateStoreArrowFileReadStore readStore() {
-        return new StateStoreArrowFileReadStore(instanceProperties, s3ClientV2);
+        return new StateStoreArrowFileReadStore(instanceProperties, s3Client);
     }
 
     private StateStoreArrowFileUploadStore uploadStore() {
-        return new StateStoreArrowFileUploadStore(instanceProperties, tableProperties, s3ClientV2, s3TransferManager);
+        return new StateStoreArrowFileUploadStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
 }

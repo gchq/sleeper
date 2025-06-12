@@ -39,7 +39,7 @@ public class DeleteMessageActionIT extends LocalStackTestBase {
                 .queueName(UUID.randomUUID().toString())
                 .attributes(attributes)
                 .build();
-        return sqsClientV2.createQueue(createQueueRequest).queueUrl();
+        return sqsClient.createQueue(createQueueRequest).queueUrl();
     }
 
     @Test
@@ -53,19 +53,19 @@ public class DeleteMessageActionIT extends LocalStackTestBase {
                 .queueUrl(queueUrl)
                 .messageBody(message)
                 .build();
-        sqsClientV2.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(sendMessageRequest);
         //  - Retrieve message from queue
         ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(1)
                 .build();
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(receiveMessageRequest);
+        ReceiveMessageResponse response = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(response.messages()).hasSize(1);
         String receiptHandle = response.messages().get(0).receiptHandle();
 
         // When
         //  - Delete the message
-        DeleteMessageAction action = new MessageReference(sqsClientV2, queueUrl, "test", receiptHandle).deleteAction();
+        DeleteMessageAction action = new MessageReference(sqsClient, queueUrl, "test", receiptHandle).deleteAction();
         action.call();
 
         // Then
@@ -76,7 +76,7 @@ public class DeleteMessageActionIT extends LocalStackTestBase {
                 .maxNumberOfMessages(1)
                 .waitTimeSeconds(0)
                 .build();
-        response = sqsClientV2.receiveMessage(receiveMessageRequest);
+        response = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(response.messages()).isEmpty();
     }
 }

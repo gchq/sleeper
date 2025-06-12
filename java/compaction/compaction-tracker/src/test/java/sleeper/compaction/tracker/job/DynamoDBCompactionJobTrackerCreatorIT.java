@@ -40,15 +40,15 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
-        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+        assertThat(dynamoClient.describeTable(DescribeTableRequest.builder()
                 .tableName(updatesTableName)
                 .build()))
                 .extracting(DescribeTableResponse::table).isNotNull();
-        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+        assertThat(dynamoClient.describeTable(DescribeTableRequest.builder()
                 .tableName(jobsTableName)
                 .build()))
                 .extracting(DescribeTableResponse::table).isNotNull();
@@ -61,15 +61,15 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends LocalStackTestBase {
         instanceProperties.set(COMPACTION_TRACKER_ENABLED, "false");
 
         // When
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
-        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoClientV2.describeTable(DescribeTableRequest.builder()
+        assertThatThrownBy(() -> dynamoClient.describeTable(DescribeTableRequest.builder()
                 .tableName(updatesTableName)
                 .build()))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> dynamoClientV2.describeTable(DescribeTableRequest.builder()
+        assertThatThrownBy(() -> dynamoClient.describeTable(DescribeTableRequest.builder()
                 .tableName(jobsTableName)
                 .build()))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -84,6 +84,6 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends LocalStackTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoClientV2);
+        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }

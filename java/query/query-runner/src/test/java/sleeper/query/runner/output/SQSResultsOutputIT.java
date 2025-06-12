@@ -74,7 +74,7 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     }
 
     private SQSResultsOutput output() {
-        return new SQSResultsOutput(instanceProperties, sqsClientV2, tableProperties.getSchema(), Map.of());
+        return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), Map.of());
     }
 
     private QueryOrLeafPartitionQuery queryWithId(String id) {
@@ -91,7 +91,7 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     }
 
     private List<ResultsBatch> receiveResults() {
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(request -> request
+        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
                 .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
                 .waitTimeSeconds(1));
         JSONResultsBatchSerialiser serDe = new JSONResultsBatchSerialiser();

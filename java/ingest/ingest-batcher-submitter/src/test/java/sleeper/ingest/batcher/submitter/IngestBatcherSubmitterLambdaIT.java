@@ -62,7 +62,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     void setup() {
         tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
         createBucket(testBucket);
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
         tableProperties.set(TABLE_ID, TEST_TABLE_ID);
         tableProperties.set(TABLE_NAME, "test-table");
@@ -441,7 +441,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     }
 
     private void uploadFileToS3(String filePath) {
-        s3Client.putObject(testBucket, filePath, "test");
+        putObject(testBucket, filePath, "test");
     }
 
     private static IngestBatcherTrackedFile fileRequest(String filePath) {
@@ -453,7 +453,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     }
 
     private List<String> receiveDeadLetters() {
-        ReceiveMessageResponse result = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        ReceiveMessageResponse result = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
                 .maxNumberOfMessages(10)
                 .waitTimeSeconds(1)
@@ -466,12 +466,12 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     private IngestBatcherSubmitterLambda lambda() {
         return new IngestBatcherSubmitterLambda(
                 batcherStore(), instanceProperties, tableIndex,
-                new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClientV2),
-                s3ClientV2);
+                new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClient),
+                s3Client);
     }
 
     private IngestBatcherStore batcherStore() {
-        return new DynamoDBIngestBatcherStore(dynamoClientV2, instanceProperties,
+        return new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties));
     }
 }

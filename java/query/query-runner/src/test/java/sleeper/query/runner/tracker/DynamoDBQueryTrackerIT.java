@@ -55,7 +55,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
     @BeforeEach
     public void createDynamoTable() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
     }
 
     @Test
@@ -274,7 +274,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     }
 
     private DynamoDBQueryTracker queryTracker() {
-        return new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
+        return new DynamoDBQueryTracker(instanceProperties, dynamoClient);
     }
 
     private TrackedQuery queryQueued(Query query) {

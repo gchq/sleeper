@@ -45,8 +45,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
-    protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT_V2;
-    protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
+    protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
+    protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
     protected TablePropertiesStore tablePropertiesStore;

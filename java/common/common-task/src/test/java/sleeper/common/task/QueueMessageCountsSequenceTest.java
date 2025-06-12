@@ -15,8 +15,8 @@
  */
 package sleeper.common.task;
 
-import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -66,8 +66,8 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         systemTestProperties.set(SYSTEM_TEST_JOBS_QUEUE_URL, createSqsQueueGetUrl());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         sleeperClient = createSleeperClient();
         sleeperClient.addTable(tableProperties, List.of());
     }
@@ -93,8 +93,8 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     ECSSystemTestTask createTask() {
-        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClientV2, hadoopConf, tempDir.toString());
-        return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
+        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, hadoopConf, tempDir.toString());
+        return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
             try {
                 ingestData.run(job);
             } catch (IOException e) {
@@ -104,7 +104,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     void sendJob(SystemTestDataGenerationJob job) {
-        sqsClientV2.sendMessage(builder -> builder
+        sqsClient.sendMessage(builder -> builder
                 .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
                 .messageBody(new SystemTestDataGenerationJobSerDe().toJson(job)));
     }
@@ -113,9 +113,9 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients
-                        .s3Client(s3ClientV2)
-                        .dynamoClient(dynamoClientV2)
-                        .sqsClient(sqsClientV2))
+                        .s3Client(s3Client)
+                        .dynamoClient(dynamoClient)
+                        .sqsClient(sqsClient))
                 .hadoopConf(hadoopConf)
                 .build();
     }

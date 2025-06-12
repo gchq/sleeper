@@ -78,16 +78,16 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoClientV2.deleteTable(DeleteTableRequest.builder().tableName(jobStatusTableName).build());
+        dynamoClient.deleteTable(DeleteTableRequest.builder().tableName(jobStatusTableName).build());
     }
 
     protected CompactionJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
@@ -100,7 +100,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
     }
 
     protected CompactionJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
-        return new DynamoDBCompactionJobTracker(dynamoClientV2, instanceProperties,
+        return new DynamoDBCompactionJobTracker(dynamoClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
 

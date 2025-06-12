@@ -32,8 +32,12 @@ public class AwsDrainSqsQueueIT extends LocalStackTestBase {
         // Given
         List<String> queueUrls = IntStream.range(0, 5)
                 .mapToObj(i -> createSqsQueueGetUrl()).toList();
-        sqsClient.sendMessage(queueUrls.get(0), "test0");
-        sqsClient.sendMessage(queueUrls.get(1), "test1");
+        sqsClient.sendMessage(request -> request
+                .queueUrl(queueUrls.get(0))
+                .messageBody("test0"));
+        sqsClient.sendMessage(request -> request
+                .queueUrl(queueUrls.get(1))
+                .messageBody("test1"));
 
         // When
         EmptyQueueResults results = drainQueueWithThreads(3).empty(queueUrls);
@@ -49,8 +53,12 @@ public class AwsDrainSqsQueueIT extends LocalStackTestBase {
     void shouldEmptyMultipleQueuesAcrossMoreThreadsThanQueues() {
         // Given
         List<String> queueUrls = List.of(createSqsQueueGetUrl(), createSqsQueueGetUrl());
-        sqsClient.sendMessage(queueUrls.get(0), "test0");
-        sqsClient.sendMessage(queueUrls.get(1), "test1");
+        sqsClient.sendMessage(request -> request
+                .queueUrl(queueUrls.get(0))
+                .messageBody("test0"));
+        sqsClient.sendMessage(request -> request
+                .queueUrl(queueUrls.get(1))
+                .messageBody("test1"));
 
         // When
         EmptyQueueResults results = drainQueueWithThreads(3).empty(queueUrls);
@@ -64,7 +72,7 @@ public class AwsDrainSqsQueueIT extends LocalStackTestBase {
 
     private AwsDrainSqsQueue drainQueueWithThreads(int numThreads) {
         return AwsDrainSqsQueue.builder()
-                .sqsClient(sqsClientV2)
+                .sqsClient(sqsClient)
                 .numThreads(numThreads)
                 .messagesPerBatchPerThread(10)
                 .waitTimeSeconds(1)

@@ -46,7 +46,7 @@ public class IngestBatcherSenderIT extends LocalStackTestBase {
         IngestBatcherSubmitRequest request = new IngestBatcherSubmitRequest("test-table", List.of());
 
         // When
-        IngestBatcherSender.toSqs(instanceProperties, sqsClientV2)
+        IngestBatcherSender.toSqs(instanceProperties, sqsClient)
                 .submit(request);
 
         // Then
@@ -54,7 +54,7 @@ public class IngestBatcherSenderIT extends LocalStackTestBase {
     }
 
     private List<IngestBatcherSubmitRequest> receiveSubmitRequests() {
-        return sqsClientV2.receiveMessage(request -> request
+        return sqsClient.receiveMessage(request -> request
                 .queueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .waitTimeSeconds(1))

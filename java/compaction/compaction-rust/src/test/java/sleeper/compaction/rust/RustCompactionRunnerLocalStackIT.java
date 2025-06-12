@@ -67,7 +67,7 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     @TempDir
     public Path tempDir;
 

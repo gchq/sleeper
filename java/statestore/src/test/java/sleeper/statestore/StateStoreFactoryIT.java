@@ -73,7 +73,7 @@ public class StateStoreFactoryIT extends LocalStackTestBase {
     }
 
     private StateStoreFactory factory() {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
     }
 
 }

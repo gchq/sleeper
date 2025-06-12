@@ -15,12 +15,11 @@
  */
 package sleeper.statestore.transactionlog;
 
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonSyntaxException;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -100,7 +99,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
-        dynamoClientV2.putItem(PutItemRequest.builder()
+        dynamoClient.putItem(PutItemRequest.builder()
                 .tableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -118,7 +117,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
-        dynamoClientV2.putItem(PutItemRequest.builder()
+        dynamoClient.putItem(PutItemRequest.builder()
                 .tableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -317,11 +316,11 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private String singleFileInDataBucket() {
@@ -334,11 +333,10 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private List<String> filesInDataBucket() {
-        return s3Client.listObjects(new ListObjectsRequest()
-                .withBucketName(instanceProperties.get(DATA_BUCKET))
-                .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
-                .getObjectSummaries().stream()
-                .map(S3ObjectSummary::getKey)
+        return s3Client.listObjectsV2Paginator(builder -> builder
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .prefix(tableProperties.get(TableProperty.TABLE_ID)))
+                .contents().stream().map(S3Object::key)
                 .toList();
     }
 }

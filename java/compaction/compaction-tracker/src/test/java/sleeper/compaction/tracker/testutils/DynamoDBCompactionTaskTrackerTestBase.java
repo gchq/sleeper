@@ -47,21 +47,21 @@ public class DynamoDBCompactionTaskTrackerTestBase extends LocalStackTestBase {
             .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+    protected final CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoClientV2.deleteTable(DeleteTableRequest.builder().tableName(taskStatusTableName).build());
+        dynamoClient.deleteTable(DeleteTableRequest.builder().tableName(taskStatusTableName).build());
     }
 
     protected CompactionTaskTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBCompactionTaskTracker(dynamoClientV2, instanceProperties,
+        return new DynamoDBCompactionTaskTracker(dynamoClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

@@ -48,7 +48,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTes
 
     @BeforeEach
     void setup() {
-        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoClientV2).create();
+        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @Nested
@@ -432,7 +432,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTes
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClientV2, timeSupplier);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient, timeSupplier);
     }
 
     private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {

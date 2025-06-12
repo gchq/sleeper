@@ -40,7 +40,7 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
 
     @BeforeEach
     void setup() {
-        initialiseTable(dynamoClientV2, tableName,
+        initialiseTable(dynamoClient, tableName,
                 List.of(
                         AttributeDefinition.builder()
                                 .attributeName(TEST_KEY)
@@ -60,9 +60,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .string(TEST_VALUE, "value").build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(record);
     }
 
@@ -73,9 +73,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .number(TEST_VALUE, 123).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(record);
     }
 
@@ -86,9 +86,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .number(TEST_VALUE, 123L).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(record);
     }
 
@@ -99,9 +99,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .number(TEST_VALUE, Instant.now().toEpochMilli()).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(record);
     }
 
@@ -113,9 +113,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_KEY, key)
                 .number(TEST_VALUE, Double.NaN).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(record);
     }
 
@@ -127,9 +127,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_KEY, key)
                 .number(TEST_VALUE, null).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(record);
     }
 
@@ -142,9 +142,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .number(TEST_VALUE, 123)
                 .number(TEST_VALUE, null).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(new DynamoDBRecordBuilder()
                 .string(TEST_KEY, key).build());
     }
@@ -158,9 +158,9 @@ class DynamoDBRecordBuilderIT extends DynamoDBToolsTestBase {
                 .string(TEST_VALUE, "abc")
                 .string(TEST_VALUE, null).build();
         // When
-        dynamoClientV2.putItem(buildPutItemRequest(tableName, record));
+        dynamoClient.putItem(buildPutItemRequest(tableName, record));
         // Then
-        ScanResponse result = dynamoClientV2.scan(ScanRequest.builder().tableName(tableName).build());
+        ScanResponse result = dynamoClient.scan(ScanRequest.builder().tableName(tableName).build());
         assertThat(result.items()).containsExactly(new DynamoDBRecordBuilder()
                 .string(TEST_KEY, key).build());
     }

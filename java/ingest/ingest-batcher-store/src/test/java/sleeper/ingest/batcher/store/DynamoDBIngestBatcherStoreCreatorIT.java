@@ -34,10 +34,10 @@ public class DynamoDBIngestBatcherStoreCreatorIT extends LocalStackTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
 
         // Then
-        assertThat(dynamoClientV2.describeTable(DescribeTableRequest.builder()
+        assertThat(dynamoClient.describeTable(DescribeTableRequest.builder()
                 .tableName(tableName)
                 .build()))
                 .extracting(DescribeTableResponse::table).isNotNull();

@@ -15,10 +15,9 @@
  */
 package sleeper.invoke.tables;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -42,7 +41,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
         String queueUrl = createFifoQueueGetUrl();
 
         // When
-        InvokeForTables.sendOneMessagePerTable(sqsClientV2, queueUrl, Stream.of(
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, Stream.of(
                 uniqueIdAndName("table-id", "table-name")));
 
         // Then
@@ -56,7 +55,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
         String queueUrl = createFifoQueueGetUrl();
 
         // When we send more than the SQS hard limit of 10 messages to send in a single batch
-        InvokeForTables.sendOneMessagePerTable(sqsClientV2, queueUrl,
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl,
                 IntStream.rangeClosed(1, 11)
                         .mapToObj(i -> uniqueIdAndName("table-id-" + i, "table-name-" + i)));
 
@@ -76,7 +75,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
         tableIndex.create(uniqueIdAndName("table-id", "table-name"));
 
         // When
-        InvokeForTables.sendOneMessagePerTableByName(sqsClientV2, queueUrl, tableIndex, List.of("table-name"));
+        InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex, List.of("table-name"));
 
         // Then
         assertThat(receiveTableIdMessages(queueUrl, 2))
@@ -91,7 +90,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
 
         // When / Then
         assertThatThrownBy(() -> InvokeForTables.sendOneMessagePerTableByName(
-                sqsClientV2, queueUrl, tableIndex, List.of("missing-table")))
+                sqsClient, queueUrl, tableIndex, List.of("missing-table")))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(receiveTableIdMessages(queueUrl, 1))
                 .isEmpty();
@@ -107,7 +106,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
                 .forEach(tableIndex::create);
 
         // When / Then
-        assertThatThrownBy(() -> InvokeForTables.sendOneMessagePerTableByName(sqsClientV2, queueUrl, tableIndex,
+        assertThatThrownBy(() -> InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex,
                 IntStream.rangeClosed(1, 12)
                         .mapToObj(i -> "table-name-" + i)
                         .collect(toUnmodifiableList())))
@@ -117,12 +116,12 @@ public class InvokeForTablesIT extends LocalStackTestBase {
     }
 
     private List<String> receiveTableIdMessages(String queueUrl, int maxMessages) {
-        ReceiveMessageResult result = sqsClient.receiveMessage(
-                new ReceiveMessageRequest(queueUrl)
-                        .withMaxNumberOfMessages(maxMessages)
-                        .withWaitTimeSeconds(0));
-        return result.getMessages().stream()
-                .map(Message::getBody)
+        ReceiveMessageResponse result = sqsClient.receiveMessage(request -> request
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(maxMessages)
+                .waitTimeSeconds(0));
+        return result.messages().stream()
+                .map(Message::body)
                 .collect(toUnmodifiableList());
     }
 

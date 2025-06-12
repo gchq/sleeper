@@ -86,7 +86,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         instanceProperties.set(BULK_EXPORT_S3_BUCKET, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(BULK_EXPORT_S3_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         update(stateStore()).initialise(partitions.getAllPartitions());
     }
 
@@ -126,11 +126,11 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private void runTask() throws Exception {
         ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClientV2, s3ClientV2, dynamoClientV2, hadoopConf);
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client, dynamoClient, hadoopConf);
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     private FileReference addPartitionFile(String partitionId, String name, List<Record> records) {
@@ -167,14 +167,14 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(
                 new FixedTablePropertiesProvider(tableProperties));
         String messageBody = serDe.toJson(query);
-        sqsClientV2.sendMessage(SendMessageRequest.builder()
+        sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .messageBody(messageBody)
                 .build());
     }
 
     private List<String> getMessagesFromQueue() {
-        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .build())
                 .messages()

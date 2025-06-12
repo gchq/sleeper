@@ -85,7 +85,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
     }
 
     private SimpleMetadataHandler handler(InstanceProperties instanceProperties) {
-        return new SimpleMetadataHandler(s3ClientV2, dynamoClientV2,
+        return new SimpleMetadataHandler(s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
     }

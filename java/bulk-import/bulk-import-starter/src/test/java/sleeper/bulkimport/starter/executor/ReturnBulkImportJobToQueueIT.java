@@ -53,7 +53,7 @@ public class ReturnBulkImportJobToQueueIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ReturnBulkImportJobToQueue.forFullPersistentEmrCluster(instanceProperties, sqsClientV2)
+        ReturnBulkImportJobToQueue.forFullPersistentEmrCluster(instanceProperties, sqsClient)
                 .send(job);
 
         // Then
@@ -64,7 +64,7 @@ public class ReturnBulkImportJobToQueueIT extends LocalStackTestBase {
     }
 
     private List<BulkImportJob> receiveBulkImportJobsWithWaitTimeSeconds(int waitTimeSeconds) {
-        return sqsClientV2.receiveMessage(
+        return sqsClient.receiveMessage(
                 ReceiveMessageRequest.builder()
                         .queueUrl(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
                         .waitTimeSeconds(waitTimeSeconds)

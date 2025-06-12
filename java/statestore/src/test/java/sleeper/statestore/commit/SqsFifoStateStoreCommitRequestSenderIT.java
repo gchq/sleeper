@@ -66,8 +66,8 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(CreateQueueRequest.builder()
                 .queueName(UUID.randomUUID().toString() + ".fifo")
                 .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
                 .queueUrl());
@@ -109,7 +109,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     void shouldSendCommitWithTooManyFilesForSqs() throws Exception {
         // Given
         instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + UUID.randomUUID().toString());
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
         FileReferenceFactory factory = FileReferenceFactory.forSinglePartition("root", tableProperties);
         List<FileReference> fileReferences = IntStream.range(0, 1350)
                 .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))
@@ -133,7 +133,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private StateStoreCommitRequestSender sender() {
         return new SqsFifoStateStoreCommitRequestSender(
-                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClientV2);
+                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClient);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
@@ -146,7 +146,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .maxNumberOfMessages(10).build();
-        return sqsClientV2.receiveMessage(receiveMessageRequest);
+        return sqsClient.receiveMessage(receiveMessageRequest);
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {

@@ -16,7 +16,6 @@
 package sleeper.ingest.tracker.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -36,9 +35,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.UUID;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
-import static sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker.taskStatusTableName;
 
 public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
 
@@ -49,22 +46,16 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
                     "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
             .build();
     private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
-    private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+    protected final IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
-    }
-
-    @AfterEach
-    public void tearDown() {
-        dynamoClient.deleteTable(taskStatusTableName);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     protected IngestTaskTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(INGEST_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBIngestTaskTracker(dynamoClientV2, instanceProperties,
+        return new DynamoDBIngestTaskTracker(dynamoClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

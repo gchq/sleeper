@@ -59,18 +59,17 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     protected String ingestLocalFiles;
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    protected final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    protected final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
 
     @BeforeEach
     void setUp() throws Exception {
         ingestLocalFiles = createTempDirectory(tempDir, null).toString();
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     protected StateStore initialiseStateStore() {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
-                dynamoClientV2, s3ClientV2).build();
+        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClient, s3Client).build();
         update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }

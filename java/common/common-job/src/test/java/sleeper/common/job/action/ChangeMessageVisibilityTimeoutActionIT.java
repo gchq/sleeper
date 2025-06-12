@@ -39,7 +39,7 @@ public class ChangeMessageVisibilityTimeoutActionIT extends LocalStackTestBase {
                 .queueName(UUID.randomUUID().toString())
                 .attributes(attributes)
                 .build();
-        return sqsClientV2.createQueue(createQueueRequest).queueUrl();
+        return sqsClient.createQueue(createQueueRequest).queueUrl();
     }
 
     private void sendMessage(String queueUrl, String message) {
@@ -47,7 +47,7 @@ public class ChangeMessageVisibilityTimeoutActionIT extends LocalStackTestBase {
                 .queueUrl(queueUrl)
                 .messageBody(message)
                 .build();
-        sqsClientV2.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(sendMessageRequest);
     }
 
     private ReceiveMessageResponse receiveMessage(String queueUrl) {
@@ -55,7 +55,7 @@ public class ChangeMessageVisibilityTimeoutActionIT extends LocalStackTestBase {
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(1)
                 .build();
-        return sqsClientV2.receiveMessage(receiveMessageRequest);
+        return sqsClient.receiveMessage(receiveMessageRequest);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class ChangeMessageVisibilityTimeoutActionIT extends LocalStackTestBase {
 
         // When
         String receiptHandle = receiveMessage(queueUrl).messages().get(0).receiptHandle();
-        new MessageReference(sqsClientV2, queueUrl, "test", receiptHandle)
+        new MessageReference(sqsClient, queueUrl, "test", receiptHandle)
                 .changeVisibilityTimeoutAction(10).call();
         Thread.sleep(2000);
 
@@ -109,7 +109,7 @@ public class ChangeMessageVisibilityTimeoutActionIT extends LocalStackTestBase {
 
         // When
         String receiptHandle = receiveMessage(queueUrl).messages().get(0).receiptHandle();
-        new MessageReference(sqsClientV2, queueUrl, "test", receiptHandle)
+        new MessageReference(sqsClient, queueUrl, "test", receiptHandle)
                 .changeVisibilityTimeoutAction(2).call();
         Thread.sleep(3000);
 

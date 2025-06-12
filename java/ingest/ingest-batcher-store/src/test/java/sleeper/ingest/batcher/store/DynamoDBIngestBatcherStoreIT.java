@@ -340,7 +340,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.addFile(fileIngestRequest);
 
             // Then
-            assertThat(streamPagedItems(dynamoClientV2, ScanRequest.builder()
+            assertThat(streamPagedItems(dynamoClient, ScanRequest.builder()
                     .tableName(requestsTableName)
                     .build()))
                     .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
@@ -361,7 +361,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // Then
-            assertThat(streamPagedItems(dynamoClientV2, ScanRequest.builder()
+            assertThat(streamPagedItems(dynamoClient, ScanRequest.builder()
                     .tableName(requestsTableName)
                     .build()))
                     .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))

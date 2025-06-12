@@ -81,13 +81,13 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
             .rootFirst("root")
             .splitToNewChildren("root", "left", "right", 0L)
             .buildTree();
-    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     private StateStore stateStore;
 
     @BeforeEach
     public void before() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         update(stateStore).initialise(tree.getAllPartitions());
@@ -96,7 +96,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     @Test
