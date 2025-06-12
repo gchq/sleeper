@@ -32,13 +32,12 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
-import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 
 import java.nio.file.Path;
@@ -69,6 +68,7 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private static final String TEST_TABLE_ID = "test-table-id";
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    protected final IngestBatcherStore store = new InMemoryIngestBatcherStore();
 
     public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
@@ -89,7 +89,6 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
             sqsClient = wiremockAwsV2Client(runtimeInfo, SqsClient.builder());
             dynamoClient = wiremockAwsV2Client(runtimeInfo, DynamoDbClient.builder());
 
-            // find inmemory version
             tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
             DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
             instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, createSqsQueueGetUrl());
@@ -101,10 +100,10 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
         @Test
         void shouldHandleNetworkErrorCorrectly(WireMockRuntimeInfo runtimeInfo) {
             uploadFileToS3("test-file-1.parquet");
-            //Mock Network error
 
+            //Mock Network error
             final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-                    batcherStore(), instanceProperties, tableIndex,
+                    store, instanceProperties, tableIndex,
                     new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClient),
                     s3Client);
             stubFor(post("/").willReturn(aResponse().withStatus(200)));
@@ -121,7 +120,7 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
             lambda.handleMessage(json, RECEIVED_TIME);
 
             //Assert retry attempted
-            assertThat(batcherStore().getAllFilesNewestFirst())
+            assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest(testBucket + "/test-file-1.parquet"));
             assertThat(receiveDeadLetters()).isEmpty();
@@ -153,12 +152,6 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
             return result.messages().stream()
                     .map(Message::body)
                     .toList();
-        }
-
-        // find inmemory version
-        private IngestBatcherStore batcherStore() {
-            return new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties,
-                    new FixedTablePropertiesProvider(tableProperties));
         }
 
         private String createSqsQueueGetUrl() {
