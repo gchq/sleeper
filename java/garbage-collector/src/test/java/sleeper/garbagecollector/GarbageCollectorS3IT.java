@@ -40,7 +40,7 @@ import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
 import java.time.Instant;

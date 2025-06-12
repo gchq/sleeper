@@ -16,7 +16,7 @@ on:
       - 'java/trino/**'
       - 'java/partitions/splitter/**'
       - 'java/ingest/ingest-runner/**'
-      - 'java/statestorev2/**'
+      - 'java/statestore/**'
       - 'java/common/common-jobv2/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'

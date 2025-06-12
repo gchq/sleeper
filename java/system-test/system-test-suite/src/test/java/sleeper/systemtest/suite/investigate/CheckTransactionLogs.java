@@ -49,12 +49,12 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
-import sleeper.statestorev2.StateStoreArrowFileReadStore;
-import sleeper.statestorev2.StateStorePartitionsArrowFormat;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
-import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.statestorev2.transactionlog.snapshots.LatestSnapshots;
+import sleeper.statestore.StateStoreArrowFileReadStore;
+import sleeper.statestore.StateStorePartitionsArrowFormat;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 
 import java.io.IOException;

@@ -31,7 +31,7 @@ on:
       - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/ingest/ingest-core/**'
-      - 'java/statestorev2/**'
+      - 'java/statestore/**'
       - 'java/common/common-invoke-tablesv2/**'
       - 'java/configurationV2/**'
       - 'java/common/dynamodb-toolsv2/**'

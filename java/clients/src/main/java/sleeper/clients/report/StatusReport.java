@@ -35,7 +35,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;

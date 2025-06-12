@@ -32,8 +32,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.nio.file.Path;
 import java.util.List;

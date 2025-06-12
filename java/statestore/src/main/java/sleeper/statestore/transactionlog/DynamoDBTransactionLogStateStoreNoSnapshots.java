@@ -15,8 +15,8 @@
  */
 package sleeper.statestore.transactionlog;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -53,7 +53,7 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
      */
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB, AmazonS3 s3) {
+            DynamoDbClient dynamoDB, S3Client s3) {
         return TransactionLogStateStore.builder()
                 .sleeperTable(tableProperties.getStatus())
                 .timeBetweenSnapshotChecks(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)))

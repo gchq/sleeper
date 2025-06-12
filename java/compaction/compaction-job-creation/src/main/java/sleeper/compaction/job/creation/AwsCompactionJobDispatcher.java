@@ -39,7 +39,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJobs;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configurationv2.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 import java.util.function.Supplier;

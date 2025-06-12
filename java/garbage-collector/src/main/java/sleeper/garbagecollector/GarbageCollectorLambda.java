@@ -38,8 +38,8 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Instant;
 import java.util.ArrayList;

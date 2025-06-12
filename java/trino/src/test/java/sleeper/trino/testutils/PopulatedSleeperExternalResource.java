@@ -46,8 +46,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 

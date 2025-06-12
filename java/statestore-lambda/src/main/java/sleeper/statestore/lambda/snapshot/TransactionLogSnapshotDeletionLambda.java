@@ -33,8 +33,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestorev2.transactionlog.snapshots.SnapshotDeletionTracker;
-import sleeper.statestorev2.transactionlog.snapshots.TransactionLogSnapshotDeleter;
+import sleeper.statestore.transactionlog.snapshots.SnapshotDeletionTracker;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -37,7 +37,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -52,7 +52,7 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.dynamodb.toolsv2.DynamoDBUtils;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.S3SketchesStore;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;

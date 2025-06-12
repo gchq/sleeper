@@ -15,13 +15,13 @@
  */
 package sleeper.statestore.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -35,10 +35,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
  * testing purposes as the creation of the tables in real deployments is normally done using CDK.
  */
 public class DynamoDBTransactionLogSnapshotMetadataStoreCreator {
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final InstanceProperties instanceProperties;
 
-    public DynamoDBTransactionLogSnapshotMetadataStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+    public DynamoDBTransactionLogSnapshotMetadataStoreCreator(InstanceProperties instanceProperties, DynamoDbClient dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.instanceProperties = instanceProperties;
     }
@@ -53,29 +53,49 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreCreator {
 
     private void createLatestSnapshotTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID, ScalarAttributeType.S));
+                AttributeDefinition.builder()
+                        .attributeName(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID)
+                        .attributeType(ScalarAttributeType.S)
+                        .build());
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID, KeyType.HASH));
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME))
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                KeySchemaElement.builder()
+                        .attributeName(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID)
+                        .keyType(KeyType.HASH)
+                        .build());
+        CreateTableRequest request = CreateTableRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME))
+                .attributeDefinitions(attributeDefinitions)
+                .keySchema(keySchemaElements)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .build();
         dynamoDB.createTable(request);
     }
 
     private void createAllSnapshotsTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER, ScalarAttributeType.N));
+                AttributeDefinition.builder()
+                        .attributeName(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE)
+                        .attributeType(ScalarAttributeType.S)
+                        .build(),
+                AttributeDefinition.builder()
+                        .attributeName(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER)
+                        .attributeType(ScalarAttributeType.N)
+                        .build());
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE, KeyType.HASH),
-                new KeySchemaElement(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER, KeyType.RANGE));
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME))
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                KeySchemaElement.builder()
+                        .attributeName(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE)
+                        .keyType(KeyType.HASH)
+                        .build(),
+                KeySchemaElement.builder()
+                        .attributeName(DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER)
+                        .keyType(KeyType.RANGE)
+                        .build());
+        CreateTableRequest request = CreateTableRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME))
+                .attributeDefinitions(attributeDefinitions)
+                .keySchema(keySchemaElements)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .build();
         dynamoDB.createTable(request);
     }
 }

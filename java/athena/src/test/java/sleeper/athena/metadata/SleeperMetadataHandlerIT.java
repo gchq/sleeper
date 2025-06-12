@@ -53,7 +53,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.split.SplitPartition;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.util.HashMap;

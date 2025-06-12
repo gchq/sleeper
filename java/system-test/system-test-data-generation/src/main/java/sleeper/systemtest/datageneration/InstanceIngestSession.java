@@ -31,7 +31,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 public class InstanceIngestSession implements AutoCloseable {
     private final S3Client s3Client;

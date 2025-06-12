@@ -26,7 +26,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Instant;
 import java.util.Random;
