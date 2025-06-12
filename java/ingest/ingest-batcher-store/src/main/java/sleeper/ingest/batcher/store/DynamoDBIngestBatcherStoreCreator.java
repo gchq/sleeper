@@ -28,8 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.configureTimeToLive;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.initialiseTable;
+import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
+import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;

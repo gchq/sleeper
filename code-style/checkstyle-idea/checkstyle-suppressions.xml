@@ -48,14 +48,10 @@
     <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]job[\\/]common[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]job[\\/]common[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]common[\\/]jobv2[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]common[\\/]jobv2[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]task[\\/]common[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]task[\\/]common[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]common[\\/]taskv2[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]common[\\/]taskv2[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]job[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]job[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]task[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]task[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocMethod"/>

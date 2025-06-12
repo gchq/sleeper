@@ -21,7 +21,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import org.junit.jupiter.api.Test;
 
-import sleeper.common.taskv2.EC2InstanceDetails;
+import sleeper.common.task.EC2InstanceDetails;
 
 import java.io.IOException;
 import java.io.Reader;

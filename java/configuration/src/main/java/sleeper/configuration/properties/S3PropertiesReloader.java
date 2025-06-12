@@ -15,7 +15,7 @@
  */
 package sleeper.configuration.properties;
 
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -28,11 +28,11 @@ import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPE
  */
 public class S3PropertiesReloader implements PropertiesReloader {
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    private S3PropertiesReloader(AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+    private S3PropertiesReloader(S3Client s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -47,7 +47,7 @@ public class S3PropertiesReloader implements PropertiesReloader {
      * @return                         the reloader
      */
     public static PropertiesReloader ifConfigured(
-            AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+            S3Client s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         return new S3PropertiesReloader(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
@@ -60,7 +60,7 @@ public class S3PropertiesReloader implements PropertiesReloader {
      * @return                    the reloader
      */
     public static PropertiesReloader ifConfigured(
-            AmazonS3 s3Client, InstanceProperties instanceProperties) {
+            S3Client s3Client, InstanceProperties instanceProperties) {
         return new S3PropertiesReloader(s3Client, instanceProperties, null);
     }
 

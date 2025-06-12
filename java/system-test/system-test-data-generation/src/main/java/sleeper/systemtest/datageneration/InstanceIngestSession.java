@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.api.role.AssumeSleeperRole;
 import sleeper.clients.api.role.AssumeSleeperRoleAwsSdk;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;

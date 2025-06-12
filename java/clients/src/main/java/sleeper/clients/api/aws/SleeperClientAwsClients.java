@@ -26,7 +26,7 @@ import sleeper.clients.util.UncheckedAutoCloseables;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * AWS clients to instantiate a Sleeper client.

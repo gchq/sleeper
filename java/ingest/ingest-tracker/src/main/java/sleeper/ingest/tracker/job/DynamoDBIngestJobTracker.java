@@ -37,7 +37,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.util.LoggedDuration;
-import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.tracker.IngestTrackerException;
 
 import java.time.Instant;
@@ -52,10 +52,10 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
 import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.UPDATE_TYPE;
 import static sleeper.ingest.tracker.job.DynamoDBIngestJobStatusFormat.VALIDATION_REJECTED_VALUE;

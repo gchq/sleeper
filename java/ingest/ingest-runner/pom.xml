@@ -61,12 +61,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-jobv2</artifactId>
+            <artifactId>common-job</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

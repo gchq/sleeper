@@ -37,7 +37,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.athena.FilterTranslator;
-import sleeper.configurationv2.jars.S3UserJarsLoader;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.table.TableProperties;
