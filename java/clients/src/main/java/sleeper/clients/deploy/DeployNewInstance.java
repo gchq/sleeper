@@ -36,15 +36,15 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;

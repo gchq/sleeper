@@ -27,8 +27,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.S3SketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.S3SketchesStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 

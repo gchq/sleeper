@@ -15,11 +15,11 @@
  */
 package sleeper.configuration.jars;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -30,6 +30,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,10 +42,10 @@ public class S3UserJarsLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3UserJarsLoader.class);
 
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3Client;
-    private final String localDir;
+    private final S3Client s3Client;
+    private final Path localDir;
 
-    public S3UserJarsLoader(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) {
+    public S3UserJarsLoader(InstanceProperties instanceProperties, S3Client s3Client, Path localDir) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.localDir = localDir;
@@ -90,11 +91,13 @@ public class S3UserJarsLoader {
 
     private String loadJar(String jar) {
         String bucket = instanceProperties.get(CommonProperty.JARS_BUCKET);
-        GetObjectRequest getObjectRequest = new GetObjectRequest(bucket, jar);
-        String outputFile = localDir + "/" + jar;
-        ObjectMetadata metadata = s3Client.getObject(getObjectRequest, new File(outputFile));
+        Path outputFile = localDir.resolve(jar);
+        GetObjectResponse response = s3Client.getObject(request -> request
+                .bucket(bucket).key(jar),
+                ResponseTransformer.toFile(outputFile));
+        outputFile.toFile().deleteOnExit();
         LOGGER.info("Loaded jar {} of size {} from {} and wrote to {}",
-                jar, metadata.getContentLength(), bucket, outputFile);
-        return outputFile;
+                jar, response.contentLength(), bucket, outputFile);
+        return outputFile.toString();
     }
 }

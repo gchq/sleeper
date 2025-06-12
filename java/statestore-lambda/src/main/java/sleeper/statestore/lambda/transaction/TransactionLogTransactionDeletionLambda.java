@@ -25,18 +25,18 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3PropertiesReloader;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.util.LoggedDuration;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
-import sleeper.statestorev2.transactionlog.TransactionLogTransactionDeleter;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.time.Instant;
 import java.util.ArrayList;

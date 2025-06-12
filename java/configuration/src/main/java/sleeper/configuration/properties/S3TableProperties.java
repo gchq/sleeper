@@ -16,11 +16,12 @@
 
 package sleeper.configuration.properties;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesUtils;
@@ -41,9 +42,9 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
 
-    private S3TableProperties(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+    private S3TableProperties(InstanceProperties instanceProperties, S3Client s3Client) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
     }
@@ -57,7 +58,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      * @return                    the store
      */
     public static TablePropertiesStore createStore(
-            InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+            InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return new TablePropertiesStore(
                 new DynamoDBTableIndex(instanceProperties, dynamoClient),
                 new S3TableProperties(instanceProperties, s3Client));
@@ -72,7 +73,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      * @return                    the store
      */
     public static TablePropertiesProvider createProvider(
-            InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+            InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return new TablePropertiesProvider(instanceProperties, createStore(instanceProperties, s3Client, dynamoClient));
     }
 
@@ -85,7 +86,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
      * @return                    the store
      */
     public static TablePropertiesProvider createProvider(
-            InstanceProperties instanceProperties, TableIndex tableIndex, AmazonS3 s3Client) {
+            InstanceProperties instanceProperties, TableIndex tableIndex, S3Client s3Client) {
         return new TablePropertiesProvider(instanceProperties,
                 new TablePropertiesStore(tableIndex, new S3TableProperties(instanceProperties, s3Client)));
     }
@@ -96,9 +97,11 @@ public class S3TableProperties implements TablePropertiesStore.Client {
         String key = getS3Key(table);
         LOGGER.info("Loading table properties from bucket {}, key {}", bucket, key);
         try {
-            String content = s3Client.getObjectAsString(bucket, key);
+            String content = s3Client.getObjectAsBytes(builder -> builder.bucket(bucket)
+                    .key(key)).asUtf8String();
+
             return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
-        } catch (AmazonS3Exception e) {
+        } catch (S3Exception e) {
             throw TableNotFoundException.withTable(table, e);
         }
     }
@@ -107,7 +110,9 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     public void saveProperties(TableProperties tableProperties) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
         String key = getS3Key(tableProperties.getStatus());
-        s3Client.putObject(bucket, key, tableProperties.saveAsString());
+        s3Client.putObject(builder -> builder.bucket(bucket).key(key),
+                RequestBody.fromString(tableProperties.saveAsString()));
+
         LOGGER.info("Saved table properties to bucket {}, key {}", bucket, key);
     }
 
@@ -115,7 +120,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     public void deleteProperties(TableStatus table) {
         String bucket = instanceProperties.get(CONFIG_BUCKET);
         String key = getS3Key(table);
-        s3Client.deleteObject(bucket, key);
+        s3Client.deleteObject(builder -> builder.bucket(bucket).key(key));
         LOGGER.info("Deleted table properties in bucket {}, key {}", bucket, key);
     }
 

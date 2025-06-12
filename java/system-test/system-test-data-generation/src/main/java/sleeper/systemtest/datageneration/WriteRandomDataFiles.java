@@ -26,13 +26,13 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
-import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
 import java.util.Iterator;
 
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class WriteRandomDataFiles {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataFiles.class);

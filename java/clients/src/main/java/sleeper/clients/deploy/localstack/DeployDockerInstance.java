@@ -26,8 +26,8 @@ import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
 import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
 import sleeper.clients.deploy.localstack.stack.TableDockerStack;
 import sleeper.clients.table.AddTable;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
@@ -36,14 +36,14 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;

@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.util.Collections;
 

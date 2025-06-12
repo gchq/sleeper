@@ -43,8 +43,8 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.util.PollWithRetries;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter;
-import sleeper.statestorev2.StateStoreFactory;
 
 import java.time.Duration;
 import java.time.Instant;

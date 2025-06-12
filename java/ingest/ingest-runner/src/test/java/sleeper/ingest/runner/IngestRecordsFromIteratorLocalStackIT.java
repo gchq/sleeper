@@ -21,7 +21,7 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
 import java.util.List;

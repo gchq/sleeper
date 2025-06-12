@@ -20,20 +20,20 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.statestorev2.InitialiseStateStoreFromSplitPoints;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class AddTable {

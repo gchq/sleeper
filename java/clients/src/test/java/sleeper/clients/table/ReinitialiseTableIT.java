@@ -24,9 +24,9 @@ import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.clients.table.partition.ReinitialiseTableFromSplitPoints;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -40,8 +40,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

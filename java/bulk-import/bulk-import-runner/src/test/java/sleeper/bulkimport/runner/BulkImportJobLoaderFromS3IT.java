@@ -18,7 +18,7 @@ package sleeper.bulkimport.runner;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.starterv2.executor.BulkImportJobWriterToS3;
+import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 

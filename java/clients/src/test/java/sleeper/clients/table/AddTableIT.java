@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,8 +32,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;

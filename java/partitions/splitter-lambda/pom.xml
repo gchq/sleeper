@@ -46,22 +46,22 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestorev2</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitterv2</artifactId>
+            <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-invoke-tablesv2</artifactId>
+            <artifactId>common-invoke-tables</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

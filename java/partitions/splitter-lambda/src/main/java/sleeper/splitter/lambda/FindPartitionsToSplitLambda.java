@@ -26,9 +26,9 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3PropertiesReloader;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -36,8 +36,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.splitterv2.core.find.FindPartitionsToSplit;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.splitter.core.find.FindPartitionsToSplit;
+import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -16,33 +16,26 @@
 
 package sleeper.dynamodb.tools;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import sleeper.localstack.test.LocalStackTestBase;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_KEY;
-import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_VALUE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.tools.DynamoDBUtils.loadPagedItemsWithLimit;
 
-public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
+public class DynamoDBUtilsPagingLimitIT extends DynamoDBToolsTestBase {
 
     private final String tableName = UUID.randomUUID().toString();
 
@@ -51,11 +44,15 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
     class RunningScan {
         @BeforeEach
         void setup() {
-            initialiseTable(dynamoClient, tableName,
+            initialiseTable(dynamoClientV2, tableName,
                     List.of(
-                            new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
+                            AttributeDefinition.builder()
+                                    .attributeName(TEST_KEY)
+                                    .attributeType(ScalarAttributeType.S)
+                                    .build()),
                     List.of(
-                            new KeySchemaElement(TEST_KEY, KeyType.HASH)));
+                            KeySchemaElement.builder().attributeName(TEST_KEY)
+                                    .keyType(KeyType.HASH).build()));
         }
 
         @Test
@@ -68,11 +65,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 2, scan()))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 2, scanWithLimit(tableName, 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -89,11 +86,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 10, scan()))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 10, scan()))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -110,11 +107,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 1, scan().withLimit(10)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, scanWithLimit(tableName, 10)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -139,13 +136,13 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "key4")
                     .string(TEST_VALUE, "value4").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
-            dynamoClient.putItem(new PutItemRequest(tableName, record3));
-            dynamoClient.putItem(new PutItemRequest(tableName, record4));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record3));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record4));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 3, scan().withLimit(2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 3, scanWithLimit(tableName, 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(3)
@@ -164,11 +161,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "key2")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 1, scan().withLimit(1)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, scanWithLimit(tableName, 1)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -183,13 +180,13 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
     class RunningQuery {
         @BeforeEach
         void setUp() {
-            initialiseTable(dynamoClient, tableName,
+            initialiseTable(dynamoClientV2, tableName,
                     List.of(
-                            new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
-                            new AttributeDefinition(TEST_VALUE, ScalarAttributeType.S)),
+                            AttributeDefinition.builder().attributeName(TEST_KEY).attributeType(ScalarAttributeType.S).build(),
+                            AttributeDefinition.builder().attributeName(TEST_VALUE).attributeType(ScalarAttributeType.S).build()),
                     List.of(
-                            new KeySchemaElement(TEST_KEY, KeyType.HASH),
-                            new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
+                            KeySchemaElement.builder().attributeName(TEST_KEY).keyType(KeyType.HASH).build(),
+                            KeySchemaElement.builder().attributeName(TEST_VALUE).keyType(KeyType.RANGE).build()));
         }
 
         @Test
@@ -202,11 +199,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 2, queryForKey("test-key")))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 2, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -223,11 +220,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 10, queryForKey("test-key")))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 10, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems()).containsExactlyInAnyOrder(record1, record2);
                         assertThat(items.isMoreItems()).isFalse();
@@ -244,11 +241,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 1, queryForKey("test-key").withLimit(10)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, queryForKeyWithLimit(tableName, "test-key", 10)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -273,13 +270,13 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "value4").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
-            dynamoClient.putItem(new PutItemRequest(tableName, record3));
-            dynamoClient.putItem(new PutItemRequest(tableName, record4));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record3));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record4));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 3, queryForKey("test-key").withLimit(2)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 3, queryForKeyWithLimit(tableName, "test-key", 2)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(3)
@@ -298,11 +295,11 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
                     .string(TEST_KEY, "test-key")
                     .string(TEST_VALUE, "value2").build();
 
-            dynamoClient.putItem(new PutItemRequest(tableName, record1));
-            dynamoClient.putItem(new PutItemRequest(tableName, record2));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record1));
+            dynamoClientV2.putItem(buildPutItemRequest(tableName, record2));
 
             // When/Then
-            assertThat(loadPagedItemsWithLimit(dynamoClient, 1, queryForKey("test-key").withLimit(1)))
+            assertThat(loadPagedItemsWithLimit(dynamoClientV2, 1, queryForKeyWithLimit(tableName, "test-key", 1)))
                     .satisfies(items -> {
                         assertThat(items.getItems())
                                 .hasSize(1)
@@ -313,14 +310,8 @@ public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
     }
 
     private ScanRequest scan() {
-        return new ScanRequest().withTableName(tableName);
-    }
-
-    private QueryRequest queryForKey(String key) {
-        return new QueryRequest()
-                .withTableName(tableName)
-                .withKeyConditionExpression("#TestKey = :testkey")
-                .withExpressionAttributeNames(Map.of("#TestKey", TEST_KEY))
-                .withExpressionAttributeValues(Map.of(":testkey", createStringAttribute(key)));
+        return ScanRequest.builder()
+                .tableName(tableName)
+                .build();
     }
 }

@@ -22,9 +22,9 @@ import sleeper.clients.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.splitterv2.core.status.PartitionsStatus;
+import sleeper.splitter.core.status.PartitionsStatus;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * A utility class to report information about the partitions in the system and

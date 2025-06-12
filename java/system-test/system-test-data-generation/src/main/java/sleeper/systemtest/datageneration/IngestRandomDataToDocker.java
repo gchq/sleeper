@@ -24,21 +24,21 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.net.URI;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRandomDataToDocker {

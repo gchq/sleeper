@@ -15,27 +15,22 @@
  */
 package sleeper.statestore.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.statestore.StateStoreArrowFileStore;
+import sleeper.statestore.StateStoreArrowFileUploadStore;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
 import java.io.IOException;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 /**
  * Stores snapshots derived from a transaction log. Holds an index of snapshots in DynamoDB, and stores snapshot data in
@@ -45,29 +40,29 @@ public class DynamoDBTransactionLogSnapshotSaver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotSaver.class);
 
     private final SnapshotMetadataSaver metadataSaver;
-    private final StateStoreArrowFileStore fileStore;
-    private final Configuration configuration;
+    private final StateStoreArrowFileUploadStore fileUploadStore;
     private final String basePath;
 
     public DynamoDBTransactionLogSnapshotSaver(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo,
+            S3Client s3Client, S3TransferManager s3TransferManager) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
-                instanceProperties, tableProperties, configuration);
+                instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     private DynamoDBTransactionLogSnapshotSaver(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
+            InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, s3Client, s3TransferManager);
     }
 
     DynamoDBTransactionLogSnapshotSaver(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
-            InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            S3Client s3Client, S3TransferManager s3TransferManager) {
         this.metadataSaver = metadataSaver;
-        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
-        this.configuration = configuration;
-        this.basePath = getBasePath(instanceProperties, tableProperties);
+        this.fileUploadStore = new StateStoreArrowFileUploadStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
+        this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
     }
 
     /**
@@ -81,7 +76,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
                 basePath, snapshot.getTransactionNumber());
         StateStoreFiles state = snapshot.getState();
-        fileStore.saveFiles(metadata.getPath(), state);
+        fileUploadStore.saveFiles(metadata.getObjectKey(), state);
         saveMetadata(metadata);
     }
 
@@ -97,7 +92,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
                 basePath, snapshot.getTransactionNumber());
         StateStorePartitions state = snapshot.getState();
-        fileStore.savePartitions(metadata.getPath(), state.all());
+        fileUploadStore.savePartitions(metadata.getObjectKey(), state.all());
         saveMetadata(metadata);
     }
 
@@ -106,24 +101,9 @@ public class DynamoDBTransactionLogSnapshotSaver {
             metadataSaver.save(metadata);
         } catch (DuplicateSnapshotException | RuntimeException e) {
             LOGGER.info("Failed to save snapshot metadata to DynamoDB. Deleting snapshot file.");
-            Path path = new Path(metadata.getPath());
-            FileSystem fs = path.getFileSystem(configuration);
-            fs.delete(path, false);
+            fileUploadStore.deleteSnapshotFile(metadata);
             throw e;
         }
-    }
-
-    /**
-     * Constructs the base path to a table data bucket.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  tableProperties    the table properties
-     * @return                    the full path to the table data bucket (including the file system)
-     */
-    public static String getBasePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_ID);
     }
 
     /**

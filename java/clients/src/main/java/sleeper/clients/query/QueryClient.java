@@ -21,10 +21,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configurationv2.jars.S3UserJarsLoader;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.configuration.jars.S3UserJarsLoader;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -42,8 +42,8 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -56,7 +56,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**

@@ -25,16 +25,16 @@ import sleeper.clients.teardown.ShutdownSystemProcesses;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
 import sleeper.core.deploy.PopulateInstanceProperties;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class TearDownSystemTestDeployment {
     public static final Logger LOGGER = LoggerFactory.getLogger(TearDownSystemTestDeployment.class);

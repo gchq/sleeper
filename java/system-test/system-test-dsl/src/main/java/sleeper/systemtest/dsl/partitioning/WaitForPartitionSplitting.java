@@ -23,8 +23,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.PollWithRetries;
-import sleeper.splitterv2.core.find.FindPartitionToSplitResult;
-import sleeper.splitterv2.core.find.FindPartitionsToSplit;
+import sleeper.splitter.core.find.FindPartitionToSplitResult;
+import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;

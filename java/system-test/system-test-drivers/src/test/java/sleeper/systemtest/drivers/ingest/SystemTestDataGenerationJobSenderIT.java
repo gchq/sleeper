@@ -22,15 +22,15 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class SystemTestDataGenerationJobSenderIT extends LocalStackTestBase {
 

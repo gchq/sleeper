@@ -20,8 +20,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
-import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;

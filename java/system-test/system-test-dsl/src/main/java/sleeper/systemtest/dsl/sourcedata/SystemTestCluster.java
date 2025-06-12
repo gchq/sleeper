@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;

@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.partitioning;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.invoke.tablesv2.InvokeForTables;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;

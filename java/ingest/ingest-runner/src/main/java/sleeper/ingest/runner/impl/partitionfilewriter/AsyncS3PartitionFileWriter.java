@@ -30,8 +30,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.File;
 import java.io.IOException;

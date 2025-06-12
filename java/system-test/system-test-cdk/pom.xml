@@ -35,7 +35,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>system-test-configurationv2</artifactId>
+            <artifactId>system-test-configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

@@ -21,8 +21,8 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -32,10 +32,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.sqs.model.Message;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -40,10 +40,10 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinition;
-import sleeper.splitterv2.core.find.SplitPartitionJobDefinitionSerDe;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.splitter.core.find.SplitPartitionJobDefinition;
+import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.nio.file.Path;
 import java.util.List;

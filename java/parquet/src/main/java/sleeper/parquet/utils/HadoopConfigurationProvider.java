@@ -15,9 +15,10 @@
  */
 package sleeper.parquet.utils;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -37,7 +38,7 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+            conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         }
         return conf;
     }
@@ -67,14 +68,14 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+            conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         }
         return conf;
     }
 
     public static Configuration getConfigurationForEKS(InstanceProperties instanceProperties) {
         Configuration configuration = getConfigurationForECS(instanceProperties);
-        configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        configuration.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         return configuration;
     }
 
@@ -91,7 +92,7 @@ public class HadoopConfigurationProvider {
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {
-            conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
+            conf.set("fs.s3a.aws.credentials.provider", ContainerCredentialsProvider.class.getName());
         }
         // See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise
         // Some quick experiments showed that the following setting increases the number of records processed per second

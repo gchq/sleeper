@@ -30,13 +30,13 @@ import sleeper.clients.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.common.taskv2.QueueMessageCount;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.common.task.QueueMessageCount;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -44,7 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";

@@ -29,8 +29,8 @@ import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateJobsTestUtils;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
@@ -45,8 +45,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTrans
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;

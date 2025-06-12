@@ -28,6 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+<<<<<<< HEAD
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
@@ -36,6 +37,11 @@ import sleeper.sketchesv2.store.S3SketchesStore;
 import sleeper.sketchesv2.store.SketchesStore;
 import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+=======
+import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+>>>>>>> origin/develop
 
 import java.io.IOException;
 import java.nio.file.Path;

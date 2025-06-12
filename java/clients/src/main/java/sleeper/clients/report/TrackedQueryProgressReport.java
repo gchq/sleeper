@@ -18,12 +18,12 @@ package sleeper.clients.report;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.tracker.QueryTrackerException;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Reports progress of a specified query.

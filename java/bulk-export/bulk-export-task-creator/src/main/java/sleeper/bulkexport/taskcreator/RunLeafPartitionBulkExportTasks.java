@@ -26,9 +26,9 @@ import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
-import sleeper.common.taskv2.ECSTaskCount;
-import sleeper.common.taskv2.QueueMessageCount;
-import sleeper.common.taskv2.RunECSTasks;
+import sleeper.common.task.ECSTaskCount;
+import sleeper.common.task.QueueMessageCount;
+import sleeper.common.task.RunECSTasks;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;

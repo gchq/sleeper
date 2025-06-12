@@ -37,7 +37,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.util.LoggedDuration;
-import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -55,10 +55,10 @@ import static sleeper.compaction.tracker.job.DynamoDBCompactionJobStatusFormat.c
 import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobTracker.class);

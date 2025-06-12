@@ -15,10 +15,11 @@
  */
 package sleeper.configuration.properties;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
@@ -49,7 +50,7 @@ public class S3InstanceProperties {
      * @param  instanceId the Sleeper instance ID
      * @return            the loaded instance properties
      */
-    public static InstanceProperties loadGivenInstanceId(AmazonS3 s3Client, String instanceId) {
+    public static InstanceProperties loadGivenInstanceId(S3Client s3Client, String instanceId) {
         return InstanceProperties.createAndValidate(loadPropertiesGivenInstanceId(s3Client, instanceId));
     }
 
@@ -60,7 +61,7 @@ public class S3InstanceProperties {
      * @param  instanceId the Sleeper instance ID
      * @return            the loaded instance properties
      */
-    public static InstanceProperties loadGivenInstanceIdNoValidation(AmazonS3 s3Client, String instanceId) {
+    public static InstanceProperties loadGivenInstanceIdNoValidation(S3Client s3Client, String instanceId) {
         return InstanceProperties.createWithoutValidation(loadPropertiesGivenInstanceId(s3Client, instanceId));
     }
 
@@ -71,7 +72,7 @@ public class S3InstanceProperties {
      * @param  bucket   the bucket name
      * @return          the loaded instance properties
      */
-    public static InstanceProperties loadFromBucket(AmazonS3 s3Client, String bucket) {
+    public static InstanceProperties loadFromBucket(S3Client s3Client, String bucket) {
         return InstanceProperties.createAndValidate(loadPropertiesFromBucket(s3Client, bucket));
     }
 
@@ -82,10 +83,12 @@ public class S3InstanceProperties {
      * @param s3Client   the S3 client
      * @param properties the instance properties
      */
-    public static void saveToS3(AmazonS3 s3Client, InstanceProperties properties) {
+    public static void saveToS3(S3Client s3Client, InstanceProperties properties) {
         String bucket = properties.get(CONFIG_BUCKET);
         LOGGER.debug("Uploading config to bucket {}", bucket);
-        s3Client.putObject(bucket, S3_INSTANCE_PROPERTIES_FILE, properties.saveAsString());
+        s3Client.putObject(builder -> builder.bucket(bucket).key(S3_INSTANCE_PROPERTIES_FILE),
+                RequestBody.fromString(properties.saveAsString()));
+
         LOGGER.info("Saved instance properties to bucket {}, key {}", bucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 
@@ -96,7 +99,7 @@ public class S3InstanceProperties {
      * @param s3Client   the S3 client
      * @param properties the instance properties
      */
-    public static void reload(AmazonS3 s3Client, InstanceProperties properties) {
+    public static void reload(S3Client s3Client, InstanceProperties properties) {
         properties.resetAndValidate(loadPropertiesFromBucket(s3Client, properties.get(CONFIG_BUCKET)));
     }
 
@@ -107,7 +110,7 @@ public class S3InstanceProperties {
      * @param properties the instance properties
      * @param instanceId the Sleeper instance ID
      */
-    public static void reloadGivenInstanceId(AmazonS3 s3Client, InstanceProperties properties, String instanceId) {
+    public static void reloadGivenInstanceId(S3Client s3Client, InstanceProperties properties, String instanceId) {
         properties.resetAndValidate(loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId)));
     }
 
@@ -123,7 +126,7 @@ public class S3InstanceProperties {
      * @throws IOException if the configuration could not be saved to the local file system
      */
     public static InstanceProperties saveToLocalWithTableProperties(
-            AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
+            S3Client s3, DynamoDbClient dynamoDB, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = loadGivenInstanceId(s3, instanceId);
         SaveLocalProperties.saveToDirectory(directory, instanceProperties,
                 S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
@@ -131,12 +134,13 @@ public class S3InstanceProperties {
         return instanceProperties;
     }
 
-    private static Properties loadPropertiesGivenInstanceId(AmazonS3 s3Client, String instanceId) {
+    private static Properties loadPropertiesGivenInstanceId(S3Client s3Client, String instanceId) {
         return loadPropertiesFromBucket(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
     }
 
-    private static Properties loadPropertiesFromBucket(AmazonS3 s3Client, String bucket) {
-        return loadProperties(s3Client.getObjectAsString(bucket, S3_INSTANCE_PROPERTIES_FILE));
+    private static Properties loadPropertiesFromBucket(S3Client s3Client, String bucket) {
+        return loadProperties(s3Client.getObjectAsBytes(builder -> builder.bucket(bucket)
+                .key(S3_INSTANCE_PROPERTIES_FILE)).asUtf8String());
     }
 
 }

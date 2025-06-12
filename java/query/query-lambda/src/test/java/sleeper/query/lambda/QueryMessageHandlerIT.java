@@ -48,11 +48,11 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 public class QueryMessageHandlerIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClientV2);
 
     @BeforeEach
     void setUp() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClientV2).create();
     }
 
     private final TableProperties tableProperties = createTable("table-1");

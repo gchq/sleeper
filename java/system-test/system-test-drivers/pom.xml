@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-starterv2</artifactId>
+            <artifactId>bulk-import-starter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -81,12 +81,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-taskv2</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-invoke-tablesv2</artifactId>
+            <artifactId>common-invoke-tables</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

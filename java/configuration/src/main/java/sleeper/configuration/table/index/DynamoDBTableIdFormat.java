@@ -16,7 +16,7 @@
 
 package sleeper.configuration.table.index;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.table.TableStatus;
 

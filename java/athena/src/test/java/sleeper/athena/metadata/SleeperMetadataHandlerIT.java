@@ -51,9 +51,9 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.splitterv2.core.split.SplitPartition;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.splitter.core.split.SplitPartition;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.util.HashMap;

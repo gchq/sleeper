@@ -48,6 +48,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
@@ -60,6 +61,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     void setUp() {
         instanceProperties.set(ID, "instance");
         instanceProperties.set(CONFIG_BUCKET, "config-bucket");
+        instanceProperties.set(JARS_BUCKET, "jars-bucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "import-bucket");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, "my-application");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, "application-id");

@@ -38,7 +38,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
