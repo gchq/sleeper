@@ -15,8 +15,6 @@
  */
 package sleeper.localstack.test;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -44,7 +42,6 @@ public class SleeperLocalStackClients {
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
     public static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    public static final AmazonCloudWatch CLOUDWATCH_CLIENT = buildAwsV1Client(CONTAINER, Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
     public static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
     public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3AsyncClient.crtBuilder());
     public static final S3TransferManager S3_TRANSFER_MANAGER = S3TransferManager.builder().s3Client(S3_ASYNC_CLIENT).build();
