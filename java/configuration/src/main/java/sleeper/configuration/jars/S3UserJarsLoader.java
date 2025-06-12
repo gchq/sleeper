@@ -17,8 +17,6 @@ package sleeper.configuration.jars;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.core.exception.SdkClientException;
-import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
@@ -31,9 +29,9 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,35 +93,15 @@ public class S3UserJarsLoader {
     private String loadJar(String jar) {
         String bucket = instanceProperties.get(CommonProperty.JARS_BUCKET);
         Path outputFile = localDir.resolve(jar);
-        if (Files.exists(outputFile)) {
-            LOGGER.info("Found jar already exists locally, skipping: {}", outputFile);
-            return outputFile.toString();
-        }
-        try {
-            GetObjectResponse response = s3Client.getObject(request -> request
-                    .bucket(bucket).key(jar),
-                    ResponseTransformer.toFile(outputFile));
-            outputFile.toFile().deleteOnExit();
-            LOGGER.info("Loaded jar {} of size {} from {} and wrote to {}",
-                    jar, response.contentLength(), bucket, outputFile);
-        } catch (SdkClientException e) {
-            if (isFileAlreadyExists(e)) {
-                LOGGER.info("Found jar already exists locally after download attempt, skipping: {}", outputFile);
-            } else {
-                throw e;
-            }
-        }
+        GetObjectResponse response = s3Client.getObject(request -> request
+                .bucket(bucket).key(jar),
+                (resp, inputStream) -> {
+                    Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                    return resp;
+                });
+        outputFile.toFile().deleteOnExit();
+        LOGGER.info("Loaded jar {} of size {} from {} and wrote to {}",
+                jar, response.contentLength(), bucket, outputFile);
         return outputFile.toString();
-    }
-
-    private static boolean isFileAlreadyExists(RuntimeException e) {
-        Throwable check = e;
-        do {
-            if (check instanceof FileAlreadyExistsException) {
-                return true;
-            }
-            check = check.getCause();
-        } while (check != null);
-        return false;
     }
 }
