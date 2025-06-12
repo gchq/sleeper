@@ -16,14 +16,14 @@
 
 package sleeper.configuration.table.index;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.dynamodb.tools.DynamoDBUtils;
+import sleeper.dynamodb.toolsv2.DynamoDBUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,9 +41,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_
  */
 public class DynamoDBTableIndexCreator {
     private final InstanceProperties instanceProperties;
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
 
-    private DynamoDBTableIndexCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+    private DynamoDBTableIndexCreator(InstanceProperties instanceProperties, DynamoDbClient dynamoDB) {
         this.instanceProperties = Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
     }
@@ -54,22 +54,22 @@ public class DynamoDBTableIndexCreator {
      * @param dynamoDBClient     the DynamoDB client
      * @param instanceProperties the instance properties
      */
-    public static void create(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
+    public static void create(DynamoDbClient dynamoDBClient, InstanceProperties instanceProperties) {
         new DynamoDBTableIndexCreator(instanceProperties, dynamoDBClient).create();
     }
 
     private void create() {
         initialiseTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
-                List.of(new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
-                List.of(new KeySchemaElement(TABLE_NAME_FIELD, KeyType.HASH)));
+                List.of(AttributeDefinition.builder().attributeName(TABLE_NAME_FIELD).attributeType(ScalarAttributeType.S).build()),
+                List.of(KeySchemaElement.builder().attributeName(TABLE_NAME_FIELD).keyType(KeyType.HASH).build()));
         initialiseTable(instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
-                List.of(new AttributeDefinition(TABLE_ID_FIELD, ScalarAttributeType.S)),
-                List.of(new KeySchemaElement(TABLE_ID_FIELD, KeyType.HASH)));
+                List.of(AttributeDefinition.builder().attributeName(TABLE_ID_FIELD).attributeType(ScalarAttributeType.S).build()),
+                List.of(KeySchemaElement.builder().attributeName(TABLE_ID_FIELD).keyType(KeyType.HASH).build()));
         initialiseTable(instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME),
-                List.of(new AttributeDefinition(TABLE_ONLINE_FIELD, ScalarAttributeType.S),
-                        new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
-                List.of(new KeySchemaElement(TABLE_ONLINE_FIELD, KeyType.HASH),
-                        new KeySchemaElement(TABLE_NAME_FIELD, KeyType.RANGE)));
+                List.of(AttributeDefinition.builder().attributeName(TABLE_ONLINE_FIELD).attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName(TABLE_NAME_FIELD).attributeType(ScalarAttributeType.S).build()),
+                List.of(KeySchemaElement.builder().attributeName(TABLE_ONLINE_FIELD).keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName(TABLE_NAME_FIELD).keyType(KeyType.RANGE).build()));
     }
 
     private void initialiseTable(

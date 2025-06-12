@@ -27,8 +27,8 @@ import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -38,7 +38,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.statestore.StateStoreFactory;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * A utility class to report information about the partitions, the files, the

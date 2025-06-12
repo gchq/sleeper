@@ -26,8 +26,8 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.deploy.SqsQueues;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;

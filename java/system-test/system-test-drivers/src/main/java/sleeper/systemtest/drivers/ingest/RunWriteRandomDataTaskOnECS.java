@@ -31,7 +31,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.common.task.RunECSTasks;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;

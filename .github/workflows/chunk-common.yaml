@@ -12,7 +12,6 @@ on:
       - 'java/core/**'
       - 'java/example-iterators/**'
       - 'java/configuration/**'
-      - 'java/configurationV2/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
       - 'java/common/common-job/**'

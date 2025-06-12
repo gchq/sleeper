@@ -18,9 +18,9 @@ package sleeper.clients.report.partitions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configurationv2.properties.S3InstancePropertiesTestHelper;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;

@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.QuerySerDe;
@@ -32,7 +32,7 @@ import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 
 import java.util.function.Function;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;

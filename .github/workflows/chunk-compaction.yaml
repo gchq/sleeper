@@ -33,7 +33,7 @@ on:
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/common/common-invoke-tables/**'
-      - 'java/configurationV2/**'
+      - 'java/configuration/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 
 /**

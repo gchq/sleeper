@@ -28,7 +28,7 @@ on:
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-task/**'
       - 'java/query/query-runner/**'
-      - 'java/configurationV2/**'
+      - 'java/configuration/**'
       - 'java/common/dynamodb-toolsv2/**'
       - 'java/bulk-import/bulk-import-core/**'
       - 'java/partitions/splitter/**'

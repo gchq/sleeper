@@ -24,10 +24,10 @@ import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
 import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
 import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
 import sleeper.clients.deploy.localstack.stack.TableDockerStack;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class TearDownDockerInstance {
     private TearDownDockerInstance() {

@@ -32,7 +32,6 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
-        <module>configurationV2</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
