@@ -18,7 +18,6 @@ package sleeper.query.lambda;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -36,7 +35,7 @@ import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.statestore.StateStoreFactory;
 
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 
@@ -103,7 +102,6 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         }
     }
 
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private void updateProperties(String configBucket) throws ObjectFactoryException {
         // Refresh properties and caches
         if (null == configBucket) {
@@ -118,7 +116,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .executorService(Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS)))
-                .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, Paths.get("/tmp")).buildObjectFactory())
+                .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory())
                 .queryListener(new DynamoDBQueryTracker(instanceProperties, dynamoClient))
                 .build();
         lastUpdateTime = Instant.now();
