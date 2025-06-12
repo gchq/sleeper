@@ -24,6 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -72,6 +73,13 @@ public abstract class LocalStackTestBase {
     public static PutObjectResponse putObject(String bucketName, String key, String content) {
         return S3_CLIENT_V2.putObject(builder -> builder.bucket(bucketName).key(key),
                 RequestBody.fromString(content));
+    }
+
+    public static String getObjectAsString(String bucketName, String key) {
+        return S3_CLIENT_V2.getObject(
+                builder -> builder.bucket(bucketName).key(key),
+                ResponseTransformer.toBytes())
+                .asUtf8String();
     }
 
     public static Set<String> listObjectKeys(String bucketName) {

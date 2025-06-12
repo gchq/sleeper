@@ -441,7 +441,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     }
 
     private void uploadFileToS3(String filePath) {
-        s3Client.putObject(testBucket, filePath, "test");
+        putObject(testBucket, filePath, "test");
     }
 
     private static IngestBatcherTrackedFile fileRequest(String filePath) {

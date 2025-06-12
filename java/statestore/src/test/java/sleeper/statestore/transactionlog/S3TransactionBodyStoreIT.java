@@ -55,7 +55,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     @Nested

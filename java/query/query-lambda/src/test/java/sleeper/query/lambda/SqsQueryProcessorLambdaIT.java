@@ -800,7 +800,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(QUERY_RESULTS_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
 
         DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);

@@ -206,8 +206,8 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void writeFileAndSketches(String filename) {
-        s3Client.putObject(testBucket, dataFileObjectKey(filename), filename);
-        s3Client.putObject(testBucket, sketchesFileObjectKey(filename), filename);
+        putObject(testBucket, dataFileObjectKey(filename), filename);
+        putObject(testBucket, sketchesFileObjectKey(filename), filename);
     }
 
     private String dataFileFullFilename(String filename) {

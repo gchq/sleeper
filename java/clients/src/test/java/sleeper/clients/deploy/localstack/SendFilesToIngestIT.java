@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy.localstack;
 
-import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,8 +23,6 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.IngestJob;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -53,16 +50,12 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3ClientV2, sqsClientV2);
 
         // Then
-        assertThat(getObjectContents(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))
+        assertThat(getObjectAsString(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))
                 .isEqualTo("abc");
         assertThat(receiveIngestJob(instanceProperties.get(INGEST_JOB_QUEUE_URL)))
                 .isEqualTo(IngestJob.builder()
                         .tableName("system-test")
                         .files(List.of(instanceProperties.get(DATA_BUCKET) + "/ingest/test-file.parquet"))
                         .build());
-    }
-
-    private String getObjectContents(String bucketName, String key) throws IOException {
-        return CharStreams.toString(new InputStreamReader(s3Client.getObject(bucketName, key).getObjectContent()));
     }
 }

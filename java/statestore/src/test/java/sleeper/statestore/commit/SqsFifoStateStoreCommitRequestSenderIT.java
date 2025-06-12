@@ -66,7 +66,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClientV2.createQueue(CreateQueueRequest.builder()
                 .queueName(UUID.randomUUID().toString() + ".fifo")
                 .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
@@ -109,7 +109,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     void shouldSendCommitWithTooManyFilesForSqs() throws Exception {
         // Given
         instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + UUID.randomUUID().toString());
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
         FileReferenceFactory factory = FileReferenceFactory.forSinglePartition("root", tableProperties);
         List<FileReference> fileReferences = IntStream.range(0, 1350)
                 .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))

@@ -34,7 +34,7 @@ public class TransactionLogStateStoreTestBase extends LocalStackTestBase {
     @BeforeEach
     void setUpBase() {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     public StateStore createStateStore(TableProperties tableProperties) {
