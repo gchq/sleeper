@@ -36,9 +36,9 @@ import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterF
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 

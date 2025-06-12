@@ -36,8 +36,8 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
 import java.time.Instant;

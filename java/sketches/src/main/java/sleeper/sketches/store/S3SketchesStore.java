@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.sketchesv2.store;
+package sleeper.sketches.store;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +24,8 @@ import software.amazon.awssdk.transfer.s3.model.Upload;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.util.S3Filename;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.SketchesSerDe;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.SketchesSerDe;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

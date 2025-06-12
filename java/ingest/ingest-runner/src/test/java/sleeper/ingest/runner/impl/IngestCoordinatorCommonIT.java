@@ -45,10 +45,10 @@ import sleeper.ingest.runner.testutils.ResultVerifier;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.ingest.runner.testutils.TestIngestType.WriteTarget;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestorev2.StateStoreFactory;
 import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
 

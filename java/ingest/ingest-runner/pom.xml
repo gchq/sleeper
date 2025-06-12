@@ -71,7 +71,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -132,7 +132,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

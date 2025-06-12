@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 

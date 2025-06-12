@@ -43,7 +43,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketchesv2.store.NoSketchesStore;
+import sleeper.sketches.store.NoSketchesStore;
 import sleeper.statestorev2.StateStoreFactory;
 
 import java.io.IOException;

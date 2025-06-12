@@ -22,9 +22,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
 import java.util.Objects;

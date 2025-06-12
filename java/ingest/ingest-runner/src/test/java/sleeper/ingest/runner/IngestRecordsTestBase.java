@@ -31,8 +31,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
 import java.nio.file.Path;

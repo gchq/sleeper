@@ -23,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.schema.Schema;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.SketchesSerDe;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.SketchesSerDe;
+import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
