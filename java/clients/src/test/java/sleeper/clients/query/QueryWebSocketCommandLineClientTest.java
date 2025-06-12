@@ -481,7 +481,7 @@ public class QueryWebSocketCommandLineClientTest {
     protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                        new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient),
+                        new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient, 0),
                 () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                 .run();
     }
