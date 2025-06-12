@@ -102,7 +102,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
 
     private CompactionCommitBatcherLambda lambda() {
         return new CompactionCommitBatcherLambda(
-                CompactionCommitBatcherLambda.createBatcher(instanceProperties, sqsClientV2, s3ClientV2));
+                CompactionCommitBatcherLambda.createBatcher(instanceProperties, sqsClient, s3Client));
     }
 
     private SQSEvent createEvent(String tableId, ReplaceFileReferencesRequest request) {
@@ -123,7 +123,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> consumeQueueMessages() {
-        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .waitTimeSeconds(1)
                 .maxNumberOfMessages(10).build())

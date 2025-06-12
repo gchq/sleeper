@@ -51,7 +51,7 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-taskv2</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

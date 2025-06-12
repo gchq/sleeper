@@ -15,11 +15,11 @@
  */
 package sleeper.invoke.tables;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
@@ -32,36 +32,60 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Invokes a lambda that is triggered by a FIFO SQS queue where each message is a Sleeper table ID. The Sleeper table ID
+ * is also the message group ID. This setup means the lambda can be invoked in parallel for a number of Sleeper tables
+ * at the same time, without ever having two invocations for the same Sleeper table at once.
+ * <p>
+ * Also see this AWS blog: https://aws.amazon.com/blogs/compute/new-for-aws-lambda-sqs-fifo-as-an-event-source/
+ */
 public class InvokeForTables {
     public static final Logger LOGGER = LoggerFactory.getLogger(InvokeForTables.class);
 
     private InvokeForTables() {
     }
 
-    public static void sendOneMessagePerTable(AmazonSQS sqsClient, String queueUrl, Stream<TableStatus> tables) {
+    /**
+     * Invokes a lambda to run for a given set of Sleeper tables.
+     *
+     * @param sqsClient an SQS client
+     * @param queueUrl  the URL of the FIFO queue that triggers the lambda
+     * @param tables    the Sleeper tables to invoke the lambda for
+     */
+    public static void sendOneMessagePerTable(SqsClient sqsClient, String queueUrl, Stream<TableStatus> tables) {
         // Limit to stay under the maximum number of messages for an SQS sendMessageBatch call.
         SplitIntoBatches.reusingListOfSize(10, tables,
                 batch -> sendMessageBatch(sqsClient, queueUrl, batch));
     }
 
+    /**
+     * Invokes a lambda to run for a given set of Sleeper tables by their names.
+     *
+     * @param sqsClient  an SQS client
+     * @param queueUrl   the URL of the FIFO queue that triggers the lambda
+     * @param tableIndex the index of Sleeper tables
+     * @param tableNames the names of Sleeper tables to invoke the lambda for
+     */
     public static void sendOneMessagePerTableByName(
-            AmazonSQS sqsClient, String queueUrl, TableIndex tableIndex, List<String> tableNames) {
+            SqsClient sqsClient, String queueUrl, TableIndex tableIndex, List<String> tableNames) {
         List<TableStatus> tables = tableNames.stream().map(name -> tableIndex.getTableByName(name)
                 .orElseThrow(() -> TableNotFoundException.withTableName(name)))
                 .collect(toUnmodifiableList());
         sendOneMessagePerTable(sqsClient, queueUrl, tables.stream());
     }
 
-    private static void sendMessageBatch(AmazonSQS sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
+    private static void sendMessageBatch(SqsClient sqsClient, String queueUrl, List<TableStatus> tablesBatch) {
         LOGGER.info("Sending table batch of size {} to SQS queue {}: {}", tablesBatch.size(), queueUrl, tablesBatch);
-        sqsClient.sendMessageBatch(new SendMessageBatchRequest()
-                .withQueueUrl(queueUrl)
-                .withEntries(tablesBatch.stream()
-                        .map(table -> new SendMessageBatchRequestEntry()
-                                .withMessageDeduplicationId(UUID.randomUUID().toString())
-                                .withId(table.getTableUniqueId())
-                                .withMessageGroupId(table.getTableUniqueId())
-                                .withMessageBody(table.getTableUniqueId()))
-                        .collect(toUnmodifiableList())));
+        sqsClient.sendMessageBatch(SendMessageBatchRequest.builder()
+                .queueUrl(queueUrl)
+                .entries(tablesBatch.stream()
+                        .map(table -> SendMessageBatchRequestEntry.builder()
+                                .messageDeduplicationId(UUID.randomUUID().toString())
+                                .id(table.getTableUniqueId())
+                                .messageGroupId(table.getTableUniqueId())
+                                .messageBody(table.getTableUniqueId())
+                                .build())
+                        .toList())
+                .build());
     }
 }

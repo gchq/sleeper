@@ -24,8 +24,8 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.util.Iterator;

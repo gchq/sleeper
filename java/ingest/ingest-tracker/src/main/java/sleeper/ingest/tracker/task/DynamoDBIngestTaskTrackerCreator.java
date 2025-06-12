@@ -15,13 +15,14 @@
  */
 package sleeper.ingest.tracker.task;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -42,27 +43,27 @@ public class DynamoDBIngestTaskTrackerCreator {
     private DynamoDBIngestTaskTrackerCreator() {
     }
 
-    public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
+    public static void create(InstanceProperties properties, DynamoDbClient dynamoDB) {
         if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
-                        new AttributeDefinition(TASK_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
+                        AttributeDefinition.builder().attributeName(TASK_ID).attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName(UPDATE_TIME).attributeType(ScalarAttributeType.N).build()),
                 Arrays.asList(
-                        new KeySchemaElement(TASK_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
+                        KeySchemaElement.builder().attributeName(TASK_ID).keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName(UPDATE_TIME).keyType(KeyType.RANGE).build()));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 
-    public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
+    public static void tearDown(InstanceProperties properties, DynamoDbClient dynamoDBClient) {
         if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));
         LOGGER.info("Deleting table: {}", tableName);
-        dynamoDBClient.deleteTable(tableName);
+        dynamoDBClient.deleteTable(DeleteTableRequest.builder().tableName(tableName).build());
     }
 }

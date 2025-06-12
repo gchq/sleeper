@@ -27,12 +27,12 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.Optional;
 

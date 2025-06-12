@@ -20,13 +20,13 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.BucketUtils;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
 public class LocalStackSystemTestDeploymentDriver implements SystemTestDeploymentDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSystemTestDeploymentDriver.class);

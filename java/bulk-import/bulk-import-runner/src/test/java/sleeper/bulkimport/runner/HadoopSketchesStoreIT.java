@@ -27,8 +27,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.util.Map;

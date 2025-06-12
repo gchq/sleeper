@@ -17,25 +17,91 @@
 package sleeper.ingest.runner;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.core.IngestResult;
+import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.List;
+
+import static java.nio.file.Files.createTempDirectory;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
-public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
+public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
+    @TempDir
+    private static Path tempDir;
+
+    private final Field field = new Field("key", new LongType());
+    protected Schema schema = schemaWithRowKeys(field);
+    protected String ingestLocalFiles;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    protected final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
 
     @BeforeEach
-    void setUp() {
-        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT_V2).create();
+    void setUp() throws Exception {
+        ingestLocalFiles = createTempDirectory(tempDir, null).toString();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     protected StateStore initialiseStateStore() {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
-                SleeperLocalStackClients.DYNAMO_CLIENT_V2, SleeperLocalStackClients.S3_CLIENT_V2).build();
+        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClient, s3Client).build();
         update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }
+
+    protected IngestResult ingestRecords(StateStore stateStore, List<Record> records) throws Exception {
+        IngestFactory factory = createIngestFactory(stateStore);
+
+        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
+        ingestRecords.init();
+        for (Record record : records) {
+            ingestRecords.write(record);
+        }
+        return ingestRecords.close();
+    }
+
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
+        IngestFactory factory = createIngestFactory(stateStore);
+        return factory.ingestFromRecordIterator(tableProperties, iterator);
+    }
+
+    protected List<Record> readRecords(List<FileReference> fileReferences) {
+        return readMergedRecordsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
+    }
+
+    private IngestFactory createIngestFactory(StateStore stateStore) {
+        return IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(ingestLocalFiles)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .instanceProperties(instanceProperties)
+                .s3AsyncClient(s3AsyncClient)
+                .build();
+    }
+
 }

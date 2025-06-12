@@ -42,10 +42,10 @@ import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -67,7 +67,7 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     @TempDir
     public Path tempDir;
 

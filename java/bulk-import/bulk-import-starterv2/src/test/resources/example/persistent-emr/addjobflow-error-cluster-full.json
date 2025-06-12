@@ -1,4 +1,0 @@
-{
-  "__type": "ValidationException",
-  "message": "Maximum number of active steps(State = 'Running', 'Pending' or 'Cancel_Pending') for cluster exceeded."
-}

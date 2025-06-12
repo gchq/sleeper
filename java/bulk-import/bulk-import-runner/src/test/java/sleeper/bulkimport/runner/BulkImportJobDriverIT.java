@@ -31,8 +31,8 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -59,12 +59,12 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -439,8 +439,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(BULK_IMPORT_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         return instanceProperties;
     }
 
@@ -449,7 +449,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
-        return S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+        return S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     }
 
     private static Schema getSchema() {
@@ -542,7 +542,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) {
         tablePropertiesStore(instanceProperties).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
         update(stateStore).initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
         return stateStore;
     }
@@ -557,10 +557,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job, Supplier<Instant> timeSupplier) throws IOException {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
-                properties, sqsClientV2, s3ClientV2, TransactionSerDeProvider.from(tablePropertiesProvider));
+                properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                 tablePropertiesProvider, stateStoreProvider, tracker, commitSender, timeSupplier);

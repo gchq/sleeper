@@ -25,17 +25,17 @@ import sleeper.clients.report.query.StandardQueryTrackerReporter;
 import sleeper.clients.report.query.TrackerQuery;
 import sleeper.clients.report.query.TrackerQueryPrompt;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.tracker.QueryTrackerStore;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class QueryTrackerReport {
     private static final String DEFAULT_REPORTER = "STANDARD";

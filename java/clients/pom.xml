@@ -27,11 +27,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sts</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
         </dependency>
@@ -83,7 +78,7 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runnerv2</artifactId>
+            <artifactId>query-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -108,27 +103,27 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-trackerV2</artifactId>
+            <artifactId>ingest-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitterv2</artifactId>
+            <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestorev2</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-taskv2</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -143,7 +138,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-invoke-tablesv2</artifactId>
+            <artifactId>common-invoke-tables</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
@@ -156,7 +151,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -170,7 +165,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-taskv2</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -197,7 +192,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -245,7 +240,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runnerv2</artifactId>
+            <artifactId>query-runner</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

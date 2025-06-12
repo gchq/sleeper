@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.QueryStatus;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 

@@ -44,9 +44,9 @@ import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat
 import static sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
-import static sleeper.dynamodb.toolsv2.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionTaskTracker implements CompactionTaskTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskTracker.class);

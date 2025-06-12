@@ -27,8 +27,8 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
-import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 
 import java.util.Optional;
 

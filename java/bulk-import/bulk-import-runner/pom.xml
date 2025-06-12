@@ -62,7 +62,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-trackerV2</artifactId>
+            <artifactId>ingest-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -72,17 +72,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestorev2</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
@@ -102,13 +102,13 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>bulk-import-starterv2</artifactId>
+            <artifactId>bulk-import-starter</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

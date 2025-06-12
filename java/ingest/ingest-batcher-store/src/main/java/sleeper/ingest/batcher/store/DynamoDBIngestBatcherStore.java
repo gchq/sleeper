@@ -37,7 +37,7 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.dynamodb.toolsv2.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
@@ -50,8 +50,8 @@ import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.instanceTableName;
-import static sleeper.dynamodb.toolsv2.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;

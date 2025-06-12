@@ -30,14 +30,14 @@ import software.amazon.awssdk.services.ecs.model.TaskOverride;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.common.taskv2.RunECSTasks;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.common.task.RunECSTasks;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
-import sleeper.systemtest.configurationv2.SystemTestProperties;
-import sleeper.systemtest.configurationv2.SystemTestPropertyValues;
-import sleeper.systemtest.configurationv2.SystemTestStandaloneProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.IOException;
@@ -50,11 +50,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.systemtest.configurationv2.SystemTestConstants.SYSTEM_TEST_CONTAINER;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configurationv2.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
+import static sleeper.systemtest.configuration.SystemTestConstants.SYSTEM_TEST_CONTAINER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
  * Runs ECS tasks to write random data.

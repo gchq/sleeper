@@ -31,12 +31,17 @@
             <artifactId>datasketches-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-aws</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3-transfer-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk.crt</groupId>
+            <artifactId>aws-crt</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
@@ -44,12 +49,19 @@
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>localstack-test</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -22,15 +22,15 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.configurationv2.jars.S3UserJarsLoader;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.jars.S3UserJarsLoader;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Command line client to create compaction jobs to be run for specified Sleeper tables.

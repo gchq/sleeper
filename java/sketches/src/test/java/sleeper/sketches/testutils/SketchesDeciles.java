@@ -17,18 +17,15 @@ package sleeper.sketches.testutils;
 
 import com.google.common.base.Strings;
 import org.apache.datasketches.quantiles.ItemsUnion;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,27 +57,23 @@ public class SketchesDeciles {
         return from(sketches);
     }
 
-    public static SketchesDeciles fromFile(Schema schema, FileReference file) throws IOException {
-        return fromFile(schema, file.getFilename());
+    public static SketchesDeciles fromFile(Schema schema, FileReference file, SketchesStore sketchesStore) throws IOException {
+        return fromFile(schema, file.getFilename(), sketchesStore);
     }
 
-    public static SketchesDeciles fromFile(Schema schema, String file) throws IOException {
-        return from(getSketches(schema, file, new Configuration()));
+    public static SketchesDeciles fromFile(Schema schema, String file, SketchesStore sketchesStore) throws IOException {
+        return from(sketchesStore.loadFileSketches(file, schema));
     }
 
-    public static SketchesDeciles fromFileReferences(Schema schema, List<FileReference> files, Configuration conf) {
-        return fromFiles(schema, files.stream().map(FileReference::getFilename).collect(toUnmodifiableList()), conf);
+    public static SketchesDeciles fromFileReferences(Schema schema, List<FileReference> files, SketchesStore sketchesStore) {
+        return fromFiles(schema, files.stream().map(FileReference::getFilename).collect(toUnmodifiableList()), sketchesStore);
     }
 
-    public static SketchesDeciles fromFiles(Schema schema, List<String> files) {
-        return fromFiles(schema, files, new Configuration());
-    }
-
-    public static SketchesDeciles fromFiles(Schema schema, List<String> files, Configuration conf) {
+    public static SketchesDeciles fromFiles(Schema schema, List<String> files, SketchesStore sketchesStore) {
         Map<String, ItemsUnion> unionByField = schema.getRowKeyFields().stream()
                 .collect(toMap(Field::getName, field -> Sketches.createUnion(field.getType(), 1024)));
         for (String file : files) {
-            Sketches sketches = getSketches(schema, file, conf);
+            Sketches sketches = sketchesStore.loadFileSketches(file, schema);
             sketches.fieldSketches().forEach(fieldSketch -> {
                 ItemsUnion union = unionByField.get(fieldSketch.getField().getName());
                 union.update(fieldSketch.getSketch());
@@ -89,15 +82,6 @@ public class SketchesDeciles {
         Sketches sketches = new Sketches(schema, unionByField.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
         return from(sketches);
-    }
-
-    private static Sketches getSketches(Schema schema, String filename, Configuration conf) {
-        String sketchFile = filename.replace(".parquet", ".sketches");
-        try {
-            return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), conf);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     public static Builder builder() {

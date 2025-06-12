@@ -15,27 +15,27 @@
  */
 package sleeper.dynamodb.tools;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CancellationReason;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.Tag;
-import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CancellationReason;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ResourceInUseException;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.Tag;
+import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
+import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.RetryOnDynamoDbThrottling;
@@ -61,7 +61,7 @@ public class DynamoDBUtils {
     }
 
     public static void initialiseTable(
-            AmazonDynamoDB dynamoDB,
+            DynamoDbClient dynamoDB,
             String tableName,
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements) {
@@ -69,98 +69,105 @@ public class DynamoDBUtils {
     }
 
     public static void initialiseTable(
-            AmazonDynamoDB dynamoDB,
+            DynamoDbClient dynamoDB,
             String tableName,
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements,
             Map<String, String> tags) {
-        initialiseTable(dynamoDB, tags, new CreateTableRequest()
-                .withTableName(tableName)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements));
+
+        initialiseTable(dynamoDB, tags, CreateTableRequest.builder()
+                .tableName(tableName)
+                .attributeDefinitions(attributeDefinitions)
+                .keySchema(keySchemaElements)
+                .build());
     }
 
     public static void initialiseTable(
-            AmazonDynamoDB dynamoDB,
+            DynamoDbClient dynamoDB,
             Map<String, String> tags,
             CreateTableRequest request) {
-        request.setBillingMode(BillingMode.PAY_PER_REQUEST.toString());
+        CreateTableRequest.Builder requestBuilder = request.toBuilder().billingMode(BillingMode.PAY_PER_REQUEST.toString());
         String message = "";
         if (!tags.isEmpty()) {
-            request.setTags(tags.entrySet().stream()
-                    .map(e -> new Tag().withKey(e.getKey()).withValue(e.getValue()))
+            requestBuilder.tags(tags.entrySet().stream()
+                    .map(e -> Tag.builder()
+                            .key(e.getKey())
+                            .value(e.getValue())
+                            .build())
                     .collect(Collectors.toUnmodifiableList()));
             message = " with tags " + tags;
         }
+        request = requestBuilder.build();
         try {
-            CreateTableResult result = dynamoDB.createTable(request);
-            LOGGER.info("Created table {} {}", result.getTableDescription().getTableName(), message);
+            CreateTableResponse result = dynamoDB.createTable(request);
+            LOGGER.info("Created table {} {}", result.tableDescription().tableName(), message);
         } catch (ResourceInUseException e) {
             if (e.getMessage().contains("Table already exists")) {
-                LOGGER.warn("Table {} already exists", request.getTableName());
+                LOGGER.warn("Table {} already exists", request.tableName());
             } else {
                 throw e;
             }
         }
     }
 
-    public static void configureTimeToLive(AmazonDynamoDB dynamoDB, String tableName, String expiryField) {
-        dynamoDB.updateTimeToLive(new UpdateTimeToLiveRequest()
-                .withTableName(tableName)
-                .withTimeToLiveSpecification(
-                        new TimeToLiveSpecification()
-                                .withEnabled(true)
-                                .withAttributeName(expiryField)));
+    public static void configureTimeToLive(DynamoDbClient dynamoDB, String tableName, String expiryField) {
+        dynamoDB.updateTimeToLive(UpdateTimeToLiveRequest.builder()
+                .tableName(tableName)
+                .timeToLiveSpecification(
+                        TimeToLiveSpecification.builder()
+                                .enabled(true)
+                                .attributeName(expiryField)
+                                .build())
+                .build());
         LOGGER.info("Configured TTL on field {}", expiryField);
     }
 
-    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(DynamoDbClient dynamoDB, ScanRequest scanRequest) {
         return streamPagedResults(dynamoDB, scanRequest)
-                .flatMap(result -> result.getItems().stream());
+                .flatMap(result -> result.items().stream());
     }
 
-    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(DynamoDbClient dynamoDB, QueryRequest queryRequest) {
         return streamPagedResults(dynamoDB, queryRequest)
-                .flatMap(result -> result.getItems().stream());
+                .flatMap(result -> result.items().stream());
     }
 
-    public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        return streamResults(scanRequest, dynamoDB::scan,
-                ScanResult::getLastEvaluatedKey, scanRequest::withExclusiveStartKey);
-    }
-
-    public static Stream<QueryResult> streamPagedResults(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
-        return streamResults(queryRequest, dynamoDB::query,
-                QueryResult::getLastEvaluatedKey, queryRequest::withExclusiveStartKey);
-    }
-
-    public static <Request, Result, Key> Stream<Result> streamResults(
-            Request request, Function<Request, Result> query,
-            Function<Result, Key> getLastKey, Function<Key, Request> withStartKey) {
+    public static Stream<ScanResponse> streamPagedResults(DynamoDbClient dynamoDB, ScanRequest scanRequest) {
         return Stream.iterate(
-                query.apply(request),
+                dynamoDB.scan(scanRequest),
                 Objects::nonNull,
-                result -> Optional.ofNullable(getLastKey.apply(result))
-                        .map(lastKey -> query.apply(withStartKey.apply(lastKey)))
+                response -> Optional.ofNullable(response.lastEvaluatedKey().isEmpty() ? null : response.lastEvaluatedKey())
+                        .map(lastKey -> dynamoDB.scan(scanRequest.toBuilder().exclusiveStartKey(lastKey).build()))
                         .orElse(null));
     }
 
-    public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, ScanRequest scanRequest) {
-        if (scanRequest.getLimit() == null || scanRequest.getLimit() > limit) {
-            scanRequest.setLimit(limit + 1);
-        }
-        return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, scanRequest),
-                ScanResult::getItems, ScanResult::getLastEvaluatedKey,
-                startKey -> dynamoDB.scan(scanRequest.withLimit(1).withExclusiveStartKey(startKey)));
+    public static Stream<QueryResponse> streamPagedResults(DynamoDbClient dynamoDB, QueryRequest queryRequest) {
+        return Stream.iterate(
+                dynamoDB.query(queryRequest),
+                Objects::nonNull,
+                response -> Optional.ofNullable(response.lastEvaluatedKey().isEmpty() ? null : response.lastEvaluatedKey())
+                        .map(lastKey -> dynamoDB.query(queryRequest.toBuilder().exclusiveStartKey(lastKey).build()))
+                        .orElse(null));
     }
 
-    public static LoadedItemsWithLimit loadPagedItemsWithLimit(AmazonDynamoDB dynamoDB, int limit, QueryRequest queryRequest) {
-        if (queryRequest.getLimit() == null || queryRequest.getLimit() > limit) {
-            queryRequest.setLimit(limit + 1);
+    public static LoadedItemsWithLimit loadPagedItemsWithLimit(DynamoDbClient dynamoDB, int limit, final ScanRequest scanRequest) {
+        ScanRequest.Builder scanBuilder = scanRequest.toBuilder();
+        if (scanRequest.limit() == null || scanRequest.limit() > limit) {
+            scanBuilder.limit(limit + 1);
+        }
+        return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, scanRequest),
+                ScanResponse::items, ScanResponse::lastEvaluatedKey,
+                startKey -> dynamoDB.scan(scanBuilder.limit(1).exclusiveStartKey(startKey).build()));
+    }
+
+    public static LoadedItemsWithLimit loadPagedItemsWithLimit(DynamoDbClient dynamoDB, int limit, QueryRequest queryRequest) {
+        QueryRequest.Builder queryBuilder = queryRequest.toBuilder();
+        if (queryRequest.limit() == null || queryRequest.limit() > limit) {
+            queryBuilder.limit(limit + 1);
         }
         return loadPagedItemsWithLimit(limit, streamPagedResults(dynamoDB, queryRequest),
-                QueryResult::getItems, QueryResult::getLastEvaluatedKey,
-                startKey -> dynamoDB.query(queryRequest.withLimit(1).withExclusiveStartKey(startKey)));
+                QueryResponse::items, QueryResponse::lastEvaluatedKey,
+                startKey -> dynamoDB.query(queryBuilder.limit(1).exclusiveStartKey(startKey).build()));
     }
 
     private static <Result> LoadedItemsWithLimit loadPagedItemsWithLimit(
@@ -192,24 +199,26 @@ public class DynamoDBUtils {
     }
 
     public static void deleteAllDynamoTableItems(
-            AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
+            DynamoDbClient dynamoDB, QueryRequest queryRequest,
             UnaryOperator<Map<String, AttributeValue>> getItemKeyForDelete) {
-        LOGGER.info("Deleting all items from {} Dynamo DB Table", queryRequest.getTableName());
-        long countOfDeletedItems = streamPagedItems(dynamoDB, queryRequest.withLimit(50))
+        LOGGER.info("Deleting all items from {} Dynamo DB Table", queryRequest.tableName());
+        long countOfDeletedItems = streamPagedItems(dynamoDB, queryRequest.toBuilder().limit(50).build())
                 .map(item -> {
                     Map<String, AttributeValue> deleteKey = getItemKeyForDelete.apply(item);
                     return dynamoDB.deleteItem(
-                            new DeleteItemRequest(queryRequest.getTableName(), deleteKey));
+                            DeleteItemRequest.builder()
+                                    .tableName(queryRequest.tableName())
+                                    .key(deleteKey).build());
                 }).count();
 
-        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, queryRequest.getTableName());
+        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, queryRequest.tableName());
     }
 
     public static boolean hasConditionalCheckFailure(TransactionCanceledException e) {
-        return e.getCancellationReasons().stream().anyMatch(DynamoDBUtils::isConditionCheckFailure);
+        return e.cancellationReasons().stream().anyMatch(DynamoDBUtils::isConditionCheckFailure);
     }
 
-    public static boolean hasConditionalCheckFailure(AmazonDynamoDBException e) {
+    public static boolean hasConditionalCheckFailure(DynamoDbException e) {
         if (e instanceof TransactionCanceledException) {
             return hasConditionalCheckFailure((TransactionCanceledException) e);
         } else {
@@ -218,13 +227,13 @@ public class DynamoDBUtils {
     }
 
     public static boolean isConditionCheckFailure(CancellationReason reason) {
-        return "ConditionalCheckFailed".equals(reason.getCode());
+        return "ConditionalCheckFailed".equals(reason.code());
     }
 
     public static boolean isThrottlingException(Throwable e) {
         do {
-            if (e instanceof AmazonDynamoDBException) {
-                return "ThrottlingException".equals(((AmazonDynamoDBException) e).getErrorCode());
+            if (e instanceof DynamoDbException) {
+                return ((DynamoDbException) e).isThrottlingException();
             }
             e = e.getCause();
         } while (e != null);

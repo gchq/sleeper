@@ -39,7 +39,7 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestorev2</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

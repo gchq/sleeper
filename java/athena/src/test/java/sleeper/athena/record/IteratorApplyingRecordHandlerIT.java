@@ -37,7 +37,7 @@ import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
@@ -328,7 +328,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
@@ -392,7 +392,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
     private IteratorApplyingRecordHandler handler(InstanceProperties instanceProperties) {
         return new IteratorApplyingRecordHandler(
-                s3Client, s3ClientV2, dynamoClientV2,
+                s3ClientV1, s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
     }

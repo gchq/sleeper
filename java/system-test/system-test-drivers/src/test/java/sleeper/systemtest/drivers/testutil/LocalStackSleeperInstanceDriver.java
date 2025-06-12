@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import sleeper.clients.deploy.localstack.DeployDockerInstance;
 import sleeper.clients.util.BucketUtils;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;

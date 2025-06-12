@@ -24,11 +24,11 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.common.taskv2.QueueMessageCount;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.common.task.QueueMessageCount;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -45,8 +45,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
-    protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT_V2;
-    protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
+    protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
+    protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
     protected TablePropertiesStore tablePropertiesStore;

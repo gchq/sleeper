@@ -27,9 +27,9 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -40,8 +40,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Instant;
 import java.util.List;
@@ -63,7 +63,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
-    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     Schema schema = createSchemaWithKey("key");
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     TableProperties tableProperties = addTable(instanceProperties, schema, partitions);
@@ -155,20 +155,20 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
         instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(COMPACTION_PENDING_DLQ_URL, createSqsQueueGetUrl());
 
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         return instanceProperties;
     }
 
     private TableProperties addTable(InstanceProperties instanceProperties, Schema schema, PartitionTree partitions) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .createTable(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties))
                 .initialise(partitions.getAllPartitions());
@@ -176,7 +176,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private void saveTableProperties() {
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .save(tableProperties);
     }
 
@@ -207,11 +207,11 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return AwsCompactionJobDispatcher.from(s3ClientV2, dynamoClientV2, sqsClientV2, instanceProperties, times.iterator()::next);
+        return AwsCompactionJobDispatcher.from(s3Client, dynamoClient, sqsClient, instanceProperties, times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .build());
@@ -221,7 +221,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private List<CompactionJobDispatchRequest> recievePendingBatches() {
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .build());
@@ -231,7 +231,7 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private List<CompactionJobDispatchRequest> receiveDeadLetters() {
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
                 .maxNumberOfMessages(10)
                 .build());

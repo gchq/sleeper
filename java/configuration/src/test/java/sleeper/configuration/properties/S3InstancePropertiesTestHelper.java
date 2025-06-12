@@ -15,7 +15,7 @@
  */
 package sleeper.configuration.properties;
 
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.testutils.InstancePropertiesTestHelper;
@@ -39,7 +39,7 @@ public class S3InstancePropertiesTestHelper {
      * @param  s3 the S3 client
      * @return    the instance properties
      */
-    public static InstanceProperties createTestInstanceProperties(AmazonS3 s3) {
+    public static InstanceProperties createTestInstanceProperties(S3Client s3) {
         return S3InstancePropertiesTestHelper.createTestInstanceProperties(s3, properties -> {
         });
     }
@@ -53,11 +53,11 @@ public class S3InstancePropertiesTestHelper {
      * @return                 the instance properties
      */
     public static InstanceProperties createTestInstanceProperties(
-            AmazonS3 s3, Consumer<InstanceProperties> extraProperties) {
+            S3Client s3, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties instanceProperties = InstancePropertiesTestHelper.createTestInstanceProperties();
         extraProperties.accept(instanceProperties);
         try {
-            s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+            s3.createBucket(builder -> builder.bucket(instanceProperties.get(CONFIG_BUCKET)));
             S3InstanceProperties.saveToS3(s3, instanceProperties);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save instance properties", e);

@@ -25,7 +25,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
-import sleeper.sketchesv2.testutils.InMemorySketchesStore;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 

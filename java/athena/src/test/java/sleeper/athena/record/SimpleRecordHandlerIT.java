@@ -333,7 +333,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
 
     private SimpleRecordHandler handler(InstanceProperties instanceProperties) {
         return new SimpleRecordHandler(
-                s3Client, s3ClientV2, dynamoClientV2,
+                s3ClientV1, s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
     }

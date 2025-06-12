@@ -29,7 +29,7 @@
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -39,12 +39,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-runnerv2</artifactId>
+            <artifactId>query-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestorev2</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -78,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitterv2</artifactId>
+            <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

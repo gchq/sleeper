@@ -36,11 +36,11 @@ import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterF
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -81,13 +81,13 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
             .rootFirst("root")
             .splitToNewChildren("root", "left", "right", 0L)
             .buildTree();
-    private final SketchesStore sketchesStore = new S3SketchesStore(s3ClientV2, s3TransferManager);
+    private final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     private StateStore stateStore;
 
     @BeforeEach
     public void before() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         update(stateStore).initialise(tree.getAllPartitions());
@@ -96,7 +96,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     @Test

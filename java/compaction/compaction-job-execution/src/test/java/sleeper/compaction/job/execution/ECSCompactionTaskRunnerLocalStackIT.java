@@ -42,9 +42,9 @@ import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
@@ -70,14 +70,14 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
-import sleeper.dynamodb.toolsv2.DynamoDBUtils;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -121,30 +121,30 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
-    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
-    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("key", new LongType()))
             .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
             .build();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
-    private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClientV2, instanceProperties);
+    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
     private InMemoryTransactionLogsPerTable inMemoryTransactionLogsPerTable;
 
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         tablePropertiesStore.save(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties)).initialise(schema);
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClientV2);
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @TempDir
@@ -420,7 +420,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private Stream<Message> messagesOnQueue(InstanceProperty queueProperty) {
-        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(queueProperty))
                 .messageSystemAttributeNames(List.of(MessageSystemAttributeName.MESSAGE_GROUP_ID))
                 .waitTimeSeconds(2).build())
@@ -430,10 +430,10 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
         String jobQueueUrl = createSqsQueueGetUrl();
         String jobDlqUrl = createSqsQueueGetUrl();
-        String jobDlqArn = sqsClientV2.getQueueAttributes(GetQueueAttributesRequest.builder()
+        String jobDlqArn = sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder()
                 .queueUrl(jobDlqUrl)
                 .attributeNames(List.of(QueueAttributeName.QUEUE_ARN)).build()).attributes().get(QueueAttributeName.QUEUE_ARN);
-        sqsClientV2.setQueueAttributes(SetQueueAttributesRequest.builder()
+        sqsClient.setQueueAttributes(SetQueueAttributesRequest.builder()
                 .queueUrl(jobQueueUrl)
                 .attributes(Map.of(
                         QueueAttributeName.REDRIVE_POLICY, "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", " +
@@ -464,14 +464,14 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
-                ObjectFactory.noUserJars(), hadoopConf, new S3SketchesStore(s3ClientV2, s3TransferManager));
+                ObjectFactory.noUserJars(), hadoopConf, new S3SketchesStore(s3Client, s3TransferManager));
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
-                instanceProperties, sqsClientV2);
+                instanceProperties, sqsClient);
         StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(
                 tablePropertiesProvider, stateStoreProvider, jobTracker, DynamoDBUtils.retryOnThrottlingException());
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
-                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClientV2, instanceProperties),
+                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                 waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
@@ -514,7 +514,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
                 .queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .messageBody(jobJson).build();
-        sqsClientV2.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(sendMessageRequest);
         return jobJson;
     }
 

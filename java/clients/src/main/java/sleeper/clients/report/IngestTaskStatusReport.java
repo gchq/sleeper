@@ -21,12 +21,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.IngestTaskStatusReportArguments;
 import sleeper.clients.report.ingest.task.IngestTaskStatusReporter;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
-import sleeper.ingest.trackerv2.task.IngestTaskTrackerFactory;
+import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestTaskStatusReport {
     private final IngestTaskTracker tracker;

@@ -23,8 +23,8 @@ import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -42,12 +42,12 @@ import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecords;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.DynamoDBTransactionLogStore;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
-import sleeper.statestorev2.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
-import sleeper.statestorev2.transactionlog.snapshots.LatestSnapshots;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -75,7 +75,7 @@ public class DeleteTableIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private String inputFolderName;
 
     @BeforeEach
@@ -83,8 +83,8 @@ public class DeleteTableIT extends LocalStackTestBase {
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         inputFolderName = createTempDirectory(tempDir, null).toString();
     }
 
@@ -167,7 +167,7 @@ public class DeleteTableIT extends LocalStackTestBase {
                 new Record(Map.of("key1", 25L)),
                 new Record(Map.of("key1", 100L))));
 
-        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3ClientV2, s3TransferManager, dynamoClientV2)
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
                 .createSnapshot();
 
         assertThat(listDataBucketObjectKeys())
@@ -202,7 +202,7 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(instanceProperties, s3ClientV2, dynamoClientV2)
+        new DeleteTable(instanceProperties, s3Client, dynamoClient)
                 .delete(tableName);
     }
 
@@ -215,14 +215,14 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     private AllReferencesToAFile ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3ClientV2, dynamoClientV2))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .s3AsyncClient(s3AsyncClient)
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConf)
@@ -242,7 +242,7 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private List<String> listDataBucketObjectKeys() {
-        return s3ClientV2.listObjects(ListObjectsRequest.builder()
+        return s3Client.listObjects(ListObjectsRequest.builder()
                 .bucket(instanceProperties.get(DATA_BUCKET))
                 .build())
                 .contents().stream()
@@ -251,16 +251,16 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private Stream<TransactionLogEntry> streamTableFileTransactions(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2)
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client)
                 .readTransactions(TransactionLogRange.fromMinimum(1));
     }
 
     private Stream<TransactionLogEntry> streamTablePartitionTransactions(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClientV2, s3ClientV2)
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client)
                 .readTransactions(TransactionLogRange.fromMinimum(1));
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClientV2);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient);
     }
 }

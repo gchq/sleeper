@@ -27,7 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.example.iterator.AgeOffIterator;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 

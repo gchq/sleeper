@@ -17,7 +17,7 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.systemtest.configurationv2.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.util.Iterator;
 import java.util.stream.Stream;

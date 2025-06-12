@@ -79,13 +79,13 @@ public class BulkImportJobSenderIT extends LocalStackTestBase {
                 .id(UUID.randomUUID().toString())
                 .files(List.of("filename1.parquet", "filename2.parquet"))
                 .build();
-        BulkImportJobSender.toSqs(instanceProperties, sqsClientV2)
+        BulkImportJobSender.toSqs(instanceProperties, sqsClient)
                 .sendFilesToBulkImport(platform, job);
         return job;
     }
 
     private List<BulkImportJob> recieveJobs(InstanceProperty queueUrlProperty) {
-        return sqsClientV2.receiveMessage(request -> request
+        return sqsClient.receiveMessage(request -> request
                 .queueUrl(instanceProperties.get(queueUrlProperty))
                 .maxNumberOfMessages(10)
                 .waitTimeSeconds(1))

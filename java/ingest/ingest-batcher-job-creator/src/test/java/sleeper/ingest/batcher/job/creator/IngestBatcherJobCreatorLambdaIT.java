@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
@@ -58,13 +58,13 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClientV2, instanceProperties);
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
         instanceProperties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString());
         instanceProperties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
-        S3InstanceProperties.saveToS3(s3ClientV2, instanceProperties);
-        S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2).save(tableProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     }
 
     private List<Message> consumeQueueMessages(InstanceProperty queueProperty) {
-        return sqsClientV2.receiveMessage(ReceiveMessageRequest.builder()
+        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(instanceProperties.get(queueProperty))
                 .waitTimeSeconds(1)
                 .maxNumberOfMessages(10)
@@ -107,13 +107,13 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     }
 
     private IngestBatcherStore batcherStore() {
-        return new DynamoDBIngestBatcherStore(dynamoClientV2, instanceProperties,
-                S3TableProperties.createProvider(instanceProperties, s3ClientV2, dynamoClientV2));
+        return new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties,
+                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient));
     }
 
     private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
         return new IngestBatcherJobCreatorLambda(
-                s3ClientV2, instanceProperties.get(CONFIG_BUCKET),
-                sqsClientV2, dynamoClientV2, timeSupplier(times), jobIdSupplier(jobIds));
+                s3Client, instanceProperties.get(CONFIG_BUCKET),
+                sqsClient, dynamoClient, timeSupplier(times), jobIdSupplier(jobIds));
     }
 }

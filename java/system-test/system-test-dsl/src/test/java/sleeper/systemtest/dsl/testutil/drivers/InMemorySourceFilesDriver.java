@@ -20,8 +20,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.testutils.InMemorySketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
 import java.util.ArrayList;

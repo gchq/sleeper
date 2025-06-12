@@ -15,12 +15,11 @@
  */
 package sleeper.statestore.transactionlog;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonSyntaxException;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -100,14 +99,15 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
-        dynamoClient.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
-                .withItem(new DynamoDBRecordBuilder()
+        dynamoClient.putItem(PutItemRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
+                .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, 1)
                         .string("TYPE", "UNRECOGNISED_TRANSACTION")
                         .string("BODY", "{}")
-                        .build()));
+                        .build())
+                .build());
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateAt(0)).findAny())
@@ -117,14 +117,15 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
-        dynamoClient.putItem(new PutItemRequest()
-                .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
-                .withItem(new DynamoDBRecordBuilder()
+        dynamoClient.putItem(PutItemRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
+                .item(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
                         .number(TRANSACTION_NUMBER, 1)
                         .string("TYPE", TransactionType.ADD_FILES.name())
                         .string("BODY", "{")
-                        .build()));
+                        .build())
+                .build());
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateAt(0)).findAny())
@@ -292,7 +293,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateToApply(2, 2)))
-                .isInstanceOf(AmazonDynamoDBException.class);
+                .isInstanceOf(DynamoDbException.class);
     }
 
     @Test
@@ -307,7 +308,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // When / Then
         assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateToApply(3, 2)))
-                .isInstanceOf(AmazonDynamoDBException.class);
+                .isInstanceOf(DynamoDbException.class);
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
@@ -332,11 +333,10 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private List<String> filesInDataBucket() {
-        return s3Client.listObjects(new ListObjectsRequest()
-                .withBucketName(instanceProperties.get(DATA_BUCKET))
-                .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
-                .getObjectSummaries().stream()
-                .map(S3ObjectSummary::getKey)
+        return s3Client.listObjectsV2Paginator(builder -> builder
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .prefix(tableProperties.get(TableProperty.TABLE_ID)))
+                .contents().stream().map(S3Object::key)
                 .toList();
     }
 }

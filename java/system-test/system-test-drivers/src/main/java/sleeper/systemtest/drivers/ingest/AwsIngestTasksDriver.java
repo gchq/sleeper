@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.trackerv2.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

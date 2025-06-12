@@ -31,9 +31,7 @@
         <module>statestore</module>
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
-        <module>statestorev2</module>
         <module>configuration</module>
-        <module>configurationV2</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
@@ -41,7 +39,6 @@
         <module>partitions</module>
         <module>cdk</module>
         <module>sketches</module>
-        <module>sketchesv2</module>
         <module>athena</module>
         <module>common</module>
         <module>bulk-import</module>
@@ -133,7 +130,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.786</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.61</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.62</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
         <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->

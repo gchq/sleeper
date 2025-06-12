@@ -18,9 +18,9 @@ package sleeper.clients.report.partitions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.configurationv2.properties.S3InstancePropertiesTestHelper;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndexCreator;
+import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,8 +32,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.function.Consumer;
 
@@ -49,7 +49,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class PartitionsStatusReportIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstance();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3ClientV2, dynamoClientV2);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
@@ -72,20 +72,20 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
     private String runReport() throws Exception {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
-                .runReport(s3ClientV2, dynamoClientV2, out.getPrintStream());
+                .runReport(s3Client, dynamoClient, out.getPrintStream());
         return out.toString();
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2)
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
     }
 
     private InstanceProperties createTestInstance() {
-        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3ClientV2);
+        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
         createBucket(properties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoClientV2, properties);
-        new TransactionLogStateStoreCreator(properties, dynamoClientV2).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, properties);
+        new TransactionLogStateStoreCreator(properties, dynamoClient).create();
         return properties;
     }
 

@@ -15,12 +15,12 @@
  */
 package sleeper.query.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
@@ -42,12 +42,14 @@ import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.output.WebSocketOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +66,7 @@ public class SqsLeafPartitionQueryProcessor {
 
     private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final ObjectFactory objectFactory;
     private final DynamoDBQueryTracker queryTracker;
@@ -75,7 +77,7 @@ public class SqsLeafPartitionQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, "/tmp").buildObjectFactory();
+        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, Path.of("/tmp")).buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
     }
 
@@ -134,7 +136,7 @@ public class SqsLeafPartitionQueryProcessor {
             return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
         } else if (S3ResultsOutput.S3.equals(destination)) {
             return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
-        } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(destination)) {
+        } else if (WebSocketOutput.DESTINATION_NAME.equals(destination)) {
             return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig);
         } else if (NO_RESULTS_OUTPUT.equals(destination)) {
             return new NoResultsOutput();
@@ -146,26 +148,26 @@ public class SqsLeafPartitionQueryProcessor {
     }
 
     public static final class Builder {
-        private AmazonSQS sqsClient;
-        private AmazonS3 s3Client;
-        private AmazonDynamoDB dynamoClient;
+        private SqsClient sqsClient;
+        private S3Client s3Client;
+        private DynamoDbClient dynamoClient;
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
 
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }
 
-        public Builder s3Client(AmazonS3 s3Client) {
+        public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
             return this;
         }
 
-        public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
             return this;
         }

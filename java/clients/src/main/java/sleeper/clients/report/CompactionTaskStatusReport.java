@@ -22,11 +22,11 @@ import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.CompactionTaskStatusReportArguments;
 import sleeper.clients.report.compaction.task.CompactionTaskStatusReporter;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class CompactionTaskStatusReport {
 

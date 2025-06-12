@@ -16,7 +16,7 @@
 
 package sleeper.ingest.tracker.task;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
@@ -28,7 +28,7 @@ public class IngestTaskTrackerFactory {
     private IngestTaskTrackerFactory() {
     }
 
-    public static IngestTaskTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static IngestTaskTracker getTracker(DynamoDbClient dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return new DynamoDBIngestTaskTracker(dynamoDB, properties);
         } else {

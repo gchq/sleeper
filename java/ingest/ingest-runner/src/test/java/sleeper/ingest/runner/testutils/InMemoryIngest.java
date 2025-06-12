@@ -22,7 +22,7 @@ import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.sketchesv2.testutils.InMemorySketchesStore;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 
 public class InMemoryIngest {
 

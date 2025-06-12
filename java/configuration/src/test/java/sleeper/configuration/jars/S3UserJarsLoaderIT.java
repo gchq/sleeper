@@ -15,62 +15,51 @@
  */
 package sleeper.configuration.jars;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.google.common.io.ByteStreams;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.core.sync.RequestBody;
 
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.UUID;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 class S3UserJarsLoaderIT extends LocalStackTestBase {
 
+    InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
-    public Path folder;
+    Path tempDir;
 
-    private InstanceProperties createInstanceProperties(AmazonS3 s3Client) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString().substring(0, 18));
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(JARS_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(FILE_SYSTEM, "");
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3Client.createBucket(instanceProperties.get(JARS_BUCKET));
-        return instanceProperties;
+    @BeforeEach
+    void setUp() {
+        createBucket(instanceProperties.get(JARS_BUCKET));
     }
 
     @Test
-    public void shouldLoadCode() throws IOException, ObjectFactoryException {
-        // Create a class implementing SortedRecordIterator
+    public void shouldLoadCode() throws Exception {
+        // Given a class implementing SortedRecordIterator
         String sourceCode = "" +
                 "import sleeper.core.record.Record;\n" +
                 "import sleeper.core.schema.Schema;\n" +
@@ -93,30 +82,49 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
                 "    @Override\n" +
                 "    public List<String> getRequiredValueFields() { return null; }\n" +
                 "}\n";
-        MySimpleJavaFileObject fileObject = new MySimpleJavaFileObject("MyIterator", sourceCode);
-        // Compile class and write to jar in temp directory
-        ToolProvider.getSystemJavaCompiler()
-                .getTask(null, null, null, Collections.emptyList(), Collections.emptyList(), Collections.singletonList(fileObject))
-                .call();
-        String jarFileLocation = createTempDirectory(folder, null).toString() + "/ajar.jar";
-        JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFileLocation), new Manifest());
-        JarEntry jarEntry = new JarEntry("MyIterator.class");
-        jos.putNextEntry(jarEntry);
-        FileInputStream fis = new FileInputStream("MyIterator.class");
-        ByteStreams.copy(fis, jos);
-        jos.close();
-        // Upload jar to S3
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
+        byte[] jarBytes = compileClassCodeToJar("MyIterator", sourceCode);
+        writeJarToBucket("iterator.jar", jarBytes);
         instanceProperties.set(USER_JARS, "iterator.jar");
-        PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET), "iterator.jar", new File(jarFileLocation));
-        s3Client.putObject(pubObjectRequest);
-        // Delete local class file
-        Files.delete(new File("MyIterator.class").toPath());
-        // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, createTempDirectory(folder, null).toString()).buildObjectFactory();
-        SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
+        // When
+        SortedRecordIterator sri = objectFactory().getObject("MyIterator", SortedRecordIterator.class);
+
+        // Then
         assertThat(sri).hasToString("MyIterator");
+    }
+
+    private ObjectFactory objectFactory() throws Exception {
+        return new S3UserJarsLoader(instanceProperties, s3Client, tempDir).buildObjectFactory();
+    }
+
+    private void writeJarToBucket(String objectKey, byte[] data) {
+        s3Client.putObject(request -> request
+                .bucket(instanceProperties.get(JARS_BUCKET))
+                .key(objectKey),
+                RequestBody.fromBytes(data));
+    }
+
+    private byte[] compileClassCodeToJar(String className, String sourceCode) throws Exception {
+        // Compile class
+        ToolProvider.getSystemJavaCompiler()
+                .getTask(null, null, null,
+                        List.of(), List.of(), List.of(new MySimpleJavaFileObject(className, sourceCode)))
+                .call();
+        String classFileName = className + ".class";
+        try {
+            // Read output class file and write to jar format in memory
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            try (JarOutputStream jos = new JarOutputStream(bytes, new Manifest())) {
+                jos.putNextEntry(new JarEntry(classFileName));
+                try (FileInputStream fis = new FileInputStream(classFileName)) {
+                    ByteStreams.copy(fis, jos);
+                }
+            }
+            return bytes.toByteArray();
+        } finally {
+            // Delete output class file
+            Files.delete(Paths.get(classFileName));
+        }
     }
 
     static class MySimpleJavaFileObject extends SimpleJavaFileObject {

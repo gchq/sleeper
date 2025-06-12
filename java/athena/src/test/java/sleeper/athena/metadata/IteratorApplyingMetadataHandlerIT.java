@@ -48,9 +48,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.splitterv2.core.split.SplitPartition;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.splitter.core.split.SplitPartition;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -299,14 +299,14 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
     }
 
     private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {
-        return new IteratorApplyingMetadataHandler(s3ClientV2, dynamoClientV2,
+        return new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
                 "spillBucket", "spillPrefix");
     }
 
     private StateStore stateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {

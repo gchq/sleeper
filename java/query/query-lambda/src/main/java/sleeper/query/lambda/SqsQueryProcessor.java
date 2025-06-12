@@ -15,12 +15,13 @@
  */
 package sleeper.query.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -44,6 +45,7 @@ import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 import sleeper.statestore.StateStoreFactory;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,7 +64,7 @@ public class SqsQueryProcessor {
 
     private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
@@ -74,12 +76,9 @@ public class SqsQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, "/tmp").buildObjectFactory();
+        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, Path.of("/tmp")).buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
-        // The following Configuration is only used in the state store, rather than table data, so use the standard
-        // Configuration rather than the one for query lambdas which is specific to the table.
-        Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, builder.s3Client, builder.dynamoClient, confForStateStore);
+        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, builder.s3Client, builder.dynamoClient);
     }
 
     public static Builder builder() {
@@ -125,33 +124,36 @@ public class SqsQueryProcessor {
         String sqsLeafPartitionQueryQueueURL = instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL);
         for (LeafPartitionQuery subQuery : subQueries) {
             String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
-            sqsClient.sendMessage(sqsLeafPartitionQueryQueueURL, serialisedQuery);
+            sqsClient.sendMessage(SendMessageRequest.builder()
+                    .queueUrl(sqsLeafPartitionQueryQueueURL)
+                    .messageBody(serialisedQuery)
+                    .build());
         }
         queryTrackers.subQueriesCreated(query, subQueries);
         LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
     }
 
     public static final class Builder {
-        private AmazonSQS sqsClient;
-        private AmazonS3 s3Client;
-        private AmazonDynamoDB dynamoClient;
+        private SqsClient sqsClient;
+        private S3Client s3Client;
+        private DynamoDbClient dynamoClient;
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
 
-        public Builder sqsClient(AmazonSQS sqsClient) {
+        public Builder sqsClient(SqsClient sqsClient) {
             this.sqsClient = sqsClient;
             return this;
         }
 
-        public Builder s3Client(AmazonS3 s3Client) {
+        public Builder s3Client(S3Client s3Client) {
             this.s3Client = s3Client;
             return this;
         }
 
-        public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
+        public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
             return this;
         }

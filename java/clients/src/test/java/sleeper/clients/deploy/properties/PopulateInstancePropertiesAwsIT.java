@@ -47,14 +47,14 @@ public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
-        expected.set(ACCOUNT, stsClientV2.getCallerIdentity().account());
+        expected.set(ACCOUNT, stsClient.getCallerIdentity().account());
         expected.set(REGION, localStackContainer.getRegion());
 
         assertThat(properties).isEqualTo(expected);
     }
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstancePropertiesAws.builder(stsClientV2, () -> Region.of(localStackContainer.getRegion()))
+        return PopulateInstancePropertiesAws.builder(stsClient, () -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }

@@ -57,7 +57,7 @@ public class BuildUptimeLambdaIT extends LocalStackTestBase {
         lambda = new BuildUptimeLambda(
                 wiremockClient(runtimeInfo, Ec2Client.builder()),
                 wiremockClient(runtimeInfo, CloudWatchEventsClient.builder()),
-                s3ClientV2, times::poll);
+                s3Client, times::poll);
         stubFor(post("/").willReturn(aResponse().withStatus(200)));
     }
 

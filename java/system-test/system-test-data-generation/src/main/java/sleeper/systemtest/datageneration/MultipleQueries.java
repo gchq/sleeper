@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.clients.query.QueryLambdaClient;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
@@ -36,8 +36,8 @@ import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
-import sleeper.systemtest.configurationv2.SystemTestProperties;
-import sleeper.systemtest.configurationv2.SystemTestRandomDataSettings;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
