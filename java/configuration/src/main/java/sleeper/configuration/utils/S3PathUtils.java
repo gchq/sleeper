@@ -64,7 +64,7 @@ public class S3PathUtils {
      */
     public List<String> streamFileKeyByPath(String bucket, String path) throws FileNotFoundException {
         return streamFileDetails(bucket, path)
-                .stream().map(S3FileDetails::getFilename)
+                .stream().map(S3FileDetails::filename)
                 .collect(Collectors.toList());
     }
 
