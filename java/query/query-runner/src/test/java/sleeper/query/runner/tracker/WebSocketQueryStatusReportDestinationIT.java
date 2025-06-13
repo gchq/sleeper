@@ -277,6 +277,40 @@ class WebSocketQueryStatusReportDestinationIT {
                 """)));
     }
 
+    @Test
+    void shouldSendSubQueryFailureNotificationOnException() {
+        // Given
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
+        Query query = Query.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
+        LeafPartitionQuery subQuery = LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .tableId("tableId")
+                .subQueryId("s1")
+                .regions(List.of(new Region(range)))
+                .leafPartitionId("leaf1")
+                .partitionRegion(new Region(partitionRange))
+                .files(List.of())
+                .build();
+
+        // When
+        config.getListener().queryFailed(subQuery, new IOException("fail"));
+
+        // Then
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "s1",
+                  "message" : "error",
+                  "error" : "IOException: fail"
+                }
+                """)));
+    }
+
     private static class WebSocketQueryConfig {
         private final WebSocketQueryStatusReportDestination listener;
         private final UrlPattern url;

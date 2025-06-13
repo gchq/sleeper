@@ -105,7 +105,7 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
 
     @Override
     public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
-        queryFailed(leafQuery.getQueryId(), e);
+        queryFailed(leafQuery.getSubQueryId(), e);
     }
 
     private void sendStatusReport(String message, String queryId, Map<String, Object> data) {
