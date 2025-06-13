@@ -8,16 +8,18 @@ The following improvements are actively being worked on:
 - https://github.com/gchq/sleeper/issues/3446 Bulk export.
 - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
 - https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
-- https://github.com/gchq/sleeper/issues/1388 Rust implementations for operations on data files.
+- https://github.com/gchq/sleeper/issues/4344 Aggregation support for compactions in Rust with DataFusion.
 
 The following are likely to be worked on in the near future:
 
+- https://github.com/gchq/sleeper/issues/5083 Queries in Rust with DataFusion.
 - https://github.com/gchq/sleeper/issues/4393 Batch up partition splitting commits.
 - https://github.com/gchq/sleeper/issues/3693 Improvements to declarative deployment with infrastructure as code.
 - https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 
 The following improvements will be worked on in future (these are in no particular order):
 
+- https://github.com/gchq/sleeper/issues/1388 Other Rust implementations for operations on data files.
 - https://github.com/gchq/sleeper/issues/576 Use Arrow types in the table schema.
 - https://github.com/gchq/sleeper/issues/4396 Failure handling / backpressure for state store updates.
 - https://github.com/gchq/sleeper/issues/4398 Trigger compaction dispatch in transaction log follower.
