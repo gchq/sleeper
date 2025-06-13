@@ -20,25 +20,76 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
- * Implements a record aggregating iterator similiar to the DataFusion aggregation functionality.
+ * Implements a record aggregating iterator similiar to the DataFusion
+ * aggregation functionality.
  *
- * The format for the iterator's configuration string mirrors that of the DataFusion code. It should follow this format:
- * {@code <extra aggregation columns>;<filter>,<aggregation>}. Any of the components may be empty. The extra aggregation
- * columns should be a comma separated list of columns beyond the row_key columns to aggregate over. Note the semi-colon
- * after the last column before the filter component. The filter component will expose one possible filter: age off.
- * Only one filter will be specifiable at a time on a table (this is a minimum reasonable effort!).
+ * The format for the iterator's configuration string mirrors that of the
+ * DataFusion code. It should follow this format:
+ * {@code <extra aggregation columns>;<filter>,<aggregation>}. Any of the
+ * components may be empty. The extra aggregation
+ * columns should be a comma separated list of columns beyond the row_key
+ * columns to aggregate over. Note the semi-colon
+ * after the last column before the filter component. The filter component will
+ * expose one possible filter: age off.
+ * Only one filter will be specifiable at a time on a table (this is a minimum
+ * reasonable effort!).
  * <ul>
- * <li>Age off filter format is `ageoff='column','time_period'. If the elapsed time from the integer value in the given
- * column to "now" is lower than the time_period value, the row is retained. Values in seconds.</li>
- * <li>Aggregation filter format is OP(column_name) where OP is one of sum, min, max, map_sum, map_min or map_max.</li>
+ * <li>Age off filter format is `ageoff='column','time_period'. If the elapsed
+ * time from the integer value in the given
+ * column to "now" is lower than the time_period value, the row is retained.
+ * Values in seconds.</li>
+ * <li>Aggregation filter format is OP(column_name) where OP is one of sum, min,
+ * max, map_sum, map_min or map_max.</li>
  * </ul>
  *
- * We may decide to expand the list of allowable operations. Additional aggregation filters should be comma separated.
+ * This class is not designed to be the final design and as such we expect its
+ * API to change in the future in incompatible ways.
+ *
+ * We may decide to expand the list of allowable operations. Additional
+ * aggregation filters should be comma separated.
  */
 public class AggregatingIterator implements SortedRecordIterator {
+    /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
+    public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
+
+    /** Aggregation functions this iterator can perform. */
+    public static enum AggregationOp {
+        SUM,
+        MIN,
+        MAX,
+        MAP_SUM,
+        MAP_MIN,
+        MAP_MAX,
+    }
+
+    /** Defines an aggregation operation with the column name to perform on it. */
+    public static record Aggregation(String column, AggregationOp op) {
+        public Aggregation {
+            Objects.requireNonNull(column, "column");
+        }
+    }
+
+    /**
+     * Defines the filtering and aggregation configuration for this iterator.
+     */
+    public static record FilterAggregationConfig(List<String> groupingColumns, Optional<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
+        public FilterAggregationConfig {
+            Objects.requireNonNull(groupingColumns, "groupingColumns");
+            Objects.requireNonNull(ageOffColumn, "ageOffColumn");
+            Objects.requireNonNull(aggregations, "aggregations");
+        }
+    }
 
     @Override
     public CloseableIterator<Record> apply(CloseableIterator<Record> arg0) {
@@ -49,32 +100,92 @@ public class AggregatingIterator implements SortedRecordIterator {
     /**
      * Configures the iterator.
      *
-     * The configuration string will be validated and the internal state of the iterator will be initialised.
+     * The configuration string will be validated and the internal state of the
+     * iterator will be initialised.
      *
-     * @throws IllegalArgumentException if {@code configString} is not a valid configuration
+     * @throws IllegalArgumentException if {@code configString} is not a valid
+     *                                  configuration
      */
     @Override
     public void init(String configString, Schema schema) {
-        parseConfiguration(configString);
+        FilterAggregationConfig iteratorConfig = parseConfiguration(configString);
+        validate(iteratorConfig, schema);
     }
 
     /**
-     * Parses a configuration string for aggregation.
+     * Performs validation on a {@link FilterAggregationConfig}.
      *
      * Validates that:
      * <ol>
-     * <li>All columns that are NOT query aggregation columns have an aggregation operation specified for them.</li>
+     * <li>All columns that are NOT query aggregation columns have an aggregation
+     * operation specified for them.</li>
      * <li>No query aggregation columns have aggregations specified.</li>
      * <li>No query aggregation column is duplicated.</li>
      * <li>Aggregation columns must be valid in schema.</li>
      * </ol>
      *
-     * @implNote                          This is a minimum viable parser for the configuration for filters/aggregators.
+     * @param  iteratorConfig           the configuration to check
+     * @param  schema                   the record schema to check against
+     * @throws IllegalArgumentException if {@code iteratorConfig} is invalid
+     */
+    private void validate(FilterAggregationConfig iteratorConfig, Schema schema) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'validate'");
+    }
+
+    /**
+     * Parses a configuration string for aggregation.
+     *
+     * Note that the configuration is NOT validated! Use {@link AggregatingIterator#validate(FilterAggregationConfig)}
+     * to
+     * check the returned configuration is valid.
+     *
+     * @implNote                          This is a minimum viable parser for the configuration for
+     *                                    filters/aggregators. It is a really good example of how NOT to do it.
+     *                                    This routine has some odd behaviour.
      *
      * @throws   IllegalArgumentException if {@code configString} is invalid
+     * @return                            an un-validated configuration for aggregation
      */
-    public static void parseConfiguration(String configString) {
-
+    public static FilterAggregationConfig parseConfiguration(String configString) {
+        // This is a minimum viable parser for the configuration for
+        // filters/aggregators.
+        // It is a really good example of how NOT to do it. This routine has some odd
+        // behaviour.
+        String[] configParts = configString.split(";", 2);
+        if (configParts.length != 2) {
+            throw new IllegalArgumentException("Should be exactly one ; in aggregation configuation");
+        }
+        // Extract the aggregation grouping columns and trim and split the remaining
+        List<String> groupingColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).toList();
+        // Following list needs to be mutable, hence Collectors.toList()
+        List<String> filter_aggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
+        // We only support age-off filtering
+        Optional<String> filter = Optional.empty();
+        long maxAge = 0;
+        if (filter_aggs.size() > 0) {
+            if (filter_aggs.get(0).startsWith("ageoff=")) {
+                filter = Optional.of(filter_aggs.get(0).split("=", 2)[1].replace("'", ""));
+                maxAge = Long.parseLong(filter_aggs.get(1).replace("'", ""));
+                // Remove these first two processed elements of filter_aggs list
+                // This is a really hacky implementation
+                filter_aggs.subList(0, 2).clear();
+            } else {
+                // Just remove first element
+                filter_aggs.remove(0);
+            }
+        }
+        // We use a regular expression to extract the aggregation operation and column for each remaining part
+        List<Aggregation> aggregations = new ArrayList<>();
+        for (String agg : filter_aggs) {
+            Matcher matcher = AGGREGATE_REGEX.matcher(agg);
+            if (matcher.matches()) {
+                AggregationOp op = AggregationOp.valueOf(matcher.group(1).toUpperCase(Locale.getDefault()));
+                String aggCol = matcher.group(2);
+                aggregations.add(new Aggregation(aggCol, op));
+            }
+        }
+        return new FilterAggregationConfig(groupingColumns, filter, maxAge, aggregations);
     }
 
     @Override
