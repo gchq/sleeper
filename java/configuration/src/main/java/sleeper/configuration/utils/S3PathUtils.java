@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Utility class for retrieve s3 file names. */
+/** Class for retrieve paths for S3. */
 public class S3PathUtils {
 
     private final S3Client s3Client;
@@ -36,11 +36,12 @@ public class S3PathUtils {
     }
 
     /**
-     * TODO.
+     * Streams filenames back from bucket for list of paths provided.
      *
-     * @param  bucket                words
-     * @return                       wprds
-     * @throws FileNotFoundException w
+     * @param  bucket                s3 bucket to retrieve from
+     * @param  files                 list of file paths to expand
+     * @return                       list of full filenames of all paths detailed
+     * @throws FileNotFoundException thrown when path not valid within s3
      */
     public List<String> streamFileKeyByPath(String bucket, List<String> files) throws FileNotFoundException {
         List<String> outList = new ArrayList<>();
@@ -54,26 +55,26 @@ public class S3PathUtils {
     }
 
     /**
-     * TODO.
+     * Streams filenames back from bucket for singular path provided
      *
-     * @param  bucket                wrods
-     * @param  path                  words
-     * @return                       words
-     * @throws FileNotFoundException words
+     * @param  bucket                s3 bucket to retrieve from
+     * @param  path                  path of file to expand
+     * @return                       list of full filenames at path
+     * @throws FileNotFoundException thrown when path not valid within s3
      */
-    private List<String> streamFileKeyByPath(String bucket, String path) throws FileNotFoundException {
+    public List<String> streamFileKeyByPath(String bucket, String path) throws FileNotFoundException {
         return streamFileDetails(bucket, path)
                 .stream().map(S3FileDetails::getFilename)
                 .collect(Collectors.toList());
     }
 
     /**
-     * TODO.
+     * Streams file details back from bucket for singular path provided
      *
-     * @param  bucket                wrods
-     * @param  path                  words
-     * @return                       words
-     * @throws FileNotFoundException words
+     * @param  bucket                s3 bucket to retrieve from
+     * @param  path                  path of file to expand
+     * @return                       details of files contained at paths
+     * @throws FileNotFoundException thrown when path not valid within s3
      */
     private List<S3FileDetails> streamFileDetails(String bucket, String path) throws FileNotFoundException {
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
@@ -96,16 +97,17 @@ public class S3PathUtils {
     }
 
     /**
-     * TODO.
+     * Builds record object of key file details retrieved from S3.
      *
-     * @param  bucket words
-     * @param  object words
-     * @return        words
+     * @param  bucket bucket with file stored
+     * @param  object object return from s3
+     * @return        record of key details
      */
     private S3FileDetails generateS3FileDetails(String bucket, S3Object object) {
-        return S3FileDetails.builder()
-                .filename(bucket + "/" + object.key())
-                .fileSizeBytes(object.size())
-                .build();
+        return new S3FileDetails(bucket + "/" + object.key(), object.size());
+    }
+
+    /** Record class for import file information. */
+    public record S3FileDetails(String filename, long fileSizeBytes) {
     }
 }
