@@ -109,7 +109,7 @@ public class SystemTestClients {
 
     public static SystemTestClients fromDefaults() {
         return builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
+                .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
