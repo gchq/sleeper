@@ -130,7 +130,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.786</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.62</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.63</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
         <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
@@ -177,7 +177,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.38.0</google.errorprone.version>
-        <cdk.version>2.200.1</cdk.version>
+        <cdk.version>2.200.2</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.112.0</jsii.version>
