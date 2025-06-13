@@ -75,7 +75,7 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
 
     @Override
     public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
-        queryCompleted(leafQuery.getQueryId(), outputInfo);
+        queryCompleted(leafQuery.getSubQueryId(), outputInfo);
     }
 
     private void queryCompleted(String queryId, ResultsOutputInfo outputInfo) {

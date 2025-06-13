@@ -169,6 +169,53 @@ class WebSocketQueryStatusReportDestinationIT {
     }
 
     @Test
+    void shouldSendSubQueryCompletedNotification() {
+        // Given
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
+        Query query = Query.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
+        LeafPartitionQuery subQuery = LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .tableId("tableId")
+                .subQueryId("s1")
+                .regions(List.of(new Region(range)))
+                .leafPartitionId("leaf1")
+                .partitionRegion(new Region(partitionRange))
+                .files(List.of())
+                .build();
+        ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
+                new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
+                new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")));
+
+        // When
+        config.getListener().queryCompleted(subQuery, result);
+
+        // Then
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "s1",
+                  "message" : "completed",
+                  "recordCount" : 1,
+                  "locations" : [
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file1.parquet"
+                    },
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file2.parquet"
+                    }
+                  ]
+                }
+                """)));
+    }
+
+    @Test
     void shouldSendPartialQueryFailureNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
