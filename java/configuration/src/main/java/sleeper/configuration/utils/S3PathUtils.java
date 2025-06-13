@@ -55,7 +55,7 @@ public class S3PathUtils {
     }
 
     /**
-     * Streams filenames back from bucket for singular path provided
+     * Streams filenames back from bucket for singular path provided.
      *
      * @param  bucket                s3 bucket to retrieve from
      * @param  path                  path of file to expand
@@ -69,7 +69,7 @@ public class S3PathUtils {
     }
 
     /**
-     * Streams file details back from bucket for singular path provided
+     * Streams file details back from bucket for singular path provided.
      *
      * @param  bucket                s3 bucket to retrieve from
      * @param  path                  path of file to expand
@@ -107,7 +107,12 @@ public class S3PathUtils {
         return new S3FileDetails(bucket + "/" + object.key(), object.size());
     }
 
-    /** Record class for import file information. */
+    /**
+     * Record class for import file information.
+     *
+     * @param filename      name of file
+     * @param fileSizeBytes size of file
+     */
     public record S3FileDetails(String filename, long fileSizeBytes) {
     }
 }

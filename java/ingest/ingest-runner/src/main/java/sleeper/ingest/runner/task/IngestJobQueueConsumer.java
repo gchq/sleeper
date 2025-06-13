@@ -96,8 +96,6 @@ public class IngestJobQueueConsumer implements MessageReceiver {
                         return List.of();
                     }
                 });
-
-        // HadoopPathUtils.expandDirectories(files, configuration, instanceProperties));
     }
 
     @Override

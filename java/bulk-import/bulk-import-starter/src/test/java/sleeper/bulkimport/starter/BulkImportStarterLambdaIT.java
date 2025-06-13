@@ -80,7 +80,6 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
                         return List.of();
                     }
                 });
-        //.expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConf, new InstanceProperties()));
     }
 
     @Nested
