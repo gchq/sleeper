@@ -40,10 +40,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.absent;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -125,16 +122,17 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().subQueriesCreated(query, subQueries);
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q1"))
-                        .and(matchingJsonPath("$.message", equalTo("subqueries")))
-                        .and(matchingJsonPath("$.error", absent()))
-                        .and(matchingJsonPath("$.recordCount", absent()))
-                        .and(matchingJsonPath("$.queryIds", equalToJson("[\"s1\",\"s2\",\"s3\"]")))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "message": "subqueries",
+                  "queryId": "q1",
+                  "queryIds": ["s1", "s2", "s3"]
+                }
+                """)));
     }
 
     @Test
-    void shouldSendQueryCompletedNotification() {
+    void shouldSendParentQueryCompletedNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -151,11 +149,23 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().queryCompleted(query, result);
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q1"))
-                        .and(matchingJsonPath("$.message", equalTo("completed")))
-                        .and(matchingJsonPath("$.error", absent()))
-                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "q1",
+                  "message" : "completed",
+                  "recordCount" : 1,
+                  "locations" : [
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file1.parquet"
+                    },
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file2.parquet"
+                    }
+                  ]
+                }
+                """)));
     }
 
     @Test
@@ -176,11 +186,24 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().queryCompleted(query, result);
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q2"))
-                        .and(matchingJsonPath("$.message", equalTo("error")))
-                        .and(matchingJsonPath("$.error", equalTo(result.getError().getClass().getSimpleName() + ": " + result.getError().getMessage())))
-                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "q2",
+                  "message" : "error",
+                  "error" : "IOException: error writing record #2",
+                  "recordCount" : 1,
+                  "locations" : [
+                    {
+                      "type" : "data",
+                      "location" : "s3://bucket/data/parquet"
+                    },
+                    {
+                      "type" : "sketches",
+                      "location" : "s3://bucket/sketches.parquet"
+                    }
+                  ]
+                }
+                """)));
     }
 
     @Test
@@ -198,11 +221,13 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().queryFailed(query, new IOException("fail"));
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q3"))
-                        .and(matchingJsonPath("$.message", equalTo("error")))
-                        .and(matchingJsonPath("$.error", equalTo("IOException: fail")))
-                        .and(matchingJsonPath("$.recordCount", absent()))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "q3",
+                  "message" : "error",
+                  "error" : "IOException: fail"
+                }
+                """)));
     }
 
     private static class WebSocketQueryConfig {
