@@ -18,14 +18,18 @@ package sleeper.example.iterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -62,6 +66,8 @@ import java.util.stream.Collectors;
 public class AggregatingIterator implements SortedRecordIterator {
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
+
+    private Optional<FilterAggregationConfig> config = Optional.empty();
 
     /** Aggregation functions this iterator can perform. */
     public static enum AggregationOp {
@@ -110,12 +116,17 @@ public class AggregatingIterator implements SortedRecordIterator {
     public void init(String configString, Schema schema) {
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString);
         validate(iteratorConfig, schema);
+        this.config = Optional.of(iteratorConfig);
     }
 
     /**
      * Performs validation on a {@link FilterAggregationConfig}.
      *
-     * Validates that:
+     * Validates that <strong>either</strong>:
+     * <ul>
+     * <li>No aggregations have been specified</li>
+     * </ul>
+     * OR:
      * <ol>
      * <li>All columns that are NOT query aggregation columns have an aggregation
      * operation specified for them.</li>
@@ -128,9 +139,56 @@ public class AggregatingIterator implements SortedRecordIterator {
      * @param  schema                   the record schema to check against
      * @throws IllegalArgumentException if {@code iteratorConfig} is invalid
      */
-    private void validate(FilterAggregationConfig iteratorConfig, Schema schema) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'validate'");
+    private static void validate(FilterAggregationConfig iteratorConfig, Schema schema) {
+        System.out.println(iteratorConfig);
+        // If there are no aggregations to perform, then this configuration is trivially valid
+        if (iteratorConfig.aggregations().isEmpty()) {
+            return;
+        }
+        // Check grouping columns are not already row key columns, are not duplicated and are valid
+        List<String> allColumns = schema.getAllFieldNames();
+        Set<String> allGroupingColumns = new HashSet<>(
+                schema.getRowKeyFieldNames());
+        for (String col : iteratorConfig.groupingColumns()) {
+            // Duplicated?
+            if (!allGroupingColumns.add(col)) {
+                throw new IllegalArgumentException("Aggregation grouping column " + col + " is already a row key column or is duplicated");
+            }
+            // Is valid?
+            if (!allColumns.contains(col)) {
+                throw new IllegalArgumentException("Aggregation grouping column " + col + " doesn't exist");
+            }
+        }
+        // Check every non aggregation column (i.e. row key columns and extra grouping columns) have an aggregation specified
+        List<String> nonGroupingColumns = new ArrayList<>(allColumns);
+        nonGroupingColumns.removeIf(allGroupingColumns::contains);
+        Set<String> duplicateAggregationCheck = new HashSet<>();
+        // Loop through each aggregation column
+        for (String aggColumn : iteratorConfig.aggregations().stream().map(Aggregation::column).toList()) {
+            if (allGroupingColumns.contains(aggColumn)) {
+                throw new IllegalArgumentException("Row key/extra grouping column " + aggColumn + " cannot have an aggregation");
+            }
+            if (!nonGroupingColumns.contains(aggColumn)) {
+                throw new IllegalArgumentException("Aggregation column " + aggColumn + " doesn't exist");
+            }
+            if (!duplicateAggregationCheck.add(aggColumn)) {
+                throw new IllegalArgumentException("Aggregation column " + aggColumn + " duplicated");
+            }
+        }
+        // Finally, check all non row key and extra grouping columns have an aggregation specified
+        for (String column : nonGroupingColumns) {
+            if (!duplicateAggregationCheck.contains(column)) {
+                throw new IllegalArgumentException("Column " + column + " doesn't have a aggregation operator specified!");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        FilterAggregationConfig config = parseConfiguration("col3;,sum(col4),sum(col5),min(col6),map_min(col7),map_sum(col8)");
+        List<Field> row_keys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
+        List<Field> sort_cols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
+        List<Field> value_cols = List.of(new Field("col5", new IntType()), new Field("col6", new IntType()), new Field("col7", new IntType()));
+        Schema s = Schema.builder().rowKeyFields(row_keys).sortKeyFields(sort_cols).valueFields(value_cols).build();
     }
 
     /**
@@ -157,7 +215,7 @@ public class AggregatingIterator implements SortedRecordIterator {
             throw new IllegalArgumentException("Should be exactly one ; in aggregation configuation");
         }
         // Extract the aggregation grouping columns and trim and split the remaining
-        List<String> groupingColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).toList();
+        List<String> groupingColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).filter(name -> !name.isEmpty()).toList();
         // Following list needs to be mutable, hence Collectors.toList()
         List<String> filter_aggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
         // We only support age-off filtering

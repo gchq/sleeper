@@ -201,7 +201,11 @@ impl TryFrom<&str> for FilterAggregationConfig {
     }
 }
 
-/// Validate that
+/// Validate that __either__:
+///  * No aggregations have been specified
+///
+/// OR
+///
 ///  1. All columns that are NOT query aggregation columns have an aggregation operation specified for them,
 ///  2. No query aggregation columns have aggregations specified,
 ///  3. No query aggregation column is duplicated.
@@ -237,16 +241,16 @@ pub fn validate_aggregations(
         let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
         // Check for duplications in aggregation columns and row key aggregations
         let mut col_checks: HashSet<&String> = HashSet::new();
-        for col in &agg_cols {
-            if query_agg_cols.contains(*col) {
+        for col in agg_cols {
+            if query_agg_cols.contains(col) {
                 return plan_err!(
                     "Row key/extra grouping column \"{col}\" cannot have an aggregation"
                 );
             }
-            if !col_checks.insert(*col) {
+            if !col_checks.insert(col) {
                 return plan_err!("Aggregation column \"{col}\" duplicated");
             }
-            if !non_row_key_cols.contains(*col) {
+            if !non_row_key_cols.contains(col) {
                 return plan_err!("Aggregation column \"{col}\" doesn't exist");
             }
         }
