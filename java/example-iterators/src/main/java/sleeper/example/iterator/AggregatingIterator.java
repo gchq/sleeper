@@ -67,7 +67,8 @@ public class AggregatingIterator implements SortedRecordIterator {
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 
-    private Optional<FilterAggregationConfig> config = Optional.empty();
+    private FilterAggregationConfig config;
+    private Schema schema;
 
     /** Aggregation functions this iterator can perform. */
     public static enum AggregationOp {
@@ -99,8 +100,17 @@ public class AggregatingIterator implements SortedRecordIterator {
 
     @Override
     public CloseableIterator<Record> apply(CloseableIterator<Record> arg0) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'apply'");
+        if (config == null) {
+            throw new IllegalStateException("AggregatingIterator has not been initialised, call init()");
+        }
+        // First, see if we need to age-off data
+        CloseableIterator<Record> input = config.ageOffColumn().map(filter_col -> {
+            AgeOffIterator ageoff = new AgeOffIterator();
+            ageoff.init(String.format("%s,%d", filter_col, config.maxAge() * 1000), schema);
+            return ageoff.apply(arg0);
+        }).orElse(arg0);
+
+        return input;
     }
 
     /**
@@ -116,7 +126,8 @@ public class AggregatingIterator implements SortedRecordIterator {
     public void init(String configString, Schema schema) {
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString);
         validate(iteratorConfig, schema);
-        this.config = Optional.of(iteratorConfig);
+        this.config = iteratorConfig;
+        this.schema = schema;
     }
 
     /**
