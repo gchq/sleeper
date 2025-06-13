@@ -29,6 +29,7 @@ import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
@@ -97,7 +98,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
             List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
         String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
-        MetricsLogger metricsLogger = Metrics.MetricsUtils.metricsLogger();
+        MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
         for (TableProperties tableProperties : tables) {
             TableStatus tableStatus = tableProperties.getStatus();
