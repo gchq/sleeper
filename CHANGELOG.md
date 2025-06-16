@@ -5,6 +5,17 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.31.0
+
+This includes upgrading from AWS SDK v1 to AWS SDK v2, and upgrading EMR, Spark and Hadoop.
+
+Upgrades:
+- Upgraded all AWS clients to Java SDK v2
+  - S3 SDK v1 is still used by the experimental Athena integration
+- Upgraded AWS EMR to 7.9.0
+- Upgraded Apache Spark to 3.5.5
+- Upgraded Hadoop to 3.4.1
+
 ## Version 0.30.1
 
 *Note: this may be a breaking change if you have deployed with your own custom-named ECR repositories, see below under Deployment.*
