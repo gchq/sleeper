@@ -62,6 +62,23 @@ class S3PathUtilsIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldIgnoreCrcFiles() {
+            // Given
+            String folder = "test-folder";
+            List<String> files = List.of(createTestFile(folder + "/file-1.parquet"),
+                    createTestFile(folder + "/file-2.crc"),
+                    createTestFile(folder + "/file-3.parquet"));
+
+            // When
+            Stream<String> paths = s3PathUtils.streamFilenames(files);
+
+            // Then
+            assertThat(paths)
+                    .containsExactlyInAnyOrder(generateFilePath(folder, "/file-1.parquet"),
+                            generateFilePath(folder, "/file-3.parquet"));
+        }
+
+        @Test
         void shouldReadFileSizes() throws Exception {
             // Given
             String folder = "size-test-folder";
@@ -87,6 +104,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldReturnEmptyListIfNoFiles() throws Exception {
             assertThat(s3PathUtils.streamFilenames(List.of())).isEmpty();
         }
+
     }
 
     private String createTestFileWithContents(String filename, String contents) {
