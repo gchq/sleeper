@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
+import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
@@ -88,11 +88,11 @@ class S3PathUtilsIT extends LocalStackTestBase {
                             "more details for a bigger number of size"));
 
             // When
-            Stream<S3Object> fileDetails = s3PathUtils.streamFilesAsS3Objects(files);
+            Stream<S3FileDetails> fileDetails = s3PathUtils.streamFilesAsS3FileDetails(files);
 
             // Then
             assertThat(fileDetails)
-                    .extracting(fileSize -> fileSize.size())
+                    .extracting(file -> file.fileObject().size())
                     .containsExactlyInAnyOrder(34L, 81L);
         }
     }
