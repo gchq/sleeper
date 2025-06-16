@@ -124,6 +124,46 @@ class S3PathUtilsIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(generateFilePath(folder1, "/file-1.parquet"),
                             generateFilePath(folder2, "/file-2.parquet"));
         }
+
+        @Test
+        void shouldGetPathsForFilesInNestedDirectories() {
+            // Given
+            String folder1 = "test-folder-1";
+            String subfolder1 = "/sub-folder-1";
+            String folder2 = "test-folder-2";
+            createTestFile(folder1 + subfolder1 + "/file-1.parquet");
+            createTestFile(folder2 + "/file-2.parquet");
+            List<String> files = List.of(appendBucketNamePrefix(folder1),
+                    appendBucketNamePrefix(folder2));
+
+            // When
+            Stream<String> paths = s3PathUtils.streamFilenames(files);
+
+            // Then
+            assertThat(paths)
+                    .containsExactlyInAnyOrder(generateFilePath(folder1, (subfolder1 + "/file-1.parquet")),
+                            generateFilePath(folder2, "/file-2.parquet"));
+        }
+
+        @Test
+        void shouldReadFileSizesUnderADirectory() throws Exception {
+            // Given
+            String folder = "size-test-folder";
+            String subfolder = "/subfolder";
+
+            createTestFileWithContents(folder + subfolder + "/file-1.parquet", "this is a sub folder size test");
+            createTestFileWithContents(folder + subfolder + "/file-2.parquet", "this is a longer test file for sub folder evaluation it has " +
+                    "more details for a bigger number of size");
+            List<String> files = List.of(appendBucketNamePrefix(folder));
+
+            // When
+            Stream<S3FileDetails> fileDetails = s3PathUtils.streamFilesAsS3FileDetails(files);
+
+            // Then
+            assertThat(fileDetails)
+                    .extracting(file -> file.fileObject().size())
+                    .containsExactlyInAnyOrder(30L, 100L);
+        }
     }
 
     @Nested
