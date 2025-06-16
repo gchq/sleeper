@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
@@ -54,7 +54,7 @@ public class TearDownInstance {
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
         instanceProperties = Optional.ofNullable(builder.instanceProperties)
-                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3v2(), builder.instanceId, scriptsDir));
+                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -105,7 +105,7 @@ public class TearDownInstance {
 
     public void cleanupAfterStackDeleted() throws InterruptedException {
         LOGGER.info("Removing the jars bucket and docker containers");
-        RemoveJarsBucket.remove(clients.getS3v2(), instanceProperties.get(JARS_BUCKET));
+        RemoveJarsBucket.remove(clients.getS3(), instanceProperties.get(JARS_BUCKET));
         RemoveECRRepositories.remove(clients.getEcr(), instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
     }
 

@@ -16,10 +16,11 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
@@ -39,8 +40,8 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestBatcherDriver.class);
 
     private final SystemTestInstanceContext instance;
-    private final AmazonDynamoDB dynamoDBClient;
-    private final AmazonSQS sqsClient;
+    private final DynamoDbClient dynamoClient;
+    private final SqsClient sqsClient;
     private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
 
     public AwsIngestBatcherDriver(
@@ -48,22 +49,24 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
             IngestSourceFilesContext sourceFiles,
             SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoDBClient = clients.getDynamoDB();
+        this.dynamoClient = clients.getDynamo();
         this.sqsClient = clients.getSqs();
     }
 
     @Override
     public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
-        sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                serDe.toJson(new IngestBatcherSubmitRequest(
+        sqsClient.sendMessage(SendMessageRequest.builder()
+                .queueUrl(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL))
+                .messageBody(serDe.toJson(new IngestBatcherSubmitRequest(
                         instance.getTableProperties().get(TABLE_NAME),
-                        files)));
+                        files)))
+                .build());
     }
 
     @Override
     public IngestBatcherStore batcherStore() {
-        return new DynamoDBIngestBatcherStore(dynamoDBClient,
+        return new DynamoDBIngestBatcherStore(dynamoClient,
                 instance.getInstanceProperties(), instance.getTablePropertiesProvider());
     }
 }

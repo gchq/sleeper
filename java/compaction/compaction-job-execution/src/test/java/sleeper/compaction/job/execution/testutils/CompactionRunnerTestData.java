@@ -27,8 +27,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.sketchesv2.Sketches;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -30,9 +30,9 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.ingest.runner.testutils.RecordGenerator;
-import sleeper.ingest.trackerv2.job.DynamoDBIngestJobTrackerCreator;
-import sleeper.ingest.trackerv2.task.DynamoDBIngestTaskTrackerCreator;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -52,14 +52,14 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
         ECSIngestTaskRunner.createIngestTask(
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
-                s3ClientV2, dynamoClientV2, sqsClientV2, cloudWatchClientV2, s3AsyncClient, hadoopConf, s3TransferManager)
+                s3Client, dynamoClient, sqsClient, cloudWatchClient, s3AsyncClient, hadoopConf)
                 .run();
     }
 
     @BeforeEach
     void setUp() {
-        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClientV2);
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClientV2);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @Test
@@ -139,7 +139,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     }
 
     private void sendJobs(List<IngestJob> jobs) {
-        jobs.forEach(job -> sqsClientV2.sendMessage(builder -> builder
+        jobs.forEach(job -> sqsClient.sendMessage(builder -> builder
                 .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
                 .messageBody(new IngestJobSerDe().toJson(job))));
     }

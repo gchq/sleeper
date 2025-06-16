@@ -28,7 +28,6 @@
 
     <modules>
         <module>splitter</module>
-        <module>splitterv2</module>
         <module>splitter-lambda</module>
     </modules>
 </project>

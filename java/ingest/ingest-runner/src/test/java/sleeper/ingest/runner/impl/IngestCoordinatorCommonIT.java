@@ -45,12 +45,12 @@ import sleeper.ingest.runner.testutils.ResultVerifier;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.ingest.runner.testutils.TestIngestType.WriteTarget;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.sketchesv2.store.LocalFileSystemSketchesStore;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.sketchesv2.store.SketchesStore;
-import sleeper.sketchesv2.testutils.SketchesDeciles;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -107,13 +107,13 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @BeforeEach
     public void before() {
         createBucket(dataBucketName);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClientV2).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     private void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
     @ParameterizedTest
@@ -729,7 +729,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     private SketchesStore getSketchesStore(TestIngestType ingestType) {
         if (ingestType.getWriteTarget() == WriteTarget.S3) {
-            return new S3SketchesStore(s3ClientV2, s3TransferManager);
+            return new S3SketchesStore(s3Client, s3TransferManager);
         } else {
             return new LocalFileSystemSketchesStore();
         }

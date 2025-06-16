@@ -32,6 +32,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -186,7 +187,8 @@ class FileWritingIteratorIT {
     }
 
     private FileWritingIterator createIteratorFrom(Iterator<Row> input, Supplier<String> filenameSupplier) {
-        return new FileWritingIterator(input, instanceProperties, tableProperties, new Configuration(), filenameSupplier);
+        return new FileWritingIterator(input, instanceProperties, tableProperties, new Configuration(),
+                new LocalFileSystemSketchesStore(), filenameSupplier);
     }
 
     private Schema createSchema() {

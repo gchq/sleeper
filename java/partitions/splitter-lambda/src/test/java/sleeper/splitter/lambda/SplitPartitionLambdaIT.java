@@ -15,10 +15,9 @@
  */
 package sleeper.splitter.lambda;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -135,15 +134,15 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
 
     private List<StateStoreCommitRequest> receiveSplitPartitionCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.body()))
                 .collect(Collectors.toList());
     }
 
     private List<Message> receiveCommitMessages() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest).getMessages();
+        return sqsClient.receiveMessage(request -> request
+                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .maxNumberOfMessages(10))
+                .messages();
     }
 
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {
@@ -163,11 +162,11 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
     private SplitPartitionLambda lambdaWithNewPartitionIds(String... ids) {
-        return new SplitPartitionLambda(instanceProperties, hadoopConf, s3Client, dynamoClient, sqsClient, List.of(ids).iterator()::next);
+        return new SplitPartitionLambda(instanceProperties, s3Client, dynamoClient, sqsClient, List.of(ids).iterator()::next);
     }
 
     private List<String> ingestRecordsGetFilenames(Stream<Record> records) throws Exception {

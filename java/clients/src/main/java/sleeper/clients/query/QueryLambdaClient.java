@@ -19,8 +19,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.model.Query;
@@ -29,8 +29,8 @@ import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.runnerv2.output.SQSResultsOutput;
-import sleeper.query.runnerv2.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;

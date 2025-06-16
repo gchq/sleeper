@@ -24,12 +24,10 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
@@ -38,11 +36,11 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 import sleeper.statestore.committer.StateStoreCommitter.RetryOnThrottling;
-import sleeper.statestorev2.StateStoreFactory;
-import sleeper.statestorev2.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -68,13 +66,12 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public StateStoreCommitterLambda() {
         S3Client s3Client = S3Client.create();
         DynamoDbClient dynamoDBClient = DynamoDbClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, s3TransferManager);
+        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient);
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
         committer = new StateStoreCommitter(

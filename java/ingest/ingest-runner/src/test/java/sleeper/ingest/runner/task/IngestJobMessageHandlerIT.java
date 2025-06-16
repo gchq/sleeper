@@ -193,7 +193,7 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
     }
 
     private void uploadFileToS3(String filePath) {
-        s3Client.putObject(testBucket, filePath, "test");
+        putObject(testBucket, filePath, "test");
     }
 
     private static IngestJob jobWithFiles(String... files) {

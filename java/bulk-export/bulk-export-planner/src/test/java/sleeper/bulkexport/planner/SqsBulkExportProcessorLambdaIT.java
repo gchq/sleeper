@@ -18,6 +18,7 @@ package sleeper.bulkexport.planner;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
@@ -75,12 +76,12 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
         tableProperties.set(TABLE_NAME, "test-table");
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(CreateBucketRequest.builder().bucket(instanceProperties.get(CONFIG_BUCKET)).build());
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
         sqsBulkExportProcessorLambda = new SqsBulkExportProcessorLambda(sqsClient, s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     }
 
@@ -157,7 +158,7 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private List<BulkExportLeafPartitionQuery> receiveLeafPartitionQueries() {
-        ReceiveMessageResponse response = sqsClientV2.receiveMessage(request -> request
+        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
                 .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .maxNumberOfMessages(10)
                 .waitTimeSeconds(1));

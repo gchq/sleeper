@@ -18,8 +18,8 @@ package sleeper.clients.deploy.localstack.stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.compaction.trackerv2.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.compaction.trackerv2.task.DynamoDBCompactionTaskTrackerCreator;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;

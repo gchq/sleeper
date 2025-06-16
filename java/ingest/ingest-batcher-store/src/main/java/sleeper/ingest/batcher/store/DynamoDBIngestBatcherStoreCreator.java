@@ -16,11 +16,11 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -38,15 +38,15 @@ public class DynamoDBIngestBatcherStoreCreator {
     private DynamoDBIngestBatcherStoreCreator() {
     }
 
-    public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
+    public static void create(InstanceProperties properties, DynamoDbClient dynamoDB) {
         String tableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 List.of(
-                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(FILE_PATH, ScalarAttributeType.S)),
+                        AttributeDefinition.builder().attributeName(JOB_ID).attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName(FILE_PATH).attributeType(ScalarAttributeType.S).build()),
                 Arrays.asList(
-                        new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(FILE_PATH, KeyType.RANGE)));
+                        KeySchemaElement.builder().attributeName(JOB_ID).keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName(FILE_PATH).keyType(KeyType.RANGE).build()));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_TIME);
     }
 }

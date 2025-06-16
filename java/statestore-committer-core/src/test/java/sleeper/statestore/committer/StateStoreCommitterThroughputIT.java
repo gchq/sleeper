@@ -147,7 +147,7 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
 }

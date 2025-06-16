@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStartConfigurationProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStopConfigurationProperty;
-import software.amazon.awscdk.services.emrserverless.CfnApplication.ImageConfigurationInputProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigKeyValuePairProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.NetworkConfigurationProperty;
@@ -39,16 +38,18 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Collections;
@@ -61,9 +62,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
@@ -99,9 +98,11 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             CoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         createEmrServerlessApplication(instanceProperties);
         IRole emrRole = createEmrServerlessRole(
-                instanceProperties, importBucketStack, coreStacks);
+                instanceProperties, importBucketStack, coreStacks, jarsBucket);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 BulkImportPlatform.EMRServerless, instanceProperties, coreStacks, errorMetrics);
         bulkImportJobQueue = commonHelper.createJobQueue(
@@ -109,7 +110,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 errorsTopic);
 
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
+                bulkImportJobQueue, lambdaCode, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_SERVERLESS_START, List.of(emrRole));
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
@@ -135,18 +136,11 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     }
 
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
-        String region = instanceProperties.get(REGION);
-        String accountId = instanceProperties.get(ACCOUNT);
-        String repo = DockerDeployment.EMR_SERVERLESS_BULK_IMPORT.getEcrRepositoryName(instanceProperties);
-        String version = instanceProperties.get(VERSION);
-        String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
-
         CfnApplication emrServerlessCluster = CfnApplication.Builder.create(this, "BulkImportEMRServerless")
                 .name(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties)))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type("Spark")
-                .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .initialCapacity(createInitialCapacity(instanceProperties))
                 .autoStartConfiguration(AutoStartConfigurationProperty.builder()
                         .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTART)).build())
@@ -210,7 +204,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
             BulkImportBucketStack bulkImportBucketStack,
-            CoreStacks coreStacks) {
+            CoreStacks coreStacks, IBucket jarsBucket) {
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper",
                         Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))
@@ -223,6 +217,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         bulkImportBucketStack.getImportBucket().grantReadWrite(role);
         coreStacks.grantIngest(role);
+        jarsBucket.grantRead(role);
         return role;
     }
 

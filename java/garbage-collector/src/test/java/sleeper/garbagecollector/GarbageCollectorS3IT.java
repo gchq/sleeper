@@ -40,7 +40,7 @@ import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestorev2.commit.SqsFifoStateStoreCommitRequestSender;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -206,8 +206,8 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void writeFileAndSketches(String filename) {
-        s3Client.putObject(testBucket, dataFileObjectKey(filename), filename);
-        s3Client.putObject(testBucket, sketchesFileObjectKey(filename), filename);
+        putObject(testBucket, dataFileObjectKey(filename), filename);
+        putObject(testBucket, sketchesFileObjectKey(filename), filename);
     }
 
     private String dataFileFullFilename(String filename) {
@@ -231,14 +231,14 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void collectGarbageAtTimeWithS3BatchSize(Instant time, int s3BatchSize) throws Exception {
-        createGarbageCollector(new S3DeleteFiles(s3ClientV2, s3BatchSize, refuseWaits()))
+        createGarbageCollector(new S3DeleteFiles(s3Client, s3BatchSize, refuseWaits()))
                 .runAtTime(time, List.of(tableProperties));
     }
 
     private GarbageCollector createGarbageCollector(DeleteFiles deleteFiles) {
         return new GarbageCollector(deleteFiles, instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClientV2, s3ClientV2, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
 
     private static Schema getSchema() {

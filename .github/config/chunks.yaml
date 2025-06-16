@@ -10,7 +10,6 @@ chunks:
       - build-uptime-lambda
       - system-test/system-test-cdk
       - system-test/system-test-configuration
-      - system-test/system-test-configurationv2
       - system-test/system-test-data-generation
       - system-test/system-test-dsl
       - system-test/system-test-drivers
@@ -21,24 +20,17 @@ chunks:
     modules:
       - core
       - configuration
-      - configurationV2
       - sketches
-      - sketchesv2
       - parquet
       - common/common-job
-      - common/common-jobv2
       - common/common-task
-      - common/common-taskv2
       - common/common-invoke-tables
-      - common/common-invoke-tablesv2
       - build
       - common/dynamodb-tools
-      - common/dynamodb-toolsv2
       - common/localstack-test
       - statestore
       - statestore-committer-core
       - statestore-lambda
-      - statestorev2
       - metrics
       - example-iterators
   compaction:
@@ -48,13 +40,10 @@ chunks:
       - compaction/compaction-job-execution
       - compaction/compaction-task-creation
       - compaction/compaction-job-creation
-      - compaction/compaction-job-creationv2
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
-      - compaction/compaction-trackerV2
       - compaction/compaction-core
       - partitions/splitter
-      - partitions/splitterv2
       - partitions/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
@@ -72,13 +61,10 @@ chunks:
     modules:
       - ingest/ingest-core
       - ingest/ingest-tracker
-      - ingest/ingest-trackerV2
       - ingest/ingest-taskrunner
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
-      - ingest/ingest-batcher-storev2
       - ingest/ingest-batcher-submitter
-      - ingest/ingest-batcher-submitterv2
       - ingest/ingest-batcher-job-creator
       - bulk-import/bulk-import-core
       - bulk-import/bulk-import-starter
@@ -90,8 +76,6 @@ chunks:
     modules:
       - query/query-core
       - query/query-runner
-      - query/query-runnerv2
       - query/query-lambda
-      - query/query-lambdav2
       - athena
       - trino

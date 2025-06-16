@@ -21,15 +21,13 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
-import sleeper.compaction.job.creationv2.AwsCompactionJobDispatcher;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.compaction.job.creation.AwsCompactionJobDispatcher;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.time.Instant;
@@ -52,10 +50,9 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
         S3Client s3 = S3Client.create();
         DynamoDbClient dynamoDB = DynamoDbClient.create();
         SqsClient sqs = SqsClient.create();
-        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         String configBucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, configBucket);
-        dispatcher = AwsCompactionJobDispatcher.from(s3, dynamoDB, sqs, s3TransferManager, instanceProperties, Instant::now);
+        dispatcher = AwsCompactionJobDispatcher.from(s3, dynamoDB, sqs, instanceProperties, Instant::now);
     }
 
     @Override

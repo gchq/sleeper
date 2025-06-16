@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;

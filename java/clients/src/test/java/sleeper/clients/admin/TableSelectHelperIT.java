@@ -19,6 +19,7 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
+import sleeper.clients.report.TableNamesReport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -57,14 +58,17 @@ class TableSelectHelperIT extends AdminClientITBase {
 
         // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                .startsWith(CLEAR_CONSOLE + "\n\n\n" +
+                        "Table Names\n" +
+                        "----------------------------------\n" +
+                        TABLE_SELECT_SCREEN + "\n" +
                         "Could not load properties for table test-table in instance " + instanceId + "\n" +
                         "Cause: Table not found")
                 .endsWith(PROMPT_RETURN_TO_MAIN);
     }
 
     private String runTableSelectHelperGetOutput() {
-        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store())
+        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store(), new TableNamesReport(out.consoleOut(), in.consoleIn(), tableIndex))
                 .chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> out.consoleOut().println("\n" +
                         "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();

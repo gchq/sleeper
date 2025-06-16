@@ -17,16 +17,14 @@ package sleeper.clients.query;
 
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configurationv2.jars.S3UserJarsLoader;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.configuration.jars.S3UserJarsLoader;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -44,9 +42,12 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.statestore.StateStoreFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
@@ -55,7 +56,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -69,11 +70,11 @@ public class QueryClient extends QueryCommandLineClient {
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient,
+    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(instanceProperties, s3Client, dynamoClient, in, out,
-                new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory(),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, s3TransferManager));
+                new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));
     }
 
     public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
@@ -89,6 +90,16 @@ public class QueryClient extends QueryCommandLineClient {
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
         this.executorService = Executors.newFixedThreadPool(30);
+    }
+
+    public static Path makeTemporaryDirectory() {
+        try {
+            Path tempDir = Files.createTempDirectory(null);
+            tempDir.toFile().deleteOnExit();
+            return tempDir;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -142,12 +153,10 @@ public class QueryClient extends QueryCommandLineClient {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
             QueryClient queryClient = new QueryClient(
-                    instanceProperties, s3Client, s3TransferManager, dynamoClient,
+                    instanceProperties, s3Client, dynamoClient,
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out));
             queryClient.run();
         }

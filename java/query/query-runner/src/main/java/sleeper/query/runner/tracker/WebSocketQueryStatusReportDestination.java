@@ -15,7 +15,6 @@
  */
 package sleeper.query.runner.tracker;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
@@ -25,7 +24,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runner.output.WebSocketOutput;
+import sleeper.query.runner.output.ApiGatewayWebSocketOutput;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,20 +32,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class WebSocketQueryStatusReportDestination extends WebSocketOutput implements QueryStatusReportListener {
+public class WebSocketQueryStatusReportDestination implements QueryStatusReportListener {
     private final Gson serde = new GsonBuilder().create();
+    private final ApiGatewayWebSocketOutput output;
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryStatusReportDestination.class);
 
-    public WebSocketQueryStatusReportDestination(String region, String endpoint, String connectionId) {
-        super(region, endpoint, connectionId);
-    }
-
-    public WebSocketQueryStatusReportDestination(String awsRegion, String endpoint, String connectionId, AWSCredentials awsCredentials) {
-        super(awsRegion, endpoint, connectionId, awsCredentials);
+    public WebSocketQueryStatusReportDestination(ApiGatewayWebSocketOutput output) {
+        this.output = output;
     }
 
     public WebSocketQueryStatusReportDestination(Map<String, String> config) {
-        super(config);
+        this.output = ApiGatewayWebSocketOutput.fromConfig(config);
     }
 
     @Override
@@ -69,17 +65,17 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
         List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
         Map<String, Object> data = new HashMap<>();
         data.put("queryIds", subQueryIds);
-        this.sendStatusReport("subqueries", getQueryId(query), data);
+        this.sendStatusReport("subqueries", query.getQueryId(), data);
     }
 
     @Override
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
-        queryCompleted(getQueryId(query), outputInfo);
+        queryCompleted(query.getQueryId(), outputInfo);
     }
 
     @Override
     public void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo) {
-        queryCompleted(getQueryId(leafQuery), outputInfo);
+        queryCompleted(leafQuery.getSubQueryId(), outputInfo);
     }
 
     private void queryCompleted(String queryId, ResultsOutputInfo outputInfo) {
@@ -97,7 +93,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
 
     @Override
     public void queryFailed(Query query, Exception e) {
-        queryFailed(getQueryId(query), e);
+        queryFailed(query.getQueryId(), e);
     }
 
     @Override
@@ -109,7 +105,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
 
     @Override
     public void queryFailed(LeafPartitionQuery leafQuery, Exception e) {
-        queryFailed(getQueryId(leafQuery), e);
+        queryFailed(leafQuery.getSubQueryId(), e);
     }
 
     private void sendStatusReport(String message, String queryId, Map<String, Object> data) {
@@ -118,7 +114,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
         record.put("queryId", queryId);
 
         try {
-            sendString(serde.toJson(record));
+            output.sendString(serde.toJson(record));
         } catch (IOException e) {
             LOGGER.error("Unable to send query status report to websocket", e);
         }

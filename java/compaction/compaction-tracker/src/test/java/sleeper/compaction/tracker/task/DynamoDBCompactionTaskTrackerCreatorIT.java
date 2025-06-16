@@ -15,10 +15,11 @@
  */
 package sleeper.compaction.tracker.task;
 
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -42,8 +43,10 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalStackTestBase {
         CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThat(dynamoClient.describeTable(tableName))
-                .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(dynamoClient.describeTable(DescribeTableRequest.builder()
+                .tableName(tableName)
+                .build()))
+                .extracting(DescribeTableResponse::table).isNotNull();
         assertThat(tracker).isInstanceOf(DynamoDBCompactionTaskTracker.class);
     }
 
@@ -57,7 +60,9 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalStackTestBase {
         CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoClient.describeTable(tableName))
+        assertThatThrownBy(() -> dynamoClient.describeTable(DescribeTableRequest.builder()
+                .tableName(tableName)
+                .build()))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(tracker).isSameAs(CompactionTaskTracker.NONE);
         assertThatThrownBy(tracker::getAllTasks).isInstanceOf(UnsupportedOperationException.class);

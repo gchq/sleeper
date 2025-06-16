@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.clients.report.ingest.task.IngestTaskStatusReportTestHelper;
-import sleeper.common.taskv2.QueueMessageCount;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -55,7 +55,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.common.taskv2.InMemoryQueueMessageCounts.visibleMessages;
+import static sleeper.common.task.InMemoryQueueMessageCounts.visibleMessages;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;

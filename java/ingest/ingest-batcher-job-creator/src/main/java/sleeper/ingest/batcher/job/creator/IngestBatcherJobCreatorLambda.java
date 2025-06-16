@@ -23,12 +23,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.core.IngestBatcher;
-import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.time.Instant;
 import java.util.UUID;

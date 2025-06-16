@@ -26,19 +26,19 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.common.jobv2.EC2ContainerMetadata;
+import sleeper.common.job.EC2ContainerMetadata;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.BatchedCommitQueueSender;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
-import sleeper.compaction.trackerv2.task.CompactionTaskTrackerFactory;
-import sleeper.configurationv2.jars.S3UserJarsLoader;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3PropertiesReloader;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
+import sleeper.configuration.jars.S3UserJarsLoader;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3PropertiesReloader;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -49,16 +49,17 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.sketchesv2.store.S3SketchesStore;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -95,8 +96,7 @@ public class ECSCompactionTaskRunner {
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
-                    s3TransferManager);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
             CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient,
@@ -109,7 +109,8 @@ public class ECSCompactionTaskRunner {
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
                     new S3SketchesStore(s3Client, s3TransferManager));
 
-            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
+            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(
+                    tablePropertiesProvider, stateStoreProvider, jobTracker, DynamoDBUtils.retryOnThrottlingException());
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobTracker, instanceProperties, sqsClient);

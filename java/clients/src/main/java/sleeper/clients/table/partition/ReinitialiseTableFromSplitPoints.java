@@ -18,9 +18,7 @@ package sleeper.clients.table.partition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.table.ReinitialiseTable;
 import sleeper.core.partition.Partition;
@@ -32,7 +30,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.local.ReadSplitPoints.readSplitPoints;
 
 /**
@@ -48,13 +46,12 @@ public class ReinitialiseTableFromSplitPoints {
 
     public ReinitialiseTableFromSplitPoints(
             S3Client s3Client,
-            S3TransferManager s3TransferManager,
             DynamoDbClient dynamoClient,
             String instanceId,
             String tableName,
             String splitPointsFileLocation,
             boolean splitPointStringsBase64Encoded) {
-        this.reinitialiseTable = new ReinitialiseTable(s3Client, s3TransferManager, dynamoClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoClient, instanceId, tableName, true);
         this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.splitPointsFileLocation = splitPointsFileLocation;
     }
@@ -93,11 +90,9 @@ public class ReinitialiseTableFromSplitPoints {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             ReinitialiseTableFromSplitPoints reinitialiseTable = new ReinitialiseTableFromSplitPoints(
-                    s3Client, s3TransferManager, dynamoClient, instanceId, tableName,
+                    s3Client, dynamoClient, instanceId, tableName,
                     splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");

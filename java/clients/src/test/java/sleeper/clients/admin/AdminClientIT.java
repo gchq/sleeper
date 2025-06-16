@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
-import sleeper.configurationv2.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
@@ -88,7 +88,10 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
-                CLEAR_CONSOLE + TABLE_SELECT_SCREEN +
+                CLEAR_CONSOLE + "\n\n\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
+                "test-table\n" + TABLE_SELECT_SCREEN +
                 CLEAR_CONSOLE + MAIN_SCREEN);
         verify(editor).openPropertiesFile(tableProperties);
     }

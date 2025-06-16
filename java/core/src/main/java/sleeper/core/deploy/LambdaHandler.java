@@ -48,7 +48,7 @@ public class LambdaHandler {
             .optionalStacks(OptionalStack.BULK_IMPORT_STACKS).add();
     public static final LambdaHandler INGEST_TASK_CREATOR = builder()
             .jar(LambdaJar.INGEST_TASK_CREATOR)
-            .handler("sleeper.ingest.starter.RunIngestTasksLambda::eventHandler")
+            .handler("sleeper.ingest.taskrunner.RunIngestTasksLambda::eventHandler")
             .optionalStack(OptionalStack.IngestStack).add();
     public static final LambdaHandler INGEST_BATCHER_SUBMITTER = builder()
             .jar(LambdaJar.INGEST_BATCHER_SUBMITTER)
@@ -212,6 +212,10 @@ public class LambdaHandler {
 
     public List<OptionalStack> getOptionalStacks() {
         return optionalStacks;
+    }
+
+    public boolean isAlwaysDockerDeploy() {
+        return jar.isAlwaysDockerDeploy();
     }
 
     /**

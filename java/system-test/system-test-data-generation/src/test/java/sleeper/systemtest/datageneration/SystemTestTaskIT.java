@@ -93,8 +93,8 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     ECSSystemTestTask createTask() {
-        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, stsClientV2, hadoopConf, tempDir.toString());
-        return new ECSSystemTestTask(systemTestProperties, sqsClientV2, job -> {
+        IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, hadoopConf, tempDir.toString());
+        return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
             try {
                 ingestData.run(job);
             } catch (IOException e) {
@@ -104,7 +104,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     }
 
     void sendJob(SystemTestDataGenerationJob job) {
-        sqsClientV2.sendMessage(builder -> builder
+        sqsClient.sendMessage(builder -> builder
                 .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
                 .messageBody(new SystemTestDataGenerationJobSerDe().toJson(job)));
     }
@@ -113,10 +113,9 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients
-                        .s3Client(s3ClientV2)
-                        .s3TransferManager(s3TransferManager)
-                        .dynamoClient(dynamoClientV2)
-                        .sqsClient(sqsClientV2))
+                        .s3Client(s3Client)
+                        .dynamoClient(dynamoClient)
+                        .sqsClient(sqsClient))
                 .hadoopConf(hadoopConf)
                 .build();
     }

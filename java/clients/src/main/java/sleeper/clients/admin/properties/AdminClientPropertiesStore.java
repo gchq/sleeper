@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -28,15 +27,15 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +51,6 @@ public class AdminClientPropertiesStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
 
     private final S3Client s3Client;
-    private final S3TransferManager s3TransferManager;
     private final DynamoDbClient dynamoClient;
     private final InvokeCdkForInstance cdk;
     private final DockerImageConfiguration dockerImageConfiguration;
@@ -60,10 +58,9 @@ public class AdminClientPropertiesStore {
     private final Path generatedDirectory;
 
     public AdminClientPropertiesStore(
-            S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
+            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
             Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3Client = s3Client;
-        this.s3TransferManager = s3TransferManager;
         this.dynamoClient = dynamoClient;
         this.dockerImageConfiguration = DockerImageConfiguration.getDefault();
         this.uploadDockerImages = uploadDockerImages;
@@ -154,7 +151,7 @@ public class AdminClientPropertiesStore {
 
     public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, s3TransferManager);
+        StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
         return stateStoreFactory.getStateStore(tableProperties);
     }
 

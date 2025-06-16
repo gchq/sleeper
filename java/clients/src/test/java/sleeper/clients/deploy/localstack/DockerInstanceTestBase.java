@@ -30,8 +30,8 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runnerv2.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.statestorev2.StateStoreFactory;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -49,15 +49,15 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder()
-                .s3Client(s3ClientV2).s3TransferManager(s3TransferManager)
-                .dynamoClient(dynamoClientV2).sqsClient(sqsClientV2)
+                .s3Client(s3Client)
+                .dynamoClient(dynamoClient).sqsClient(sqsClient)
                 .extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3ClientV2, dynamoClientV2, s3TransferManager)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
@@ -67,7 +67,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
     }
 
     protected IngestJob receiveIngestJob(String queueUrl) {
-        List<Message> messages = sqsClientV2.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
+        List<Message> messages = sqsClient.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }

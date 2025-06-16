@@ -16,9 +16,10 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
@@ -31,7 +32,7 @@ import java.util.UUID;
 public class AwsIngestByQueueDriver implements IngestByQueueDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsIngestByQueueDriver.class);
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
 
     public AwsIngestByQueueDriver(SystemTestClients clients) {
         this.sqsClient = clients.getSqs();
@@ -40,12 +41,14 @@ public class AwsIngestByQueueDriver implements IngestByQueueDriver {
     public String sendJobGetId(String queueUrl, String tableName, List<String> files) {
         String jobId = UUID.randomUUID().toString();
         LOGGER.info("Sending ingest job {} with {} files to queue: {}", jobId, files.size(), queueUrl);
-        sqsClient.sendMessage(queueUrl,
-                new IngestJobSerDe().toJson(IngestJob.builder()
+        sqsClient.sendMessage(SendMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .messageBody(new IngestJobSerDe().toJson(IngestJob.builder()
                         .id(jobId)
                         .tableName(tableName)
                         .files(files)
-                        .build()));
+                        .build()))
+                .build());
         return jobId;
     }
 }

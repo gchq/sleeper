@@ -16,10 +16,8 @@
 
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -29,7 +27,7 @@ import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class GenerateRandomDataFiles {
@@ -64,18 +62,14 @@ public class GenerateRandomDataFiles {
             numberOfRecords = Long.parseLong(args[3]);
         }
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
             new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
                     .run();
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
         }
     }
 }

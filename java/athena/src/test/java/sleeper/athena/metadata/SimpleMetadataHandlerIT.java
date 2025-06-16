@@ -45,9 +45,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
     public void shouldCreateSplitForEachFileInAPartition() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(s3Client, dynamoClient,
-                instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
-                mock(AmazonAthena.class), "abc", "def");
+        SimpleMetadataHandler simpleMetadataHandler = handler(instance);
 
         // When
         GetSplitsResponse getSplitsResponse;
@@ -68,9 +66,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
     public void shouldOnlyCreateOneSplitForEachFileAcrossMultiplePartitions() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(s3Client, dynamoClient,
-                instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
-                mock(AmazonAthena.class), "abc", "def");
+        SimpleMetadataHandler simpleMetadataHandler = handler(instance);
 
         // When
         GetSplitsResponse getSplitsResponse;
@@ -86,6 +82,12 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
         assertThat(getSplitsResponse.getSplits())
                 .extracting(split -> split.getProperties().get(RELEVANT_FILES_FIELD))
                 .containsExactlyInAnyOrder("a/b/c.parquet", "d/e/f.parquet", "g/h/i.parquet");
+    }
+
+    private SimpleMetadataHandler handler(InstanceProperties instanceProperties) {
+        return new SimpleMetadataHandler(s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
+                mock(AmazonAthena.class), "abc", "def");
     }
 
     private Block createPartitionsBlock(BlockAllocator blockAllocator, String... jsonSerialisedLists) {

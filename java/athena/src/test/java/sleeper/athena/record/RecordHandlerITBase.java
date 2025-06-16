@@ -75,7 +75,7 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
     public void createInstance() throws IOException {
         this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
     }
 
     protected InstanceProperties getInstanceProperties() {
@@ -98,11 +98,11 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, SCHEMA, dynamoClient, s3Client, hadoopConf, initialSplits);
+        return TestUtils.createTable(instanceProperties, SCHEMA, s3Client, dynamoClient, initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, schema, dynamoClient, s3Client, hadoopConf, initialSplits);
+        return TestUtils.createTable(instanceProperties, schema, s3Client, dynamoClient, initialSplits);
     }
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {

@@ -42,7 +42,7 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
-    public void closeBlocking() throws InterruptedException {
+    public void close() {
         if (!closed) {
             onClose("Connection closed normally");
         }
@@ -57,7 +57,7 @@ public class FakeWebSocketClient implements Client {
     public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
         CompletableFuture<List<String>> future = new CompletableFuture<>();
         messageHandler.setFuture(future);
-        messageHandler.setCloser(this::closeBlocking);
+        messageHandler.setCloser(this::close);
         connectBlocking();
         messageHandler.onOpen(query, sentMessages::add);
         responses.forEach(response -> response.sendTo(this));

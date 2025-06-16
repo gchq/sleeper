@@ -26,10 +26,10 @@ import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
+import sleeper.common.task.ECSTaskCount;
+import sleeper.common.task.QueueMessageCount;
+import sleeper.common.task.RunECSTasks;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.task.common.ECSTaskCount;
-import sleeper.task.common.QueueMessageCount;
-import sleeper.task.common.RunECSTasks;
 
 import java.util.List;
 import java.util.Objects;
@@ -191,8 +191,8 @@ public class RunLeafPartitionBulkExportTasks {
     /**
      * Creates a new task request that can be passed to ECS.
      *
-     * @param instanceProperties the instance properties
-     * @return the request for ECS
+     * @param  instanceProperties       the instance properties
+     * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and
      *                                  version is null
      */
@@ -217,8 +217,8 @@ public class RunLeafPartitionBulkExportTasks {
     /**
      * Create the container definition overrides for the task launch.
      *
-     * @param instanceProperties the instance properties
-     * @return the container definition overrides
+     * @param  instanceProperties the instance properties
+     * @return                    the container definition overrides
      */
     private static TaskOverride createOverride(InstanceProperties instanceProperties) {
         ContainerOverride containerOverride = ContainerOverride.builder()
@@ -233,8 +233,8 @@ public class RunLeafPartitionBulkExportTasks {
     /**
      * Create the container networking configuration.
      *
-     * @param instanceProperties the instance properties
-     * @return task network configuration
+     * @param  instanceProperties the instance properties
+     * @return                    task network configuration
      */
     private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
         AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()

@@ -27,8 +27,12 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    public static final LambdaJar ATHENA = withFormatAndImage("athena-%s.jar", "athena-lambda");
-    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
+    // The Athena plugin includes Hadoop, which makes the jar too big to deploy directly.
+    // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
+    public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
+    // The bulk import starter includes Hadoop, which makes the jar too big to deploy directly.
+    // Hadoop will be removed from this module in the following issue: https://github.com/gchq/sleeper/issues/4993
+    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImageDeployWithDocker("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
     public static final LambdaJar BULK_EXPORT_PLANNER = withFormatAndImage("bulk-export-planner-%s.jar", "bulk-export-planner");
     public static final LambdaJar BULK_EXPORT_TASK_CREATOR = withFormatAndImage("bulk-export-task-creator-%s.jar", "bulk-export-task-creator");
     public static final LambdaJar INGEST_TASK_CREATOR = withFormatAndImage("ingest-taskrunner-%s.jar", "ingest-task-creator-lambda");
@@ -38,17 +42,22 @@ public class LambdaJar {
     public static final LambdaJar COMPACTION_JOB_CREATOR = withFormatAndImage("lambda-jobSpecCreationLambda-%s.jar", "compaction-job-creator-lambda");
     public static final LambdaJar COMPACTION_TASK_CREATOR = withFormatAndImage("runningjobs-%s.jar", "compaction-task-creator-lambda");
     public static final LambdaJar PARTITION_SPLITTER = withFormatAndImage("lambda-splitter-%s.jar", "partition-splitter-lambda");
-    public static final LambdaJar QUERY = withFormatAndImage("query-%s.jar", "query-lambda");
+    // The query module includes Hadoop, which makes the jar too big to deploy directly.
+    // It seems difficult to reduce this significantly, but this may be unnecessary if we switch to using DataFusion
+    // for queries.
+    public static final LambdaJar QUERY = withFormatAndImageDeployWithDocker("query-%s.jar", "query-lambda");
     public static final LambdaJar CUSTOM_RESOURCES = withFormatAndImage("cdk-custom-resources-%s.jar", "custom-resources-lambda");
     public static final LambdaJar METRICS = withFormatAndImage("metrics-%s.jar", "metrics-lambda");
     public static final LambdaJar STATESTORE = withFormatAndImage("statestore-lambda-%s.jar", "statestore-lambda");
 
     private final String filename;
     private final String imageName;
+    private final boolean alwaysDockerDeploy;
 
-    private LambdaJar(String filename, String imageName) {
+    private LambdaJar(String filename, String imageName, boolean alwaysDockerDeploy) {
         this.filename = Objects.requireNonNull(filename, "filename must not be null");
         this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
+        this.alwaysDockerDeploy = Objects.requireNonNull(alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
     }
 
     /**
@@ -59,7 +68,20 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImage(String format, String imageName) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName);
+        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, false);
+    }
+
+    /**
+     * Creates a jar definition with a filename computed by adding the Sleeper version to the given format string.
+     * Lambdas using this jar will always be deployed with Docker. This should be used if the jar is too big to be
+     * deployed directly, and we cannot reduce the size.
+     *
+     * @param  format    the format string
+     * @param  imageName the name of the Docker image built from this jar
+     * @return           the jar definition
+     */
+    public static LambdaJar withFormatAndImageDeployWithDocker(String format, String imageName) {
+        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, true);
     }
 
     public String getFilename() {
@@ -68,6 +90,10 @@ public class LambdaJar {
 
     public String getImageName() {
         return imageName;
+    }
+
+    public boolean isAlwaysDockerDeploy() {
+        return alwaysDockerDeploy;
     }
 
     /**

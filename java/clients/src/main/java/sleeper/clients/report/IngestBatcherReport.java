@@ -24,20 +24,20 @@ import sleeper.clients.report.ingest.batcher.IngestBatcherReporter;
 import sleeper.clients.report.ingest.batcher.JsonIngestBatcherReporter;
 import sleeper.clients.report.ingest.batcher.StandardIngestBatcherReporter;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.properties.S3TableProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatusProvider;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.batcher.storev2.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class IngestBatcherReport {
     private static final Map<String, BatcherQuery.Type> QUERY_TYPES = new HashMap<>();

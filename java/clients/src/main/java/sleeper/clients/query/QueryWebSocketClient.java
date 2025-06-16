@@ -25,10 +25,12 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
+import software.amazon.awssdk.http.auth.spi.internal.signer.DefaultSignRequest;
 import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
 import sleeper.clients.query.exception.MessageMalformedException;
@@ -54,56 +56,64 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
+    public static final long DEFAULT_TIMEOUT_MS = 120000L;
+
     private final String apiUrl;
     private final Supplier<Client> clientSupplier;
-    private Client client;
+    private final long timeoutMs;
 
     public QueryWebSocketClient(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
+        this(instanceProperties, tablePropertiesProvider, credentialsProvider, DEFAULT_TIMEOUT_MS);
+    }
+
+    public QueryWebSocketClient(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider, long timeoutMs) {
         this(instanceProperties, tablePropertiesProvider,
-                () -> new WebSocketQueryClient(instanceProperties, tablePropertiesProvider));
+                clientSupplier(instanceProperties, tablePropertiesProvider, credentialsProvider), timeoutMs);
     }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            Supplier<Client> clientSupplier) {
+            Supplier<Client> clientSupplier, long timeoutMs) {
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
         this.clientSupplier = clientSupplier;
+        this.timeoutMs = timeoutMs;
     }
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
-        client = clientSupplier.get();
+        Client client = clientSupplier.get();
         try {
             Instant startTime = Instant.now();
             return client.startQueryFuture(query)
+                    .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((records, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
                         long recordsReturned = client.getTotalRecordsReturned();
                         LOGGER.info("Query took {} to return {} records", duration, recordsReturned);
+                        client.close();
                     });
-        } catch (Exception e) {
-            try {
-                client.closeBlocking();
-            } catch (InterruptedException e2) {
-                throw e2;
-            }
+        } catch (RuntimeException | InterruptedException e) {
+            client.close();
             throw e;
         }
     }
 
     public interface Client {
-        void closeBlocking() throws InterruptedException;
+        void close();
 
         CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
 
@@ -114,19 +124,31 @@ public class QueryWebSocketClient {
         List<String> getResults(String queryId);
     }
 
+    private static Supplier<Client> clientSupplier(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
+        String region = instanceProperties.get(REGION);
+        URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
+        QuerySerDe serDe = new QuerySerDe(tablePropertiesProvider);
+        return () -> {
+            WebSocketMessageHandler messageHandler = new WebSocketMessageHandler(serDe);
+            LOGGER.info("Obtaining AWS IAM credentials...");
+            AwsCredentials credentials = credentialsProvider.resolveCredentials();
+            return new WebSocketQueryClient(region, serverUri, credentials, messageHandler);
+        };
+    }
+
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
-        private final WebSocketMessageHandler messageHandler;
+        private final String region;
         private final URI serverUri;
+        private final AwsCredentials credentials;
+        private final WebSocketMessageHandler messageHandler;
         private Query query;
 
-        private WebSocketQueryClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-            this(URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL)),
-                    new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider)));
-        }
-
-        private WebSocketQueryClient(URI serverUri, WebSocketMessageHandler messageHandler) {
+        private WebSocketQueryClient(String region, URI serverUri, AwsCredentials credentials, WebSocketMessageHandler messageHandler) {
             super(serverUri);
+            this.region = region;
             this.serverUri = serverUri;
+            this.credentials = credentials;
             this.messageHandler = messageHandler;
             messageHandler.setCloser(this::closeBlocking);
         }
@@ -135,25 +157,29 @@ public class QueryWebSocketClient {
             CompletableFuture<List<String>> future = new CompletableFuture<>();
             messageHandler.setFuture(future);
             this.query = query;
-            initialiseConnection(serverUri);
+            initialiseConnection();
             return future;
         }
 
-        private void initialiseConnection(URI serverUri) throws InterruptedException {
-            setAwsIamAuthHeaders(serverUri);
-            LOGGER.info("Connecting to WebSocket API at " + serverUri);
+        private void initialiseConnection() throws InterruptedException {
+            setAwsIamAuthHeaders();
+            LOGGER.info("Connecting to WebSocket API at {}", serverUri);
             connectBlocking();
         }
 
-        private void setAwsIamAuthHeaders(URI serverUri) {
-            LOGGER.info("Obtaining AWS IAM creds...");
+        private void setAwsIamAuthHeaders() {
+            LOGGER.debug("Creating auth signature with server URI: {}", serverUri);
             AwsV4HttpSigner signer = AwsV4HttpSigner.create();
-            SignedRequest signed = signer.sign(request -> request
-                    .identity(DefaultCredentialsProvider.create().resolveCredentials())
+            SignedRequest signed = signer.sign(DefaultSignRequest.builder(credentials)
+                    .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "execute-api")
+                    .putProperty(AwsV4HttpSigner.REGION_NAME, region)
                     .request(SdkHttpRequest.builder()
                             .uri(serverUri)
+                            .protocol("https")
                             .method(SdkHttpMethod.GET)
-                            .build()));
+                            .build())
+                    .build());
+            LOGGER.debug("Setting auth headers...");
             signed.request().forEachHeader((header, values) -> {
                 for (String value : values) {
                     addHeader(header, value);

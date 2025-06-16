@@ -16,15 +16,9 @@
 
 package sleeper.systemtest.drivers.util;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -48,9 +42,8 @@ import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
+import sleeper.clients.api.role.AssumeSleeperRoleAwsSdk;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
-import sleeper.clients.api.role.AssumeSleeperRoleV1;
-import sleeper.clients.api.role.AssumeSleeperRoleV2;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -62,17 +55,14 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class SystemTestClients {
+    private final AwsCredentialsProvider credentialsProvider;
     private final AwsRegionProvider regionProvider;
-    private final AmazonS3 s3;
-    private final S3Client s3V2;
+    private final S3Client s3;
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
-    private final AmazonDynamoDB dynamoDB;
-    private final DynamoDbClient dynamoV2;
-    private final AWSSecurityTokenService sts;
-    private final StsClient stsV2;
-    private final AmazonSQS sqs;
-    private final SqsClient sqsV2;
+    private final DynamoDbClient dynamo;
+    private final StsClient sts;
+    private final SqsClient sqs;
     private final LambdaClient lambda;
     private final CloudFormationClient cloudFormation;
     private final EmrServerlessClient emrServerless;
@@ -89,17 +79,14 @@ public class SystemTestClients {
     private final boolean skipAssumeRole;
 
     private SystemTestClients(Builder builder) {
+        credentialsProvider = builder.credentialsProvider;
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
-        s3V2 = builder.s3V2;
         s3Async = builder.s3Async;
         s3TransferManager = builder.s3TransferManager;
-        dynamoDB = builder.dynamoDB;
-        dynamoV2 = builder.dynamoV2;
+        dynamo = builder.dynamo;
         sts = builder.sts;
-        stsV2 = builder.stsV2;
         sqs = builder.sqs;
-        sqsV2 = builder.sqsV2;
         lambda = builder.lambda;
         cloudFormation = builder.cloudFormation;
         emrServerless = builder.emrServerless;
@@ -122,16 +109,13 @@ public class SystemTestClients {
 
     public static SystemTestClients fromDefaults() {
         return builder()
+                .credentialsProvider(DefaultCredentialsProvider.builder().build())
                 .regionProvider(DefaultAwsRegionProviderChain.builder().build())
-                .s3(AmazonS3ClientBuilder.defaultClient())
-                .s3V2(S3Client.create())
+                .s3(S3Client.create())
                 .s3Async(S3AsyncClient.crtCreate())
-                .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
-                .dynamoV2(DynamoDbClient.create())
-                .sts(AWSSecurityTokenServiceClientBuilder.defaultClient())
-                .stsV2(StsClient.create())
-                .sqs(AmazonSQSClientBuilder.defaultClient())
-                .sqsV2(SqsClient.create())
+                .dynamo(DynamoDbClient.create())
+                .sts(StsClient.create())
+                .sqs(SqsClient.create())
                 .lambda(systemTestLambdaClientBuilder().build())
                 .cloudFormation(CloudFormationClient.create())
                 .emrServerless(EmrServerlessClient.create())
@@ -150,42 +134,42 @@ public class SystemTestClients {
         if (skipAssumeRole) {
             return this;
         }
-        AssumeSleeperRoleV1 v1 = assumeRole.forAwsV1(sts);
-        AssumeSleeperRoleV2 v2 = assumeRole.forAwsV2(stsV2);
+        AssumeSleeperRoleAwsSdk aws = assumeRole.forAwsSdk(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
+                .credentialsProvider(aws.credentialsProvider())
                 .regionProvider(regionProvider)
-                .s3(v1.buildClient(AmazonS3ClientBuilder.standard()))
-                .s3V2(v2.buildClient(S3Client.builder()))
-                .s3Async(v2.buildClient(S3AsyncClient.crtBuilder()))
-                .dynamoDB(v1.buildClient(AmazonDynamoDBClientBuilder.standard()))
-                .dynamoV2(v2.buildClient(DynamoDbClient.builder()))
-                .sts(v1.buildClient(AWSSecurityTokenServiceClientBuilder.standard()))
-                .stsV2(v2.buildClient(StsClient.builder()))
-                .sqs(v1.buildClient(AmazonSQSClientBuilder.standard()))
-                .sqsV2(v2.buildClient(SqsClient.builder()))
-                .lambda(v2.buildClient(systemTestLambdaClientBuilder()))
-                .cloudFormation(v2.buildClient(CloudFormationClient.builder()))
-                .emrServerless(v2.buildClient(EmrServerlessClient.builder()))
-                .emr(v2.buildClient(EmrClient.builder()))
-                .ecs(v2.buildClient(EcsClient.builder()))
-                .autoScaling(v2.buildClient(AutoScalingClient.builder()))
-                .ecr(v2.buildClient(EcrClient.builder()))
-                .ec2(v2.buildClient(Ec2Client.builder()))
-                .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
-                .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
-                .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
-                .getAuthEnvVars(v1::authEnvVars)
+                .s3(aws.buildClient(S3Client.builder()))
+                .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
+                .dynamo(aws.buildClient(DynamoDbClient.builder()))
+                .sts(aws.buildClient(StsClient.builder()))
+                .sqs(aws.buildClient(SqsClient.builder()))
+                .lambda(aws.buildClient(systemTestLambdaClientBuilder()))
+                .cloudFormation(aws.buildClient(CloudFormationClient.builder()))
+                .emrServerless(aws.buildClient(EmrServerlessClient.builder()))
+                .emr(aws.buildClient(EmrClient.builder()))
+                .ecs(aws.buildClient(EcsClient.builder()))
+                .autoScaling(aws.buildClient(AutoScalingClient.builder()))
+                .ecr(aws.buildClient(EcrClient.builder()))
+                .ec2(aws.buildClient(Ec2Client.builder()))
+                .cloudWatch(aws.buildClient(CloudWatchClient.builder()))
+                .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
+                .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
+                .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
     }
 
-    public AmazonS3 getS3() {
-        return s3;
+    public AwsCredentialsProvider getCredentialsProvider() {
+        return credentialsProvider;
     }
 
-    public S3Client getS3V2() {
-        return s3V2;
+    public AwsRegionProvider getRegionProvider() {
+        return regionProvider;
+    }
+
+    public S3Client getS3() {
+        return s3;
     }
 
     public S3AsyncClient getS3Async() {
@@ -196,32 +180,16 @@ public class SystemTestClients {
         return s3TransferManager;
     }
 
-    public AmazonDynamoDB getDynamoDB() {
-        return dynamoDB;
+    public DynamoDbClient getDynamo() {
+        return dynamo;
     }
 
-    public DynamoDbClient getDynamoV2() {
-        return dynamoV2;
-    }
-
-    public AWSSecurityTokenService getSts() {
+    public StsClient getSts() {
         return sts;
     }
 
-    public StsClient getStsV2() {
-        return stsV2;
-    }
-
-    public AwsRegionProvider getRegionProvider() {
-        return regionProvider;
-    }
-
-    public AmazonSQS getSqs() {
+    public SqsClient getSqs() {
         return sqs;
-    }
-
-    public SqsClient getSqsV2() {
-        return sqsV2;
     }
 
     public LambdaClient getLambda() {
@@ -290,17 +258,14 @@ public class SystemTestClients {
     }
 
     public static class Builder {
+        private AwsCredentialsProvider credentialsProvider;
         private AwsRegionProvider regionProvider;
-        private AmazonS3 s3;
-        private S3Client s3V2;
+        private S3Client s3;
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
-        private AmazonDynamoDB dynamoDB;
-        private DynamoDbClient dynamoV2;
-        private AWSSecurityTokenService sts;
-        private StsClient stsV2;
-        private AmazonSQS sqs;
-        private SqsClient sqsV2;
+        private DynamoDbClient dynamo;
+        private StsClient sts;
+        private SqsClient sqs;
         private LambdaClient lambda;
         private CloudFormationClient cloudFormation;
         private EmrServerlessClient emrServerless;
@@ -319,18 +284,18 @@ public class SystemTestClients {
         private Builder() {
         }
 
+        public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
+            this.credentialsProvider = credentialsProvider;
+            return this;
+        }
+
         public Builder regionProvider(AwsRegionProvider regionProvider) {
             this.regionProvider = regionProvider;
             return this;
         }
 
-        public Builder s3(AmazonS3 s3) {
+        public Builder s3(S3Client s3) {
             this.s3 = s3;
-            return this;
-        }
-
-        public Builder s3V2(S3Client s3V2) {
-            this.s3V2 = s3V2;
             return this;
         }
 
@@ -340,33 +305,18 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
+        public Builder dynamo(DynamoDbClient dynamo) {
+            this.dynamo = dynamo;
             return this;
         }
 
-        public Builder dynamoV2(DynamoDbClient dynamoV2) {
-            this.dynamoV2 = dynamoV2;
-            return this;
-        }
-
-        public Builder sts(AWSSecurityTokenService sts) {
+        public Builder sts(StsClient sts) {
             this.sts = sts;
             return this;
         }
 
-        public Builder stsV2(StsClient stsV2) {
-            this.stsV2 = stsV2;
-            return this;
-        }
-
-        public Builder sqs(AmazonSQS sqs) {
+        public Builder sqs(SqsClient sqs) {
             this.sqs = sqs;
-            return this;
-        }
-
-        public Builder sqsV2(SqsClient sqsV2) {
-            this.sqsV2 = sqsV2;
             return this;
         }
 

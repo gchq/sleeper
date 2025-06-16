@@ -15,23 +15,18 @@
  */
 package sleeper.bulkimport.runner;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.google.gson.JsonSyntaxException;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.core.util.VersionInfo;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.model.GetCallerIdentityRequest;
+import software.amazon.awssdk.services.sts.model.GetCallerIdentityResponse;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -53,7 +48,6 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -61,10 +55,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 
 /**
@@ -181,10 +176,19 @@ public class BulkImportJobDriver {
         String jobRunId = args[3];
         String bulkImportMode = args[4];
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        try {
+        LOGGER.info("Starting bulk import job driver");
+        LOGGER.info("Config bucket: {}", configBucket);
+        LOGGER.info("Job ID: {}", jobId);
+        LOGGER.info("Task ID: {}", taskId);
+        LOGGER.info("Job run ID: {}", jobRunId);
+        LOGGER.info("Bulk import mode: {}", bulkImportMode);
+        LOGGER.info("AWS SDK version, from VersionInfo: {}", VersionInfo.SDK_VERSION);
+        logCodeSource(VersionInfo.class);
+        logCodeSource(SdkSystemSetting.class);
+
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create();
+                SqsClient sqsClient = SqsClient.create()) {
             InstanceProperties instanceProperties;
             try {
                 instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
@@ -194,19 +198,11 @@ public class BulkImportJobDriver {
                 logPermissions();
                 throw e;
             }
-            Configuration configuration;
-            if (bulkImportMode.equals("EKS")) {
-                configuration = HadoopConfigurationProvider.getConfigurationForEKS(instanceProperties);
-            } else if (bulkImportMode.equals("EMR")) {
-                configuration = HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties);
-            } else {
-                throw new IllegalArgumentException("Unknown bulk import mode: " + bulkImportMode);
-            }
 
-            BulkImportJob bulkImportJob = loadJob(instanceProperties, jobId, jobRunId, s3Client);
+            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, configuration);
+            StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                     instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
@@ -214,29 +210,6 @@ public class BulkImportJobDriver {
                     runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                     tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
-            sqsClient.shutdown();
-        }
-    }
-
-    private static BulkImportJob loadJob(
-            InstanceProperties instanceProperties, String jobId, String jobRunId, AmazonS3 s3Client) {
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        if (null == bulkImportBucket) {
-            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
-        }
-        String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
-        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
-        String jsonJob = s3Client.getObjectAsString(bulkImportBucket, jsonJobKey);
-        try {
-            return new BulkImportJobSerDe().fromJson(jsonJob);
-        } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed");
-            throw e;
-        } finally {
-            s3Client.deleteObject(bulkImportBucket, jsonJobKey);
         }
     }
 
@@ -251,13 +224,21 @@ public class BulkImportJobDriver {
             LOGGER.info("Token Permissions: {}", readAttributes.permissions());
             LOGGER.info("Token owner: {}", readAttributes.owner());
         }
+
         // This could error if not logged in correctly
-        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        try {
-            GetCallerIdentityResult callerIdentity = sts.getCallerIdentity(new GetCallerIdentityRequest());
-            LOGGER.info("Logged in as: {}", callerIdentity.getArn());
-        } finally {
-            sts.shutdown();
+        try (StsClient sts = StsClient.create()) {
+            GetCallerIdentityResponse callerIdentity = sts.getCallerIdentity(GetCallerIdentityRequest.builder().build());
+            LOGGER.info("Logged in as: {}", callerIdentity.arn());
+        }
+    }
+
+    private static void logCodeSource(Class<?> clazz) {
+        ProtectionDomain domain = clazz.getProtectionDomain();
+        CodeSource codeSource = domain.getCodeSource();
+        if (codeSource != null) {
+            LOGGER.info("Code location for class {}: {}", clazz.getName(), codeSource.getLocation());
+        } else {
+            LOGGER.info("Code source is null for class {}", clazz.getName());
         }
     }
 }

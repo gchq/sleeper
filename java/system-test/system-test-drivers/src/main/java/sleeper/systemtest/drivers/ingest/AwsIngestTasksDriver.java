@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -29,17 +29,17 @@ import sleeper.systemtest.dsl.util.WaitForTasks;
 public class AwsIngestTasksDriver implements IngestTasksDriver {
 
     private final SystemTestInstanceContext instance;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final DynamoDbClient dynamoClient;
 
     public AwsIngestTasksDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.dynamoDBClient = clients.getDynamoDB();
+        this.dynamoClient = clients.getDynamo();
     }
 
     @Override
     public WaitForTasks waitForTasksForCurrentInstance() {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
-        IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
         return new WaitForTasks(jobTracker);
     }
 }

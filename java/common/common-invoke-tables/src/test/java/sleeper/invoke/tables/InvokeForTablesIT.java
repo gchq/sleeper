@@ -15,10 +15,9 @@
  */
 package sleeper.invoke.tables;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -117,12 +116,12 @@ public class InvokeForTablesIT extends LocalStackTestBase {
     }
 
     private List<String> receiveTableIdMessages(String queueUrl, int maxMessages) {
-        ReceiveMessageResult result = sqsClient.receiveMessage(
-                new ReceiveMessageRequest(queueUrl)
-                        .withMaxNumberOfMessages(maxMessages)
-                        .withWaitTimeSeconds(0));
-        return result.getMessages().stream()
-                .map(Message::getBody)
+        ReceiveMessageResponse result = sqsClient.receiveMessage(request -> request
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(maxMessages)
+                .waitTimeSeconds(0));
+        return result.messages().stream()
+                .map(Message::body)
                 .collect(toUnmodifiableList());
     }
 

@@ -15,13 +15,13 @@
  */
 package sleeper.query.runner.tracker;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.apigatewaymanagementapi.ApiGatewayManagementApiClient;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -34,20 +34,19 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
+import sleeper.query.runner.output.ApiGatewayWebSocketOutput;
 
 import java.io.IOException;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.absent;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 class WebSocketQueryStatusReportDestinationIT {
@@ -59,7 +58,7 @@ class WebSocketQueryStatusReportDestinationIT {
 
     @BeforeAll
     public static void setup(WireMockRuntimeInfo runtimeInfo) {
-        config = WebSocketQueryConfig.from(runtimeInfo);
+        config = new WebSocketQueryConfig(runtimeInfo);
     }
 
     @Test
@@ -123,16 +122,17 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().subQueriesCreated(query, subQueries);
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q1"))
-                        .and(matchingJsonPath("$.message", equalTo("subqueries")))
-                        .and(matchingJsonPath("$.error", absent()))
-                        .and(matchingJsonPath("$.recordCount", absent()))
-                        .and(matchingJsonPath("$.queryIds", equalToJson("[\"s1\",\"s2\",\"s3\"]")))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "message": "subqueries",
+                  "queryId": "q1",
+                  "queryIds": ["s1", "s2", "s3"]
+                }
+                """)));
     }
 
     @Test
-    void shouldSendQueryCompletedNotification() {
+    void shouldSendParentQueryCompletedNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -149,11 +149,70 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().queryCompleted(query, result);
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q1"))
-                        .and(matchingJsonPath("$.message", equalTo("completed")))
-                        .and(matchingJsonPath("$.error", absent()))
-                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "q1",
+                  "message" : "completed",
+                  "recordCount" : 1,
+                  "locations" : [
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file1.parquet"
+                    },
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file2.parquet"
+                    }
+                  ]
+                }
+                """)));
+    }
+
+    @Test
+    void shouldSendSubQueryCompletedNotification() {
+        // Given
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
+        Query query = Query.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
+        LeafPartitionQuery subQuery = LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .tableId("tableId")
+                .subQueryId("s1")
+                .regions(List.of(new Region(range)))
+                .leafPartitionId("leaf1")
+                .partitionRegion(new Region(partitionRange))
+                .files(List.of())
+                .build();
+        ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
+                new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
+                new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")));
+
+        // When
+        config.getListener().queryCompleted(subQuery, result);
+
+        // Then
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "s1",
+                  "message" : "completed",
+                  "recordCount" : 1,
+                  "locations" : [
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file1.parquet"
+                    },
+                    {
+                      "type" : "s3",
+                      "location" : "s3://bucket/file2.parquet"
+                    }
+                  ]
+                }
+                """)));
     }
 
     @Test
@@ -174,11 +233,24 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().queryCompleted(query, result);
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q2"))
-                        .and(matchingJsonPath("$.message", equalTo("error")))
-                        .and(matchingJsonPath("$.error", equalTo(result.getError().getClass().getSimpleName() + ": " + result.getError().getMessage())))
-                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "q2",
+                  "message" : "error",
+                  "error" : "IOException: error writing record #2",
+                  "recordCount" : 1,
+                  "locations" : [
+                    {
+                      "type" : "data",
+                      "location" : "s3://bucket/data/parquet"
+                    },
+                    {
+                      "type" : "sketches",
+                      "location" : "s3://bucket/sketches.parquet"
+                    }
+                  ]
+                }
+                """)));
     }
 
     @Test
@@ -196,11 +268,47 @@ class WebSocketQueryStatusReportDestinationIT {
         config.getListener().queryFailed(query, new IOException("fail"));
 
         // Then
-        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("q3"))
-                        .and(matchingJsonPath("$.message", equalTo("error")))
-                        .and(matchingJsonPath("$.error", equalTo("IOException: fail")))
-                        .and(matchingJsonPath("$.recordCount", absent()))));
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "q3",
+                  "message" : "error",
+                  "error" : "IOException: fail"
+                }
+                """)));
+    }
+
+    @Test
+    void shouldSendSubQueryFailureNotificationOnException() {
+        // Given
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
+        Query query = Query.builder()
+                .tableName("tableName")
+                .queryId("q1")
+                .regions(List.of(new Region(range)))
+                .build();
+        LeafPartitionQuery subQuery = LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .tableId("tableId")
+                .subQueryId("s1")
+                .regions(List.of(new Region(range)))
+                .leafPartitionId("leaf1")
+                .partitionRegion(new Region(partitionRange))
+                .files(List.of())
+                .build();
+
+        // When
+        config.getListener().queryFailed(subQuery, new IOException("fail"));
+
+        // Then
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
+                {
+                  "queryId" : "s1",
+                  "message" : "error",
+                  "error" : "IOException: fail"
+                }
+                """)));
     }
 
     private static class WebSocketQueryConfig {
@@ -208,16 +316,13 @@ class WebSocketQueryStatusReportDestinationIT {
         private final UrlPattern url;
         private final RangeFactory rangeFactory;
 
-        private WebSocketQueryConfig(String endpoint) {
-            String region = "eu-west-1";
+        WebSocketQueryConfig(WireMockRuntimeInfo runtimeInfo) {
             String connectionId = "connection1";
-            this.listener = new WebSocketQueryStatusReportDestination(region, endpoint, connectionId, new BasicAWSCredentials("accessKey", "secretKey"));
+            ApiGatewayManagementApiClient client = wiremockAwsV2Client(runtimeInfo, ApiGatewayManagementApiClient.builder());
+            ApiGatewayWebSocketOutput output = new ApiGatewayWebSocketOutput(client, connectionId);
+            this.listener = new WebSocketQueryStatusReportDestination(output);
             this.url = urlEqualTo("/@connections/" + connectionId);
             this.rangeFactory = new RangeFactory(SCHEMA);
-        }
-
-        public static WebSocketQueryConfig from(WireMockRuntimeInfo runtimeInfo) {
-            return new WebSocketQueryConfig(runtimeInfo.getHttpBaseUrl());
         }
 
         public WebSocketQueryStatusReportDestination getListener() {

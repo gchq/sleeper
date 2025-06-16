@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.tracker.task;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;

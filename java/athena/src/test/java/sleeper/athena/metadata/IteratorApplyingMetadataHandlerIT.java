@@ -40,7 +40,6 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
@@ -49,6 +48,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.statestore.StateStore;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.split.SplitPartition;
 import sleeper.statestore.StateStoreFactory;
 
@@ -69,7 +69,6 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.splitter.core.split.FindPartitionSplitPoint.loadSketchesFromFile;
 
 public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
@@ -81,11 +80,8 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(
-                s3Client, dynamoClient, instance.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
-                "spillBucket", "spillPrefix");
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
+        IteratorApplyingMetadataHandler sleeperMetadataHandler = handler(instance);
+        StateStore stateStore = stateStore(instance, table);
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
@@ -127,10 +123,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         InstanceProperties instance = createInstance();
 
         // When
-        IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
-                instance.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
-                "spillBucket", "spillPrefix");
+        IteratorApplyingMetadataHandler sleeperMetadataHandler = handler(instance);
 
         GetSplitsResponse getSplitsResponse;
         try (BlockAllocator blockAllocator = new BlockAllocatorImpl()) {
@@ -165,14 +158,11 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
-                instance.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
-                "spillBucket", "spillPrefix");
+        IteratorApplyingMetadataHandler sleeperMetadataHandler = handler(instance);
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
+        StateStore stateStore = stateStore(instance, table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -208,14 +198,11 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
-                instance.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
-                "spillBucket", "spillPrefix");
+        IteratorApplyingMetadataHandler sleeperMetadataHandler = handler(instance);
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
+        StateStore stateStore = stateStore(instance, table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -264,14 +251,11 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
-                instance.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
-                "spillBucket", "spillPrefix");
+        IteratorApplyingMetadataHandler sleeperMetadataHandler = handler(instance);
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
+        StateStore stateStore = stateStore(instance, table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -314,9 +298,20 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         assertThat(dayReader.readObject()).isEqualTo(Integer.MIN_VALUE);
     }
 
+    private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {
+        return new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
+                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
+                "spillBucket", "spillPrefix");
+    }
+
+    private StateStore stateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
+    }
+
     private SplitPartition splitPartition(StateStore stateStore, TableProperties tableProperties) {
         return new SplitPartition(stateStore, tableProperties,
-                loadSketchesFromFile(tableProperties, new Configuration()),
+                new LocalFileSystemSketchesStore(),
                 () -> UUID.randomUUID().toString(), null);
     }
 

@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -53,15 +52,13 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSystemTestDeploymentDriver.class);
 
     private final SystemTestParameters parameters;
-    private final AmazonS3 s3;
-    private final S3Client s3v2;
+    private final S3Client s3;
     private final EcrClient ecr;
     private final CloudFormationClient cloudFormation;
 
     public AwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
-        this.s3v2 = clients.getS3V2();
         this.ecr = clients.getEcr();
         this.cloudFormation = clients.getCloudFormation();
     }
@@ -108,7 +105,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
-        SyncJars.builder().s3(s3v2)
+        SyncJars.builder().s3(s3)
                 .jarsDirectory(parameters.getJarsDirectory())
                 .bucketName(parameters.buildJarsBucketName())
                 .region(parameters.getRegion())

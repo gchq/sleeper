@@ -43,6 +43,8 @@ public class IngestRandomDataViaQueue {
         String jsonJob = new IngestJobSerDe().toJson(ingestJob);
         String queueUrl = job.getIngestQueue().getJobQueueUrl(session.instanceProperties());
         LOGGER.debug("Sending message to ingest queue {}: {}", queueUrl, jsonJob);
-        session.sqs().sendMessage(queueUrl, jsonJob);
+        session.sqs().sendMessage(send -> send
+                .queueUrl(queueUrl)
+                .messageBody(jsonJob));
     }
 }

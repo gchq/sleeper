@@ -38,9 +38,12 @@
             <artifactId>aws-lambda-java-events</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sqs</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
@@ -56,11 +59,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-batcher-store</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>parquet</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

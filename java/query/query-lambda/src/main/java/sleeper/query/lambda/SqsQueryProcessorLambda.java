@@ -15,18 +15,16 @@
  */
 package sleeper.query.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -35,12 +33,16 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.statestore.StateStoreFactory;
 
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.concurrent.Executors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
@@ -54,18 +56,20 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
 
     private Instant lastUpdateTime;
     private InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final SqsClient sqsClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
     private QueryMessageHandler messageHandler;
     private SqsQueryProcessor processor;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
-        this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        this(S3Client.create(), SqsClient.create(),
+                DynamoDbClient.create(),
+                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SqsQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, AmazonDynamoDB dynamoClient, String configBucket) throws ObjectFactoryException {
+    public SqsQueryProcessorLambda(S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient,
+            String configBucket) throws ObjectFactoryException {
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
@@ -108,8 +112,12 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
-                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
+                .sqsClient(sqsClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                .executorService(Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS)))
+                .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory())
+                .queryListener(new DynamoDBQueryTracker(instanceProperties, dynamoClient))
                 .build();
         lastUpdateTime = Instant.now();
     }

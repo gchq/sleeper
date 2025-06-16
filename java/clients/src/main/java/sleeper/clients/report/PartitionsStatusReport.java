@@ -16,17 +16,15 @@
 package sleeper.clients.report;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.clients.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.splitterv2.core.status.PartitionsStatus;
+import sleeper.splitter.core.status.PartitionsStatus;
 
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * A utility class to report information about the partitions in the system and
@@ -59,10 +57,8 @@ public class PartitionsStatusReport {
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
-                S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            arguments.runReport(s3Client, s3TransferManager, dynamoClient, System.out);
+            arguments.runReport(s3Client, dynamoClient, System.out);
         }
     }
 }

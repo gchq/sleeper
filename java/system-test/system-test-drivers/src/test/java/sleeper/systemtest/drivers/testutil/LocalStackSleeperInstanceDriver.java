@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import sleeper.clients.deploy.localstack.DeployDockerInstance;
+import sleeper.clients.util.BucketUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
@@ -63,7 +64,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
 
     @Override
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        if (clients.getS3().doesBucketExistV2(InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
+        if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
@@ -73,16 +74,15 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         instanceProperties.set(VERSION, SleeperVersion.getVersion());
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()
-                .s3Client(clients.getS3V2())
-                .s3TransferManager(clients.getS3TransferManager())
-                .dynamoClient(clients.getDynamoV2())
-                .sqsClient(clients.getSqsV2())
+                .s3Client(clients.getS3())
+                .dynamoClient(clients.getDynamo())
+                .sqsClient(clients.getSqs())
                 .build().deploy(instanceProperties, deployConfig.getTableProperties());
         return true;
     }
 
     private CreateQueueResponse createStateStoreCommitterQueue(String instanceId) {
-        return clients.getSqsV2().createQueue(request -> request
+        return clients.getSqs().createQueue(request -> request
                 .queueName(String.join("-", "sleeper", instanceId, "StateStoreCommitterQ.fifo"))
                 .attributes(Map.of(
                         QueueAttributeName.FIFO_QUEUE, "true",

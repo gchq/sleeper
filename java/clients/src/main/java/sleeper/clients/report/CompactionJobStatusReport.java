@@ -25,9 +25,9 @@ import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.trackerv2.job.CompactionJobTrackerFactory;
-import sleeper.configurationv2.properties.S3InstanceProperties;
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -38,7 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configurationv2.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";

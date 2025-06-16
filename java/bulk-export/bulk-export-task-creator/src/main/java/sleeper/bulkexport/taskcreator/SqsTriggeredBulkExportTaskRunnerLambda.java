@@ -17,17 +17,15 @@ package sleeper.bulkexport.taskcreator;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.task.common.QueueMessageCount;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -44,8 +42,8 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
 
     public SqsTriggeredBulkExportTaskRunnerLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        SqsClient sqsClient = SqsClient.create();
+        S3Client s3Client = S3Client.create();
         EcsClient ecsClient = EcsClient.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         runLeafPartitionBulkExportTasks = new RunLeafPartitionBulkExportTasks(instanceProperties, ecsClient);

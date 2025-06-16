@@ -16,14 +16,12 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.retry.PredefinedRetryPolicies;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -49,7 +47,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.localstack.test.WiremockAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
 @WireMockTest
 public class DynamoDBIngestBatcherStoreWiremockIT {
@@ -115,15 +114,15 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
 
     private IngestBatcherStore store(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
-                buildAwsV1Client(runtimeInfo, AmazonDynamoDBClientBuilder.standard()),
+                wiremockAwsV2Client(runtimeInfo, DynamoDbClient.builder()),
                 instanceProperties, tablePropertiesProvider);
     }
 
     private IngestBatcherStore storeWithNoRetry(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
-                buildAwsV1Client(runtimeInfo, AmazonDynamoDBClientBuilder.standard()
-                        .withClientConfiguration(new ClientConfiguration()
-                                .withRetryPolicy(PredefinedRetryPolicies.NO_RETRY_POLICY))),
+                // Passing a 1 into this method means do 1 attempt overall, not 1 attempt and 1 retry.
+                // So in effect this method is not re-trying if the initial attempt fails.
+                wiremockAwsV2ClientWithRetryAttempts(1, runtimeInfo, DynamoDbClient.builder()),
                 instanceProperties, tablePropertiesProvider);
     }
 

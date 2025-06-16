@@ -27,7 +27,7 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.configurationv2.table.index.DynamoDBTableIndex;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.cdk.util.Utils.removalPolicy;

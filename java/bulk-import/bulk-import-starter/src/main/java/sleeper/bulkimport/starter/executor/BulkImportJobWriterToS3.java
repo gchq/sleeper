@@ -15,9 +15,11 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
@@ -29,9 +31,9 @@ public class BulkImportJobWriterToS3 implements BulkImportExecutor.WriteJobToBuc
     public static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobWriterToS3.class);
 
     protected final InstanceProperties instanceProperties;
-    protected final AmazonS3 s3Client;
+    protected final S3Client s3Client;
 
-    public BulkImportJobWriterToS3(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+    public BulkImportJobWriterToS3(InstanceProperties instanceProperties, S3Client s3Client) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
     }
@@ -44,7 +46,11 @@ public class BulkImportJobWriterToS3 implements BulkImportExecutor.WriteJobToBuc
         }
         String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunID + ".json";
         String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
-        s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
+        s3Client.putObject(PutObjectRequest.builder()
+                .bucket(bulkImportBucket)
+                .key(key)
+                .build(),
+                RequestBody.fromString(bulkImportJobJSON));
         LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
     }
 }

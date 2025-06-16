@@ -65,7 +65,7 @@ public class CleanUpDeletedSleeperInstances {
     }
 
     private Stream<String> instanceIdsByJarsBuckets() {
-        return instanceIdsByJarsBuckets(clients.getS3v2().listBuckets().buckets().stream().map(Bucket::name));
+        return instanceIdsByJarsBuckets(clients.getS3().listBuckets().buckets().stream().map(Bucket::name));
     }
 
     private Stream<String> instanceIdsByEcrRepositories() {

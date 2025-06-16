@@ -16,8 +16,7 @@
 
 package sleeper.systemtest.drivers.nightly;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -31,11 +30,8 @@ public class RecordNightlyTestOutput {
         String bucketName = args[0];
         NightlyTestTimestamp timestamp = NightlyTestTimestamp.from(args[1]);
         Path output = Path.of(args[2]);
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        try {
+        try (S3Client s3Client = S3Client.create()) {
             NightlyTestOutput.from(output).uploadToS3(s3Client, bucketName, timestamp);
-        } finally {
-            s3Client.shutdown();
         }
     }
 }

@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-trackerV2</artifactId>
+            <artifactId>compaction-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-jobv2</artifactId>
+            <artifactId>common-job</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -64,17 +64,17 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>statestorev2</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
@@ -99,7 +99,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

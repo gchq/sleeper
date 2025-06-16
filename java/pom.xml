@@ -31,9 +31,7 @@
         <module>statestore</module>
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
-        <module>statestorev2</module>
         <module>configuration</module>
-        <module>configurationV2</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
@@ -41,7 +39,6 @@
         <module>partitions</module>
         <module>cdk</module>
         <module>sketches</module>
-        <module>sketchesv2</module>
         <module>athena</module>
         <module>common</module>
         <module>bulk-import</module>
@@ -68,11 +65,11 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.5.1</spark.version>
-        <hadoop.version>3.3.6</hadoop.version>
+        <spark.version>3.5.5</spark.version>
+        <hadoop.version>3.4.1</hadoop.version>
         <parquet.version>1.15.2</parquet.version>
-        <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
-        <!-- The version of Arrow should match the version used by Spark -->
+        <joom.spark.platform.version>0.4.10</joom.spark.platform.version>
+        <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
         <arrow.version>12.0.1</arrow.version>
         <!--
         Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as it is
@@ -80,18 +77,18 @@
         -->
         <datasketches.version>3.3.0</datasketches.version>
         <!--
-        Hadoop AWS uses an old version of wildfly-openssl.
-        Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
+        Hadoop uses an old version of wildfly-openssl in hadoop-aws.
+        We upgraded to the latest version from wildfly-openssl 1.1.3.Final.
         -->
         <wildfly-openssl.version>2.2.5.Final</wildfly-openssl.version>
         <wildfly-common.version>2.0.1</wildfly-common.version>
         <!--
-        Hadoop client uses an old version of woodstox-core.
-        Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
+        Hadoop uses an old version of Woodstox in hadoop-common.
+        We upgraded to the latest version from woodstox-core 5.4.0.
         -->
         <woodstox.version>7.1.1</woodstox.version>
-        <stax2.version>4.2.2</stax2.version>
-        <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
+        <woodstox.stax2.version>4.2.2</woodstox.stax2.version>
+        <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.1. -->
         <ivy.version>2.5.3</ivy.version>
         <!--
         Snappy is used by both hadoop-client and parquet-hadoop.
@@ -100,42 +97,55 @@
         <snappy.version>1.1.10.7</snappy.version>
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
-        <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
+        <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.31.1</protobuf.version>
-        <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
+        <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
-        <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
+        <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.0</avro.version>
-        <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
+        <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
         <kerby.version>2.1.0</kerby.version>
-        <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
-        <xnio.version>3.8.16.Final</xnio.version>
-        <jboss-logging.version>3.6.1.Final</jboss-logging.version>
-        <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
+        <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
         <dnsjava.version>3.6.3</dnsjava.version>
-        <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. Managed from 1.9. -->
+        <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.10</xz.version>
-        <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
+        <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
         <okhttp3.version>4.12.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
-        Managed from a conflict between 1.6.20 and 1.5.31.
+        Managed from a conflict.
         -->
         <kotlin.version>2.1.21</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
-        Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
+        Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.12.0</okio.version>
+        <okio.version>3.13.0</okio.version>
+        <!--
+        Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
+        ahead of the Spark version to address detected vulnerabilities.
+        -->
+        <roaringbitmap.version>1.3.0</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk.version>1.12.783</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.54</aws-java-sdk-v2.version>
-        <aws-crt.version>0.38.4</aws-crt.version>
+        <aws-java-sdk.version>1.12.787</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.31.63</aws-java-sdk-v2.version>
+        <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
+        <!-- At the time of writing it's not compatible with the latest version. -->
+        <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
+        <!-- BulkImportJobDriver.start tries to create an SqsClient: -->
+        <!-- java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE -->
+        <!-- at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75) -->
+        <!-- The old version of the library is coming from this file in the EMR Serverless Docker image: -->
+        <!-- /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar -->
+        <!-- To find the version below, we logged out the code location for the class in the Spark driver, then -->
+        <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class. -->
+        <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
+        <aws-crt.version>0.38.5</aws-crt.version>
         <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>1.20.2</aws-lambda-powertools.version>
+        <aws-lambda-powertools.version>2.0.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.18.0</commons-codec.version>
@@ -145,7 +155,7 @@
         <commons-text.version>1.13.1</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
-        <commons-fileupload.version>1.5</commons-fileupload.version>
+        <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <commons-logging.version>1.3.5</commons-logging.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <httpcore4.version>4.4.16</httpcore4.version>
@@ -160,14 +170,14 @@
         <guice.version>5.1.0</guice.version>
         <jol.version>0.2</jol.version>
         <zookeeper.version>3.9.3</zookeeper.version>
-        <jackson.version>2.19.0</jackson.version>
+        <jackson.version>2.19.1</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.38.0</google.errorprone.version>
-        <cdk.version>2.199.0</cdk.version>
+        <cdk.version>2.201.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.112.0</jsii.version>
@@ -175,7 +185,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
-        <bouncycastle.version>1.80</bouncycastle.version>
+        <bouncycastle.version>1.81</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino requires an old version of JGraphT -->
@@ -186,7 +196,9 @@
         <jersey.version>2.45</jersey.version>
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.1.Final</netty.version>
+        <netty.version>4.2.2.Final</netty.version>
+        <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
+        <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>9.4.57.v20241219</jetty.version>
@@ -200,8 +212,8 @@
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.13.0</junit.version>
-        <junit.platform.version>1.13.0</junit.platform.version>
+        <junit.version>5.13.1</junit.version>
+        <junit.platform.version>1.13.1</junit.platform.version>
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.1</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
@@ -239,7 +251,7 @@
         <findbugs.version>3.0.2</findbugs.version>
         <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <dependency-check.plugin.version>12.1.1</dependency-check.plugin.version>
+        <dependency-check.plugin.version>12.1.3</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.5.1</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
@@ -331,6 +343,11 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>jmespath-java</artifactId>
                 <version>${aws-java-sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>auth</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
@@ -477,6 +494,10 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-all</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -485,8 +506,8 @@
                 <version>${hadoop.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>com.amazonaws</groupId>
-                        <artifactId>aws-java-sdk-bundle</artifactId>
+                        <groupId>software.amazon.awssdk</groupId>
+                        <artifactId>bundle</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -583,6 +604,16 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http2</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
             </dependency>
@@ -649,6 +680,11 @@
                 <artifactId>netty-transport-native-kqueue</artifactId>
                 <version>${netty.version}</version>
                 <classifier>osx-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative-boringssl-static</artifactId>
+                <version>${netty-tcnative.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -818,7 +854,7 @@
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>stax2-api</artifactId>
-                <version>${stax2.version}</version>
+                <version>${woodstox.stax2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ivy</groupId>
@@ -871,14 +907,19 @@
                 <version>${kerby.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.xnio</groupId>
-                <artifactId>xnio-api</artifactId>
-                <version>${xnio.version}</version>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerb-crypto</artifactId>
+                <version>${kerby.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss-logging.version}</version>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerby-pkix</artifactId>
+                <version>${kerby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerby-util</artifactId>
+                <version>${kerby.version}</version>
             </dependency>
             <dependency>
                 <groupId>dnsjava</groupId>
@@ -924,6 +965,11 @@
                 <groupId>com.squareup.okio</groupId>
                 <artifactId>okio-jvm</artifactId>
                 <version>${okio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>${roaringbitmap.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -1216,6 +1262,16 @@
                 <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
             <!-- Test Dependencies -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -1452,7 +1508,7 @@
                 <version>${enforcer.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>enforce-banned-dependencies</id>
+                        <id>enforcer-checks</id>
                         <phase>install</phase>
                         <goals>
                             <goal>enforce</goal>
@@ -1472,6 +1528,7 @@
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
                         <dependencyConvergence/>
+                        <banDuplicatePomDependencyVersions/>
                     </rules>
                 </configuration>
             </plugin>
@@ -1523,6 +1580,16 @@
                                     -->
                                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 </transformers>
+                                <filters>
+                                    <filter>
+                                        <artifact>*:*</artifact>
+                                        <excludes>
+                                            <exclude>META-INF/*.SF</exclude>
+                                            <exclude>META-INF/*.DSA</exclude>
+                                            <exclude>META-INF/*.RSA</exclude>
+                                        </excludes>
+                                    </filter>
+                                </filters>
                             </configuration>
                         </execution>
                     </executions>

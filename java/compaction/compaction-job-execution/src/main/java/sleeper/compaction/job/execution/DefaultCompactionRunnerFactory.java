@@ -26,7 +26,7 @@ import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
-import sleeper.sketchesv2.store.SketchesStore;
+import sleeper.sketches.store.SketchesStore;
 
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 

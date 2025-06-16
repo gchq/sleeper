@@ -44,7 +44,7 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = clients.getEcs();
-        this.sqsClient = clients.getSqsV2();
+        this.sqsClient = clients.getSqs();
     }
 
     @Override

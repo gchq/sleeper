@@ -34,10 +34,10 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
         uploadJarsToBucket(bucketName);
 
         // When
-        RemoveJarsBucket.remove(s3ClientV2, bucketName);
+        RemoveJarsBucket.remove(s3Client, bucketName);
 
         // Then
-        assertThat(doesBucketExist(s3ClientV2, bucketName)).isFalse();
+        assertThat(doesBucketExist(s3Client, bucketName)).isFalse();
     }
 
     @Test
@@ -47,10 +47,10 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
         uploadJarsToBucket(bucketName);
 
         // When
-        RemoveJarsBucket.remove(s3ClientV2, bucketName);
+        RemoveJarsBucket.remove(s3Client, bucketName);
 
         // Then
-        assertThat(doesBucketExist(s3ClientV2, bucketName)).isFalse();
+        assertThat(doesBucketExist(s3Client, bucketName)).isFalse();
     }
 
     @Test
@@ -63,10 +63,10 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
         uploadJarsToBucket(bucketName);
 
         // When
-        RemoveJarsBucket.remove(s3ClientV2, bucketName);
+        RemoveJarsBucket.remove(s3Client, bucketName);
 
         // Then
-        assertThat(doesBucketExist(s3ClientV2, bucketName)).isFalse();
+        assertThat(doesBucketExist(s3Client, bucketName)).isFalse();
     }
 
     @Test
@@ -77,18 +77,18 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
         Thread.sleep(1000);
         Files.writeString(tempDir.resolve("test.jar"), "data2");
         uploadJarsToBucket(bucketName);
-        s3ClientV2.deleteObject(builder -> builder.bucket(bucketName).key("test.jar"));
+        s3Client.deleteObject(builder -> builder.bucket(bucketName).key("test.jar"));
 
         // When
-        RemoveJarsBucket.remove(s3ClientV2, bucketName);
+        RemoveJarsBucket.remove(s3Client, bucketName);
 
         // Then
-        assertThat(doesBucketExist(s3ClientV2, bucketName)).isFalse();
+        assertThat(doesBucketExist(s3Client, bucketName)).isFalse();
     }
 
     @Test
     void shouldIgnoreIfBucketDoesNotExist() {
-        assertThatCode(() -> RemoveJarsBucket.remove(s3ClientV2, "not-a-bucket"))
+        assertThatCode(() -> RemoveJarsBucket.remove(s3Client, "not-a-bucket"))
                 .doesNotThrowAnyException();
     }
 }

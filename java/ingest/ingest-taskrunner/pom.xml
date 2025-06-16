@@ -50,12 +50,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configurationV2</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-taskv2</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

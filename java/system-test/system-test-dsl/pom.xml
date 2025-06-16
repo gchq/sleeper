@@ -69,11 +69,6 @@
             <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>splitterv2</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
         <!-- Test Dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -102,8 +97,9 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketchesv2</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
