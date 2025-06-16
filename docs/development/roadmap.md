@@ -29,7 +29,6 @@ The following improvements will be worked on in future (these are in no particul
     - https://github.com/gchq/sleeper/issues/4215 Optional long running service for queries.
     - https://github.com/gchq/sleeper/issues/4218 Batch up updates to job trackers from state store commits.
     - https://github.com/gchq/sleeper/issues/4214 Mitigate memory limitations with multiple Sleeper tables.
-    - https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
 - Usability improvements.
     - https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
     - https://github.com/gchq/sleeper/issues/1786 REST API.
