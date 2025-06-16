@@ -43,7 +43,7 @@ env_logger = { version = "0.11.8" } # Standard logging to stderr
 futures = { version = "0.3.31" } # Async processing
 git2 = { version = "0.20.2" } # Interact with version control
 human-panic = { version = "2.0.2" } # Readable panic messages
-libc = { version = "0.2.172" } # FFI type support
+libc = { version = "0.2.173" } # FFI type support
 log = { version = "0.4.27" } # Standard logging framework
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 object_store = { version = "0.11.2" } # Remote cloud storage access
