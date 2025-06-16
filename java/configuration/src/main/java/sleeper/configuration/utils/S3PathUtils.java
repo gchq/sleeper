@@ -15,12 +15,14 @@
  */
 package sleeper.configuration.utils;
 
+import org.apache.commons.lang3.exception.UncheckedException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,13 +47,21 @@ public class S3PathUtils {
         if ((files == null) || files.isEmpty()) {
             return Stream.empty();
         }
-        List<String> outList = new ArrayList<String>();
-        files.stream().forEach(file -> {
-            outList.addAll(listFilesAsS3FileDetails(file)
-                    .stream().map(S3FileDetails::filename)
-                    .collect(Collectors.toList()));
-        });
-        return outList.stream();
+        try {
+            List<String> outList = new ArrayList<String>();
+            files.stream().forEach(file -> {
+                try {
+                    outList.addAll(listFilesAsS3FileDetails(file)
+                            .stream().map(S3FileDetails::filename)
+                            .collect(Collectors.toList()));
+                } catch (FileNotFoundException e) {
+                    throw new UncheckedException(e);
+                }
+            });
+            return outList.stream();
+        } catch (UncheckedException e) {
+            return Stream.empty();
+        }
     }
 
     /**
@@ -64,11 +74,19 @@ public class S3PathUtils {
         if ((files == null) || files.isEmpty()) {
             return Stream.empty();
         }
-        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-        files.stream().forEach(file -> {
-            outList.addAll(listFilesAsS3FileDetails(file));
-        });
-        return outList.stream();
+        try {
+            List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+            files.stream().forEach(file -> {
+                try {
+                    outList.addAll(listFilesAsS3FileDetails(file));
+                } catch (FileNotFoundException e) {
+                    throw new UncheckedException(e);
+                }
+            });
+            return outList.stream();
+        } catch (UncheckedException e) {
+            return Stream.empty();
+        }
     }
 
     /**
@@ -77,7 +95,7 @@ public class S3PathUtils {
      * @param  filename name of file
      * @return          containing all files details
      */
-    private List<S3FileDetails> listFilesAsS3FileDetails(String filename) {
+    public List<S3FileDetails> listFilesAsS3FileDetails(String filename) throws FileNotFoundException {
         String bucket = filename.substring(0, filename.indexOf("/"));
         String objectKey = filename.substring(filename.indexOf("/") + 1);
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
@@ -92,6 +110,9 @@ public class S3PathUtils {
                     outList.add(new S3FileDetails(bucket + "/" + s3Object.key(), s3Object));
                 }
             });
+        }
+        if (outList.isEmpty()) {
+            throw new FileNotFoundException();
         }
 
         return outList;

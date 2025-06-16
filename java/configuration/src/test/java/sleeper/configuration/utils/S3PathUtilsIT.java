@@ -25,11 +25,13 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class S3PathUtilsIT extends LocalStackTestBase {
 
@@ -163,6 +165,12 @@ class S3PathUtilsIT extends LocalStackTestBase {
             assertThat(fileDetails)
                     .extracting(file -> file.fileObject().size())
                     .containsExactlyInAnyOrder(30L, 100L);
+        }
+
+        @Test
+        void shouldFailWhenFileNotFoundAtSpecifiedPath() {
+            assertThatThrownBy(() -> s3PathUtils.listFilesAsS3FileDetails(bucket + "/not-a-file.parquet"))
+                    .isInstanceOf(FileNotFoundException.class);
         }
     }
 
