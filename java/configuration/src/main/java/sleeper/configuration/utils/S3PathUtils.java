@@ -35,19 +35,27 @@ public class S3PathUtils {
     }
 
     /**
-     * Streams filenames back from bucket for list of paths provided.
+     * Streams filenames back from S3 for list of paths provided.
      *
      * @param  files list of file paths to expand
-     * @return       list of full filenames of all paths detailed
+     * @return       list of filenames found at paths
      */
     public List<String> streamFilenames(List<String> files) {
         List<String> outList = new ArrayList<String>();
         files.stream().forEach(file -> {
-            outList.addAll(streamFilenamesFromPath(file));
+            outList.addAll(streamFilesAsS3Objects(file)
+                    .stream().map(S3Object::key)
+                    .collect(Collectors.toList()));
         });
         return outList;
     }
 
+    /**
+     * Streams S3Objects for files from S3 for list of paths provided.
+     *
+     * @param  files list of file paths to expand
+     * @return       list of files as S3Object found at given paths
+     */
     public List<S3Object> streamFilesAsS3Objects(List<String> files) {
         List<S3Object> outList = new ArrayList<S3Object>();
         files.stream().forEach(file -> {
@@ -57,24 +65,12 @@ public class S3PathUtils {
     }
 
     /**
-     * Streams filenames back from bucket for singular path provided.
-     *
-     * @param  filename words
-     * @return          list of full filenames at path
-     */
-    public List<String> streamFilenamesFromPath(String filename) {
-        return streamFilesAsS3Objects(filename)
-                .stream().map(S3Object::key)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Streams file details back from bucket for singular path provided.
+     * Streams S3Object details of file for singular path provided.
      *
      * @param  filename name of file
-     * @return          details of files contained at paths
+     * @return          s3Object containing all files details
      */
-    public List<S3Object> streamFilesAsS3Objects(String filename) {
+    private List<S3Object> streamFilesAsS3Objects(String filename) {
         String bucket = filename.substring(0, filename.indexOf("/"));
         String objectKey = filename.substring(filename.indexOf("/") + 1);
         List<S3Object> outList = new ArrayList<S3Object>();
@@ -92,49 +88,5 @@ public class S3PathUtils {
         }
 
         return outList;
-    }
-
-    /**
-     * Streams file details back from bucket for singular path provided.
-     *
-     * @param  filename words
-     * @return          details of files contained at paths
-     */
-    public List<S3FileDetails> streamFileDetails(String filename) {
-        String bucket = filename.substring(0, filename.indexOf("/"));
-        String objectKey = filename.substring(filename.indexOf("/") + 1);
-        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-        ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
-                .bucket(bucket)
-                .prefix(objectKey)
-                .build());
-
-        for (ListObjectsV2Response subResponse : response) {
-            subResponse.contents().forEach((S3Object s3Object) -> {
-                outList.add(generateS3FileDetails(bucket, s3Object));
-            });
-        }
-
-        return outList;
-    }
-
-    /**
-     * Builds record object of key file details retrieved from S3.
-     *
-     * @param  bucket bucket with file stored
-     * @param  object object return from s3
-     * @return        record of key details
-     */
-    private S3FileDetails generateS3FileDetails(String bucket, S3Object object) {
-        return new S3FileDetails(bucket + "/" + object.key(), object.size());
-    }
-
-    /**
-     * Record class for import file information.
-     *
-     * @param filename      name of file
-     * @param fileSizeBytes size of file
-     */
-    public record S3FileDetails(String filename, long fileSizeBytes) {
     }
 }
