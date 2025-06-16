@@ -83,7 +83,7 @@ public class S3PathUtils {
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
                 if (!s3Object.key().contains(".crc")) {
-                    outList.add(s3Object);
+                    outList.add(s3Object.toBuilder().key(bucket + "/" + s3Object.key()).build());
                 }
             });
         }

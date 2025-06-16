@@ -130,7 +130,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
     }
 
     private String generateFilePath(String folder, String filename) {
-        return folder + filename;
+        return bucket + "/" + folder + filename;
     }
 
 }
