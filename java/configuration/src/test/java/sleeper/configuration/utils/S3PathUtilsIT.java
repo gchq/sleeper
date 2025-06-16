@@ -105,6 +105,15 @@ class S3PathUtilsIT extends LocalStackTestBase {
             assertThat(s3PathUtils.streamFilenames(List.of())).isEmpty();
         }
 
+        @Test
+        void shouldReturnEmptyListForFilesNotFound() {
+            // Given
+            List<String> files = List.of((bucket + "/not-file-1.parquet"),
+                    (bucket + "/not-file-2.parquet"));
+
+            // When /Then
+            assertThat(s3PathUtils.streamFilenames(files)).isEmpty();
+        }
     }
 
     private String createTestFileWithContents(String filename, String contents) {
