@@ -57,7 +57,7 @@ Build:
 - Removed use of Hadoop in most modules
 
 System tests:
-- When draining an SQS queue for assertions, added retries if a queue is empty to capture full contents of queue
+- When draining an SQS queue for assertions, added retries if no messages are found, to capture full contents of queue
 - Support for future test parallelisation
   - Multiple tests can run different data generation tasks in ECS at the same time
   - Multiple tests can wait on deployment of data generation ECS cluster at the same time
