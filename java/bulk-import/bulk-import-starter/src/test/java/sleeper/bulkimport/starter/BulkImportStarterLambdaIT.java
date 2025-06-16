@@ -72,7 +72,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> new S3PathUtils(s3Client).streamFilenames(files));
+                .expandDirectories(files -> new S3PathUtils(s3Client).streamFilenames(files).toList());
     }
 
     @Nested

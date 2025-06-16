@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Class for retrieve paths for S3. */
 public class S3PathUtils {
@@ -38,39 +39,39 @@ public class S3PathUtils {
      * Streams filenames back from S3 for list of paths provided.
      *
      * @param  files list of file paths to expand
-     * @return       list of filenames found at paths
+     * @return       stream of filenames found at paths
      */
-    public List<String> streamFilenames(List<String> files) {
+    public Stream<String> streamFilenames(List<String> files) {
         List<String> outList = new ArrayList<String>();
         files.stream().forEach(file -> {
-            outList.addAll(streamFilesAsS3Objects(file)
+            outList.addAll(listFilesAsS3Objects(file)
                     .stream().map(S3Object::key)
                     .collect(Collectors.toList()));
         });
-        return outList;
+        return outList.stream();
     }
 
     /**
      * Streams S3Objects for files from S3 for list of paths provided.
      *
      * @param  files list of file paths to expand
-     * @return       list of files as S3Object found at given paths
+     * @return       stream of files as S3Objects found at given paths
      */
-    public List<S3Object> streamFilesAsS3Objects(List<String> files) {
+    public Stream<S3Object> streamFilesAsS3Objects(List<String> files) {
         List<S3Object> outList = new ArrayList<S3Object>();
         files.stream().forEach(file -> {
-            outList.addAll(streamFilesAsS3Objects(file));
+            outList.addAll(listFilesAsS3Objects(file));
         });
-        return outList;
+        return outList.stream();
     }
 
     /**
-     * Streams S3Object details of file for singular path provided.
+     * Lists the S3Object details of file for singular path provided.
      *
      * @param  filename name of file
      * @return          s3Object containing all files details
      */
-    private List<S3Object> streamFilesAsS3Objects(String filename) {
+    private List<S3Object> listFilesAsS3Objects(String filename) {
         String bucket = filename.substring(0, filename.indexOf("/"));
         String objectKey = filename.substring(filename.indexOf("/") + 1);
         List<S3Object> outList = new ArrayList<S3Object>();

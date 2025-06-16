@@ -27,6 +27,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,7 +53,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
                     createTestFile(folder + "/file-2.parquet"));
 
             // When
-            List<String> paths = s3PathUtils.streamFilenames(files);
+            Stream<String> paths = s3PathUtils.streamFilenames(files);
 
             // Then
             assertThat(paths)
@@ -70,7 +71,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
                             "more details for a bigger number of size"));
 
             // When
-            List<S3Object> fileDetails = s3PathUtils.streamFilesAsS3Objects(files);
+            Stream<S3Object> fileDetails = s3PathUtils.streamFilesAsS3Objects(files);
 
             // Then
             assertThat(fileDetails)

@@ -73,7 +73,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> new S3PathUtils(s3).streamFilenames(files))
+                .expandDirectories(files -> new S3PathUtils(s3).streamFilenames(files).toList())
                 .build();
     }
 
