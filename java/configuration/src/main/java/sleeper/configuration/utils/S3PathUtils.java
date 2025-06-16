@@ -40,10 +40,18 @@ public class S3PathUtils {
      * @param  files list of file paths to expand
      * @return       list of full filenames of all paths detailed
      */
-    public List<String> streamFileKeyByPath(List<String> files) {
-        List<String> outList = new ArrayList<>();
+    public List<String> streamFilenames(List<String> files) {
+        List<String> outList = new ArrayList<String>();
         files.stream().forEach(file -> {
-            outList.addAll(streamFileKeyByPath(file));
+            outList.addAll(streamFilenamesFromPath(file));
+        });
+        return outList;
+    }
+
+    public List<S3Object> streamFilesAsS3Objects(List<String> files) {
+        List<S3Object> outList = new ArrayList<S3Object>();
+        files.stream().forEach(file -> {
+            outList.addAll(streamFilesAsS3Objects(file));
         });
         return outList;
     }
@@ -54,31 +62,32 @@ public class S3PathUtils {
      * @param  filename words
      * @return          list of full filenames at path
      */
-    public List<String> streamFileKeyByPath(String filename) {
-        String bucket = filename.substring(0, filename.indexOf("/"));
-        String objectKey = filename.substring(filename.indexOf("/") + 1);
-        return streamFileDetails(bucket, objectKey)
-                .stream().map(S3FileDetails::filename)
+    public List<String> streamFilenamesFromPath(String filename) {
+        return streamFilesAsS3Objects(filename)
+                .stream().map(S3Object::key)
                 .collect(Collectors.toList());
     }
 
     /**
      * Streams file details back from bucket for singular path provided.
      *
-     * @param  bucket s3 bucket to retrieve from
-     * @param  path   path of file to expand
-     * @return        details of files contained at paths
+     * @param  filename name of file
+     * @return          details of files contained at paths
      */
-    public List<S3FileDetails> streamFileDetails(String bucket, String path) {
-        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+    public List<S3Object> streamFilesAsS3Objects(String filename) {
+        String bucket = filename.substring(0, filename.indexOf("/"));
+        String objectKey = filename.substring(filename.indexOf("/") + 1);
+        List<S3Object> outList = new ArrayList<S3Object>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(bucket)
-                .prefix(path)
+                .prefix(objectKey)
                 .build());
 
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
-                outList.add(generateS3FileDetails(bucket, s3Object));
+                if (!s3Object.key().contains(".crc")) {
+                    outList.add(s3Object);
+                }
             });
         }
 

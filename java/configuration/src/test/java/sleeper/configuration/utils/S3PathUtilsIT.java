@@ -16,12 +16,13 @@
 package sleeper.configuration.utils;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class S3PathUtilsIT extends LocalStackTestBase {
 
@@ -41,57 +41,59 @@ class S3PathUtilsIT extends LocalStackTestBase {
         createBucket(bucket);
     }
 
-    @Test
-    void shouldGetPathsForFilesInOneDir() throws Exception {
-        // Given
-        String folder = "test-folder";
-        List<String> files = new ArrayList<String>();
+    @Nested
+    @DisplayName("Find files by their paths")
+    class FindFiles {
 
-        files.add(createTestFile(folder + "/file-1.parquet"));
-        files.add(createTestFile(folder + "/file-2.parquet"));
+        @Test
+        void shouldGetPathsForFilesInOneDir() throws Exception {
+            // Given
+            String folder = "test-folder";
+            List<String> files = new ArrayList<String>();
 
-        // When
-        List<String> paths = s3PathUtils.streamFileKeyByPath(files);
+            files.add(createTestFile(folder + "/file-1.parquet"));
+            files.add(createTestFile(folder + "/file-2.parquet"));
 
-        // Then
-        assertThat(paths)
-                .containsExactlyInAnyOrder(generateFilePath(folder, "/file-1.parquet"),
-                        generateFilePath(folder, "/file-2.parquet"));
+            // When
+            List<String> paths = s3PathUtils.streamFilenames(files);
+
+            // Then
+            assertThat(paths)
+                    .containsExactlyInAnyOrder(generateFilePath(folder, "/file-1.parquet"),
+                            generateFilePath(folder, "/file-2.parquet"));
+        }
+
+        @Test
+        void shouldReadFileSizes() throws Exception {
+            // Given
+            String folder = "size-test-folder";
+            List<String> files = new ArrayList<String>();
+
+            files.add(createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents"));
+            files.add(createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
+                    "more details for a bigger number of size"));
+
+            // When
+            List<S3Object> fileDetails = s3PathUtils.streamFilesAsS3Objects(files);
+
+            // Then
+            assertThat(fileDetails)
+                    .extracting(fileSize -> fileSize.size())
+                    .containsExactlyInAnyOrder(34L, 81L);
+        }
     }
 
-    @Test
-    void shouldReadFileSizes() throws Exception {
-        // Given
-        String folder = "size-test-folder";
-        List<String> files = new ArrayList<String>();
+    @Nested
+    @DisplayName("Find no files when none are present")
+    class FindNoFiles {
+        @Test
+        void shouldReturnEmptyListIfNoFiles() throws Exception {
+            // Given / When
+            List<String> emptyDetails = s3PathUtils.streamFilenames(List.of());
 
-        createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents");
-        createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
-                "more details for a bigger number of size");
-
-        // When
-        List<S3FileDetails> fileDetails = s3PathUtils.streamFileKeyByPath(files);
-
-        // Then
-        assertThat(fileDetails)
-                .extracting(fileSize -> fileSize.fileSizeBytes())
-                .containsExactlyInAnyOrder(34L, 81L);
-    }
-
-    @Test
-    void shouldReturnEmptyListIfNoFiles() throws Exception {
-        // Given / When
-        List<S3FileDetails> emptyDetails = s3PathUtils.streamFileDetails(bucket, "");
-
-        // Then
-        assertThat(emptyDetails).isEmpty();
-    }
-
-    @Test
-    void shouldExceptionBucketIncorrect() {
-        // When / Then
-        assertThatThrownBy(() -> s3PathUtils.streamFileDetails(UUID.randomUUID().toString(), "test"))
-                .isInstanceOf(NoSuchBucketException.class);
+            // Then
+            assertThat(emptyDetails).isEmpty();
+        }
     }
 
     private String createTestFileWithContents(String filename, String contents) {
