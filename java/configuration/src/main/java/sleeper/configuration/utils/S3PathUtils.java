@@ -42,6 +42,9 @@ public class S3PathUtils {
      * @return       stream of filenames found at paths
      */
     public Stream<String> streamFilenames(List<String> files) {
+        if ((files == null) || files.isEmpty()) {
+            return Stream.empty();
+        }
         List<String> outList = new ArrayList<String>();
         files.stream().forEach(file -> {
             outList.addAll(listFilesAsS3FileDetails(file)
@@ -58,6 +61,9 @@ public class S3PathUtils {
      * @return       stream of files found at given paths
      */
     public Stream<S3FileDetails> streamFilesAsS3FileDetails(List<String> files) {
+        if ((files == null) || files.isEmpty()) {
+            return Stream.empty();
+        }
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
         files.stream().forEach(file -> {
             outList.addAll(listFilesAsS3FileDetails(file));
