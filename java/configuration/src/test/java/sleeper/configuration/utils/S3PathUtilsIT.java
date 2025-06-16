@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.localstack.test.LocalStackTestBase;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,10 +48,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldGetPathsForFilesInOneDir() throws Exception {
             // Given
             String folder = "test-folder";
-            List<String> files = new ArrayList<String>();
-
-            files.add(createTestFile(folder + "/file-1.parquet"));
-            files.add(createTestFile(folder + "/file-2.parquet"));
+            List<String> files = List.of(createTestFile(folder + "/file-1.parquet"),
+                    createTestFile(folder + "/file-2.parquet"));
 
             // When
             List<String> paths = s3PathUtils.streamFilenames(files);
@@ -67,11 +64,10 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldReadFileSizes() throws Exception {
             // Given
             String folder = "size-test-folder";
-            List<String> files = new ArrayList<String>();
-
-            files.add(createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents"));
-            files.add(createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
-                    "more details for a bigger number of size"));
+            List<String> files = List.of(
+                    createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents"),
+                    createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
+                            "more details for a bigger number of size"));
 
             // When
             List<S3Object> fileDetails = s3PathUtils.streamFilesAsS3Objects(files);
