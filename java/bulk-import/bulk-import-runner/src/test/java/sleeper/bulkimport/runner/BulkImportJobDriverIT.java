@@ -307,7 +307,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             relevantFiles.stream()
                     .map(af -> {
                         try {
-                            return new ParquetRecordReader(new Path(af.getFilename()), schema);
+                            return new ParquetRecordReader(af.getFilename(), schema);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }

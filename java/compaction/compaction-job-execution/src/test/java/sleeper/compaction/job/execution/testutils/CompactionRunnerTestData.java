@@ -168,7 +168,7 @@ public class CompactionRunnerTestData {
 
     public static List<Record> readDataFile(Schema schema, String filename) throws IOException {
         List<Record> results = new ArrayList<>();
-        try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(filename), schema))) {
+        try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(filename, schema))) {
             while (reader.hasNext()) {
                 results.add(new Record(reader.next()));
             }
