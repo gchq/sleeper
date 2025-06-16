@@ -14,6 +14,7 @@ The following are likely to be worked on in the near future:
 
 - https://github.com/gchq/sleeper/issues/5083 Queries in Rust with DataFusion.
 - https://github.com/gchq/sleeper/issues/4393 Batch up partition splitting commits.
+- https://github.com/gchq/sleeper/issues/5091 Optional long running state store committer.
 - https://github.com/gchq/sleeper/issues/3693 Improvements to declarative deployment with infrastructure as code.
 - https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 
