@@ -37,7 +37,11 @@ public class ParquetRecordReader extends ParquetReader<Record> {
         private final Schema schema;
 
         public Builder(String path, Schema schema) {
-            super(new Path(path));
+            this(new Path(path), schema);
+        }
+
+        public Builder(Path path, Schema schema) {
+            super(path);
             this.schema = schema;
             useColumnIndexFilter(false);
         }
