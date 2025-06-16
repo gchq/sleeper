@@ -30,7 +30,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class S3PathUtilsTest extends LocalStackTestBase {
+class S3PathUtilsIT extends LocalStackTestBase {
 
     private S3PathUtils s3PathUtils = new S3PathUtils(s3Client);
     private String bucket = UUID.randomUUID().toString();
