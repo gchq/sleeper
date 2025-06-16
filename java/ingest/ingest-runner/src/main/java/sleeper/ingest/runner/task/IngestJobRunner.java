@@ -124,7 +124,6 @@ public class IngestJobRunner implements IngestJobHandler {
         // Create list of all files to be read
 
         List<String> paths = s3PathUtils.streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), job.getFiles());
-        //List<Path> paths = HadoopPathUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 
