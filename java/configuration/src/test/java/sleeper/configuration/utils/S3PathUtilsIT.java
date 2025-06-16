@@ -85,11 +85,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
     class FindNoFiles {
         @Test
         void shouldReturnEmptyListIfNoFiles() throws Exception {
-            // Given / When
-            List<String> emptyDetails = s3PathUtils.streamFilenames(List.of());
-
-            // Then
-            assertThat(emptyDetails).isEmpty();
+            assertThat(s3PathUtils.streamFilenames(List.of())).isEmpty();
         }
     }
 
