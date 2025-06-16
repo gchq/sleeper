@@ -52,7 +52,6 @@ Upgrades:
 - Upgraded Hadoop to 3.4.1
 
 Build:
-- Rust code now compiles C/C++ dependencies with Clang
 - Enforced dependency version convergence in Maven build
 - Enforced no duplicate Maven dependencies in the same pom
 - Removed use of Hadoop in most modules
