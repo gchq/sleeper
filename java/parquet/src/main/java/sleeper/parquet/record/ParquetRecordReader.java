@@ -33,6 +33,10 @@ public class ParquetRecordReader extends ParquetReader<Record> {
         super(new Path(file), new RecordReadSupport(schema));
     }
 
+    public ParquetRecordReader(Path path, Schema schema) throws IOException {
+        super(path, new RecordReadSupport(schema));
+    }
+
     public static class Builder extends ParquetReader.Builder<Record> {
         private final Schema schema;
 

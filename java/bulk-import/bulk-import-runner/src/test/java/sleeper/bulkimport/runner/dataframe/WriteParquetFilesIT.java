@@ -16,6 +16,7 @@
 package sleeper.bulkimport.runner.dataframe;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -155,7 +156,7 @@ class WriteParquetFilesIT {
     }
 
     private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(filename, schema)) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> records = new ArrayList<>();
             for (Record record = reader.read(); record != null; record = reader.read()) {
                 records.add(new Record(record));

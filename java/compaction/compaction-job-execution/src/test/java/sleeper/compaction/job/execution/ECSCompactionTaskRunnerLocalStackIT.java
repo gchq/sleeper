@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.execution;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -553,7 +554,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(filename, schema)) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> records = new ArrayList<>();
             for (Record record = reader.read(); record != null; record = reader.read()) {
                 records.add(new Record(record));

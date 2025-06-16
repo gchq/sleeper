@@ -32,6 +32,7 @@ import com.amazonaws.services.athena.AmazonAthena;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
+import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
@@ -261,7 +262,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 1_000_000L));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(file, SCHEMA));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }

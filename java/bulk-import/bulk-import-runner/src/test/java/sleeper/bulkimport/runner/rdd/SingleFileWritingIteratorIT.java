@@ -17,6 +17,7 @@ package sleeper.bulkimport.runner.rdd;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -233,7 +234,7 @@ class SingleFileWritingIteratorIT {
     }
 
     private List<Record> readRecords(String path) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(path, schema)) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), schema)) {
             List<Record> records = new ArrayList<>();
             Record record = reader.read();
             while (null != record) {

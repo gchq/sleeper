@@ -80,7 +80,7 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Record> records = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(path,
+            ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path),
                     instance.getTableProperties().getSchema());
 
             Record record = reader.read();
