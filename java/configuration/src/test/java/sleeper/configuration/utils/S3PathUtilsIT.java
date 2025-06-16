@@ -49,8 +49,10 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldGetPathsForFilesInOneDir() throws Exception {
             // Given
             String folder = "test-folder";
-            List<String> files = List.of(createTestFile(folder + "/file-1.parquet"),
-                    createTestFile(folder + "/file-2.parquet"));
+            createTestFile(folder + "/file-1.parquet");
+            createTestFile(folder + "/file-2.parquet");
+
+            List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
             Stream<String> paths = s3PathUtils.streamFilenames(files);
@@ -65,9 +67,11 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldIgnoreCrcFiles() {
             // Given
             String folder = "test-folder";
-            List<String> files = List.of(createTestFile(folder + "/file-1.parquet"),
-                    createTestFile(folder + "/file-2.crc"),
-                    createTestFile(folder + "/file-3.parquet"));
+            createTestFile(folder + "/file-1.parquet");
+            createTestFile(folder + "/file-2.crc");
+            createTestFile(folder + "/file-3.parquet");
+
+            List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
             Stream<String> paths = s3PathUtils.streamFilenames(files);
@@ -82,10 +86,11 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldReadFileSizes() throws Exception {
             // Given
             String folder = "size-test-folder";
-            List<String> files = List.of(
-                    createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents"),
-                    createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
-                            "more details for a bigger number of size"));
+
+            createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents");
+            createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
+                    "more details for a bigger number of size");
+            List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
             Stream<S3FileDetails> fileDetails = s3PathUtils.streamFilesAsS3FileDetails(files);
@@ -94,6 +99,30 @@ class S3PathUtilsIT extends LocalStackTestBase {
             assertThat(fileDetails)
                     .extracting(file -> file.fileObject().size())
                     .containsExactlyInAnyOrder(34L, 81L);
+        }
+    }
+
+    @Nested
+    @DisplayName("Find files by paths of directories")
+    class FollowDirectories {
+
+        @Test
+        void shouldGetPathsForFilesInMultipleDirectories() {
+            // Given
+            String folder1 = "test-folder-1";
+            String folder2 = "test-folder-2";
+            createTestFile(folder1 + "/file-1.parquet");
+            createTestFile(folder2 + "/file-2.parquet");
+            List<String> files = List.of(appendBucketNamePrefix(folder1),
+                    appendBucketNamePrefix(folder2));
+
+            // When
+            Stream<String> paths = s3PathUtils.streamFilenames(files);
+
+            // Then
+            assertThat(paths)
+                    .containsExactlyInAnyOrder(generateFilePath(folder1, "/file-1.parquet"),
+                            generateFilePath(folder2, "/file-2.parquet"));
         }
     }
 
@@ -116,21 +145,24 @@ class S3PathUtilsIT extends LocalStackTestBase {
         }
     }
 
-    private String createTestFileWithContents(String filename, String contents) {
+    private void createTestFileWithContents(String filename, String contents) {
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(filename)
                 .build(),
                 RequestBody.fromString(contents));
-        return bucket + "/" + filename;
     }
 
-    private String createTestFile(String filename) {
-        return createTestFileWithContents(filename, "dummy-test-data");
+    private String appendBucketNamePrefix(String file) {
+        return bucket + "/" + file;
+    }
+
+    private void createTestFile(String filename) {
+        createTestFileWithContents(filename, "dummy-test-data");
     }
 
     private String generateFilePath(String folder, String filename) {
-        return bucket + "/" + folder + filename;
+        return appendBucketNamePrefix(folder + filename);
     }
 
 }

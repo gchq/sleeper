@@ -82,13 +82,21 @@ public class S3PathUtils {
 
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
-                if (!s3Object.key().contains(".crc")) {
-                    outList.add(new S3FileDetails(filename, s3Object));
+                if (isValidFile(s3Object.key())) {
+                    outList.add(new S3FileDetails(bucket + "/" + s3Object.key(), s3Object));
                 }
             });
         }
 
         return outList;
+    }
+
+    private boolean isValidFile(String key) {
+        if (!key.contains(".crc")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public record S3FileDetails(String filename, S3Object fileObject) {
