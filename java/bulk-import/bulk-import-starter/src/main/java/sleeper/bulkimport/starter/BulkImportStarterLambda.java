@@ -18,7 +18,6 @@ package sleeper.bulkimport.starter;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -40,7 +39,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
@@ -67,7 +65,6 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
-        Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         IngestJobTracker ingestJobTracker = IngestJobTrackerFactory.getTracker(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamo),
