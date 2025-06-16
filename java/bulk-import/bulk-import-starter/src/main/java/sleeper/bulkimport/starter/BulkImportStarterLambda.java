@@ -33,6 +33,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configuration.utils.S3PathUtils;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -40,12 +41,12 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
-import sleeper.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 /**
  * Consumes bulk import jobs from SQS and starts them in the execution platform. An environment variable configures
@@ -60,6 +61,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     public BulkImportStarterLambda() {
         S3Client s3 = S3Client.create();
+
         DynamoDbClient dynamo = DynamoDbClient.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
@@ -75,7 +77,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConfig, instanceProperties))
+                .expandDirectories(files -> new S3PathUtils(s3).streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), files))
                 .build();
     }
 
