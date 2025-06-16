@@ -37,14 +37,13 @@ public class S3PathUtils {
     /**
      * Streams filenames back from bucket for list of paths provided.
      *
-     * @param  bucket s3 bucket to retrieve from
-     * @param  files  list of file paths to expand
-     * @return        list of full filenames of all paths detailed
+     * @param  files list of file paths to expand
+     * @return       list of full filenames of all paths detailed
      */
-    public List<String> streamFileKeyByPath(String bucket, List<String> files) {
+    public List<String> streamFileKeyByPath(List<String> files) {
         List<String> outList = new ArrayList<>();
         files.stream().forEach(file -> {
-            outList.addAll(streamFileKeyByPath(bucket, file));
+            outList.addAll(streamFileKeyByPath(file));
         });
         return outList;
     }
@@ -52,12 +51,13 @@ public class S3PathUtils {
     /**
      * Streams filenames back from bucket for singular path provided.
      *
-     * @param  bucket s3 bucket to retrieve from
-     * @param  path   path of file to expand
-     * @return        list of full filenames at path
+     * @param  filename words
+     * @return          list of full filenames at path
      */
-    public List<String> streamFileKeyByPath(String bucket, String path) {
-        return streamFileDetails(bucket, path)
+    public List<String> streamFileKeyByPath(String filename) {
+        String bucket = filename.substring(0, filename.indexOf("/"));
+        String objectKey = filename.substring(filename.indexOf("/") + 1);
+        return streamFileDetails(bucket, objectKey)
                 .stream().map(S3FileDetails::filename)
                 .collect(Collectors.toList());
     }
@@ -74,6 +74,30 @@ public class S3PathUtils {
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(bucket)
                 .prefix(path)
+                .build());
+
+        for (ListObjectsV2Response subResponse : response) {
+            subResponse.contents().forEach((S3Object s3Object) -> {
+                outList.add(generateS3FileDetails(bucket, s3Object));
+            });
+        }
+
+        return outList;
+    }
+
+    /**
+     * Streams file details back from bucket for singular path provided.
+     *
+     * @param  filename words
+     * @return          details of files contained at paths
+     */
+    public List<S3FileDetails> streamFileDetails(String filename) {
+        String bucket = filename.substring(0, filename.indexOf("/"));
+        String objectKey = filename.substring(filename.indexOf("/") + 1);
+        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+        ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
+                .bucket(bucket)
+                .prefix(objectKey)
                 .build());
 
         for (ListObjectsV2Response subResponse : response) {

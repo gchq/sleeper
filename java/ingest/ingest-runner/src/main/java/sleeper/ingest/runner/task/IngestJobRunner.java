@@ -57,7 +57,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -123,7 +122,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Create list of all files to be read
 
-        List<String> paths = s3PathUtils.streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), job.getFiles());
+        List<String> paths = s3PathUtils.streamFileKeyByPath(job.getFiles());
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 

@@ -45,7 +45,6 @@ import sleeper.ingest.core.job.IngestJobMessageHandler;
 import java.util.List;
 import java.util.Optional;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
@@ -88,7 +87,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> s3PathUtils.streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), files));
+                .expandDirectories(files -> s3PathUtils.streamFileKeyByPath(files));
     }
 
     @Override

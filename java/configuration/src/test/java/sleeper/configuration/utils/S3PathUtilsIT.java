@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,16 +45,16 @@ class S3PathUtilsIT extends LocalStackTestBase {
     void shouldGetPathsForFilesInOneDir() throws Exception {
         // Given
         String folder = "test-folder";
+        List<String> files = new ArrayList<String>();
 
-        createTestFile(folder + "/file-1.parquet");
-        createTestFile(folder + "/file-2.parquet");
+        files.add(createTestFile(folder + "/file-1.parquet"));
+        files.add(createTestFile(folder + "/file-2.parquet"));
 
         // When
-        List<S3FileDetails> paths = s3PathUtils.streamFileDetails(bucket, folder);
+        List<String> paths = s3PathUtils.streamFileKeyByPath(files);
 
         // Then
         assertThat(paths)
-                .extracting(path -> path.filename())
                 .containsExactlyInAnyOrder(generateFilePath(folder, "/file-1.parquet"),
                         generateFilePath(folder, "/file-2.parquet"));
     }
@@ -62,13 +63,14 @@ class S3PathUtilsIT extends LocalStackTestBase {
     void shouldReadFileSizes() throws Exception {
         // Given
         String folder = "size-test-folder";
+        List<String> files = new ArrayList<String>();
 
         createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents");
         createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
                 "more details for a bigger number of size");
 
         // When
-        List<S3FileDetails> fileDetails = s3PathUtils.streamFileDetails(bucket, folder);
+        List<S3FileDetails> fileDetails = s3PathUtils.streamFileKeyByPath(files);
 
         // Then
         assertThat(fileDetails)
@@ -92,16 +94,17 @@ class S3PathUtilsIT extends LocalStackTestBase {
                 .isInstanceOf(NoSuchBucketException.class);
     }
 
-    private void createTestFileWithContents(String filename, String contents) {
+    private String createTestFileWithContents(String filename, String contents) {
         s3Client.putObject(PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(filename)
                 .build(),
                 RequestBody.fromString(contents));
+        return bucket + "/" + filename;
     }
 
-    private void createTestFile(String filename) {
-        createTestFileWithContents(filename, "dummy-test-data");
+    private String createTestFile(String filename) {
+        return createTestFileWithContents(filename, "dummy-test-data");
     }
 
     private String generateFilePath(String folder, String filename) {

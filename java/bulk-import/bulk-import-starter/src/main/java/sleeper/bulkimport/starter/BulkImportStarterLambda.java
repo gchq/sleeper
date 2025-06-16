@@ -44,7 +44,6 @@ import sleeper.statestore.StateStoreFactory;
 import java.time.Instant;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 /**
  * Consumes bulk import jobs from SQS and starts them in the execution platform. An environment variable configures
@@ -74,7 +73,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> new S3PathUtils(s3).streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), files))
+                .expandDirectories(files -> new S3PathUtils(s3).streamFileKeyByPath(files))
                 .build();
     }
 
