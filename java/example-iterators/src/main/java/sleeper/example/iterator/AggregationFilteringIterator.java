@@ -27,9 +27,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BinaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,7 +51,7 @@ import java.util.stream.Collectors;
  * Only one filter will be specifiable at a time on a table (this is a minimum
  * reasonable effort!).
  * <ul>
- * <li>Age off filter format is `ageoff='column','time_period'. If the elapsed
+ * <li>Age off filter format is `ageoff='column','time_period'`. If the elapsed
  * time from the integer value in the given
  * column to "now" is lower than the time_period value, the row is retained.
  * Values in seconds.</li>
@@ -63,21 +65,151 @@ import java.util.stream.Collectors;
  * We may decide to expand the list of allowable operations. Additional
  * aggregation filters should be comma separated.
  */
-public class AggregatingIterator implements SortedRecordIterator {
+public class AggregationFilteringIterator implements SortedRecordIterator {
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 
+    /** Combined configuration for the optional filtering and aggregation behaviour. */
     private FilterAggregationConfig config;
+    /** Table schema being filtered. */
     private Schema schema;
 
-    /** Aggregation functions this iterator can perform. */
-    public static enum AggregationOp {
-        SUM,
-        MIN,
-        MAX,
-        MAP_SUM,
-        MAP_MIN,
-        MAP_MAX,
+    /** Aggregation functions that can be performed on values. */
+    public static enum AggregationOp implements BinaryOperator<Object> {
+        SUM {
+            @Override
+            public int op(int lhs, int rhs) {
+                return lhs + rhs;
+            }
+
+            @Override
+            public long op(long lhs, long rhs) {
+                return lhs + rhs;
+            }
+
+            @Override
+            public String op(String lhs, String rhs) {
+                return lhs + rhs;
+            }
+
+            @Override
+            public byte[] op(byte[] lhs, byte[] rhs) {
+                byte[] concatenated = Arrays.copyOf(lhs, lhs.length + rhs.length);
+                System.arraycopy(rhs, 0, concatenated, lhs.length, rhs.length);
+                return concatenated;
+            }
+
+            @Override
+            public Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs) {
+                throw new UnsupportedOperationException("Unimplemented aggregation");
+            }
+
+        },
+        MIN {
+            @Override
+            public int op(int lhs, int rhs) {
+                return Math.min(lhs, rhs);
+            }
+
+            @Override
+            public long op(long lhs, long rhs) {
+                return Math.min(lhs, rhs);
+            }
+
+            @Override
+            public String op(String lhs, String rhs) {
+                if (lhs.compareTo(rhs) <= 0) {
+                    return lhs;
+                } else {
+                    return rhs;
+                }
+            }
+
+            @Override
+            public byte[] op(byte[] lhs, byte[] rhs) {
+                if (Arrays.compareUnsigned(lhs, rhs) <= 0) {
+                    return lhs;
+                } else {
+                    return rhs;
+                }
+            }
+
+            @Override
+            public Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Unimplemented method 'op'");
+            }
+        },
+        MAX {
+            @Override
+            public int op(int lhs, int rhs) {
+                return Math.max(lhs, rhs);
+            }
+
+            @Override
+            public long op(long lhs, long rhs) {
+                return Math.max(lhs, rhs);
+            }
+
+            @Override
+            public String op(String lhs, String rhs) {
+                if (lhs.compareTo(rhs) > 0) {
+                    return lhs;
+                } else {
+                    return rhs;
+                }
+            }
+
+            @Override
+            public byte[] op(byte[] lhs, byte[] rhs) {
+                if (Arrays.compareUnsigned(lhs, rhs) > 0) {
+                    return lhs;
+                } else {
+                    return rhs;
+                }
+            }
+
+            @Override
+            public Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Unimplemented method 'op'");
+            }
+        };
+
+        public abstract int op(int lhs, int rhs);
+
+        public abstract long op(long lhs, long rhs);
+
+        public abstract String op(String lhs, String rhs);
+
+        public abstract byte[] op(byte[] lhs, byte[] rhs);
+
+        public abstract Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs);
+
+        /**
+         * Aggregates the {@code rhs} on to the {@code lhs} object.
+         *
+         * @return the aggregated value
+         */
+        @Override
+        public Object apply(Object lhs, Object rhs) {
+            if (lhs.getClass() != rhs.getClass()) {
+                throw new IllegalArgumentException("lhs type: " + lhs.getClass() + " rhs type: " + rhs.getClass());
+            }
+            if (lhs instanceof Integer) {
+                return op((Integer) lhs, (Integer) rhs);
+            } else if (lhs instanceof Long) {
+                return op((Long) lhs, (Long) rhs);
+            } else if (lhs instanceof String) {
+                return op((String) lhs, (String) rhs);
+            } else if (lhs instanceof byte[]) {
+                return op((byte[]) lhs, (byte[]) rhs);
+            } else if (lhs instanceof Map) {
+                return op((Map<?, Object>) lhs, (Map<?, Object>) rhs);
+            } else {
+                throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
+            }
+        }
     }
 
     /** Defines an aggregation operation with the column name to perform on it. */
@@ -99,18 +231,38 @@ public class AggregatingIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> arg0) {
+    public CloseableIterator<Record> apply(CloseableIterator<Record> source) {
         if (config == null) {
             throw new IllegalStateException("AggregatingIterator has not been initialised, call init()");
         }
-        // First, see if we need to age-off data
-        CloseableIterator<Record> input = config.ageOffColumn().map(filter_col -> {
-            AgeOffIterator ageoff = new AgeOffIterator();
-            ageoff.init(String.format("%s,%d", filter_col, config.maxAge() * 1000), schema);
-            return ageoff.apply(arg0);
-        }).orElse(arg0);
+        // See if we need to age-off data
+        CloseableIterator<Record> input = maybeCreateFilter(source);
 
-        return input;
+        // Do any aggregations need to be performed?
+        if (!config.aggregations().isEmpty()) {
+            return new AggregatorIteratorImpl(config, input);
+        } else {
+            return input;
+        }
+    }
+
+    /**
+     * Configures an age off filter on the source iterator if needed.
+     *
+     * If this aggregating iterator has been configured to provide age off filtering,
+     * then an {@link AgeOffIterator} is appended to the input iterator to provide
+     * age-off functionality.
+     *
+     * @param  source the input iterator
+     * @return        the source iterator or a new filtering iterator
+     */
+    private CloseableIterator<Record> maybeCreateFilter(CloseableIterator<Record> source) {
+        return config.ageOffColumn().map(filter_col -> {
+            AgeOffIterator ageoff = new AgeOffIterator();
+            // Age off iterator operates in milliseconds, so convert seconds value
+            ageoff.init(String.format("%s,%d", filter_col, config.maxAge() * 1000), schema);
+            return ageoff.apply(source);
+        }).orElse(source);
     }
 
     /**
@@ -128,6 +280,19 @@ public class AggregatingIterator implements SortedRecordIterator {
         validate(iteratorConfig, schema);
         this.config = iteratorConfig;
         this.schema = schema;
+    }
+
+    @Override
+    public List<String> getRequiredValueFields() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getRequiredValueFields'");
+    }
+
+    public static void main(String[] args) {
+        List<Field> row_keys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
+        List<Field> sort_cols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
+        List<Field> value_cols = List.of(new Field("col5", new IntType()), new Field("col6", new IntType()), new Field("col7", new IntType()));
+        Schema schema = Schema.builder().rowKeyFields(row_keys).sortKeyFields(sort_cols).valueFields(value_cols).build();
     }
 
     /**
@@ -151,7 +316,6 @@ public class AggregatingIterator implements SortedRecordIterator {
      * @throws IllegalArgumentException if {@code iteratorConfig} is invalid
      */
     private static void validate(FilterAggregationConfig iteratorConfig, Schema schema) {
-        System.out.println(iteratorConfig);
         // If there are no aggregations to perform, then this configuration is trivially valid
         if (iteratorConfig.aggregations().isEmpty()) {
             return;
@@ -194,18 +358,11 @@ public class AggregatingIterator implements SortedRecordIterator {
         }
     }
 
-    public static void main(String[] args) {
-        FilterAggregationConfig config = parseConfiguration("col3;,sum(col4),sum(col5),min(col6),map_min(col7),map_sum(col8)");
-        List<Field> row_keys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
-        List<Field> sort_cols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
-        List<Field> value_cols = List.of(new Field("col5", new IntType()), new Field("col6", new IntType()), new Field("col7", new IntType()));
-        Schema s = Schema.builder().rowKeyFields(row_keys).sortKeyFields(sort_cols).valueFields(value_cols).build();
-    }
-
     /**
      * Parses a configuration string for aggregation.
      *
-     * Note that the configuration is NOT validated! Use {@link AggregatingIterator#validate(FilterAggregationConfig)}
+     * Note that the configuration is NOT validated! Use
+     * {@link AggregationFilteringIterator#validate(FilterAggregationConfig)}
      * to
      * check the returned configuration is valid.
      *
@@ -249,17 +406,14 @@ public class AggregatingIterator implements SortedRecordIterator {
         for (String agg : filter_aggs) {
             Matcher matcher = AGGREGATE_REGEX.matcher(agg);
             if (matcher.matches()) {
-                AggregationOp op = AggregationOp.valueOf(matcher.group(1).toUpperCase(Locale.getDefault()));
+                // We implement the "Map" variants with the same operators as the primitive ones, so we can
+                // remove the "map_" prefix.
+                String primitiveOp = matcher.group(1).toUpperCase(Locale.getDefault()).replaceFirst("^MAP_", "");
+                AggregationOp op = AggregationOp.valueOf(primitiveOp);
                 String aggCol = matcher.group(2);
                 aggregations.add(new Aggregation(aggCol, op));
             }
         }
         return new FilterAggregationConfig(groupingColumns, filter, maxAge, aggregations);
-    }
-
-    @Override
-    public List<String> getRequiredValueFields() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getRequiredValueFields'");
     }
 }
