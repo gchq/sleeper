@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,18 +37,14 @@ public class S3PathUtils {
     /**
      * Streams filenames back from bucket for list of paths provided.
      *
-     * @param  bucket                s3 bucket to retrieve from
-     * @param  files                 list of file paths to expand
-     * @return                       list of full filenames of all paths detailed
-     * @throws FileNotFoundException thrown when path not valid within s3
+     * @param  bucket s3 bucket to retrieve from
+     * @param  files  list of file paths to expand
+     * @return        list of full filenames of all paths detailed
      */
-    public List<String> streamFileKeyByPath(String bucket, List<String> files) throws FileNotFoundException {
+    public List<String> streamFileKeyByPath(String bucket, List<String> files) {
         List<String> outList = new ArrayList<>();
         files.stream().forEach(file -> {
-            try {
-                outList.addAll(streamFileKeyByPath(bucket, file));
-            } catch (FileNotFoundException e) {
-            }
+            outList.addAll(streamFileKeyByPath(bucket, file));
         });
         return outList;
     }
@@ -57,12 +52,11 @@ public class S3PathUtils {
     /**
      * Streams filenames back from bucket for singular path provided.
      *
-     * @param  bucket                s3 bucket to retrieve from
-     * @param  path                  path of file to expand
-     * @return                       list of full filenames at path
-     * @throws FileNotFoundException thrown when path not valid within s3
+     * @param  bucket s3 bucket to retrieve from
+     * @param  path   path of file to expand
+     * @return        list of full filenames at path
      */
-    public List<String> streamFileKeyByPath(String bucket, String path) throws FileNotFoundException {
+    public List<String> streamFileKeyByPath(String bucket, String path) {
         return streamFileDetails(bucket, path)
                 .stream().map(S3FileDetails::filename)
                 .collect(Collectors.toList());
@@ -71,12 +65,11 @@ public class S3PathUtils {
     /**
      * Streams file details back from bucket for singular path provided.
      *
-     * @param  bucket                s3 bucket to retrieve from
-     * @param  path                  path of file to expand
-     * @return                       details of files contained at paths
-     * @throws FileNotFoundException thrown when path not valid within s3
+     * @param  bucket s3 bucket to retrieve from
+     * @param  path   path of file to expand
+     * @return        details of files contained at paths
      */
-    private List<S3FileDetails> streamFileDetails(String bucket, String path) throws FileNotFoundException {
+    public List<S3FileDetails> streamFileDetails(String bucket, String path) {
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(bucket)
@@ -87,10 +80,6 @@ public class S3PathUtils {
             subResponse.contents().forEach((S3Object s3Object) -> {
                 outList.add(generateS3FileDetails(bucket, s3Object));
             });
-        }
-
-        if (outList.isEmpty()) {
-            throw new FileNotFoundException();
         }
 
         return outList;

@@ -42,7 +42,6 @@ import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 
-import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,13 +88,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> {
-                    try {
-                        return s3PathUtils.streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), files);
-                    } catch (FileNotFoundException e) {
-                        return List.of();
-                    }
-                });
+                .expandDirectories(files -> s3PathUtils.streamFileKeyByPath(instanceProperties.get(DATA_BUCKET), files));
     }
 
     @Override

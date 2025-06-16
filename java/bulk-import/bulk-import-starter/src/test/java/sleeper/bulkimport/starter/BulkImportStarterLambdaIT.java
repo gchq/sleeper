@@ -36,7 +36,6 @@ import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.localstack.test.LocalStackTestBase;
 
-import java.io.FileNotFoundException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -73,13 +72,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> {
-                    try {
-                        return new S3PathUtils(s3Client).streamFileKeyByPath(testBucket, files);
-                    } catch (FileNotFoundException e) {
-                        return List.of();
-                    }
-                });
+                .expandDirectories(files -> new S3PathUtils(s3Client).streamFileKeyByPath(testBucket, files));
     }
 
     @Nested
