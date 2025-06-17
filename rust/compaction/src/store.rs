@@ -131,7 +131,11 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
             stats.get_count += 1;
             match &options.range {
                 Some(GetRange::Bounded(get_range)) => {
-                    stats.get_bytes_read += get_range.len();
+                    let len = get_range
+                        .end
+                        .checked_sub(get_range.start)
+                        .expect("Get range length is negative");
+                    stats.get_bytes_read += len;
                     info!(
                         "{} GET request on {}/{} byte range {} to {} = {} bytes",
                         self.prefix,
@@ -139,7 +143,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                         location,
                         get_range.start.to_formatted_string(&Locale::en),
                         get_range.end.to_formatted_string(&Locale::en),
-                        get_range.len().to_formatted_string(&Locale::en),
+                        len.to_formatted_string(&Locale::en),
                     );
                 }
                 Some(GetRange::Offset(start_pos)) => {
