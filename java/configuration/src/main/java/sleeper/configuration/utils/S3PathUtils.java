@@ -106,7 +106,7 @@ public class S3PathUtils {
 
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
-                if (isValidFile(s3Object.key())) {
+                if (checkIsNotCrcFile(s3Object.key())) {
                     outList.add(new S3FileDetails(bucket + "/" + s3Object.key(), s3Object));
                 }
             });
@@ -118,14 +118,13 @@ public class S3PathUtils {
         return outList;
     }
 
-    private boolean isValidFile(String key) {
-        if (!key.contains(".crc")) {
-            return true;
-        } else {
-            return false;
-        }
+    private boolean checkIsNotCrcFile(String key) {
+        return key.contains(".crc");
     }
 
+    /**
+     * Storage of the details from with s3 with full file name
+     */
     public record S3FileDetails(String filename, S3Object fileObject) {
     }
 }
