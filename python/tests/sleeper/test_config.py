@@ -1,6 +1,6 @@
 import unittest
 from tests.sleeper.localstack import LocalStackTestBase
-from sleeper.config import load_instance_properties_from_bucket
+from sleeper.instance_properties import InstanceProperties
 
 class TestConfig(LocalStackTestBase):
 
@@ -10,10 +10,10 @@ class TestConfig(LocalStackTestBase):
         self.s3.Object(bucket_name, 'instance.properties').put(Body="a.b.c=value")
 
         # When
-        properties = load_instance_properties_from_bucket(bucket_name, self.s3)
+        properties = InstanceProperties.load_from_bucket(self.s3, bucket_name)
 
         # Then
-        self.assertEqual({'a.b.c': 'value'}, properties)
+        self.assertEqual({'a.b.c': 'value'}, properties.as_dict())
 
 if __name__ == '__main__':
     unittest.main()
