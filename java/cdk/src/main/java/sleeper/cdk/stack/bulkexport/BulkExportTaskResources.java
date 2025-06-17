@@ -59,7 +59,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_E
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -157,21 +156,7 @@ public class BulkExportTaskResources {
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         resultsBucket.grantPut(taskDefinition.getTaskRole());
         resultsBucket.grantReadWrite(taskDefinition.getTaskRole());
-
-        String queueName = jobsQueue.getQueueName();
-        taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
-                .create()
-                .resources(List.of(
-                        String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
-                                instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
-                        String.format("arn:aws:sqs:%s:%s:%s", instanceProperties.get(REGION),
-                                instanceProperties.get(ACCOUNT), queueName)))
-                .actions(List.of(
-                        "ecs:DescribeContainerInstances",
-                        "sqs:ReceiveMessage",
-                        "sqs:DeleteMessage",
-                        "sqs:ChangeMessageVisibility"))
-                .build());
+        jobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
         CfnOutputProps bulkExportClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
@@ -179,25 +164,14 @@ public class BulkExportTaskResources {
         new CfnOutput(stack, BULK_EXPORT_CLUSTER_NAME, bulkExportClusterProps);
     }
 
-    private PolicyStatement runTasksPolicyStatement() {
-        String taskDefinitionName = String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "BulkExportTaskOnFargate");
-
+    private static PolicyStatement runTasksPolicyStatement() {
         return PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
-                .actions(List.of(
-                        "ecs:DescribeClusters",
-                        "ecs:RunTask",
-                        "iam:PassRole",
-                        "ecs:DescribeContainerInstances",
-                        "ecs:DescribeTasks",
-                        "ecs:ListContainerInstances"))
-                .resources(List.of(
-                        String.format("arn:aws:ecs:%s:%s:task-definition/%s:*", instanceProperties.get(REGION),
-                                instanceProperties.get(ACCOUNT), taskDefinitionName),
-                        String.format("arn:aws:ecs:%s:%s:cluster/%s", instanceProperties.get(REGION),
-                                instanceProperties.get(ACCOUNT), instanceProperties.get(BULK_EXPORT_CLUSTER)),
-                        String.format("arn:aws:iam::%s:role/*",
-                                instanceProperties.get(ACCOUNT))))
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups",
+                        "ec2:DescribeInstanceTypes"))
+                .resources(List.of("*"))
                 .build();
     }
 }

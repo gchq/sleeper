@@ -21,11 +21,7 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.Policy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
@@ -48,7 +44,6 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -59,19 +54,7 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LA
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_ARN;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 
@@ -122,20 +105,8 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        List<String> s3Buckets = List.of(String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-export-results"),
-                instanceProperties.get(CONFIG_BUCKET),
-                instanceProperties.get(DATA_BUCKET));
-
-        List<String> dynamoTables = List.of(
-                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
-                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
-                instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME),
-                instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME),
-                instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME),
-                instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME));
-
-        attachPolicy(bulkExportLambda, "BulkExportPlanner", instanceProperties, s3Buckets, dynamoTables);
+        coreStacks.grantRunCompactionJobs(bulkExportLambda);
+        leafPartitionQueuesQ.grantSendMessages(bulkExportLambda);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -229,62 +200,6 @@ public class BulkExportStack extends NestedStack {
         }
 
         return exportBucket;
-    }
-
-    /**
-     * Attach the policy to the lambda function.
-     *
-     * @param lambda the lambda function
-     * @param id     the id of the lambda function
-     */
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void attachPolicy(IFunction lambda, String id, InstanceProperties instanceProperties,
-            List<String> s3Buckets, List<String> dynamoTables) {
-        List<String> s3Arns = buildS3Arns(s3Buckets);
-        List<String> dynamoArns = buildDynamoDbArns(dynamoTables, instanceProperties.get(REGION),
-                instanceProperties.get(ACCOUNT));
-
-        List<String> resources = new ArrayList<>();
-        resources.add(
-                instanceProperties.get(BULK_EXPORT_QUEUE_ARN));
-        resources.add(
-                instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN));
-        resources.addAll(s3Arns);
-        resources.addAll(dynamoArns);
-
-        PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
-                .effect(Effect.ALLOW)
-                .actions(List.of(
-                        "sqs:SendMessage",
-                        "sqs:ReceiveMessage",
-                        "s3:PutObject",
-                        "s3:GetObject",
-                        "dynamodb:Query"))
-                .resources(resources)
-                .build();
-
-        PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
-        String policyName = "BulkExportPolicy" + id;
-        Policy policy = new Policy(this, policyName);
-        policy.addStatements(policyStatement);
-        Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
-    }
-
-    private List<String> buildS3Arns(List<String> bucketNames) {
-        List<String> arns = new ArrayList<>();
-        for (String bucket : bucketNames) {
-            arns.add(String.format("arn:aws:s3:::%s", bucket));
-            arns.add(String.format("arn:aws:s3:::%s/*", bucket));
-        }
-        return arns;
-    }
-
-    private List<String> buildDynamoDbArns(List<String> tableNames, String region, String accountId) {
-        List<String> arns = new ArrayList<>();
-        for (String table : tableNames) {
-            arns.add(String.format("arn:aws:dynamodb:%s:%s:table/%s", region, accountId, table));
-        }
-        return arns;
     }
 
     public enum QueueType {
