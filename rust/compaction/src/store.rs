@@ -27,8 +27,6 @@ use object_store::{
 };
 use std::sync::{Arc, Mutex};
 
-pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
-
 /// Simple struct for storing various statistics about the operation of the store.
 #[derive(Debug, Eq, PartialOrd, Ord, PartialEq, Clone)]
 struct LoggingData {
@@ -36,8 +34,6 @@ struct LoggingData {
     get_count: usize,
     /// The total number of bytes read across all files.
     get_bytes_read: usize,
-    /// Multipart upload buffer capacity
-    capacity: usize,
 }
 
 impl Default for LoggingData {
@@ -45,23 +41,8 @@ impl Default for LoggingData {
         Self {
             get_count: Default::default(),
             get_bytes_read: Default::default(),
-            capacity: MULTIPART_BUF_SIZE,
         }
     }
-}
-
-/// Allow setting a size hint for multipart uploads.
-#[allow(clippy::module_name_repetitions)]
-pub trait SizeHintableStore: ObjectStore {
-    /// Set the buffer capacity hint for multipart uploading.
-    ///
-    /// In multipart uploads, data will be buffered until `capacity`
-    /// bytes have been put. This is a hint and the implementation may
-    /// choose how it uses this hint, if at all.
-    fn set_multipart_size_hint(&self, capacity: usize);
-
-    // Convenience function for trait upcasting.
-    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
 }
 
 /// An [`ObjectStore`] wrapper that logs some requests (e.g. HEAD, LIST, GET, PUT)
@@ -137,19 +118,6 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
             self.get_count().to_formatted_string(&Locale::en),
             self.get_bytes_read().to_formatted_string(&Locale::en)
         );
-    }
-}
-
-impl<T: ObjectStore> SizeHintableStore for LoggingObjectStore<T> {
-    fn set_multipart_size_hint(&self, capacity: usize) {
-        self.internal
-            .lock()
-            .expect("LoggingObjectStore stats lock poisoned")
-            .capacity = capacity;
-    }
-
-    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
-        self
     }
 }
 
@@ -257,24 +225,15 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         location: &Path,
         opts: PutMultipartOpts,
     ) -> Result<Box<dyn MultipartUpload>> {
-        let capacity: usize;
-        {
-            let stats = self
-                .internal
-                .lock()
-                .expect("LoggingObjectStore stats lock poisoned");
-            capacity = stats.capacity;
-        }
         info!(
             "{} PUT MULTIPART request to {}/{}",
             self.prefix, self.path_prefix, location
         );
         let part_upload = self.store.put_multipart_opts(location, opts).await?;
-        Ok(Box::new(LoggingMultipartUpload::new_with_capacity(
+        Ok(Box::new(LoggingMultipartUpload::new(
             part_upload,
             &self.prefix,
             format!("{}/{}", self.path_prefix, location),
-            capacity,
         )) as Box<dyn MultipartUpload>)
     }
 }
@@ -284,85 +243,47 @@ struct LoggingMultipartUpload {
     inner: Box<dyn MultipartUpload>,
     prefix: String,
     path: String,
-    buffer: BytesMut,
-    capacity: usize,
 }
 
 impl LoggingMultipartUpload {
-    pub fn new_with_capacity(
+    pub fn new(
         inner: Box<dyn MultipartUpload>,
         prefix: impl Into<String>,
         path: impl Into<String>,
-        capacity: usize,
     ) -> Self {
         Self {
             inner,
             prefix: prefix.into(),
             path: path.into(),
-            buffer: BytesMut::with_capacity(capacity),
-            capacity,
         }
-    }
-
-    fn upload_buffer(&mut self) -> UploadPart {
-        info!(
-            "{} Uploading to {} {} bytes",
-            self.prefix,
-            self.path,
-            self.buffer.len().to_formatted_string(&Locale::en)
-        );
-        let oldbuf = std::mem::replace(&mut self.buffer, BytesMut::with_capacity(self.capacity));
-        self.inner.put_part(PutPayload::from(Bytes::from(oldbuf)))
     }
 }
 
 impl MultipartUpload for LoggingMultipartUpload {
     fn put_part(&mut self, data: PutPayload) -> UploadPart {
-        let mut len = 0;
-        for bytes in &data {
-            len += bytes.len();
-            self.buffer.extend_from_slice(bytes);
-        }
         info!(
             "{} multipart PUT to {} of {} bytes",
             self.prefix,
             self.path,
-            len.to_formatted_string(&Locale::en)
+            data.content_length().to_formatted_string(&Locale::en)
         );
-        // Should we upload this?
-        if self.buffer.len() >= self.capacity {
-            return self.upload_buffer();
-        }
-        Box::pin(async { Ok(()) })
+        self.inner.put_part(data)
     }
 
     fn complete<'life0, 'async_trait>(
         &'life0 mut self,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<PutResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
+    ) -> Pin<Box<dyn Future<Output = Result<PutResult>> + Send + 'async_trait>>
     where
         'life0: 'async_trait,
         Self: 'async_trait,
     {
-        Box::pin(async move {
-            info!("multipart to {} COMPLETE", self.path);
-            if !self.buffer.is_empty() {
-                self.upload_buffer().await?;
-            }
-            self.inner.complete().await
-        })
+        info!("multipart to {} COMPLETE", self.path);
+        self.inner.complete()
     }
 
     fn abort<'life0, 'async_trait>(
         &'life0 mut self,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
+    ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'async_trait>>
     where
         'life0: 'async_trait,
         Self: 'async_trait,

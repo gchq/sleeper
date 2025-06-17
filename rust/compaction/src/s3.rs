@@ -35,10 +35,7 @@ use object_store::{
 };
 use url::Url;
 
-use crate::{
-    readahead::ReadaheadStore,
-    store::{LoggingObjectStore, SizeHintableStore},
-};
+use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
