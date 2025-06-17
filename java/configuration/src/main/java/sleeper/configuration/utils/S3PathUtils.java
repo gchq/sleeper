@@ -123,7 +123,10 @@ public class S3PathUtils {
     }
 
     /**
-     * Storage of the details from with s3 with full file name
+     * Storage of the details from with s3 with full file name.
+     * 
+     * @param filename   name of file including bucket
+     * @param fileObject respresentation of object back from s3
      */
     public record S3FileDetails(String filename, S3Object fileObject) {
     }
