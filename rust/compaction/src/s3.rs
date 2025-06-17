@@ -29,7 +29,7 @@ use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::eyre;
 use futures::Future;
 use object_store::{
-    ClientOptions, CredentialProvider, Error,
+    ClientOptions, CredentialProvider, Error, ObjectStore,
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
 };
@@ -110,7 +110,7 @@ fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
 /// object store.
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
-    store_map: RefCell<HashMap<String, Arc<dyn SizeHintableStore>>>,
+    store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
@@ -153,7 +153,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
+    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
         match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
@@ -176,7 +176,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
+    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         match src.scheme() {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
