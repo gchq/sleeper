@@ -27,21 +27,12 @@ use object_store::{
 use std::{pin::Pin, sync::Mutex};
 
 /// Simple struct for storing various statistics about the operation of the store.
-#[derive(Debug, Eq, PartialOrd, Ord, PartialEq, Clone)]
+#[derive(Debug, Default, Eq, PartialOrd, Ord, PartialEq, Clone)]
 struct LoggingData {
     /// The number of GET requests logged.
     get_count: usize,
     /// The total number of bytes read across all files.
     get_bytes_read: u64,
-}
-
-impl Default for LoggingData {
-    fn default() -> Self {
-        Self {
-            get_count: Default::default(),
-            get_bytes_read: Default::default(),
-        }
-    }
 }
 
 /// An [`ObjectStore`] wrapper that logs some requests (e.g. HEAD, LIST, GET, PUT)
