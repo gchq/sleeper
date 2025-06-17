@@ -75,7 +75,6 @@ public class IngestJobRunner implements IngestJobHandler {
     private final IngestFactory ingestFactory;
     private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
-    private final InstanceProperties instanceProperties;
     private final Supplier<Instant> timeSupplier;
     private final S3PathUtils s3PathUtils;
 
@@ -95,7 +94,6 @@ public class IngestJobRunner implements IngestJobHandler {
             Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
-        this.instanceProperties = instanceProperties;
         this.hadoopConfiguration = hadoopConfiguration;
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
