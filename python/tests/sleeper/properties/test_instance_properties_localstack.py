@@ -1,6 +1,6 @@
 import unittest
 from tests.sleeper.localstack import LocalStackTestBase
-from sleeper.instance_properties import InstanceProperties
+from sleeper.properties.instance_properties import InstanceProperties
 
 class TestInstancePropertiesLocalStack(LocalStackTestBase):
 
@@ -14,6 +14,3 @@ class TestInstancePropertiesLocalStack(LocalStackTestBase):
 
         # Then
         self.assertEqual({'a.b.c': 'value'}, properties.as_dict())
-
-if __name__ == '__main__':
-    unittest.main()

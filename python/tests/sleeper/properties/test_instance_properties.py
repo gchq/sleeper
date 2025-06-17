@@ -1,7 +1,7 @@
 
 import unittest
 
-from sleeper.instance_properties import InstanceProperties
+from sleeper.properties.instance_properties import InstanceProperties
 
 
 class TestInstanceProperties(unittest.TestCase):
