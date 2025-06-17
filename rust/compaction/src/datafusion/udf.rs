@@ -141,14 +141,6 @@ impl ScalarUDFImpl for SketchUDF {
     fn return_type(&self, _: &[DataType]) -> Result<DataType> {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
-    /*
-        fn return_type_from_args(&self, args: ReturnTypeArgs) -> Result<ReturnInfo> {
-            Ok(ReturnInfo::new(
-                args.arg_types[0].clone(),
-                args.nullables[0],
-            ))
-        }
-    */
 
     fn return_field_from_args(&self, args: ReturnFieldArgs) -> Result<FieldRef> {
         Ok(Arc::new(Field::new(
