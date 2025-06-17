@@ -119,7 +119,7 @@ public class S3PathUtils {
     }
 
     private boolean checkIsNotCrcFile(String key) {
-        return key.contains(".crc");
+        return !key.contains(".crc");
     }
 
     /**
