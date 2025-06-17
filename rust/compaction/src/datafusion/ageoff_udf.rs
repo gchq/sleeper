@@ -14,6 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::datafusion::aggregate_udf::Filter;
 use arrow::{
     array::{AsArray, BooleanBuilder},
     datatypes::{DataType, Int64Type},
@@ -32,8 +33,6 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-
-use super::Filter;
 
 /// A filtering expression (returns bool) for an integer column based upon a given threshold.
 /// If the value in a given column is lower than the given threshold, it will be filtered out.
@@ -150,7 +149,7 @@ impl ScalarUDFImpl for AgeOff {
 #[cfg(test)]
 mod tests {
     use super::AgeOff;
-    use crate::{assert_error, datafusion::functions::Filter};
+    use crate::{assert_error, datafusion::aggregate_udf::Filter};
     use arrow::array::{AsArray, Int64Builder};
     use datafusion::{
         common::exec_err,

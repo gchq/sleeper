@@ -102,7 +102,7 @@ pub fn non_null_max(expression: Expr) -> Expr {
 
 /// Register the non-nullable versions of some simple aggregators so they
 /// can be used within SQL queries.
-pub fn register_non_nullables(registry: &mut dyn FunctionRegistry) {
+pub fn register_non_nullable_aggregate_udfs(registry: &mut dyn FunctionRegistry) {
     let _ = registry.register_udaf(NON_NULL_SUM_UDAF.clone());
     let _ = registry.register_udaf(NON_NULL_MIN_UDAF.clone());
     let _ = registry.register_udaf(NON_NULL_MAX_UDAF.clone());
@@ -419,10 +419,10 @@ impl GroupsAccumulator for NonNullableGroupsAccumulator {
 mod tests {
     use crate::{
         assert_error,
-        datafusion::functions::nonnull::{
+        datafusion::aggregate_udf::nonnull::{
             NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable,
             NonNullableAccumulator, NonNullableGroupsAccumulator, non_null_max, non_null_min,
-            non_null_sum, non_nullable, nullable_check, register_non_nullables,
+            non_null_sum, non_nullable, nullable_check, register_non_nullable_aggregate_udfs,
         },
     };
     use arrow::{
@@ -454,6 +454,7 @@ mod tests {
     use mockall::*;
     use std::{any::Any, collections::HashMap, sync::Arc};
 
+    // Create mock Aggregate UDF - used to check NonNullable is calling the correct underlying functions
     mock! {
         #[allow(clippy::ref_option_ref)]
         #[derive(Debug)]
@@ -506,6 +507,7 @@ mod tests {
         unsafe impl Sync for UDFImpl {}
     }
 
+    // Mock Accumulator - used to test NonNullableAccumulator is wrapping correctly.
     mock! {
         #[derive(Debug)]
         UDFAcc{}
@@ -527,6 +529,7 @@ mod tests {
         }
     }
 
+    // Mock GroupsAccumulator - used to test NonNullableGroupsAccumulator is wrapping correctly.
     mock! {
         #[derive(Debug)]
         UDFGroupAcc{}
@@ -650,7 +653,7 @@ mod tests {
         ]);
 
         // When
-        register_non_nullables(&mut sc);
+        register_non_nullable_aggregate_udfs(&mut sc);
         let actual = sc.aggregate_functions();
 
         // Then
@@ -1226,7 +1229,7 @@ mod tests {
         // When
         let _ = acc.evaluate();
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1239,7 +1242,7 @@ mod tests {
         // When
         let _ = acc.size();
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1252,7 +1255,7 @@ mod tests {
         // When
         let _ = acc.state();
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1265,7 +1268,7 @@ mod tests {
         // When
         let _ = acc.merge_batch(&[]);
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1370,7 +1373,7 @@ mod tests {
         // When
         let _ = group_acc.evaluate(EmitTo::All);
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1386,7 +1389,7 @@ mod tests {
         // When
         let _ = group_acc.state(EmitTo::All);
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1402,7 +1405,7 @@ mod tests {
         // When
         let _ = group_acc.merge_batch(&[], &[], None, 1);
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1415,7 +1418,7 @@ mod tests {
         // When
         let _ = group_acc.size();
 
-        // Then - mock should report one call
+        // Then - test will panic if inner mock object not called the correct number of times
     }
 
     #[test]
@@ -1465,6 +1468,7 @@ mod tests {
 
         // When
         let result = group_acc.supports_convert_to_state();
+
         // Then
         assert!(result);
     }

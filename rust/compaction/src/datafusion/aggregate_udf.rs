@@ -15,10 +15,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::functions::nonnull::{
-    NonNullable, non_null_max, non_null_min, non_null_sum,
+use crate::datafusion::{
+    ageoff_udf::AgeOff,
+    aggregate_udf::nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
-use ageoff::AgeOff;
 use datafusion::{
     common::{DFSchema, HashSet, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
@@ -30,7 +30,6 @@ use num_traits::NumAssign;
 use regex::Regex;
 use std::sync::Arc;
 
-pub mod ageoff;
 pub mod map_aggregate;
 pub mod nonnull;
 

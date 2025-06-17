@@ -36,4 +36,7 @@ public enum CompactionMethod {
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);
     }
+
+    /** Special iterator marker name indicating the use of aggregation iterators. */
+    public static final String AGGREGATION_ITERATOR_NAME = "AGGREGATORS";
 }

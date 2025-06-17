@@ -32,7 +32,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::datafusion::functions::{
+use crate::datafusion::aggregate_udf::{
     MapAggregatorOp,
     map_aggregate::{
         accumulator::{
@@ -299,7 +299,7 @@ mod tests {
 
     use crate::{
         assert_error,
-        datafusion::functions::map_aggregate::aggregator::map_test_common::make_map_datatype,
+        datafusion::aggregate_udf::map_aggregate::aggregator::map_test_common::make_map_datatype,
     };
 
     use super::{MapAggregator, MapAggregatorOp, PrimBuilderType, validate_map_struct_type};
