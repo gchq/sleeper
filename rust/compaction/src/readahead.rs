@@ -629,7 +629,7 @@ mod tests {
         ReadaheadStore::new(inner, "memory:/")
     }
 
-    fn make_cache_map() -> BTreeMap<usize, Container> {
+    fn make_cache_map() -> BTreeMap<u64, Container> {
         let mut map = BTreeMap::new();
         map.insert(
             5,
@@ -1326,7 +1326,7 @@ mod tests {
         Ok(())
     }
 
-    fn test_cache_purge<T: Into<Path>, I: IntoIterator<Item = (T, usize, Instant)>>(
+    fn test_cache_purge<T: Into<Path>, I: IntoIterator<Item = (T, u64, Instant)>>(
         live_streams: usize,
         max_age: Duration,
         expected: usize,
@@ -1361,7 +1361,7 @@ mod tests {
 
     #[tokio::test]
     async fn purge_empty_cache() {
-        test_cache_purge::<&str, Vec<(&str, usize, std::time::Instant)>>(
+        test_cache_purge::<&str, Vec<(&str, u64, std::time::Instant)>>(
             8,
             Duration::from_secs(10),
             0,

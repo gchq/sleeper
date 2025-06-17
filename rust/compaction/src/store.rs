@@ -604,7 +604,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn put_multipart_log_with_capacity_default() -> Result<()> {
+    async fn put_multipart_log() -> Result<()> {
         // Given
         testing_logger::setup();
         let store = make_store();
@@ -618,7 +618,7 @@ mod tests {
 
         // Then
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 6);
+            assert_eq!(captured_logs.len(), 5);
             assert_eq!(
                 captured_logs[0].body,
                 "TEST PUT MULTIPART request to memory://test_file"
@@ -644,11 +644,6 @@ mod tests {
                 "multipart to memory://test_file COMPLETE"
             );
             assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(
-                captured_logs[5].body,
-                "TEST Uploading to memory://test_file 12 bytes"
-            );
-            assert_eq!(captured_logs[5].level, Level::Info);
         });
 
         let retrieved_data = String::from_utf8(
@@ -661,146 +656,6 @@ mod tests {
         )
         .expect("String should be valid UTF-8");
         assert_eq!(retrieved_data, "foofoo1foo12");
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn put_multipart_log_with_capacity_0() -> Result<()> {
-        // Given
-        testing_logger::setup();
-        let store = make_store();
-        // Disable multipart buffering
-        <LoggingObjectStore<_> as SizeHintableStore>::set_multipart_size_hint(&store, 0);
-
-        // When
-        let mut part = store.put_multipart(&"test_file".into()).await?;
-        part.put_part("foo".into()).await?;
-        part.put_part("foo1".into()).await?;
-        part.put_part("foo12".into()).await?;
-        part.complete().await?;
-
-        // Then
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 8);
-            assert_eq!(
-                captured_logs[0].body,
-                "TEST PUT MULTIPART request to memory://test_file"
-            );
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(
-                captured_logs[1].body,
-                "TEST multipart PUT to memory://test_file of 3 bytes"
-            );
-            assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(
-                captured_logs[2].body,
-                "TEST Uploading to memory://test_file 3 bytes"
-            );
-            assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(
-                captured_logs[3].body,
-                "TEST multipart PUT to memory://test_file of 4 bytes"
-            );
-            assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(
-                captured_logs[4].body,
-                "TEST Uploading to memory://test_file 4 bytes"
-            );
-            assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(
-                captured_logs[5].body,
-                "TEST multipart PUT to memory://test_file of 5 bytes"
-            );
-            assert_eq!(captured_logs[5].level, Level::Info);
-            assert_eq!(
-                captured_logs[6].body,
-                "TEST Uploading to memory://test_file 5 bytes"
-            );
-            assert_eq!(captured_logs[6].level, Level::Info);
-            assert_eq!(
-                captured_logs[7].body,
-                "multipart to memory://test_file COMPLETE"
-            );
-            assert_eq!(captured_logs[7].level, Level::Info);
-        });
-        let retrieved_data = String::from_utf8(
-            store
-                .get(&"test_file".into())
-                .await?
-                .bytes()
-                .await?
-                .to_vec(),
-        )
-        .expect("String should be valid UTF-8");
-        assert_eq!(retrieved_data, "foofoo1foo12");
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn put_multipart_log_with_capacity_10() -> Result<()> {
-        // Given
-        testing_logger::setup();
-        let store = make_store();
-        <LoggingObjectStore<_> as SizeHintableStore>::set_multipart_size_hint(&store, 10);
-
-        // When
-        let mut part = store.put_multipart(&"test_file".into()).await?;
-        part.put_part("12345678".into()).await?;
-        part.put_part("123456789".into()).await?;
-        part.put_part("foo".into()).await?;
-        part.complete().await?;
-
-        // Then
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 7);
-            assert_eq!(
-                captured_logs[0].body,
-                "TEST PUT MULTIPART request to memory://test_file"
-            );
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(
-                captured_logs[1].body,
-                "TEST multipart PUT to memory://test_file of 8 bytes"
-            );
-            assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(
-                captured_logs[2].body,
-                "TEST multipart PUT to memory://test_file of 9 bytes"
-            );
-            assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(
-                captured_logs[3].body,
-                "TEST Uploading to memory://test_file 17 bytes"
-            );
-            assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(
-                captured_logs[4].body,
-                "TEST multipart PUT to memory://test_file of 3 bytes"
-            );
-            assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(
-                captured_logs[5].body,
-                "multipart to memory://test_file COMPLETE"
-            );
-            assert_eq!(captured_logs[5].level, Level::Info);
-            assert_eq!(
-                captured_logs[6].body,
-                "TEST Uploading to memory://test_file 3 bytes"
-            );
-            assert_eq!(captured_logs[6].level, Level::Info);
-        });
-        let retrieved_data = String::from_utf8(
-            store
-                .get(&"test_file".into())
-                .await?
-                .bytes()
-                .await?
-                .to_vec(),
-        )
-        .expect("String should be valid UTF-8");
-        assert_eq!(retrieved_data, "12345678123456789foo");
-
         Ok(())
     }
 }
