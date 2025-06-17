@@ -29,7 +29,9 @@ use datafusion::{
 use num_traits::NumAssign;
 use std::{fmt::Debug, hash::Hash, sync::Arc};
 
-use crate::datafusion::functions::{MapAggregatorOp, map_aggregate::aggregator::PrimBuilderType};
+use crate::datafusion::aggregate_udf::{
+    MapAggregatorOp, map_aggregate::aggregator::PrimBuilderType,
+};
 
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
@@ -191,7 +193,7 @@ mod tests {
     use super::{PrimMapAccumulator, update_primitive_map};
     use crate::{
         assert_error,
-        datafusion::functions::{
+        datafusion::aggregate_udf::{
             MapAggregatorOp, map_aggregate::aggregator::map_test_common::make_map_datatype,
         },
     };

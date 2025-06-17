@@ -38,9 +38,6 @@ import java.util.Objects;
  * the state store should be required in order to start it.
  */
 public class CompactionJob {
-    /** Special iterator marker name indicating the use of DataFusion exclusive iterators. */
-    public static final String DATAFUSION_ITERATOR_NAME = "DATAFUSION";
-
     private final String tableId;
     private final String jobId;
     private final List<String> inputFiles;

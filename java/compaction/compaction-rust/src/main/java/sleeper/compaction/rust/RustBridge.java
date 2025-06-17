@@ -196,9 +196,9 @@ public class RustBridge {
 
             // Check strings non null
             Objects.requireNonNull(output_file.get(), "Output file is null");
-            Objects.requireNonNull(writer_version, "Parquet writer is null");
-            Objects.requireNonNull(compression, "Parquet compression codec is null");
-            Objects.requireNonNull(iterator_config, "Iterator configuration is null");
+            Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
+            Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
+            Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
 
             // Check lengths
             long rowKeys = row_key_cols.len.get();

@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::functions::{
+use crate::datafusion::aggregate_udf::{
     MapAggregatorOp,
     map_aggregate::{aggregator::PrimBuilderType, state::MapNullState},
 };
@@ -261,7 +261,7 @@ where
 mod tests {
     use crate::{
         assert_error,
-        datafusion::functions::{
+        datafusion::aggregate_udf::{
             MapAggregatorOp,
             map_aggregate::{
                 aggregator::map_test_common::make_map_datatype,

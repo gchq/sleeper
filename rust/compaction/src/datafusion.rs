@@ -20,11 +20,13 @@
 use crate::{
     ColRange, CompactionInput, CompactionResult, PartitionBound,
     datafusion::{
-        functions::nonnull::register_non_nullables, sketch::serialise_sketches, udf::SketchUDF,
+        aggregate_udf::nonnull::register_non_nullable_aggregate_udfs, sketch::serialise_sketches,
+        sketch_udf::SketchUDF,
     },
     details::create_sketch_path,
     s3::ObjectStoreFactory,
 };
+use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     common::DFSchema,
@@ -40,17 +42,17 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
-use functions::{FilterAggregationConfig, validate_aggregations};
 use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
-mod functions;
+mod ageoff_udf;
+mod aggregate_udf;
 mod metrics;
 pub mod sketch;
-mod udf;
+mod sketch_udf;
 
 /// Starts a Sleeper compaction.
 ///
@@ -71,7 +73,7 @@ pub async fn compact(
     info!("Compaction partition region {:?}", input_data.region);
     let sf = create_session_cfg(input_data, input_paths);
     let mut ctx = SessionContext::new_with_config(sf);
-    register_non_nullables(&mut ctx);
+    register_non_nullable_aggregate_udfs(&mut ctx);
 
     // Register object stores for input files and output file
     register_store(store_factory, input_paths, output_path, &ctx)?;
@@ -94,7 +96,7 @@ pub async fn compact(
 
     // Parse Sleeper iterator configuration and apply
     let filter_agg_conf = parse_iterator_config(input_data.iterator_config.as_ref())?;
-    frame = apply_filters(frame, filter_agg_conf.as_ref())?;
+    frame = apply_general_row_filters(frame, filter_agg_conf.as_ref())?;
 
     // Create the sketch function
     let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
@@ -215,7 +217,7 @@ fn create_sketch_udf(
     row_key_cols: &[String],
     frame: &DataFrame,
 ) -> Result<Arc<ScalarUDF>, DataFusionError> {
-    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
+    let sketch_func = Arc::new(ScalarUDF::from(sketch_udf::SketchUDF::new(
         frame.schema(),
         row_key_cols,
     )));
@@ -224,7 +226,7 @@ fn create_sketch_udf(
 }
 
 /// Apply any configured filters to the query if any are present.
-fn apply_filters(
+fn apply_general_row_filters(
     frame: DataFrame,
     filter_agg_conf: Option<&FilterAggregationConfig>,
 ) -> Result<DataFrame, DataFusionError> {
