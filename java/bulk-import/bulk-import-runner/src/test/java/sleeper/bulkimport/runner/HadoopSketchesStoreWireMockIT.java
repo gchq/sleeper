@@ -31,7 +31,9 @@ import java.io.UncheckedIOException;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.findUnmatchedRequests;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.head;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -58,6 +60,23 @@ public class HadoopSketchesStoreWireMockIT {
 
         // When / Then
         assertThatThrownBy(() -> sketchesStore.saveFileSketches(file, schema, sketches))
+                .isInstanceOf(UncheckedIOException.class)
+                .cause().isInstanceOf(AWSStatus500Exception.class);
+        assertThat(findUnmatchedRequests()).isEmpty();
+    }
+
+    @Test
+    void shouldHandleNetworkErrorWhenLoadingSketches(WireMockRuntimeInfo runtimeInfo) throws IOException {
+        // Given
+        // Mock server error
+        stubFor(head(urlEqualTo("/testbucket/file.sketches"))
+                .willReturn(aResponse().withStatus(500)));
+
+        String file = "s3a://testbucket/file.parquet";
+        Schema schema = createSchemaWithKey("key");
+
+        // When / Then
+        assertThatThrownBy(() -> sketchesStore.loadFileSketches(file, schema))
                 .isInstanceOf(UncheckedIOException.class)
                 .cause().isInstanceOf(AWSStatus500Exception.class);
         assertThat(findUnmatchedRequests()).isEmpty();
