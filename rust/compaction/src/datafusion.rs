@@ -69,7 +69,7 @@ pub async fn compact(
     let total_input_size = retrieve_input_size(input_paths, store_factory)
         .await
         .inspect_err(|e| warn!("Error getting total input size {e}"))?;
-    let upload_size = calculate_upload_size(total_input_size);
+    let upload_size = calculate_upload_size(total_input_size)?;
     let sf = create_session_cfg(input_data, input_paths, upload_size);
     let ctx = SessionContext::new_with_config(sf);
 
@@ -215,16 +215,17 @@ fn create_sketch_udf(
 
 /// Calculate the upload size based on the total input data size. This prevents uploads to S3 failing due to uploading
 /// too many small parts. We conseratively set the upload size so that fewer, larger uploads are created.
-fn calculate_upload_size(total_input_size: usize) -> usize {
+fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
     let upload_size = std::cmp::max(
         ExecutionOptions::default().objectstore_writer_buffer_size,
-        total_input_size / 5000,
+        usize::try_from(total_input_size / 5000)
+            .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
     info!(
         "Use upload buffer of {} bytes.",
         upload_size.to_formatted_string(&Locale::en)
     );
-    upload_size
+    Ok(upload_size)
 }
 
 /// Calculate the total size of all `input_paths` objects.
@@ -234,8 +235,8 @@ fn calculate_upload_size(total_input_size: usize) -> usize {
 async fn retrieve_input_size(
     input_paths: &[Url],
     store_factory: &ObjectStoreFactory,
-) -> Result<usize, DataFusionError> {
-    let mut total_input = 0usize;
+) -> Result<u64, DataFusionError> {
+    let mut total_input = 0u64;
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
@@ -458,13 +459,13 @@ fn register_store(
             .get_object_store(input_path)
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
-            .register_object_store(input_path, in_store.clone().as_object_store());
+            .register_object_store(input_path, in_store);
     }
 
     let out_store = store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
-        .register_object_store(output_path, out_store.as_object_store());
+        .register_object_store(output_path, out_store);
     Ok(())
 }

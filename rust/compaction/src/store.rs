@@ -1,8 +1,6 @@
 //! This module contains a wrapper for an [`ObjectStore`] that adds logging functionality and customised multipart upload
 //! buffering size.
 //!
-use async_trait::async_trait;
-use bytes::{Bytes, BytesMut};
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -18,6 +16,7 @@ use bytes::{Bytes, BytesMut};
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use async_trait::async_trait;
 use futures::stream::BoxStream;
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -25,7 +24,7 @@ use object_store::{
     GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
     PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
 };
-use std::sync::{Arc, Mutex};
+use std::{pin::Pin, sync::Mutex};
 
 /// Simple struct for storing various statistics about the operation of the store.
 #[derive(Debug, Eq, PartialOrd, Ord, PartialEq, Clone)]
@@ -33,7 +32,7 @@ struct LoggingData {
     /// The number of GET requests logged.
     get_count: usize,
     /// The total number of bytes read across all files.
-    get_bytes_read: usize,
+    get_bytes_read: u64,
 }
 
 impl Default for LoggingData {
@@ -91,7 +90,7 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
     /// # Panics
     /// If we are not able to acquire the lock for the store
     /// stats.
-    pub fn get_bytes_read(&self) -> usize {
+    pub fn get_bytes_read(&self) -> u64 {
         self.internal
             .lock()
             .expect("LoggingObjectStore stats lock poisoned")
@@ -184,7 +183,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.delete(location).await
     }
 
-    fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
+    fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
         info!(
             "{} LIST request {}/{:?}",
             self.prefix, self.path_prefix, prefix
