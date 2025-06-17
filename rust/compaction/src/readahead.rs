@@ -83,14 +83,14 @@ use thiserror::Error;
 #[allow(clippy::module_name_repetitions)]
 pub enum ReadaheadError {
     #[error("position {index} is out of bounds, total size {size}")]
-    RangeOutOfBounds { index: usize, size: usize },
+    RangeOutOfBounds { index: u64, size: u64 },
     #[error("underlying stream terminated earlier than expected")]
     StreamTerminatedEarly,
 }
 
 /// Default amount in bytes to allow a stream to be readahead before the
 /// stream will be closed and re-opened.
-pub const DEFAULT_READAHEAD: usize = 2usize.pow(16);
+pub const DEFAULT_READAHEAD: u64 = 2u64.pow(16);
 /// Maximum number of cached streams per location before being purged.
 pub const DEFAULT_MAX_STREAM_PER_LOCATION: usize = 2;
 /// Maximum age of a stream before being purged.
@@ -101,7 +101,7 @@ struct Container {
     /// Byte stream reader for more data.
     pub inner: BoxStream<'static, Result<Bytes>>,
     /// Absolute position within object.
-    pub pos: usize,
+    pub pos: u64,
     /// Time of last use.
     pub last_use: Instant,
 }
@@ -122,7 +122,7 @@ struct CacheObject {
     meta: ObjectMeta,
     attrs: Attributes,
     /// A cache of partially used streams, sorted by absolute stream position.
-    streams: BTreeMap<usize, Container>,
+    streams: BTreeMap<u64, Container>,
 }
 
 /// Cache inserter struct to allow insertion logic to exist independently of the store
@@ -174,7 +174,7 @@ pub struct ReadaheadStore<T: ObjectStore> {
     /// Cache for object meta-data and streams.
     cache: Arc<Mutex<HashMap<Path, CacheObject>>>,
     /// The amount of readahead we will tolerate before using a new stream.
-    max_readahead: usize,
+    max_readahead: u64,
     /// Maximum age of a cached stream.
     max_age: Duration,
     /// Maximum number of live streams per object.
@@ -221,7 +221,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     /// position and re-used, otherwise a new stream is opened.
     #[must_use]
     #[allow(dead_code)]
-    pub fn with_readahead(mut self, max_readahead: usize) -> Self {
+    pub fn with_readahead(mut self, max_readahead: u64) -> Self {
         self.max_readahead = max_readahead;
         self
     }
@@ -453,7 +453,7 @@ impl<T: ObjectStore> Drop for ReadaheadStore<T> {
 
 /// Find the end position (exclusive) given the range and object size
 #[must_use]
-pub fn get_stop_pos(range: Option<&GetRange>, total_size: usize) -> usize {
+pub fn get_stop_pos(range: Option<&GetRange>, total_size: u64) -> u64 {
     match range {
         Some(GetRange::Bounded(r)) => std::cmp::min(r.end, total_size),
         Some(_) | None => total_size,
@@ -482,7 +482,7 @@ pub fn extend_range(range: Option<&GetRange>) -> Option<GetRange> {
 /// # Panics
 /// If the range is a [`GetRange::Suffix`] as this is not implemented.
 #[must_use]
-pub fn get_start_pos(range: Option<&GetRange>) -> usize {
+pub fn get_start_pos(range: Option<&GetRange>) -> u64 {
     match range {
         Some(GetRange::Bounded(r)) => r.start,
         Some(GetRange::Offset(o)) => *o,
