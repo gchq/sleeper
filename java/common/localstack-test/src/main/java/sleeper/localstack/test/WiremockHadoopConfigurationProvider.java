@@ -53,6 +53,7 @@ public class WiremockHadoopConfigurationProvider {
         // configuration.set("fs.s3a.connection.timeout", "1000");
         // configuration.set("fs.s3a.connection.establish.timeout", "1");
         configuration.set("fs.s3a.attempts.maximum", "1");
+        configuration.set("fs.s3a.retry.limit", "0");
     }
 
 }
