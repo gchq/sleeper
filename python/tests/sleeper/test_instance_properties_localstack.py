@@ -2,7 +2,7 @@ import unittest
 from tests.sleeper.localstack import LocalStackTestBase
 from sleeper.instance_properties import InstanceProperties
 
-class TestConfig(LocalStackTestBase):
+class TestInstancePropertiesLocalStack(LocalStackTestBase):
 
     def test_load_instance_properties(self):
         # Given

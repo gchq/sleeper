@@ -19,3 +19,6 @@ class InstanceProperties:
 
     def as_dict(self) -> dict:
         return self._properties
+
+    def get(self, property_name) -> str:
+        return self._properties[property_name]
