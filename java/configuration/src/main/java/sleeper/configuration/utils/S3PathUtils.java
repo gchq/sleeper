@@ -124,7 +124,7 @@ public class S3PathUtils {
 
     /**
      * Storage of the details from with s3 with full file name.
-     * 
+     *
      * @param filename   name of file including bucket
      * @param fileObject respresentation of object back from s3
      */
