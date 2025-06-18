@@ -24,6 +24,7 @@ import sleeper.core.schema.type.IntType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -75,7 +76,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     private Schema schema;
 
     /** Aggregation functions that can be performed on values. */
-    public static enum AggregationOp implements BinaryOperator<Object> {
+    public enum AggregationOp implements BinaryOperator<Object> {
         SUM {
             @Override
             public int op(int lhs, int rhs) {
@@ -98,12 +99,6 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
                 System.arraycopy(rhs, 0, concatenated, lhs.length, rhs.length);
                 return concatenated;
             }
-
-            @Override
-            public Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs) {
-                throw new UnsupportedOperationException("Unimplemented aggregation");
-            }
-
         },
         MIN {
             @Override
@@ -132,12 +127,6 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
                 } else {
                     return rhs;
                 }
-            }
-
-            @Override
-            public Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'op'");
             }
         },
         MAX {
@@ -168,29 +157,44 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
                     return rhs;
                 }
             }
-
-            @Override
-            public Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs) {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'op'");
-            }
         };
 
+        /**
+         * Perform aggregation operation on integer arguments.
+         *
+         * @param  lhs left hand operand
+         * @param  rhs right hand operand
+         * @return     combined value
+         */
         public abstract int op(int lhs, int rhs);
 
+        /**
+         * Perform aggregation operation on long arguments.
+         *
+         * @param  lhs left hand operand
+         * @param  rhs right hand operand
+         * @return     combined value
+         */
         public abstract long op(long lhs, long rhs);
 
+        /**
+         * Perform aggregation operation on String arguments.
+         *
+         * @param  lhs left hand operand
+         * @param  rhs right hand operand
+         * @return     combined value
+         */
         public abstract String op(String lhs, String rhs);
 
+        /**
+         * Perform aggregation operation on byte array arguments.
+         *
+         * @param  lhs left hand operand
+         * @param  rhs right hand operand
+         * @return     combined value
+         */
         public abstract byte[] op(byte[] lhs, byte[] rhs);
 
-        public abstract Map<?, Object> op(Map<?, Object> lhs, Map<?, Object> rhs);
-
-        /**
-         * Aggregates the {@code rhs} on to the {@code lhs} object.
-         *
-         * @return the aggregated value
-         */
         @Override
         public Object apply(Object lhs, Object rhs) {
             if (lhs.getClass() != rhs.getClass()) {
@@ -205,15 +209,41 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
             } else if (lhs instanceof byte[]) {
                 return op((byte[]) lhs, (byte[]) rhs);
             } else if (lhs instanceof Map) {
-                return op((Map<?, Object>) lhs, (Map<?, Object>) rhs);
+                // Clone the map to avoid aliasing problems: don't want to alter map in previous Record
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> mapLhs = new HashMap<>((Map<Object, Object>) lhs);
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> mapRhs = (Map<Object, Object>) rhs;
+                // Loop over right hand side entry set, determine value class and then delegate to primitive operations.
+                for (Map.Entry<Object, Object> entry : mapRhs.entrySet()) {
+                    mapLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
+                        if (lhs_value instanceof Integer) {
+                            return op((Integer) lhs_value, (Integer) rhs_value);
+                        } else if (lhs_value instanceof Long) {
+                            return op((Long) lhs_value, (Long) rhs_value);
+                        } else if (lhs_value instanceof String) {
+                            return op((String) lhs_value, (String) rhs_value);
+                        } else if (lhs_value instanceof byte[]) {
+                            return op((byte[]) lhs_value, (byte[]) rhs_value);
+                        } else {
+                            throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
+                        }
+                    });
+                }
+                return mapLhs;
             } else {
                 throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
             }
         }
     }
 
-    /** Defines an aggregation operation with the column name to perform on it. */
-    public static record Aggregation(String column, AggregationOp op) {
+    /**
+     * Defines an aggregation operation with the column name to perform on it.
+     *
+     * @param column the column to aggregate
+     * @param op     the aggregation operator
+     */
+    public record Aggregation(String column, AggregationOp op) {
         public Aggregation {
             Objects.requireNonNull(column, "column");
         }
@@ -221,8 +251,13 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
 
     /**
      * Defines the filtering and aggregation configuration for this iterator.
+     *
+     * @param groupingColumns the columns that the aggregation will "group by"
+     * @param ageOffColumn    the optional column to have an age-off filter applied
+     * @param maxAge          the maximum age in seconds for rows
+     * @param aggregations    the list of aggregations to apply
      */
-    public static record FilterAggregationConfig(List<String> groupingColumns, Optional<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
+    public record FilterAggregationConfig(List<String> groupingColumns, Optional<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
         public FilterAggregationConfig {
             Objects.requireNonNull(groupingColumns, "groupingColumns");
             Objects.requireNonNull(ageOffColumn, "ageOffColumn");
@@ -289,14 +324,14 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     }
 
     public static void main(String[] args) {
-        List<Field> row_keys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
-        List<Field> sort_cols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
-        List<Field> value_cols = List.of(new Field("col5", new IntType()), new Field("col6", new IntType()), new Field("col7", new IntType()));
-        Schema schema = Schema.builder().rowKeyFields(row_keys).sortKeyFields(sort_cols).valueFields(value_cols).build();
+        List<Field> rowKeys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
+        List<Field> sortCols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
+        List<Field> valueCols = List.of(new Field("col5", new IntType()), new Field("col6", new IntType()), new Field("col7", new IntType()));
+        Schema schema = Schema.builder().rowKeyFields(rowKeys).sortKeyFields(sortCols).valueFields(valueCols).build();
     }
 
     /**
-     * Performs validation on a {@link FilterAggregationConfig}.
+     * Performs validation.
      *
      * Validates that <strong>either</strong>:
      * <ul>
@@ -370,8 +405,8 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
      *                                    filters/aggregators. It is a really good example of how NOT to do it.
      *                                    This routine has some odd behaviour.
      *
-     * @throws   IllegalArgumentException if {@code configString} is invalid
      * @return                            an un-validated configuration for aggregation
+     * @throws   IllegalArgumentException if {@code configString} is invalid
      */
     public static FilterAggregationConfig parseConfiguration(String configString) {
         // This is a minimum viable parser for the configuration for
@@ -385,25 +420,25 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
         // Extract the aggregation grouping columns and trim and split the remaining
         List<String> groupingColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).filter(name -> !name.isEmpty()).toList();
         // Following list needs to be mutable, hence Collectors.toList()
-        List<String> filter_aggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
+        List<String> filterAggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
         // We only support age-off filtering
         Optional<String> filter = Optional.empty();
         long maxAge = 0;
-        if (filter_aggs.size() > 0) {
-            if (filter_aggs.get(0).startsWith("ageoff=")) {
-                filter = Optional.of(filter_aggs.get(0).split("=", 2)[1].replace("'", ""));
-                maxAge = Long.parseLong(filter_aggs.get(1).replace("'", ""));
+        if (filterAggs.size() > 0) {
+            if (filterAggs.get(0).startsWith("ageoff=")) {
+                filter = Optional.of(filterAggs.get(0).split("=", 2)[1].replace("'", ""));
+                maxAge = Long.parseLong(filterAggs.get(1).replace("'", ""));
                 // Remove these first two processed elements of filter_aggs list
                 // This is a really hacky implementation
-                filter_aggs.subList(0, 2).clear();
+                filterAggs.subList(0, 2).clear();
             } else {
                 // Just remove first element
-                filter_aggs.remove(0);
+                filterAggs.remove(0);
             }
         }
         // We use a regular expression to extract the aggregation operation and column for each remaining part
         List<Aggregation> aggregations = new ArrayList<>();
-        for (String agg : filter_aggs) {
+        for (String agg : filterAggs) {
             Matcher matcher = AGGREGATE_REGEX.matcher(agg);
             if (matcher.matches()) {
                 // We implement the "Map" variants with the same operators as the primitive ones, so we can

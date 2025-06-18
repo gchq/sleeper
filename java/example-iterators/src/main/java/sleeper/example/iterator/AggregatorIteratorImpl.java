@@ -32,7 +32,7 @@ import java.util.Objects;
  */
 public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.record.Record> {
 
-    /** Which columns to group and aggregate? */
+    /** Which columns to group and aggregate. */
     private final FilterAggregationConfig config;
     /** Source iterator. */
     private final CloseableIterator<sleeper.core.record.Record> input;
@@ -120,6 +120,13 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
         }
     }
 
+    /**
+     * Determines if two records are equal.
+     *
+     * @param  lhs record
+     * @param  rhs record
+     * @return     true if they are considered equal
+     */
     public boolean recordsEqual(Record lhs, Record rhs) {
         List<Object> keys1 = new ArrayList<>();
         List<Object> keys2 = new ArrayList<>();
