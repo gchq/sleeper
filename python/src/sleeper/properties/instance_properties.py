@@ -1,7 +1,11 @@
 
 import configparser
+import logging
 from mypy_boto3_s3.service_resource import S3ServiceResource
 from typing import Self
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class InstanceProperties:
     def __init__(self, properties: dict):
@@ -15,6 +19,7 @@ class InstanceProperties:
         config = configparser.ConfigParser(allow_no_value=True)
         config.read_string(config_str)
         properties = dict(config['asection'])
+        logger.debug("Loaded properties from config bucket ${bucket_name}")
         return cls(properties)
 
     def as_dict(self) -> dict:

@@ -32,7 +32,6 @@ class LocalStack:
         if cls._container is None:
             cls._container = LocalStackContainer('localstack/localstack:4.2')
             cls._container.start()
-            cls._container.get_logs()
         return cls._container
 
 
