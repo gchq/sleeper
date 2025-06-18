@@ -13,4 +13,4 @@ class TestInstancePropertiesLocalStack(LocalStackTestBase):
         properties = InstanceProperties.load_from_bucket(self.s3, bucket_name)
 
         # Then
-        self.assertEqual({'a.b.c': 'value'}, properties.as_dict())
+        assert properties.as_dict() == {'a.b.c': 'value'}
