@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
+import sleeper.configuration.utils.S3FileNotFoundException;
 import sleeper.configuration.utils.S3PathUtils;
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
-import sleeper.core.statestore.exception.S3FileNotFoundException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.core.IngestBatcherStore;

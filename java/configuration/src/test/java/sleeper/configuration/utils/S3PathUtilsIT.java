@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
-import sleeper.core.statestore.exception.S3FileNotFoundException;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
