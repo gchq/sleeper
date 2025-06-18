@@ -1,4 +1,3 @@
-import unittest
 import uuid
 from mypy_boto3_s3 import S3ServiceResource
 from testcontainers.localstack import LocalStackContainer
