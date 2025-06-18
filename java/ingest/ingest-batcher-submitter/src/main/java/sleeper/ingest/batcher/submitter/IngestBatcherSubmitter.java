@@ -75,10 +75,9 @@ public class IngestBatcherSubmitter {
             try {
                 List<S3FileDetails> fileDetails = s3PathUtils.listFilesAsS3FileDetails(filename);
                 list.addAll(convertFileDetailsToTrackedFile(fileDetails, tableID, receivedTime));
-            } catch (java.io.FileNotFoundException e) {
+            } catch (S3FileNotFoundException e) {
                 return List.of();
             }
-
         }
         return list;
     }
