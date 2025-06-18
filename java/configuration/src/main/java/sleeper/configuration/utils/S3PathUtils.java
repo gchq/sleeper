@@ -60,6 +60,12 @@ public class S3PathUtils {
         }
     }
 
+    public Stream<String> streamHadoopPaths(List<String> files, String prefix) {
+        List<String> adjustList = new ArrayList<String>();
+        streamFilenames(files).forEach(filename -> adjustList.add(prefix + filename));
+        return adjustList.stream();
+    }
+
     /**
      * Streams files from S3 for list of paths provided.
      *

@@ -120,7 +120,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Create list of all files to be read
 
-        List<String> paths = s3PathUtils.streamFilenames(job.getFiles()).toList();
+        List<String> paths = s3PathUtils.streamHadoopPaths(job.getFiles(), "s3a://").toList();
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 
