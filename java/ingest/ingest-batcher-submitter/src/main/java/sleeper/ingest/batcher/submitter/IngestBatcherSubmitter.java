@@ -72,12 +72,8 @@ public class IngestBatcherSubmitter {
         List<IngestBatcherTrackedFile> list = new ArrayList<IngestBatcherTrackedFile>();
 
         for (String filename : request.files()) {
-            try {
-                List<S3FileDetails> fileDetails = s3PathUtils.listFilesAsS3FileDetails(filename);
-                list.addAll(convertFileDetailsToTrackedFile(fileDetails, tableID, receivedTime));
-            } catch (S3FileNotFoundException e) {
-                return List.of();
-            }
+            List<S3FileDetails> fileDetails = s3PathUtils.listFilesAsS3FileDetails(filename);
+            list.addAll(convertFileDetailsToTrackedFile(fileDetails, tableID, receivedTime));
         }
         return list;
     }
