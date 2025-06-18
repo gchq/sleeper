@@ -14,6 +14,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Make venv
+        run: |
+          python -m venv "${GITHUB_WORKSPACE}/python/env"
+          echo PATH=${GITHUB_WORKSPACE}/python/env/bin:$PATH >> $GITHUB_ENV
       - name: Python build
         run: pip install .
         working-directory: ./python
