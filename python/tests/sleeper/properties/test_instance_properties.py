@@ -1,9 +1,6 @@
 import pytest
 
-from sleeper.properties.bucket_property import BucketProperty
-from sleeper.properties.dynamo_table_property import DynamoTableProperty
-from sleeper.properties.instance_properties import InstanceProperties
-from sleeper.properties.queue_property import QueueProperty
+from sleeper.properties.instance_properties import BucketProperty, DynamoTableProperty, InstanceProperties, QueueProperty
 
 
 def test_read_set_field():

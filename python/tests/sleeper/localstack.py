@@ -3,6 +3,9 @@ import uuid
 import boto3
 from botocore.client import Config
 from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_s3.service_resource import Bucket
+from mypy_boto3_sqs import SQSServiceResource
+from mypy_boto3_sqs.service_resource import Queue
 from testcontainers.localstack import LocalStackContainer
 
 CONTAINER = LocalStackContainer("localstack/localstack:4.2")
@@ -11,6 +14,7 @@ CONTAINER = LocalStackContainer("localstack/localstack:4.2")
 class LocalStack:
     _container: LocalStackContainer = None
     _s3_resource: S3ServiceResource = None
+    _sqs_resource: SQSServiceResource = None
 
     @classmethod
     def container(cls) -> LocalStackContainer:
@@ -43,7 +47,19 @@ class LocalStack:
         return cls._s3_resource
 
     @classmethod
-    def create_bucket(cls) -> str:
+    def sqs_resource(cls) -> SQSServiceResource:
+        if cls._sqs_resource is None:
+            cls._sqs_resource = cls.resource("sqs")
+        return cls._sqs_resource
+
+    @classmethod
+    def create_bucket(cls) -> Bucket:
         bucket_name = str(uuid.uuid4())
-        cls.s3_resource().Bucket(bucket_name).create(CreateBucketConfiguration={"LocationConstraint": cls.region_name()})
-        return bucket_name
+        bucket = cls.s3_resource().Bucket(bucket_name)
+        bucket.create(CreateBucketConfiguration={"LocationConstraint": cls.region_name()})
+        return bucket
+
+    @classmethod
+    def create_queue(cls) -> Queue:
+        queue_name = str(uuid.uuid4())
+        return cls.sqs_resource().create_queue(QueueName=queue_name)

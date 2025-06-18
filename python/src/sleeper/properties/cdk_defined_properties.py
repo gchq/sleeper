@@ -1,6 +1,4 @@
-from sleeper.properties.bucket_property import BucketProperty
-from sleeper.properties.dynamo_table_property import DynamoTableProperty
-from sleeper.properties.queue_property import QueueProperty
+from sleeper.properties.instance_properties import BucketProperty, DynamoTableProperty, QueueProperty
 
 
 class IngestQueue:
@@ -15,3 +13,4 @@ class QueryResources:
     QUERY_QUEUE = QueueProperty("sleeper.query.queue.url")
     QUERY_RESULTS_BUCKET = BucketProperty("sleeper.query.results.bucket")
     QUERY_TRACKER_TABLE = DynamoTableProperty("sleeper.query.tracker.table.name")
+    BULK_EXPORT_QUEUE = QueueProperty("sleeper.bulk.export.queue.url")

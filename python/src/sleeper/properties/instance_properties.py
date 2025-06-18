@@ -9,7 +9,9 @@ logger.setLevel(logging.DEBUG)
 
 
 class InstanceProperties:
-    def __init__(self, properties: dict):
+    def __init__(self, properties: dict = None):
+        if properties is None:
+            properties = {}
         self._properties = properties
 
     @classmethod
@@ -26,5 +28,35 @@ class InstanceProperties:
     def as_dict(self) -> dict:
         return self._properties
 
-    def get(self, property_name) -> str:
-        return self._properties[property_name]
+    def get(self, property) -> str:
+        if isinstance(property, InstanceProperty):
+            property = property.property_name
+        return self._properties[property]
+
+    def set(self, property, value: str):
+        if isinstance(property, InstanceProperty):
+            property = property.property_name
+        self._properties[property] = value
+
+
+class InstanceProperty:
+    def __init__(self, property_name):
+        self.property_name = property_name
+
+
+class QueueProperty(InstanceProperty):
+    def queue_url(self, properties: InstanceProperties):
+        return properties.get(self.property_name)
+
+    def queue_name(self, properties: InstanceProperties):
+        return self.queue_url(properties).rsplit("/", 1)[1]
+
+
+class BucketProperty(InstanceProperty):
+    def bucket_name(self, properties: InstanceProperties):
+        return properties.get(self.property_name)
+
+
+class DynamoTableProperty(InstanceProperty):
+    def table_name(self, properties: InstanceProperties):
+        return properties.get(self.property_name)
