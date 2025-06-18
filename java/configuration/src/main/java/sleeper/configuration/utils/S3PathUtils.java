@@ -99,26 +99,31 @@ public class S3PathUtils {
      * @return          containing all files details
      */
     public List<S3FileDetails> listFilesAsS3FileDetails(String filename) {
-        FileLocationDetails fileLocation = determineFileLocationBreakdown(filename);
+        if (checkIsNotCrcFile(filename)) {
+            FileLocationDetails fileLocation = determineFileLocationBreakdown(filename);
 
-        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-        ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
-                .bucket(fileLocation.bucket)
-                .prefix(fileLocation.objectKey)
-                .build());
+            List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+            ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
+                    .bucket(fileLocation.bucket)
+                    .prefix(fileLocation.objectKey)
+                    .build());
 
-        for (ListObjectsV2Response subResponse : response) {
-            subResponse.contents().forEach((S3Object s3Object) -> {
-                if (checkIsNotCrcFile(s3Object.key())) {
-                    outList.add(new S3FileDetails(new FileLocationDetails(fileLocation.bucket, s3Object.key()), s3Object));
-                }
-            });
+            for (ListObjectsV2Response subResponse : response) {
+                subResponse.contents().forEach((S3Object s3Object) -> {
+                    if (checkIsNotCrcFile(s3Object.key())) {
+                        outList.add(new S3FileDetails(new FileLocationDetails(fileLocation.bucket, s3Object.key()), s3Object));
+                    }
+                });
+            }
+            if (outList.isEmpty()) {
+                throw new S3FileNotFoundException(fileLocation.bucket, fileLocation.objectKey);
+            }
+
+            return outList;
+        } else {
+            return List.of();
         }
-        if (outList.isEmpty()) {
-            throw new S3FileNotFoundException(fileLocation.bucket, fileLocation.objectKey);
-        }
 
-        return outList;
     }
 
     private FileLocationDetails determineFileLocationBreakdown(String filename) {
