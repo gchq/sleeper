@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Python build
-        run: pip3 install .
+        run: pip install .
         working-directory: ./python
       - name: Python tests
         run: pytest
