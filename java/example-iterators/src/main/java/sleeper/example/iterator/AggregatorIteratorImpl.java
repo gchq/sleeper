@@ -91,11 +91,13 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
             Record aggregated = toBeAggregated;
             toBeAggregated = null;
             // Aggregation loop
-            while (input.hasNext()) {
+            boolean testAggregation = true;
+            while (input.hasNext() && testAggregation) {
                 toBeAggregated = input.next();
-                if (recordsEqual(aggregated, toBeAggregated)) {
+                if ((testAggregation = recordsEqual(aggregated, toBeAggregated))) {
                     // Do aggregation of spare into aggregated
                     aggregateOnTo(aggregated, toBeAggregated, config);
+                    toBeAggregated = null;
                 }
             }
             return aggregated;
