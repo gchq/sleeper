@@ -51,9 +51,9 @@ DEFAULT_MAX_WAIT_TIME = 120
 
 class SleeperClient:
 
-    def __init__(self, basename, use_threads=False):
-        self._basename = basename
-        resources = _get_resource_names("sleeper-" + self._basename + "-config")
+    def __init__(self, instance_id, use_threads=False):
+        self._instance_id = instance_id
+        resources = _get_resource_names("sleeper-" + self._instance_id + "-config")
         self._ingest_queue = resources[0]
         self._emr_bulk_import_queue = resources[1]
         self._persistent_emr_bulk_import_queue = resources[2]
@@ -62,7 +62,7 @@ class SleeperClient:
         self._query_queue = resources[5]
         self._query_results_bucket = resources[6]
         self._dynamodb_query_tracker_table = resources[7]
-        logger.debug("Loaded properties from config bucket sleeper-" + self._basename + "-config")
+        logger.debug("Loaded properties from config bucket sleeper-" + self._instance_id + "-config")
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
@@ -77,7 +77,7 @@ class SleeperClient:
         :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
         # Generate a filename to write to
-        databucket: str = _make_ingest_bucket_name(self._basename)
+        databucket: str = _make_ingest_bucket_name(self._instance_id)
         databucket_file = _make_ingest_s3_name(databucket)
         logger.debug(f"Writing to {databucket_file}")
         # Upload it
@@ -296,7 +296,7 @@ class SleeperClient:
                 parquet_file.write_tail()
 
                 # Get name of file to upload to on S3
-                databucket: str = _make_ingest_bucket_name(self._basename)
+                databucket: str = _make_ingest_bucket_name(self._instance_id)
                 s3_filename: str = _make_ingest_s3_name(databucket)
                 bucket: str = s3_filename.split('/', 1)[0]
                 key: str = s3_filename.split('/', 1)[1]
