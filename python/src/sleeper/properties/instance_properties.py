@@ -15,6 +15,10 @@ class InstanceProperties:
         self._properties = properties
 
     @classmethod
+    def load_for_instance(cls, s3: S3ServiceResource, instance_id: str) -> Self:
+        return cls.load_from_bucket(s3, "sleeper-" + instance_id + "-config")
+
+    @classmethod
     def load_from_bucket(cls, s3: S3ServiceResource, bucket_name: str) -> Self:
         config_obj = s3.Object(bucket_name, "instance.properties")
         config_str = config_obj.get()["Body"].read().decode("utf-8")

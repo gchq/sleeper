@@ -11,14 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import configparser
 import json
 import logging
 import tempfile
 import time
 import uuid
 from contextlib import contextmanager
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import boto3
 import s3fs
@@ -27,6 +26,8 @@ from pyarrow.parquet import ParquetFile
 
 from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
+from sleeper.properties.cdk_defined_properties import IngestQueue, QueryResources
+from sleeper.properties.instance_properties import InstanceProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -53,15 +54,16 @@ DEFAULT_MAX_WAIT_TIME = 120
 class SleeperClient:
     def __init__(self, instance_id, use_threads=False):
         self._instance_id = instance_id
-        resources = _get_resource_names("sleeper-" + self._instance_id + "-config")
-        self._ingest_queue = resources[0]
-        self._emr_bulk_import_queue = resources[1]
-        self._persistent_emr_bulk_import_queue = resources[2]
-        self._eks_bulk_import_queue = resources[3]
-        self._emr_serverless_bulk_import_queue = resources[4]
-        self._query_queue = resources[5]
-        self._query_results_bucket = resources[6]
-        self._dynamodb_query_tracker_table = resources[7]
+        properties = InstanceProperties.load_for_instance(_s3, instance_id)
+        self._instance_properties = properties
+        self._ingest_queue = IngestQueue.STANDARD_INGEST.queue_name(properties)
+        self._emr_bulk_import_queue = IngestQueue.BULK_IMPORT_EMR.queue_name(properties)
+        self._persistent_emr_bulk_import_queue = IngestQueue.BULK_IMPORT_PERSISTENT_EMR.queue_name(properties)
+        self._eks_bulk_import_queue = IngestQueue.BULK_IMPORT_EKS.queue_name(properties)
+        self._emr_serverless_bulk_import_queue = IngestQueue.BULK_IMPORT_EMR_SERVERLESS.queue_name(properties)
+        self._query_queue = QueryResources.QUERY_QUEUE.queue_name(properties)
+        self._query_results_bucket = QueryResources.QUERY_RESULTS_BUCKET.bucket_name(properties)
+        self._dynamodb_query_tracker_table = QueryResources.QUERY_TRACKER_TABLE.table_name(properties)
         logger.debug("Loaded properties from config bucket sleeper-" + self._instance_id + "-config")
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
@@ -320,66 +322,6 @@ class SleeperClient:
 
                 # Notify Sleeper
                 _ingest(table_name, [s3_filename], self._ingest_queue, job_id)
-
-
-def _get_resource_names(
-    configbucket: str,
-) -> Tuple[str, str, str, str, str, str, str, str]:
-    """
-    Gets SQS queue names from S3 for the posting of messages to Sleeper.
-
-    :param configbucket: name of the S3 bucket where the config is
-
-    :return: tuple with the names of the queues
-    """
-    config_obj = _s3_resource.Object(configbucket, "instance.properties")
-    config_str = config_obj.get()["Body"].read().decode("utf-8")
-    config_str = "[asection]\n" + config_str
-    config = configparser.ConfigParser(allow_no_value=True)
-    config.read_string(config_str)
-
-    # The string keys for these properties can be found in the Java class SystemDefinedInstanceProperty
-    ingest_queue = None
-    if "sleeper.ingest.job.queue.url" in config["asection"]:
-        ingest_queue = (config["asection"]["sleeper.ingest.job.queue.url"]).rsplit("/", 1)[1]
-
-    emr_bulk_import_queue = None
-    if "sleeper.bulk.import.emr.job.queue.url" in config["asection"]:
-        emr_bulk_import_queue = (config["asection"]["sleeper.bulk.import.emr.job.queue.url"]).rsplit("/", 1)[1]
-
-    persistent_emr_bulk_import_queue = None
-    if "sleeper.bulk.import.persistent.emr.job.queue.url" in config["asection"]:
-        persistent_emr_bulk_import_queue = (config["asection"]["sleeper.bulk.import.persistent.emr.job.queue.url"]).rsplit("/", 1)[1]
-
-    emr_serverless_bulk_import_queue = None
-    if "sleeper.bulk.import.emr.serverless.job.queue.url" in config["asection"]:
-        emr_serverless_bulk_import_queue = (config["asection"]["sleeper.bulk.import.emr.serverless.job.queue.url"]).rsplit("/", 1)[1]
-
-    eks_bulk_import_queue = None
-    if "sleeper.bulk.import.eks.job.queue.url" in config["asection"]:
-        eks_bulk_import_queue = (config["asection"]["sleeper.bulk.import.eks.job.queue.url"]).rsplit("/", 1)[1]
-    query_queue = None
-    if "sleeper.query.queue.url" in config["asection"]:
-        query_queue = (config["asection"]["sleeper.query.queue.url"]).rsplit("/", 1)[1]
-
-    query_results_bucket = None
-    if "sleeper.query.results.bucket" in config["asection"]:
-        query_results_bucket = config["asection"]["sleeper.query.results.bucket"]
-
-    dynamodb_query_tracker_table = None
-    if "sleeper.query.tracker.table.name" in config["asection"]:
-        dynamodb_query_tracker_table = config["asection"]["sleeper.query.tracker.table.name"]
-
-    return (
-        ingest_queue,
-        emr_bulk_import_queue,
-        persistent_emr_bulk_import_queue,
-        eks_bulk_import_queue,
-        emr_serverless_bulk_import_queue,
-        query_queue,
-        query_results_bucket,
-        dynamodb_query_tracker_table,
-    )
 
 
 def _write_and_upload_parquet(records_to_write: list, s3_file: str):
