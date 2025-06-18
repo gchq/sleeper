@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.utils;
 
-import org.apache.commons.lang3.exception.UncheckedException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
@@ -51,16 +50,12 @@ public class S3PathUtils {
         try {
             List<String> outList = new ArrayList<String>();
             files.stream().forEach(file -> {
-                try {
-                    outList.addAll(listFilesAsS3FileDetails(file)
-                            .stream().map(S3FileDetails::getFullFileLocation)
-                            .collect(Collectors.toList()));
-                } catch (S3FileNotFoundException e) {
-                    throw new UncheckedException(e);
-                }
+                outList.addAll(listFilesAsS3FileDetails(file)
+                        .stream().map(S3FileDetails::getFullFileLocation)
+                        .collect(Collectors.toList()));
             });
             return outList.stream();
-        } catch (UncheckedException e) {
+        } catch (S3FileNotFoundException e) {
             return Stream.empty();
         }
     }
@@ -78,14 +73,10 @@ public class S3PathUtils {
         try {
             List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
             files.stream().forEach(file -> {
-                try {
-                    outList.addAll(listFilesAsS3FileDetails(file));
-                } catch (S3FileNotFoundException e) {
-                    throw new UncheckedException(e);
-                }
+                outList.addAll(listFilesAsS3FileDetails(file));
             });
             return outList.stream();
-        } catch (UncheckedException e) {
+        } catch (S3FileNotFoundException e) {
             return Stream.empty();
         }
     }
