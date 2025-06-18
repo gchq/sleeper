@@ -15,7 +15,6 @@
         "ms-python.python",
         "ms-python.debugpy",
         "donjayamanne.python-environment-manager",
-        "pamaron.pytest-runner",
         "njpwerner.autodocstring",
         "mhutchie.git-graph",
         "scala-lang.scala"
