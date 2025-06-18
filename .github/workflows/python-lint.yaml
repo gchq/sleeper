@@ -18,6 +18,9 @@ jobs:
       - name: Python build
         run: pip install --editable .
         working-directory: ./python
-      - name: Python lint
+      - name: Ruff check
         run: ruff check
+        working-directory: ./python
+      - name: Ruff format check
+        run: ruff format --check
         working-directory: ./python

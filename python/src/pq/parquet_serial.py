@@ -89,9 +89,7 @@ def _non_nullable(fields: List[pa.Field], deep: bool = True) -> List[pa.Field]:
                 )
             )
         else:
-            new_fields.append(
-                pa.field(field.name, field.type, False, metadata=field.metadata)
-            )
+            new_fields.append(pa.field(field.name, field.type, False, metadata=field.metadata))
     return new_fields
 
 
@@ -131,9 +129,7 @@ class ParquetSerialiser:
         if self._writer is not None:
             # If we have a writer and some rows then flush
             if self._row_count > 0:
-                self._writer.write_table(
-                    pa.Table.from_pydict(self._buffer, schema=self._writer.schema)
-                )
+                self._writer.write_table(pa.Table.from_pydict(self._buffer, schema=self._writer.schema))
                 self._clear_table()
 
     def _write_row(self, record: Mapping[str, str]) -> None:
@@ -185,9 +181,7 @@ class ParquetSerialiser:
             else:
                 # Room to grow, re-calculate sample duration
                 self._mem_sample_duration = self._get_next_mem_sample_duration()
-                self._next_row_memory_check = (
-                    self._row_count + self._mem_sample_duration
-                )
+                self._next_row_memory_check = self._row_count + self._mem_sample_duration
 
     def write_tail(self) -> None:
         """
