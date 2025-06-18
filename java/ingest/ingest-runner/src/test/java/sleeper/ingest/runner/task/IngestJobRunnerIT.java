@@ -113,7 +113,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
         StateStore stateStore = initialiseStateStore();
 
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
+        List<String> files = writeParquetFilesForIngest(recordListAndSchema, 2);
         List<Record> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
                 .flatMap(List::stream).collect(Collectors.toList());
 
@@ -140,7 +140,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 1);
+        List<String> files = writeParquetFilesForIngest(recordListAndSchema, 1);
         URI uri1 = new URI("s3a://" + ingestSourceBucketName + "/file-1.crc");
         FileSystem.get(uri1, hadoopConf).createNewFile(new Path(uri1));
         files.add(ingestSourceBucketName + "/file-1.crc");
@@ -260,7 +260,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
         StateStore stateStore = initialiseStateStore();
 
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 1);
+        List<String> files = writeParquetFilesForIngest(recordListAndSchema, 1);
         IngestJob job = IngestJob.builder()
                 .tableName(tableName)
                 .tableId(tableId)
@@ -352,13 +352,25 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private List<String> writeParquetFilesForIngest(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
+            int numberOfFiles) throws IOException {
+        return writeParquetFilesForIngestWithRoot(recordListAndSchema, ingestSourceBucketName, numberOfFiles);
+    }
+
+    private List<String> writeParquetFilesForIngest(
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
             String subDirectory,
+            int numberOfFiles) throws IOException {
+        return writeParquetFilesForIngestWithRoot(recordListAndSchema, ingestSourceBucketName + "/" + subDirectory, numberOfFiles);
+    }
+
+    private List<String> writeParquetFilesForIngestWithRoot(
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            String rootDirectory,
             int numberOfFiles) throws IOException {
         List<String> files = new ArrayList<>();
 
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
-            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet",
-                    ingestSourceBucketName, subDirectory, fileNo);
+            String fileWithoutSystemPrefix = String.format("%s/file-%d.parquet", rootDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path("s3a://" + fileWithoutSystemPrefix);
             writeParquetFileForIngest(path, recordListAndSchema);
