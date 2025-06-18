@@ -19,7 +19,7 @@ setup(
     description='Python client for Sleeper',
     packages=['sleeper', 'pq'],
     install_requires=[
-        'pyarrow', 'boto3', 's3fs', 'boto3-stubs[essential]', 'testcontainers[localstack]'
+        'pyarrow', 'boto3', 's3fs', 'boto3-stubs[essential]', 'pytest', 'testcontainers[localstack]'
     ],
     package_dir={"": "src"},
     python_requires=">=3.7",
