@@ -105,7 +105,7 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        coreStacks.grantRunCompactionJobs(bulkExportLambda);
+        coreStacks.grantReadTablesMetadata(bulkExportLambda);
         leafPartitionQueuesQ.grantSendMessages(bulkExportLambda);
 
         // Add the queue as a source of events for the lambdas
