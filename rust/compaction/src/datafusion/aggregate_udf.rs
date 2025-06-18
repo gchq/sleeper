@@ -200,19 +200,21 @@ impl TryFrom<&str> for FilterAggregationConfig {
     }
 }
 
-/// Validate that __either__:
-///  * No aggregations have been specified
+/// Validates the filtering and aggregation configuration.
 ///
-/// OR
+/// Row key columns are implicitly "group by" columns. Extra columns may be added. Typically,
+/// we expect this to include sort key columns.
 ///
-///  1. All columns that are NOT query aggregation columns have an aggregation operation specified for them,
-///  2. No query aggregation columns have aggregations specified,
-///  3. No query aggregation column is duplicated.
-///  4. Aggregation columns must be valid in schema.
+/// In particular, validates that:
+///  1. All columns that are NOT "group by" columns have an aggregation operation specified for them,
+///  2. No "group by" columns have aggregations specified,
+///  3. No "group by" column is duplicated.
+///  4. No aggregation column is specified multiple times,
+///  5. All columns must be valid in schema.
 ///
 /// Raise an error if this is not the case.
 pub fn validate_aggregations(
-    query_agg_cols: &[String],
+    group_by_cols: &[String],
     schema: &DFSchema,
     agg_conf: &[Aggregate],
 ) -> Result<()> {
@@ -221,21 +223,22 @@ pub fn validate_aggregations(
         let all_cols = schema.clone().strip_qualifiers().field_names();
         // Check for duplicate aggregation columns
         let mut dup_check = HashSet::new();
-        for col in query_agg_cols {
-            // Is this column duplicated or a row key column?
+        for col in group_by_cols {
+            // Has this "group by" column been specified multiple times? Or is it a row key column?
+            // Row key columns are implicitly "group by" columns.
             if !dup_check.insert(col) {
                 return plan_err!(
-                    "Aggregation grouping column \"{col}\" is already a row key column or is duplicated"
+                    "Grouping column \"{col}\" is already a row key column or has been specified multiple times"
                 );
             }
             // Is this column valid?
             if !all_cols.contains(col) {
-                return plan_err!("Aggregation grouping column \"{col}\" doesn't exist");
+                return plan_err!("Grouping column \"{col}\" doesn't exist");
             }
         }
-        // Remove query aggregation columns
+        // Remove "group by" columns
         let mut non_row_key_cols = all_cols.clone();
-        non_row_key_cols.retain(|col| !query_agg_cols.contains(col));
+        non_row_key_cols.retain(|col| !group_by_cols.contains(col));
         // Columns with aggregators
         let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
         // Check for duplications in aggregation columns and row key aggregations
@@ -255,7 +258,7 @@ pub fn validate_aggregations(
         }
         // Check all non row key columns exist in aggregation column list
         for col in non_row_key_cols {
-            if !agg_cols.contains(&&col) {
+            if !agg_cols.contains(col) {
                 return plan_err!(
                     "Column \"{col}\" doesn't have a aggregation operator specified!"
                 );

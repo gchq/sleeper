@@ -169,8 +169,8 @@ fn set_dictionary_encoding(
 
 /// Extract the Data Sketch result and write it out.
 ///
-/// This function should be called after a query has completed. The sketch function will be asked for the current
-/// sketch.
+/// This function should be called after a `DataFusion` operation has completed. The sketch function will be asked for
+/// the current sketch.
 ///
 /// # Errors
 /// If the sketch couldn't be serialised.
@@ -225,7 +225,7 @@ fn create_sketch_udf(
     Ok(sketch_func)
 }
 
-/// Apply any configured filters to the query if any are present.
+/// Apply any configured filters to the `DataFusion` operation if any are present.
 fn apply_general_row_filters(
     frame: DataFrame,
     filter_agg_conf: Option<&FilterAggregationConfig>,
@@ -245,7 +245,7 @@ fn apply_general_row_filters(
     )
 }
 
-/// If any are present, apply Sleeper aggregations to this query.
+/// If any are present, apply Sleeper aggregations to this `DataFusion` plan.
 ///
 /// # Errors
 /// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
@@ -262,9 +262,9 @@ fn apply_aggregations(
         }) = &filter_agg_conf
         {
             // Grab initial row key columns
-            let mut query_agg_cols = row_key_cols;
+            let mut group_by_cols = row_key_cols;
             let mut extra_agg_cols = vec![];
-            // If we have any extra query columns, concatenate them all together
+            // If we have any extra "group by" columns, concatenate them all together
             if let Some(more_columns) = agg_cols {
                 extra_agg_cols.extend(
                     row_key_cols
@@ -272,15 +272,15 @@ fn apply_aggregations(
                         .chain(more_columns)
                         .map(ToOwned::to_owned),
                 );
-                query_agg_cols = &extra_agg_cols;
+                group_by_cols = &extra_agg_cols;
             }
             // Check aggregations meet validity checks
-            validate_aggregations(query_agg_cols, frame.schema(), aggregation)?;
+            validate_aggregations(group_by_cols, frame.schema(), aggregation)?;
             let aggregations = aggregation
                 .iter()
                 .map(|agg| agg.to_expr(&frame))
                 .collect::<Result<Vec<_>, _>>()?;
-            frame.aggregate(query_agg_cols.iter().map(col).collect(), aggregations)?
+            frame.aggregate(group_by_cols.iter().map(col).collect(), aggregations)?
         } else {
             frame
         },

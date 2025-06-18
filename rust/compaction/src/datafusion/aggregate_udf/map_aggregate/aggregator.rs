@@ -10,7 +10,7 @@
 /// | ....|
 ///
 ///
-/// Given a "`map_sum`" aggregator configured, the query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
+/// Given a "`map_sum`" aggregator configured, the SQL query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
 /// | Key |Total | Items |
 /// |--|--|--|
 /// | a | 9 | { 'k1' = 2, 'k2' = 3, 'k3' = 4, 'k4' = 1} |
