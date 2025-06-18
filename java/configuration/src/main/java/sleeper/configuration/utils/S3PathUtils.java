@@ -22,6 +22,8 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
+import sleeper.core.statestore.exception.S3FileNotFoundException;
+
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,26 +98,35 @@ public class S3PathUtils {
      * @return          containing all files details
      */
     public List<S3FileDetails> listFilesAsS3FileDetails(String filename) throws FileNotFoundException {
-        String bucket = filename.substring(0, filename.indexOf("/"));
-        String objectKey = filename.substring(filename.indexOf("/") + 1);
+        FileLocationDetails fileLocation = determineFileLocationBreakdown(filename);
+
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
-                .bucket(bucket)
-                .prefix(objectKey)
+                .bucket(fileLocation.bucket)
+                .prefix(fileLocation.objectKey)
                 .build());
 
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
                 if (checkIsNotCrcFile(s3Object.key())) {
-                    outList.add(new S3FileDetails(new FileLocationDetails(bucket, s3Object.key()), s3Object));
+                    outList.add(new S3FileDetails(new FileLocationDetails(fileLocation.bucket, s3Object.key()), s3Object));
                 }
             });
         }
         if (outList.isEmpty()) {
-            throw new FileNotFoundException();
+            throw new S3FileNotFoundException(fileLocation.bucket, fileLocation.objectKey);
         }
 
         return outList;
+    }
+
+    private FileLocationDetails determineFileLocationBreakdown(String filename) {
+        if (!filename.contains("/")) {
+            return new FileLocationDetails(filename, "");
+        } else {
+            return new FileLocationDetails(filename.substring(0, filename.indexOf("/")),
+                    filename.substring(filename.indexOf("/") + 1));
+        }
     }
 
     private boolean checkIsNotCrcFile(String key) {

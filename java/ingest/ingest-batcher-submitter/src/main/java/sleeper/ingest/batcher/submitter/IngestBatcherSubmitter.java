@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import sleeper.configuration.utils.S3PathUtils;
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
+import sleeper.core.statestore.exception.S3FileNotFoundException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
@@ -52,7 +53,7 @@ public class IngestBatcherSubmitter {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
-        } catch (FileNotFoundException | NoSuchKeyException e) {
+        } catch (S3FileNotFoundException | NoSuchKeyException e) {
             LOGGER.info("File not found, sending request to dead letter queue: {}", request, e);
             deadLetterQueue.submit(request);
             return;
