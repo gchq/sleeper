@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - 'python/**'
-      - '.github/workflows/python-tests.yaml'
+      - '.github/workflows/python-lint.yaml'
 
 jobs:
   build:
