@@ -151,7 +151,10 @@ impl ScalarUDFImpl for AgeOff {
 mod tests {
     use super::AgeOff;
     use crate::{assert_error, datafusion::aggregate_udf::Filter};
-    use arrow::array::{AsArray, Int64Builder};
+    use arrow::{
+        array::{AsArray, Int64Builder},
+        datatypes::{DataType, Field},
+    };
     use datafusion::{
         common::exec_err,
         error::DataFusionError,
@@ -258,7 +261,8 @@ mod tests {
         let result = ageoff.invoke_with_args(ScalarFunctionArgs {
             number_rows: 1,
             args: vec![],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![],
         });
 
         assert_error!(
@@ -280,7 +284,11 @@ mod tests {
                 ColumnarValue::Scalar(ScalarValue::Boolean(Some(true))),
                 ColumnarValue::Scalar(ScalarValue::Boolean(Some(false))),
             ],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![
+                Arc::new(Field::new("", DataType::Boolean, false)),
+                Arc::new(Field::new("", DataType::Boolean, false)),
+            ],
         });
 
         assert_error!(
@@ -299,7 +307,8 @@ mod tests {
         let result = ageoff.invoke_with_args(ScalarFunctionArgs {
             number_rows: 1,
             args: vec![ColumnarValue::Scalar(ScalarValue::Float32(None))],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![Arc::new(Field::new("", DataType::Float32, false))],
         });
 
         assert_error!(
@@ -318,7 +327,8 @@ mod tests {
         let result = ageoff.invoke_with_args(ScalarFunctionArgs {
             number_rows: 1,
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(None))],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
         });
 
         assert_error!(
@@ -337,7 +347,8 @@ mod tests {
         let result = ageoff.invoke_with_args(ScalarFunctionArgs {
             number_rows: 1,
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(1000)))],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
         })?;
 
         // Then
@@ -357,7 +368,8 @@ mod tests {
         let result = ageoff.invoke_with_args(ScalarFunctionArgs {
             number_rows: 1,
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(999)))],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
         })?;
 
         // Then
@@ -383,7 +395,8 @@ mod tests {
         let result = ageoff.invoke_with_args(ScalarFunctionArgs {
             number_rows: 1,
             args: vec![ColumnarValue::Array(vals)],
-            return_type: &arrow::datatypes::DataType::Boolean,
+            return_field: Arc::new(Field::new("", DataType::Boolean, false)),
+            arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
         })?;
 
         // Then

@@ -30,7 +30,7 @@ use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     common::DFSchema,
-    config::TableParquetOptions,
+    config::{ExecutionOptions, TableParquetOptions},
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
@@ -71,15 +71,17 @@ pub async fn compact(
     );
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
-    let sf = create_session_cfg(input_data, input_paths);
+
+    let total_input_size = retrieve_input_size(input_paths, store_factory)
+        .await
+        .inspect_err(|e| warn!("Error getting total input size {e}"))?;
+    let upload_size = calculate_upload_size(total_input_size)?;
+    let sf = create_session_cfg(input_data, input_paths, upload_size);
     let mut ctx = SessionContext::new_with_config(sf);
     register_non_nullable_aggregate_udfs(&mut ctx);
 
     // Register object stores for input files and output file
     register_store(store_factory, input_paths, output_path, &ctx)?;
-
-    // Set the upload size based upon size of input data
-    set_multipart_upload_hint(store_factory, input_paths, output_path).await?;
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -300,42 +302,30 @@ fn parse_iterator_config(
     Ok(filter_agg_conf)
 }
 
-/// Calculate the total input size of all the input paths and set the multipart upload size hint accordingly. This prevents
-/// uploads to S3 failing due to uploading too many small parts. We conseratively set the upload size hint so that fewer,
-/// larger uploads are output.
-///
-/// # Errors
-/// Fails if we can't obtain the size of the input files from the object store.
-async fn set_multipart_upload_hint(
-    store_factory: &ObjectStoreFactory,
-    input_paths: &[Url],
-    output_path: &Url,
-) -> Result<(), DataFusionError> {
-    let input_size = calculate_input_size(input_paths, store_factory)
-        .await
-        .inspect_err(|e| warn!("Error getting total input size {e}"));
-    let multipart_size = std::cmp::max(
-        crate::store::MULTIPART_BUF_SIZE,
-        input_size.unwrap_or_default() / 5000,
+/// Calculate the upload size based on the total input data size. This prevents uploads to S3 failing due to uploading
+/// too many small parts. We conseratively set the upload size so that fewer, larger uploads are created.
+fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
+    let upload_size = std::cmp::max(
+        ExecutionOptions::default().objectstore_writer_buffer_size,
+        usize::try_from(total_input_size / 5000)
+            .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
-    store_factory
-        .get_object_store(output_path)
-        .map_err(|e| DataFusionError::External(e.into()))?
-        .set_multipart_size_hint(multipart_size);
     info!(
-        "Setting multipart size hint to {} bytes.",
-        multipart_size.to_formatted_string(&Locale::en)
+        "Use upload buffer of {} bytes.",
+        upload_size.to_formatted_string(&Locale::en)
     );
-    Ok(())
+    Ok(upload_size)
 }
 
 /// Calculate the total size of all `input_paths` objects.
 ///
-async fn calculate_input_size(
+/// # Errors
+/// Fails if we can't obtain the size of the input files from the object store.
+async fn retrieve_input_size(
     input_paths: &[Url],
     store_factory: &ObjectStoreFactory,
-) -> Result<usize, DataFusionError> {
-    let mut total_input = 0usize;
+) -> Result<u64, DataFusionError> {
+    let mut total_input = 0u64;
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
@@ -496,7 +486,11 @@ fn get_parquet_writer_version(version: &str) -> String {
 ///
 /// This sets as many parameters as possible from the given input data.
 ///
-fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> SessionConfig {
+fn create_session_cfg<T>(
+    input_data: &CompactionInput,
+    input_paths: &[T],
+    upload_size: usize,
+) -> SessionConfig {
     let mut sf = SessionConfig::new();
     // In order to avoid a costly "Sort" stage in the physical plan, we must make
     // sure the target partitions as at least as big as number of input files.
@@ -510,6 +504,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));
+    sf.options_mut().execution.objectstore_writer_buffer_size = upload_size;
     sf.options_mut().execution.parquet.writer_version =
         get_parquet_writer_version(&input_data.writer_version);
     sf.options_mut()
@@ -557,13 +552,13 @@ fn register_store(
             .get_object_store(input_path)
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
-            .register_object_store(input_path, in_store.clone().as_object_store());
+            .register_object_store(input_path, in_store);
     }
 
     let out_store = store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
-        .register_object_store(output_path, out_store.as_object_store());
+        .register_object_store(output_path, out_store);
     Ok(())
 }

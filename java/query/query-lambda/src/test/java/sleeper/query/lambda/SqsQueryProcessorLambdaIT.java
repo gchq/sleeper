@@ -88,6 +88,7 @@ import java.util.Optional;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -587,11 +588,18 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
             // Then
             wireMockServer.verify(2, postRequestedFor(url));
-            wireMockServer.verify(2, postRequestedFor(url).withRequestBody(
-                    matchingJsonPath("$.queryId", equalTo("abc"))));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                    matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("28")))));
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(equalToJson("""
+                    {
+                        "queryId": "abc",
+                        "message": "subqueries"
+                    }
+                    """, true, true)));
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(equalToJson("""
+                    {
+                        "message": "completed",
+                        "recordCount": 28
+                    }
+                    """, true, true)));
         } finally {
             wireMockServer.stop();
         }

@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.query.QueryWebSocketClientTestHelper.asJson;
@@ -366,6 +367,22 @@ public class QueryWebSocketClientTest {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
+
+        @Test
+        void shouldTimeOutWithNoReponse() throws Exception {
+            // Given
+            Query query = exactQuery("test-query-id", 123L);
+
+            // When / Then
+            assertThat(runQueryFuture(query, withResponses()))
+                    .failsWithin(Duration.ofMillis(10))
+                    .withThrowableOfType(ExecutionException.class)
+                    .withCauseInstanceOf(TimeoutException.class);
+            assertThat(client.isConnected()).isFalse();
+            assertThat(client.isClosed()).isTrue();
+            assertThat(client.getSentMessages())
+                    .containsExactly(querySerDe.toJson(query));
+        }
     }
 
     private Query exactQuery(String queryId, long value) {
@@ -390,7 +407,7 @@ public class QueryWebSocketClientTest {
 
     protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient);
+                new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient, 0);
         return client.submitQuery(query);
     }
 

@@ -80,7 +80,7 @@ impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
 /// # Errors
 /// Produces an execution error if the field is not a struct type with 2 inner fields.
 fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a Fields> {
-    let DataType::Map(field, _) = acc_args.return_type else {
+    let DataType::Map(field, _) = acc_args.return_type() else {
         return exec_err!("MapAggregator can only be used on Map column types");
     };
     let DataType::Struct(struct_fields) = field.data_type() else {
@@ -181,7 +181,7 @@ impl AggregateUDFImpl for MapAggregator {
 
         let key_type = struct_fields[0].data_type();
         let value_type = struct_fields[1].data_type();
-        let map_type = acc_args.return_type;
+        let map_type = acc_args.return_type();
         let op_type = self.op.clone();
 
         if key_type.is_integer() {
@@ -220,7 +220,7 @@ impl AggregateUDFImpl for MapAggregator {
 
         let key_type = struct_fields[0].data_type();
         let value_type = struct_fields[1].data_type();
-        let map_type = args.return_type;
+        let map_type = args.return_type();
         let op_type = self.op.clone();
 
         if key_type.is_integer() {
@@ -326,7 +326,7 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
-            return_type: &DataType::Int64,
+            return_field: Arc::new(Field::new("", DataType::Int64, false)),
             schema: &Schema::empty(),
             ignore_nulls: true,
             ordering_req: LexOrdering::empty(),
@@ -349,10 +349,11 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
-            return_type: &DataType::Map(
-                Arc::new(Field::new("test", DataType::Binary, false)),
-                true,
-            ),
+            return_field: Arc::new(Field::new(
+                "",
+                DataType::Map(Arc::new(Field::new("test", DataType::Binary, false)), true),
+                false,
+            )),
             schema: &Schema::empty(),
             ignore_nulls: true,
             ordering_req: LexOrdering::empty(),
@@ -375,18 +376,22 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
-            return_type: &DataType::Map(
-                Arc::new(Field::new(
-                    "test",
-                    DataType::Struct(Fields::from(vec![Field::new(
-                        "key",
-                        DataType::Boolean,
+            return_field: Arc::new(Field::new(
+                "",
+                DataType::Map(
+                    Arc::new(Field::new(
+                        "test",
+                        DataType::Struct(Fields::from(vec![Field::new(
+                            "key",
+                            DataType::Boolean,
+                            true,
+                        )])),
                         true,
-                    )])),
+                    )),
                     true,
-                )),
+                ),
                 true,
-            ),
+            )),
             schema: &Schema::empty(),
             ignore_nulls: true,
             ordering_req: LexOrdering::empty(),
@@ -471,7 +476,7 @@ mod tests {
         map_type: &'a DataType,
     ) -> AccumulatorArgs<'a> {
         AccumulatorArgs {
-            return_type: map_type,
+            return_field: Arc::new(Field::new("", map_type.clone(), false)),
             schema,
             ignore_nulls: true,
             ordering_req: lex,

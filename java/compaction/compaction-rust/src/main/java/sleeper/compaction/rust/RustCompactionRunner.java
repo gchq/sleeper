@@ -95,7 +95,7 @@ public class RustCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    public FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+    private FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
             Region region, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);

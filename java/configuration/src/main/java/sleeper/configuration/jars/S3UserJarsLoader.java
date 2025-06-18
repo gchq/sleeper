@@ -17,7 +17,6 @@ package sleeper.configuration.jars;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
@@ -30,7 +29,9 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,7 +95,10 @@ public class S3UserJarsLoader {
         Path outputFile = localDir.resolve(jar);
         GetObjectResponse response = s3Client.getObject(request -> request
                 .bucket(bucket).key(jar),
-                ResponseTransformer.toFile(outputFile));
+                (resp, inputStream) -> {
+                    Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
+                    return resp;
+                });
         outputFile.toFile().deleteOnExit();
         LOGGER.info("Loaded jar {} of size {} from {} and wrote to {}",
                 jar, response.contentLength(), bucket, outputFile);
