@@ -32,6 +32,8 @@ import javax.tools.ToolProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,6 +50,30 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 
 class S3UserJarsLoaderIT extends LocalStackTestBase {
 
+    private static final String SOURCE_CODE = "" +
+            "import sleeper.core.record.Record;\n" +
+            "import sleeper.core.schema.Schema;\n" +
+            "import sleeper.core.iterator.CloseableIterator;\n" +
+            "import sleeper.core.iterator.SortedRecordIterator;\n" +
+            "import java.util.List;\n" +
+            "\n" +
+            "public class MyIterator implements SortedRecordIterator {\n" +
+            "    public MyIterator() {}\n" +
+            "\n" +
+            "    @Override\n" +
+            "    public void init(String configString, Schema schema) {}\n" +
+            "\n" +
+            "    @Override\n" +
+            "    public CloseableIterator<Record> apply(CloseableIterator<Record> it) {return it;}\n" +
+            "\n" +
+            "    @Override\n" +
+            "    public String toString() {return \"MyIterator\";}\n" +
+            "\n" +
+            "    @Override\n" +
+            "    public List<String> getRequiredValueFields() { return null; }\n" +
+            "}\n";
+    private static final byte[] JAR_BYTES = compileClassCodeToJar("MyIterator", SOURCE_CODE);
+
     InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
     Path tempDir;
@@ -59,32 +85,23 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
 
     @Test
     public void shouldLoadCode() throws Exception {
-        // Given a class implementing SortedRecordIterator
-        String sourceCode = "" +
-                "import sleeper.core.record.Record;\n" +
-                "import sleeper.core.schema.Schema;\n" +
-                "import sleeper.core.iterator.CloseableIterator;\n" +
-                "import sleeper.core.iterator.SortedRecordIterator;\n" +
-                "import java.util.List;\n" +
-                "\n" +
-                "public class MyIterator implements SortedRecordIterator {\n" +
-                "    public MyIterator() {}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public void init(String configString, Schema schema) {}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public CloseableIterator<Record> apply(CloseableIterator<Record> it) {return it;}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public String toString() {return \"MyIterator\";}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public List<String> getRequiredValueFields() { return null; }\n" +
-                "}\n";
-        byte[] jarBytes = compileClassCodeToJar("MyIterator", sourceCode);
-        writeJarToBucket("iterator.jar", jarBytes);
+        // Given
+        writeJarToBucket("iterator.jar", JAR_BYTES);
         instanceProperties.set(USER_JARS, "iterator.jar");
+
+        // When
+        SortedRecordIterator sri = objectFactory().getObject("MyIterator", SortedRecordIterator.class);
+
+        // Then
+        assertThat(sri).hasToString("MyIterator");
+    }
+
+    @Test
+    public void shouldLoadCodeTwice() throws Exception {
+        // Given
+        writeJarToBucket("iterator.jar", JAR_BYTES);
+        instanceProperties.set(USER_JARS, "iterator.jar");
+        objectFactory().getObject("MyIterator", SortedRecordIterator.class);
 
         // When
         SortedRecordIterator sri = objectFactory().getObject("MyIterator", SortedRecordIterator.class);
@@ -104,7 +121,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
                 RequestBody.fromBytes(data));
     }
 
-    private byte[] compileClassCodeToJar(String className, String sourceCode) throws Exception {
+    private static byte[] compileClassCodeToJar(String className, String sourceCode) {
         // Compile class
         ToolProvider.getSystemJavaCompiler()
                 .getTask(null, null, null,
@@ -121,9 +138,15 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
                 }
             }
             return bytes.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         } finally {
             // Delete output class file
-            Files.delete(Paths.get(classFileName));
+            try {
+                Files.delete(Paths.get(classFileName));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 

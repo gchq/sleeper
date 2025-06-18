@@ -42,7 +42,7 @@ public class FakeWebSocketClient implements Client {
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         if (!closed) {
             onClose("Connection closed normally");
         }

@@ -25,11 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
-import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
-import software.amazon.cloudwatchlogs.emf.model.Unit;
+import software.amazon.lambda.powertools.metrics.FlushMetrics;
 import software.amazon.lambda.powertools.metrics.Metrics;
-import software.amazon.lambda.powertools.metrics.MetricsUtils;
+import software.amazon.lambda.powertools.metrics.MetricsFactory;
+import software.amazon.lambda.powertools.metrics.model.DimensionSet;
+import software.amazon.lambda.powertools.metrics.model.MetricUnit;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
@@ -58,6 +58,7 @@ import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE
 
 public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
+    private static final Metrics METRICS = MetricsFactory.getMetricsInstance();
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -75,7 +76,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
     }
 
     @Override
-    @Metrics
+    @FlushMetrics
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
@@ -98,15 +99,14 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
             List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
         String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
-        MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
-        metricsLogger.setNamespace(metricsNamespace);
+        METRICS.setNamespace(metricsNamespace);
         for (TableProperties tableProperties : tables) {
             TableStatus tableStatus = tableProperties.getStatus();
             try {
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                TableMetrics metrics = TableMetrics.from(
+                TableMetrics tableMetrics = TableMetrics.from(
                         instanceProperties.get(ID), tableStatus, stateStore);
-                publishStateStoreMetrics(metricsLogger, metrics);
+                publishStateStoreMetrics(tableMetrics);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed publishing metrics for table {}", tableStatus, e);
                 messagesByTableId.get(tableStatus.getTableUniqueId()).stream()
@@ -117,21 +117,21 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         }
     }
 
-    public void publishStateStoreMetrics(MetricsLogger metricsLogger, TableMetrics metrics) {
-        metricsLogger.setDimensions(DimensionSet.of(
-                "instanceId", metrics.getInstanceId(),
-                "tableName", metrics.getTableName()));
+    public void publishStateStoreMetrics(TableMetrics tableMetrics) {
+        METRICS.addDimension(DimensionSet.of(
+                "instanceId", tableMetrics.getInstanceId(),
+                "tableName", tableMetrics.getTableName()));
 
-        metricsLogger.putMetric("NumberOfFilesWithReferences", metrics.getFileCount(), Unit.COUNT);
-        metricsLogger.putMetric("RecordCount", metrics.getRecordCount(), Unit.COUNT);
-        metricsLogger.putMetric("PartitionCount", metrics.getPartitionCount(), Unit.COUNT);
-        metricsLogger.putMetric("LeafPartitionCount", metrics.getLeafPartitionCount(), Unit.COUNT);
+        METRICS.addMetric("NumberOfFilesWithReferences", tableMetrics.getFileCount(), MetricUnit.COUNT);
+        METRICS.addMetric("RecordCount", tableMetrics.getRecordCount(), MetricUnit.COUNT);
+        METRICS.addMetric("PartitionCount", tableMetrics.getPartitionCount(), MetricUnit.COUNT);
+        METRICS.addMetric("LeafPartitionCount", tableMetrics.getLeafPartitionCount(), MetricUnit.COUNT);
         // TODO: Work out how to publish min and max active files per partition too
         // This is possible via the CloudMetrics API by publishing a statistic set (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html#publishingDataPoints1)
         // Is it possible when publishing via the embedded metric format though?
-        metricsLogger.putMetric("AverageFileReferencesPerPartition", metrics.getAverageFileReferencesPerPartition(), Unit.COUNT);
-        metricsLogger.setTimestamp(Instant.now());
-        metricsLogger.flush();
+        METRICS.addMetric("AverageFileReferencesPerPartition", tableMetrics.getAverageFileReferencesPerPartition(), MetricUnit.COUNT);
+        METRICS.setTimestamp(Instant.now());
+        METRICS.flush();
     }
 
     private List<TableProperties> loadTables(

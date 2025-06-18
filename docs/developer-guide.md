@@ -156,8 +156,7 @@ mvn clean install -Pquick -DskipRust=true
 ## Using the codebase
 
 The codebase is structured around the components explained in the [design document](design.md). The elements of the
-design largely correspond to Maven modules. Core or common modules contain shared model code. Other modules contain
-integrations with libraries which are not needed by all components of the system, eg. AWS API clients.
+design largely correspond to Maven modules. We'll look at the module architecture in more detail below.
 
 If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
 the [development scripts section](#development-scripts) that can display the dependency structure as a graph. There's
@@ -186,6 +185,33 @@ For Eclipse, these settings are available to import:
 * License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
 * Code templates at [code-style/eclipse-codetemplates.xml](/code-style/eclipse-codetemplates.xml)
 * Editor templates at [code-style/eclipse-templates.xml](/code-style/eclipse-templates.xml)
+
+### Maven module architecture
+
+Most Maven modules map to features of Sleeper, and we also have "core" modules, "common" modules, and some other modules
+to do with the build, deployment with the CDK, and system tests.
+
+The "core" modules make up the main application code independent of infrastructure or external dependencies. These are
+the module `core`, and other modules with "core" in the name nested against specific features. These core modules
+represent the "application" part of a ports and adapters, or hexagonal architecture. They do not contain external
+dependencies such as the AWS SDK, Parquet or other client libraries. They do contain dependencies for logging, and some
+utilities for serialisation/deserialisation.
+
+The `core` module contains shared code for things like configuring a Sleeper instance, interacting with the state of a
+Sleeper table, and some common logic to track operations for reporting. Each of these have adapters that connect these
+things to AWS, but the adapter code sits in other, non-core modules that are specific to those features.
+
+The other modules with "core" in the name involve core application code that we felt was more peripheral to the system.
+For example, the specifics of how we model a compaction job is in the module `compaction-core`, but the high level
+tracking of compaction, and the interactions of compaction with the state of a Sleeper table, are both part of the
+`core` module. The `compaction-core` module sits alongside other non-core modules that contain the adapter code that
+links the application code for compaction to AWS.
+
+The "common" modules are shared utilities for interacting with external dependencies in common ways. They sit under the
+directory `java/common`. This includes tools for working with DynamoDB, testing code using AWS clients against
+LocalStack, and some infrastructure code to do with invoking lambdas, running jobs in a task, and starting tasks that
+will run jobs. Here a job is some process that needs to run, and a task is a piece of infrastructure that can run jobs,
+e.g. an AWS ECS task.
 
 ### Linting
 

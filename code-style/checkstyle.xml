@@ -229,9 +229,10 @@
             <property name="id" value="upperEll"/>
         </module>
         <module name="IllegalImport">
+            <property name="id" value="illegalImport"/>
             <property name="regexp" value="true"/>
             <property name="illegalClasses"
-                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+, ^org\.apache\.hadoop\.thirdparty.+"/>
+                      value="^org\.junit\.jupiter\.api\.Assertions, ^org\.junit\.(?!jupiter|platform).+, ^org\.apache\.hadoop\.thirdparty.+, ^com\.amazonaws\.(?!services\.lambda\.runtime).+"/>
         </module>
         <module name="Indentation">
             <property name="id" value="indentation"/>
