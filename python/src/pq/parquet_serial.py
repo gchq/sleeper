@@ -13,7 +13,7 @@
 #  limitations under the License.
 import json
 import random
-from typing import BinaryIO, Mapping, List, Dict
+from typing import BinaryIO, Dict, List, Mapping
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -40,8 +40,7 @@ def _create_writer(stream: BinaryIO, record: Mapping[str, str]) -> pq.ParquetWri
     # We don't want that, so we duplicate the schema below and make all columns non-nullable (required)
     original_schema: pa.Schema = table.schema
 
-    fields = [original_schema.field(i)
-              for i in range(len(original_schema.names))]
+    fields = [original_schema.field(i) for i in range(len(original_schema.names))]
     non_optional_fields = _non_nullable(fields)
 
     # Create the new schema
@@ -65,26 +64,38 @@ def _non_nullable(fields: List[pa.Field], deep: bool = True) -> List[pa.Field]:
     """
     new_fields = []
     for field in fields:
-        if type(field.type) == pa.StructType and deep:
-            struct_fields = [field.type[i]
-                             for i in range(field.type.num_fields)]
+        if isinstance(field.type, pa.StructType) and deep:
+            struct_fields = [field.type[i] for i in range(field.type.num_fields)]
             # Recurse
             new_struct_fields = _non_nullable(struct_fields)
-            new_fields.append(pa.field(field.name, pa.struct(
-                new_struct_fields), False, metadata=field.metadata))
-        elif type(field.type) == pa.ListType and deep:
+            new_fields.append(
+                pa.field(
+                    field.name,
+                    pa.struct(new_struct_fields),
+                    False,
+                    metadata=field.metadata,
+                )
+            )
+        elif isinstance(field.type, pa.ListType) and deep:
             # Recurse
             list_type = [field.type.value_field]
             new_list_type = _non_nullable(list_type)
-            new_fields.append(pa.field(field.name, pa.list_(
-                new_list_type[0]), False, metadata=field.metadata))
+            new_fields.append(
+                pa.field(
+                    field.name,
+                    pa.list_(new_list_type[0]),
+                    False,
+                    metadata=field.metadata,
+                )
+            )
         else:
-            new_fields.append(pa.field(field.name, field.type,
-                                       False, metadata=field.metadata))
+            new_fields.append(
+                pa.field(field.name, field.type, False, metadata=field.metadata)
+            )
     return new_fields
 
 
-class ParquetSerialiser():
+class ParquetSerialiser:
     """
     Class that can serialise to Parquet.
     """
@@ -120,8 +131,9 @@ class ParquetSerialiser():
         if self._writer is not None:
             # If we have a writer and some rows then flush
             if self._row_count > 0:
-                self._writer.write_table(pa.Table.from_pydict(
-                    self._buffer, schema=self._writer.schema))
+                self._writer.write_table(
+                    pa.Table.from_pydict(self._buffer, schema=self._writer.schema)
+                )
                 self._clear_table()
 
     def _write_row(self, record: Mapping[str, str]) -> None:
@@ -173,7 +185,9 @@ class ParquetSerialiser():
             else:
                 # Room to grow, re-calculate sample duration
                 self._mem_sample_duration = self._get_next_mem_sample_duration()
-                self._next_row_memory_check = self._row_count + self._mem_sample_duration
+                self._next_row_memory_check = (
+                    self._row_count + self._mem_sample_duration
+                )
 
     def write_tail(self) -> None:
         """
