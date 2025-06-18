@@ -21,7 +21,6 @@ ROW_GROUP_MAX_SIZE = 256 * 1024 * 1024
 
 
 class ParquetDeserialiser:
-
     def __init__(self, use_threads=True):
         self.use_threads = use_threads
 

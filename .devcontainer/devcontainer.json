@@ -14,6 +14,7 @@
         "nemurubaka.cratesx",
         "ms-python.python",
         "ms-python.debugpy",
+        "charliermarsh.ruff",
         "donjayamanne.python-environment-manager",
         "njpwerner.autodocstring",
         "mhutchie.git-graph",
