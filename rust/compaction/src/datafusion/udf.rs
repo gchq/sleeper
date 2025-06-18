@@ -23,20 +23,20 @@ use std::{
     any::Any,
     fmt::Debug,
     iter::zip,
-    sync::{Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard},
 };
 
 use arrow::{
     array::AsArray,
     datatypes::{
-        BinaryType, DataType, Int32Type, Int64Type, LargeBinaryType, LargeUtf8Type, Utf8Type,
+        BinaryType, DataType, Field, FieldRef, Int32Type, Int64Type, LargeBinaryType,
+        LargeUtf8Type, Utf8Type,
     },
 };
 use datafusion::{
     common::{DFSchema, Result, internal_err},
     logical_expr::{
-        ColumnarValue, ReturnInfo, ReturnTypeArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature,
-        Volatility,
+        ColumnarValue, ReturnFieldArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
     },
     scalar::ScalarValue,
 };
@@ -141,11 +141,13 @@ impl ScalarUDFImpl for SketchUDF {
     fn return_type(&self, _: &[DataType]) -> Result<DataType> {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
-    fn return_type_from_args(&self, args: ReturnTypeArgs) -> Result<ReturnInfo> {
-        Ok(ReturnInfo::new(
-            args.arg_types[0].clone(),
-            args.nullables[0],
-        ))
+
+    fn return_field_from_args(&self, args: ReturnFieldArgs) -> Result<FieldRef> {
+        Ok(Arc::new(Field::new(
+            "",
+            args.arg_fields[0].data_type().clone(),
+            args.arg_fields[0].is_nullable(),
+        )))
     }
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
