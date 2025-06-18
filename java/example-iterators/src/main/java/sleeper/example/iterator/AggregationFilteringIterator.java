@@ -17,10 +17,14 @@ package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +40,7 @@ import java.util.function.BinaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implements a record aggregating iterator similiar to the DataFusion
@@ -319,15 +324,53 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
 
     @Override
     public List<String> getRequiredValueFields() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getRequiredValueFields'");
+        return Stream.concat(config.groupingColumns.stream(), config.aggregations.stream().map(Aggregation::column)).toList();
     }
 
     public static void main(String[] args) {
         List<Field> rowKeys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
         List<Field> sortCols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
-        List<Field> valueCols = List.of(new Field("col5", new IntType()), new Field("col6", new IntType()), new Field("col7", new IntType()));
+        List<Field> valueCols = List.of(new Field("col5", new IntType()), new Field("col6", new LongType()), new Field("col7", new StringType()), new Field("col8", new ByteArrayType()));
         Schema schema = Schema.builder().rowKeyFields(rowKeys).sortKeyFields(sortCols).valueFields(valueCols).build();
+        AggregationFilteringIterator afit = new AggregationFilteringIterator();
+        String oppy = "sum";
+        afit.init(String.format("col3,col4;,%1$s(col5),%1$s(col6),%1$s(col7),%1$s(col8)", oppy), schema);
+        List<Record> records = new ArrayList<>();
+        var record = new Record();
+        record.put("col1", 1);
+        record.put("col2", 1);
+        record.put("col3", 1);
+        record.put("col4", 1);
+        record.put("col5", 1);
+        record.put("col6", 1L);
+        record.put("col7", "1");
+        record.put("col8", new byte[]{1});
+        records.add(record);
+        record = new Record();
+        record.put("col1", 1);
+        record.put("col2", 1);
+        record.put("col3", 1);
+        record.put("col4", 1);
+        record.put("col5", 2);
+        record.put("col6", 2L);
+        record.put("col7", "2");
+        record.put("col8", new byte[]{2});
+        records.add(record);
+        record = new Record();
+        record.put("col1", 1);
+        record.put("col2", 1);
+        record.put("col3", 1);
+        record.put("col4", 1);
+        record.put("col5", 3);
+        record.put("col6", 3L);
+        record.put("col7", "3");
+        record.put("col8", new byte[]{3});
+        records.add(record);
+        CloseableIterator<Record> aggregated = afit.apply(new WrappedIterator<>(records.iterator()));
+        while (aggregated.hasNext()) {
+            var rec = aggregated.next();
+            System.out.println(rec);
+        }
     }
 
     /**
