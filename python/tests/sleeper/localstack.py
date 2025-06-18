@@ -9,6 +9,14 @@ CONTAINER = LocalStackContainer('localstack/localstack:4.2')
 
 class LocalStack:
     _container: LocalStackContainer = None
+    _s3_resource: S3ServiceResource = None
+
+    @classmethod
+    def container(cls) -> LocalStackContainer:
+        if cls._container is None:
+            cls._container = LocalStackContainer('localstack/localstack:4.2')
+            cls._container.start()
+        return cls._container
 
     @classmethod
     def resource(cls, name: str, **kwargs):
@@ -28,19 +36,14 @@ class LocalStack:
         return cls.container().region_name
 
     @classmethod
-    def container(cls) -> LocalStackContainer:
-        if cls._container is None:
-            cls._container = LocalStackContainer('localstack/localstack:4.2')
-            cls._container.start()
-        return cls._container
+    def s3_resource(cls) -> S3ServiceResource:
+        if cls._s3_resource is None:
+            cls._s3_resource = cls.resource('s3')
+        return cls._s3_resource
 
-
-class LocalStackTestBase(unittest.TestCase):
-    def setUp(self):
-        self.s3: S3ServiceResource = LocalStack.resource('s3')
-        self.region_name = LocalStack.region_name()
-
-    def create_bucket(self) -> str:
+    @classmethod
+    def create_bucket(cls) -> str:
         bucket_name = str(uuid.uuid4())
-        self.s3.Bucket(bucket_name).create(CreateBucketConfiguration={'LocationConstraint': self.region_name})
+        cls.s3_resource().Bucket(bucket_name).create(
+            CreateBucketConfiguration={'LocationConstraint': cls.region_name()})
         return bucket_name
