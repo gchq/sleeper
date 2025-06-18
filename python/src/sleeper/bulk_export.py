@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from mypy_boto3_sqs import SQSServiceResource
@@ -17,6 +18,14 @@ class BulkExportQuery:
         self.export_id = export_id
         self.table_name = table_name
         self.table_id = table_id
+
+    def to_json(self) -> str:
+        obj = {"exportId": self.export_id}
+        if self.table_name is not None:
+            obj["tableName"] = self.table_name
+        if self.table_id is not None:
+            obj["tableId"] = self.table_id
+        return json.dumps(obj)
 
 
 class BulkExportSender:

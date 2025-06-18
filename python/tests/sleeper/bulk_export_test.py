@@ -1,3 +1,5 @@
+import json
+
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.properties.cdk_defined_properties import QueryResources
 from sleeper.properties.instance_properties import InstanceProperties
@@ -16,7 +18,7 @@ def test_bulk_export():
     sender().send(query)
 
     # Then
-    assert [""] == receive_messages()
+    assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages()
 
 
 def sender():
@@ -25,4 +27,4 @@ def sender():
 
 def receive_messages():
     messages = queue.receive_messages(WaitTimeSeconds=0)
-    return list(map(lambda message: message.body, messages))
+    return list(map(lambda message: json.loads(message.body), messages))
