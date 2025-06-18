@@ -54,17 +54,7 @@ DEFAULT_MAX_WAIT_TIME = 120
 class SleeperClient:
     def __init__(self, instance_id, use_threads=False):
         self._instance_id = instance_id
-        properties = InstanceProperties.load_for_instance(_s3, instance_id)
-        self._instance_properties = properties
-        self._ingest_queue = IngestQueue.STANDARD_INGEST.queue_name(properties)
-        self._emr_bulk_import_queue = IngestQueue.BULK_IMPORT_EMR.queue_name(properties)
-        self._persistent_emr_bulk_import_queue = IngestQueue.BULK_IMPORT_PERSISTENT_EMR.queue_name(properties)
-        self._eks_bulk_import_queue = IngestQueue.BULK_IMPORT_EKS.queue_name(properties)
-        self._emr_serverless_bulk_import_queue = IngestQueue.BULK_IMPORT_EMR_SERVERLESS.queue_name(properties)
-        self._query_queue = QueryResources.QUERY_QUEUE.queue_name(properties)
-        self._query_results_bucket = QueryResources.QUERY_RESULTS_BUCKET.bucket_name(properties)
-        self._dynamodb_query_tracker_table = QueryResources.QUERY_TRACKER_TABLE.table_name(properties)
-        logger.debug("Loaded properties from config bucket sleeper-" + self._instance_id + "-config")
+        self._instance_properties = InstanceProperties.load_for_instance(_s3, instance_id)
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
@@ -85,7 +75,7 @@ class SleeperClient:
         # Upload it
         _write_and_upload_parquet(records_to_write, databucket_file)
         # Inform Sleeper
-        _ingest(table_name, [databucket_file], self._ingest_queue, job_id)
+        _ingest(table_name, [databucket_file], self._instance_properties, job_id)
 
     def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str = None):
         """
@@ -99,7 +89,7 @@ class SleeperClient:
         :param files: list of the files containing the records to ingest
         :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
-        _ingest(table_name, files, self._ingest_queue, job_id)
+        _ingest(table_name, files, self._instance_properties, job_id)
 
     def bulk_import_parquet_files_from_s3(
         self,
@@ -126,10 +116,7 @@ class SleeperClient:
         _bulk_import(
             table_name,
             files,
-            self._emr_bulk_import_queue,
-            self._persistent_emr_bulk_import_queue,
-            self._eks_bulk_import_queue,
-            self._emr_serverless_bulk_import_queue,
+            self._instance_properties,
             id,
             platform,
             platform_spec,
@@ -255,12 +242,13 @@ class SleeperClient:
 
         # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
-        query_queue_sqs = _sqs.get_queue_by_name(QueueName=self._query_queue)
+        query_queue_name = QueryResources.QUERY_QUEUE.queue_name(self._instance_properties)
+        query_queue_sqs = _sqs.get_queue_by_name(QueueName=query_queue_name)
         query_queue_sqs.send_message(MessageBody=query_message_json)
 
         logger.debug(f"Submitted query with id {query_id}")
 
-        located_records = _receive_messages(self, query_id)
+        located_records = _receive_messages(self._instance_properties, self._s3fs, self._deserialiser, query_id)
         return located_records
 
     @contextmanager
@@ -321,7 +309,7 @@ class SleeperClient:
                 logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, [s3_filename], self._ingest_queue, job_id)
+                _ingest(table_name, [s3_filename], self._instance_properties, job_id)
 
 
 def _write_and_upload_parquet(records_to_write: list, s3_file: str):
@@ -345,7 +333,7 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
         _s3.upload_file(fp.name, databucket_name, file_name)
 
 
-def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: str):
+def _ingest(table_name: str, files_to_ingest: list, instance_properties: InstanceProperties, job_id: str):
     """
     Instructs Sleeper to ingest the given file from S3.
 
@@ -353,8 +341,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: s
     :param files_to_ingest: path to the file on the S3 databucket which is to be ingested
     :param ingest_queue: name of the Sleeper instance's ingest queue
     """
-    if ingest_queue is None:
-        raise Exception("Ingest queue is not defined - was the Ingest Stack deployed?")
+    ingest_queue = IngestQueue.STANDARD_INGEST.queue_name(instance_properties)
     if job_id is None:
         job_id = str(uuid.uuid4())
 
@@ -371,10 +358,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: s
 def _bulk_import(
     table_name: str,
     files_to_ingest: list,
-    emr_bulk_import_queue: str,
-    persistent_emr_bulk_import_queue: str,
-    eks_bulk_import_queue: str,
-    emr_serverless_bulk_import_queue: str,
+    instance_properties: InstanceProperties,
     job_id: str,
     platform: str,
     platform_spec: dict,
@@ -396,21 +380,13 @@ def _bulk_import(
         raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS' or 'EMRServerless'")
 
     if platform == "EMR":
-        if emr_bulk_import_queue is None:
-            raise Exception("EMR bulk import queue is not defined - was the EmrBulkImportStack deployed?")
-        queue = emr_bulk_import_queue
+        queue = IngestQueue.BULK_IMPORT_EMR.queue_name(instance_properties)
     elif platform == "PersistentEMR":
-        if persistent_emr_bulk_import_queue is None:
-            raise Exception("Persistent EMR bulk import queue is not defined - was the PersistentEmrBulkImportStack deployed?")
-        queue = persistent_emr_bulk_import_queue
+        queue = IngestQueue.BULK_IMPORT_PERSISTENT_EMR.queue_name(instance_properties)
     elif platform == "EKS":
-        if eks_bulk_import_queue is None:
-            raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
-        queue = eks_bulk_import_queue
+        queue = IngestQueue.BULK_IMPORT_EKS.queue_name(instance_properties)
     else:
-        if emr_serverless_bulk_import_queue is None:
-            raise Exception("EMR serverless bulk import queue is not defined - was the EmrServerlessBulkImportStack deployed?")
-        queue = emr_serverless_bulk_import_queue
+        queue = IngestQueue.BULK_IMPORT_EMR_SERVERLESS.queue_name(instance_properties)
     if job_id is None:
         job_id = str(uuid.uuid4())
 
@@ -432,7 +408,7 @@ def _bulk_import(
     bulk_import_queue_sqs.send_message(MessageBody=bulk_import_message_json)
 
 
-def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME) -> List:
+def _receive_messages(instance_properties: InstanceProperties, s3fs: s3fs.S3FileSystem, deserialiser: ParquetDeserialiser, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME) -> List:
     """
     Polls the DynamoDB query tracker until the query is completed, then reads the results from S3.
 
@@ -443,7 +419,7 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
     """
     # This while loop will poll the DynamoDB query tracker until the query is completed. Upon completion the
     # results will be read from S3 into a list and returned.
-    results_table = _dynanmodb.Table(self._dynamodb_query_tracker_table)
+    results_table = _dynanmodb.Table(QueryResources.QUERY_TRACKER_TABLE.table_name(instance_properties))
 
     timer = time.time()
     end_time = timeout + timer
@@ -474,17 +450,18 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
             # Query results are put as Parquet files in the results bucket under "query-<query id>/"
             # (see Java class S3ResultsOutput for the precise formation of the location of the result files)
             results_files = []
-            for object_summary in _s3_resource.Bucket(self._query_results_bucket).objects.filter(Prefix=f"query-{query_id}"):
+            results_bucket_name = QueryResources.QUERY_RESULTS_BUCKET.bucket_name(instance_properties)
+            for object_summary in _s3_resource.Bucket(results_bucket_name).objects.filter(Prefix=f"query-{query_id}"):
                 logger.debug(f"Found {object_summary.key}")
                 if object_summary.key.endswith(".parquet"):
                     results_files.append(object_summary.key)
 
             results = []
             for file in results_files:
-                logger.debug(f"Opening file {self._query_results_bucket}/{file}")
-                with self._s3fs.open(f"{self._query_results_bucket}/{file}", "rb") as f:
+                logger.debug(f"Opening file {results_bucket_name}/{file}")
+                with s3fs.open(f"{results_bucket_name}/{file}", "rb") as f:
                     with ParquetFile(f) as po:
-                        for record in self._deserialiser.read(po):
+                        for record in deserialiser.read(po):
                             results.append(record)
 
             logger.debug("Query has finished")
