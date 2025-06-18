@@ -19,8 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -51,8 +49,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldGetPathsForFilesInOneDir() throws Exception {
             // Given
             String folder = "test-folder";
-            createTestFile(folder + "/file-1.parquet");
-            createTestFile(folder + "/file-2.parquet");
+            putObject(bucket, folder + "/file-1.parquet", "test-data");
+            putObject(bucket, folder + "/file-2.parquet", "test-data");
 
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
@@ -69,9 +67,9 @@ class S3PathUtilsIT extends LocalStackTestBase {
         void shouldIgnoreCrcFiles() {
             // Given
             String folder = "test-folder";
-            createTestFile(folder + "/file-1.parquet");
-            createTestFile(folder + "/file-2.crc");
-            createTestFile(folder + "/file-3.parquet");
+            putObject(bucket, folder + "/file-1.parquet", "test-data");
+            putObject(bucket, folder + "/file-2.crc", "test-data");
+            putObject(bucket, folder + "/file-3.parquet", "test-data");
 
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
@@ -89,8 +87,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
             // Given
             String folder = "size-test-folder";
 
-            createTestFileWithContents(folder + "/file-1.parquet", "this is a short test file contents");
-            createTestFileWithContents(folder + "/file-2.parquet", "this is a longer test file contents with " +
+            putObject(bucket, folder + "/file-1.parquet", "this is a short test file contents");
+            putObject(bucket, folder + "/file-2.parquet", "this is a longer test file contents with " +
                     "more details for a bigger number of size");
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
@@ -113,8 +111,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
             // Given
             String folder1 = "test-folder-1";
             String folder2 = "test-folder-2";
-            createTestFile(folder1 + "/file-1.parquet");
-            createTestFile(folder2 + "/file-2.parquet");
+            putObject(bucket, folder1 + "/file-1.parquet", "test-data");
+            putObject(bucket, folder2 + "/file-2.parquet", "test-data");
             List<String> files = List.of(appendBucketNamePrefix(folder1),
                     appendBucketNamePrefix(folder2));
 
@@ -133,8 +131,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
             String folder1 = "test-folder-1";
             String subfolder1 = "/sub-folder-1";
             String folder2 = "test-folder-2";
-            createTestFile(folder1 + subfolder1 + "/file-1.parquet");
-            createTestFile(folder2 + "/file-2.parquet");
+            putObject(bucket, folder1 + subfolder1 + "/file-1.parquet", "test-data");
+            putObject(bucket, folder2 + "/file-2.parquet", "test-data");
             List<String> files = List.of(appendBucketNamePrefix(folder1),
                     appendBucketNamePrefix(folder2));
 
@@ -153,8 +151,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
             String folder = "size-test-folder";
             String subfolder = "/subfolder";
 
-            createTestFileWithContents(folder + subfolder + "/file-1.parquet", "this is a sub folder size test");
-            createTestFileWithContents(folder + subfolder + "/file-2.parquet", "this is a longer test file for sub folder evaluation it has " +
+            putObject(bucket, folder + subfolder + "/file-1.parquet", "this is a sub folder size test");
+            putObject(bucket, folder + subfolder + "/file-2.parquet", "this is a longer test file for sub folder evaluation it has " +
                     "more details for a bigger number of size");
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
@@ -193,20 +191,8 @@ class S3PathUtilsIT extends LocalStackTestBase {
         }
     }
 
-    private void createTestFileWithContents(String filename, String contents) {
-        s3Client.putObject(PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(filename)
-                .build(),
-                RequestBody.fromString(contents));
-    }
-
     private String appendBucketNamePrefix(String file) {
         return bucket + "/" + file;
-    }
-
-    private void createTestFile(String filename) {
-        createTestFileWithContents(filename, "dummy-test-data");
     }
 
     private String generateFilePath(String folder, String filename) {

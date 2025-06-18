@@ -52,7 +52,7 @@ public class S3PathUtils {
             files.stream().forEach(file -> {
                 try {
                     outList.addAll(listFilesAsS3FileDetails(file)
-                            .stream().map(S3FileDetails::filename)
+                            .stream().map(S3FileDetails::getFullFileLocation)
                             .collect(Collectors.toList()));
                 } catch (FileNotFoundException e) {
                     throw new UncheckedException(e);
@@ -107,7 +107,7 @@ public class S3PathUtils {
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
                 if (checkIsNotCrcFile(s3Object.key())) {
-                    outList.add(new S3FileDetails(bucket + "/" + s3Object.key(), s3Object));
+                    outList.add(new S3FileDetails(new FileLocationDetails(bucket, s3Object.key()), s3Object));
                 }
             });
         }
@@ -125,9 +125,22 @@ public class S3PathUtils {
     /**
      * Storage of the details from with s3 with full file name.
      *
-     * @param filename   name of file including bucket
-     * @param fileObject respresentation of object back from s3
+     * @param fileLocation name of file including bucket
+     * @param fileObject   respresentation of object back from s3
      */
-    public record S3FileDetails(String filename, S3Object fileObject) {
+    public record S3FileDetails(FileLocationDetails fileLocation, S3Object fileObject) {
+
+        public String getFullFileLocation() {
+            return fileLocation.bucket + "/" + fileLocation().objectKey;
+        }
+    }
+
+    /**
+     * Storage for the breadown of the filename into the relevant parts.
+     *
+     * @param bucket    bucket location of file
+     * @param objectKey name of file
+     */
+    public record FileLocationDetails(String bucket, String objectKey) {
     }
 }
