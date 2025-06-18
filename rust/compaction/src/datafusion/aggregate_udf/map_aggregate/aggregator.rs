@@ -80,7 +80,7 @@ impl<T: ArrowPrimitiveType + Debug> PrimBuilderType for PrimitiveBuilder<T> {
 /// # Errors
 /// Produces an execution error if the field is not a struct type with 2 inner fields.
 fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a Fields> {
-    let DataType::Map(field, _) = acc_args.return_type else {
+    let DataType::Map(field, _) = acc_args.return_type() else {
         return exec_err!("MapAggregator can only be used on Map column types");
     };
     let DataType::Struct(struct_fields) = field.data_type() else {
@@ -181,7 +181,7 @@ impl AggregateUDFImpl for MapAggregator {
 
         let key_type = struct_fields[0].data_type();
         let value_type = struct_fields[1].data_type();
-        let map_type = acc_args.return_type;
+        let map_type = acc_args.return_type();
         let op_type = self.op.clone();
 
         if key_type.is_integer() {
@@ -220,7 +220,7 @@ impl AggregateUDFImpl for MapAggregator {
 
         let key_type = struct_fields[0].data_type();
         let value_type = struct_fields[1].data_type();
-        let map_type = args.return_type;
+        let map_type = args.return_type();
         let op_type = self.op.clone();
 
         if key_type.is_integer() {

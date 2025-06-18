@@ -206,7 +206,7 @@ impl AggregateUDFImpl for NonNullable {
         false
     }
 
-    fn state_fields(&self, args: StateFieldsArgs) -> Result<Vec<Field>> {
+    fn state_fields(&self, args: StateFieldsArgs) -> Result<Vec<Arc<Field>>> {
         self.inner.state_fields(args)
     }
 
