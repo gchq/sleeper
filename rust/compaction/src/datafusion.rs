@@ -227,7 +227,6 @@ fn create_sketch_udf(
     Ok(sketch_func)
 }
 
-<<<<<<< HEAD
 /// Apply any configured filters to the `DataFusion` operation if any are present.
 fn apply_general_row_filters(
     frame: DataFrame,
