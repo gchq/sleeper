@@ -202,7 +202,12 @@ impl AggregateUDFImpl for NonNullable {
     }
 
     fn return_field(&self, arg_fields: &[FieldRef]) -> Result<FieldRef> {
-        self.inner.return_field(arg_fields)
+        let field = self.inner.return_field(arg_fields)?;
+        Ok(Arc::new(Field::new(
+            field.name(),
+            field.data_type().clone(),
+            false,
+        )))
     }
 
     /// This aggregation function doesn't contain nullable values.
