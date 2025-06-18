@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.exception;
+package sleeper.configuration.utils;
 
 /**
  * An exception for when a file could not be found within S3 as it doesn't exist.

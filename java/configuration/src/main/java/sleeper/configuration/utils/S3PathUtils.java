@@ -21,8 +21,6 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
-import sleeper.core.statestore.exception.S3FileNotFoundException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,6 +58,13 @@ public class S3PathUtils {
         }
     }
 
+    /**
+     * Streams filenames back from S3 for list of paths provided.
+     *
+     * @param  files  list of file paths to expand
+     * @param  prefix prefix for hadoop path
+     * @return        stream of hadoop paths for files found
+     */
     public Stream<String> streamHadoopPaths(List<String> files, String prefix) {
         List<String> adjustList = new ArrayList<String>();
         streamFilenames(files).forEach(filename -> adjustList.add(prefix + filename));
