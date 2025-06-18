@@ -34,8 +34,9 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-/// A filtering expression (returns bool) for an integer column based upon a given threshold.
-/// If the value in a given column is lower than the given threshold, it will be filtered out.
+/// A filtering expression (returns bool) for an integer (typically 64-bit, known as "long" elsewhere in the codebase,
+/// other widths will be automatically co-erced) column based upon a given threshold. If the value in a given column is
+/// lower than the given threshold, it will be filtered out.
 #[derive(Debug)]
 pub struct AgeOff {
     /// Threshold value (seconds since UNIX epoch)
