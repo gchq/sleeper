@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
+import sleeper.core.statestore.exception.S3FileNotFoundException;
 import sleeper.localstack.test.LocalStackTestBase;
 
-import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -168,7 +168,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
         @Test
         void shouldFailWhenFileNotFoundAtSpecifiedPath() {
             assertThatThrownBy(() -> s3PathUtils.listFilesAsS3FileDetails(bucket + "/not-a-file.parquet"))
-                    .isInstanceOf(FileNotFoundException.class);
+                    .isInstanceOf(S3FileNotFoundException.class);
         }
     }
 

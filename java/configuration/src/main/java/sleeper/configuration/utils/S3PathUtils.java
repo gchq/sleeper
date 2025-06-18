@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import sleeper.core.statestore.exception.S3FileNotFoundException;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +55,7 @@ public class S3PathUtils {
                     outList.addAll(listFilesAsS3FileDetails(file)
                             .stream().map(S3FileDetails::getFullFileLocation)
                             .collect(Collectors.toList()));
-                } catch (FileNotFoundException e) {
+                } catch (S3FileNotFoundException e) {
                     throw new UncheckedException(e);
                 }
             });
@@ -81,7 +80,7 @@ public class S3PathUtils {
             files.stream().forEach(file -> {
                 try {
                     outList.addAll(listFilesAsS3FileDetails(file));
-                } catch (FileNotFoundException e) {
+                } catch (S3FileNotFoundException e) {
                     throw new UncheckedException(e);
                 }
             });
@@ -97,7 +96,7 @@ public class S3PathUtils {
      * @param  filename name of file
      * @return          containing all files details
      */
-    public List<S3FileDetails> listFilesAsS3FileDetails(String filename) throws FileNotFoundException {
+    public List<S3FileDetails> listFilesAsS3FileDetails(String filename) {
         FileLocationDetails fileLocation = determineFileLocationBreakdown(filename);
 
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
