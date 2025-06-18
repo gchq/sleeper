@@ -326,7 +326,7 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
-            return_type: &DataType::Int64,
+            return_field: Arc::new(Field::new("", DataType::Int64, false)),
             schema: &Schema::empty(),
             ignore_nulls: true,
             ordering_req: LexOrdering::empty(),
@@ -349,10 +349,11 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
-            return_type: &DataType::Map(
-                Arc::new(Field::new("test", DataType::Binary, false)),
-                true,
-            ),
+            return_field: Arc::new(Field::new(
+                "",
+                DataType::Map(Arc::new(Field::new("test", DataType::Binary, false)), true),
+                false,
+            )),
             schema: &Schema::empty(),
             ignore_nulls: true,
             ordering_req: LexOrdering::empty(),
@@ -375,18 +376,22 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
-            return_type: &DataType::Map(
-                Arc::new(Field::new(
-                    "test",
-                    DataType::Struct(Fields::from(vec![Field::new(
-                        "key",
-                        DataType::Boolean,
+            return_field: Arc::new(Field::new(
+                "",
+                DataType::Map(
+                    Arc::new(Field::new(
+                        "test",
+                        DataType::Struct(Fields::from(vec![Field::new(
+                            "key",
+                            DataType::Boolean,
+                            true,
+                        )])),
                         true,
-                    )])),
+                    )),
                     true,
-                )),
+                ),
                 true,
-            ),
+            )),
             schema: &Schema::empty(),
             ignore_nulls: true,
             ordering_req: LexOrdering::empty(),
@@ -471,7 +476,7 @@ mod tests {
         map_type: &'a DataType,
     ) -> AccumulatorArgs<'a> {
         AccumulatorArgs {
-            return_type: map_type,
+            return_field: Arc::new(Field::new("", map_type.clone(), false)),
             schema,
             ignore_nulls: true,
             ordering_req: lex,

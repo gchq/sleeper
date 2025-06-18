@@ -17,7 +17,7 @@
 */
 use arrow::{
     array::{Array, ArrayRef, BooleanArray},
-    datatypes::{DataType, Field},
+    datatypes::{DataType, Field, FieldRef},
 };
 use datafusion::{
     common::{exec_err, plan_err},
@@ -201,6 +201,10 @@ impl AggregateUDFImpl for NonNullable {
             .map(|acc| Box::new(NonNullableAccumulator(acc)) as Box<dyn Accumulator>)
     }
 
+    fn return_field(&self, arg_fields: &[FieldRef]) -> Result<FieldRef> {
+        self.inner.return_field(arg_fields)
+    }
+
     /// This aggregation function doesn't contain nullable values.
     fn is_nullable(&self) -> bool {
         false
@@ -297,6 +301,14 @@ impl AggregateUDFImpl for NonNullable {
 
     fn default_value(&self, data_type: &DataType) -> Result<ScalarValue> {
         self.inner.default_value(data_type)
+    }
+
+    fn supports_null_handling_clause(&self) -> bool {
+        self.inner.supports_null_handling_clause()
+    }
+
+    fn is_ordered_set_aggregate(&self) -> bool {
+        self.inner.is_ordered_set_aggregate()
     }
 
     fn documentation(&self) -> Option<&Documentation> {
@@ -475,8 +487,9 @@ mod tests {
                 &self,
                 params: &WindowFunctionParams,
             ) -> Result<String>;
+            fn return_field(&self, arg_fields: &[Arc<Field>]) -> Result<Arc<Field>, DataFusionError>;
             fn is_nullable(&self) -> bool;
-            fn state_fields<'a>(&self, args: StateFieldsArgs<'a>) -> Result<Vec<Field>>;
+            fn state_fields<'a>(&self, args: StateFieldsArgs<'a>) -> Result<Vec<Arc<Field>>>;
             fn groups_accumulator_supported<'a>(&self, args: AccumulatorArgs<'a>) -> bool;
             fn create_groups_accumulator<'a>(
                 &self,
@@ -500,6 +513,8 @@ mod tests {
             fn is_descending(&self) -> Option<bool> ;
             fn value_from_stats<'a>(&self, statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
             fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
+            fn supports_null_handling_clause(&self) -> bool;
+            fn is_ordered_set_aggregate(&self) -> bool;
             fn documentation(&self) -> Option<&'static Documentation>;
             fn set_monotonicity(&self, data_type: &DataType) -> SetMonotonicity;
         }
@@ -821,7 +836,7 @@ mod tests {
         // When
         nonnull
             .accumulator(AccumulatorArgs {
-                return_type: &DataType::Int64,
+                return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 schema: &Schema::empty(),
                 ignore_nulls: false,
                 ordering_req: LexOrdering::empty(),
@@ -833,6 +848,24 @@ mod tests {
             .expect("No Accumulator instance");
 
         // Then - shouldn't fail
+    }
+
+    #[test]
+    fn should_call_return_field() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_return_field()
+            .once()
+            .return_once(|_| Result::Ok(Arc::new(Field::new("", DataType::Boolean, false))));
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let ordering = nonnull.return_field(&[]).expect("can't unwrap field");
+
+        // Then
+        assert_eq!(Arc::new(Field::new("", DataType::Boolean, false)), ordering);
     }
 
     #[test]
@@ -865,15 +898,15 @@ mod tests {
         let states = nonnull
             .state_fields(StateFieldsArgs {
                 name: "test",
-                input_types: &[],
-                return_type: &DataType::Int64,
+                input_fields: &[],
+                return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 ordering_fields: &[],
                 is_distinct: false,
             })
             .expect("Couldn't unwrap state_fields result");
 
         // Then
-        assert_eq!(Vec::<Field>::new(), states);
+        assert_eq!(Vec::<Arc<Field>>::new(), states);
     }
 
     #[test]
@@ -890,7 +923,7 @@ mod tests {
 
         // When
         let group_supported = nonnull.groups_accumulator_supported(AccumulatorArgs {
-            return_type: &DataType::Int64,
+            return_field: Arc::new(Field::new("", DataType::Int64, false)),
             schema: &Schema::empty(),
             ignore_nulls: false,
             ordering_req: LexOrdering::empty(),
@@ -921,7 +954,7 @@ mod tests {
         // When
         nonnull
             .create_groups_accumulator(AccumulatorArgs {
-                return_type: &DataType::Int64,
+                return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 schema: &Schema::empty(),
                 ignore_nulls: false,
                 ordering_req: LexOrdering::empty(),
@@ -964,7 +997,7 @@ mod tests {
         // When
         nonnull
             .create_sliding_accumulator(AccumulatorArgs {
-                return_type: &DataType::Int64,
+                return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 schema: &Schema::empty(),
                 ignore_nulls: false,
                 ordering_req: LexOrdering::empty(),
@@ -1144,6 +1177,42 @@ mod tests {
 
         // Then
         assert_eq!(ScalarValue::Null, default);
+    }
+
+    #[test]
+    fn should_call_supports_null_handling_cause() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_supports_null_handling_clause()
+            .once()
+            .return_const(true);
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let null_handling = nonnull.supports_null_handling_clause();
+
+        // Then
+        assert!(null_handling);
+    }
+
+    #[test]
+    fn should_call_is_ordered_set_aggregate() {
+        // Given
+        let mut mock_udf = MockUDFImpl::new();
+        mock_udf.expect_name().return_const("mockudf".to_owned());
+        mock_udf
+            .expect_is_ordered_set_aggregate()
+            .once()
+            .return_const(true);
+        let nonnull = NonNullable::new(Arc::new(mock_udf));
+
+        // When
+        let ordered_set = nonnull.is_ordered_set_aggregate();
+
+        // Then
+        assert!(ordered_set);
     }
 
     #[test]
