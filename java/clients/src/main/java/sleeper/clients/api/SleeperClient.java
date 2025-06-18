@@ -15,6 +15,7 @@
  */
 package sleeper.clients.api;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.api.aws.AwsSleeperClientBuilder;
@@ -63,6 +64,7 @@ public class SleeperClient implements AutoCloseable {
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final IngestJobSender ingestJobSender;
+    private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
@@ -76,6 +78,7 @@ public class SleeperClient implements AutoCloseable {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
         recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
+        bulkExportQuerySender = Objects.requireNonNull(builder.bulkExportQuerySender, "bulkExportQuerySender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
@@ -312,6 +315,36 @@ public class SleeperClient implements AutoCloseable {
         ingestBatcherSender.submit(new IngestBatcherSubmitRequest(tableName, files));
     }
 
+    /**
+     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as a
+     * an export job in a queue. The job will be processed asynchronously. The ID of the export can be used to track its
+     * progress.
+     *
+     * @param  tableName - the table to export data from
+     * @param  tableId   - The id of the table
+     * @return           - The id of the export for tracking
+     */
+    public String bulkExportFromQuery(String tableName, String tableId) {
+        String exportId = UUID.randomUUID().toString();
+        bulkExportFromQuery(BulkExportQuery.builder()
+                .tableName(tableName)
+                .tableId(tableId)
+                .exportId(exportId)
+                .build());
+        return exportId;
+    }
+
+    /**
+     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as a
+     * export in a queue. The job will be processed asynchronously. The ID of the export can be used to track its
+     * progress.
+     *
+     * @param query the bulk export query
+     */
+    public void bulkExportFromQuery(BulkExportQuery query) {
+        bulkExportQuerySender.sendQueryToBulkExport(query);
+    }
+
     @Override
     public void close() {
         shutdown.run();
@@ -326,6 +359,7 @@ public class SleeperClient implements AutoCloseable {
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private IngestJobSender ingestJobSender;
+        private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
@@ -416,6 +450,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder ingestJobSender(IngestJobSender ingestJobSender) {
             this.ingestJobSender = ingestJobSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to send a bulk export job.
+         *
+         * @param  bulkExportQuerySender the client
+         * @return                       this builder for chaining
+         */
+        public Builder bulkExportQuerySender(BulkExportQuerySender bulkExportQuerySender) {
+            this.bulkExportQuerySender = bulkExportQuerySender;
             return this;
         }
 
