@@ -34,7 +34,7 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{DFSchema, Result, internal_err},
+    common::{DFSchema, Result, exec_err, internal_err},
     logical_expr::{
         ColumnarValue, ReturnFieldArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
     },
@@ -46,7 +46,7 @@ use super::sketch::{DataSketchVariant, K, update_sketch};
 /// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
 /// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
 /// The column values aren't transformed at all. We just use the UDF as a way to get to see the column values
-/// so we can inject them into a sketch for later retrieval. The query should look something like:
+/// so we can inject them into a sketch for later retrieval. The SQL query should look something like:
 /// `SELECT sketch(row_key_col1, row_key_col2, ...), row_key_col2, value_col1, value_col2, ... FROM blah...`
 /// so the sketch function can see each row key column, but only returns the first.
 pub(crate) struct SketchUDF {
@@ -186,7 +186,7 @@ impl ScalarUDFImpl for SketchUDF {
                             sketch,
                             &array.as_binary_view(),
                         ),
-                        _ => return internal_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
+                        _ => return exec_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
                     }
                 }
 
@@ -211,7 +211,7 @@ impl ScalarUDFImpl for SketchUDF {
                     sketch.update(value);
                 }
                 x @ ColumnarValue::Scalar(_) => {
-                    return internal_err!(
+                    return exec_err!(
                         "Row type {} not supported for Sleeper row key field",
                         x.data_type()
                     );
