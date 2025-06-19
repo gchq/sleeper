@@ -9,8 +9,6 @@ from mypy_boto3_sqs import SQSServiceResource
 from mypy_boto3_sqs.service_resource import Queue
 from testcontainers.localstack import LocalStackContainer
 
-CONTAINER = LocalStackContainer("localstack/localstack:4.2")
-
 
 class LocalStack:
     _container: LocalStackContainer = None
