@@ -1,15 +1,14 @@
 import json
-import uuid
 
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
+from python.tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
 from sleeper.properties.config_bucket import save_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
 from sleeper.sleeper import SleeperClient
-from tests.sleeper.instance_properties_helper import create_test_instance_properties
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 

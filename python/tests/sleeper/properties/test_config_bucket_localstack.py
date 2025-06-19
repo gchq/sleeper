@@ -1,8 +1,8 @@
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty
 from sleeper.properties.config_bucket import load_instance_properties, load_instance_properties_from_bucket, save_instance_properties
 from sleeper.properties.user_defined_properties import CommonProperty
-from tests.sleeper.instance_properties_helper import create_test_instance_properties
 from tests.sleeper.localstack import LocalStack
+from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
 def test_load_instance_properties():
