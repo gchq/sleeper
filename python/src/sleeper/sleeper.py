@@ -22,6 +22,9 @@ from typing import Dict, List
 import boto3
 import s3fs
 from boto3.dynamodb.conditions import Key
+from mypy_boto3_dynamodb import DynamoDBServiceResource
+from mypy_boto3_s3 import S3Client, S3ServiceResource
+from mypy_boto3_sqs import SQSServiceResource
 from pyarrow.parquet import ParquetFile
 
 from pq.parquet_deserial import ParquetDeserialiser
@@ -42,20 +45,38 @@ if not hasHandler:
     logger.addHandler(handler)
     logger.propagate = 0
 
-_s3 = boto3.client("s3")
-_s3_resource = boto3.resource("s3")
-_sqs = boto3.resource("sqs")
-_dynanmodb = boto3.resource("dynamodb")
-
 DEFAULT_MAX_WAIT_TIME = 120
 """The default maximum amount of time to wait for queries to be finished."""
 
 
 class SleeperClient:
-    def __init__(self, instance_id, use_threads=False):
+    def __init__(
+        self,
+        instance_id,
+        use_threads=False,
+        s3_client: S3Client = None,
+        s3_resource: S3ServiceResource = None,
+        s3_fs: s3fs.S3FileSystem = None,
+        sqs: SQSServiceResource = None,
+        dynamo: DynamoDBServiceResource = None,
+    ):
+        if s3_client is None:
+            s3_client = boto3.client("s3")
+        if s3_resource is None:
+            s3_resource = boto3.resource("s3")
+        if s3_fs is None:
+            s3_fs = s3fs.S3FileSystem(anon=False)
+        if sqs is None:
+            sqs = boto3.resource("sqs")
+        if dynamo is None:
+            dynamo = boto3.resource("dynamo")
         self._instance_id = instance_id
-        self._instance_properties = InstanceProperties.load_for_instance(_s3, instance_id)
-        self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
+        self._instance_properties = InstanceProperties.load_for_instance(s3_resource, instance_id)
+        self._s3_client = s3_client
+        self._s3_resource = s3_resource
+        self._s3_fs = s3_fs
+        self._sqs = sqs
+        self._dynamo = dynamo
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
     def write_single_batch(self, table_name: str, records_to_write: list, job_id: str = None):
@@ -73,7 +94,7 @@ class SleeperClient:
         databucket_file = _make_ingest_s3_name(databucket)
         logger.debug(f"Writing to {databucket_file}")
         # Upload it
-        _write_and_upload_parquet(records_to_write, databucket_file)
+        _write_and_upload_parquet(self._s3_client, records_to_write, databucket_file)
         # Inform Sleeper
         _ingest(table_name, [databucket_file], self._instance_properties, job_id)
 
@@ -114,6 +135,7 @@ class SleeperClient:
         :param platform_spec: a dict containing details of the platform to use - see docs/usage/python-api.md
         """
         _bulk_import(
+            self._sqs,
             table_name,
             files,
             self._instance_properties,
@@ -243,12 +265,12 @@ class SleeperClient:
         # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
         query_queue_name = QueryResources.QUERY_QUEUE.queue_name(self._instance_properties)
-        query_queue_sqs = _sqs.get_queue_by_name(QueueName=query_queue_name)
+        query_queue_sqs = self._sqs.get_queue_by_name(QueueName=query_queue_name)
         query_queue_sqs.send_message(MessageBody=query_message_json)
 
         logger.debug(f"Submitted query with id {query_id}")
 
-        located_records = _receive_messages(self._instance_properties, self._s3fs, self._deserialiser, query_id)
+        located_records = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo, self._deserialiser, query_id)
         return located_records
 
     @contextmanager
@@ -305,14 +327,14 @@ class SleeperClient:
                 key: str = s3_filename.split("/", 1)[1]
 
                 # Perform upload
-                _s3.upload_file(fp.name, bucket, key)
+                self._s3_client.upload_file(fp.name, bucket, key)
                 logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, [s3_filename], self._instance_properties, job_id)
+                _ingest(self._sqs, table_name, [s3_filename], self._instance_properties, job_id)
 
 
-def _write_and_upload_parquet(records_to_write: list, s3_file: str):
+def _write_and_upload_parquet(s3_client: S3Client, records_to_write: list, s3_file: str):
     """
     Creates a Parquet file from the user's records and uploads to their Sleeper databucket.
 
@@ -330,10 +352,10 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
             writer.write_record(record)
         writer.write_tail()
 
-        _s3.upload_file(fp.name, databucket_name, file_name)
+        s3_client.upload_file(fp.name, databucket_name, file_name)
 
 
-def _ingest(table_name: str, files_to_ingest: list, instance_properties: InstanceProperties, job_id: str):
+def _ingest(sqs: SQSServiceResource, table_name: str, files_to_ingest: list, instance_properties: InstanceProperties, job_id: str):
     """
     Instructs Sleeper to ingest the given file from S3.
 
@@ -351,11 +373,12 @@ def _ingest(table_name: str, files_to_ingest: list, instance_properties: Instanc
     # Converts ingest message to json and sends to the SQS queue
     ingest_message_json = json.dumps(ingest_message)
     logger.debug(f"Sending JSON message to queue {ingest_message_json}")
-    ingest_queue_sqs = _sqs.get_queue_by_name(QueueName=ingest_queue)
+    ingest_queue_sqs = sqs.get_queue_by_name(QueueName=ingest_queue)
     ingest_queue_sqs.send_message(MessageBody=ingest_message_json)
 
 
 def _bulk_import(
+    sqs: SQSServiceResource,
     table_name: str,
     files_to_ingest: list,
     instance_properties: InstanceProperties,
@@ -404,11 +427,19 @@ def _bulk_import(
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)
     logger.debug(f"Sending JSON message to {platform} queue: {bulk_import_message_json}")
-    bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName=queue)
+    bulk_import_queue_sqs = sqs.get_queue_by_name(QueueName=queue)
     bulk_import_queue_sqs.send_message(MessageBody=bulk_import_message_json)
 
 
-def _receive_messages(instance_properties: InstanceProperties, s3fs: s3fs.S3FileSystem, deserialiser: ParquetDeserialiser, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME) -> List:
+def _receive_messages(
+    instance_properties: InstanceProperties,
+    s3: S3ServiceResource,
+    s3fs: s3fs.S3FileSystem,
+    dynamo: DynamoDBServiceResource,
+    deserialiser: ParquetDeserialiser,
+    query_id: str,
+    timeout: int = DEFAULT_MAX_WAIT_TIME,
+) -> List:
     """
     Polls the DynamoDB query tracker until the query is completed, then reads the results from S3.
 
@@ -419,7 +450,7 @@ def _receive_messages(instance_properties: InstanceProperties, s3fs: s3fs.S3File
     """
     # This while loop will poll the DynamoDB query tracker until the query is completed. Upon completion the
     # results will be read from S3 into a list and returned.
-    results_table = _dynanmodb.Table(QueryResources.QUERY_TRACKER_TABLE.table_name(instance_properties))
+    results_table = dynamo.Table(QueryResources.QUERY_TRACKER_TABLE.table_name(instance_properties))
 
     timer = time.time()
     end_time = timeout + timer
@@ -451,7 +482,7 @@ def _receive_messages(instance_properties: InstanceProperties, s3fs: s3fs.S3File
             # (see Java class S3ResultsOutput for the precise formation of the location of the result files)
             results_files = []
             results_bucket_name = QueryResources.QUERY_RESULTS_BUCKET.bucket_name(instance_properties)
-            for object_summary in _s3_resource.Bucket(results_bucket_name).objects.filter(Prefix=f"query-{query_id}"):
+            for object_summary in s3.Bucket(results_bucket_name).objects.filter(Prefix=f"query-{query_id}"):
                 logger.debug(f"Found {object_summary.key}")
                 if object_summary.key.endswith(".parquet"):
                     results_files.append(object_summary.key)
