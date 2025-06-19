@@ -27,9 +27,6 @@
         ],
         "Dimensions": [
           [
-            "LogGroup",
-            "ServiceName",
-            "ServiceType",
             "instanceId",
             "tableName"
           ]
@@ -39,9 +36,6 @@
   },
   "instanceId": "test-instance",
   "LeafPartitionCount": 1.0,
-  "LogGroup": "Unknown-metrics",
-  "ServiceName": "Unknown",
-  "ServiceType": "Unknown",
   "NumberOfFilesWithReferences": 1.0,
   "RecordCount": 123.0,
   "PartitionCount": 1.0,

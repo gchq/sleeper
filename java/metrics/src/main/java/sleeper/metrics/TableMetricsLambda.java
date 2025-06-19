@@ -107,6 +107,9 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         Metrics metrics = MetricsFactory.getMetricsInstance();
         metrics.setNamespace(metricsNamespace);
+        metrics.setDefaultDimensions(DimensionSet.of(
+                "instanceId", instanceProperties.get(ID),
+                "tableName", "Unknown"));
         for (TableProperties tableProperties : tables) {
             TableStatus tableStatus = tableProperties.getStatus();
             try {
