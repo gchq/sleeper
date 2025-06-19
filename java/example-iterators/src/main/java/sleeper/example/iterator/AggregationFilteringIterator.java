@@ -24,6 +24,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
@@ -202,7 +203,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
 
         @Override
         public Object apply(Object lhs, Object rhs) {
-            if (lhs.getClass() != rhs.getClass()) {
+            if (!(lhs instanceof Map && rhs instanceof Map) && lhs.getClass() != rhs.getClass()) {
                 throw new IllegalArgumentException("lhs type: " + lhs.getClass() + " rhs type: " + rhs.getClass());
             }
             if (lhs instanceof Integer) {
@@ -215,25 +216,54 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
                 return op((byte[]) lhs, (byte[]) rhs);
             } else if (lhs instanceof Map) {
                 // Clone the map to avoid aliasing problems: don't want to alter map in previous Record
-                @SuppressWarnings("unchecked")
-                Map<Object, Object> mapLhs = new HashMap<>((Map<Object, Object>) lhs);
-                @SuppressWarnings("unchecked")
-                Map<Object, Object> mapRhs = (Map<Object, Object>) rhs;
-                // Loop over right hand side entry set, determine value class and then delegate to primitive operations.
-                for (Map.Entry<Object, Object> entry : mapRhs.entrySet()) {
-                    mapLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
-                        if (lhs_value instanceof Integer) {
-                            return op((Integer) lhs_value, (Integer) rhs_value);
-                        } else if (lhs_value instanceof Long) {
-                            return op((Long) lhs_value, (Long) rhs_value);
-                        } else if (lhs_value instanceof String) {
-                            return op((String) lhs_value, (String) rhs_value);
-                        } else if (lhs_value instanceof byte[]) {
-                            return op((byte[]) lhs_value, (byte[]) rhs_value);
-                        } else {
-                            throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
+                Map<?, ?> mapLhs = new HashMap<>((Map<?, ?>) lhs);
+                // Find first value of RHS if there is one
+                Object testValue = ((Map<?, ?>) rhs).values().stream().findFirst().orElse(null);
+                if (testValue != null) {
+                    // Loop over right hand side entry set, determine value class and then delegate to primitive operations.
+                    if (testValue instanceof Integer) {
+                        @SuppressWarnings("unchecked")
+                        Map<Object, Integer> castLhs = (Map<Object, Integer>) mapLhs;
+                        @SuppressWarnings("unchecked")
+                        Map<Object, Integer> castRhs = (Map<Object, Integer>) rhs;
+                        for (Map.Entry<Object, Integer> entry : castRhs.entrySet()) {
+                            castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
+                                return op(lhs_value, rhs_value);
+                            });
                         }
-                    });
+                    } else if (testValue instanceof Long) {
+                        @SuppressWarnings("unchecked")
+                        Map<Object, Long> castLhs = (Map<Object, Long>) mapLhs;
+                        @SuppressWarnings("unchecked")
+                        Map<Object, Long> castRhs = (Map<Object, Long>) rhs;
+                        for (Map.Entry<Object, Long> entry : castRhs.entrySet()) {
+                            castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
+                                return op(lhs_value, rhs_value);
+                            });
+                        }
+                    } else if (testValue instanceof String) {
+                        @SuppressWarnings("unchecked")
+                        Map<Object, String> castLhs = (Map<Object, String>) mapLhs;
+                        @SuppressWarnings("unchecked")
+                        Map<Object, String> castRhs = (Map<Object, String>) rhs;
+                        for (Map.Entry<Object, String> entry : castRhs.entrySet()) {
+                            castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
+                                return op(lhs_value, rhs_value);
+                            });
+                        }
+                    } else if (testValue instanceof byte[]) {
+                        @SuppressWarnings("unchecked")
+                        Map<Object, byte[]> castLhs = (Map<Object, byte[]>) mapLhs;
+                        @SuppressWarnings("unchecked")
+                        Map<Object, byte[]> castRhs = (Map<Object, byte[]>) rhs;
+                        for (Map.Entry<Object, byte[]> entry : castRhs.entrySet()) {
+                            castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
+                                return op(lhs_value, rhs_value);
+                            });
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
+                    }
                 }
                 return mapLhs;
             } else {
@@ -330,11 +360,12 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     public static void main(String[] args) {
         List<Field> rowKeys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
         List<Field> sortCols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
-        List<Field> valueCols = List.of(new Field("col5", new IntType()), new Field("col6", new LongType()), new Field("col7", new StringType()), new Field("col8", new ByteArrayType()));
+        List<Field> valueCols = List.of(new Field("col5", new IntType()), new Field("col6", new LongType()), new Field("col7", new StringType()), new Field("col8", new ByteArrayType()),
+                new Field("col9", new MapType(new StringType(), new IntType())));
         Schema schema = Schema.builder().rowKeyFields(rowKeys).sortKeyFields(sortCols).valueFields(valueCols).build();
         AggregationFilteringIterator afit = new AggregationFilteringIterator();
         String oppy = "sum";
-        afit.init(String.format("col3,col4;,%1$s(col5),%1$s(col6),%1$s(col7),%1$s(col8)", oppy), schema);
+        afit.init(String.format("col3,col4;,%1$s(col5),%1$s(col6),%1$s(col7),%1$s(col8),map_%1$s(col9)", oppy), schema);
         List<Record> records = new ArrayList<>();
         var record = new Record();
         record.put("col1", 1);
@@ -345,6 +376,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
         record.put("col6", 1L);
         record.put("col7", "1");
         record.put("col8", new byte[]{1});
+        record.put("col9", Map.of("aaa", 5, "bbb", 2, "ccc", 14));
         records.add(record);
         record = new Record();
         record.put("col1", 1);
@@ -355,6 +387,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
         record.put("col6", 2L);
         record.put("col7", "2");
         record.put("col8", new byte[]{2});
+        record.put("col9", Map.of("bbb", 5, "ccc", 3, "ddd", 10));
         records.add(record);
         record = new Record();
         record.put("col1", 1);
@@ -365,6 +398,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
         record.put("col6", 3L);
         record.put("col7", "3");
         record.put("col8", new byte[]{3});
+        record.put("col9", Map.of("ccc", 100));
         records.add(record);
         CloseableIterator<Record> aggregated = afit.apply(new WrappedIterator<>(records.iterator()));
         while (aggregated.hasNext()) {
