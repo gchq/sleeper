@@ -34,5 +34,5 @@ class BulkExportSender:
         self.properties = properties
 
     def send(self, query: BulkExportQuery):
-        queue_url = QueryCdkProperty.BULK_EXPORT_QUEUE.queue_url(self.properties)
+        queue_url = self.properties.get(QueryCdkProperty.BULK_EXPORT_QUEUE_URL)
         self.sqs.Queue(queue_url).send_message(MessageBody=query.to_json())

@@ -1,6 +1,7 @@
 import pytest
 
-from sleeper.properties.instance_properties import BucketProperty, DynamoTableProperty, InstanceProperties, QueueProperty
+from sleeper.properties.cdk_defined_properties import queue_name_from_url
+from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty
 
 
 def test_read_set_field():
@@ -20,29 +21,11 @@ def test_read_unset_field():
         properties.get("a.b.c")
 
 
-def test_read_queue():
+def test_read_property():
     # Given
-    property = QueueProperty("queue.url")
+    property = InstanceProperty("queue.url")
     properties = InstanceProperties({"queue.url": "https://sqs.eu-west-2.amazonaws.com/123456789/MyQueue"})
 
     # When / Then
-    assert property.queue_url(properties) == "https://sqs.eu-west-2.amazonaws.com/123456789/MyQueue"
-    assert property.queue_name(properties) == "MyQueue"
-
-
-def test_read_table():
-    # Given
-    property = DynamoTableProperty("table.name")
-    properties = InstanceProperties({"table.name": "test-dynamo-table"})
-
-    # When / Then
-    assert property.table_name(properties) == "test-dynamo-table"
-
-
-def test_read_bucket():
-    # Given
-    property = BucketProperty("bucket.name")
-    properties = InstanceProperties({"bucket.name": "test-bucket"})
-
-    # When / Then
-    assert property.bucket_name(properties) == "test-bucket"
+    assert properties.get(property) == "https://sqs.eu-west-2.amazonaws.com/123456789/MyQueue"
+    assert queue_name_from_url(properties.get(property)) == "MyQueue"

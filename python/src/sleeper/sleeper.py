@@ -30,7 +30,7 @@ from pyarrow.parquet import ParquetFile
 from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
-from sleeper.properties.cdk_defined_properties import IngestCdkProperty, QueryCdkProperty
+from sleeper.properties.cdk_defined_properties import IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
 
@@ -269,7 +269,7 @@ class SleeperClient:
 
         # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
-        query_queue_name = QueryCdkProperty.QUERY_QUEUE.queue_name(self._instance_properties)
+        query_queue_name = queue_name_from_url(self._instance_properties.get(QueryCdkProperty.QUERY_QUEUE_URL))
         query_queue_sqs = self._sqs_resource.get_queue_by_name(QueueName=query_queue_name)
         query_queue_sqs.send_message(MessageBody=query_message_json)
 
@@ -368,7 +368,7 @@ def _ingest(sqs: SQSServiceResource, table_name: str, files_to_ingest: list, ins
     :param files_to_ingest: path to the file on the S3 databucket which is to be ingested
     :param ingest_queue: name of the Sleeper instance's ingest queue
     """
-    ingest_queue = IngestCdkProperty.STANDARD_INGEST.queue_name(instance_properties)
+    ingest_queue = queue_name_from_url(instance_properties.get(IngestCdkProperty.STANDARD_INGEST_QUEUE_URL))
     if job_id is None:
         job_id = str(uuid.uuid4())
 
@@ -408,15 +408,17 @@ def _bulk_import(
         raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS' or 'EMRServerless'")
 
     if platform == "EMR":
-        queue = IngestCdkProperty.BULK_IMPORT_EMR.queue_name(instance_properties)
+        queue_property = IngestCdkProperty.BULK_IMPORT_EMR_QUEUE_URL
     elif platform == "PersistentEMR":
-        queue = IngestCdkProperty.BULK_IMPORT_PERSISTENT_EMR.queue_name(instance_properties)
+        queue_property = IngestCdkProperty.BULK_IMPORT_PERSISTENT_EMR_QUEUE_URL
     elif platform == "EKS":
-        queue = IngestCdkProperty.BULK_IMPORT_EKS.queue_name(instance_properties)
+        queue_property = IngestCdkProperty.BULK_IMPORT_EKS_QUEUE_URL
     else:
-        queue = IngestCdkProperty.BULK_IMPORT_EMR_SERVERLESS.queue_name(instance_properties)
+        queue_property = IngestCdkProperty.BULK_IMPORT_EMR_SERVERLESS_QUEUE_URL
     if job_id is None:
         job_id = str(uuid.uuid4())
+
+    queue = queue_name_from_url(instance_properties.get(queue_property))
 
     # Creates the ingest message and generates and ID
     bulk_import_message = {
@@ -455,7 +457,7 @@ def _receive_messages(
     """
     # This while loop will poll the DynamoDB query tracker until the query is completed. Upon completion the
     # results will be read from S3 into a list and returned.
-    results_table = dynamo.Table(QueryCdkProperty.QUERY_TRACKER_TABLE.table_name(instance_properties))
+    results_table = dynamo.Table(instance_properties.get(QueryCdkProperty.QUERY_TRACKER_TABLE))
 
     timer = time.time()
     end_time = timeout + timer
@@ -486,7 +488,7 @@ def _receive_messages(
             # Query results are put as Parquet files in the results bucket under "query-<query id>/"
             # (see Java class S3ResultsOutput for the precise formation of the location of the result files)
             results_files = []
-            results_bucket_name = QueryCdkProperty.QUERY_RESULTS_BUCKET.bucket_name(instance_properties)
+            results_bucket_name = instance_properties.get(QueryCdkProperty.QUERY_RESULTS_BUCKET)
             for object_summary in s3.Bucket(results_bucket_name).objects.filter(Prefix=f"query-{query_id}"):
                 logger.debug(f"Found {object_summary.key}")
                 if object_summary.key.endswith(".parquet"):

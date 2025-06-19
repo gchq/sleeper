@@ -45,7 +45,7 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
 @pytest.fixture
 def properties(queue: Queue) -> InstanceProperties:
     properties = create_test_instance_properties()
-    properties.set(QueryCdkProperty.BULK_EXPORT_QUEUE, queue.url)
+    properties.set(QueryCdkProperty.BULK_EXPORT_QUEUE_URL, queue.url)
     return properties
 
 
