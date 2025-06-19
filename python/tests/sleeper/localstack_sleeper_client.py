@@ -1,6 +1,6 @@
+from sleeper.client import SleeperClient
 from sleeper.properties.instance_properties import InstanceProperties
 from sleeper.properties.user_defined_properties import CommonProperty
-from sleeper.sleeper import SleeperClient
 from tests.sleeper.localstack import LocalStack
 
 
