@@ -148,6 +148,12 @@ class SleeperClient:
         )
 
     def bulk_export(self, query: BulkExportQuery):
+        """
+        Exports data from a Sleeper table. This is submitted to an SQS queue and processed asynchronously. Data will be
+        written to the bulk export results S3 bucket.
+
+        :param query: the bulk export query to send
+        """
         BulkExportSender(self._sqs_resource, self._instance_properties).send(query)
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
