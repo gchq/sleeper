@@ -1,4 +1,3 @@
-import traceback
 import uuid
 
 import boto3
@@ -24,7 +23,6 @@ class LocalStack:
     @classmethod
     def container(cls) -> LocalStackContainer:
         if cls._container is None:
-            traceback.print_stack()
             cls._container = LocalStackContainer("localstack/localstack:4.2")
             cls._container.start()
         return cls._container
