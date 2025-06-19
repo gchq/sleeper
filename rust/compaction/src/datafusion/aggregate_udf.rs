@@ -243,22 +243,22 @@ pub fn validate_aggregations(
         let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
         // Check for duplications in aggregation columns and row key aggregations
         let mut col_checks: HashSet<&String> = HashSet::new();
-        for col in agg_cols {
-            if query_agg_cols.contains(col) {
+        for col in &agg_cols {
+            if group_by_cols.contains(*col) {
                 return plan_err!(
                     "Row key/extra grouping column \"{col}\" cannot have an aggregation"
                 );
             }
-            if !col_checks.insert(col) {
+            if !col_checks.insert(*col) {
                 return plan_err!("Aggregation column \"{col}\" duplicated");
             }
-            if !non_row_key_cols.contains(col) {
+            if !non_row_key_cols.contains(*col) {
                 return plan_err!("Aggregation column \"{col}\" doesn't exist");
             }
         }
         // Check all non row key columns exist in aggregation column list
-        for col in non_row_key_cols {
-            if !agg_cols.contains(col) {
+        for col in &non_row_key_cols {
+            if !agg_cols.contains(&col) {
                 return plan_err!(
                     "Column \"{col}\" doesn't have a aggregation operator specified!"
                 );
