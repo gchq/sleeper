@@ -316,7 +316,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
      */
     @Override
     public void init(String configString, Schema schema) {
-        FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema);
+        FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
         validate(iteratorConfig, schema);
         this.config = iteratorConfig;
         this.schema = schema;
@@ -438,6 +438,10 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     /**
      * Parses a configuration string for aggregation.
      *
+     * The string must be in the correct format. Row key columns are automatically "group by" columns for any
+     * aggregation
+     * so the list of row key columns is added into the returned {@link FilterAggregationConfig}.
+     *
      * Note that the configuration is NOT validated! Use
      * {@link AggregationFilteringIterator#validate(FilterAggregationConfig)}
      * to check the returned configuration is valid.
@@ -447,11 +451,11 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
      *                                    This routine has some odd behaviour.
      *
      * @param    configString             the filter and aggregation string to parse
-     * @param    schema                   the table schema
+     * @param    rowkeyNames              the list of all the row key column names from the schema
      * @return                            an un-validated configuration for aggregation
      * @throws   IllegalArgumentException if {@code configString} is invalid
      */
-    public static FilterAggregationConfig parseConfiguration(String configString, Schema schema) {
+    public static FilterAggregationConfig parseConfiguration(String configString, List<String> rowkeyNames) {
         // This is a minimum viable parser for the configuration for
         // filters/aggregators.
         // It is a really good example of how NOT to do it. This routine has some odd
@@ -461,9 +465,9 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
             throw new IllegalArgumentException("Should be exactly one ; in aggregation configuation");
         }
         // Extract the aggregation grouping columns and trim and split the remaining
-        List<String> groupingColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).filter(name -> !name.isEmpty()).toList();
-        // Add the row key columns
-        groupingColumns = Stream.concat(schema.getRowKeyFieldNames().stream(), groupingColumns.stream()).toList();
+        Stream<String> splitGroupColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).filter(name -> !name.isEmpty());
+        List<String> groupingColumns = Stream.concat(rowkeyNames.stream(), splitGroupColumns).toList();
+
         // Following list needs to be mutable, hence Collectors.toList()
         List<String> filterAggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
         // We only support age-off filtering

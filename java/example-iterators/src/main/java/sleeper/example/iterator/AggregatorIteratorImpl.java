@@ -36,10 +36,12 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
     private final FilterAggregationConfig config;
     /** Source iterator. */
     private final CloseableIterator<sleeper.core.record.Record> input;
-    /** The record to be returned next. */
-    private Record next;
-    /** The record that starts the next aggregation group. */
-    private Record toBeAggregated;
+    /**
+     * The record retrieved from the record source that is the start of the next aggregation group. If this is null,
+     * then either we are at the start of the iteration (no input records retrieved yet), or the input iterator
+     * has run out of records.
+     */
+    private Record startOfNextAggregationGroup = null;
 
     /**
      * Sets up a aggregating iterator.
@@ -49,61 +51,39 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
     public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<sleeper.core.record.Record> input) {
         this.config = Objects.requireNonNull(config, "config");
         this.input = Objects.requireNonNull(input, "input");
-        this.next = getNextRecord();
     }
 
     @Override
     public boolean hasNext() {
-        return next != null;
+        // Is there a record left over from previous aggregation group or (at least) one more in the input source?
+        return startOfNextAggregationGroup != null || input.hasNext();
     }
 
     @Override
     public void close() throws IOException {
         input.close();
-        next = null;
-        toBeAggregated = null;
+        startOfNextAggregationGroup = null;
     }
 
     @Override
     public sleeper.core.record.Record next() {
-        if (next == null) {
+        if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        Record toReturn = new Record(next);
-        // Update next record, this will become null if no more data
-        next = getNextRecord();
-        return toReturn;
-    }
-
-    /**
-     * Aggregates from the input iterator to create the next fully aggregated record.
-     *
-     * @return the next aggregated record
-     */
-    protected Record getNextRecord() {
-        // If this is the first run, then both record fields might be null
-        if (toBeAggregated == null && input.hasNext()) {
-            toBeAggregated = input.next();
-        }
-        // Assertion if toBeAggregated is null, then there is nothing more we can do
-        if (toBeAggregated != null) {
-            // We will now aggregate "on to" this record
-            Record aggregated = toBeAggregated;
-            toBeAggregated = null;
-            // Aggregation loop
-            boolean testAggregation = true;
-            while (input.hasNext() && testAggregation) {
-                toBeAggregated = input.next();
-                if ((testAggregation = recordsEqual(aggregated, toBeAggregated))) {
-                    // Do aggregation of spare into aggregated
-                    aggregateOnTo(aggregated, toBeAggregated, config);
-                    toBeAggregated = null;
-                }
+        // There must be at least one more record, either stashed by us or in the input iterator
+        Record aggregated = (startOfNextAggregationGroup != null) ? startOfNextAggregationGroup : input.next();
+        // We may have just re-assigned the startOfNextAggregation group, so null it out
+        startOfNextAggregationGroup = null;
+        // Now aggregate more records on to this one until we find an unequal one or run out of data
+        while (startOfNextAggregationGroup == null && input.hasNext()) {
+            Record next = input.next();
+            if (recordsEqual(aggregated, next)) {
+                aggregateOnTo(aggregated, next, config);
+            } else {
+                startOfNextAggregationGroup = next;
             }
-            return aggregated;
-        } else {
-            return null;
         }
+        return aggregated;
     }
 
     /**
