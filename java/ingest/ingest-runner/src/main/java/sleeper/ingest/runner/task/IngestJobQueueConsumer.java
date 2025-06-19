@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import sleeper.common.job.action.ActionException;
 import sleeper.common.job.action.MessageReference;
 import sleeper.common.job.action.thread.PeriodicActionRunnable;
-import sleeper.configuration.utils.S3PathUtils;
+import sleeper.configuration.utils.S3ExpandDirectories;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -75,7 +75,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker, new S3PathUtils(s3Client)).build();
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker, new S3ExpandDirectories(s3Client)).build();
     }
 
     public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
@@ -83,7 +83,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
             Configuration configuration,
             TableIndex tableIndex,
             IngestJobTracker ingestJobTracker,
-            S3PathUtils s3PathUtils) {
+            S3ExpandDirectories s3PathUtils) {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)

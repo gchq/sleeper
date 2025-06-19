@@ -32,7 +32,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.configuration.utils.S3PathUtils;
+import sleeper.configuration.utils.S3ExpandDirectories;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -73,7 +73,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> new S3PathUtils(s3).streamFilenames(files).toList())
+                .expandDirectories(files -> new S3ExpandDirectories(s3).streamFilenames(files).toList())
                 .build();
     }
 

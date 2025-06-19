@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.utils.S3PathUtils;
+import sleeper.configuration.utils.S3ExpandDirectories;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -76,7 +76,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
     private final Supplier<Instant> timeSupplier;
-    private final S3PathUtils s3PathUtils;
+    private final S3ExpandDirectories s3PathUtils;
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public IngestJobRunner(ObjectFactory objectFactory,
@@ -107,7 +107,7 @@ public class IngestJobRunner implements IngestJobHandler {
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();
-        this.s3PathUtils = new S3PathUtils(s3Client);
+        this.s3PathUtils = new S3ExpandDirectories(s3Client);
         this.commitSender = new SqsFifoStateStoreCommitRequestSender(
                 instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
     }

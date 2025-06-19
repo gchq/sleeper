@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
+import sleeper.configuration.utils.S3ExpandDirectories.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
@@ -30,9 +30,9 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class S3PathUtilsIT extends LocalStackTestBase {
+class S3ExpandDirectoriesIT extends LocalStackTestBase {
 
-    private S3PathUtils s3PathUtils = new S3PathUtils(s3Client);
+    private S3ExpandDirectories expandDirectories = new S3ExpandDirectories(s3Client);
     private String bucket = UUID.randomUUID().toString();
 
     @BeforeEach
@@ -54,7 +54,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
-            Stream<String> paths = s3PathUtils.streamFilenames(files);
+            Stream<String> paths = expandDirectories.streamFilenames(files);
 
             // Then
             assertThat(paths)
@@ -73,7 +73,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
-            Stream<String> paths = s3PathUtils.streamFilenames(files);
+            Stream<String> paths = expandDirectories.streamFilenames(files);
 
             // Then
             assertThat(paths)
@@ -92,7 +92,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
-            Stream<S3FileDetails> fileDetails = s3PathUtils.streamFilesAsS3FileDetails(files);
+            Stream<S3FileDetails> fileDetails = expandDirectories.streamFilesAsS3FileDetails(files);
 
             // Then
             assertThat(fileDetails)
@@ -116,7 +116,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
                     appendBucketNamePrefix(folder2));
 
             // When
-            Stream<String> paths = s3PathUtils.streamFilenames(files);
+            Stream<String> paths = expandDirectories.streamFilenames(files);
 
             // Then
             assertThat(paths)
@@ -136,7 +136,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
                     appendBucketNamePrefix(folder2));
 
             // When
-            Stream<String> paths = s3PathUtils.streamFilenames(files);
+            Stream<String> paths = expandDirectories.streamFilenames(files);
 
             // Then
             assertThat(paths)
@@ -156,7 +156,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
             List<String> files = List.of(appendBucketNamePrefix(folder));
 
             // When
-            Stream<S3FileDetails> fileDetails = s3PathUtils.streamFilesAsS3FileDetails(files);
+            Stream<S3FileDetails> fileDetails = expandDirectories.streamFilesAsS3FileDetails(files);
 
             // Then
             assertThat(fileDetails)
@@ -166,7 +166,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
 
         @Test
         void shouldFailWhenFileNotFoundAtSpecifiedPath() {
-            assertThatThrownBy(() -> s3PathUtils.listFilesAsS3FileDetails(bucket + "/not-a-file.parquet"))
+            assertThatThrownBy(() -> expandDirectories.listFilesAsS3FileDetails(bucket + "/not-a-file.parquet"))
                     .isInstanceOf(S3FileNotFoundException.class);
         }
     }
@@ -176,7 +176,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
     class FindNoFiles {
         @Test
         void shouldReturnEmptyListIfNoFiles() throws Exception {
-            assertThat(s3PathUtils.streamFilenames(List.of())).isEmpty();
+            assertThat(expandDirectories.streamFilenames(List.of())).isEmpty();
         }
 
         @Test
@@ -186,7 +186,7 @@ class S3PathUtilsIT extends LocalStackTestBase {
                     (bucket + "/not-file-2.parquet"));
 
             // When /Then
-            assertThat(s3PathUtils.streamFilenames(files)).isEmpty();
+            assertThat(expandDirectories.streamFilenames(files)).isEmpty();
         }
     }
 

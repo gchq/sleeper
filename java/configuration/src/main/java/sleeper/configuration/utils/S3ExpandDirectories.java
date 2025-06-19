@@ -26,12 +26,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/** Class for retrieve paths for S3. */
-public class S3PathUtils {
+/**
+ * Discovers files under given paths in S3. This is used when submitting files for ingest to a Sleeper table, to allow
+ * for submitting directories rather than individual files. It also supports converting to multiple path formats, e.g.
+ * Hadoop s3a:// paths, or <bucket-name>/object-key>.
+ */
+public class S3ExpandDirectories {
 
     private final S3Client s3Client;
 
-    public S3PathUtils(S3Client s3Client) {
+    public S3ExpandDirectories(S3Client s3Client) {
         this.s3Client = s3Client;
     }
 

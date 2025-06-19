@@ -21,7 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.utils.S3PathUtils;
+import sleeper.configuration.utils.S3ExpandDirectories;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -52,7 +52,7 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
-            properties, hadoopConf, tableIndex, tracker, new S3PathUtils(s3Client))
+            properties, hadoopConf, tableIndex, tracker, new S3ExpandDirectories(s3Client))
             .jobIdSupplier(() -> "job-id")
             .timeSupplier(() -> validationTime)
             .build();

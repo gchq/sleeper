@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
+import sleeper.configuration.utils.S3ExpandDirectories;
+import sleeper.configuration.utils.S3ExpandDirectories.S3FileDetails;
 import sleeper.configuration.utils.S3FileNotFoundException;
-import sleeper.configuration.utils.S3PathUtils;
-import sleeper.configuration.utils.S3PathUtils.S3FileDetails;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
@@ -39,14 +39,14 @@ public class IngestBatcherSubmitter {
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
     private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
-    private final S3PathUtils s3PathUtils;
+    private final S3ExpandDirectories s3PathUtils;
 
     public IngestBatcherSubmitter(TableIndex tableIndex, IngestBatcherStore store,
             IngestBatcherSubmitDeadLetterQueue deadLetterQueue, S3Client s3Client) {
         this.tableIndex = tableIndex;
         this.store = store;
         this.deadLetterQueue = deadLetterQueue;
-        this.s3PathUtils = new S3PathUtils(s3Client);
+        this.s3PathUtils = new S3ExpandDirectories(s3Client);
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
