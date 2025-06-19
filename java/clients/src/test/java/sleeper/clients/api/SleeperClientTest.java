@@ -208,16 +208,14 @@ class SleeperClientTest {
     @Test
     void shouldExportFromTableUsingBulkExportQuery() {
         String tableName = "export-table";
-        String tableId = null;
 
         // When
-        String exportId = sleeperClient.bulkExport(tableName, tableId);
+        String exportId = sleeperClient.bulkExport(tableName);
 
         // Then
         assertThat(exportId).isNotBlank();
         assertThat(instance.bulkExportQueue()).containsExactly(
                 BulkExportQuery.builder()
-                        .tableId(tableId)
                         .tableName(tableName)
                         .exportId(exportId)
                         .build());

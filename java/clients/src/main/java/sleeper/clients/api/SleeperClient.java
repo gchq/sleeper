@@ -316,32 +316,24 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as a
-     * an export job in a queue. The job will be processed asynchronously. The ID of the export can be used to track its
-     * progress.
-     * <p>
-     * The table must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to.
+     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as
+     * an export job in a queue. The job will be processed asynchronously.
      *
-     * @param  tableName - the table to export data from
-     * @param  tableId   - The id of the table
-     * @return           - The id of the export for tracking
+     * @param  tableName the table to export data from
+     * @return           the id of the export for tracking
      */
-    public String bulkExport(String tableName, String tableId) {
+    public String bulkExport(String tableName) {
         String exportId = UUID.randomUUID().toString();
         bulkExport(BulkExportQuery.builder()
                 .tableName(tableName)
-                .tableId(tableId)
                 .exportId(exportId)
                 .build());
         return exportId;
     }
 
     /**
-     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as a
-     * export in a queue. The job will be processed asynchronously. The ID of the export can be used to track its
-     * progress.
-     * <p>
-     * The table must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to.
+     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as
+     * export in a queue. The job will be processed asynchronously.
      *
      * @param query the bulk export query
      */
