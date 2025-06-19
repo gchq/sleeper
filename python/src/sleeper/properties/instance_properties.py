@@ -14,33 +14,24 @@ class InstanceProperties:
             properties = {}
         self._properties = properties
 
-    @classmethod
-    def load_for_instance(cls, s3: S3ServiceResource, instance_id: str) -> Self:
-        return cls.load_from_bucket(s3, "sleeper-" + instance_id + "-config")
+    def get(self, property) -> str:
+        return self._properties[_property_name(property)]
 
-    @classmethod
-    def load_from_bucket(cls, s3: S3ServiceResource, bucket_name: str) -> Self:
-        config_obj = s3.Object(bucket_name, "instance.properties")
-        config_str = config_obj.get()["Body"].read().decode("utf-8")
-        config_str = "[asection]\n" + config_str
-        config = configparser.ConfigParser(allow_no_value=True)
-        config.read_string(config_str)
-        properties = dict(config["asection"])
-        logger.debug("Loaded properties from config bucket ${bucket_name}")
-        return cls(properties)
+    def set(self, property, value: str):
+        self._properties[_property_name(property)] = value
 
     def as_dict(self) -> dict:
         return self._properties
 
-    def get(self, property) -> str:
-        if isinstance(property, InstanceProperty):
-            property = property.property_name
-        return self._properties[property]
+    def as_properties_str(self) -> str:
+        return "\n".join(f"{k}={v}" for k, v in self._properties.items())
 
-    def set(self, property, value: str):
-        if isinstance(property, InstanceProperty):
-            property = property.property_name
-        self._properties[property] = value
+
+def _property_name(property):
+    if isinstance(property, InstanceProperty):
+        return property.property_name
+    else:
+        return property
 
 
 class InstanceProperty:
@@ -50,7 +41,7 @@ class InstanceProperty:
 
 class QueueProperty(InstanceProperty):
     def queue_url(self, properties: InstanceProperties):
-        return properties.get(self.property_name)
+        return properties.get(self)
 
     def queue_name(self, properties: InstanceProperties):
         return self.queue_url(properties).rsplit("/", 1)[1]
@@ -58,9 +49,9 @@ class QueueProperty(InstanceProperty):
 
 class BucketProperty(InstanceProperty):
     def bucket_name(self, properties: InstanceProperties):
-        return properties.get(self.property_name)
+        return properties.get(self)
 
 
 class DynamoTableProperty(InstanceProperty):
     def table_name(self, properties: InstanceProperties):
-        return properties.get(self.property_name)
+        return properties.get(self)

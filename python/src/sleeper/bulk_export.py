@@ -3,7 +3,7 @@ import uuid
 
 from mypy_boto3_sqs import SQSServiceResource
 
-from sleeper.properties.cdk_defined_properties import QueryResources
+from sleeper.properties.cdk_defined_properties import QueryCdkProperty
 from sleeper.properties.instance_properties import InstanceProperties
 
 
@@ -34,5 +34,5 @@ class BulkExportSender:
         self.properties = properties
 
     def send(self, query: BulkExportQuery):
-        queue_url = QueryResources.BULK_EXPORT_QUEUE.queue_url(self.properties)
+        queue_url = QueryCdkProperty.BULK_EXPORT_QUEUE.queue_url(self.properties)
         self.sqs.Queue(queue_url).send_message(MessageBody=query.to_json())
