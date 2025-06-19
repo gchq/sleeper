@@ -206,7 +206,7 @@ class SleeperClientTest {
     }
 
     @Test
-    void shouldExportFromTable() {
+    void shouldExportFromTableUsingBulkExportQuery() {
         String tableName = "export-table";
         String tableId = null;
 

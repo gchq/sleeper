@@ -42,7 +42,7 @@ public class BulkExportQuerySenderIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldExportTableFromQuery() {
+    void shouldExportTableUsingBulkExportQuery() {
         String exportId = UUID.randomUUID().toString();
         BulkExportQuery query = BulkExportQuery.builder()
                 .tableName("export-table")

@@ -319,6 +319,8 @@ public class SleeperClient implements AutoCloseable {
      * Exports the data defined in a bulk export query using the bulk export method. This submits the query as a
      * an export job in a queue. The job will be processed asynchronously. The ID of the export can be used to track its
      * progress.
+     * <p>
+     * The table must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to.
      *
      * @param  tableName - the table to export data from
      * @param  tableId   - The id of the table
@@ -338,6 +340,8 @@ public class SleeperClient implements AutoCloseable {
      * Exports the data defined in a bulk export query using the bulk export method. This submits the query as a
      * export in a queue. The job will be processed asynchronously. The ID of the export can be used to track its
      * progress.
+     * <p>
+     * The table must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to.
      *
      * @param query the bulk export query
      */
@@ -454,17 +458,6 @@ public class SleeperClient implements AutoCloseable {
         }
 
         /**
-         * Sets the client to send a bulk export job.
-         *
-         * @param  bulkExportQuerySender the client
-         * @return                       this builder for chaining
-         */
-        public Builder bulkExportQuerySender(BulkExportQuerySender bulkExportQuerySender) {
-            this.bulkExportQuerySender = bulkExportQuerySender;
-            return this;
-        }
-
-        /**
          * Sets the client to send a bulk import job.
          *
          * @param  bulkImportJobSender the client
@@ -483,6 +476,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder ingestBatcherSender(IngestBatcherSender ingestBatcherSender) {
             this.ingestBatcherSender = ingestBatcherSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to send a bulk export job.
+         *
+         * @param  bulkExportQuerySender the client
+         * @return                       this builder for chaining
+         */
+        public Builder bulkExportQuerySender(BulkExportQuerySender bulkExportQuerySender) {
+            this.bulkExportQuerySender = bulkExportQuerySender;
             return this;
         }
 
