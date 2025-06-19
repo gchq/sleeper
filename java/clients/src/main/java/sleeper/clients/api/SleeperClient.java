@@ -326,9 +326,9 @@ public class SleeperClient implements AutoCloseable {
      * @param  tableId   - The id of the table
      * @return           - The id of the export for tracking
      */
-    public String bulkExportFromQuery(String tableName, String tableId) {
+    public String bulkExport(String tableName, String tableId) {
         String exportId = UUID.randomUUID().toString();
-        bulkExportFromQuery(BulkExportQuery.builder()
+        bulkExport(BulkExportQuery.builder()
                 .tableName(tableName)
                 .tableId(tableId)
                 .exportId(exportId)
@@ -345,7 +345,7 @@ public class SleeperClient implements AutoCloseable {
      *
      * @param query the bulk export query
      */
-    public void bulkExportFromQuery(BulkExportQuery query) {
+    public void bulkExport(BulkExportQuery query) {
         bulkExportQuerySender.sendQueryToBulkExport(query);
     }
 

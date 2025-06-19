@@ -211,7 +211,7 @@ class SleeperClientTest {
         String tableId = null;
 
         // When
-        String exportId = sleeperClient.bulkExportFromQuery(tableName, tableId);
+        String exportId = sleeperClient.bulkExport(tableName, tableId);
 
         // Then
         assertThat(exportId).isNotBlank();
