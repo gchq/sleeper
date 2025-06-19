@@ -164,7 +164,7 @@ class S3ResultsOutputIT {
     private List<Record> getRecordsFromOutput(String path) {
         List<Record> records = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path), schema);
+            ParquetRecordReader reader = new ParquetRecordReader(path, schema);
 
             Record record = reader.read();
             while (null != record) {

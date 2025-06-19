@@ -101,8 +101,12 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             int numberOfFiles) {
         List<String> files = new ArrayList<>();
 
+        if (!subDirectory.isEmpty()) {
+            subDirectory = "/" + subDirectory;
+        }
+
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
-            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
+            String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
             try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(

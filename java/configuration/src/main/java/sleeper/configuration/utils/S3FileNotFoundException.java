@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher.submitter;
+package sleeper.configuration.utils;
 
-public class FileNotFoundException extends RuntimeException {
+/**
+ * An exception for when a file could not be found within S3 as it doesn't exist.
+ */
+public class S3FileNotFoundException extends RuntimeException {
 
-    public FileNotFoundException(String bucket, String path) {
+    public S3FileNotFoundException(String bucket, String path) {
         super("Found no files at path " + bucket + "/" + path);
     }
-
 }
