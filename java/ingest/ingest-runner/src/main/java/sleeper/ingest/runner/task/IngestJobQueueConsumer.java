@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
 import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
 import software.amazon.awssdk.services.cloudwatch.model.StandardUnit;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
@@ -31,6 +32,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import sleeper.common.job.action.ActionException;
 import sleeper.common.job.action.MessageReference;
 import sleeper.common.job.action.thread.PeriodicActionRunnable;
+import sleeper.configuration.utils.S3PathUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -39,7 +41,6 @@ import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +63,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler;
 
     public IngestJobQueueConsumer(SqsClient sqsClient,
+            S3Client s3Client,
             CloudWatchClient cloudWatchClient,
             InstanceProperties instanceProperties,
             Configuration configuration,
@@ -73,18 +75,19 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker).build();
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker, new S3PathUtils(s3Client)).build();
     }
 
     public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
             InstanceProperties instanceProperties,
             Configuration configuration,
             TableIndex tableIndex,
-            IngestJobTracker ingestJobTracker) {
+            IngestJobTracker ingestJobTracker,
+            S3PathUtils s3PathUtils) {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, configuration, instanceProperties));
+                .expandDirectories(files -> s3PathUtils.streamFilenames(files).toList());
     }
 
     @Override

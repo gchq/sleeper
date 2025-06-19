@@ -48,6 +48,7 @@ on:
       - 'java/ingest/ingest-core/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'
+      - 'java/bulk-export/bulk-export-core/**'
 
 jobs:
   chunk-workflow:

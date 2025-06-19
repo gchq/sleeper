@@ -52,10 +52,11 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
         CompactionRunner runner = createRunnerForMethod(method);
 
-        // Is an iterator specifed? If so can we support this?
-        if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
-            LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
-            runner = createJavaRunner();
+        // Has an experimental DataFusion only iterator been specified? If so, make sure
+        // we are using the DataFusion compactor
+        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof RustCompactionRunner)) {
+            throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
+                    + job.getId() + " table ID " + job.getTableId());
         }
 
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());

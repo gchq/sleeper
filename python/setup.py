@@ -14,12 +14,18 @@
 from setuptools import setup
 
 setup(
-    name='sleeper',
-    version='0.31.0.dev1',
-    description='Python client for Sleeper',
-    packages=['sleeper', 'pq'],
+    name="sleeper",
+    version="0.31.0.dev1",
+    description="Python client for Sleeper",
+    packages=["sleeper", "pq"],
     install_requires=[
-        'pyarrow', 'boto3', 's3fs'
+        "pyarrow",
+        "boto3",
+        "s3fs",
+        "boto3-stubs[essential]",
+        "ruff",
+        "pytest",
+        "testcontainers[localstack]",
     ],
     package_dir={"": "src"},
     python_requires=">=3.7",
@@ -28,5 +34,5 @@ setup(
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3 :: Only",
         "Typing :: Typed",
-    ]
+    ],
 )
