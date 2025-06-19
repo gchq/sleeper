@@ -85,15 +85,11 @@ public class S3ExpandDirectories {
         if ((files == null) || files.isEmpty()) {
             return Stream.empty();
         }
-        try {
-            List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-            files.stream().forEach(file -> {
-                outList.addAll(listFilesAsS3FileDetails(file));
-            });
-            return outList.stream();
-        } catch (S3FileNotFoundException e) {
-            return Stream.empty();
-        }
+        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+        files.stream().forEach(file -> {
+            outList.addAll(listFilesAsS3FileDetails(file));
+        });
+        return outList.stream();
     }
 
     /**

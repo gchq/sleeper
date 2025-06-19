@@ -175,18 +175,19 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
     @DisplayName("Find no files when none are present")
     class FindNoFiles {
         @Test
-        void shouldReturnEmptyListIfNoFiles() throws Exception {
-            assertThat(expandDirectories.streamFilenames(List.of())).isEmpty();
+        void shouldReturnEmptyStreamIfNoFiles() throws Exception {
+            assertThat(expandDirectories.streamFilesAsS3FileDetails(List.of())).isEmpty();
         }
 
         @Test
-        void shouldReturnEmptyListForFilesNotFound() {
-            // Given
-            List<String> files = List.of((bucket + "/not-file-1.parquet"),
-                    (bucket + "/not-file-2.parquet"));
+        void shouldReturnEmptyStreamIfNull() throws Exception {
+            assertThat(expandDirectories.streamFilesAsS3FileDetails(null)).isEmpty();
+        }
 
-            // When /Then
-            assertThat(expandDirectories.streamFilenames(files)).isEmpty();
+        @Test
+        void shouldFailWhenFileNotFoundAtSpecifiedPath() {
+            assertThatThrownBy(() -> expandDirectories.streamFilesAsS3FileDetails(List.of(bucket + "/not-a-file.parquet")).toList())
+                    .isInstanceOf(S3FileNotFoundException.class);
         }
     }
 

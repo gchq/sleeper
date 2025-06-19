@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import sleeper.configuration.utils.S3ExpandDirectories;
-import sleeper.configuration.utils.S3ExpandDirectories.S3FileDetails;
 import sleeper.configuration.utils.S3FileNotFoundException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
@@ -30,7 +29,6 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public class IngestBatcherSubmitter {
@@ -39,14 +37,14 @@ public class IngestBatcherSubmitter {
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
     private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
-    private final S3ExpandDirectories s3PathUtils;
+    private final S3ExpandDirectories expandDirectories;
 
     public IngestBatcherSubmitter(TableIndex tableIndex, IngestBatcherStore store,
             IngestBatcherSubmitDeadLetterQueue deadLetterQueue, S3Client s3Client) {
         this.tableIndex = tableIndex;
         this.store = store;
         this.deadLetterQueue = deadLetterQueue;
-        this.s3PathUtils = new S3ExpandDirectories(s3Client);
+        this.expandDirectories = new S3ExpandDirectories(s3Client);
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
@@ -69,33 +67,13 @@ public class IngestBatcherSubmitter {
     private List<IngestBatcherTrackedFile> toTrackedFiles(IngestBatcherSubmitRequest request, Instant receivedTime) {
         String tableID = tableIndex.getTableByName(request.tableName())
                 .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName())).getTableUniqueId();
-        List<IngestBatcherTrackedFile> list = new ArrayList<IngestBatcherTrackedFile>();
-
-        for (String filename : request.files()) {
-            List<S3FileDetails> fileDetails = s3PathUtils.listFilesAsS3FileDetails(filename);
-            list.addAll(convertFileDetailsToTrackedFile(fileDetails, tableID, receivedTime));
-        }
-        return list;
-    }
-
-    private List<IngestBatcherTrackedFile> convertFileDetailsToTrackedFile(List<S3FileDetails> files, String tableID, Instant recievedTime) {
-        List<IngestBatcherTrackedFile> trackedFiles = new ArrayList<IngestBatcherTrackedFile>();
-        files.forEach(file -> {
-            trackedFiles.add(getIndividualFile(file, tableID, recievedTime));
-        });
-        return trackedFiles;
-    }
-
-    private IngestBatcherTrackedFile getIndividualFile(S3FileDetails file, String tableID, Instant receivedTime) {
-        return buildTrackedFile(file.getFullFileLocation(), file.fileObject().size(), tableID, receivedTime);
-    }
-
-    private IngestBatcherTrackedFile buildTrackedFile(String filename, Long fileSizeBytes, String tableID, Instant receivedTime) {
-        return IngestBatcherTrackedFile.builder()
-                .file(filename)
-                .fileSizeBytes(fileSizeBytes)
-                .tableId(tableID)
-                .receivedTime(receivedTime)
-                .build();
+        return expandDirectories.streamFilesAsS3FileDetails(request.files())
+                .map(file -> IngestBatcherTrackedFile.builder()
+                        .file(file.getFullFileLocation())
+                        .fileSizeBytes(file.fileObject().size())
+                        .tableId(tableID)
+                        .receivedTime(receivedTime)
+                        .build())
+                .toList();
     }
 }
