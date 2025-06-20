@@ -393,11 +393,12 @@ public class IngestJobMessageHandlerTest {
                 .expandDirectories(files -> expandDirFiles(files, directoryContents));
     }
 
-    private static List<String> expandDirFiles(List<String> files, Map<String, List<String>> directoryContents) {
-        return files.stream()
+    private static ExpandDirectoriesResult expandDirFiles(List<String> files, Map<String, List<String>> directoryContents) {
+        List<String> expanded = files.stream()
                 .flatMap(dir -> Optional.ofNullable(directoryContents.get(dir))
                         .map(dirFiles -> dirFiles.stream().map(file -> dir + "/" + file))
                         .orElseGet(() -> Stream.of(dir)))
                 .collect(Collectors.toUnmodifiableList());
+        return new ExpandDirectoriesResult(expanded, List.of());
     }
 }

@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
-import sleeper.configuration.utils.S3ExpandDirectories;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
@@ -72,7 +71,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> new S3ExpandDirectories(s3Client).expandPaths(files).listJobPathsThrowIfAnyPathIsEmpty());
+                .expandDirectories(BulkImportStarterLambda.expandDirectories(s3Client));
     }
 
     @Nested

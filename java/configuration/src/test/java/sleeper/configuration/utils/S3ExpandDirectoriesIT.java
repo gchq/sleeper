@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.utils.S3ExpandDirectories.S3FileDetails;
-import sleeper.configuration.utils.S3ExpandDirectories.S3Location;
-import sleeper.configuration.utils.S3ExpandDirectories.S3PathContents;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
@@ -172,10 +170,8 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
             String file = bucket + "/not-a-file.parquet";
 
             // When / Then
-            assertThat(expandDirectories.expandPaths(List.of(file)).contents())
-                    .containsExactly(new S3PathContents(
-                            S3Location.parse(file),
-                            List.of()));
+            assertThat(expandDirectories.expandPaths(List.of(file)).listMissingPaths())
+                    .containsExactly(file);
         }
 
         @Test
@@ -184,10 +180,8 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
             String file = bucket + "/not-a-directory/";
 
             // When / Then
-            assertThat(expandDirectories.expandPaths(List.of(file)).contents())
-                    .containsExactly(new S3PathContents(
-                            S3Location.parse(file),
-                            List.of()));
+            assertThat(expandDirectories.expandPaths(List.of(file)).listMissingPaths())
+                    .containsExactly(file);
         }
     }
 
@@ -199,8 +193,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
     }
 
     private List<String> listPathsForJob(List<String> files) {
-        return expandDirectories.expandPaths(files)
-                .listJobPathsThrowIfAnyPathIsEmpty();
+        return expandDirectories.expandPaths(files).listJobPaths();
     }
 
 }

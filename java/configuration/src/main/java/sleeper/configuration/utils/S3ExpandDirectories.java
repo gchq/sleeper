@@ -91,16 +91,28 @@ public class S3ExpandDirectories {
                     .toList();
         }
 
-        public List<String> listJobPathsThrowIfAnyPathIsEmpty() {
-            return streamFilesThrowIfAnyPathIsEmpty()
+        public List<String> listJobPaths() {
+            return streamFiles()
                     .map(S3FileDetails::pathForJob)
+                    .toList();
+        }
+
+        public List<String> listMissingPaths() {
+            return contents.stream()
+                    .filter(S3PathContents::isEmpty)
+                    .map(S3PathContents::requestedPath)
                     .toList();
         }
 
         public Stream<S3FileDetails> streamFilesThrowIfAnyPathIsEmpty() {
             return contents.stream()
                     .peek(S3PathContents::throwIfEmpty)
-                    .flatMap(path -> path.contents().stream());
+                    .flatMap(path -> path.files().stream());
+        }
+
+        public Stream<S3FileDetails> streamFiles() {
+            return contents.stream()
+                    .flatMap(path -> path.files().stream());
         }
     }
 
@@ -108,14 +120,22 @@ public class S3ExpandDirectories {
      * Results of expanding a path in S3.
      *
      * @param location the location in S3
-     * @param contents the files found
+     * @param files    the files found
      */
-    public record S3PathContents(S3Location location, List<S3FileDetails> contents) {
+    public record S3PathContents(S3Location location, List<S3FileDetails> files) {
 
         public void throwIfEmpty() throws S3FileNotFoundException {
-            if (contents.isEmpty()) {
+            if (files.isEmpty()) {
                 throw new S3FileNotFoundException(location.bucket, location.prefix);
             }
+        }
+
+        public boolean isEmpty() {
+            return files.isEmpty();
+        }
+
+        public String requestedPath() {
+            return location.requestedPath();
         }
     }
 
@@ -147,11 +167,11 @@ public class S3ExpandDirectories {
     /**
      * A location in S3 to look for files.
      *
-     * @param requestPath the path requested before parsing
-     * @param bucket      the S3 bucket name
-     * @param prefix      prefix for object keys
+     * @param requestedPath the path requested before parsing
+     * @param bucket        the S3 bucket name
+     * @param prefix        prefix for object keys
      */
-    public record S3Location(String requestPath, String bucket, String prefix) {
+    public record S3Location(String requestedPath, String bucket, String prefix) {
 
         /**
          * Parses a path from a request in an ingest job, bulk import job or ingest batcher submission.
