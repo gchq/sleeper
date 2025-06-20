@@ -39,112 +39,134 @@ public class S3ExpandDirectories {
     }
 
     /**
-     * Discovers files under the given paths. Works with paths in the format for an ingest job.
-     *
-     * @param  filenames filenames to expand, in the format bucket-name/object-key;
-     * @return           filenames found, in the format bucket-name/object-key
-     */
-    public List<String> expandJobFilenames(List<String> filenames) {
-        return streamFilesAsS3FileDetails(filenames)
-                .map(S3FileDetails::pathForJob)
-                .toList();
-    }
-
-    /**
-     * Discovers files under the given paths. Takes paths in the format for an ingest job, and returns Hadoop paths.
-     *
-     * @param  filenames filenames to expand, in the format bucket-name/object-key
-     * @return           filenames found, in the format s3a://bucket-name/object-key
-     */
-    public List<String> expandJobFilenamesForHadoop(List<String> filenames) {
-        return streamFilesAsS3FileDetails(filenames)
-                .map(S3FileDetails::hadoopPath)
-                .toList();
-    }
-
-    /**
      * Discovers files under the given paths. Takes paths in the format for an ingest job, and returns details of each
      * file.
      *
-     * @param  filenames filenames to expand, in the format bucket-name/object-key
-     * @return           stream of files found at given paths
+     * @param  files paths to expand, in the format bucket-name/object-key
+     * @return       contents under the specified paths
      */
-    public Stream<S3FileDetails> streamFilesAsS3FileDetails(List<String> filenames) {
-        if (filenames == null) {
-            return Stream.empty();
+    public S3ExpandDirectoriesResult expandPaths(List<String> files) {
+        if (files == null) {
+            return new S3ExpandDirectoriesResult(List.of());
         }
-        return filenames.stream()
-                .filter(this::checkIsNotCrcFile)
-                .map(this::parseS3FileLocation)
-                .flatMap(filename -> listFilesAsS3FileDetails(filename).stream());
+        return new S3ExpandDirectoriesResult(files.stream()
+                .filter(S3ExpandDirectories::checkIsNotCrcFile)
+                .map(S3Location::parse)
+                .map(this::findContents)
+                .toList());
     }
 
-    private List<S3FileDetails> listFilesAsS3FileDetails(S3FileLocation fileLocation) {
+    private S3PathContents findContents(S3Location location) {
+        return new S3PathContents(location, listFilesAsS3FileDetails(location));
+    }
+
+    private List<S3FileDetails> listFilesAsS3FileDetails(S3Location location) {
 
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
-                .bucket(fileLocation.bucket)
-                .prefix(fileLocation.objectKey)
+                .bucket(location.bucket)
+                .prefix(location.prefix)
                 .build());
 
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
                 if (checkIsNotCrcFile(s3Object.key())) {
-                    outList.add(new S3FileDetails(fileLocation.bucket, s3Object));
+                    outList.add(new S3FileDetails(location.bucket, s3Object));
                 }
             });
-        }
-        if (outList.isEmpty()) {
-            throw new S3FileNotFoundException(fileLocation.bucket, fileLocation.objectKey);
         }
 
         return outList;
     }
 
-    private S3FileLocation parseS3FileLocation(String filename) {
-        if (!filename.contains("/")) {
-            return new S3FileLocation(filename, "");
-        } else {
-            return new S3FileLocation(filename.substring(0, filename.indexOf("/")),
-                    filename.substring(filename.indexOf("/") + 1));
+    private static boolean checkIsNotCrcFile(String key) {
+        return !key.endsWith(".crc");
+    }
+
+    public record S3ExpandDirectoriesResult(List<S3PathContents> contents) {
+
+        public List<String> listHadoopPathsThrowIfAnyPathIsEmpty() {
+            return streamFilesThrowIfAnyPathIsEmpty()
+                    .map(S3FileDetails::pathForHadoop)
+                    .toList();
+        }
+
+        public List<String> listJobPathsThrowIfAnyPathIsEmpty() {
+            return streamFilesThrowIfAnyPathIsEmpty()
+                    .map(S3FileDetails::pathForJob)
+                    .toList();
+        }
+
+        public Stream<S3FileDetails> streamFilesThrowIfAnyPathIsEmpty() {
+            return contents.stream()
+                    .peek(S3PathContents::throwIfEmpty)
+                    .flatMap(path -> path.contents().stream());
         }
     }
 
-    private boolean checkIsNotCrcFile(String key) {
-        return !key.contains(".crc");
+    /**
+     * Results of expanding a path in S3.
+     *
+     * @param location the location in S3
+     * @param contents the files found
+     */
+    public record S3PathContents(S3Location location, List<S3FileDetails> contents) {
+
+        public void throwIfEmpty() throws S3FileNotFoundException {
+            if (contents.isEmpty()) {
+                throw new S3FileNotFoundException(location.bucket, location.prefix);
+            }
+        }
     }
 
     /**
-     * Storage of the details from with s3 with full file name.
+     * A file found in an S3 bucket.
      *
-     * @param fileLocation name of file including bucket
-     * @param fileObject   respresentation of object back from s3
+     * @param bucket   the S3 bucket name
+     * @param s3Object details of the S3 object
      */
-    public record S3FileDetails(String bucket, S3Object fileObject) {
+    public record S3FileDetails(String bucket, S3Object s3Object) {
 
         public String pathForJob() {
             return bucket() + "/" + objectKey();
         }
 
-        public String hadoopPath() {
+        public String pathForHadoop() {
             return "s3a://" + bucket() + "/" + objectKey();
         }
 
         public String objectKey() {
-            return fileObject.key();
+            return s3Object.key();
         }
 
         public long fileSizeBytes() {
-            return fileObject.size();
+            return s3Object.size();
         }
     }
 
     /**
-     * Storage for the breadown of the filename into the relevant parts.
+     * A location in S3 to look for files.
      *
-     * @param bucket    bucket location of file
-     * @param objectKey name of file
+     * @param requestPath the path requested before parsing
+     * @param bucket      the S3 bucket name
+     * @param prefix      prefix for object keys
      */
-    public record S3FileLocation(String bucket, String objectKey) {
+    public record S3Location(String requestPath, String bucket, String prefix) {
+
+        /**
+         * Parses a path from a request in an ingest job, bulk import job or ingest batcher submission.
+         *
+         * @param  path the path
+         * @return      the parsed location in S3
+         */
+        public static S3Location parse(String path) {
+            if (!path.contains("/")) {
+                return new S3Location(path, path, "");
+            } else {
+                return new S3Location(path,
+                        path.substring(0, path.indexOf("/")),
+                        path.substring(path.indexOf("/") + 1));
+            }
+        }
     }
 }

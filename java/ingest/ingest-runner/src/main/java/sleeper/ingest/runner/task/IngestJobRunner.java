@@ -120,7 +120,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Create list of all files to be read
 
-        List<String> paths = expandDirectories.expandJobFilenamesForHadoop(job.getFiles());
+        List<String> paths = expandDirectories.expandPaths(job.getFiles()).listHadoopPathsThrowIfAnyPathIsEmpty();
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 

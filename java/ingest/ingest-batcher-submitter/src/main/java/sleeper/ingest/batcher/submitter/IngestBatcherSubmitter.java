@@ -67,10 +67,11 @@ public class IngestBatcherSubmitter {
     private List<IngestBatcherTrackedFile> toTrackedFiles(IngestBatcherSubmitRequest request, Instant receivedTime) {
         String tableID = tableIndex.getTableByName(request.tableName())
                 .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName())).getTableUniqueId();
-        return expandDirectories.streamFilesAsS3FileDetails(request.files())
+        return expandDirectories.expandPaths(request.files())
+                .streamFilesThrowIfAnyPathIsEmpty()
                 .map(file -> IngestBatcherTrackedFile.builder()
                         .file(file.pathForJob())
-                        .fileSizeBytes(file.fileObject().size())
+                        .fileSizeBytes(file.fileSizeBytes())
                         .tableId(tableID)
                         .receivedTime(receivedTime)
                         .build())

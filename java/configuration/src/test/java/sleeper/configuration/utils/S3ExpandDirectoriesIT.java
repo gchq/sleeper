@@ -21,13 +21,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.utils.S3ExpandDirectories.S3FileDetails;
+import sleeper.configuration.utils.S3ExpandDirectories.S3Location;
+import sleeper.configuration.utils.S3ExpandDirectories.S3PathContents;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class S3ExpandDirectoriesIT extends LocalStackTestBase {
 
@@ -46,22 +47,21 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         @Test
         void shouldGetPathsForFilesInOneDir() throws Exception {
             // Given
-            List<String> filenames = List.of(
+            List<String> files = List.of(
                     bucket + "/file-1.parquet",
                     bucket + "/file-2.parquet");
             putObject(bucket, "file-1.parquet", "test-data");
             putObject(bucket, "file-2.parquet", "test-data");
 
             // When / Then
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(filenames))
-                    .extracting(S3FileDetails::pathForJob)
-                    .containsExactlyElementsOf(filenames);
+            assertThat(listPathsForJob(files))
+                    .containsExactlyElementsOf(files);
         }
 
         @Test
         void shouldIgnoreCrcFiles() {
             // Given
-            List<String> filenames = List.of(
+            List<String> files = List.of(
                     bucket + "/file-1.parquet",
                     bucket + "/file-2.crc",
                     bucket + "/file-3.parquet");
@@ -70,8 +70,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
             putObject(bucket, "file-3.parquet", "test-data");
 
             // When / Then
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(filenames))
-                    .extracting(S3FileDetails::pathForJob)
+            assertThat(listPathsForJob(files))
                     .containsExactlyInAnyOrder(
                             bucket + "/file-1.parquet",
                             bucket + "/file-3.parquet");
@@ -80,7 +79,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         @Test
         void shouldReadFileSizes() throws Exception {
             // Given
-            List<String> filenames = List.of(
+            List<String> files = List.of(
                     bucket + "/file-1.parquet",
                     bucket + "/file-2.parquet");
             putObject(bucket, "file-1.parquet", "this is a short test file contents");
@@ -88,8 +87,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
                     "more details for a bigger number of size");
 
             // When / Then
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(filenames))
-                    .extracting(S3FileDetails::fileSizeBytes)
+            assertThat(listFileSizeBytes(files))
                     .containsExactlyInAnyOrder(34L, 81L);
         }
     }
@@ -101,15 +99,14 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         @Test
         void shouldGetPathsForFilesInADirectory() {
             // Given
-            List<String> filenames = List.of(bucket + "/test-folder");
+            List<String> files = List.of(bucket + "/test-folder");
             String objectKey1 = "test-folder/file-1.parquet";
             String objectKey2 = "test-folder/file-2.parquet";
             putObject(bucket, objectKey1, "test-data");
             putObject(bucket, objectKey2, "test-data");
 
             // When / Then
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(filenames))
-                    .extracting(S3FileDetails::pathForJob)
+            assertThat(listPathsForJob(files))
                     .containsExactlyInAnyOrder(
                             bucket + "/" + objectKey1,
                             bucket + "/" + objectKey2);
@@ -118,7 +115,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         @Test
         void shouldGetPathsForFilesInNestedDirectories() {
             // Given
-            List<String> filenames = List.of(
+            List<String> files = List.of(
                     bucket + "/folder-1",
                     bucket + "/folder-2");
             String objectKey1 = "folder-1/file-1.parquet";
@@ -131,8 +128,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
             putObject(bucket, objectKey4, "test-data");
 
             // When / Then
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(filenames))
-                    .extracting(S3FileDetails::pathForJob)
+            assertThat(listPathsForJob(files))
                     .containsExactlyInAnyOrder(
                             bucket + "/" + objectKey1,
                             bucket + "/" + objectKey2,
@@ -143,7 +139,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         @Test
         void shouldReadFileSizesUnderADirectory() throws Exception {
             // Given
-            List<String> filenames = List.of(bucket + "/size-test-folder");
+            List<String> files = List.of(bucket + "/size-test-folder");
             String objectKey1 = "size-test-folder/file-1.parquet";
             String objectKey2 = "size-test-folder/subfolder/file-2.parquet";
 
@@ -152,8 +148,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
                     "more details for a bigger number of size");
 
             // When / Then
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(filenames))
-                    .extracting(S3FileDetails::fileSizeBytes)
+            assertThat(listFileSizeBytes(files))
                     .containsExactlyInAnyOrder(30L, 100L);
         }
     }
@@ -163,25 +158,49 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
     class FindNoFiles {
         @Test
         void shouldReturnEmptyStreamIfNoFiles() throws Exception {
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(List.of())).isEmpty();
+            assertThat(listPathsForJob(List.of())).isEmpty();
         }
 
         @Test
         void shouldReturnEmptyStreamIfNull() throws Exception {
-            assertThat(expandDirectories.streamFilesAsS3FileDetails(null)).isEmpty();
+            assertThat(listPathsForJob(null)).isEmpty();
         }
 
         @Test
-        void shouldFailWhenFileNotFoundAtSpecifiedPath() {
-            assertThatThrownBy(() -> expandDirectories.streamFilesAsS3FileDetails(List.of(bucket + "/not-a-file.parquet")).toList())
-                    .isInstanceOf(S3FileNotFoundException.class);
+        void shouldReturnEmptyContentsWhenFileIsNotFound() {
+            // Given
+            String file = bucket + "/not-a-file.parquet";
+
+            // When / Then
+            assertThat(expandDirectories.expandPaths(List.of(file)).contents())
+                    .containsExactly(new S3PathContents(
+                            S3Location.parse(file),
+                            List.of()));
         }
 
         @Test
-        void shouldFailWhenDirectoryNotFoundAtSpecifiedPath() {
-            assertThatThrownBy(() -> expandDirectories.streamFilesAsS3FileDetails(List.of(bucket + "/not-a-directory/")).toList())
-                    .isInstanceOf(S3FileNotFoundException.class);
+        void shouldReturnEmptyContentsWhenDirectoryIsNotFound() {
+            // Given
+            String file = bucket + "/not-a-directory/";
+
+            // When / Then
+            assertThat(expandDirectories.expandPaths(List.of(file)).contents())
+                    .containsExactly(new S3PathContents(
+                            S3Location.parse(file),
+                            List.of()));
         }
+    }
+
+    private List<Long> listFileSizeBytes(List<String> files) {
+        return expandDirectories.expandPaths(files)
+                .streamFilesThrowIfAnyPathIsEmpty()
+                .map(S3FileDetails::fileSizeBytes)
+                .toList();
+    }
+
+    private List<String> listPathsForJob(List<String> files) {
+        return expandDirectories.expandPaths(files)
+                .listJobPathsThrowIfAnyPathIsEmpty();
     }
 
 }
