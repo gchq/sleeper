@@ -11,24 +11,18 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from sleeper.sleeper import SleeperClient
+from sleeper.client import SleeperClient
 
-first_record = {
-    'key': 'example-key',
-    'value': 'example-value'
-}
+first_record = {"key": "example-key", "value": "example-value"}
 
-second_record = {
-    'key': 'example-key2',
-    'value': 'example-value2'
-}
+second_record = {"key": "example-key2", "value": "example-value2"}
 
 table_name = "my_table"
 
 records_list = [first_record, second_record]
 
 # Create Sleeper instance with base name of install
-my_sleeper = SleeperClient('my-sleeper-instance')
+my_sleeper = SleeperClient("my-sleeper-instance")
 my_sleeper.write_single_batch(table_name, records_list)
 
 # These queries will not return results straight away, it can take a few minutes before

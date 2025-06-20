@@ -49,7 +49,7 @@ public class IngestJobMessageHandler<T> {
     private final Function<String, T> deserialiser;
     private final Function<T, IngestJob> toIngestJob;
     private final BiFunction<T, IngestJob, T> applyIngestJobChanges;
-    private final Function<List<String>, List<String>> expandDirectories;
+    private final ExpandDirectories expandDirectories;
     private final Supplier<String> jobIdSupplier;
     private final Supplier<Instant> timeSupplier;
 
@@ -148,15 +148,15 @@ public class IngestJobMessageHandler<T> {
         }
         TableStatus table = tableOpt.get();
 
-        List<String> expandedFiles = expandDirectories.apply(files);
-        if (expandedFiles.isEmpty()) {
-            LOGGER.warn("Could not find one or more files for job: {}", job);
+        ExpandDirectoriesResult expanded = expandDirectories.expandPaths(files);
+        if (!expanded.missingPaths().isEmpty()) {
+            LOGGER.warn("Could not find paths for job {}: {}", jobId, expanded.missingPaths());
             ingestJobTracker.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
                             .jsonMessage(message)
-                            .reasons("Could not find one or more files")
+                            .reasons("Could not find one or more paths")
                             .build());
             return Optional.empty();
         }
@@ -167,7 +167,7 @@ public class IngestJobMessageHandler<T> {
                         .id(jobId)
                         .tableName(table.getTableName())
                         .tableId(table.getTableUniqueId())
-                        .files(expandedFiles)
+                        .files(expanded.expandedFiles())
                         .build()));
     }
 
@@ -197,7 +197,7 @@ public class IngestJobMessageHandler<T> {
         private Function<String, T> deserialiser;
         private Function<T, IngestJob> toIngestJob;
         private BiFunction<T, IngestJob, T> applyIngestJobChanges;
-        private Function<List<String>, List<String>> expandDirectories;
+        private ExpandDirectories expandDirectories;
         private Supplier<String> jobIdSupplier = () -> UUID.randomUUID().toString();
         private Supplier<Instant> timeSupplier = Instant::now;
 
@@ -265,7 +265,7 @@ public class IngestJobMessageHandler<T> {
          * @param  expandDirectories the function that expands directories
          * @return                   the builder
          */
-        public Builder<T> expandDirectories(Function<List<String>, List<String>> expandDirectories) {
+        public Builder<T> expandDirectories(ExpandDirectories expandDirectories) {
             this.expandDirectories = expandDirectories;
             return this;
         }

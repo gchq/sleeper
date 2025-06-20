@@ -23,20 +23,20 @@ use std::{
     any::Any,
     fmt::Debug,
     iter::zip,
-    sync::{Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard},
 };
 
 use arrow::{
     array::AsArray,
     datatypes::{
-        BinaryType, DataType, Int32Type, Int64Type, LargeBinaryType, LargeUtf8Type, Utf8Type,
+        BinaryType, DataType, Field, FieldRef, Int32Type, Int64Type, LargeBinaryType,
+        LargeUtf8Type, Utf8Type,
     },
 };
 use datafusion::{
-    common::{DFSchema, Result, internal_err},
+    common::{DFSchema, Result, exec_err, internal_err},
     logical_expr::{
-        ColumnarValue, ReturnInfo, ReturnTypeArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature,
-        Volatility,
+        ColumnarValue, ReturnFieldArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
     },
     scalar::ScalarValue,
 };
@@ -46,7 +46,7 @@ use super::sketch::{DataSketchVariant, K, update_sketch};
 /// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
 /// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
 /// The column values aren't transformed at all. We just use the UDF as a way to get to see the column values
-/// so we can inject them into a sketch for later retrieval. The query should look something like:
+/// so we can inject them into a sketch for later retrieval. The SQL query should look something like:
 /// `SELECT sketch(row_key_col1, row_key_col2, ...), row_key_col2, value_col1, value_col2, ... FROM blah...`
 /// so the sketch function can see each row key column, but only returns the first.
 pub(crate) struct SketchUDF {
@@ -141,11 +141,13 @@ impl ScalarUDFImpl for SketchUDF {
     fn return_type(&self, _: &[DataType]) -> Result<DataType> {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
-    fn return_type_from_args(&self, args: ReturnTypeArgs) -> Result<ReturnInfo> {
-        Ok(ReturnInfo::new(
-            args.arg_types[0].clone(),
-            args.nullables[0],
-        ))
+
+    fn return_field_from_args(&self, args: ReturnFieldArgs) -> Result<FieldRef> {
+        Ok(Arc::new(Field::new(
+            "",
+            args.arg_fields[0].data_type().clone(),
+            args.arg_fields[0].is_nullable(),
+        )))
     }
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
@@ -184,7 +186,7 @@ impl ScalarUDFImpl for SketchUDF {
                             sketch,
                             &array.as_binary_view(),
                         ),
-                        _ => return internal_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
+                        _ => return exec_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
                     }
                 }
 
@@ -209,7 +211,7 @@ impl ScalarUDFImpl for SketchUDF {
                     sketch.update(value);
                 }
                 x @ ColumnarValue::Scalar(_) => {
-                    return internal_err!(
+                    return exec_err!(
                         "Row type {} not supported for Sleeper row key field",
                         x.data_type()
                     );

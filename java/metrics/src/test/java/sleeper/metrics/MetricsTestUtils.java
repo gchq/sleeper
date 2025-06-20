@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher.submitter;
+package sleeper.metrics;
 
-public class FileNotFoundException extends RuntimeException {
+import com.google.common.io.CharStreams;
 
-    public FileNotFoundException(String bucket, String path) {
-        super("Found no files at path " + bucket + "/" + path);
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+
+public class MetricsTestUtils {
+
+    private MetricsTestUtils() {
     }
 
+    public static String example(String path) {
+        try (Reader reader = new InputStreamReader(MetricsTestUtils.class.getClassLoader().getResourceAsStream(path))) {
+            return CharStreams.toString(reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }

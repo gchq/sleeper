@@ -376,6 +376,14 @@ SciJava Native Library Loader (org.scijava:native-lib-loader:2.*)
 
 - Simplified BSD License
 
+AspectJ (org.aspectj:aspectjrt:1.*, org.aspectj:aspectjtools:1.*)
+
+- Eclipse Public License (EPL) 2.0
+
+AspectJ Maven Plugin (dev.aspectj:aspectj-maven-plugin:1.*)
+
+- MIT License
+
 Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.*)
 
 - Apache License, Version 2.0
@@ -537,7 +545,7 @@ testing_logger (https://github.com/brucechapman/rust_testing_logger)
 
 - The 3-Clause BSD License
 
-assert_cmd (https://github.com/assert-rs/assert_cmd)
+cmd (https://github.com/assert-rs/assert_cmd)
 
 - Apache 2 License
 
@@ -552,6 +560,35 @@ cargo_metadata (https://github.com/oli-obk/cargo_metadata)
 serde_json (https://github.com/serde-rs/json)
 
 - Apache 2 License
+
+regex (https://github.com/serde-rs/json)
+
+- Apache 2 License
+
+async_trait (https://github.com/dtolnay/async-trait)
+
+- Apache 2 License
+
+nohash (https://github.com/paritytech/nohash-hasher)
+
+- Apache 2 License
+
+num-traits (https://github.com/rust-num/num-traits)
+
+- Apache 2 License
+
+openssl (https://github.com/sfackler/rust-openssl)
+
+- Apache 2 License
+
+rand (https://github.com/rust-random/rand)
+
+- Apache 2 License
+
+test-log (https://github.com/d-e-s-o/test-log)
+
+- Apache 2 License
+
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.

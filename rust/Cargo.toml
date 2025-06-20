@@ -25,40 +25,44 @@ repository = "https://github.com/gchq/sleeper"
 authors = ["GCHQ"]
 
 [workspace.dependencies]
-arrow = { version = "54.3.1" } # Batch of reading from Parquet files
-assert_cmd = { version = "2.0.17" } # CLI interface testing
+arrow = { version = "55.1.0" }                      # Batch of reading from Parquet files
+assert_cmd = { version = "2.0.17" }                 # CLI interface testing
 async-trait = { version = "0.1.88" }
-aws-config = { version = "1.8.0" } # Credential loading
-aws-credential-types = { version = "1.2.2" } # Credential provider types
-aws-types = { version = "1.3.5" } # for Region
-bytes = { version = "1.10.1" } # Byte buffer for S3 uploading
-cargo_metadata = { version = "0.19.2" } # Access cargo metadata programmtically
-chrono = { version = "0.4.41" } # Log helper
-clap = { version = "4.5.40" } # Cmd line args processing
-color-eyre = { version = "0.6.5" } # Colourised version of `anyhow`
-cxx = { version = "1.0.158" } # Exception handling for Rust
+aws-config = { version = "1.8.0" }                  # Credential loading
+aws-credential-types = { version = "1.2.2" }        # Credential provider types
+aws-types = { version = "1.3.5" }                   # for Region
+bytes = { version = "1.10.1" }                      # Byte buffer for S3 uploading
+cargo_metadata = { version = "0.20.0" }             # Access cargo metadata programmtically
+chrono = { version = "0.4.41" }                     # Log helper
+clap = { version = "4.5.40" }                       # Cmd line args processing
+color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
+cxx = { version = "1.0.158" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.158" }
-datafusion = { version = "46.0.1" }
-env_logger = { version = "0.11.8" } # Standard logging to stderr
-futures = { version = "0.3.31" } # Async processing
-git2 = { version = "0.20.2" } # Interact with version control
-human-panic = { version = "2.0.2" } # Readable panic messages
-libc = { version = "0.2.172" } # FFI type support
-log = { version = "0.4.27" } # Standard logging framework
-num-format = { version = "0.4.4" } # Nicely formatted numbers
-object_store = { version = "0.11.2" } # Remote cloud storage access
-openssl = { version = "0.10.73" } # Use vendored feature to build from source for cross compilation
-owo-colors = { version = "4.2.1" } # Colourised output
-predicates = { version = "3.1.3" } # Test assertions
-rand = { version = "0.9.1" }
-serde_json = { version = "1.0.140" } # Process metadata JSON
-tempfile = { version = "3.20.0" } # Create temporary files
+datafusion = { version = "48.0.0" }
+env_logger = { version = "0.11.8" }                 # Standard logging to stderr
+futures = { version = "0.3.31" }                    # Async processing
+git2 = { version = "0.20.2" }                       # Interact with version control
+human-panic = { version = "2.0.2" }                 # Readable panic messages
+libc = { version = "0.2.174" }                      # FFI type support
+log = { version = "0.4.27" }                        # Standard logging framework
+nohash = { version = "0.2.0" }                      # No-op hashing for integral types
+num-format = { version = "0.4.4" }                  # Nicely formatted numbers
+num-traits = { version = "0.2.19" }                 # Unified traits for integral types
+object_store = { version = "0.12.2" }               # Remote cloud storage access
+openssl = { version = "0.10.73" }                   # Use vendored feature to build from source for cross compilation
+owo-colors = { version = "4.2.1" }                  # Colourised output
+predicates = { version = "3.1.3" }                  # Test assertions
+rand = { version = "0.9.1" }                        # Random number generation
+regex = { version = "1.11.1" }                      # Regular expressions
+serde_json = { version = "1.0.140" }                # Process metadata JSON
+tempfile = { version = "3.20.0" }                   # Create temporary files
 test-log = { version = "0.2.17" }
-testing_logger = { version = "0.1.1" } # Assert on logger output in tests
-thiserror = { version = "2.0.12" } # Derivable error enums
+testing_logger = { version = "0.1.1" }              # Assert on logger output in tests
+thiserror = { version = "2.0.12" }                  # Derivable error enums
 tokio = { version = "1.45.1", features = ["full"] } # Async runtime
-tokio-test = { version = "0.4.4" } # Doc tests
-url = { version = "2.5.4" } # URL processing for S3
+tokio-test = { version = "0.4.4" }                  # Doc tests
+url = { version = "2.5.4" }                         # URL processing for S3
+mockall = { version = "0.13.1" }                    # Mock trait library
 
 [workspace.metadata.datasketches]
 git_repository_tag = "5.2.0"

@@ -18,6 +18,7 @@ package sleeper.clients.api.aws;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.clients.api.IngestBatcherSender;
 import sleeper.clients.api.IngestJobSender;
@@ -71,6 +72,7 @@ public class AwsSleeperClientBuilder {
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
+                .bulkExportQuerySender(BulkExportQuerySender.toSqs(instanceProperties, awsClients.sqs()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, recordRetrieverProvider)))
                 .build();
     }

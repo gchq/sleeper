@@ -21,11 +21,7 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.Policy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
@@ -61,6 +57,7 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RE
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+
 public class BulkExportStack extends NestedStack {
     public static final String BULK_EXPORT_QUEUE_URL = "BulkExportQueueUrl";
     public static final String BULK_EXPORT_QUEUE_NAME = "BulkExportQueueName";
@@ -83,6 +80,16 @@ public class BulkExportStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export_planner");
 
+        List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
+        Queue bulkExportQ = bulkExportQueues.get(0);
+        Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
+        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
+
+        List<Queue> leafPartitionQueues = createQueueAndDeadLetterQueue("BulkExportLeafPartition", instanceProperties);
+        Queue leafPartitionQueuesQ = leafPartitionQueues.get(0);
+        Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
+        setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
+
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
@@ -98,12 +105,8 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        attachPolicy(bulkExportLambda, "BulkExportPlanner");
-
-        List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
-        Queue bulkExportQ = bulkExportQueues.get(0);
-        Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
-        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
+        coreStacks.grantReadTablesMetadata(bulkExportLambda);
+        leafPartitionQueuesQ.grantSendMessages(bulkExportLambda);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -111,11 +114,6 @@ public class BulkExportStack extends NestedStack {
                 .build();
 
         bulkExportLambda.addEventSource(new SqsEventSource(bulkExportQ, eventSourceProps));
-
-        List<Queue> leafPartitionQueues = createQueueAndDeadLetterQueue("BulkExportLeafPartition", instanceProperties);
-        Queue leafPartitionQueuesQ = leafPartitionQueues.get(0);
-        Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
-        setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
 
         /*
          * Output the role arn of the lambda as a property so that clients that want the
@@ -202,31 +200,6 @@ public class BulkExportStack extends NestedStack {
         }
 
         return exportBucket;
-    }
-
-    /**
-     * Attach the policy to the lambda function.
-     *
-     * @param lambda the lambda function
-     * @param id     the id of the lambda function
-     */
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void attachPolicy(IFunction lambda, String id) {
-        PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
-                .effect(Effect.ALLOW)
-                .actions(List.of(
-                        "sqs:SendMessage",
-                        "sqs:ReceiveMessage",
-                        "s3:PutObject",
-                        "s3:GetObject",
-                        "dynamodb:Query"))
-                .resources(Collections.singletonList("*"))
-                .build();
-        PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
-        String policyName = "BulkExportPolicy" + id;
-        Policy policy = new Policy(this, policyName);
-        policy.addStatements(policyStatement);
-        Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
     }
 
     public enum QueueType {
