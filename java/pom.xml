@@ -184,6 +184,7 @@
         <gson.version>2.13.1</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
+        <aspectj.version>1.9.24</aspectj.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.81</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
@@ -240,6 +241,7 @@
         <surefire.plugin.version>3.5.3</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
+        <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.0</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.4.2</jar.plugin.version>
@@ -286,6 +288,11 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${findbugs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjrt</artifactId>
+                <version>${aspectj.version}</version>
             </dependency>
             <!-- AWS CDK -->
             <dependency>
@@ -1463,6 +1470,8 @@
                                 <!-- Hadoop client sets many exclusions in hadoop-common dependency, so we don't want to redeclare that -->
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-client::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-aws::</ignoredUnusedDeclaredDependency>
+                                <!-- AspectJ wants to be declared as a compile dependency -->
+                                <ignoredUnusedDeclaredDependency>org.aspectj:aspectjrt::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
@@ -1787,6 +1796,30 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
                     <version>${site.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>dev.aspectj</groupId>
+                    <artifactId>aspectj-maven-plugin</artifactId>
+                    <version>${aspectj.plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <complianceLevel>${java.version}</complianceLevel>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.aspectj</groupId>
+                            <artifactId>aspectjtools</artifactId>
+                            <version>${aspectj.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

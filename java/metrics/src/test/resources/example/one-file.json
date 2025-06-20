@@ -1,0 +1,44 @@
+{
+  "_aws": {
+    "CloudWatchMetrics": [
+      {
+        "Namespace": "Sleeper",
+        "Metrics": [
+          {
+            "Name": "LeafPartitionCount",
+            "Unit": "Count"
+          },
+          {
+            "Name": "NumberOfFilesWithReferences",
+            "Unit": "Count"
+          },
+          {
+            "Name": "RecordCount",
+            "Unit": "Count"
+          },
+          {
+            "Name": "PartitionCount",
+            "Unit": "Count"
+          },
+          {
+            "Name": "AverageFileReferencesPerPartition",
+            "Unit": "Count"
+          }
+        ],
+        "Dimensions": [
+          [
+            "instanceId",
+            "tableName"
+          ]
+        ]
+      }
+    ]
+  },
+  "instanceId": "test-instance",
+  "LeafPartitionCount": 1.0,
+  "NumberOfFilesWithReferences": 1.0,
+  "RecordCount": 123.0,
+  "PartitionCount": 1.0,
+  "AverageFileReferencesPerPartition": 1.0,
+  "tableName": "test-table"
+}
