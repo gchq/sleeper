@@ -130,7 +130,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.787</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.66</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.67</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
         <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
@@ -143,9 +143,9 @@
         <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class. -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.38.5</aws-crt.version>
-        <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
+        <aws-lambda-java-events.version>3.16.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>2.0.0</aws-lambda-powertools.version>
+        <aws-lambda-powertools.version>2.1.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.18.0</commons-codec.version>
