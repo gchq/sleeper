@@ -170,7 +170,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
             verify(executor, times(0)).runJob(any());
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
 
         @Test
@@ -189,7 +189,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
             verify(executor, times(0)).runJob(any());
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
     }
 

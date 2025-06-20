@@ -30,11 +30,9 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
@@ -190,7 +188,7 @@ public class IngestJobMessageHandlerTest {
             // When / Then
             IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
-                            "Could not find one or more files"));
+                            "Could not find one or more paths"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(expected);
@@ -215,7 +213,7 @@ public class IngestJobMessageHandlerTest {
             // When / Then
             IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
-                            "Could not find one or more files"));
+                            "Could not find one or more paths"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(tracker.getInvalidJobs()).containsExactly(expected);
             assertThat(tracker.getAllJobs(tableId)).containsExactly(expected);
@@ -394,11 +392,18 @@ public class IngestJobMessageHandlerTest {
     }
 
     private static ExpandDirectoriesResult expandDirFiles(List<String> files, Map<String, List<String>> directoryContents) {
-        List<String> expanded = files.stream()
-                .flatMap(dir -> Optional.ofNullable(directoryContents.get(dir))
-                        .map(dirFiles -> dirFiles.stream().map(file -> dir + "/" + file))
-                        .orElseGet(() -> Stream.of(dir)))
-                .collect(Collectors.toUnmodifiableList());
-        return new ExpandDirectoriesResult(expanded, List.of());
+        List<String> expanded = new ArrayList<>();
+        List<String> missing = new ArrayList<>();
+        for (String path : files) {
+            List<String> contents = directoryContents.get(path);
+            if (contents == null) { // Not a directory
+                expanded.add(path);
+            } else if (contents.isEmpty()) {
+                missing.add(path);
+            } else {
+                expanded.addAll(contents.stream().map(file -> path + "/" + file).toList());
+            }
+        }
+        return new ExpandDirectoriesResult(expanded, missing);
     }
 }

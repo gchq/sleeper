@@ -156,7 +156,7 @@ public class IngestJobMessageHandler<T> {
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
                             .jsonMessage(message)
-                            .reasons("Could not find paths: " + String.join(", ", expanded.missingPaths()))
+                            .reasons("Could not find one or more paths")
                             .build());
             return Optional.empty();
         }

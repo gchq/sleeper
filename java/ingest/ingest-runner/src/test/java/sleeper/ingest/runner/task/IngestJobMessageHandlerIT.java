@@ -168,7 +168,7 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
             assertThat(job).isNotPresent();
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
 
         @Test
@@ -190,7 +190,7 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
             assertThat(job).isNotPresent();
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
     }
 
