@@ -13,9 +13,11 @@ Hadoop.
 Bulk export:
 - Added an optional `BulkExportStack` to export a whole Sleeper table
   - Will write one Parquet file per Sleeper partition
+- Can submit bulk export queries with `SleeperClient` in Java or Python
 
 Compaction:
 - Better logging messages for DataFusion compactions
+- Added experimental support for aggregation and filtering in DataFusion compactions
 
 Bulk import:
 - Bulk import job definitions are now deleted from the bulk import bucket after they are read by Spark
@@ -55,6 +57,7 @@ Build:
 - Enforced dependency version convergence in Maven build
 - Enforced no duplicate Maven dependencies in the same pom
 - Removed use of Hadoop in most modules
+- Added tests and linting for Python API
 
 System tests:
 - When draining an SQS queue for assertions, added retries if no messages are found, to capture full contents of queue
