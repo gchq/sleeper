@@ -17,6 +17,12 @@ package sleeper.ingest.core.job;
 
 import java.util.List;
 
+/**
+ * The result of expanding directories for given paths.
+ *
+ * @param expandedFiles the list of files found, in the format bucket-name/object-key
+ * @param missingPaths  the list of paths that were not found
+ */
 public record ExpandDirectoriesResult(List<String> expandedFiles, List<String> missingPaths) {
 
 }

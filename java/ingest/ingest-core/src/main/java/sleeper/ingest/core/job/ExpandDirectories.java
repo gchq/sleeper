@@ -17,8 +17,17 @@ package sleeper.ingest.core.job;
 
 import java.util.List;
 
+/**
+ * Takes paths specified in an ingest job and expands any directories, listing all files.
+ */
 public interface ExpandDirectories {
 
+    /**
+     * Expands the given paths.
+     *
+     * @param  files the paths
+     * @return       the result
+     */
     ExpandDirectoriesResult expandPaths(List<String> files);
 
 }
