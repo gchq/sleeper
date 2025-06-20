@@ -33,7 +33,7 @@ import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.S3ExpandDirectories;
-import sleeper.configuration.utils.S3ExpandDirectories.S3ExpandDirectoriesResult;
+import sleeper.configuration.utils.S3ExpandDirectoriesResult;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;

@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.utils.S3ExpandDirectories.S3FileDetails;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;

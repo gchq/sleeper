@@ -32,7 +32,7 @@ import sleeper.common.job.action.ActionException;
 import sleeper.common.job.action.MessageReference;
 import sleeper.common.job.action.thread.PeriodicActionRunnable;
 import sleeper.configuration.utils.S3ExpandDirectories;
-import sleeper.configuration.utils.S3ExpandDirectories.S3ExpandDirectoriesResult;
+import sleeper.configuration.utils.S3ExpandDirectoriesResult;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;

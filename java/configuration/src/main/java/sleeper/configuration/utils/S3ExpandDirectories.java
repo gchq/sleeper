@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Discovers files under given paths in S3. This is used when submitting files for ingest to a Sleeper table, to allow
@@ -51,27 +50,27 @@ public class S3ExpandDirectories {
         }
         return new S3ExpandDirectoriesResult(files.stream()
                 .filter(S3ExpandDirectories::checkIsNotCrcFile)
-                .map(S3Location::parse)
+                .map(S3Path::parse)
                 .map(this::findContents)
                 .toList());
     }
 
-    private S3PathContents findContents(S3Location location) {
-        return new S3PathContents(location, listFilesAsS3FileDetails(location));
+    private S3PathContents findContents(S3Path path) {
+        return new S3PathContents(path, listFilesAsS3FileDetails(path));
     }
 
-    private List<S3FileDetails> listFilesAsS3FileDetails(S3Location location) {
+    private List<S3FileDetails> listFilesAsS3FileDetails(S3Path path) {
 
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
-                .bucket(location.bucket)
-                .prefix(location.prefix)
+                .bucket(path.bucket())
+                .prefix(path.prefix())
                 .build());
 
         for (ListObjectsV2Response subResponse : response) {
             subResponse.contents().forEach((S3Object s3Object) -> {
                 if (checkIsNotCrcFile(s3Object.key())) {
-                    outList.add(new S3FileDetails(location.bucket, s3Object));
+                    outList.add(new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()));
                 }
             });
         }
@@ -81,112 +80,5 @@ public class S3ExpandDirectories {
 
     private static boolean checkIsNotCrcFile(String key) {
         return !key.endsWith(".crc");
-    }
-
-    public record S3ExpandDirectoriesResult(List<S3PathContents> contents) {
-
-        public List<String> listHadoopPathsThrowIfAnyPathIsEmpty() {
-            return streamFilesThrowIfAnyPathIsEmpty()
-                    .map(S3FileDetails::pathForHadoop)
-                    .toList();
-        }
-
-        public List<String> listJobPaths() {
-            return streamFiles()
-                    .map(S3FileDetails::pathForJob)
-                    .toList();
-        }
-
-        public List<String> listMissingPaths() {
-            return contents.stream()
-                    .filter(S3PathContents::isEmpty)
-                    .map(S3PathContents::requestedPath)
-                    .toList();
-        }
-
-        public Stream<S3FileDetails> streamFilesThrowIfAnyPathIsEmpty() {
-            return contents.stream()
-                    .peek(S3PathContents::throwIfEmpty)
-                    .flatMap(path -> path.files().stream());
-        }
-
-        public Stream<S3FileDetails> streamFiles() {
-            return contents.stream()
-                    .flatMap(path -> path.files().stream());
-        }
-    }
-
-    /**
-     * Results of expanding a path in S3.
-     *
-     * @param location the location in S3
-     * @param files    the files found
-     */
-    public record S3PathContents(S3Location location, List<S3FileDetails> files) {
-
-        public void throwIfEmpty() throws S3FileNotFoundException {
-            if (files.isEmpty()) {
-                throw new S3FileNotFoundException(location.bucket, location.prefix);
-            }
-        }
-
-        public boolean isEmpty() {
-            return files.isEmpty();
-        }
-
-        public String requestedPath() {
-            return location.requestedPath();
-        }
-    }
-
-    /**
-     * A file found in an S3 bucket.
-     *
-     * @param bucket   the S3 bucket name
-     * @param s3Object details of the S3 object
-     */
-    public record S3FileDetails(String bucket, S3Object s3Object) {
-
-        public String pathForJob() {
-            return bucket() + "/" + objectKey();
-        }
-
-        public String pathForHadoop() {
-            return "s3a://" + bucket() + "/" + objectKey();
-        }
-
-        public String objectKey() {
-            return s3Object.key();
-        }
-
-        public long fileSizeBytes() {
-            return s3Object.size();
-        }
-    }
-
-    /**
-     * A location in S3 to look for files.
-     *
-     * @param requestedPath the path requested before parsing
-     * @param bucket        the S3 bucket name
-     * @param prefix        prefix for object keys
-     */
-    public record S3Location(String requestedPath, String bucket, String prefix) {
-
-        /**
-         * Parses a path from a request in an ingest job, bulk import job or ingest batcher submission.
-         *
-         * @param  path the path
-         * @return      the parsed location in S3
-         */
-        public static S3Location parse(String path) {
-            if (!path.contains("/")) {
-                return new S3Location(path, path, "");
-            } else {
-                return new S3Location(path,
-                        path.substring(0, path.indexOf("/")),
-                        path.substring(path.indexOf("/") + 1));
-            }
-        }
     }
 }
