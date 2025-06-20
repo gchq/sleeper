@@ -145,7 +145,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .includedInTemplate(false).build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing. May also have special value \"DATAFUSION\" indicating the use of experimental " +
+                    "Defaults to nothing. May also have special value \"" + CompactionMethod.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
                     "iterators that are only usable with the DataFusion compactor. When this marker is present, attempting " +
                     "to compact with the table with the default Java compactor will fail.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
