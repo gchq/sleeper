@@ -221,7 +221,7 @@
         <hamcrest.version>1.3</hamcrest.version>
         <approvaltests.version>24.22.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
-        <xmlunit.version>2.10.2</xmlunit.version>
+        <xmlunit.version>2.10.3</xmlunit.version>
         <jsonunit.version>4.1.1</jsonunit.version>
         <checkstyle.version>10.25.0</checkstyle.version>
         <sleeper.system.test.short.id/>
