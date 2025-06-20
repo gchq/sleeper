@@ -32,11 +32,14 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.configuration.utils.S3PathUtils;
+import sleeper.configuration.utils.S3ExpandDirectories;
+import sleeper.configuration.utils.S3ExpandDirectoriesResult;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.ingest.core.job.ExpandDirectories;
+import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -73,7 +76,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> new S3PathUtils(s3).streamFilenames(files).toList())
+                .expandDirectories(expandDirectories(s3))
                 .build();
     }
 
@@ -99,5 +102,13 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 .flatMap(message -> ingestJobMessageHandler.deserialiseAndValidate(message).stream())
                 .forEach(executor::runJob);
         return null;
+    }
+
+    public static ExpandDirectories expandDirectories(S3Client s3Client) {
+        S3ExpandDirectories expander = new S3ExpandDirectories(s3Client);
+        return files -> {
+            S3ExpandDirectoriesResult result = expander.expandPaths(files);
+            return new ExpandDirectoriesResult(result.listJobPaths(), result.listMissingPaths());
+        };
     }
 }

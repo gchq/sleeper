@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.runner.task;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -32,13 +31,16 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import sleeper.common.job.action.ActionException;
 import sleeper.common.job.action.MessageReference;
 import sleeper.common.job.action.thread.PeriodicActionRunnable;
-import sleeper.configuration.utils.S3PathUtils;
+import sleeper.configuration.utils.S3ExpandDirectories;
+import sleeper.configuration.utils.S3ExpandDirectoriesResult;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
+import sleeper.ingest.core.job.ExpandDirectories;
+import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 
@@ -66,7 +68,6 @@ public class IngestJobQueueConsumer implements MessageReceiver {
             S3Client s3Client,
             CloudWatchClient cloudWatchClient,
             InstanceProperties instanceProperties,
-            Configuration configuration,
             TableIndex tableIndex,
             IngestJobTracker ingestJobTracker) {
         this.sqsClient = sqsClient;
@@ -75,19 +76,26 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker, new S3PathUtils(s3Client)).build();
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, tableIndex, ingestJobTracker, s3Client).build();
     }
 
     public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
             InstanceProperties instanceProperties,
-            Configuration configuration,
             TableIndex tableIndex,
             IngestJobTracker ingestJobTracker,
-            S3PathUtils s3PathUtils) {
+            S3Client s3Client) {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> s3PathUtils.streamFilenames(files).toList());
+                .expandDirectories(expandDirectories(s3Client));
+    }
+
+    public static ExpandDirectories expandDirectories(S3Client s3Client) {
+        S3ExpandDirectories expander = new S3ExpandDirectories(s3Client);
+        return files -> {
+            S3ExpandDirectoriesResult result = expander.expandPaths(files);
+            return new ExpandDirectoriesResult(result.listJobPaths(), result.listMissingPaths());
+        };
     }
 
     @Override

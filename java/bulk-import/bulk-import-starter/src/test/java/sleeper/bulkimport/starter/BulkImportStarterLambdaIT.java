@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
-import sleeper.configuration.utils.S3PathUtils;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
@@ -72,7 +71,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> new S3PathUtils(s3Client).streamFilenames(files).toList());
+                .expandDirectories(BulkImportStarterLambda.expandDirectories(s3Client));
     }
 
     @Nested
@@ -171,7 +170,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
             verify(executor, times(0)).runJob(any());
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
 
         @Test
@@ -190,7 +189,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
             verify(executor, times(0)).runJob(any());
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
     }
 

@@ -109,7 +109,7 @@ public class ECSIngestTaskRunner {
                 propertiesReloader, stateStoreProvider, jobTracker, taskId, localDir,
                 s3Client, s3AsyncClient, sqsClient, hadoopConfiguration, Instant::now);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                sqsClient, s3Client, cloudWatchClient, instanceProperties, hadoopConfiguration,
+                sqsClient, s3Client, cloudWatchClient, instanceProperties,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobTracker);
         return new IngestTask(() -> UUID.randomUUID().toString(), Instant::now,
                 queueConsumer, ingestJobRunner, jobTracker, taskTracker, taskId);
