@@ -17,11 +17,8 @@ package sleeper.configuration.utils;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,26 +53,18 @@ public class S3ExpandDirectories {
     }
 
     private S3PathContents findContents(S3Path path) {
-        return new S3PathContents(path, listFilesAsS3FileDetails(path));
+        return new S3PathContents(path, listFiles(path));
     }
 
-    private List<S3FileDetails> listFilesAsS3FileDetails(S3Path path) {
-
-        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+    private List<S3FileDetails> listFiles(S3Path path) {
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(path.bucket())
                 .prefix(path.prefix())
                 .build());
-
-        for (ListObjectsV2Response subResponse : response) {
-            subResponse.contents().forEach((S3Object s3Object) -> {
-                if (checkIsNotCrcFile(s3Object.key())) {
-                    outList.add(new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()));
-                }
-            });
-        }
-
-        return outList;
+        return response.contents().stream()
+                .filter(s3Object -> checkIsNotCrcFile(s3Object.key()))
+                .map(s3Object -> new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()))
+                .toList();
     }
 
     private static boolean checkIsNotCrcFile(String key) {
