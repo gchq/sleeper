@@ -8,7 +8,7 @@ The following improvements are actively being worked on:
 - https://github.com/gchq/sleeper/issues/3446 Bulk export.
 - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
 - https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
-- https://github.com/gchq/sleeper/issues/4344 Aggregation support for compactions in Rust with DataFusion.
+- https://github.com/gchq/sleeper/issues/5123 Aggregation and filtering with DataFusion.
 
 The following are likely to be worked on in the near future:
 
