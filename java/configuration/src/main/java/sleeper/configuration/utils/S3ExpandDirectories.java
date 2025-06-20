@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 /**
  * Discovers files under given paths in S3. This is used when submitting files for ingest to a Sleeper table, to allow
  * for submitting directories rather than individual files. It also supports converting to multiple path formats, e.g.
- * Hadoop s3a:// paths, or <bucket-name>/object-key>.
+ * Hadoop s3a:// paths, or bucket-name/object-key.
  */
 public class S3ExpandDirectories {
 
@@ -41,8 +41,8 @@ public class S3ExpandDirectories {
     /**
      * Discovers files under the given paths. Works with paths in the format for an ingest job.
      *
-     * @param  filenames filenames to expand, in the format <bucket-name>/<object-key>
-     * @return           filenames found, in the format <bucket-name>/<object-key>
+     * @param  filenames filenames to expand, in the format bucket-name/object-key;
+     * @return           filenames found, in the format bucket-name/object-key
      */
     public List<String> expandJobFilenames(List<String> filenames) {
         return streamFilesAsS3FileDetails(filenames)
@@ -53,8 +53,8 @@ public class S3ExpandDirectories {
     /**
      * Discovers files under the given paths. Takes paths in the format for an ingest job, and returns Hadoop paths.
      *
-     * @param  filenames filenames to expand, in the format <bucket-name>/<object-key>
-     * @return           filenames found, in the format s3a://<bucket-name>/<object-key>
+     * @param  filenames filenames to expand, in the format bucket-name/object-key
+     * @return           filenames found, in the format s3a://bucket-name/object-key
      */
     public List<String> expandJobFilenamesForHadoop(List<String> filenames) {
         return streamFilesAsS3FileDetails(filenames)
@@ -66,53 +66,46 @@ public class S3ExpandDirectories {
      * Discovers files under the given paths. Takes paths in the format for an ingest job, and returns details of each
      * file.
      *
-     * @param  filenames filenames to expand, in the format <bucket-name>/<object-key>
+     * @param  filenames filenames to expand, in the format bucket-name/object-key
      * @return           stream of files found at given paths
      */
     public Stream<S3FileDetails> streamFilesAsS3FileDetails(List<String> filenames) {
-        if ((filenames == null) || filenames.isEmpty()) {
+        if (filenames == null) {
             return Stream.empty();
         }
-        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-        filenames.stream().forEach(file -> {
-            outList.addAll(listFilesAsS3FileDetails(file));
-        });
-        return outList.stream();
+        return filenames.stream()
+                .filter(this::checkIsNotCrcFile)
+                .map(this::parseS3FileLocation)
+                .flatMap(filename -> listFilesAsS3FileDetails(filename).stream());
     }
 
-    private List<S3FileDetails> listFilesAsS3FileDetails(String filename) {
-        if (checkIsNotCrcFile(filename)) {
-            FileLocationDetails fileLocation = determineFileLocationBreakdown(filename);
+    private List<S3FileDetails> listFilesAsS3FileDetails(S3FileLocation fileLocation) {
 
-            List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-            ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
-                    .bucket(fileLocation.bucket)
-                    .prefix(fileLocation.objectKey)
-                    .build());
+        List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
+        ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
+                .bucket(fileLocation.bucket)
+                .prefix(fileLocation.objectKey)
+                .build());
 
-            for (ListObjectsV2Response subResponse : response) {
-                subResponse.contents().forEach((S3Object s3Object) -> {
-                    if (checkIsNotCrcFile(s3Object.key())) {
-                        outList.add(new S3FileDetails(fileLocation.bucket, s3Object));
-                    }
-                });
-            }
-            if (outList.isEmpty()) {
-                throw new S3FileNotFoundException(fileLocation.bucket, fileLocation.objectKey);
-            }
-
-            return outList;
-        } else {
-            return List.of();
+        for (ListObjectsV2Response subResponse : response) {
+            subResponse.contents().forEach((S3Object s3Object) -> {
+                if (checkIsNotCrcFile(s3Object.key())) {
+                    outList.add(new S3FileDetails(fileLocation.bucket, s3Object));
+                }
+            });
+        }
+        if (outList.isEmpty()) {
+            throw new S3FileNotFoundException(fileLocation.bucket, fileLocation.objectKey);
         }
 
+        return outList;
     }
 
-    private FileLocationDetails determineFileLocationBreakdown(String filename) {
+    private S3FileLocation parseS3FileLocation(String filename) {
         if (!filename.contains("/")) {
-            return new FileLocationDetails(filename, "");
+            return new S3FileLocation(filename, "");
         } else {
-            return new FileLocationDetails(filename.substring(0, filename.indexOf("/")),
+            return new S3FileLocation(filename.substring(0, filename.indexOf("/")),
                     filename.substring(filename.indexOf("/") + 1));
         }
     }
@@ -152,6 +145,6 @@ public class S3ExpandDirectories {
      * @param bucket    bucket location of file
      * @param objectKey name of file
      */
-    public record FileLocationDetails(String bucket, String objectKey) {
+    public record S3FileLocation(String bucket, String objectKey) {
     }
 }
