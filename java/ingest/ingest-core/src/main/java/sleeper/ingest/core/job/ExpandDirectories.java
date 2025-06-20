@@ -23,7 +23,7 @@ import java.util.List;
 public interface ExpandDirectories {
 
     /**
-     * Expands the given paths.
+     * Expands the given paths. Reports on any paths that were not found.
      *
      * @param  files the paths
      * @return       the result
