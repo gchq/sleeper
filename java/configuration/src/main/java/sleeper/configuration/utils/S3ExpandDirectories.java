@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -40,65 +39,48 @@ public class S3ExpandDirectories {
     }
 
     /**
-     * Streams filenames back from S3 for list of paths provided.
+     * Discovers files under the given paths. Works with paths in the format for an ingest job.
      *
-     * @param  files list of file paths to expand
-     * @return       stream of filenames found at paths
+     * @param  filenames filenames to expand, in the format <bucket-name>/<object-key>
+     * @return           filenames found, in the format <bucket-name>/<object-key>
      */
-    public Stream<String> streamFilenames(List<String> files) {
-        if ((files == null) || files.isEmpty()) {
-            return Stream.empty();
-        }
-        try {
-            List<String> outList = new ArrayList<String>();
-            files.stream().forEach(file -> {
-                outList.addAll(listFilesAsS3FileDetails(file)
-                        .stream().map(S3FileDetails::getFullFileLocation)
-                        .collect(Collectors.toList()));
-            });
-            return outList.stream();
-        } catch (S3FileNotFoundException e) {
-            return Stream.empty();
-        }
+    public List<String> expandJobFilenames(List<String> filenames) {
+        return streamFilesAsS3FileDetails(filenames)
+                .map(S3FileDetails::pathForJob)
+                .toList();
     }
 
     /**
-     * Streams filenames back from S3 for list of paths provided.
+     * Discovers files under the given paths. Takes paths in the format for an ingest job, and returns Hadoop paths.
      *
-     * @param  files  list of file paths to expand
-     * @param  prefix prefix for hadoop path
-     * @return        stream of hadoop paths for files found
+     * @param  filenames filenames to expand, in the format <bucket-name>/<object-key>
+     * @return           filenames found, in the format s3a://<bucket-name>/<object-key>
      */
-    public Stream<String> streamHadoopPaths(List<String> files, String prefix) {
-        List<String> adjustList = new ArrayList<String>();
-        streamFilenames(files).forEach(filename -> adjustList.add(prefix + filename));
-        return adjustList.stream();
+    public List<String> expandJobFilenamesForHadoop(List<String> filenames) {
+        return streamFilesAsS3FileDetails(filenames)
+                .map(S3FileDetails::hadoopPath)
+                .toList();
     }
 
     /**
-     * Streams files from S3 for list of paths provided.
+     * Discovers files under the given paths. Takes paths in the format for an ingest job, and returns details of each
+     * file.
      *
-     * @param  files list of file paths to expand
-     * @return       stream of files found at given paths
+     * @param  filenames filenames to expand, in the format <bucket-name>/<object-key>
+     * @return           stream of files found at given paths
      */
-    public Stream<S3FileDetails> streamFilesAsS3FileDetails(List<String> files) {
-        if ((files == null) || files.isEmpty()) {
+    public Stream<S3FileDetails> streamFilesAsS3FileDetails(List<String> filenames) {
+        if ((filenames == null) || filenames.isEmpty()) {
             return Stream.empty();
         }
         List<S3FileDetails> outList = new ArrayList<S3FileDetails>();
-        files.stream().forEach(file -> {
+        filenames.stream().forEach(file -> {
             outList.addAll(listFilesAsS3FileDetails(file));
         });
         return outList.stream();
     }
 
-    /**
-     * Lists the details of file for singular path provided.
-     *
-     * @param  filename name of file
-     * @return          containing all files details
-     */
-    public List<S3FileDetails> listFilesAsS3FileDetails(String filename) {
+    private List<S3FileDetails> listFilesAsS3FileDetails(String filename) {
         if (checkIsNotCrcFile(filename)) {
             FileLocationDetails fileLocation = determineFileLocationBreakdown(filename);
 
@@ -111,7 +93,7 @@ public class S3ExpandDirectories {
             for (ListObjectsV2Response subResponse : response) {
                 subResponse.contents().forEach((S3Object s3Object) -> {
                     if (checkIsNotCrcFile(s3Object.key())) {
-                        outList.add(new S3FileDetails(new FileLocationDetails(fileLocation.bucket, s3Object.key()), s3Object));
+                        outList.add(new S3FileDetails(fileLocation.bucket, s3Object));
                     }
                 });
             }
@@ -145,10 +127,22 @@ public class S3ExpandDirectories {
      * @param fileLocation name of file including bucket
      * @param fileObject   respresentation of object back from s3
      */
-    public record S3FileDetails(FileLocationDetails fileLocation, S3Object fileObject) {
+    public record S3FileDetails(String bucket, S3Object fileObject) {
 
-        public String getFullFileLocation() {
-            return fileLocation.bucket + "/" + fileLocation().objectKey;
+        public String pathForJob() {
+            return bucket() + "/" + objectKey();
+        }
+
+        public String hadoopPath() {
+            return "s3a://" + bucket() + "/" + objectKey();
+        }
+
+        public String objectKey() {
+            return fileObject.key();
+        }
+
+        public long fileSizeBytes() {
+            return fileObject.size();
         }
     }
 

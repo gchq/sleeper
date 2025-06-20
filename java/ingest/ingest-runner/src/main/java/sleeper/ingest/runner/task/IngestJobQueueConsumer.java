@@ -87,7 +87,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> s3PathUtils.streamFilenames(files).toList());
+                .expandDirectories(files -> s3PathUtils.expandJobFilenames(files));
     }
 
     @Override

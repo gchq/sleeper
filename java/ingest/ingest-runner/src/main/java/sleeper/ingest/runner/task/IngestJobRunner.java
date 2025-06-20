@@ -76,7 +76,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
     private final Supplier<Instant> timeSupplier;
-    private final S3ExpandDirectories s3PathUtils;
+    private final S3ExpandDirectories expandDirectories;
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public IngestJobRunner(ObjectFactory objectFactory,
@@ -107,7 +107,7 @@ public class IngestJobRunner implements IngestJobHandler {
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();
-        this.s3PathUtils = new S3ExpandDirectories(s3Client);
+        this.expandDirectories = new S3ExpandDirectories(s3Client);
         this.commitSender = new SqsFifoStateStoreCommitRequestSender(
                 instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
     }
@@ -120,7 +120,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Create list of all files to be read
 
-        List<String> paths = s3PathUtils.streamHadoopPaths(job.getFiles(), "s3a://").toList();
+        List<String> paths = expandDirectories.expandJobFilenamesForHadoop(job.getFiles());
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 

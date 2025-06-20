@@ -69,7 +69,7 @@ public class IngestBatcherSubmitter {
                 .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName())).getTableUniqueId();
         return expandDirectories.streamFilesAsS3FileDetails(request.files())
                 .map(file -> IngestBatcherTrackedFile.builder()
-                        .file(file.getFullFileLocation())
+                        .file(file.pathForJob())
                         .fileSizeBytes(file.fileObject().size())
                         .tableId(tableID)
                         .receivedTime(receivedTime)
