@@ -26,6 +26,8 @@ import org.scijava.nativelib.NativeLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.rust.RustBridge.FFICompactionParams;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -353,33 +355,66 @@ public class RustBridge {
                 throw new ClassCastException("Can't cast " + item.getClass() + " to a valid Sleeper row key type");
             }
         }
-    }
 
-    /**
-     * The compaction output data that the native code will populate.
-     */
-    @SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
-    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class FFICompactionResult extends Struct {
-        public final Struct.size_t rows_read = new Struct.size_t();
-        public final Struct.size_t rows_written = new Struct.size_t();
-
-        public FFICompactionResult(jnr.ffi.Runtime runtime) {
-            super(runtime);
+        @SuppressWarnings("unchecked")
+        protected <E> E getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
+            if (idx < 0 || idx >= len.intValue()) {
+                throw new IndexOutOfBoundsException(String.format("idx %d length %d", idx, len.intValue()));
+            }
+            // TODO: Handle nulls here
+            if (clazz.equals(Integer.TYPE) || clazz.equals(Integer.class)) {
+                return (E) Integer.valueOf(this.items[idx].getInt(0));
+            } else if (clazz.equals(Long.TYPE) || clazz.equals(Long.class)) {
+                return (E) Long.valueOf(this.items[idx].getLong(0));
+            } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
+                return (E) Boolean.valueOf((this.items[idx].getByte(0) == 1) ? true : false);
+            } else if (clazz.equals(String.class)) {
+                int length = this.items[idx].getInt(0);
+                if (length < 0) {
+                    throw new IllegalStateException(String.format("Read string length of %d at index %d", length, idx));
+                }
+                byte[] utf8String = new byte[length];
+                this.items[idx].get(4, utf8String, 0, length);
+                return (E) new String(utf8String, StandardCharsets.UTF_8);
+            } else if (clazz.equals(byte.class.arrayType())) {
+                int length = this.items[idx].getInt(0);
+                if (length < 0) {
+                    throw new IllegalStateException(String.format("Read byte[] length of %d at index %d", length, idx));
+                }
+                byte[] bytes = new byte[length];
+                this.items[idx].get(4, bytes, 0, length);
+                return (E) bytes;
+            } else {
+                throw new ClassCastException("Can't cast " + clazz + " to a valid Sleeper row key type");
+            }
         }
     }
+}
 
-    /**
-     * The interface for the native library we are calling.
-     */
-    public interface Compaction {
-        FFICompactionResult allocate_result();
+/**
+ * The compaction output data that the native code will populate.
+ */
+@SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
+@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+public static class FFICompactionResult extends Struct {
+    public final Struct.size_t rows_read = new Struct.size_t();
+    public final Struct.size_t rows_written = new Struct.size_t();
 
-        void free_result(@In FFICompactionResult res);
-
-        @SuppressWarnings(value = "checkstyle:parametername")
-        int ffi_merge_sorted_files(@In FFICompactionParams input, @Out FFICompactionResult result);
+    public FFICompactionResult(jnr.ffi.Runtime runtime) {
+        super(runtime);
     }
+}
+
+/**
+ * The interface for the native library we are calling.
+ */
+public interface Compaction {
+    FFICompactionResult allocate_result();
+
+    void free_result(@In FFICompactionResult res);
+
+    @SuppressWarnings(value = "checkstyle:parametername")
+    int ffi_merge_sorted_files(@In FFICompactionParams input, @Out FFICompactionResult result);}
 
     private RustBridge() {
     }

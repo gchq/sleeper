@@ -71,7 +71,7 @@ public class RustCompactionRunner implements CompactionRunner {
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), runtime);
+        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
 
@@ -95,12 +95,12 @@ public class RustCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
-            Region region, jnr.ffi.Runtime runtime) {
+    public static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+            Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
         if (awsConfig != null) {
-            params.override_aws_config.set(true);
+            params.override_aws_config.set(true)
             params.aws_region.set(awsConfig.region);
             params.aws_endpoint.set(awsConfig.endpoint);
             params.aws_allow_http.set(awsConfig.allowHttp);
