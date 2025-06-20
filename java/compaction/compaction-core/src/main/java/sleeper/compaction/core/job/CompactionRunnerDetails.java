@@ -34,13 +34,4 @@ public interface CompactionRunnerDetails {
     default String implementationLanguage() {
         return "Java";
     }
-
-    /**
-     * States whether this compactor compact Sleeper tables that have iterators attached to them.
-     *
-     * @return true if iterators can be processed by this compactor
-     */
-    default boolean supportsIterators() {
-        return false;
-    }
 }

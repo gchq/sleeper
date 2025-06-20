@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
@@ -62,6 +63,11 @@ public class LeafPartitionQueryExecutor {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
+        // TODO: Remove this when a proper compaction iterator specification is present
+        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(compactionIteratorClassName)) {
+            throw new QueryException(new UnsupportedOperationException("Queries are not currently possible on tables with a DATAFUSION iterator specified."));
+        }
+
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
         SortedRecordIterator compactionIterator;
         SortedRecordIterator queryIterator;

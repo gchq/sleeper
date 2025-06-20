@@ -19,14 +19,18 @@
 */
 use crate::{
     ColRange, CompactionInput, CompactionResult, PartitionBound,
-    datafusion::{sketch::serialise_sketches, udf::SketchUDF},
+    datafusion::{
+        aggregate_udf::nonnull::register_non_nullable_aggregate_udfs, sketch::serialise_sketches,
+        sketch_udf::SketchUDF,
+    },
     details::create_sketch_path,
     s3::ObjectStoreFactory,
 };
+use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     common::DFSchema,
-    config::TableParquetOptions,
+    config::{ExecutionOptions, TableParquetOptions},
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
@@ -44,9 +48,11 @@ use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
+mod ageoff_udf;
+mod aggregate_udf;
 mod metrics;
 pub mod sketch;
-mod udf;
+mod sketch_udf;
 
 /// Starts a Sleeper compaction.
 ///
@@ -65,14 +71,17 @@ pub async fn compact(
     );
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
-    let sf = create_session_cfg(input_data, input_paths);
-    let ctx = SessionContext::new_with_config(sf);
+
+    let total_input_size = retrieve_input_size(input_paths, store_factory)
+        .await
+        .inspect_err(|e| warn!("Error getting total input size {e}"))?;
+    let upload_size = calculate_upload_size(total_input_size)?;
+    let sf = create_session_cfg(input_data, input_paths, upload_size);
+    let mut ctx = SessionContext::new_with_config(sf);
+    register_non_nullable_aggregate_udfs(&mut ctx);
 
     // Register object stores for input files and output file
     register_store(store_factory, input_paths, output_path, &ctx)?;
-
-    // Set the upload size based upon size of input data
-    set_multipart_upload_hint(store_factory, input_paths, output_path).await?;
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -87,11 +96,16 @@ pub async fn compact(
         frame = frame.filter(expr)?;
     }
 
+    // Parse Sleeper iterator configuration and apply
+    let filter_agg_conf = parse_iterator_config(input_data.iterator_config.as_ref())?;
+    frame = apply_general_row_filters(frame, filter_agg_conf.as_ref())?;
+
     // Create the sketch function
     let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
+    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
 
     // Iterate through column names, mapping each into an `Expr` of the name UNLESS
     // we find the first row key column which should be mapped to the sketch function
@@ -103,7 +117,7 @@ pub async fn compact(
                 // Map to the sketch function
                 sketch_func
                     // Sketch function needs to be called with each row key column
-                    .call(input_data.row_key_cols.iter().map(col).collect())
+                    .call(row_key_exprs.clone())
                     // Alias name to original schema column name
                     .alias(col_name)
             } else {
@@ -112,8 +126,10 @@ pub async fn compact(
         })
         .collect::<Vec<_>>();
 
-    // Apply sort to DataFrame, then project for DataSketch
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
+    frame = frame.sort(sort_order)?;
+    frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
+    frame = frame.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
@@ -155,8 +171,8 @@ fn set_dictionary_encoding(
 
 /// Extract the Data Sketch result and write it out.
 ///
-/// This function should be called after a query has completed. The sketch function will be asked for the current
-/// sketch.
+/// This function should be called after a `DataFusion` operation has completed. The sketch function will be asked for
+/// the current sketch.
 ///
 /// # Errors
 /// If the sketch couldn't be serialised.
@@ -203,7 +219,7 @@ fn create_sketch_udf(
     row_key_cols: &[String],
     frame: &DataFrame,
 ) -> Result<Arc<ScalarUDF>, DataFusionError> {
-    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
+    let sketch_func = Arc::new(ScalarUDF::from(sketch_udf::SketchUDF::new(
         frame.schema(),
         row_key_cols,
     )));
@@ -211,42 +227,105 @@ fn create_sketch_udf(
     Ok(sketch_func)
 }
 
-/// Calculate the total input size of all the input paths and set the multipart upload size hint accordingly. This prevents
-/// uploads to S3 failing due to uploading too many small parts. We conseratively set the upload size hint so that fewer,
-/// larger uploads are output.
+/// Apply any configured filters to the `DataFusion` operation if any are present.
+fn apply_general_row_filters(
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
+) -> Result<DataFrame, DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            agg_cols: _,
+            filter: Some(f),
+            aggregation: _,
+        }) = filter_agg_conf
+        {
+            info!("Applying Sleeper filter iterator: {f:?}");
+            frame.filter(f.create_filter_expr()?)?
+        } else {
+            frame
+        },
+    )
+}
+
+/// If any are present, apply Sleeper aggregations to this `DataFusion` plan.
 ///
 /// # Errors
-/// Fails if we can't obtain the size of the input files from the object store.
-async fn set_multipart_upload_hint(
-    store_factory: &ObjectStoreFactory,
-    input_paths: &[Url],
-    output_path: &Url,
-) -> Result<(), DataFusionError> {
-    let input_size = calculate_input_size(input_paths, store_factory)
-        .await
-        .inspect_err(|e| warn!("Error getting total input size {e}"));
-    let multipart_size = std::cmp::max(
-        crate::store::MULTIPART_BUF_SIZE,
-        input_size.unwrap_or_default() / 5000,
+/// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
+fn apply_aggregations(
+    row_key_cols: &[String],
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
+) -> Result<DataFrame, DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            agg_cols,
+            filter: _,
+            aggregation: Some(aggregation),
+        }) = &filter_agg_conf
+        {
+            // Grab initial row key columns
+            let mut group_by_cols = row_key_cols;
+            let mut extra_agg_cols = vec![];
+            // If we have any extra "group by" columns, concatenate them all together
+            if let Some(more_columns) = agg_cols {
+                extra_agg_cols.extend(
+                    row_key_cols
+                        .iter()
+                        .chain(more_columns)
+                        .map(ToOwned::to_owned),
+                );
+                group_by_cols = &extra_agg_cols;
+            }
+            // Check aggregations meet validity checks
+            validate_aggregations(group_by_cols, frame.schema(), aggregation)?;
+            let aggregations = aggregation
+                .iter()
+                .map(|agg| agg.to_expr(&frame))
+                .collect::<Result<Vec<_>, _>>()?;
+            frame.aggregate(group_by_cols.iter().map(col).collect(), aggregations)?
+        } else {
+            frame
+        },
+    )
+}
+
+// Process the iterator configuration and create a filter and aggregation object from it.
+//
+// # Errors
+// If there is an error in parsing the configuration string.
+fn parse_iterator_config(
+    iterator_config: Option<&String>,
+) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
+    let filter_agg_conf = iterator_config
+        .map(|s| FilterAggregationConfig::try_from(s.as_str()))
+        .transpose()?;
+    Ok(filter_agg_conf)
+}
+
+/// Calculate the upload size based on the total input data size. This prevents uploads to S3 failing due to uploading
+/// too many small parts. We conseratively set the upload size so that fewer, larger uploads are created.
+fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
+    let upload_size = std::cmp::max(
+        ExecutionOptions::default().objectstore_writer_buffer_size,
+        usize::try_from(total_input_size / 5000)
+            .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
-    store_factory
-        .get_object_store(output_path)
-        .map_err(|e| DataFusionError::External(e.into()))?
-        .set_multipart_size_hint(multipart_size);
     info!(
-        "Setting multipart size hint to {} bytes.",
-        multipart_size.to_formatted_string(&Locale::en)
+        "Use upload buffer of {} bytes.",
+        upload_size.to_formatted_string(&Locale::en)
     );
-    Ok(())
+    Ok(upload_size)
 }
 
 /// Calculate the total size of all `input_paths` objects.
 ///
-async fn calculate_input_size(
+/// # Errors
+/// Fails if we can't obtain the size of the input files from the object store.
+async fn retrieve_input_size(
     input_paths: &[Url],
     store_factory: &ObjectStoreFactory,
-) -> Result<usize, DataFusionError> {
-    let mut total_input = 0usize;
+) -> Result<u64, DataFusionError> {
+    let mut total_input = 0u64;
     for input_path in input_paths {
         let store = store_factory
             .get_object_store(input_path)
@@ -407,16 +486,25 @@ fn get_parquet_writer_version(version: &str) -> String {
 ///
 /// This sets as many parameters as possible from the given input data.
 ///
-fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> SessionConfig {
+fn create_session_cfg<T>(
+    input_data: &CompactionInput,
+    input_paths: &[T],
+    upload_size: usize,
+) -> SessionConfig {
     let mut sf = SessionConfig::new();
     // In order to avoid a costly "Sort" stage in the physical plan, we must make
     // sure the target partitions as at least as big as number of input files.
     sf.options_mut().execution.target_partitions =
         std::cmp::max(sf.options().execution.target_partitions, input_paths.len());
+    // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
     sf.options_mut().execution.parquet.enable_page_index = false;
+    // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
+    // together in wrong order.
+    sf.options_mut().optimizer.repartition_aggregations = false;
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));
+    sf.options_mut().execution.objectstore_writer_buffer_size = upload_size;
     sf.options_mut().execution.parquet.writer_version =
         get_parquet_writer_version(&input_data.writer_version);
     sf.options_mut()
@@ -464,13 +552,13 @@ fn register_store(
             .get_object_store(input_path)
             .map_err(|e| DataFusionError::External(e.into()))?;
         ctx.runtime_env()
-            .register_object_store(input_path, in_store.clone().as_object_store());
+            .register_object_store(input_path, in_store);
     }
 
     let out_store = store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?;
     ctx.runtime_env()
-        .register_object_store(output_path, out_store.as_object_store());
+        .register_object_store(output_path, out_store);
     Ok(())
 }

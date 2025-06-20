@@ -17,6 +17,7 @@ package sleeper.clients.api;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.iterator.CloseableIterator;
@@ -79,6 +80,8 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkImportJobSender");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().ingestBatcherSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestBatcherSender");
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().bulkExportQuerySender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkExportQuerySender");
     }
 
     @Test
@@ -200,6 +203,22 @@ class SleeperClientTest {
         // Then
         assertThat(instance.ingestBatcherQueue()).containsExactly(
                 new IngestBatcherSubmitRequest(tableName, fileList));
+    }
+
+    @Test
+    void shouldExportFromTableUsingBulkExportQuery() {
+        String tableName = "export-table";
+
+        // When
+        String exportId = sleeperClient.bulkExport(tableName);
+
+        // Then
+        assertThat(exportId).isNotBlank();
+        assertThat(instance.bulkExportQueue()).containsExactly(
+                BulkExportQuery.builder()
+                        .tableName(tableName)
+                        .exportId(exportId)
+                        .build());
     }
 
     private TableProperties createTableProperties(String tableName) {

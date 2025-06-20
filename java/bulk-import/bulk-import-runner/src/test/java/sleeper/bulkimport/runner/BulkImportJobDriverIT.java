@@ -413,7 +413,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(filename, schema)) {
             List<Record> readRecords = new ArrayList<>();
             Record record = reader.read();
             while (null != record) {

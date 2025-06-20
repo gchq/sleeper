@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -67,6 +68,17 @@ public class StateStoreUpdatesWrapper {
      */
     public static StateStoreUpdatesWrapper update(StateStore stateStore) {
         return new StateStoreUpdatesWrapper(stateStore);
+    }
+
+    /**
+     * Initialises the store with a single partition covering all keys. This is the root partition which may be split
+     * in the future.
+     *
+     * @param  tableProperties     the Sleeper table properties
+     * @throws StateStoreException if the update fails
+     */
+    public void initialise(TableProperties tableProperties) throws StateStoreException {
+        initialise(tableProperties.getSchema());
     }
 
     /**

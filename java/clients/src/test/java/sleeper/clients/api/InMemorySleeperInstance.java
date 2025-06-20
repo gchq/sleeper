@@ -15,6 +15,7 @@
  */
 package sleeper.clients.api;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -51,6 +52,7 @@ public class InMemorySleeperInstance {
     private final Queue<IngestJob> ingestQueue = new LinkedList<>();
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     private final Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
+    private final Queue<BulkExportQuery> bulkExportQueue = new LinkedList<>();
 
     public InMemorySleeperInstance(InstanceProperties properties) {
         this.properties = properties;
@@ -68,7 +70,8 @@ public class InMemorySleeperInstance {
                 .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())
-                .ingestBatcherSender(ingestBatcherQueue::add);
+                .ingestBatcherSender(ingestBatcherQueue::add)
+                .bulkExportQuerySender(bulkExportQueue::add);
     }
 
     public InMemoryIngest ingestByTableName(String tableName) {
@@ -132,6 +135,10 @@ public class InMemorySleeperInstance {
 
     private BulkImportJobSender bulkImportSender() {
         return (platform, job) -> bulkImportQueue(platform).add(job);
+    }
+
+    public Queue<BulkExportQuery> bulkExportQueue() {
+        return bulkExportQueue;
     }
 
 }

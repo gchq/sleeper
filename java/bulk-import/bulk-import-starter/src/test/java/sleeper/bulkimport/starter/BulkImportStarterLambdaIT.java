@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
@@ -35,7 +34,6 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -73,7 +71,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConf, new InstanceProperties()));
+                .expandDirectories(BulkImportStarterLambda.expandDirectories(s3Client));
     }
 
     @Nested
@@ -172,7 +170,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
             verify(executor, times(0)).runJob(any());
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
 
         @Test
@@ -191,7 +189,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
             verify(executor, times(0)).runJob(any());
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
     }
 

@@ -28,9 +28,11 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -141,6 +143,6 @@ public class BulkImportStarterLambdaTest {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> files);
+                .expandDirectories(files -> new ExpandDirectoriesResult(files, List.of()));
     }
 }

@@ -1,8 +1,6 @@
 //! This module contains a wrapper for an [`ObjectStore`] that adds logging functionality and customised multipart upload
 //! buffering size.
 //!
-use async_trait::async_trait;
-use bytes::{Bytes, BytesMut};
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -18,6 +16,7 @@ use bytes::{Bytes, BytesMut};
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use async_trait::async_trait;
 use futures::stream::BoxStream;
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -25,43 +24,15 @@ use object_store::{
     GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
     PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
 };
-use std::sync::{Arc, Mutex};
-
-pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
+use std::{pin::Pin, sync::Mutex};
 
 /// Simple struct for storing various statistics about the operation of the store.
-#[derive(Debug, Eq, PartialOrd, Ord, PartialEq, Clone)]
+#[derive(Debug, Default, Eq, PartialOrd, Ord, PartialEq, Clone)]
 struct LoggingData {
     /// The number of GET requests logged.
     get_count: usize,
     /// The total number of bytes read across all files.
-    get_bytes_read: usize,
-    /// Multipart upload buffer capacity
-    capacity: usize,
-}
-
-impl Default for LoggingData {
-    fn default() -> Self {
-        Self {
-            get_count: Default::default(),
-            get_bytes_read: Default::default(),
-            capacity: MULTIPART_BUF_SIZE,
-        }
-    }
-}
-
-/// Allow setting a size hint for multipart uploads.
-#[allow(clippy::module_name_repetitions)]
-pub trait SizeHintableStore: ObjectStore {
-    /// Set the buffer capacity hint for multipart uploading.
-    ///
-    /// In multipart uploads, data will be buffered until `capacity`
-    /// bytes have been put. This is a hint and the implementation may
-    /// choose how it uses this hint, if at all.
-    fn set_multipart_size_hint(&self, capacity: usize);
-
-    // Convenience function for trait upcasting.
-    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
+    get_bytes_read: u64,
 }
 
 /// An [`ObjectStore`] wrapper that logs some requests (e.g. HEAD, LIST, GET, PUT)
@@ -110,7 +81,7 @@ impl<T: ObjectStore> LoggingObjectStore<T> {
     /// # Panics
     /// If we are not able to acquire the lock for the store
     /// stats.
-    pub fn get_bytes_read(&self) -> usize {
+    pub fn get_bytes_read(&self) -> u64 {
         self.internal
             .lock()
             .expect("LoggingObjectStore stats lock poisoned")
@@ -140,19 +111,6 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     }
 }
 
-impl<T: ObjectStore> SizeHintableStore for LoggingObjectStore<T> {
-    fn set_multipart_size_hint(&self, capacity: usize) {
-        self.internal
-            .lock()
-            .expect("LoggingObjectStore stats lock poisoned")
-            .capacity = capacity;
-    }
-
-    fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore> {
-        self
-    }
-}
-
 #[async_trait]
 impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
@@ -164,7 +122,11 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
             stats.get_count += 1;
             match &options.range {
                 Some(GetRange::Bounded(get_range)) => {
-                    stats.get_bytes_read += get_range.len();
+                    let len = get_range
+                        .end
+                        .checked_sub(get_range.start)
+                        .expect("Get range length is negative");
+                    stats.get_bytes_read += len;
                     info!(
                         "{} GET request on {}/{} byte range {} to {} = {} bytes",
                         self.prefix,
@@ -172,7 +134,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                         location,
                         get_range.start.to_formatted_string(&Locale::en),
                         get_range.end.to_formatted_string(&Locale::en),
-                        get_range.len().to_formatted_string(&Locale::en),
+                        len.to_formatted_string(&Locale::en),
                     );
                 }
                 Some(GetRange::Offset(start_pos)) => {
@@ -216,7 +178,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.delete(location).await
     }
 
-    fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
+    fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
         info!(
             "{} LIST request {}/{:?}",
             self.prefix, self.path_prefix, prefix
@@ -257,24 +219,15 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         location: &Path,
         opts: PutMultipartOpts,
     ) -> Result<Box<dyn MultipartUpload>> {
-        let capacity: usize;
-        {
-            let stats = self
-                .internal
-                .lock()
-                .expect("LoggingObjectStore stats lock poisoned");
-            capacity = stats.capacity;
-        }
         info!(
             "{} PUT MULTIPART request to {}/{}",
             self.prefix, self.path_prefix, location
         );
         let part_upload = self.store.put_multipart_opts(location, opts).await?;
-        Ok(Box::new(LoggingMultipartUpload::new_with_capacity(
+        Ok(Box::new(LoggingMultipartUpload::new(
             part_upload,
             &self.prefix,
             format!("{}/{}", self.path_prefix, location),
-            capacity,
         )) as Box<dyn MultipartUpload>)
     }
 }
@@ -284,85 +237,47 @@ struct LoggingMultipartUpload {
     inner: Box<dyn MultipartUpload>,
     prefix: String,
     path: String,
-    buffer: BytesMut,
-    capacity: usize,
 }
 
 impl LoggingMultipartUpload {
-    pub fn new_with_capacity(
+    pub fn new(
         inner: Box<dyn MultipartUpload>,
         prefix: impl Into<String>,
         path: impl Into<String>,
-        capacity: usize,
     ) -> Self {
         Self {
             inner,
             prefix: prefix.into(),
             path: path.into(),
-            buffer: BytesMut::with_capacity(capacity),
-            capacity,
         }
-    }
-
-    fn upload_buffer(&mut self) -> UploadPart {
-        info!(
-            "{} Uploading to {} {} bytes",
-            self.prefix,
-            self.path,
-            self.buffer.len().to_formatted_string(&Locale::en)
-        );
-        let oldbuf = std::mem::replace(&mut self.buffer, BytesMut::with_capacity(self.capacity));
-        self.inner.put_part(PutPayload::from(Bytes::from(oldbuf)))
     }
 }
 
 impl MultipartUpload for LoggingMultipartUpload {
     fn put_part(&mut self, data: PutPayload) -> UploadPart {
-        let mut len = 0;
-        for bytes in &data {
-            len += bytes.len();
-            self.buffer.extend_from_slice(bytes);
-        }
         info!(
             "{} multipart PUT to {} of {} bytes",
             self.prefix,
             self.path,
-            len.to_formatted_string(&Locale::en)
+            data.content_length().to_formatted_string(&Locale::en)
         );
-        // Should we upload this?
-        if self.buffer.len() >= self.capacity {
-            return self.upload_buffer();
-        }
-        Box::pin(async { Ok(()) })
+        self.inner.put_part(data)
     }
 
     fn complete<'life0, 'async_trait>(
         &'life0 mut self,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<PutResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
+    ) -> Pin<Box<dyn Future<Output = Result<PutResult>> + Send + 'async_trait>>
     where
         'life0: 'async_trait,
         Self: 'async_trait,
     {
-        Box::pin(async move {
-            info!("multipart to {} COMPLETE", self.path);
-            if !self.buffer.is_empty() {
-                self.upload_buffer().await?;
-            }
-            self.inner.complete().await
-        })
+        info!("multipart to {} COMPLETE", self.path);
+        self.inner.complete()
     }
 
     fn abort<'life0, 'async_trait>(
         &'life0 mut self,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
+    ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'async_trait>>
     where
         'life0: 'async_trait,
         Self: 'async_trait,
@@ -680,7 +595,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn put_multipart_log_with_capacity_default() -> Result<()> {
+    async fn put_multipart_log() -> Result<()> {
         // Given
         testing_logger::setup();
         let store = make_store();
@@ -694,7 +609,7 @@ mod tests {
 
         // Then
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 6);
+            assert_eq!(captured_logs.len(), 5);
             assert_eq!(
                 captured_logs[0].body,
                 "TEST PUT MULTIPART request to memory://test_file"
@@ -720,11 +635,6 @@ mod tests {
                 "multipart to memory://test_file COMPLETE"
             );
             assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(
-                captured_logs[5].body,
-                "TEST Uploading to memory://test_file 12 bytes"
-            );
-            assert_eq!(captured_logs[5].level, Level::Info);
         });
 
         let retrieved_data = String::from_utf8(
@@ -737,146 +647,6 @@ mod tests {
         )
         .expect("String should be valid UTF-8");
         assert_eq!(retrieved_data, "foofoo1foo12");
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn put_multipart_log_with_capacity_0() -> Result<()> {
-        // Given
-        testing_logger::setup();
-        let store = make_store();
-        // Disable multipart buffering
-        <LoggingObjectStore<_> as SizeHintableStore>::set_multipart_size_hint(&store, 0);
-
-        // When
-        let mut part = store.put_multipart(&"test_file".into()).await?;
-        part.put_part("foo".into()).await?;
-        part.put_part("foo1".into()).await?;
-        part.put_part("foo12".into()).await?;
-        part.complete().await?;
-
-        // Then
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 8);
-            assert_eq!(
-                captured_logs[0].body,
-                "TEST PUT MULTIPART request to memory://test_file"
-            );
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(
-                captured_logs[1].body,
-                "TEST multipart PUT to memory://test_file of 3 bytes"
-            );
-            assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(
-                captured_logs[2].body,
-                "TEST Uploading to memory://test_file 3 bytes"
-            );
-            assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(
-                captured_logs[3].body,
-                "TEST multipart PUT to memory://test_file of 4 bytes"
-            );
-            assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(
-                captured_logs[4].body,
-                "TEST Uploading to memory://test_file 4 bytes"
-            );
-            assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(
-                captured_logs[5].body,
-                "TEST multipart PUT to memory://test_file of 5 bytes"
-            );
-            assert_eq!(captured_logs[5].level, Level::Info);
-            assert_eq!(
-                captured_logs[6].body,
-                "TEST Uploading to memory://test_file 5 bytes"
-            );
-            assert_eq!(captured_logs[6].level, Level::Info);
-            assert_eq!(
-                captured_logs[7].body,
-                "multipart to memory://test_file COMPLETE"
-            );
-            assert_eq!(captured_logs[7].level, Level::Info);
-        });
-        let retrieved_data = String::from_utf8(
-            store
-                .get(&"test_file".into())
-                .await?
-                .bytes()
-                .await?
-                .to_vec(),
-        )
-        .expect("String should be valid UTF-8");
-        assert_eq!(retrieved_data, "foofoo1foo12");
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn put_multipart_log_with_capacity_10() -> Result<()> {
-        // Given
-        testing_logger::setup();
-        let store = make_store();
-        <LoggingObjectStore<_> as SizeHintableStore>::set_multipart_size_hint(&store, 10);
-
-        // When
-        let mut part = store.put_multipart(&"test_file".into()).await?;
-        part.put_part("12345678".into()).await?;
-        part.put_part("123456789".into()).await?;
-        part.put_part("foo".into()).await?;
-        part.complete().await?;
-
-        // Then
-        testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 7);
-            assert_eq!(
-                captured_logs[0].body,
-                "TEST PUT MULTIPART request to memory://test_file"
-            );
-            assert_eq!(captured_logs[0].level, Level::Info);
-            assert_eq!(
-                captured_logs[1].body,
-                "TEST multipart PUT to memory://test_file of 8 bytes"
-            );
-            assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(
-                captured_logs[2].body,
-                "TEST multipart PUT to memory://test_file of 9 bytes"
-            );
-            assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(
-                captured_logs[3].body,
-                "TEST Uploading to memory://test_file 17 bytes"
-            );
-            assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(
-                captured_logs[4].body,
-                "TEST multipart PUT to memory://test_file of 3 bytes"
-            );
-            assert_eq!(captured_logs[4].level, Level::Info);
-            assert_eq!(
-                captured_logs[5].body,
-                "multipart to memory://test_file COMPLETE"
-            );
-            assert_eq!(captured_logs[5].level, Level::Info);
-            assert_eq!(
-                captured_logs[6].body,
-                "TEST Uploading to memory://test_file 3 bytes"
-            );
-            assert_eq!(captured_logs[6].level, Level::Info);
-        });
-        let retrieved_data = String::from_utf8(
-            store
-                .get(&"test_file".into())
-                .await?
-                .bytes()
-                .await?
-                .to_vec(),
-        )
-        .expect("String should be valid UTF-8");
-        assert_eq!(retrieved_data, "12345678123456789foo");
-
         Ok(())
     }
 }
