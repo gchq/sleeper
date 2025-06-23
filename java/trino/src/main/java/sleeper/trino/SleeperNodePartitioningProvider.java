@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import io.trino.spi.connector.BucketFunction;
 import io.trino.spi.connector.ConnectorBucketNodeMap;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
-import io.trino.spi.connector.ConnectorPartitionHandle;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
@@ -34,10 +33,9 @@ import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.utils.SleeperPageBlockUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
-
-import static io.trino.spi.connector.NotPartitionedPartitionHandle.NOT_PARTITIONED;
 
 /**
  * Determines which splits are read from which node, and which rows are written to which node. These two related
@@ -73,9 +71,9 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
      * @return                    the bucket-node mapping
      */
     @Override
-    public ConnectorBucketNodeMap getBucketNodeMap(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorPartitioningHandle partitioningHandle) {
+    public Optional<ConnectorBucketNodeMap> getBucketNodeMapping(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorPartitioningHandle partitioningHandle) {
         SleeperPartitioningHandle sleeperPartitioningHandle = (SleeperPartitioningHandle) partitioningHandle;
-        return ConnectorBucketNodeMap.createBucketNodeMap(sleeperPartitioningHandle.getNoOfPartitions());
+        return Optional.of(ConnectorBucketNodeMap.createBucketNodeMap(sleeperPartitioningHandle.getNoOfPartitions()));
     }
 
     /**
@@ -134,7 +132,7 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
         };
     }
 
-    /**
+    /*
      * Obtain a list of all of the partitions for a read operation. These partitions are passed to
      * {@link SleeperSplitSource} so that separate batches of {@link SleeperSplit} objects can be generated for each
      * partition.
@@ -144,13 +142,18 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
      * list of partitions is provided here, and so it must be detecting that from somewhere else - perhaps from the
      * response to {@link #getBucketNodeMap}.
      *
-     * @param  transactionHandle  the transaction to run under
-     * @param  session            the session to run under
-     * @param  partitioningHandle the partitioning scheme to use
-     * @return                    a list of {@link sleeper.trino.handle.SleeperPartitionHandle} objects
+     * @param transactionHandle the transaction to run under
+     *
+     * @param session the session to run under
+     *
+     * @param partitioningHandle the partitioning scheme to use
+     *
+     * @return a list of {@link sleeper.trino.handle.SleeperPartitionHandle} objects
+     *
+     * @Override
+     * public List<ConnectorPartitionHandle> listPartitionHandles(ConnectorTransactionHandle transactionHandle,
+     * ConnectorSession session, ConnectorPartitioningHandle partitioningHandle) {
+     * return ImmutableList.of(NOT_PARTITIONED);
+     * } TODO Check if this is used elsewhere
      */
-    @Override
-    public List<ConnectorPartitionHandle> listPartitionHandles(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorPartitioningHandle partitioningHandle) {
-        return ImmutableList.of(NOT_PARTITIONED);
-    }
 }
