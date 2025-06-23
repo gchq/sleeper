@@ -27,12 +27,12 @@ import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorInsertTableHandle;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorOutputMetadata;
-import io.trino.spi.connector.ConnectorPartitioningHandle;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.ConnectorTablePartitioning;
 import io.trino.spi.connector.ConnectorTableProperties;
+import io.trino.spi.connector.ConnectorTableVersion;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.ConstraintApplicationResult;
 import io.trino.spi.connector.LocalProperty;
@@ -72,8 +72,10 @@ import static java.util.Objects.requireNonNull;
 /**
  * Provides information to Trino about the table structure and other metadata. This class also handles the application
  * of static filters to tables, and the resolution of indexes.
+ *
+ * @param <T>
  */
-public class SleeperMetadata implements ConnectorMetadata {
+public class SleeperMetadata<T> implements ConnectorMetadata {
     private static final Logger LOGGER = Logger.get(SleeperMetadata.class);
 
     private final SleeperConfig sleeperConfig;
@@ -128,7 +130,9 @@ public class SleeperMetadata implements ConnectorMetadata {
      * @return                 the handle for the table
      */
     @Override
-    public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName schemaTableName) {
+    public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName schemaTableName,
+            Optional<ConnectorTableVersion> startVersion,
+            Optional<ConnectorTableVersion> endVersion) {
         return sleeperConnectionAsTrino.getSleeperTableHandle(schemaTableName);
     }
 
@@ -157,7 +161,7 @@ public class SleeperMetadata implements ConnectorMetadata {
     public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
         return listTables(session, prefix.getSchema()).stream()
                 .filter(prefix::matches)
-                .map(schemaTableName -> (SleeperTableHandle) this.getTableHandle(session, schemaTableName))
+                .map(schemaTableName -> (SleeperTableHandle) this.getTableHandle(session, schemaTableName, Optional.empty(), Optional.empty()))
                 .map(SleeperTableHandle::toTableColumnsMetadata)
                 .iterator();
     }
@@ -233,7 +237,6 @@ public class SleeperMetadata implements ConnectorMetadata {
                     TupleDomain.all(),
                     Optional.of(connectorTablePartitioning),
                     Optional.empty(),
-                    Optional.empty(),
                     localProperties);
         } else {
             return new ConnectorTableProperties();
@@ -304,6 +307,7 @@ public class SleeperMetadata implements ConnectorMetadata {
         LOGGER.debug("Remaining domain is %s", remainingConstraintsTupleDomain);
         return Optional.of(new ConstraintApplicationResult<>(sleeperTableHandle.withTupleDomain(rowKeyConstrainedTableTupleDomain),
                 remainingConstraintsTupleDomain,
+                null, //TODO validate this assigment
                 false));
     }
 
@@ -345,14 +349,20 @@ public class SleeperMetadata implements ConnectorMetadata {
      */
     @Override
     public Optional<ConnectorOutputMetadata> finishInsert(
-            ConnectorSession session, ConnectorInsertTableHandle insertHandle, Collection<Slice> fragments,
+            ConnectorSession session, ConnectorInsertTableHandle insertHandle,
+            List<ConnectorTableHandle> sourceTableHandles, Collection<Slice> fragments,
             Collection<ComputedStatistics> computedStatistics) {
         // Do nothing - the records are written when the PageSink is closed
         return Optional.empty();
     }
 
-    @Override
-    public ConnectorTableHandle makeCompatiblePartitioning(ConnectorSession session, ConnectorTableHandle tableHandle, ConnectorPartitioningHandle partitioningHandle) {
-        return tableHandle;
-    }
+    /*
+     * TODO if not broken as method no longer in parent class
+     *
+     * @Override
+     * public ConnectorTableHandle makeCompatiblePartitioning(ConnectorSession session, ConnectorTableHandle
+     * tableHandle, ConnectorPartitioningHandle partitioningHandle) {
+     * return tableHandle;
+     * }
+     */
 }
