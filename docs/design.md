@@ -360,7 +360,10 @@ An iterator is a function that is called either during a compaction job or durin
 logic to be inserted into the compaction or query path. This logic could be used to age-off old data or to
 aggregate together values for the same key (e.g. to sum counts associated with the same key). Each iterator is a
 function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
-iterators can be found in `sleeper.core.iterator.impl`.
+iterators can be found in the `example-iterators` module.
+
+We are in the process of designing a replacement for this that will work with DataFusion rather than just in Java. See
+the following epic: https://github.com/gchq/sleeper/issues/5123
 
 ## Job and task trackers
 
