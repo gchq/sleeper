@@ -31,6 +31,7 @@ from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
+from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
@@ -149,6 +150,19 @@ class SleeperClient:
             platform_spec,
             class_name,
         )
+
+    def submit_to_ingest_batcher(self, table_name: str, files: list[str]):
+        """
+        Submits files to the ingest batcher to be added to a Sleeper table. This request is submitted to an SQS queue
+        and processed asynchronously. The files will be tracked in the batcher and then ingested to the table later
+        based on the configuration of the batcher.
+
+        :param table_name: the table name to write to
+        :param files: list of the files containing the records to ingest
+        """
+
+        request = IngestBatcherSubmitRequest(table_name=table_name, files=files)
+        IngestBatcherSender(self._sqs_resource, self._instance_properties).send(request)
 
     def bulk_export(self, query: BulkExportQuery):
         """
