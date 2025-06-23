@@ -31,7 +31,7 @@ from pq.parquet_deserial import ParquetDeserialiser
 from pq.parquet_serial import ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
-from sleeper.properties.cdk_defined_properties import IngestCdkProperty, QueryCdkProperty, queue_name_from_url
+from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
 
@@ -93,8 +93,8 @@ class SleeperClient:
         :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
         # Generate a filename to write to
-        databucket: str = _make_ingest_bucket_name(self._instance_id)
-        databucket_file = _make_ingest_s3_name(databucket)
+        databucket = self._instance_properties.get(CommonCdkProperty.DATA_BUCKET)
+        databucket_file: str = f"{databucket}/{_make_ingest_object_key(job_id)}"
         logger.debug(f"Writing to {databucket_file}")
         # Upload it
         _write_and_upload_parquet(self._s3_client, records_to_write, databucket_file)
@@ -335,17 +335,15 @@ class SleeperClient:
                 parquet_file.write_tail()
 
                 # Get name of file to upload to on S3
-                databucket: str = _make_ingest_bucket_name(self._instance_id)
-                s3_filename: str = _make_ingest_s3_name(databucket)
-                bucket: str = s3_filename.split("/", 1)[0]
-                key: str = s3_filename.split("/", 1)[1]
+                bucket = self._instance_properties.get(CommonCdkProperty.DATA_BUCKET)
+                key: str = _make_ingest_object_key(job_id)
 
                 # Perform upload
                 self._s3_client.upload_file(fp.name, bucket, key)
                 logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                job = IngestJob(job_id=job_id, table_name=table_name, files=[s3_filename])
+                job = IngestJob(job_id=job_id, table_name=table_name, files=[f"{bucket}/{key}"])
                 IngestJobSender(self._sqs_resource, self._instance_properties).send(job)
 
 
@@ -495,18 +493,7 @@ def _receive_messages(
     raise RuntimeError("No results received from Sleeper within specified timeout.")
 
 
-def _make_ingest_bucket_name(basename: str) -> str:
-    """
-    Returns the S3 bucket name that Sleeper will use for storing table data.
-
-    :param basename: the Sleeper instance base name (sleeper.id)
-
-    :return: S3 bucket name
-    """
-    return f"sleeper-{basename}-table-data"
-
-
-def _make_ingest_s3_name(bucket: str) -> str:
-    file_name: str = str(uuid.uuid4()) + ".parquet"
-    databucket_file = f"{bucket}/for_ingest/{file_name}"
-    return databucket_file
+def _make_ingest_object_key(id: str = None) -> str:
+    if id is None:
+        id = str(uuid.uuid4())
+    return f"for_ingest/{id}.parquet"

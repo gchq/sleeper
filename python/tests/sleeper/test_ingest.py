@@ -48,6 +48,23 @@ def test_ingest_from_records_with_client(queue: Queue, sleeper_client: SleeperCl
     assert {"tableName": "my_table"} == job
 
 
+def test_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
+    # Given
+    records = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
+    LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
+
+    # When
+    with sleeper_client.create_batch_writer("my_table", "my_job") as writer:
+        writer.write(records)
+
+    # Then
+    job = receive_message(queue)
+    file = single(job.pop("files"))
+    assert LocalStack.read_parquet_file(file) == records
+    assert isinstance(job.pop("id"), str)
+    assert {"tableName": "my_table"} == job
+
+
 def test_ingest_by_table_id():
     # When
     job = IngestJob(job_id="test-job", table_id="test-table", files=["file-1.parquet"])
