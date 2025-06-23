@@ -34,6 +34,15 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.rust.RustCompactionRunner.RUST_MAX_ROW_GROUP_ROWS;
+import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -65,7 +74,23 @@ public class RustCompactionRunnerTest {
 
         // Then
         assertThat(params.override_aws_config.get()).isFalse();
-
+        String[] expectedInputs = new String[]{"/path/to/some/file", "/path/to/other"};
+        String[] actual = params.input_files.readBack(String.class, false);
+        assertThat(actual).containsExactly(expectedInputs);
+        assertThat(params.output_file.get()).isEqualTo(job.getOutputFile());
+        assertThat(params.row_key_cols.readBack(String.class, false)).containsExactly("key");
+        assertThat(params.row_key_schema.readBack(Integer.class, false)).containsExactly(3);
+        assertThat(params.sort_key_cols.len.get()).isEqualTo(0);
+        assertThat(params.max_row_group_size.get()).isEqualTo(RUST_MAX_ROW_GROUP_ROWS);
+        assertThat(params.max_page_size.get()).isEqualTo(tableProperties.getInt(PAGE_SIZE));
+        assertThat(params.compression.get()).isEqualTo(tableProperties.get(COMPRESSION_CODEC));
+        assertThat(params.writer_version.get()).isEqualTo(tableProperties.get(PARQUET_WRITER_VERSION));
+        assertThat(params.column_truncate_length.get()).isEqualTo(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
+        assertThat(params.stats_truncate_length.get()).isEqualTo(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+        assertThat(params.dict_enc_row_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
+        assertThat(params.dict_enc_sort_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
+        assertThat(params.dict_enc_values.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        assertThat(params.iterator_config.get()).isEmpty();
     }
 
     private CompactionJobFactory compactionFactory() {

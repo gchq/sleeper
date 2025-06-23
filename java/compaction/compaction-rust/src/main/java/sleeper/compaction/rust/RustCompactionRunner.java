@@ -51,7 +51,7 @@ public class RustCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
 
     /** Maximum number of rows in a Parquet row group. */
-    private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
+    public static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     private final AwsConfig awsConfig;
 
@@ -100,7 +100,7 @@ public class RustCompactionRunner implements CompactionRunner {
         Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
         if (awsConfig != null) {
-            params.override_aws_config.set(true)
+            params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.region);
             params.aws_endpoint.set(awsConfig.endpoint);
             params.aws_allow_http.set(awsConfig.allowHttp);

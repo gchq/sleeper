@@ -26,8 +26,6 @@ import org.scijava.nativelib.NativeLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.rust.RustBridge.FFICompactionParams;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -285,6 +283,34 @@ public class RustBridge {
         }
 
         /**
+         * Fetches the contents of this array back into a Java array.
+         *
+         * The items in this arrayn are read back from the direct heap storage
+         * where they will have been allocated by {@link Array#populate(Object[], boolean)}.
+         *
+         * @param  clazz                 the class type of generic parameter T
+         * @param  nullsAllowed          if nulls are allowed in this array
+         * @return                       Java array of object from this array
+         * @throws IllegalStateException if this array is not valid before calling this method
+         * @throws IllegalStateException if a {@code null} is found in a non-nullable array
+         * @throws NullPointerException  if parts of this object are {@null} when they shouldn't be, see
+         *                               {@link Array#validate()}
+         */
+        public T[] readBack(Class<T> clazz, boolean nullsAllowed) {
+            validate();
+            final jnr.ffi.Runtime r = len.struct().getRuntime();
+            int len = items.length;
+
+            @SuppressWarnings("unchecked")
+            T[] values = (T[]) java.lang.reflect.Array.newInstance(clazz, len);
+
+            for (int i = 0; i < len; i++) {
+                values[i] = getValue(i, clazz, nullsAllowed, r);
+            }
+            return values;
+        }
+
+        /**
          * Check class invariants.
          *
          * @throws IllegalStateException if a violation is found
@@ -312,14 +338,13 @@ public class RustBridge {
          *
          * Intended for internal use only.
          *
-         * @param  <E>                       item type, must be int, long String or byte[], or boolean
          * @param  item                      the item to encode
          * @param  idx                       array position to use
          * @param  r                         struct runtime
          * @throws ClassCastException        if item is of wrong class
          * @throws IndexOutOfBoundsException if idx is invalid
          */
-        protected <E> void setValue(E item, int idx, jnr.ffi.Runtime r) {
+        protected void setValue(T item, int idx, jnr.ffi.Runtime r) {
             if (item == null) {
                 this.items[idx] = jnr.ffi.Pointer.wrap(r, 0);
             } else if (item instanceof Integer) {
@@ -356,65 +381,94 @@ public class RustBridge {
             }
         }
 
+        /**
+         * Reads a value from array.
+         *
+         * The value of the array element is read from previously allocated memory. The array MUST have been
+         * previously populated with {@link Array#populate(Object[], boolean)}. The type of the array item
+         * to read is given in the {@code clazz} argument. This should match the generic type given.
+         *
+         * If nulls are not allowed in this array, but a null pointer is found, then an exception is thrown.
+         *
+         * @param  idx                       the index to read
+         * @param  clazz                     the class type of generic parameter E
+         * @param  nullsAllowed              if nulls may be present in this array
+         * @param  r                         the runtime this array was allocated with
+         * @return                           the array element, or {@code null} if nulls are allowed and the pointer at
+         *                                   {@code idx} is 0.
+         * @throws IndexOutOfBoundsException if {@code idx} is out of range
+         * @throws IllegalStateException     if a pointer to 0 is found in a non-nullable array
+         */
         @SuppressWarnings("unchecked")
-        protected <E> E getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
-            if (idx < 0 || idx >= len.intValue()) {
+        protected T getValue(int idx, Class<T> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
+            if (idx < 0 || idx >= items.length) {
                 throw new IndexOutOfBoundsException(String.format("idx %d length %d", idx, len.intValue()));
             }
-            // TODO: Handle nulls here
+            // Null handling
+            if (this.items[idx].address() == 0) {
+                if (nullsAllowed) {
+                    return (T) null;
+                } else {
+                    throw new IllegalStateException(String.format("Null found in non-nullable array at idx %d", idx));
+                }
+            }
             if (clazz.equals(Integer.TYPE) || clazz.equals(Integer.class)) {
-                return (E) Integer.valueOf(this.items[idx].getInt(0));
+                return (T) Integer.valueOf(this.items[idx].getInt(0));
             } else if (clazz.equals(Long.TYPE) || clazz.equals(Long.class)) {
-                return (E) Long.valueOf(this.items[idx].getLong(0));
+                return (T) Long.valueOf(this.items[idx].getLong(0));
             } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
-                return (E) Boolean.valueOf((this.items[idx].getByte(0) == 1) ? true : false);
+                return (T) Boolean.valueOf(this.items[idx].getByte(0) == 1);
             } else if (clazz.equals(String.class)) {
+                // Read string length
                 int length = this.items[idx].getInt(0);
                 if (length < 0) {
                     throw new IllegalStateException(String.format("Read string length of %d at index %d", length, idx));
                 }
+                // Decode the bytes as UTF-8
                 byte[] utf8String = new byte[length];
                 this.items[idx].get(4, utf8String, 0, length);
-                return (E) new String(utf8String, StandardCharsets.UTF_8);
+                return (T) new String(utf8String, StandardCharsets.UTF_8);
             } else if (clazz.equals(byte.class.arrayType())) {
+                // Read the length of the byte array
                 int length = this.items[idx].getInt(0);
                 if (length < 0) {
                     throw new IllegalStateException(String.format("Read byte[] length of %d at index %d", length, idx));
                 }
+                // Grab the actual bytes into the new array
                 byte[] bytes = new byte[length];
                 this.items[idx].get(4, bytes, 0, length);
-                return (E) bytes;
+                return (T) bytes;
             } else {
                 throw new ClassCastException("Can't cast " + clazz + " to a valid Sleeper row key type");
             }
         }
     }
-}
 
-/**
- * The compaction output data that the native code will populate.
- */
-@SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public static class FFICompactionResult extends Struct {
-    public final Struct.size_t rows_read = new Struct.size_t();
-    public final Struct.size_t rows_written = new Struct.size_t();
+    /**
+     * The compaction output data that the native code will populate.
+     */
+    @SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
+    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    public static class FFICompactionResult extends Struct {
+        public final Struct.size_t rows_read = new Struct.size_t();
+        public final Struct.size_t rows_written = new Struct.size_t();
 
-    public FFICompactionResult(jnr.ffi.Runtime runtime) {
-        super(runtime);
+        public FFICompactionResult(jnr.ffi.Runtime runtime) {
+            super(runtime);
+        }
     }
-}
 
-/**
- * The interface for the native library we are calling.
- */
-public interface Compaction {
-    FFICompactionResult allocate_result();
+    /**
+     * The interface for the native library we are calling.
+     */
+    public interface Compaction {
+        FFICompactionResult allocate_result();
 
-    void free_result(@In FFICompactionResult res);
+        void free_result(@In FFICompactionResult res);
 
-    @SuppressWarnings(value = "checkstyle:parametername")
-    int ffi_merge_sorted_files(@In FFICompactionParams input, @Out FFICompactionResult result);}
+        @SuppressWarnings(value = "checkstyle:parametername")
+        int ffi_merge_sorted_files(@In FFICompactionParams input, @Out FFICompactionResult result);
+    }
 
     private RustBridge() {
     }
