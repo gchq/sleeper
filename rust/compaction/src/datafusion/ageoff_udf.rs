@@ -62,33 +62,66 @@ impl AgeOff {
     fn retain(&self, t: i64) -> bool {
         t >= self.threshold
     }
+
+    /// Attempts to create an [`AgeOff`] from a [`Filter`] relative to a time instant.
+    ///
+    /// The given time is used to create an age-off filter that will filter out
+    /// values older than a duration relative to the given time.
+    ///
+    /// # Errors
+    ///
+    /// An error occurs if the maximum age in the filter is not representable as a timestamp.
+    pub fn try_from_relative_to(
+        value: &Filter,
+        time_origin: SystemTime,
+    ) -> std::result::Result<Self, DataFusionError> {
+        match value {
+            Filter::Ageoff { column: _, max_age } => {
+                // Figure out max_age in as a millisecond threshold from current time
+                // The filter time may be -ve (i.e. in the future relative to time_origin),
+                // but Durations must be +ve. Therefore, we take the absolute value
+                // and then add or subtract the duration from the time_origin to derive
+                // the absolute threshold time.
+                let absolute_instant = if *max_age >= 0 {
+                    time_origin.checked_sub(Duration::from_secs(max_age.unsigned_abs()))
+                } else {
+                    time_origin.checked_add(Duration::from_secs(max_age.unsigned_abs()))
+                }
+                // Convert Option to Result with DataFusionError
+                .ok_or(plan_datafusion_err!(
+                    "Age off filter max_age not representable as a SystemTime timestamp"
+                ))?;
+                // We might have a time that is before the origin
+                let absolute_seconds = if absolute_instant < UNIX_EPOCH {
+                    let time_before_epoch = UNIX_EPOCH
+                        .duration_since(absolute_instant)
+                        .map_err(|e| DataFusionError::External(Box::new(e)))?
+                        .as_secs();
+                    // Ensure time difference is negative in filter
+                    0 - i64::try_from(time_before_epoch)
+                        .map_err(|e| DataFusionError::External(Box::new(e)))?
+                } else {
+                    let time_after_epoch = absolute_instant
+                        .duration_since(UNIX_EPOCH)
+                        .map_err(|e| DataFusionError::External(Box::new(e)))?
+                        .as_secs();
+                    i64::try_from(time_after_epoch)
+                        .map_err(|e| DataFusionError::External(Box::new(e)))?
+                };
+                Ok(AgeOff::new(absolute_seconds))
+            }
+        }
+    }
 }
 
 impl TryFrom<&Filter> for AgeOff {
     type Error = DataFusionError;
 
-    #[allow(irrefutable_let_patterns, clippy::cast_possible_wrap)]
+    /// Attempts to convert relative to current system time.
+    ///
+    /// See [`AgeOff::try_from_relative_to`].
     fn try_from(value: &Filter) -> std::result::Result<Self, Self::Error> {
-        match value {
-            Filter::Ageoff { column: _, max_age } => {
-                // Figure out max_age in as a millisecond threshold from current time
-                let threshold = if *max_age >= 0 {
-                    SystemTime::now().checked_sub(Duration::from_secs(max_age.unsigned_abs()))
-                } else {
-                    SystemTime::now().checked_add(Duration::from_secs(max_age.unsigned_abs()))
-                }
-                // Convert Option to Result with DataFusionError
-                .ok_or(plan_datafusion_err!(
-                    "Age off filter max_age not representable as timestamp"
-                ))?
-                // Figure out duration since unix epoch
-                .duration_since(UNIX_EPOCH)
-                .map_err(|e| DataFusionError::External(Box::new(e)))?
-                // Finally, convert to raw integer
-                .as_secs() as i64;
-                Ok(AgeOff::new(threshold))
-            }
-        }
+        AgeOff::try_from_relative_to(value, SystemTime::now())
     }
 }
 
@@ -161,7 +194,10 @@ mod tests {
         logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl},
         scalar::ScalarValue,
     };
-    use std::sync::Arc;
+    use std::{
+        sync::Arc,
+        time::{Duration, SystemTime},
+    };
 
     fn run_retain_check(threshold: i64, candidate: i64) -> bool {
         let ageoff = AgeOff::new(threshold);
@@ -206,20 +242,81 @@ mod tests {
     }
 
     #[test]
-    fn try_from_should_create_from_filter() -> Result<(), DataFusionError> {
+    fn try_from_should_create_from_filter_positive_time() -> Result<(), DataFusionError> {
         // Given
         let filter = Filter::Ageoff {
             column: "test".into(),
             max_age: 1000,
         };
+        let now = SystemTime::UNIX_EPOCH;
+        let origin_time = now.checked_add(Duration::from_secs(2000)).unwrap();
 
         // When
-        AgeOff::try_from(&filter)?;
+        let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
+
+        // Then
+        assert_eq!(filter.threshold, 1000);
         Ok(())
     }
 
     #[test]
-    fn try_from_should_produce_error_on_large_timestamp() {
+    fn try_from_should_create_from_filter_negative_time() -> Result<(), DataFusionError> {
+        // Given
+        let filter = Filter::Ageoff {
+            column: "test".into(),
+            max_age: -1000,
+        };
+        let now = SystemTime::UNIX_EPOCH;
+        let origin_time = now.checked_add(Duration::from_secs(2000)).unwrap();
+
+        // When
+        let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
+
+        // Then
+        assert_eq!(filter.threshold, 3000);
+        Ok(())
+    }
+
+    #[test]
+    fn try_from_should_create_from_filter_positive_time_before_epoch() -> Result<(), DataFusionError>
+    {
+        // Given
+        let filter = Filter::Ageoff {
+            column: "test".into(),
+            max_age: 1000,
+        };
+        let now = SystemTime::UNIX_EPOCH;
+        let origin_time = now.checked_sub(Duration::from_secs(2000)).unwrap();
+
+        // When
+        let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
+
+        // Then
+        assert_eq!(filter.threshold, -3000);
+        Ok(())
+    }
+
+    #[test]
+    fn try_from_should_create_from_filter_negative_time_before_epoch() -> Result<(), DataFusionError>
+    {
+        // Given
+        let filter = Filter::Ageoff {
+            column: "test".into(),
+            max_age: -1000,
+        };
+        let now = SystemTime::UNIX_EPOCH;
+        let origin_time = now.checked_sub(Duration::from_secs(2000)).unwrap();
+
+        // When
+        let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
+
+        // Then
+        assert_eq!(filter.threshold, -1000);
+        Ok(())
+    }
+
+    #[test]
+    fn try_from_should_work_on_large_timestamp() {
         // Given
         let filter = Filter::Ageoff {
             column: "test".into(),
@@ -230,7 +327,7 @@ mod tests {
         let result = AgeOff::try_from(&filter);
 
         // Then
-        assert!(result.is_err());
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -248,7 +345,7 @@ mod tests {
         assert_error!(
             result,
             DataFusionError::Plan,
-            "Age off filter max_age not representable as timestamp"
+            "Age off filter max_age not representable as a SystemTime timestamp"
         );
     }
 
