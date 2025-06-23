@@ -32,6 +32,22 @@ def test_ingest_with_client(queue: Queue, sleeper_client: SleeperClient):
     assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
 
 
+def test_ingest_from_records_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
+    # Given
+    records = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
+    LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
+
+    # When
+    sleeper_client.write_single_batch("my_table", records)
+
+    # Then
+    job = receive_message(queue)
+    file = single(job.pop("files"))
+    assert LocalStack.read_parquet_file(file) == records
+    assert isinstance(job.pop("id"), str)
+    assert {"tableName": "my_table"} == job
+
+
 def test_ingest_by_table_id():
     # When
     job = IngestJob(job_id="test-job", table_id="test-table", files=["file-1.parquet"])
@@ -72,6 +88,15 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
     return LocalStackSleeperClient.create(properties)
 
 
-def receive_messages(queue: Queue):
+def receive_messages(queue: Queue) -> list[dict]:
     messages = queue.receive_messages(WaitTimeSeconds=0)
     return list(map(lambda message: json.loads(message.body), messages))
+
+
+def receive_message(queue: Queue) -> dict:
+    return single(receive_messages(queue))
+
+
+def single(list: list):
+    assert len(list) == 1
+    return list[0]
