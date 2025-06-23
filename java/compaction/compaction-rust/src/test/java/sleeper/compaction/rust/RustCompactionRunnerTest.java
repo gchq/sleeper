@@ -21,6 +21,7 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.range.Range;
@@ -91,6 +92,40 @@ public class RustCompactionRunnerTest {
         assertThat(params.dict_enc_sort_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         assertThat(params.dict_enc_values.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         assertThat(params.iterator_config.get()).isEmpty();
+    }
+
+    @Test
+    public void shouldCreateFFICompactionParamsWithDataFusionIterator() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
+        tableProperties.set(TableProperty.ITERATOR_CONFIG, "test_iterator_config_string");
+        CompactionJob job = compactionFactory().createCompactionJobWithFilenames(UUID.randomUUID().toString(), List.of("/path/to/some/file", "/path/to/other"), UUID.randomUUID().toString());
+        Region compactionRegion = new Region(new Range(new Field("key", new StringType()), "a", "k"));
+
+        // When
+        FFICompactionParams params = RustCompactionRunner.createFFIParams(job, tableProperties, compactionRegion, null, runtime);
+
+        // Then
+        assertThat(params.override_aws_config.get()).isFalse();
+        String[] expectedInputs = new String[]{"/path/to/some/file", "/path/to/other"};
+        String[] actual = params.input_files.readBack(String.class, false);
+        assertThat(actual).containsExactly(expectedInputs);
+        assertThat(params.output_file.get()).isEqualTo(job.getOutputFile());
+        assertThat(params.row_key_cols.readBack(String.class, false)).containsExactly("key");
+        assertThat(params.row_key_schema.readBack(Integer.class, false)).containsExactly(3);
+        assertThat(params.sort_key_cols.len.get()).isEqualTo(0);
+        assertThat(params.max_row_group_size.get()).isEqualTo(RUST_MAX_ROW_GROUP_ROWS);
+        assertThat(params.max_page_size.get()).isEqualTo(tableProperties.getInt(PAGE_SIZE));
+        assertThat(params.compression.get()).isEqualTo(tableProperties.get(COMPRESSION_CODEC));
+        assertThat(params.writer_version.get()).isEqualTo(tableProperties.get(PARQUET_WRITER_VERSION));
+        assertThat(params.column_truncate_length.get()).isEqualTo(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
+        assertThat(params.stats_truncate_length.get()).isEqualTo(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+        assertThat(params.dict_enc_row_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
+        assertThat(params.dict_enc_sort_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
+        assertThat(params.dict_enc_values.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        assertThat(params.iterator_config.get()).isEqualTo("test_iterator_config_string");
     }
 
     private CompactionJobFactory compactionFactory() {
