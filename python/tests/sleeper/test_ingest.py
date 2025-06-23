@@ -10,13 +10,12 @@ from sleeper.properties.instance_properties import InstanceProperties
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
-def test_ingest(queue: Queue, properties: InstanceProperties, sender: IngestJobSender):
+def test_ingest(queue: Queue, sender: IngestJobSender):
     # Given
     job = IngestJob(job_id="test-job", table_name="test-table", files=["file-1.parquet"])
-    properties.set(IngestCdkProperty.STANDARD_INGEST_QUEUE_URL, queue.url)
 
     # When
-    sender.send(job, IngestCdkProperty.STANDARD_INGEST_QUEUE_URL)
+    sender.send(job)
 
     # Then
     assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
@@ -44,8 +43,10 @@ def queue() -> Queue:
 
 
 @pytest.fixture
-def properties() -> InstanceProperties:
-    return create_test_instance_properties()
+def properties(queue: Queue) -> InstanceProperties:
+    properties = create_test_instance_properties()
+    properties.set(IngestCdkProperty.STANDARD_INGEST_QUEUE_URL, queue.url)
+    return properties
 
 
 @pytest.fixture

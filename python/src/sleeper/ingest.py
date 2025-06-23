@@ -3,6 +3,7 @@ import uuid
 
 from mypy_boto3_sqs import SQSServiceResource
 
+from sleeper.properties.cdk_defined_properties import IngestCdkProperty
 from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty
 
 
@@ -35,6 +36,6 @@ class IngestJobSender:
         self.sqs = sqs
         self.properties = properties
 
-    def send(self, job: IngestJob, queue_url_property: InstanceProperty):
-        queue_url = self.properties.get(queue_url_property)
+    def send(self, job: IngestJob):
+        queue_url = self.properties.get(IngestCdkProperty.STANDARD_INGEST_QUEUE_URL)
         self.sqs.Queue(queue_url).send_message(MessageBody=job.to_json())
