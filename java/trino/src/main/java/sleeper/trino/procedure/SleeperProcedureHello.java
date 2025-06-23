@@ -20,11 +20,19 @@ import io.trino.spi.procedure.Procedure;
 
 import java.lang.invoke.MethodHandle;
 
-import static io.trino.spi.block.MethodHandleUtil.methodHandle;
 import static io.trino.spi.type.VarcharType.VARCHAR;
+import static java.lang.invoke.MethodHandles.lookup;
 
 public class SleeperProcedureHello {
-    private static final MethodHandle HELLO_METHOD = methodHandle(SleeperProcedureHello.class, "entryPoint", String.class);
+    private static final MethodHandle HELLO_METHOD;
+
+    static {
+        try {
+            HELLO_METHOD = lookup().unreflect(SleeperProcedureHello.class.getMethod("entryPoint", String.class));
+        } catch (IllegalAccessException | NoSuchMethodException | SecurityException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     public static Procedure getProcedure() {
         return new Procedure(
