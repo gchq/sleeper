@@ -2,11 +2,14 @@ import json
 
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
-from python.tests.sleeper.localstack import LocalStack
 
+from sleeper.client import SleeperClient
 from sleeper.ingest import IngestJob, IngestJobSender
-from sleeper.properties.cdk_defined_properties import IngestCdkProperty
+from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty
+from sleeper.properties.config_bucket import save_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
+from tests.sleeper.localstack import LocalStack
+from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
@@ -16,6 +19,14 @@ def test_ingest(queue: Queue, sender: IngestJobSender):
 
     # When
     sender.send(job)
+
+    # Then
+    assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
+
+
+def test_ingest_with_client(queue: Queue, sleeper_client: SleeperClient):
+    # When
+    sleeper_client.ingest_parquet_files_from_s3("test-table", ["file-1.parquet"], "test-job")
 
     # Then
     assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
@@ -52,6 +63,13 @@ def properties(queue: Queue) -> InstanceProperties:
 @pytest.fixture
 def sender(properties: InstanceProperties) -> IngestJobSender:
     return IngestJobSender(LocalStack.sqs_resource(), properties)
+
+
+@pytest.fixture
+def sleeper_client(properties: InstanceProperties) -> SleeperClient:
+    LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
+    save_instance_properties(LocalStack.s3_resource(), properties)
+    return LocalStackSleeperClient.create(properties)
 
 
 def receive_messages(queue: Queue):
