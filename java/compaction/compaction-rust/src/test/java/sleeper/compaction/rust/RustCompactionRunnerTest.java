@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
+import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -76,8 +77,7 @@ public class RustCompactionRunnerTest {
         // Then
         assertThat(params.override_aws_config.get()).isFalse();
         String[] expectedInputs = new String[]{"/path/to/some/file", "/path/to/other"};
-        String[] actual = params.input_files.readBack(String.class, false);
-        assertThat(actual).containsExactly(expectedInputs);
+        assertThat(params.input_files.readBack(String.class, false)).containsExactly(expectedInputs);
         assertThat(params.output_file.get()).isEqualTo(job.getOutputFile());
         assertThat(params.row_key_cols.readBack(String.class, false)).containsExactly("key");
         assertThat(params.row_key_schema.readBack(Integer.class, false)).containsExactly(3);
@@ -92,6 +92,11 @@ public class RustCompactionRunnerTest {
         assertThat(params.dict_enc_sort_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         assertThat(params.dict_enc_values.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         assertThat(params.iterator_config.get()).isEmpty();
+        // Check compaction region
+        assertThat(params.region_mins.readBack(String.class, false)).containsExactly("a");
+        assertThat(params.region_mins_inclusive.readBack(Boolean.class, false)).containsExactly(true);
+        assertThat(params.region_maxs.readBack(String.class, true)).containsExactly("k");
+        assertThat(params.region_maxs_inclusive.readBack(Boolean.class, false)).containsExactly(false);
     }
 
     @Test
@@ -110,8 +115,7 @@ public class RustCompactionRunnerTest {
         // Then
         assertThat(params.override_aws_config.get()).isFalse();
         String[] expectedInputs = new String[]{"/path/to/some/file", "/path/to/other"};
-        String[] actual = params.input_files.readBack(String.class, false);
-        assertThat(actual).containsExactly(expectedInputs);
+        assertThat(params.input_files.readBack(String.class, false)).containsExactly(expectedInputs);
         assertThat(params.output_file.get()).isEqualTo(job.getOutputFile());
         assertThat(params.row_key_cols.readBack(String.class, false)).containsExactly("key");
         assertThat(params.row_key_schema.readBack(Integer.class, false)).containsExactly(3);
@@ -126,6 +130,61 @@ public class RustCompactionRunnerTest {
         assertThat(params.dict_enc_sort_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         assertThat(params.dict_enc_values.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         assertThat(params.iterator_config.get()).isEqualTo("test_iterator_config_string");
+        // Check compaction region
+        assertThat(params.region_mins.readBack(String.class, false)).containsExactly("a");
+        assertThat(params.region_mins_inclusive.readBack(Boolean.class, false)).containsExactly(true);
+        assertThat(params.region_maxs.readBack(String.class, true)).containsExactly("k");
+        assertThat(params.region_maxs_inclusive.readBack(Boolean.class, false)).containsExactly(false);
+    }
+
+    @Test
+    public void shouldCreateFFICompactionParamsWithAwsConfig() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new StringType());
+        tableProperties.setSchema(schema);
+        tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, null);
+        tableProperties.set(TableProperty.ITERATOR_CONFIG, null);
+        CompactionJob job = compactionFactory().createCompactionJobWithFilenames(UUID.randomUUID().toString(), List.of("/path/to/some/file", "/path/to/other"), UUID.randomUUID().toString());
+        Region compactionRegion = new Region(new Range(new Field("key", new StringType()), "a", "k"));
+        AwsConfig awsConfig = AwsConfig.builder()
+                .accessKey("test_access_key")
+                .allowHttp(true)
+                .endpoint("test_endpoint")
+                .region("test_region")
+                .secretKey("test_secret_key")
+                .build();
+
+        // When
+        FFICompactionParams params = RustCompactionRunner.createFFIParams(job, tableProperties, compactionRegion, awsConfig, runtime);
+
+        // Then
+        assertThat(params.override_aws_config.get()).isTrue();
+        assertThat(params.aws_access_key.get()).isEqualTo("test_access_key");
+        assertThat(params.aws_allow_http.get()).isTrue();
+        assertThat(params.aws_endpoint.get()).isEqualTo("test_endpoint");
+        assertThat(params.aws_region.get()).isEqualTo("test_region");
+        assertThat(params.aws_secret_key.get()).isEqualTo("test_secret_key");
+        String[] expectedInputs = new String[]{"/path/to/some/file", "/path/to/other"};
+        assertThat(params.input_files.readBack(String.class, false)).containsExactly(expectedInputs);
+        assertThat(params.output_file.get()).isEqualTo(job.getOutputFile());
+        assertThat(params.row_key_cols.readBack(String.class, false)).containsExactly("key");
+        assertThat(params.row_key_schema.readBack(Integer.class, false)).containsExactly(3);
+        assertThat(params.sort_key_cols.len.get()).isEqualTo(0);
+        assertThat(params.max_row_group_size.get()).isEqualTo(RUST_MAX_ROW_GROUP_ROWS);
+        assertThat(params.max_page_size.get()).isEqualTo(tableProperties.getInt(PAGE_SIZE));
+        assertThat(params.compression.get()).isEqualTo(tableProperties.get(COMPRESSION_CODEC));
+        assertThat(params.writer_version.get()).isEqualTo(tableProperties.get(PARQUET_WRITER_VERSION));
+        assertThat(params.column_truncate_length.get()).isEqualTo(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH));
+        assertThat(params.stats_truncate_length.get()).isEqualTo(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
+        assertThat(params.dict_enc_row_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
+        assertThat(params.dict_enc_sort_keys.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
+        assertThat(params.dict_enc_values.get()).isEqualTo(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        assertThat(params.iterator_config.get()).isEmpty();
+        // Check compaction region
+        assertThat(params.region_mins.readBack(String.class, false)).containsExactly("a");
+        assertThat(params.region_mins_inclusive.readBack(Boolean.class, false)).containsExactly(true);
+        assertThat(params.region_maxs.readBack(String.class, true)).containsExactly("k");
+        assertThat(params.region_maxs_inclusive.readBack(Boolean.class, false)).containsExactly(false);
     }
 
     private CompactionJobFactory compactionFactory() {

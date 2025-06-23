@@ -288,6 +288,7 @@ public class RustBridge {
          * The items in this arrayn are read back from the direct heap storage
          * where they will have been allocated by {@link Array#populate(Object[], boolean)}.
          *
+         * @param  <E>                   the generic type of elements in the array
          * @param  clazz                 the class type of generic parameter T
          * @param  nullsAllowed          if nulls are allowed in this array
          * @return                       Java array of object from this array
@@ -296,7 +297,7 @@ public class RustBridge {
          * @throws NullPointerException  if parts of this object are {@null} when they shouldn't be, see
          *                               {@link Array#validate()}
          */
-        public T[] readBack(Class<T> clazz, boolean nullsAllowed) {
+        public <E> T[] readBack(Class<E> clazz, boolean nullsAllowed) {
             validate();
             final jnr.ffi.Runtime r = len.struct().getRuntime();
             int len = items.length;
@@ -390,6 +391,7 @@ public class RustBridge {
          *
          * If nulls are not allowed in this array, but a null pointer is found, then an exception is thrown.
          *
+         * @param  <E>                       the generic type of elements in the array
          * @param  idx                       the index to read
          * @param  clazz                     the class type of generic parameter E
          * @param  nullsAllowed              if nulls may be present in this array
@@ -400,7 +402,7 @@ public class RustBridge {
          * @throws IllegalStateException     if a pointer to 0 is found in a non-nullable array
          */
         @SuppressWarnings("unchecked")
-        protected T getValue(int idx, Class<T> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
+        protected <E> T getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
             if (idx < 0 || idx >= items.length) {
                 throw new IndexOutOfBoundsException(String.format("idx %d length %d", idx, len.intValue()));
             }
