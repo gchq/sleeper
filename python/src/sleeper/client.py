@@ -155,7 +155,10 @@ class SleeperClient:
         """
         Submits files to the ingest batcher to be added to a Sleeper table. This request is submitted to an SQS queue
         and processed asynchronously. The files will be tracked in the batcher and then ingested to the table later
-        based on the configuration of the batcher. Files should be specified in the format 'bucket/file'.
+        based on the configuration of the batcher.
+
+        These files must be in S3. They can be either files or directories. If they are directories then all Parquet
+        files under the directory will be ingested. Files should be specified in the format 'bucket/file'.
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
