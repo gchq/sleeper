@@ -18,6 +18,7 @@ class QueryCdkProperty:
 
 class CommonCdkProperty:
     CONFIG_BUCKET = InstanceProperty("sleeper.config.bucket")
+    DATA_BUCKET = InstanceProperty("sleeper.data.bucket")
 
 
 def queue_name_from_url(queue_url: str) -> str:
