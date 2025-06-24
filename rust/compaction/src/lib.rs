@@ -116,19 +116,16 @@ pub struct FFICompactionParams {
     region_mins_inclusive: *const *const bool,
     region_maxs_inclusive_len: usize,
     region_maxs_inclusive: *const *const bool,
+    iterator_config: *const c_char,
 }
 
 impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
     type Error = color_eyre::eyre::Report;
 
     fn try_from(params: &'a FFICompactionParams) -> Result<CompactionInput<'a>, Self::Error> {
-        // We do this separately since we need the values for computing the region
-        let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
-            .into_iter()
-            .map(String::from)
-            .collect::<Vec<_>>();
-        let region = compute_region(params, &row_key_cols)?;
-
+        if params.iterator_config.is_null() {
+            error!("FFICompactionsParams iterator_config is NULL");
+        }
         if params.output_file.is_null() {
             error!("FFICompactionParams output_file is NULL");
         }
@@ -138,6 +135,20 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
         if params.writer_version.is_null() {
             error!("FFICompactionParams writer_version is NULL");
         }
+        // We do this separately since we need the values for computing the region
+        let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<_>>();
+        let region = compute_region(params, &row_key_cols)?;
+        // Extract iterator config
+        let iterator_config = Some(
+            unsafe { CStr::from_ptr(params.iterator_config) }
+                .to_str()?
+                .to_owned(),
+        )
+        // Set option to None if config is empty
+        .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
         Ok(Self {
             aws_config: unpack_aws_config(params)?,
@@ -167,6 +178,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             dict_enc_sort_keys: params.dict_enc_sort_keys,
             dict_enc_values: params.dict_enc_values,
             region,
+            iterator_config,
         })
     }
 }

@@ -22,6 +22,7 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -122,6 +123,12 @@ public class RustCompactionRunner implements CompactionRunner {
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        // Is there an aggregation/filtering iterator set?
+        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
+            params.iterator_config.set(job.getIteratorConfig());
+        } else {
+            params.iterator_config.set("");
+        }
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
@@ -187,8 +194,6 @@ public class RustCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         RustBridge.FFICompactionResult compactionData = nativeLib.allocate_result();
         try {
-            LOGGER.info("Invoking native Rust compaction...");
-
             // Perform compaction
             int result = nativeLib.ffi_merge_sorted_files(compactionParams, compactionData);
 
@@ -214,16 +219,6 @@ public class RustCompactionRunner implements CompactionRunner {
     @Override
     public String implementationLanguage() {
         return "Rust";
-    }
-
-    @Override
-    public boolean isHardwareAccelerated() {
-        return false;
-    }
-
-    @Override
-    public boolean supportsIterators() {
-        return false;
     }
 
     public static class AwsConfig {

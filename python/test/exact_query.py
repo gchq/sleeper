@@ -16,7 +16,7 @@ import argparse
 import json
 
 from pq.parquet_serial import ParquetSerialiser
-from sleeper.sleeper import SleeperClient
+from sleeper.client import SleeperClient
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run exact query against Sleeper")

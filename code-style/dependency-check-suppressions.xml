@@ -223,4 +223,13 @@
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This dependency includes a new vunerability with latest version.
+        Dependabot should update it automatically when a fixed version is available.
+        file name: xmlunit-core-2.10.3.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
+        <cve>CVE-2024-9410</cve>
+    </suppress>
 </suppressions>

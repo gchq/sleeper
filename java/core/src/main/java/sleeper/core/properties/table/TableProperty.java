@@ -145,11 +145,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .includedInTemplate(false).build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing.")
+                    "Defaults to nothing. May also have special value \"" + CompactionMethod.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
+                    "iterators that are only usable with the DataFusion compactor. When this marker is present, attempting " +
+                    "to compact with the table with the default Java compactor will fail.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
+            .description("Iterator configuration. An iterator will be initialised with the following configuration. " +
+                    "If a DataFusion only iterator is specified, then the configuration should be as described in " +
+                    "https://github.com/gchq/sleeper/issues/4344 for DataFusion.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")

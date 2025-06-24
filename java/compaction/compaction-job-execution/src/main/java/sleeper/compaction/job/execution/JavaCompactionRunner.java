@@ -158,11 +158,6 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public boolean supportsIterators() {
-        return true;
-    }
-
-    @Override
     public String implementationLanguage() {
         return "Java";
     }

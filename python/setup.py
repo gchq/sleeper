@@ -17,7 +17,6 @@ setup(
     name="sleeper",
     version="0.31.0.dev1",
     description="Python client for Sleeper",
-    packages=["sleeper", "pq"],
     install_requires=[
         "pyarrow",
         "boto3",
