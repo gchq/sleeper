@@ -19,7 +19,7 @@ import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.trino.spi.Page;
 import io.trino.spi.block.Block;
-import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.VariableWidthBlockBuilder;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.BigintType;
 import io.trino.spi.type.IntegerType;
@@ -28,6 +28,9 @@ import io.trino.spi.type.VarcharType;
 
 import sleeper.trino.handle.SleeperColumnHandle;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 import static io.trino.spi.type.BigintType.BIGINT;
@@ -76,24 +79,32 @@ public class SleeperPageBlockUtils {
      * @param fieldType    the type of the field being written to
      * @param element      the element itself
      */
-    public static void writeElementToBuilder(BlockBuilder blockBuilder, ArrayType fieldType, Object element) {
+    public static void writeElementToBuilder(VariableWidthBlockBuilder blockBuilder, ArrayType fieldType, Object element) {
         if (element == null) {
             // Null entries do not appear to need to be closed, and doing so adds an erroneous extra element
             blockBuilder.appendNull();
         } else {
             Type elementType = fieldType.getElementType();
-            if (elementType.equals(BIGINT)) {
-                blockBuilder.writeLong((Long) element);
-            } else if (elementType.equals(INTEGER)) {
-                blockBuilder.writeInt((Integer) element);
+            if ((elementType.equals(BIGINT)) || elementType.equals(INTEGER)) {
+                blockBuilder.writeEntry(convertObjectToBytes(element), 0, 0);
             } else if (elementType.equals(VARCHAR)) {
                 Slice slice = Slices.utf8Slice((String) element);
-                blockBuilder.writeBytes(slice, 0, slice.length());
+                blockBuilder.writeEntry(slice, 0, slice.length());
             } else {
                 throw new UnsupportedOperationException(
                         String.format("Array elements of type %s are not currently supported", elementType));
             }
-            blockBuilder.closeEntry();
         }
+    }
+
+    private static byte[] convertObjectToBytes(Object obj) {
+        ByteArrayOutputStream boas = new ByteArrayOutputStream();
+        try (ObjectOutputStream ois = new ObjectOutputStream(boas)) {
+            ois.writeObject(obj);
+            return boas.toByteArray();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        throw new RuntimeException();
     }
 }
