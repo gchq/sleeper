@@ -22,6 +22,7 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -156,8 +157,9 @@ public class CreateCompactionJobs {
 
         Instant limitJobsStartTime = Instant.now();
         int creationLimit = tableProperties.getInt(TableProperty.COMPACTION_JOB_CREATION_LIMIT);
+
         if (compactionJobs.size() > creationLimit) {
-            compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
+            compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit - countCurrentRunningJobs(index));
         }
 
         Instant sendJobsStartTime = Instant.now();
@@ -183,6 +185,17 @@ public class CreateCompactionJobs {
         LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, sendJobsStartTime));
         LOGGER.info("Sending compaction jobs took {}", LoggedDuration.withShortOutput(sendJobsStartTime, finishTime));
         return finishTime;
+    }
+
+    private int countCurrentRunningJobs(CompactionStrategyIndex index) {
+        int count = 0;
+        for (FilesInPartition files : index.getFilesInLeafPartitions()) {
+            count += files.getFilesWithJobId().stream()
+                    .map(FileReference::getJobId)
+                    .collect(Collectors.toSet())
+                    .size();
+        }
+        return count;
     }
 
     private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
