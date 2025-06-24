@@ -30,12 +30,16 @@ import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -250,6 +254,76 @@ public class RustCompactionRunnerIT {
             // Then
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle aggregation")
+    class HandleAggregation {
+        @Test
+        void shouldMergeAndAggregate() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sort", new StringType()))
+                    .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
+                    .build();
+            tableProperties.setSchema(schema);
+            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
+            tableProperties.set(TableProperty.ITERATOR_CONFIG, "sort;,sum(value),map_sum(map_value2)");
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
+            Record record2 = new Record(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2", Map.of("map_key1", 3L, "map_key2", 4L)));
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            Record output1 = new Record(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2", Map.of("map_key1", 4L, "map_key2", 7L)));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(2);
+            assertThat(summary.getRecordsWritten()).isEqualTo(1);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(output1);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(output1)));
+        }
+
+        @Test
+        void shouldMergeAndFilterAgeOff() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("timestamp", new LongType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build();
+            tableProperties.setSchema(schema);
+            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
+            tableProperties.set(TableProperty.ITERATOR_CONFIG, "timestamp;ageoff=timestamp,10,sum(value)");
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Record record1 = new Record(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
+            Record record2 = new Record(Map.of("key", "a", "timestamp", 1L, "value", 2L));
+            Record record3 = new Record(Map.of("key", "a", "timestamp", 999999999999999L, "value", 3L));
+
+            String file1 = writeFileForPartition("root", List.of(record1));
+            String file2 = writeFileForPartition("root", List.of(record2, record3));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            Record output1 = new Record(Map.of("key", "a", "timestamp", 999999999999999L, "value", 4L));
+
+            // When
+            RecordsProcessed summary = compact(job);
+
+            // Then
+            assertThat(summary.getRecordsRead()).isEqualTo(2);
+            assertThat(summary.getRecordsWritten()).isEqualTo(1);
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .containsExactly(output1);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(output1)));
         }
     }
 
