@@ -4,18 +4,31 @@ Building and deploying Sleeper
 This contains instructions on how to deploy Sleeper.
 
 If you just want a local instance for testing, see the documentation
-on [deploying to localstack](usage/deploy-to-localstack.md). This has very limited functionality compared to a
+on [deploying to localstack](deployment/deploy-to-localstack.md). This has very limited functionality compared to a
 deployed instance.
+
+## Fine-grained security
+
+Sleeper provides the tools to implement fine-grained security on the data, although further work is needed to make
+these easier to use. Briefly, the following steps are required:
+
+- Decide how to store the security information in the table, e.g. there might be one security label per row,
+  or two per row, or one per cell. These fields must be added to the schema.
+- Write an iterator that will run on the results of every query to filter out records that a user is not permitted
+  to see. This takes as input a user's authorisations and uses those to make a decision as to whether the user can see
+  the data.
+- Ensure the Sleeper instance is deployed such that the boundary of the system is protected.
+- Ensure that queries are submitted to the query queue via a service that authenticates users, and passes their
+  authorisations into the query time iterator configuration.
 
 ## Get your environment set up
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
-interact with it. See [getting started](getting-started.md) for how to install the Sleeper CLI. The information below
-provides more detail on how to create an environment to deploy Sleeper into, and how to get set up to deploy into AWS.
+interact with it. See [environment setup](deployment/environment-setup.md) for how to install the Sleeper CLI and create
+an environment suitable for deploying Sleeper.
 
-Currently it's necessary to build Sleeper before any deployment. With the `sleeper environment` setup described in the
-getting started guide, you get an EC2 with the Sleeper CLI installed, and the Git repository checked out. Once this is
-deployed, you can connect to it and build Sleeper like this:
+If you set up the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md), you can connect to it
+and build Sleeper like this:
 
 ```bash
 sleeper environment connect # Get a shell in the EC2 you deployed
@@ -24,204 +37,21 @@ cd sleeper                  # Change directory to the root of the Git repository
 ./scripts/build/build.sh
 ```
 
-If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
+If you used the system test deployment described in the getting started guide, you will have already built Sleeper from
+the Git repository in a `sleeper builder` container. If you deploy from outside of AWS this will involve lengthy uploads
+of build artefacts, which you can avoid with the environment EC2, or your own EC2 instance. If you deploy from your own
+EC2, you will need to check out the Git repository inside a `sleeper builder` container yourself.
 
-### Sleeper CLI Docker environment
-
-The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install anything other than
-Docker on your machine.
-
-The `sleeper builder` command gets you a shell inside a container with all the dependencies required to build and deploy
-an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper Git repository will have been
-cloned into the working directory of the container. If you are not using an environment EC2, you will need to manually
-clone the repository. If you deploy from outside of AWS this will involve lengthy uploads of build artifacts, which you
-can avoid with the environment EC2.
-
-If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
-the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
-to the container as well.
-
-The host Docker environment will be propagated to the container via the Docker socket.
-
-The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
-if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
-
-If you add a command on the end, you can run a specific script like this:
-
-```shell
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
-```
-
-### Configure AWS
-
-When you configure AWS on your machine or in the environment EC2, if you do it outside the Sleeper CLI, the
-configuration will be passed on to any Sleeper CLI commands.
-
-The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
-
-~/.aws/credentials:
-
-```ini
-[named-profile-123456789]
-aws_access_key_id = abcd12345
-aws_secret_access_key = defg12345
-aws_session_token = hijK12345
-```
-
-~/.aws/config
-
-```ini
-[profile named-profile-123456789]
-region = eu-west-2
-```
-
-~/.bashrc:
-
-```bash
-export AWS_PROFILE=named-profile-123456789
-export AWS_REGION=eu-west-2
-```
-
-Also see
-the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
-
-### Bootstrapping CDK
-
-To deploy Sleeper into your AWS account you will need to have bootstrapped CDK in the
-account. Bootstrapping installs all the resources that CDK needs to do deployments. Note
-that bootstrapping CDK is a one-time action for the account that is nothing to do with
-Sleeper itself. See
-[this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
-on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
-not be run from inside the sleeper directory. You can run `cdk bootstrap` in a Sleeper CLI
-Docker container, as described in [getting started](getting-started.md#deployment-environment).
-
-### Lambda Reserved Concurrency
-
-When deploying Sleeper, depending on the stacks you need, it will deploy a few Lambda
-functions into your account. Some of these Lambda functions are configured to run
-with reserved concurrency of 1. In order to allow this you will need to make
-sure you have enough free reserved concurrency in your account.
-
-You will need a reserved account concurrency of at most 6 for all the Sleeper stacks
-to be deployed. In order to check how many you have, go to the Lambda section in your
-AWS Console and check the dashboard. It should say at the top "full account concurrency = X"
-(usually 1000) and "unreserved account concurrency = Y". You can't use the last 100 of your
-limit. So if Y is greater than or equal to X-100 you won't be able to deploy Sleeper
-and you will have to see if you can adjust your existing lambdas to free some up.
-
-You're now ready to build and deploy Sleeper.
-
-### Deployment environment
-
-Please follow the [getting started guide](getting-started.md#deployment-environment) to set up an environment suitable
-to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
-This section adds more detail for the tools to set up this environment.
-
-The environment EC2 described here is provided to allow easy deployment, especially for development. It's a machine that
-can build Sleeper within AWS, and it avoids lengthy uploads of built artifacts into AWS, particularly jars and Docker
-images. In the future we may add support for prebuilt artifacts, in which case the EC2 will not be needed to deploy
-Sleeper.
-
-The EC2 is deployed with admin access to your AWS account. A production instance of Sleeper is likely to need some extra
-security setup, and you may wish to avoid deploying an EC2 with admin access to a production AWS account.
-
-For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
-
-If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
-Sleeper `environment` commands directly, without prefixing with `sleeper`.
-
-You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
-variables or configuration on the host machine, which will be propagated to the Docker container when you use
-`sleeper` commands.
-
-Note that `sleeper environment` commands are not intended to be run from inside an environment EC2. When you connect to
-an EC2, this will be in a fresh context that is not aware of environments you have deployed or added. You can still use
-it to run `aws` and `cdk` commands, although it may be more convenient to use `sleeper builder` for this.
-
-#### Managing environments
-
-You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify a unique environment ID when deploying an environment. Parameters after the environment ID will be
-passed to a `cdk deploy --all` command.
-
-```bash
-# Deploy EC2 in a new VPC
-sleeper environment deploy <environment-id>
-
-# Only deploy VPC (running this with an existing environment will remove the EC2)
-sleeper environment deploy <environment-id> -c deployEc2=false
-
-# Deploy EC2 in an existing VPC
-sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
-
-# Deploy with nightly system test automation (set nightlyTestDeployId to your own 2-character value)
-sleeper environment deploy <environment-id> -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
-```
-
-You can add an environment that was previously deployed like this:
-
-```bash
-sleeper environment add <environment-id>
-```
-
-Whether you deployed or added an environment, you can connect to the deployed EC2 like this when it is running:
-
-```bash
-sleeper environment connect
-```
-
-This will SSH into the machine with EC2 Instance Connect and SSM Session Manager, and create a Linux `screen` session.
-If you do not explicitly exit this session, you will reconnect to the same `screen` session next time you connect to the
-EC2. If multiple connections are made to the EC2 as the same user, this will take over the `screen` session and
-disconnect the previous connection.
-
-You can replace the `screen` command by adding your own parameters to pass to ssh, like this:
-
-```bash
-sleeper environment connect bash
-```
-
-You can switch environments like this:
-
-```bash
-sleeper environment list
-sleeper environment set <environment-id>
-```
-
-You can tear down the deployed environment like this:
-
-```bash
-sleeper environment destroy <environment-id>
-```
-
-Parameters after the environment ID will be passed to a `cdk destroy` command.
-
-#### Managing users
-
-When you deploy or add an environment, you will connect to the EC2 as the default user for the machine. This may not be
-desirable if you want to share the EC2, or if you want to automate system tests to run as that user.
-
-From outside the EC2, you can manage operating system users on the EC2 like this:
-
-```bash
-sleeper environment adduser <username>
-sleeper environment setuser <username>
-sleeper environment deluser <username>
-```
-
-When you add a new user or set your user, further invocations of `sleeper environment connect` will connect as that
-user.
-
-When you add a new user a fresh instance of the Sleeper Git repository will be checked out for that user, accessible
-through `sleeper builder` as that user.
-
-There's no authorisation that links your identity to a particular user. Anyone with access to the EC2 can connect as any
-user.
+The `sleeper builder` command gets you a shell inside a Docker container with all the dependencies required to build and
+deploy an instance of Sleeper.  The container will be deleted after you exit. You will start in a directory mounted into
+the container from a folder in the host home directory under `~/.sleeper`. This workspace will persist after the
+container exits, and will be reused by future calls to `sleeper builder`. It also inherits the AWS and Docker
+configuration from the host.
 
 ## Deployment
 
-There are two ways to deploy Sleeper: you can use the automated scripts or a more manual approach.
+Sleeper is deployed using the AWS CDK. You can invoke the CDK to do this either using the automated scripts or a more
+manual approach.
 
 Either approach should be done from within an EC2 instance set up as described above, to avoid lengthy uploads of large
 jar files and Docker images.
@@ -390,19 +220,20 @@ Before we can use CDK to deploy Sleeper, we need to create some configuration fi
 
 * An `instance.properties` file - containing information about your Sleeper instance, as well as
   default values used by tables if not specified.
+* A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
 * A `table.properties` file which contains information about a table and a link to its schema file.
 * A `schema.json` file which describes the data stored in a Sleeper table.
-* A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
+* A `splits.txt` file which allows you to pre-split partitions in a Sleeper table.
 
-The `instance.properties` and `table.properties` files are Java properties files. You can find descriptions of all
-properties in the system [here](usage/property-master.md).
+The `.properties` files are Java properties files. You can find descriptions of all properties in the
+system [here](usage/property-master.md). Details of this configuration are available
+under [Sleeper instance configuration](deployment/instance-configuration.md).
 
-There's an example of a basic instance properties file [here](../example/basic/instance.properties) and an example of a
-full instance properties file [here](../example/full/instance.properties). This latter file shows all the instance
-properties that you can set. You can use one of these as your starting point. Examples of the other files listed above
-can also be found alongside those.
+You can start by copying the basic configuration example [here](../example/basic/). There's also an example of a full
+configuration [here](../example/full/).
 
-You will need to set sensible values for the following instance properties:
+You will need to set sensible values for the following instance properties, which are set for you if you use the
+automated deployment script:
 
 * `sleeper.id`
 * `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
@@ -414,50 +245,20 @@ You will need to set sensible values for the following instance properties:
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
 
-You will also need to set values for whichever ECR repositories you have uploaded Docker images to. These should be set
-to the ECR repository name, eg. `my-instance-id/ingest`.
+You will also need to ensure your Docker images are in ECR repositories with the correct names. If you followed the
+steps above this will already be correct. Each repository must have the expected name appended to a prefix,
+e.g. `my-prefix/ingest`, `my-prefix/compaction`. The prefix is the Sleeper instance ID by default, but it can be set
+in the instance property `sleeper.ecr.repository.prefix`. The image names are the same as the directory names in
+the `scripts/docker` folder that is created when the system is built.
 
-* `sleeper.ingest.repo`
-* `sleeper.compaction.repo`
-* `sleeper.bulk.import.emr.serverless.repo`
-* `sleeper.bulk.import.eks.repo`
-* `sleeper.systemtest.repo`
-
-To include a table in your instance, your `table.properties` file can be in the same folder as
-your `instance.properties` file. You can add more than one by creating a `tables` directory in the same folder, with a
-subfolder for each table.
-
-See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
-
-Each table will also need a `schema.json` file next to the `table.properties` file.
-See [create a schema](usage/schema.md) for how to create a schema.
-
-You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
-deployed by Sleeper. An example tags.properties file can be found [here](../example/full/tags.properties).
-
-Here's a full example with two tables:
-
-```
-instance.properties
-tags.properties
-tables/table-1/table.properties
-tables/table-1/schema.json
-tables/table-2/table.properties
-tables/table-2/schema.json
-```
-
-Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false
-when deploying then however you choose to tear down Sleeper later on
-you will also need to destroy some further S3 buckets and DynamoDB tables manually.
+Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
+choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.
 
-You may optionally want to predefine your split points for a given table.
-You can do this by setting the `sleeper.table.splits.file` property in the
-table properties file. There's an example of this in the
-[full example](../example/full/table.properties). If you decide not to set
-this, your state store will be initialised with a single root partition. Note that
-pre-splitting a table is important for any large-scale use of Sleeper, and is essential
-for running bulk import jobs.
+Please ensure you predefine split points for your table. See [tables](../usage/tables.md#pre-split-partitions) for how
+to do this. If you decide not to set split points, your state store will be initialised with a single root partition.
+Note that pre-splitting a table is important for any large-scale use of Sleeper, and is essential for running bulk
+import jobs.
 
 #### Deploy with the CDK
 
@@ -480,48 +281,6 @@ INSTANCE_PROPERTIES=/path/to/instance.properties
 VERSION=$(cat "./scripts/templates/version.txt")
 cdk -a "java -cp scripts/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
 ```
-
-#### Customising the Stacks
-
-By default all the stacks are deployed. However, if you don't need them, you can customise which stacks are deployed.
-
-Mandatory components are the configuration bucket and data bucket, the index of Sleeper tables, the state store,
-policies and roles to interact with the instance, and the `TopicStack` which creates an SNS topic used by other stacks
-to report errors.
-
-That leaves the following stacks as optional:
-
-* `CompactionStack` - for running compactions (in practice this is essential)
-* `GarbageCollectorStack` - for running garbage collection (in practice this is essential)
-* `IngestStack` - for ingesting files using the "standard" ingest method
-* `PartitionSplittingStack` - for splitting partitions when they get too large
-* `QueryStack` - for handling queries via SQS
-* `WebSocketQueryStack` - for handling queries via a web socket
-* `KeepLambdaWarmStack` - for sending dummy queries to avoid waiting for lambdas to start up during queries
-* `EmrServerlessBulkImportStack` - for running bulk import jobs using Spark running on EMR Serverless
-* `EmrStudioStack` - to create an EMR Studio containing the EMR Serverless application
-* `EmrBulkImportStack` - for running bulk import jobs using Spark running on an EMR cluster that is created on demand
-* `PersistentEmrBulkImportStack` - for running bulk import jobs using Spark running on a persistent EMR cluster, i.e. one
-  that is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up
-  and down on demand.
-* `IngestBatcherStack` - for gathering files to be ingested or bulk imported in larger jobs
-* `TableMetricsStack` - for creating CloudWatch metrics showing statistics such as the number of records in a table over
-  time
-* `DashboardStack` - to create a CloudWatch dashboard showing recorded metrics
-
-The following stacks are optional and experimental:
-
-* `AthenaStack` - for running SQL analytics over the data
-* `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
-
-By default most of the optional stacks are included but to customise it, set the `sleeper.optional.stacks` sleeper
-property to a comma separated list of stack names, for example:
-
-```properties
-sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
-```
-
-Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
 
 ## Scripts to edit an instance
 

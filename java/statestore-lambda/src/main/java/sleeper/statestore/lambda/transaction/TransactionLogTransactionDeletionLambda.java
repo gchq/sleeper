@@ -15,17 +15,15 @@
  */
 package sleeper.statestore.lambda.transaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
@@ -55,15 +53,15 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogTransactionDeletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogTransactionDeletionLambda.class);
 
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
 
     public TransactionLogTransactionDeletionLambda() {
-        s3Client = AmazonS3ClientBuilder.defaultClient();
-        dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        s3Client = S3Client.create();
+        dynamoClient = DynamoDbClient.create();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);

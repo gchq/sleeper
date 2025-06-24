@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
@@ -41,7 +40,7 @@ import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,7 +68,7 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
-import static sleeper.core.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
+import static sleeper.core.properties.model.EmrInstanceTypeConfig.readInstanceTypes;
 
 /**
  * Deploys a persistent EMR cluster to perform bulk import jobs. Bulk import jobs are sent to a queue. This triggers
@@ -215,9 +214,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
     private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("elasticmapreduce:*", "elasticmapreduce:ListClusters"))
+                .actions(List.of("elasticmapreduce:*", "elasticmapreduce:ListClusters"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
+                .resources(List.of("*"))
                 .build());
     }
 

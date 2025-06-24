@@ -19,7 +19,7 @@
     <parent>
         <artifactId>ingest</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -27,15 +27,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-cloudwatch</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
-        <!-- AWS version 2 dependencies -->
+        <!-- AWS dependencies -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3-transfer-manager</artifactId>
@@ -44,6 +39,14 @@
             <groupId>software.amazon.awssdk.crt</groupId>
             <artifactId>aws-crt</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudwatch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>

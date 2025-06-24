@@ -17,7 +17,7 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -34,19 +34,18 @@ public interface AsyncIngestPartitionFileWriterProperty {
                     "will lead to the following warning:\n" +
                     "\"The provided S3AsyncClient is not an instance of S3CrtAsyncClient, and thus multipart upload/download feature is not " +
                     "enabled and resumable file upload is not supported. To benefit from maximum throughput, consider using " +
-                    "S3AsyncClient.crtBuilder().build() instead.\"\n" +
-                    "(async partition file writer only)")
+                    "S3AsyncClient.crtBuilder().build() instead.\"")
             .defaultValue("crt")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty ASYNC_INGEST_CRT_PART_SIZE_BYTES = Index.propertyBuilder("sleeper.ingest.async.crt.part.size.bytes")
             .description("The part size in bytes to use for multipart uploads.\n" +
-                    "(CRT async ingest only) [128MB]")
+                    "(CRT client type only) [128MB]")
             .defaultValue("134217728") // 128M
             .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS = Index.propertyBuilder("sleeper.ingest.async.crt.target.throughput.gbps")
             .description("The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded simultaneously.\n" +
-                    "(CRT async ingest only)")
+                    "(CRT client type only)")
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveDouble)
             .propertyGroup(InstancePropertyGroup.INGEST).build();

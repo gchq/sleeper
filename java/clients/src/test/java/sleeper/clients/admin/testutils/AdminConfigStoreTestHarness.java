@@ -16,9 +16,9 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientTrackerFactory;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.task.common.QueueMessageCount;
 
 public interface AdminConfigStoreTestHarness {
 

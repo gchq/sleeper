@@ -34,7 +34,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
-import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
+import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -62,8 +62,8 @@ public class AwsCompactionDriverIT {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOfflineTable(DRAIN_COMPACTIONS);
-        s3 = drivers.clients().getS3V2();
-        sqs = drivers.clients().getSqsV2();
+        s3 = drivers.clients().getS3();
+        sqs = drivers.clients().getSqs();
         driver = drivers.compaction(context);
         instance = context.instance();
     }
@@ -75,9 +75,8 @@ public class AwsCompactionDriverIT {
                 instance.getInstanceProperties(), instance.getTableProperties(), instance.getStateStore(), sqs);
 
         // When / Then
-        assertThat(new HashSet<>(driver.drainJobsQueueForWholeInstance()))
+        assertThat(new HashSet<>(driver.drainJobsQueueForWholeInstance(20)))
                 .isEqualTo(new HashSet<>(jobs));
-        assertThat(driver.drainJobsQueueForWholeInstance()).isEmpty();
     }
 
     @Test

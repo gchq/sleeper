@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.properties.validation.IngestQueue;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.core.job.IngestJob;
 

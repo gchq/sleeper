@@ -23,7 +23,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
-import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
+import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -56,7 +56,7 @@ public class AwsResetInstanceOnFirstConnectIT {
         instanceProperties = sleeper.instanceProperties();
         instanceDriver = drivers.instance(parameters);
         tablesDriver = drivers.tables(parameters);
-        sqs = drivers.clients().getSqsV2();
+        sqs = drivers.clients().getSqs();
         drainQueue = AwsDrainSqsQueue.forLocalStackTests(sqs);
         onFirstConnect = new AwsResetInstanceOnFirstConnect(drivers.clients(), drainQueue);
     }

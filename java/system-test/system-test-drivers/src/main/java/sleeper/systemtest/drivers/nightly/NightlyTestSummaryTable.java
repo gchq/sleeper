@@ -16,16 +16,19 @@
 
 package sleeper.systemtest.drivers.nightly;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.clients.util.table.TableField;
-import sleeper.clients.util.table.TableWriter;
-import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.clients.util.tablewriter.TableField;
+import sleeper.clients.util.tablewriter.TableWriter;
+import sleeper.clients.util.tablewriter.TableWriterFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -56,10 +59,14 @@ public class NightlyTestSummaryTable {
         return GSON.fromJson(json, NightlyTestSummaryTable.class);
     }
 
-    public static NightlyTestSummaryTable fromS3(AmazonS3 s3Client, String bucketName) {
+    public static NightlyTestSummaryTable fromS3(S3Client s3Client, String bucketName) {
         LOGGER.info("Loading existing test summary from S3");
-        if (s3Client.doesObjectExist(bucketName, "summary.json")) {
-            NightlyTestSummaryTable summary = fromJson(s3Client.getObjectAsString(bucketName, "summary.json"));
+        if (doesObjectExist(s3Client, bucketName, "summary.json")) {
+            String json = s3Client.getObject(
+                    request -> request.bucket(bucketName).key("summary.json"),
+                    ResponseTransformer.toBytes())
+                    .asUtf8String();
+            NightlyTestSummaryTable summary = fromJson(json);
             LOGGER.info("Found test summary with {} executions", summary.executions.size());
             return summary;
         } else {
@@ -68,10 +75,23 @@ public class NightlyTestSummaryTable {
         }
     }
 
-    public void saveToS3(AmazonS3 s3Client, String bucketName) {
+    private static boolean doesObjectExist(S3Client s3Client, String bucketName, String objectKey) {
+        try {
+            s3Client.headObject(request -> request.bucket(bucketName).key(objectKey));
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
+    }
+
+    public void saveToS3(S3Client s3Client, String bucketName) {
         LOGGER.info("Saving test summary with {} executions to S3 bucket: {}", executions.size(), bucketName);
-        s3Client.putObject(bucketName, "summary.json", toJson());
-        s3Client.putObject(bucketName, "summary.txt", toTableString());
+        s3Client.putObject(
+                request -> request.bucket(bucketName).key("summary.json"),
+                RequestBody.fromString(toJson()));
+        s3Client.putObject(
+                request -> request.bucket(bucketName).key("summary.txt"),
+                RequestBody.fromString(toTableString()));
         LOGGER.info("Saved test summary to S3");
     }
 

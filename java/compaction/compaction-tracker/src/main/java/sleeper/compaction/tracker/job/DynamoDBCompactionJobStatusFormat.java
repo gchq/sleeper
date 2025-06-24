@@ -15,10 +15,10 @@
  */
 package sleeper.compaction.tracker.job;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;

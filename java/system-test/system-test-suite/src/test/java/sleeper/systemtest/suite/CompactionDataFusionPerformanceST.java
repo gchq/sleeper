@@ -19,7 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.validation.CompactionMethod;
+import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -34,9 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
@@ -62,11 +59,9 @@ public class CompactionDataFusionPerformanceST {
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
-        sleeper.systemTestCluster().updateProperties(properties -> {
-            properties.setEnum(INGEST_MODE, DIRECT);
-            properties.setNumber(NUMBER_OF_WRITERS, 110);
-            properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 40_000_000);
-        }).runDataGenerationTasks(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+        sleeper.systemTestCluster().runDataGenerationJobs(110,
+                builder -> builder.ingestMode(DIRECT).recordsPerIngest(40_000_000),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 
         // When

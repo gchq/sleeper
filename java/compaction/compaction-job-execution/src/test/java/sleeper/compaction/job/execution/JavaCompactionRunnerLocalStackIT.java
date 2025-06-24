@@ -15,12 +15,14 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
@@ -34,6 +36,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -52,10 +56,11 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
-    private static AmazonDynamoDB dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
-    private static AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
+    private static DynamoDbClient dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    private static S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
     private static S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
     private static Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
+    private static S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
 
     @BeforeEach
     void setUp() {
@@ -63,7 +68,9 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.set(DATA_BUCKET, dataBucket);
         instanceProperties.unset(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE);
-        s3Client.createBucket(dataBucket);
+        s3Client.createBucket(CreateBucketRequest.builder()
+                .bucket(dataBucket)
+                .build());
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
@@ -106,7 +113,12 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
     private void createStateStore() {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
+    }
+
+    @Override
+    protected SketchesStore createSketchesStore() {
+        return new S3SketchesStore(s3Client, s3TransferManager);
     }
 }

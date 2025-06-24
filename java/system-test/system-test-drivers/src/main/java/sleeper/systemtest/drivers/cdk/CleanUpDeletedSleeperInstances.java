@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.cdk;
 import software.amazon.awssdk.services.ecr.model.Repository;
 import software.amazon.awssdk.services.s3.model.Bucket;
 
-import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.teardown.CloudFormationStacks;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.TearDownInstance;
@@ -65,7 +65,7 @@ public class CleanUpDeletedSleeperInstances {
     }
 
     private Stream<String> instanceIdsByJarsBuckets() {
-        return instanceIdsByJarsBuckets(clients.getS3v2().listBuckets().buckets().stream().map(Bucket::name));
+        return instanceIdsByJarsBuckets(clients.getS3().listBuckets().buckets().stream().map(Bucket::name));
     }
 
     private Stream<String> instanceIdsByEcrRepositories() {

@@ -16,11 +16,10 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.status.update.AddTable;
+import sleeper.clients.table.AddTable;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,36 +37,42 @@ import java.io.UncheckedIOException;
 
 public class AwsSleeperTablesDriver implements SleeperTablesDriver {
 
-    private final AmazonS3 s3;
-    private final AmazonDynamoDB dynamoDB;
-    private final Configuration hadoopConfiguration;
+    private final S3Client s3;
+    private final DynamoDbClient dynamoDB;
 
     public AwsSleeperTablesDriver(SystemTestClients clients) {
         this.s3 = clients.getS3();
-        this.dynamoDB = clients.getDynamoDB();
-        this.hadoopConfiguration = clients.createHadoopConf();
+        this.dynamoDB = clients.getDynamo();
     }
 
+    @Override
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         tablePropertiesStore(instanceProperties).save(tableProperties);
     }
 
+    @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
         try {
-            new AddTable(s3, dynamoDB, instanceProperties, properties, hadoopConfiguration).run();
+            new AddTable(instanceProperties, properties,
+                    S3TableProperties.createStore(instanceProperties, s3, dynamoDB),
+                    StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB))
+                    .run();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
+    @Override
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties instanceProperties) {
         return S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
     }
 
+    @Override
     public StateStoreProvider createStateStoreProvider(InstanceProperties instanceProperties) {
-        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, hadoopConfiguration);
+        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB);
     }
 
+    @Override
     public TableIndex tableIndex(InstanceProperties instanceProperties) {
         return new DynamoDBTableIndex(instanceProperties, dynamoDB);
     }

@@ -23,9 +23,10 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.compaction.rust.RustCompactionRunner;
+import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.util.ObjectFactory;
+import sleeper.sketches.store.SketchesStore;
 
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 
@@ -36,12 +37,14 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private final ObjectFactory objectFactory;
     private final Configuration configuration;
+    private final SketchesStore sketchesStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompactionRunnerFactory.class);
 
-    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration) {
+    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
         this.objectFactory = objectFactory;
         this.configuration = configuration;
+        this.sketchesStore = sketchesStore;
     }
 
     @Override
@@ -49,10 +52,11 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
         CompactionRunner runner = createRunnerForMethod(method);
 
-        // Is an iterator specifed? If so can we support this?
-        if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
-            LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
-            runner = createJavaRunner();
+        // Has an experimental DataFusion only iterator been specified? If so, make sure
+        // we are using the DataFusion compactor
+        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof RustCompactionRunner)) {
+            throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
+                    + job.getId() + " table ID " + job.getTableId());
         }
 
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
@@ -70,6 +74,6 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     }
 
     private CompactionRunner createJavaRunner() {
-        return new JavaCompactionRunner(objectFactory, configuration);
+        return new JavaCompactionRunner(objectFactory, configuration, sketchesStore);
     }
 }

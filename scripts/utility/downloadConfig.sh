@@ -28,11 +28,16 @@ fi
 INSTANCE_ID=$1
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 GENERATED_DIR=${SCRIPTS_DIR}/generated
 
 # Download to temporary directory
 TEMP_DIR=$(mktemp -d)
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.properties.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
 
 # Overwrite generated directory
 mkdir -p "$GENERATED_DIR"

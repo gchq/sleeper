@@ -16,24 +16,24 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.DeleteRequest;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.ConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.Delete;
+import software.amazon.awssdk.services.dynamodb.model.DeleteRequest;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -61,19 +61,19 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestBatcherStore.class);
     // Each job assignment takes two write items, so 50 files at a time stays below the transaction limit of 100 items.
     private static final int FILES_IN_ASSIGN_JOB_BATCH = 50;
-    private final AmazonDynamoDB dynamoDB;
+    private final DynamoDbClient dynamoDB;
     private final String requestsTableName;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final int filesInAssignJobBatch;
 
     public DynamoDBIngestBatcherStore(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
+            DynamoDbClient dynamoDB, InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider) {
         this(dynamoDB, instanceProperties, tablePropertiesProvider, FILES_IN_ASSIGN_JOB_BATCH);
     }
 
     public DynamoDBIngestBatcherStore(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
+            DynamoDbClient dynamoDB, InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider, int filesInAssignJobBatch) {
         this.dynamoDB = dynamoDB;
         this.requestsTableName = ingestRequestsTableName(instanceProperties.get(ID));
@@ -87,12 +87,13 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void addFile(IngestBatcherTrackedFile fileIngestRequest) {
-        PutItemResult result = dynamoDB.putItem(new PutItemRequest()
-                .withTableName(requestsTableName)
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withItem(DynamoDBIngestRequestFormat.createRecord(tablePropertiesProvider, fileIngestRequest)));
+        PutItemResponse result = dynamoDB.putItem(PutItemRequest.builder()
+                .tableName(requestsTableName)
+                .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .item(DynamoDBIngestRequestFormat.createRecord(tablePropertiesProvider, fileIngestRequest))
+                .build());
         LOGGER.debug("Put request to ingest file {} to table {}, capacity consumed = {}",
-                fileIngestRequest.getFile(), fileIngestRequest.getTableId(), result.getConsumedCapacity().getCapacityUnits());
+                fileIngestRequest.getFile(), fileIngestRequest.getTableId(), result.consumedCapacity().capacityUnits());
     }
 
     @Override
@@ -101,33 +102,41 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
         for (int i = 0; i < filesInJob.size(); i += filesInAssignJobBatch) {
             List<IngestBatcherTrackedFile> filesInBatch = filesInJob.subList(i, Math.min(i + filesInAssignJobBatch, filesInJob.size()));
             try {
-                TransactWriteItemsRequest request = new TransactWriteItemsRequest()
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                        .withTransactItems(filesInBatch.stream()
+                TransactWriteItemsRequest request = TransactWriteItemsRequest.builder()
+                        .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                        .transactItems(filesInBatch.stream()
                                 .flatMap(file -> Stream.of(
-                                        new TransactWriteItem().withDelete(new Delete()
-                                                .withTableName(requestsTableName)
-                                                .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
-                                                .withConditionExpression("attribute_exists(#filepath)")
-                                                .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))),
-                                        new TransactWriteItem().withPut(new Put()
-                                                .withTableName(requestsTableName)
-                                                .withItem(DynamoDBIngestRequestFormat.createRecord(
-                                                        tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
-                                                .withConditionExpression("attribute_not_exists(#filepath)")
-                                                .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH)))))
-                                .collect(Collectors.toList()));
-                TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
-                List<ConsumedCapacity> consumedCapacity = Optional.ofNullable(result.getConsumedCapacity()).orElse(List.of());
-                double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+                                        TransactWriteItem.builder()
+                                                .delete(Delete.builder()
+                                                        .tableName(requestsTableName)
+                                                        .key(DynamoDBIngestRequestFormat.createUnassignedKey(file))
+                                                        .conditionExpression("attribute_exists(#filepath)")
+                                                        .expressionAttributeNames(Map.of("#filepath", FILE_PATH))
+                                                        .build())
+                                                .build(),
+                                        TransactWriteItem.builder()
+                                                .put(Put.builder()
+                                                        .tableName(requestsTableName)
+                                                        .item(DynamoDBIngestRequestFormat.createRecord(
+                                                                tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
+                                                        .conditionExpression("attribute_not_exists(#filepath)")
+                                                        .expressionAttributeNames(Map.of("#filepath", FILE_PATH))
+                                                        .build())
+                                                .build()))
+                                .collect(Collectors.toList()))
+                        .build();
+
+                TransactWriteItemsResponse result = dynamoDB.transactWriteItems(request);
+                List<ConsumedCapacity> consumedCapacity = Optional.ofNullable(result.consumedCapacity()).orElse(List.of());
+                double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::capacityUnits).sum();
                 LOGGER.debug("Assigned {} files to job {}, capacity consumed = {}",
                         filesInBatch.size(), jobId, totalConsumed);
                 assignedFiles.addAll(filesInBatch);
             } catch (TransactionCanceledException e) {
                 LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size());
-                long numFailures = e.getCancellationReasons().stream()
-                        .filter(reason -> !"None".equals(reason.getCode())).count();
-                LOGGER.error("Cancellation reasons ({} failures): {}", numFailures, e.getCancellationReasons(), e);
+                long numFailures = e.cancellationReasons().stream()
+                        .filter(reason -> !"None".equals(reason.code())).count();
+                LOGGER.error("Cancellation reasons ({} failures): {}", numFailures, e.cancellationReasons(), e);
             } catch (RuntimeException e) {
                 LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size(), e);
             }
@@ -139,8 +148,8 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public List<IngestBatcherTrackedFile> getAllFilesNewestFirst() {
-        return streamPagedItems(dynamoDB, new ScanRequest()
-                .withTableName(requestsTableName))
+        return streamPagedItems(dynamoDB, ScanRequest.builder()
+                .tableName(requestsTableName).build())
                 .map(DynamoDBIngestRequestFormat::readRecord)
                 .sorted(comparing(IngestBatcherTrackedFile::getReceivedTime).reversed())
                 .collect(Collectors.toList());
@@ -148,13 +157,14 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public List<IngestBatcherTrackedFile> getPendingFilesOldestFirst() {
-        return streamPagedItems(dynamoDB, new QueryRequest()
-                .withTableName(requestsTableName)
-                .withKeyConditionExpression("#JobId = :not_assigned")
-                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+        return streamPagedItems(dynamoDB, QueryRequest.builder()
+                .tableName(requestsTableName)
+                .keyConditionExpression("#JobId = :not_assigned")
+                .expressionAttributeNames(Map.of("#JobId", JOB_ID))
+                .expressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":not_assigned", NOT_ASSIGNED_TO_JOB)
-                        .build()))
+                        .build())
+                .build())
                 .map(DynamoDBIngestRequestFormat::readRecord)
                 .sorted(comparing(IngestBatcherTrackedFile::getReceivedTime))
                 .collect(Collectors.toList());
@@ -164,13 +174,16 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     public void deleteAllPending() {
         List<IngestBatcherTrackedFile> pendingFiles = getPendingFilesOldestFirst();
         if (!pendingFiles.isEmpty()) {
-            dynamoDB.batchWriteItem(new BatchWriteItemRequest()
-                    .addRequestItemsEntry(requestsTableName,
+            dynamoDB.batchWriteItem(BatchWriteItemRequest.builder()
+                    .requestItems(Map.of(requestsTableName,
                             pendingFiles.stream()
-                                    .map(request -> new WriteRequest()
-                                            .withDeleteRequest(new DeleteRequest()
-                                                    .withKey(createUnassignedKey(request))))
-                                    .collect(Collectors.toList())));
+                                    .map(request -> WriteRequest.builder()
+                                            .deleteRequest(DeleteRequest.builder()
+                                                    .key(createUnassignedKey(request))
+                                                    .build())
+                                            .build())
+                                    .collect(Collectors.toList())))
+                    .build());
         }
     }
 }

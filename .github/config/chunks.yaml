@@ -31,7 +31,6 @@ chunks:
       - statestore
       - statestore-committer-core
       - statestore-lambda
-      - statestore
       - metrics
       - example-iterators
   compaction:
@@ -44,8 +43,8 @@ chunks:
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
       - compaction/compaction-core
-      - splitter/splitter-core
-      - splitter/splitter-lambda
+      - partitions/splitter
+      - partitions/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
       - bulk-export/bulk-export-planner
@@ -62,7 +61,7 @@ chunks:
     modules:
       - ingest/ingest-core
       - ingest/ingest-tracker
-      - ingest/ingest-starter
+      - ingest/ingest-taskrunner
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store
       - ingest/ingest-batcher-submitter

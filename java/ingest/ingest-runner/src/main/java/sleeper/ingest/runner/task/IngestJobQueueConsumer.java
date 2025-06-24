@@ -15,31 +15,34 @@
  */
 package sleeper.ingest.runner.task;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.MetricDatum;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
-import com.amazonaws.services.cloudwatch.model.StandardUnit;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.model.Dimension;
+import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
+import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
+import software.amazon.awssdk.services.cloudwatch.model.StandardUnit;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
+import sleeper.common.job.action.ActionException;
+import sleeper.common.job.action.MessageReference;
+import sleeper.common.job.action.thread.PeriodicActionRunnable;
+import sleeper.configuration.utils.S3ExpandDirectories;
+import sleeper.configuration.utils.S3ExpandDirectoriesResult;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
+import sleeper.ingest.core.job.ExpandDirectories;
+import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.MessageReference;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
-import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,18 +56,18 @@ import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE
 
 public class IngestJobQueueConsumer implements MessageReceiver {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumer.class);
-    private final AmazonSQS sqsClient;
-    private final AmazonCloudWatch cloudWatchClient;
+    private final SqsClient sqsClient;
+    private final CloudWatchClient cloudWatchClient;
     private final InstanceProperties instanceProperties;
     private final String sqsJobQueueUrl;
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler;
 
-    public IngestJobQueueConsumer(AmazonSQS sqsClient,
-            AmazonCloudWatch cloudWatchClient,
+    public IngestJobQueueConsumer(SqsClient sqsClient,
+            S3Client s3Client,
+            CloudWatchClient cloudWatchClient,
             InstanceProperties instanceProperties,
-            Configuration configuration,
             TableIndex tableIndex,
             IngestJobTracker ingestJobTracker) {
         this.sqsClient = sqsClient;
@@ -73,40 +76,50 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker).build();
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, tableIndex, ingestJobTracker, s3Client).build();
     }
 
     public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
             InstanceProperties instanceProperties,
-            Configuration configuration,
             TableIndex tableIndex,
-            IngestJobTracker ingestJobTracker) {
+            IngestJobTracker ingestJobTracker,
+            S3Client s3Client) {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(ingestJobTracker)
-                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, configuration, instanceProperties));
+                .expandDirectories(expandDirectories(s3Client));
+    }
+
+    public static ExpandDirectories expandDirectories(S3Client s3Client) {
+        S3ExpandDirectories expander = new S3ExpandDirectories(s3Client);
+        return files -> {
+            S3ExpandDirectoriesResult result = expander.expandPaths(files);
+            return new ExpandDirectoriesResult(result.listJobPaths(), result.listMissingPaths());
+        };
     }
 
     @Override
     public Optional<MessageHandle> receiveMessage() {
         while (true) {
-            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                    .withMaxNumberOfMessages(1)
-                    .withWaitTimeSeconds(instanceProperties.getInt(INGEST_JOB_QUEUE_WAIT_TIME));
-            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-            List<Message> messages = receiveMessageResult.getMessages();
+            ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
+                    .queueUrl(sqsJobQueueUrl)
+                    .maxNumberOfMessages(1)
+                    .waitTimeSeconds(instanceProperties.getInt(INGEST_JOB_QUEUE_WAIT_TIME))
+                    .build();
+            ReceiveMessageResponse receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+            List<Message> messages = receiveMessageResult.messages();
             if (messages.isEmpty()) {
                 LOGGER.info("Finishing as no jobs have been received");
                 break;
             }
             Message message = messages.get(0);
-            LOGGER.info("Received message {}", message.getBody());
+            LOGGER.info("Received message {}", message.body());
 
-            Optional<IngestJob> ingestJobOpt = ingestJobMessageHandler.deserialiseAndValidate(message.getBody());
+            Optional<IngestJob> ingestJobOpt = ingestJobMessageHandler.deserialiseAndValidate(message.body());
             if (ingestJobOpt.isPresent()) {
                 IngestJob ingestJob = ingestJobOpt.get();
                 MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
-                        "Ingest job " + ingestJob.getId(), message.getReceiptHandle());
+                        "Ingest job " + ingestJob.getId(), message.receiptHandle());
                 // Create background thread to keep messages alive
                 PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
                         messageReference.changeVisibilityTimeoutAction(visibilityTimeoutInSeconds),
@@ -148,15 +161,17 @@ public class IngestJobQueueConsumer implements MessageReceiver {
             // Update metrics
             String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
             String instanceId = instanceProperties.get(ID);
-            cloudWatchClient.putMetricData(new PutMetricDataRequest()
-                    .withNamespace(metricsNamespace)
-                    .withMetricData(new MetricDatum()
-                            .withMetricName("StandardIngestRecordsWritten")
-                            .withValue((double) summary.getRecordsWritten())
-                            .withUnit(StandardUnit.Count)
-                            .withDimensions(
-                                    new Dimension().withName("instanceId").withValue(instanceId),
-                                    new Dimension().withName("tableName").withValue(job.getTableName()))));
+            cloudWatchClient.putMetricData(PutMetricDataRequest.builder()
+                    .namespace(metricsNamespace)
+                    .metricData(MetricDatum.builder()
+                            .metricName("StandardIngestRecordsWritten")
+                            .value((double) summary.getRecordsWritten())
+                            .unit(StandardUnit.COUNT)
+                            .dimensions(
+                                    Dimension.builder().name("instanceId").value(instanceId).build(),
+                                    Dimension.builder().name("tableName").value(job.getTableName()).build())
+                            .build())
+                    .build());
         }
 
         public void failed() {

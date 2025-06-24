@@ -18,6 +18,7 @@ package sleeper.compaction.tracker.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -86,7 +87,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
 
     @AfterEach
     public void tearDown() {
-        dynamoClient.deleteTable(jobStatusTableName);
+        dynamoClient.deleteTable(DeleteTableRequest.builder().tableName(jobStatusTableName).build());
     }
 
     protected CompactionJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {

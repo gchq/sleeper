@@ -15,16 +15,14 @@
  */
 package sleeper.ingest.batcher.submitter;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
@@ -38,7 +36,6 @@ import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.time.Instant;
 
@@ -49,29 +46,33 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private final PropertiesReloader propertiesReloader;
     private final IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
     private final IngestBatcherSubmitter submitter;
+    private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
 
     public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        S3Client s3Client = S3Client.create();
+        SqsClient sqsClient = SqsClient.create();
+        DynamoDbClient dynamoDBClient = DynamoDbClient.create();
+
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.submitter = new IngestBatcherSubmitter(instanceProperties,
-                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties),
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
-                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider));
+        this.deadLetterQueue = new IngestBatcherSubmitDeadLetterQueue(instanceProperties, sqsClient);
+        this.submitter = new IngestBatcherSubmitter(new DynamoDBTableIndex(instanceProperties, dynamoDBClient),
+                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider),
+                deadLetterQueue, s3Client);
     }
 
     public IngestBatcherSubmitterLambda(
             IngestBatcherStore store, InstanceProperties instanceProperties,
-            TableIndex tableIndex, Configuration conf) {
+            TableIndex tableIndex, IngestBatcherSubmitDeadLetterQueue dlQueue, S3Client s3Client) {
         this.propertiesReloader = PropertiesReloader.neverReload();
-        this.submitter = new IngestBatcherSubmitter(instanceProperties, conf, tableIndex, store);
+        this.deadLetterQueue = dlQueue;
+        this.submitter = new IngestBatcherSubmitter(tableIndex, store, deadLetterQueue, s3Client);
     }
 
     @Override
@@ -87,6 +88,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             request = serDe.fromJson(json);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
+            deadLetterQueue.submit(json);
             return;
         }
         submitter.submit(request, receivedTime);

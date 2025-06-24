@@ -15,9 +15,8 @@
  */
 package sleeper.statestore;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -36,20 +35,18 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_U
  */
 public class StateStoreFactory implements StateStoreProvider.Factory {
     private final InstanceProperties instanceProperties;
-    private final AmazonS3 s3;
-    private final AmazonDynamoDB dynamoDB;
-    private final Configuration configuration;
+    private final S3Client s3;
+    private final DynamoDbClient dynamoDB;
     private final boolean committerProcess;
 
-    public StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
-        this(instanceProperties, s3, dynamoDB, configuration, false);
+    public StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB) {
+        this(instanceProperties, s3, dynamoDB, false);
     }
 
-    private StateStoreFactory(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration, boolean committerProcess) {
+    private StateStoreFactory(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB, boolean committerProcess) {
         this.instanceProperties = instanceProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.configuration = configuration;
         this.committerProcess = committerProcess;
     }
 
@@ -66,11 +63,10 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3                 the S3 client
      * @param  dynamoDB           the DynamoDB client
-     * @param  configuration      the Hadoop configuration
      * @return                    the factory
      */
-    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, AmazonS3 s3, AmazonDynamoDB dynamoDB, Configuration configuration) {
-        return new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration, true);
+    public static StateStoreFactory forCommitterProcess(InstanceProperties instanceProperties, S3Client s3, DynamoDbClient dynamoDB) {
+        return new StateStoreFactory(instanceProperties, s3, dynamoDB, true);
     }
 
     /**
@@ -79,12 +75,11 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      * @param  instanceProperties the Sleeper instance properties
      * @param  s3Client           the S3 client
      * @param  dynamoDBClient     the DynamoDB client
-     * @param  configuration      the Hadoop configuration
      * @return                    the state store provider
      */
-    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoDBClient) {
         return new StateStoreProvider(instanceProperties,
-                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration));
+                new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient));
     }
 
     /**
@@ -95,12 +90,12 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
      */
     @Override
     public StateStore getStateStore(TableProperties tableProperties) {
-        String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
-        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
+        String stateStoreClassName = readSimpleClassName(tableProperties);
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,
-                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)).build();
+                    DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)).build();
         }
-        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getName())) {
+        if (stateStoreClassName.equals(DynamoDBTransactionLogStateStoreNoSnapshots.class.getSimpleName())) {
             return forCommitterProcess(committerProcess, tableProperties,
                     DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)).build();
         }
@@ -124,6 +119,16 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
             return tableProperties.getBoolean(STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT);
         } else {
             return true;
+        }
+    }
+
+    private static String readSimpleClassName(TableProperties tableProperties) {
+        String className = tableProperties.get(STATESTORE_CLASSNAME);
+        int dotIndex = className.lastIndexOf('.');
+        if (dotIndex >= 0) {
+            return className.substring(dotIndex + 1);
+        } else {
+            return className;
         }
     }
 }

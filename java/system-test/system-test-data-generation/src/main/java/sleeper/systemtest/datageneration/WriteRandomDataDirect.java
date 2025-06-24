@@ -25,7 +25,7 @@ import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -41,24 +41,24 @@ public class WriteRandomDataDirect {
     }
 
     public static void writeWithIngestFactory(
-            SystemTestPropertyValues systemTestProperties, InstanceIngestSession session) throws IOException {
+            SystemTestDataGenerationJob job, InstanceIngestSession session) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
-                        .localDir("/mnt/scratch")
+                        .localDir(session.localDir())
                         .stateStoreProvider(session.stateStoreProvider())
                         .instanceProperties(session.instanceProperties())
                         .hadoopConfiguration(session.hadoopConfiguration())
                         .s3AsyncClient(session.s3Async())
                         .build(),
                 addFilesToStateStore(session),
-                systemTestProperties, session.tableProperties());
+                job, session.tableProperties());
     }
 
     public static void writeWithIngestFactory(
             IngestFactory ingestFactory, AddFilesToStateStore addFilesToStateStore,
-            SystemTestPropertyValues testProperties, TableProperties tableProperties) throws IOException {
-        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(testProperties, tableProperties);
+            SystemTestDataGenerationJob job, TableProperties tableProperties) throws IOException {
+        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(job, tableProperties);
 
         try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                 .addFilesToStateStore(addFilesToStateStore)

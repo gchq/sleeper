@@ -32,6 +32,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketches.store.S3SketchesStore;
+import sleeper.sketches.store.SketchesStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -61,7 +63,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
-    private final String ingestQueueName = instanceId + "-ingestqueue";
+    protected final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
     private final String configBucketName = instanceProperties.get(CONFIG_BUCKET);
     private final String ingestDataBucketName = instanceId + "-ingestdata";
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
@@ -74,8 +76,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
         createBucket(configBucketName);
         createBucket(dataBucketName);
         createBucket(ingestDataBucketName);
-        sqsClient.createQueue(ingestQueueName);
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqsClient.getQueueUrl(ingestQueueName).getQueueUrl());
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
@@ -88,7 +89,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     protected StateStore createTable(Schema schema) throws IOException {
         tableProperties.setSchema(schema);
         tablePropertiesStore.save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(schema);
         return stateStore;
@@ -100,8 +101,12 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             int numberOfFiles) {
         List<String> files = new ArrayList<>();
 
+        if (!subDirectory.isEmpty()) {
+            subDirectory = "/" + subDirectory;
+        }
+
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
-            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
+            String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
             try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(

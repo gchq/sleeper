@@ -19,9 +19,9 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
-import sleeper.core.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 
@@ -70,13 +70,13 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.model.OptionalStack.CompactionStack;
+import static sleeper.core.properties.model.OptionalStack.EmrBulkImportStack;
+import static sleeper.core.properties.model.OptionalStack.EmrServerlessBulkImportStack;
+import static sleeper.core.properties.model.OptionalStack.GarbageCollectorStack;
+import static sleeper.core.properties.model.OptionalStack.IngestBatcherStack;
+import static sleeper.core.properties.model.OptionalStack.IngestStack;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.validation.OptionalStack.CompactionStack;
-import static sleeper.core.properties.validation.OptionalStack.EmrBulkImportStack;
-import static sleeper.core.properties.validation.OptionalStack.EmrServerlessBulkImportStack;
-import static sleeper.core.properties.validation.OptionalStack.GarbageCollectorStack;
-import static sleeper.core.properties.validation.OptionalStack.IngestBatcherStack;
-import static sleeper.core.properties.validation.OptionalStack.IngestStack;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
 public class SystemTestInstance {

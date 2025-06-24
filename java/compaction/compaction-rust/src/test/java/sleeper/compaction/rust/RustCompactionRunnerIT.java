@@ -46,7 +46,8 @@ import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
@@ -71,6 +72,7 @@ public class RustCompactionRunnerIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+    private final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
     @TempDir
     public Path tempDir;
 
@@ -270,8 +272,7 @@ public class RustCompactionRunnerIT {
                 sketches.update(record);
             }
         }
-        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
+        sketchesStore.saveFileSketches(dataFile, schema, sketches);
         return dataFile;
     }
 
@@ -301,7 +302,6 @@ public class RustCompactionRunnerIT {
     }
 
     private Sketches readSketches(Schema schema, String filename) throws IOException {
-        org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, new Configuration());
+        return sketchesStore.loadFileSketches(filename, schema);
     }
 }

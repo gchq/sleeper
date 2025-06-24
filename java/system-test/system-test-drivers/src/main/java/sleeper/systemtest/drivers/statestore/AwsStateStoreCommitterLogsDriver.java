@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 
-import sleeper.clients.status.report.statestore.QueryStateStoreCommitterLogs;
+import sleeper.clients.report.statestore.QueryStateStoreCommitterLogs;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
@@ -27,7 +27,7 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import java.time.Instant;
 
 public class AwsStateStoreCommitterLogsDriver implements StateStoreCommitterLogsDriver {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterDriver.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreCommitterLogsDriver.class);
 
     private final SystemTestInstanceContext instance;
     private final CloudWatchLogsClient cloudWatch;

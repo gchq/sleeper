@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,17 +38,16 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-aws</artifactId>
         </dependency>
-        <!-- Hadoop uses AWS SDK v1 -->
+        <!-- We exclude the AWS SDK as a dependency of hadoop-aws because it uses the bundle, so add just S3 back in. -->
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- We use this to set the credentials provider in the Hadoop configuration. -->
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-core</artifactId>
-            <version>${aws-java-sdk.version}</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>

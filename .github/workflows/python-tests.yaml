@@ -1,0 +1,23 @@
+name: Python Tests
+on:
+  pull_request:
+    paths:
+      - 'python/**'
+      - '.github/workflows/python-tests.yaml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Python build
+        run: pip install --editable .
+        working-directory: ./python
+      - name: Python tests
+        run: pytest
+        working-directory: ./python

@@ -15,10 +15,9 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
+import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v32.KubectlV32Layer;
@@ -73,11 +72,12 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
@@ -147,7 +147,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STARTER))
-                .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
+                .events(List.of(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
@@ -164,7 +164,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .version(KubernetesVersion.V1_32)
                 .kubectlLayer(new KubectlV32Layer(this, "KubectlLayer"))
                 .vpc(vpc)
-                .vpcSubnets(Lists.newArrayList(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
+                .vpcSubnets(List.of(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
                 .build();
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
@@ -179,7 +179,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .subnetSelection(SubnetSelection.builder()
                         .subnets(List.of(subnet))
                         .build())
-                .selectors(Lists.newArrayList(Selector.builder()
+                .selectors(List.of(Selector.builder()
                         .namespace(uniqueBulkImportId)
                         .build()))
                 .build());
@@ -195,7 +195,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .name("spark")
                 .build());
 
-        Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
+        List.of(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
 
@@ -203,7 +203,7 @@ public final class EksBulkImportStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
-                .groups(Lists.newArrayList())
+                .groups(List.of())
                 .build());
         addClusterAdminRoles(bulkImportCluster, instanceProperties);
 
@@ -218,9 +218,9 @@ public final class EksBulkImportStack extends NestedStack {
     private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("eks:*", "states:*"))
+                .actions(List.of("eks:*", "states:*"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
+                .resources(List.of("*"))
                 .build());
     }
 
@@ -362,8 +362,8 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private static String loadResource(String resource) {
-        try {
-            return IOUtils.toString(Objects.requireNonNull(EksBulkImportStack.class.getResourceAsStream(resource)), StandardCharsets.UTF_8);
+        try (InputStream is = EksBulkImportStack.class.getResourceAsStream(resource)) {
+            return CharStreams.toString(new InputStreamReader(is, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

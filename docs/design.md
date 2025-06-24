@@ -239,6 +239,8 @@ there are no more messages on the SQS queue. To scale up the number of tasks, a 
 periodically triggers a lambda. This lambda looks at the number of messages on the queue that are not being
 processed and if necessary creates more Fargate tasks. The maximum number of concurrent Fargate tasks is configurable.
 
+![Standard ingest design diagram](design/standard-ingest.png)
+
 ### Bulk import
 
 A bulk import is a process of ingesting data into a Sleeper table using Spark to perform the partitioning
@@ -252,6 +254,8 @@ The other EMR-based approach uses a persistent, i.e. long running, EMR cluster. 
 of the cluster monitors a queue and when a job appears submits it to YARN for execution. The EMR cluster can
 either be of fixed size or use EMR managed scaling.
 
+![Bulk import design diagram](design/bulk-import.png)
+
 ### Ingest batcher
 
 The ingest batcher groups ingest requests for individual files into ingest or bulk import jobs. File ingest requests are
@@ -262,7 +266,7 @@ The files need to be accessible to the relevant ingest system, but are not read 
 
 An outline of the design of this system is shown below:
 
-![Ingest Batcher design diagram](design/ingest-batcher.png)
+![Ingest batcher design diagram](design/ingest-batcher.png)
 
 ## Compactions
 
@@ -323,6 +327,8 @@ a Cloudwatch rule that periodically triggers a lambda. This lambda iterates thro
 it queries the state store to retrieve all the files that do not have any references and have been waiting for
 more than N minutes. These files are then deleted in batches.
 
+![Garbage collection design diagram](design/garbage-collection.png)
+
 ## Queries
 
 A Sleeper query is a request for all records where the key is in a range (or in one of a list of ranges). Queries
@@ -354,7 +360,10 @@ An iterator is a function that is called either during a compaction job or durin
 logic to be inserted into the compaction or query path. This logic could be used to age-off old data or to
 aggregate together values for the same key (e.g. to sum counts associated with the same key). Each iterator is a
 function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
-iterators can be found in `sleeper.core.iterator.impl`.
+iterators can be found in the `example-iterators` module.
+
+We are in the process of designing a replacement for this that will work with DataFusion rather than just in Java. See
+the following epic: https://github.com/gchq/sleeper/issues/5123
 
 ## Job and task trackers
 

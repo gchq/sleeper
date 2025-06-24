@@ -20,7 +20,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -60,6 +60,25 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
+            <version>${project.parent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
             <exclusions>
                 <exclusion>

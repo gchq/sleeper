@@ -15,10 +15,10 @@
  */
 package sleeper.ingest.batcher.job.creator;
 
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -36,17 +36,16 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.properties.validation.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.jobIdSupplier;
 import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.timeSupplier;
@@ -63,7 +62,7 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
         DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
         instanceProperties.set(DEFAULT_INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString());
         instanceProperties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
     }
@@ -95,15 +94,16 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
     }
 
     private List<Message> consumeQueueMessages(InstanceProperty queueProperty) {
-        return sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(queueProperty))
-                .withWaitTimeSeconds(1)
-                .withMaxNumberOfMessages(10))
-                .getMessages();
+        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(queueProperty))
+                .waitTimeSeconds(1)
+                .maxNumberOfMessages(10)
+                .build())
+                .messages();
     }
 
     private IngestJob readJobMessage(Message message) {
-        return new IngestJobSerDe().fromJson(message.getBody());
+        return new IngestJobSerDe().fromJson(message.body());
     }
 
     private IngestBatcherStore batcherStore() {

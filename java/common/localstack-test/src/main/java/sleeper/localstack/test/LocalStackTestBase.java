@@ -15,30 +15,30 @@
  */
 package sleeper.localstack.test;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
+import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT;
 import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
 
 /**
@@ -48,41 +48,49 @@ import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
 public abstract class LocalStackTestBase {
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
-    protected final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
-    protected final AmazonDynamoDB dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
-    protected final AmazonSQS sqsClient = SleeperLocalStackClients.SQS_CLIENT;
-    protected final AWSSecurityTokenService stsClient = SleeperLocalStackClients.STS_CLIENT;
-    protected final AmazonCloudWatch cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
-    protected final S3Client s3ClientV2 = SleeperLocalStackClients.S3_CLIENT_V2;
+    protected final AmazonS3 s3ClientV1 = SleeperLocalStackClients.S3_CLIENT_V1;
+    protected final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
     protected final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    protected final DynamoDbClient dynamoClientV2 = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
-    protected final SqsClient sqsClientV2 = SleeperLocalStackClients.SQS_CLIENT_V2;
-    protected final StsClient stsClientV2 = SleeperLocalStackClients.STS_CLIENT_V2;
+    protected final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
+    protected final DynamoDbClient dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    protected final SqsClient sqsClient = SleeperLocalStackClients.SQS_CLIENT;
+    protected final StsClient stsClient = SleeperLocalStackClients.STS_CLIENT;
     protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
+    protected final CloudWatchClient cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
 
     public static void createBucket(String bucketName) {
-        S3_CLIENT_V2.createBucket(builder -> builder.bucket(bucketName));
+        S3_CLIENT.createBucket(builder -> builder.bucket(bucketName));
     }
 
     public static PutObjectResponse putObject(String bucketName, String key, String content) {
-        return S3_CLIENT_V2.putObject(builder -> builder.bucket(bucketName).key(key),
+        return S3_CLIENT.putObject(builder -> builder.bucket(bucketName).key(key),
                 RequestBody.fromString(content));
     }
 
+    public static String getObjectAsString(String bucketName, String key) {
+        return S3_CLIENT.getObject(
+                builder -> builder.bucket(bucketName).key(key),
+                ResponseTransformer.toBytes())
+                .asUtf8String();
+    }
+
     public static Set<String> listObjectKeys(String bucketName) {
-        return S3_CLIENT_V2.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
+        return S3_CLIENT.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
                 .contents().stream().map(S3Object::key)
                 .collect(toUnmodifiableSet());
     }
 
     public static String createFifoQueueGetUrl() {
-        return SQS_CLIENT.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
+        return SQS_CLIENT.createQueue(CreateQueueRequest.builder()
+                .queueName(UUID.randomUUID().toString() + ".fifo")
+                .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build()).queueUrl();
     }
 
     public static String createSqsQueueGetUrl() {
-        return SQS_CLIENT.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        return SQS_CLIENT.createQueue(CreateQueueRequest.builder()
+                .queueName(UUID.randomUUID().toString())
+                .build())
+                .queueUrl();
     }
 
 }

@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
@@ -41,11 +41,13 @@ import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGarbageCollectionDriver;
@@ -218,6 +220,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public PartitionReportDriver partitionReports(SystemTestContext context) {
         return reports.partitions(context.instance());
+    }
+
+    @Override
+    public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
+        return new InMemoryDataGenerationTasksDriver(context.instance(), data, sketches);
     }
 
     @Override

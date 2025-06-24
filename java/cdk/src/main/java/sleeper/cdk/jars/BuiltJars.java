@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.LambdaDeployType;
+import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.HashMap;
 import java.util.Map;

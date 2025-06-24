@@ -18,16 +18,16 @@ package sleeper.clients.admin.testutils;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
-import sleeper.clients.AdminClient;
+import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.task.common.QueueMessageCount;
 
 import java.util.Collections;
 import java.util.stream.Stream;

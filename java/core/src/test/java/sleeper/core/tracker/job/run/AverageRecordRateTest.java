@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.CompactionJobStatusTestData;
 import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
+import sleeper.core.tracker.ingest.job.query.IngestJobRun;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
 import java.time.Duration;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
@@ -192,6 +195,28 @@ public class AverageRecordRateTest {
                                 .build())))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(0, 0L, 0L, Duration.ofSeconds(0));
+    }
+
+    @Test
+    void shouldReadCompactionRunWithMissingStartUpdate() {
+        Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
+
+        assertThat(AverageRecordRate.of(Stream.of(
+                new CompactionJobRun(jobRunOnTask(DEFAULT_TASK_ID,
+                        compactionFinishedStatus(finishTime, new RecordsProcessed(200, 100)))))))
+                .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
+                .containsExactly(1, 200L, 100L, Duration.ofSeconds(0));
+    }
+
+    @Test
+    void shouldReadIngestRunWithMissingStartUpdate() {
+        Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
+
+        assertThat(AverageRecordRate.of(Stream.of(
+                new IngestJobRun(jobRunOnTask(DEFAULT_TASK_ID,
+                        ingestFinishedStatus(finishTime, 1, new RecordsProcessed(200, 100)))))))
+                .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
+                .containsExactly(1, 200L, 100L, Duration.ofSeconds(0));
     }
 
     private static AverageRecordRate rateFrom(JobRunSummary... summaries) {

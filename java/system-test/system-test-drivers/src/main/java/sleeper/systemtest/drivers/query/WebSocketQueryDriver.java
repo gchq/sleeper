@@ -18,11 +18,12 @@ package sleeper.systemtest.drivers.query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.QueryWebSocketClient;
+import sleeper.clients.query.QueryWebSocketClient;
 import sleeper.core.record.Record;
 import sleeper.core.record.serialiser.RecordJSONSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.Query;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -37,13 +38,13 @@ public class WebSocketQueryDriver implements QueryDriver {
     private final SystemTestInstanceContext instance;
     private final QueryWebSocketClient queryWebSocketClient;
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance) {
-        return new QueryAllTablesInParallelDriver(instance, new WebSocketQueryDriver(instance));
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        return new QueryAllTablesInParallelDriver(instance, new WebSocketQueryDriver(instance, clients));
     }
 
-    public WebSocketQueryDriver(SystemTestInstanceContext instance) {
+    public WebSocketQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), instance.getTablePropertiesProvider());
+        this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), instance.getTablePropertiesProvider(), clients.getCredentialsProvider());
     }
 
     @Override

@@ -17,8 +17,8 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -26,7 +26,8 @@ import java.util.function.Predicate;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
- * Definitions of instance properties relating to bulk import on AWS EMR Serverless.
+ * Definitions of instance properties relating to bulk import on AWS EMR Serverless. Also see
+ * {@link BulkImportProperty} and {@link EMRProperty}.
  */
 public interface EMRServerlessProperty {
 

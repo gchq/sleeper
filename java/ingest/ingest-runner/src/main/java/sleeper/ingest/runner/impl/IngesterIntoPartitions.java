@@ -22,7 +22,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.properties.validation.IngestFileWritingStrategy;
+import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.range.Range;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;

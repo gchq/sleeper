@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
 
     <artifactId>system-test-dsl</artifactId>
@@ -66,7 +66,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>splitter-core</artifactId>
+            <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test Dependencies -->
@@ -99,6 +99,7 @@
             <groupId>sleeper</groupId>
             <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

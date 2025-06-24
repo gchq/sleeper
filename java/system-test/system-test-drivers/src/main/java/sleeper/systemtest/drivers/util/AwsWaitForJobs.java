@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.drivers.util;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
@@ -31,23 +31,23 @@ public class AwsWaitForJobs {
     private AwsWaitForJobs() {
     }
 
-    public static WaitForJobs forIngest(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
+    public static WaitForJobs forIngest(SystemTestInstanceContext instance, DynamoDbClient dynamoClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forIngest(instance,
-                properties -> IngestJobTrackerFactory.getTracker(dynamoDBClient, properties),
-                properties -> IngestTaskTrackerFactory.getTracker(dynamoDBClient, properties),
+                properties -> IngestJobTrackerFactory.getTracker(dynamoClient, properties),
+                properties -> IngestTaskTrackerFactory.getTracker(dynamoClient, properties),
                 pollDriver);
     }
 
-    public static WaitForJobs forBulkImport(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
+    public static WaitForJobs forBulkImport(SystemTestInstanceContext instance, DynamoDbClient dynamoClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forBulkImport(instance,
-                properties -> IngestJobTrackerFactory.getTracker(dynamoDBClient, properties),
+                properties -> IngestJobTrackerFactory.getTracker(dynamoClient, properties),
                 pollDriver);
     }
 
-    public static WaitForJobs forCompaction(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
+    public static WaitForJobs forCompaction(SystemTestInstanceContext instance, DynamoDbClient dynamoClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(instance,
-                properties -> CompactionJobTrackerFactory.getTracker(dynamoDBClient, properties),
-                properties -> CompactionTaskTrackerFactory.getTracker(dynamoDBClient, properties),
+                properties -> CompactionJobTrackerFactory.getTracker(dynamoClient, properties),
+                properties -> CompactionTaskTrackerFactory.getTracker(dynamoClient, properties),
                 pollDriver);
     }
 }

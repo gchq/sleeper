@@ -19,8 +19,11 @@ package sleeper.systemtest.drivers.ingest;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.Task;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
@@ -34,35 +37,47 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final DeployedSystemTestResources systemTest;
     private final SystemTestInstanceContext instance;
     private final EcsClient ecsClient;
+    private final SqsClient sqsClient;
 
     public AwsDataGenerationTasksDriver(
-            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, EcsClient ecsClient) {
+            DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, SystemTestClients clients) {
         this.systemTest = systemTest;
         this.instance = instance;
-        this.ecsClient = ecsClient;
+        this.ecsClient = clients.getEcs();
+        this.sqsClient = clients.getSqs();
     }
 
-    public void runDataGenerationTasks(PollWithRetries poll) {
-        List<Task> tasks = startTasks();
+    @Override
+    public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
+        jobSender().sendJobsToQueue(jobs);
+
+        List<Task> tasks = startTasks(jobs.size());
+
+        waitForTasks(tasks, poll);
+    }
+
+    private List<Task> startTasks(int numberOfTasks) {
+        List<RunTaskResponse> responses = taskStarter().runTasks(numberOfTasks);
+        return responses.stream()
+                .flatMap(response -> response.tasks().stream())
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private void waitForTasks(List<Task> tasks, PollWithRetries poll) {
         try {
-            waitForTasks(tasks, poll);
+            new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
+                    .pollUntilFinished(poll);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
 
-    private List<Task> startTasks() {
-        List<RunTaskResponse> responses = new RunWriteRandomDataTaskOnECS(
-                instance.getInstanceProperties(), instance.getTableProperties(), systemTest.getProperties(), ecsClient)
-                .run();
-        return responses.stream()
-                .flatMap(response -> response.tasks().stream())
-                .collect(Collectors.toUnmodifiableList());
+    private SystemTestDataGenerationJobSender jobSender() {
+        return new SystemTestDataGenerationJobSender(systemTest.getProperties(), sqsClient);
     }
 
-    private void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
-        new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
-                .pollUntilFinished(poll);
+    private RunWriteRandomDataTaskOnECS taskStarter() {
+        return new RunWriteRandomDataTaskOnECS(instance.getInstanceProperties(), systemTest.getProperties(), ecsClient);
     }
 }

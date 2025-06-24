@@ -56,7 +56,7 @@ public class ValidatorTestHelper {
 
         String tableConfiguration = "" +
                 String.format("sleeper.table.name=%s\n", tableName) +
-                String.format("sleeper.table.statestore.classname=%s\n", DynamoDBTransactionLogStateStore.class.getName());
+                String.format("sleeper.table.statestore.classname=%s\n", DynamoDBTransactionLogStateStore.class.getSimpleName());
 
         File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());

@@ -18,6 +18,8 @@ package sleeper.garbagecollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.S3Filename;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -44,16 +46,16 @@ public class FilesToDelete {
      * @return           the index
      */
     public static FilesToDelete from(List<String> filenames) {
-        Map<String, List<FileToDelete>> bucketToFiles = filenames.stream()
+        Map<String, List<S3Filename>> bucketToFiles = filenames.stream()
                 .flatMap(filename -> {
                     try {
-                        return Stream.of(FileToDelete.fromFilename(filename));
+                        return Stream.of(S3Filename.parse(filename));
                     } catch (Exception e) {
                         LOGGER.warn("Failed reading filename: {}", filename, e);
                         return Stream.empty();
                     }
                 })
-                .collect(groupingBy(FileToDelete::bucketName));
+                .collect(groupingBy(S3Filename::bucketName));
         return new FilesToDelete(bucketToFiles.entrySet().stream()
                 .map(entry -> FilesToDeleteInBucket.from(entry.getKey(), entry.getValue()))
                 .toList());

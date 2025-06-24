@@ -16,24 +16,23 @@
 
 package sleeper.systemtest.drivers.instance;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.PopulateInstancePropertiesAws;
-import sleeper.clients.util.ClientUtils;
+import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -56,10 +55,9 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperInstanceDriver.class);
 
     private final SystemTestParameters parameters;
-    private final AmazonS3 s3;
-    private final S3Client s3v2;
-    private final AmazonDynamoDB dynamoDB;
-    private final AWSSecurityTokenService sts;
+    private final S3Client s3;
+    private final DynamoDbClient dynamoDB;
+    private final StsClient sts;
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
     private final EcrClient ecr;
@@ -68,8 +66,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.s3 = clients.getS3();
-        this.s3v2 = clients.getS3V2();
-        this.dynamoDB = clients.getDynamoDB();
+        this.dynamoDB = clients.getDynamo();
         this.sts = clients.getSts();
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
@@ -99,8 +96,8 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                    .runCommand(ClientUtils::runCommandLogOutput)
-                    .deployWithClients(s3, s3v2, dynamoDB, ecr);
+                    .runCommand(CommandUtils::runCommandLogOutput)
+                    .deployWithClients(s3, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -129,12 +126,12 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         try {
             DeployExistingInstance.builder()
-                    .clients(s3v2, ecr)
+                    .clients(s3, ecr)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
                     .deployCommand(CdkCommand.deployExistingPaused())
-                    .runCommand(ClientUtils::runCommandLogOutput)
+                    .runCommand(CommandUtils::runCommandLogOutput)
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

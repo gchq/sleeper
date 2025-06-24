@@ -83,8 +83,7 @@ class S3ResultsOutputIT {
     @BeforeEach
     public void setup() throws IOException {
         outputDir = createTempDirectory(tempDir, null).toString();
-        String queryResultsBucket = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
+        instanceProperties.set(QUERY_RESULTS_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, outputDir + "/");
         tableProperties.setSchema(schema);
     }
@@ -165,7 +164,7 @@ class S3ResultsOutputIT {
     private List<Record> getRecordsFromOutput(String path) {
         List<Record> records = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path), schema);
+            ParquetRecordReader reader = new ParquetRecordReader(path, schema);
 
             Record record = reader.read();
             while (null != record) {

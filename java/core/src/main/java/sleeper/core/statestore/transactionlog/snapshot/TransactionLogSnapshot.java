@@ -18,6 +18,8 @@ package sleeper.core.statestore.transactionlog.snapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 
+import java.util.Objects;
+
 /**
  * A snapshot of the state at a given point in a transaction log. Since the state is always derived from all the
  * transactions in the log up to a given point, if we have a snapshot at a given transaction we know we only need to
@@ -71,5 +73,27 @@ public class TransactionLogSnapshot {
 
     public long getTransactionNumber() {
         return transactionNumber;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(state, transactionNumber);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TransactionLogSnapshot)) {
+            return false;
+        }
+        TransactionLogSnapshot other = (TransactionLogSnapshot) obj;
+        return Objects.equals(state, other.state) && transactionNumber == other.transactionNumber;
+    }
+
+    @Override
+    public String toString() {
+        return "TransactionLogSnapshot{state=" + state + ", transactionNumber=" + transactionNumber + "}";
     }
 }

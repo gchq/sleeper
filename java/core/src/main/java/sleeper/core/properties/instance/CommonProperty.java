@@ -17,9 +17,9 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.validation.LambdaDeployType;
-import sleeper.core.properties.validation.OptionalStack;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.LambdaDeployType;
+import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -95,6 +95,11 @@ public interface CommonProperty {
     UserDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
             .description("The AWS region to deploy to.")
             .validationPredicate(Objects::nonNull)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
+    UserDefinedInstanceProperty ENDPOINT_URL = Index.propertyBuilder("sleeper.endpoint.url")
+            .description("The AWS endpoint URL. This should only be set for a non-standard service endpoint. Usually " +
+                    "this is used to set the URL to LocalStack for a locally deployed instance.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ID = Index.propertyBuilder("sleeper.vpc")

@@ -15,15 +15,15 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.google.gson.Gson;
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.services.sfn.SfnClient;
 
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.EmrInstanceArchitecture;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,7 +64,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         defaultConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
         // Hadoop Configuration
         defaultConf.put("spark.hadoop.fs.s3a.aws.credentials.provider",
-                WebIdentityTokenCredentialsProvider.class.getName());
+                WebIdentityTokenFileCredentialsProvider.class.getName());
         defaultConf.put("spark.hadoop.fs.s3a.experimental.input.fadvise", "sequential");
         DEFAULT_CONFIG = Collections.unmodifiableMap(defaultConf);
     }

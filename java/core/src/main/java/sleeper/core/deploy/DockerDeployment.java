@@ -16,7 +16,7 @@
 package sleeper.core.deploy;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.OptionalStack;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,11 +48,6 @@ public class DockerDeployment {
             .deploymentName("compaction-job-execution")
             .optionalStack(OptionalStack.CompactionStack)
             .multiplatform(true)
-            .add();
-    public static final DockerDeployment EMR_SERVERLESS_BULK_IMPORT = builder()
-            .deploymentName("bulk-import-runner-emr-serverless")
-            .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
-            .createEmrServerlessPolicy(true)
             .add();
     public static final DockerDeployment BULK_EXPORT = builder()
             .deploymentName("bulk-export-task-execution")

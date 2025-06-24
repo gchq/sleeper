@@ -48,7 +48,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -151,6 +150,7 @@ public class IngestBatcherStack extends NestedStack {
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
+        submitDLQ.grantSendMessages(submitterLambda);
         coreStacks.grantReadTablesConfig(submitterLambda);
         coreStacks.grantReadIngestSources(submitterLambda.getRole());
 
@@ -178,7 +178,7 @@ public class IngestBatcherStack extends NestedStack {
                 .description(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(new LambdaFunction(jobCreatorLambda)))
+                .targets(List.of(new LambdaFunction(jobCreatorLambda)))
                 .build();
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }

@@ -15,20 +15,13 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
-import com.amazonaws.auth.policy.actions.DynamoDBv2Actions;
-import com.amazonaws.auth.policy.actions.S3Actions;
-import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.Policy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
@@ -64,6 +57,7 @@ import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_RE
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+
 public class BulkExportStack extends NestedStack {
     public static final String BULK_EXPORT_QUEUE_URL = "BulkExportQueueUrl";
     public static final String BULK_EXPORT_QUEUE_NAME = "BulkExportQueueName";
@@ -86,6 +80,16 @@ public class BulkExportStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export_planner");
 
+        List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
+        Queue bulkExportQ = bulkExportQueues.get(0);
+        Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
+        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
+
+        List<Queue> leafPartitionQueues = createQueueAndDeadLetterQueue("BulkExportLeafPartition", instanceProperties);
+        Queue leafPartitionQueuesQ = leafPartitionQueues.get(0);
+        Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
+        setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
+
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
@@ -101,12 +105,8 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        attachPolicy(bulkExportLambda, "BulkExportPlanner");
-
-        List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
-        Queue bulkExportQ = bulkExportQueues.get(0);
-        Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
-        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
+        coreStacks.grantReadTablesMetadata(bulkExportLambda);
+        leafPartitionQueuesQ.grantSendMessages(bulkExportLambda);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -114,11 +114,6 @@ public class BulkExportStack extends NestedStack {
                 .build();
 
         bulkExportLambda.addEventSource(new SqsEventSource(bulkExportQ, eventSourceProps));
-
-        List<Queue> leafPartitionQueues = createQueueAndDeadLetterQueue("BulkExportLeafPartition", instanceProperties);
-        Queue leafPartitionQueuesQ = leafPartitionQueues.get(0);
-        Queue leafPartitionQueuesDlq = leafPartitionQueues.get(1);
-        setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
 
         /*
          * Output the role arn of the lambda as a property so that clients that want the
@@ -143,9 +138,9 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create a queue and a dead letter queue for the queue.
      *
-     * @param id                 the id of the queue
-     * @param instanceProperties the instance properties
-     * @return the queue and the dead letter queue
+     * @param  id                 the id of the queue
+     * @param  instanceProperties the instance properties
+     * @return                    the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -174,10 +169,10 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create the export results bucket.
      *
-     * @param instanceProperties the instance properties
-     * @param coreStacks         the core stacks
-     * @param lambdaCode         the lambda code
-     * @return the export results bucket
+     * @param  instanceProperties the instance properties
+     * @param  coreStacks         the core stacks
+     * @param  lambdaCode         the lambda code
+     * @return                    the export results bucket
      */
     private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
             LambdaCode lambdaCode) {
@@ -205,31 +200,6 @@ public class BulkExportStack extends NestedStack {
         }
 
         return exportBucket;
-    }
-
-    /**
-     * Attach the policy to the lambda function.
-     *
-     * @param lambda the lambda function
-     * @param id     the id of the lambda function
-     */
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void attachPolicy(IFunction lambda, String id) {
-        PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
-                .effect(Effect.ALLOW)
-                .actions(
-                        Arrays.asList(SQSActions.SendMessage.getActionName(),
-                                SQSActions.ReceiveMessage.getActionName(),
-                                S3Actions.PutObject.getActionName(),
-                                S3Actions.GetObject.getActionName(),
-                                DynamoDBv2Actions.Query.getActionName()))
-                .resources(Collections.singletonList("*"))
-                .build();
-        PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
-        String policyName = "BulkExportPolicy" + id;
-        Policy policy = new Policy(this, policyName);
-        policy.addStatements(policyStatement);
-        Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
     }
 
     public enum QueueType {

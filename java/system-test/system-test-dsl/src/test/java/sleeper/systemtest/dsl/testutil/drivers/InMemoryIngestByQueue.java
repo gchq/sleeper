@@ -31,6 +31,7 @@ import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.IngestTask;
+import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
@@ -38,7 +39,7 @@ import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
@@ -197,7 +198,7 @@ public class InMemoryIngestByQueue {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(jobTracker)
-                .expandDirectories(files -> files)
+                .expandDirectories(files -> new ExpandDirectoriesResult(files, List.of()))
                 .build();
     }
 

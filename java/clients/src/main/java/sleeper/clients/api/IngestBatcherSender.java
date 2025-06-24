@@ -15,7 +15,7 @@
  */
 package sleeper.clients.api;
 
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
@@ -28,11 +28,11 @@ public interface IngestBatcherSender {
 
     void submit(IngestBatcherSubmitRequest request);
 
-    static IngestBatcherSender toSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    static IngestBatcherSender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient) {
         IngestBatcherSubmitRequestSerDe serDe = new IngestBatcherSubmitRequestSerDe();
-        return request -> sqsClient.sendMessage(
-                instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                serDe.toJson(request));
+        return request -> sqsClient.sendMessage(send -> send
+                .queueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL))
+                .messageBody(serDe.toJson(request)));
     }
 
 }

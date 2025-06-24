@@ -29,7 +29,7 @@ import software.constructs.Construct;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.validation.LambdaDeployType;
+import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -49,17 +49,18 @@ public class LambdaCode {
     public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
         LambdaBuilder builder;
-        if (deployType == LambdaDeployType.JAR) {
+        if (deployType == LambdaDeployType.CONTAINER || handler.isAlwaysDockerDeploy()) {
+            builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
+                    .code(containerCode(scope, handler, id)));
+        } else if (deployType == LambdaDeployType.JAR) {
             builder = new FunctionBuilder(Function.Builder.create(scope, id)
                     .code(jarCode(handler.getJar()))
                     .handler(handler.getHandler())
                     .runtime(Runtime.JAVA_17));
-        } else if (deployType == LambdaDeployType.CONTAINER) {
-            builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
-                    .code(containerCode(scope, handler, id)));
         } else {
             throw new IllegalArgumentException("Unrecognised lambda deploy type: " + deployType);
         }
+
         config.accept(builder);
         Function function = builder.build();
 

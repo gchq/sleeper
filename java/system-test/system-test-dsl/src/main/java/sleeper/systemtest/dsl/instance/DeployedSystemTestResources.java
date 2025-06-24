@@ -21,7 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
-import java.util.function.Consumer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
@@ -29,6 +32,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
 public class DeployedSystemTestResources {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSystemTestResources.class);
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentDriver driver;
     private SystemTestStandaloneProperties properties;
@@ -39,38 +43,41 @@ public class DeployedSystemTestResources {
         this.driver = driver;
     }
 
-    public void updateProperties(Consumer<SystemTestStandaloneProperties> config) {
-        config.accept(properties);
-        driver.saveProperties(properties);
-    }
-
     public SystemTestStandaloneProperties getProperties() {
         return properties;
     }
 
-    public void deployIfMissing() throws InterruptedException {
-        if (properties != null) {
-            return;
-        }
-        if (failure != null) {
-            throw failure;
-        }
-        try {
-            deployIfMissingNoFailureTracking();
-        } catch (RuntimeException | InterruptedException e) {
-            failure = new InstanceDidNotDeployException(parameters.getSystemTestShortId(), e);
-            throw e;
-        }
-    }
-
-    public void resetProperties() {
-        updateProperties(properties -> properties.getPropertiesIndex().getUserDefined().stream()
-                .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
-                .forEach(properties::unset));
+    public String getSystemTestBucketName() {
+        return properties.get(SYSTEM_TEST_BUCKET_NAME);
     }
 
     public boolean isSystemTestClusterEnabled() {
         return parameters.isSystemTestClusterEnabled() && properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED);
+    }
+
+    public void deployIfMissing() throws InterruptedException, ExecutionException {
+        if (isDeployed()) {
+            return;
+        }
+        Future<?> future = executor.submit(() -> {
+            if (isDeployed()) {
+                return;
+            }
+            try {
+                deployIfMissingNoFailureTracking();
+            } catch (RuntimeException | InterruptedException e) {
+                failure = new InstanceDidNotDeployException(parameters.getSystemTestShortId(), e);
+                throw failure;
+            }
+        });
+        future.get();
+    }
+
+    private boolean isDeployed() {
+        if (failure != null) {
+            throw failure;
+        }
+        return properties != null;
     }
 
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
@@ -80,6 +87,7 @@ public class DeployedSystemTestResources {
             driver.redeploy(properties);
             properties = driver.loadProperties();
         }
+        resetProperties();
     }
 
     private boolean isRedeployNeeded() {
@@ -96,7 +104,10 @@ public class DeployedSystemTestResources {
         return redeployNeeded;
     }
 
-    public String getSystemTestBucketName() {
-        return properties.get(SYSTEM_TEST_BUCKET_NAME);
+    private void resetProperties() {
+        properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
+                .forEach(properties::unset);
+        driver.saveProperties(properties);
     }
 }

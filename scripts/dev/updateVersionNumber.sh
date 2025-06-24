@@ -37,7 +37,7 @@ source "${PROJECT_ROOT}/scripts/functions/sedInPlace.sh"
 # Update the version number in the Python module
 NEW_VERSION_PYTHON="${NEW_VERSION//-SNAPSHOT/.dev1}"
 sed_in_place \
-  -e "s|^    version=.*|    version='${NEW_VERSION_PYTHON}',|" \
+  -e "s|^    version=.*|    version=\"${NEW_VERSION_PYTHON}\",|" \
   "${PROJECT_ROOT}/python/setup.py"
 
 # Update the version number in the Rust code

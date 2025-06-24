@@ -38,6 +38,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -193,14 +194,14 @@ class SingleFileWritingIteratorIT {
             Iterator<Row> records, PartitionTree partitionTree) {
         return new SingleFileWritingIterator(records,
                 instanceProperties, tableProperties,
-                new Configuration(), partitionTree);
+                new Configuration(), new LocalFileSystemSketchesStore(), partitionTree);
     }
 
     private SingleFileWritingIterator createIteratorOverRecordsWithPartitionsAndOutputFilename(
             Iterator<Row> records, PartitionTree partitionTree, String filename) {
         return new SingleFileWritingIterator(records,
                 instanceProperties, tableProperties,
-                new Configuration(), partitionTree, filename);
+                new Configuration(), partitionTree, new LocalFileSystemSketchesStore(), filename);
     }
 
     private InstanceProperties createInstanceProperties() {

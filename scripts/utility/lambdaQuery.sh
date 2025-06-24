@@ -17,4 +17,10 @@ set -e
 unset CDPATH
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
-java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.clients.QueryLambdaClient "$@"
+
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.query.QueryLambdaClient "$@"

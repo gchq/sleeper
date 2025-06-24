@@ -22,15 +22,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.StackDockerImage;
-import sleeper.clients.deploy.UploadDockerImagesRequest;
+import sleeper.clients.deploy.container.StackDockerImage;
+import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.properties.validation.OptionalStack;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
@@ -252,7 +252,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             assertThatThrownBy(() -> updateInstanceProperty(
                     instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveInstanceProperties.class)
-                    .hasCauseReference(thrown);
+                    .cause().isSameAs(thrown);
         }
 
         @Test

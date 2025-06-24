@@ -17,14 +17,15 @@ package sleeper.core.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.validation.CompactionMethod;
-import sleeper.core.properties.validation.CompressionCodec;
-import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
-import sleeper.core.properties.validation.IngestFileWritingStrategy;
-import sleeper.core.properties.validation.IngestQueue;
-import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.CompressionCodec;
+import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.model.IngestFileWritingStrategy;
+import sleeper.core.properties.model.IngestQueue;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -92,7 +93,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TIME
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
-import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
+import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of the table properties which are stored separately to the instance properties. Each Sleeper table has
@@ -101,6 +102,21 @@ import static sleeper.core.properties.validation.SleeperPropertyValueUtils.descr
 // Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface TableProperty extends SleeperProperty, TablePropertyComputeValue {
+
+    static List<TableProperty> getAll() {
+        return Index.INSTANCE.getAll();
+    }
+
+    /**
+     * Retrieves a list of table properties in the given group.
+     *
+     * @param  group the group
+     * @return       the properties
+     */
+    static List<TableProperty> getAllInGroup(PropertyGroup group) {
+        return Index.INSTANCE.getAllInGroup(group);
+    }
+
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
@@ -129,11 +145,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .includedInTemplate(false).build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing.")
+                    "Defaults to nothing. May also have special value \"" + CompactionMethod.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
+                    "iterators that are only usable with the DataFusion compactor. When this marker is present, attempting " +
+                    "to compact with the table with the default Java compactor will fail.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
+            .description("Iterator configuration. An iterator will be initialised with the following configuration. " +
+                    "If a DataFusion only iterator is specified, then the configuration should be as described in " +
+                    "https://github.com/gchq/sleeper/issues/4344 for DataFusion.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
@@ -335,11 +355,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
 
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
-            .defaultValue("sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore")
+            .defaultValue("DynamoDBTransactionLogStateStore")
             .description("The name of the class used for the state store. " +
                     "The default is DynamoDBTransactionLogStateStore. Options are:\n" +
-                    "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore\n" +
-                    "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots")
+                    "DynamoDBTransactionLogStateStore\n" +
+                    "DynamoDBTransactionLogStateStoreNoSnapshots")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
@@ -468,35 +488,35 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.x86.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types and weights to be used for " +
                     "the master node of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.x86.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types and weights to be used for " +
                     "the executor nodes of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.arm.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types and weights to be used for the " +
                     "master node of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.arm.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types and weights to be used for the " +
                     "executor nodes of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/bulk-import.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.market.type")
@@ -635,10 +655,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This is only applied if async commits are enabled for the table. The default value is set in an " +
                     "instance property.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
-
-    static List<TableProperty> getAll() {
-        return Index.INSTANCE.getAll();
-    }
 
     /**
      * An index of property definitions in this file.

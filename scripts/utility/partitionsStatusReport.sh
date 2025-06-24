@@ -30,6 +30,11 @@ TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar \
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+JAR_DIR=${SCRIPTS_DIR}/jars
+
+VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
+
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
   --add-opens java.base/java.nio=ALL-UNNAMED \
-  sleeper.clients.status.report.PartitionsStatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
+  sleeper.clients.report.PartitionsStatusReport "${INSTANCE_ID}" "${TABLE_NAME}"

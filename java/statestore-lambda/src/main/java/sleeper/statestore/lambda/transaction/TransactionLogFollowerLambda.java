@@ -15,17 +15,14 @@
  */
 package sleeper.statestore.lambda.transaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -41,7 +38,6 @@ import sleeper.core.table.TableNotFoundException;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.stream.Stream;
@@ -64,12 +60,11 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
 
     public TransactionLogFollowerLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        S3Client s3Client = S3Client.create();
+        DynamoDbClient dynamoClient = DynamoDbClient.create();
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        Configuration config = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, config);
+        stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
         compactionJobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
         ingestJobTracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
         mapper = new DynamoDBStreamTransactionLogEntryMapper(TransactionSerDeProvider.from(tablePropertiesProvider));

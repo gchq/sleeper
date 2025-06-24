@@ -39,7 +39,7 @@ public class RustBridge {
     private static final JniExtractor EXTRACTOR = NativeLoader.getJniExtractor();
 
     /** Paths in the JAR file where a native library may have been placed. */
-    private static final String[] LIB_PATHS = {"natives/release",
+    private static final String[] LIB_PATHS = {
         "natives/x86_64-unknown-linux-gnu/release", "natives/aarch64-unknown-linux-gnu/release",
         // Rust debug builds will place libraries in different locations
         "natives/x86_64-unknown-linux-gnu/debug", "natives/aarch64-unknown-linux-gnu/debug"};
@@ -172,6 +172,8 @@ public class RustBridge {
         public final Array<java.lang.Boolean> region_mins_inclusive = new Array<>(this);
         /** Compaction partition region maximums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
         public final Array<java.lang.Boolean> region_maxs_inclusive = new Array<>(this);
+        /** Compaction iterator configuration. This is optional. */
+        public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
         public FFICompactionParams(jnr.ffi.Runtime runtime) {
             super(runtime);
@@ -194,8 +196,9 @@ public class RustBridge {
 
             // Check strings non null
             Objects.requireNonNull(output_file.get(), "Output file is null");
-            Objects.requireNonNull(writer_version, "Parquet writer is null");
-            Objects.requireNonNull(compression, "Parquet compression codec is null");
+            Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
+            Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
+            Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
 
             // Check lengths
             long rowKeys = row_key_cols.len.get();

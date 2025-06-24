@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
@@ -44,31 +44,31 @@ public interface AdminClientTrackerFactory {
 
     Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
-    static AdminClientTrackerFactory from(AmazonDynamoDB dynamoDB) {
+    static AdminClientTrackerFactory from(DynamoDbClient dynamoClient) {
         return new AdminClientTrackerFactory() {
             @Override
             public CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties) {
-                return CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
+                return CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             }
 
             @Override
             public CompactionTaskTracker loadCompactionTaskTracker(InstanceProperties instanceProperties) {
-                return CompactionTaskTrackerFactory.getTracker(dynamoDB, instanceProperties);
+                return CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
             }
 
             @Override
             public IngestJobTracker loadIngestJobTracker(InstanceProperties instanceProperties) {
-                return IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
+                return IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             }
 
             @Override
             public IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties) {
-                return IngestTaskTrackerFactory.getTracker(dynamoDB, instanceProperties);
+                return IngestTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
             }
 
             @Override
             public Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
-                return IngestBatcherStoreFactory.getStore(dynamoDB, properties, tablePropertiesProvider);
+                return IngestBatcherStoreFactory.getStore(dynamoClient, properties, tablePropertiesProvider);
             }
         };
     }

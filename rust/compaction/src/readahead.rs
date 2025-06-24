@@ -83,14 +83,14 @@ use thiserror::Error;
 #[allow(clippy::module_name_repetitions)]
 pub enum ReadaheadError {
     #[error("position {index} is out of bounds, total size {size}")]
-    RangeOutOfBounds { index: usize, size: usize },
+    RangeOutOfBounds { index: u64, size: u64 },
     #[error("underlying stream terminated earlier than expected")]
     StreamTerminatedEarly,
 }
 
 /// Default amount in bytes to allow a stream to be readahead before the
 /// stream will be closed and re-opened.
-pub const DEFAULT_READAHEAD: usize = 2usize.pow(16);
+pub const DEFAULT_READAHEAD: u64 = 2u64.pow(16);
 /// Maximum number of cached streams per location before being purged.
 pub const DEFAULT_MAX_STREAM_PER_LOCATION: usize = 2;
 /// Maximum age of a stream before being purged.
@@ -101,7 +101,7 @@ struct Container {
     /// Byte stream reader for more data.
     pub inner: BoxStream<'static, Result<Bytes>>,
     /// Absolute position within object.
-    pub pos: usize,
+    pub pos: u64,
     /// Time of last use.
     pub last_use: Instant,
 }
@@ -122,7 +122,7 @@ struct CacheObject {
     meta: ObjectMeta,
     attrs: Attributes,
     /// A cache of partially used streams, sorted by absolute stream position.
-    streams: BTreeMap<usize, Container>,
+    streams: BTreeMap<u64, Container>,
 }
 
 /// Cache inserter struct to allow insertion logic to exist independently of the store
@@ -169,10 +169,12 @@ impl CacheInserter {
 pub struct ReadaheadStore<T: ObjectStore> {
     /// Underlying `object_store` implementation.
     inner: T,
+    /// Path prefix for logging purposes
+    path_prefix: String,
     /// Cache for object meta-data and streams.
     cache: Arc<Mutex<HashMap<Path, CacheObject>>>,
     /// The amount of readahead we will tolerate before using a new stream.
-    max_readahead: usize,
+    max_readahead: u64,
     /// Maximum age of a cached stream.
     max_age: Duration,
     /// Maximum number of live streams per object.
@@ -184,9 +186,10 @@ pub struct ReadaheadStore<T: ObjectStore> {
 impl<T: ObjectStore> ReadaheadStore<T> {
     /// Creates a new store with the default settings.
     #[must_use]
-    pub fn new(inner: T) -> Self {
+    pub fn new(inner: T, path_prefix: impl Into<String>) -> Self {
         Self {
             inner,
+            path_prefix: path_prefix.into(),
             cache: Arc::new(Mutex::new(HashMap::new())),
             max_readahead: DEFAULT_READAHEAD,
             max_age: DEFAULT_MAX_STREAM_AGE,
@@ -218,7 +221,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
     /// position and re-used, otherwise a new stream is opened.
     #[must_use]
     #[allow(dead_code)]
-    pub fn with_readahead(mut self, max_readahead: usize) -> Self {
+    pub fn with_readahead(mut self, max_readahead: u64) -> Self {
         self.max_readahead = max_readahead;
         self
     }
@@ -255,7 +258,8 @@ impl<T: ObjectStore> ReadaheadStore<T> {
                     return Ok(None);
                 };
                 debug!(
-                    "Location {} cache hit found for position {} at cached position {}",
+                    "Location {}/{} cache hit found for position {} at cached position {}",
+                    self.path_prefix,
                     location,
                     start_pos.to_formatted_string(&Locale::en),
                     nearest_stream_pos.to_formatted_string(&Locale::en)
@@ -339,7 +343,10 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .underlying_gets
             .lock()
             .expect("ReadaheadStore lock poisoned") += 1;
-        info!("ReadaheadStore GET request to {location}");
+        info!(
+            "ReadaheadStore GET request to {}/{location}",
+            self.path_prefix
+        );
 
         let stop_pos = get_stop_pos(original_range.as_ref(), meta.size);
         let payload = match payload {
@@ -434,18 +441,19 @@ impl<T: ObjectStore> ReadaheadStore<T> {
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
     fn drop(&mut self) {
         info!(
-            "ReadaheadStore made {} GET requests to underlying object store",
+            "ReadaheadStore made {} GET requests to underlying location {}",
             self.underlying_gets
                 .lock()
                 .expect("ReadaheadStore lock poisoned")
-                .to_formatted_string(&Locale::en)
+                .to_formatted_string(&Locale::en),
+            self.path_prefix,
         );
     }
 }
 
 /// Find the end position (exclusive) given the range and object size
 #[must_use]
-pub fn get_stop_pos(range: Option<&GetRange>, total_size: usize) -> usize {
+pub fn get_stop_pos(range: Option<&GetRange>, total_size: u64) -> u64 {
     match range {
         Some(GetRange::Bounded(r)) => std::cmp::min(r.end, total_size),
         Some(_) | None => total_size,
@@ -474,7 +482,7 @@ pub fn extend_range(range: Option<&GetRange>) -> Option<GetRange> {
 /// # Panics
 /// If the range is a [`GetRange::Suffix`] as this is not implemented.
 #[must_use]
-pub fn get_start_pos(range: Option<&GetRange>) -> usize {
+pub fn get_start_pos(range: Option<&GetRange>) -> u64 {
     match range {
         Some(GetRange::Bounded(r)) => r.start,
         Some(GetRange::Offset(o)) => *o,
@@ -494,7 +502,11 @@ pub fn should_skip_readahead(options: &GetOptions) -> bool {
 
 impl<T: ObjectStore> Display for ReadaheadStore<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ReadaheadStore({})", self.inner)
+        write!(
+            f,
+            "ReadaheadStore(inner: {}, path_prefix: {})",
+            self.inner, self.path_prefix
+        )
     }
 }
 
@@ -554,7 +566,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         self.inner.delete(location).await
     }
 
-    fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
+    fn list(&self, prefix: Option<&Path>) -> BoxStream<'static, Result<ObjectMeta>> {
         self.inner.list(prefix)
     }
 
@@ -614,10 +626,10 @@ mod tests {
 
     fn make_store() -> ReadaheadStore<InMemory> {
         let inner = InMemory::new();
-        ReadaheadStore::new(inner)
+        ReadaheadStore::new(inner, "memory:/")
     }
 
-    fn make_cache_map() -> BTreeMap<usize, Container> {
+    fn make_cache_map() -> BTreeMap<u64, Container> {
         let mut map = BTreeMap::new();
         map.insert(
             5,
@@ -1179,7 +1191,7 @@ mod tests {
         // Given
         let temp = TempDir::new().unwrap();
         let inner = LocalFileSystem::new_with_prefix(temp.path()).unwrap();
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1199,8 +1211,9 @@ mod tests {
         let inner = LoggingObjectStore::new(
             LocalFileSystem::new_with_prefix(temp.path()).unwrap(),
             "TEST",
+            "file:/",
         );
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1218,7 +1231,7 @@ mod tests {
         // Given
         let temp = TempDir::new().unwrap();
         let inner = LocalFileSystem::new_with_prefix(temp.path()).unwrap();
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1245,7 +1258,7 @@ mod tests {
         // Given
         let temp = TempDir::new().unwrap();
         let inner = LocalFileSystem::new_with_prefix(temp.path()).unwrap();
-        let ps = ReadaheadStore::new(inner);
+        let ps = ReadaheadStore::new(inner, "file:/");
         ps.put(&"test_file".into(), "some data".into()).await?;
 
         // When
@@ -1313,7 +1326,7 @@ mod tests {
         Ok(())
     }
 
-    fn test_cache_purge<T: Into<Path>, I: IntoIterator<Item = (T, usize, Instant)>>(
+    fn test_cache_purge<T: Into<Path>, I: IntoIterator<Item = (T, u64, Instant)>>(
         live_streams: usize,
         max_age: Duration,
         expected: usize,
@@ -1348,7 +1361,7 @@ mod tests {
 
     #[tokio::test]
     async fn purge_empty_cache() {
-        test_cache_purge::<&str, Vec<(&str, usize, std::time::Instant)>>(
+        test_cache_purge::<&str, Vec<(&str, u64, std::time::Instant)>>(
             8,
             Duration::from_secs(10),
             0,

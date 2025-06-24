@@ -18,7 +18,7 @@ package sleeper.clients.teardown;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.deploy.JarsBucketITBase;
+import sleeper.clients.testutil.JarsBucketITBase;
 import sleeper.core.util.PollWithRetries;
 
 import java.nio.file.Files;
@@ -35,7 +35,7 @@ public class WaitForS3BucketToEmptyIT extends JarsBucketITBase {
 
         // When
         WaitForS3BucketToEmpty waitForS3BucketToEmpty = new WaitForS3BucketToEmpty(
-                s3ClientV2, bucketName, PollWithRetries.noRetries());
+                s3Client, bucketName, PollWithRetries.noRetries());
 
         // Then
         assertThatThrownBy(waitForS3BucketToEmpty::pollUntilFinished)
@@ -48,7 +48,7 @@ public class WaitForS3BucketToEmptyIT extends JarsBucketITBase {
         uploadJarsToBucket(bucketName);
 
         // When
-        WaitForS3BucketToEmpty waitForS3BucketToEmpty = WaitForS3BucketToEmpty.from(s3ClientV2, bucketName);
+        WaitForS3BucketToEmpty waitForS3BucketToEmpty = WaitForS3BucketToEmpty.from(s3Client, bucketName);
 
         // Then
         assertThatCode(waitForS3BucketToEmpty::pollUntilFinished)

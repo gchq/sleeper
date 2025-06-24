@@ -19,7 +19,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -56,6 +56,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>compaction-job-creation</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
@@ -76,12 +81,12 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>common-task</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>common-task</artifactId>
+            <artifactId>common-invoke-tables</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

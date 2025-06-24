@@ -48,8 +48,8 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -144,7 +144,7 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public List<CompactionJob> drainJobsQueueForWholeInstance() {
+        public List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs) {
             List<CompactionJob> jobs = new ArrayList<>(queuedJobs);
             queuedJobs.clear();
             return jobs;
@@ -248,7 +248,7 @@ public class InMemoryCompaction {
             sketches.update(record);
         });
         dataStore.addFile(job.getOutputFile(), records);
-        sketchesStore.addSketchForFile(job.getOutputFile(), sketches);
+        sketchesStore.saveFileSketches(job.getOutputFile(), sketches);
         return new RecordsProcessed(records.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)

@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 
@@ -74,7 +74,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(readRecords(rightFile))
                 .containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, leftFile))
+        assertThat(SketchesDeciles.fromFile(schema, leftFile, sketchesStore))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(1L)
@@ -82,7 +82,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                                 .rank(0.4, 1L).rank(0.5, 1L).rank(0.6, 1L)
                                 .rank(0.7, 1L).rank(0.8, 1L).rank(0.9, 1L))
                         .build());
-        assertThat(SketchesDeciles.fromFile(schema, rightFile))
+        assertThat(SketchesDeciles.fromFile(schema, rightFile, sketchesStore))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(3L).max(3L)
@@ -119,7 +119,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(readRecords(fileReferences.get(0)))
                 .containsExactly(getSingleRecord().get(0));
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
                 .isEqualTo(SketchesDeciles.builder()
                         .field("key", deciles -> deciles
                                 .min(1L).max(1L)

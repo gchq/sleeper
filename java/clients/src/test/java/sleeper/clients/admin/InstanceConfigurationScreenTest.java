@@ -30,9 +30,9 @@ import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScr
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
-import sleeper.core.properties.validation.OptionalStack;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +46,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TEST_TABLE_REPORT_LIST;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.instancePropertyGroupOption;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePropertyGroupOption;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
@@ -545,7 +546,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .exitGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
@@ -614,7 +616,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     .exitGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
                     .contains("Found changes to properties:\n" +
                             "\n" +
                             "sleeper.table.rowgroup.size\n" +
@@ -708,7 +711,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + "\n" +
+                    TEST_TABLE_REPORT_LIST + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);

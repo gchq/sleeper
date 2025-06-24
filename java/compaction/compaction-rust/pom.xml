@@ -20,7 +20,7 @@
     <parent>
         <artifactId>compaction</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>compaction-rust</artifactId>
@@ -98,15 +98,9 @@
                         <resource>
                             <directory>${maven.multiModuleProjectDirectory}/../rust/target/</directory>
                             <includes>
-                                <include>release/*.dylib</include>
-                                <include>release/*.dll</include>
-                                <include>release/*.so</include>
                                 <include>*/release/*.dylib</include>
                                 <include>*/release/*.dll</include>
                                 <include>*/release/*.so</include>
-                                <include>debug/*.dylib</include>
-                                <include>debug/*.dll</include>
-                                <include>debug/*.so</include>
                                 <include>*/debug/*.dylib</include>
                                 <include>*/debug/*.dll</include>
                                 <include>*/debug/*.so</include>

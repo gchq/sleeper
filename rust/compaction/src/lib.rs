@@ -116,18 +116,39 @@ pub struct FFICompactionParams {
     region_mins_inclusive: *const *const bool,
     region_maxs_inclusive_len: usize,
     region_maxs_inclusive: *const *const bool,
+    iterator_config: *const c_char,
 }
 
 impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
     type Error = color_eyre::eyre::Report;
 
     fn try_from(params: &'a FFICompactionParams) -> Result<CompactionInput<'a>, Self::Error> {
+        if params.iterator_config.is_null() {
+            error!("FFICompactionsParams iterator_config is NULL");
+        }
+        if params.output_file.is_null() {
+            error!("FFICompactionParams output_file is NULL");
+        }
+        if params.compression.is_null() {
+            error!("FFICompactionParams compression is NULL");
+        }
+        if params.writer_version.is_null() {
+            error!("FFICompactionParams writer_version is NULL");
+        }
         // We do this separately since we need the values for computing the region
         let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
             .into_iter()
             .map(String::from)
             .collect::<Vec<_>>();
         let region = compute_region(params, &row_key_cols)?;
+        // Extract iterator config
+        let iterator_config = Some(
+            unsafe { CStr::from_ptr(params.iterator_config) }
+                .to_str()?
+                .to_owned(),
+        )
+        // Set option to None if config is empty
+        .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
         Ok(Self {
             aws_config: unpack_aws_config(params)?,
@@ -157,12 +178,25 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             dict_enc_sort_keys: params.dict_enc_sort_keys,
             dict_enc_values: params.dict_enc_values,
             region,
+            iterator_config,
         })
     }
 }
 
 fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
     Ok(if params.override_aws_config {
+        if params.aws_region.is_null() {
+            error!("FFICompactionsParams aws_region pointer is NULL");
+        }
+        if params.aws_endpoint.is_null() {
+            error!("FFICompactionsParams aws_endpoint pointer is NULL");
+        }
+        if params.aws_access_key.is_null() {
+            error!("FFICompactionsParams aws_access_key pointer is NULL");
+        }
+        if params.aws_secret_key.is_null() {
+            error!("FFICompactionsParams aws_secret_key pointer is NULL");
+        }
         Some(AwsConfig {
             region: unsafe { CStr::from_ptr(params.aws_region) }
                 .to_str()?
@@ -344,6 +378,9 @@ fn unpack_string_array(
     array_base: *const *const c_char,
     len: usize,
 ) -> color_eyre::Result<Vec<&'static str>> {
+    if array_base.is_null() {
+        error!("NULL pointer for array_base in string array");
+    }
     unsafe {
         // create a slice from the pointer
         slice::from_raw_parts(array_base, len)
@@ -379,11 +416,14 @@ fn unpack_string_array(
 /// # Errors
 /// If the array length is invalid, then behaviour is undefined.
 fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> Vec<T> {
+    if array_base.is_null() {
+        error!("NULL pointer for array_base in primitive array");
+    }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .inspect(|p| {
             if p.is_null() {
-                error!("Found NULL pointer in string array");
+                error!("Found NULL pointer in primitive array");
             }
         })
         .map(|&bptr| unsafe { *bptr })
@@ -409,11 +449,14 @@ fn unpack_variant_array<'a>(
     nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>, Utf8Error> {
     assert_eq!(len, schema_types.len());
+    if array_base.is_null() {
+        error!("NULL pointer for array_base in variant array");
+    }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .inspect(|p| {
             if !nulls_present && p.is_null() {
-                error!("Found NULL pointer in string array");
+                error!("Found NULL pointer in variant array");
             }
         })
         .zip(schema_types.iter())
@@ -431,8 +474,8 @@ fn unpack_variant_array<'a>(
                     //unpack length (signed because it's from Java)
                     Some(str_len) => {
                         if *str_len < 0 {
-                            error!("Illegal string length in FFI array: {str_len}");
-                            panic!("Illegal string length in FFI array: {str_len}");
+                            error!("Illegal variant length in FFI array: {str_len}");
+                            panic!("Illegal variant length in FFI array: {str_len}");
                         }
                         std::str::from_utf8(unsafe {
                             #[allow(clippy::cast_sign_loss)]

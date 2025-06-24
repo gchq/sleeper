@@ -50,7 +50,7 @@ public abstract class TablePropertiesITBase extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(builder -> builder.bucket(instanceProperties.get(CONFIG_BUCKET)));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 

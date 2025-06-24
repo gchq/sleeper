@@ -15,19 +15,15 @@
  */
 package sleeper.ingest.runner.task;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -44,16 +40,17 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.core.IngestTask;
-import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.partitionfilewriter.IngestS3TransferManager;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 
 /**
@@ -74,42 +71,36 @@ public class ECSIngestTaskRunner {
         String s3Bucket = args[0];
 
         Instant startTime = Instant.now();
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        AmazonCloudWatch cloudWatchClient = buildAwsV1Client(AmazonCloudWatchClientBuilder.standard());
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
 
-        try {
+        try (DynamoDbClient dynamoDBClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                CloudWatchClient cloudWatchClient = buildAwsV2Client(CloudWatchClient.builder());
+                S3Client s3Client = buildAwsV2Client(S3Client.builder())) {
+
             InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
-            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
+            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory();
             String localDir = "/mnt/scratch";
             String taskId = UUID.randomUUID().toString();
 
-            IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
-                    taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
-                    AsyncS3PartitionFileWriterFactory.s3AsyncClientFromProperties(instanceProperties),
-                    ingestHadoopConfiguration(instanceProperties));
-            ingestTask.run();
+            try (S3AsyncClient s3AsyncClient = IngestS3TransferManager.s3AsyncClientFromProperties(instanceProperties)) {
+                IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
+                        taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, s3AsyncClient,
+                        ingestHadoopConfiguration(instanceProperties));
+                ingestTask.run();
+            }
+
         } finally {
-            s3Client.shutdown();
-            LOGGER.info("Shut down s3Client");
-            sqsClient.shutdown();
-            LOGGER.info("Shut down sqsClient");
-            dynamoDBClient.shutdown();
-            LOGGER.info("Shut down dynamoDBClient");
-            cloudWatchClient.shutdown();
-            LOGGER.info("Shut down cloudWatchClient");
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
     }
 
     public static IngestTask createIngestTask(
             ObjectFactory objectFactory, InstanceProperties instanceProperties, String localDir, String taskId,
-            AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, AmazonCloudWatch cloudWatchClient,
+            S3Client s3Client, DynamoDbClient dynamoDBClient, SqsClient sqsClient, CloudWatchClient cloudWatchClient,
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         IngestTaskTracker taskTracker = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(
@@ -118,7 +109,7 @@ public class ECSIngestTaskRunner {
                 propertiesReloader, stateStoreProvider, jobTracker, taskId, localDir,
                 s3Client, s3AsyncClient, sqsClient, hadoopConfiguration, Instant::now);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
+                sqsClient, s3Client, cloudWatchClient, instanceProperties,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobTracker);
         return new IngestTask(() -> UUID.randomUUID().toString(), Instant::now,
                 queueConsumer, ingestJobRunner, jobTracker, taskTracker, taskId);

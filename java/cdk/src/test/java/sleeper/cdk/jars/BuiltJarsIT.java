@@ -32,12 +32,12 @@ public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final BuiltJars builtJars = BuiltJars.from(s3ClientV2, instanceProperties);
+    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
         createBucket(bucketName);
-        s3ClientV2.putBucketVersioning(put -> put.bucket(bucketName)
+        s3Client.putBucketVersioning(put -> put.bucket(bucketName)
                 .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         String versionId = putObject(bucketName, "test.jar", "data").versionId();
 

@@ -16,21 +16,19 @@
 
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.io.IOException;
 
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class GenerateRandomDataFiles {
     private final TableProperties tableProperties;
@@ -44,10 +42,12 @@ public class GenerateRandomDataFiles {
     }
 
     private void run() throws IOException {
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, numberOfRecords);
-        WriteRandomDataFiles.writeFilesToDirectory(outputDirectory, systemTestProperties,
-                tableProperties, WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
+        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
+                .tableName(tableProperties.get(TABLE_NAME))
+                .recordsPerIngest(numberOfRecords)
+                .build();
+        WriteRandomDataFiles.writeFilesToDirectory(outputDirectory, new InstanceProperties(),
+                tableProperties, WriteRandomData.createRecordIterator(job, tableProperties));
     }
 
     public static void main(String[] args) throws IOException {
@@ -62,18 +62,14 @@ public class GenerateRandomDataFiles {
             numberOfRecords = Long.parseLong(args[3]);
         }
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
             new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
                     .run();
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
         }
     }
 }

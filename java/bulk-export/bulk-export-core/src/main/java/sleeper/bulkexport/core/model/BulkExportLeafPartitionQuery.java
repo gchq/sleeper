@@ -17,6 +17,8 @@
 package sleeper.bulkexport.core.model;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
@@ -125,11 +127,23 @@ public class BulkExportLeafPartitionQuery {
     /**
      * Gets the table properties for this export.
      *
-     * @param provider table properties provider
-     * @return table properties
+     * @param  provider table properties provider
+     * @return          table properties
      */
     public TableProperties getTableProperties(TablePropertiesProvider provider) {
         return provider.getById(getTableId());
+    }
+
+    /**
+     * Gets the path to the output file for this export.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the output file
+     */
+    public String getOutputFile(InstanceProperties instanceProperties) {
+        String exportBucket = instanceProperties.get(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET);
+        return String.format("s3a://%s/%s/%s/%s.parquet",
+                exportBucket, tableId, exportId, subExportId);
     }
 
     /**

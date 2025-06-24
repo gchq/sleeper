@@ -15,8 +15,10 @@
  */
 package sleeper.clients.api;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.clients.api.aws.AwsSleeperClientBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -48,6 +50,9 @@ import java.util.stream.Stream;
  * requires permissions against those resources, e.g. the configuration and data buckets in S3, the transaction logs and
  * table index in DynamoDB. There are managed policies and roles deployed with Sleeper that can help with this, e.g.
  * {@link CdkDefinedInstanceProperty#ADMIN_ROLE_ARN}.
+ * <p>
+ * Note that this class is not thread safe. {@link TablePropertiesProvider} and {@link StateStoreProvider} both cache
+ * data in ways that are not thread safe, so this client should be owned by a single thread.
  */
 public class SleeperClient implements AutoCloseable {
 
@@ -59,6 +64,7 @@ public class SleeperClient implements AutoCloseable {
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
     private final IngestJobSender ingestJobSender;
+    private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
@@ -72,6 +78,7 @@ public class SleeperClient implements AutoCloseable {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
         recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
+        bulkExportQuerySender = Objects.requireNonNull(builder.bulkExportQuerySender, "bulkExportQuerySender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
@@ -89,13 +96,13 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
-     * Creates a builder for a client with the default AWS configuration. The ID of the Sleeper instance to interact
-     * with must be set on the builder.
+     * Creates a builder for a client to interact with AWS. The Sleeper instance to interact with must be set on the
+     * builder. Will use the default AWS configuration unless this is overridden.
      *
      * @return the builder
      */
     public static AwsSleeperClientBuilder builder() {
-        return new AwsSleeperClientBuilder().defaultClients();
+        return new AwsSleeperClientBuilder();
     }
 
     /**
@@ -195,8 +202,12 @@ public class SleeperClient implements AutoCloseable {
      * Ingests the data in some given files to a Sleeper table. This submits the files as a job in a queue. The job will
      * be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
-     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to,
+     * usually by setting the instance property 'sleeper.ingest.source.bucket'.
+     * <p>
+     * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
+     * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
+     * ingested.
      *
      * @param  tableName the name of the Sleeper table to write to
      * @param  files     a list of files containing the records to ingest
@@ -216,8 +227,12 @@ public class SleeperClient implements AutoCloseable {
      * Ingests the data in some given files to a Sleeper table. This submits the files as a job in a queue. The job will
      * be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
-     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to,
+     * usually by setting the instance property 'sleeper.ingest.source.bucket'.
+     * <p>
+     * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
+     * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
+     * ingested.
      *
      * @param job the job listing files in S3 to ingest
      */
@@ -229,8 +244,15 @@ public class SleeperClient implements AutoCloseable {
      * Ingests the data in some given files to a Sleeper table with the bulk import method. This submits the files as a
      * job in a queue. The job will be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
-     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to,
+     * usually by setting the instance property 'sleeper.ingest.source.bucket'.
+     * <p>
+     * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
+     * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
+     * ingested.
+     * <p>
+     * It is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless there are a
+     * minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param  tableName the name of the Sleeper table to write to
      * @param  platform  the platform the import should run on
@@ -251,8 +273,15 @@ public class SleeperClient implements AutoCloseable {
      * Ingests the data in some given files to a Sleeper table with the bulk import method. This submits the files as a
      * job in a queue. The job will be processed asynchronously. The ID of the job can be used to track its progress.
      * <p>
-     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
-     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to,
+     * usually by setting the instance property 'sleeper.ingest.source.bucket'.
+     * <p>
+     * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
+     * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
+     * ingested.
+     * <p>
+     * It is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless there are a
+     * minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param platform the platform the import should run on
      * @param job      the job listing files in S3 to ingest
@@ -267,14 +296,49 @@ public class SleeperClient implements AutoCloseable {
      * the batcher. The files can be tracked individually by their filename in the ingest batcher store, which will
      * track when they are assigned to a job. Any resulting jobs can then be tracked based on that entry.
      * <p>
-     * The files must be in S3. They can be either files or directories. If they are directories then all Parquet files
-     * under the directory will be ingested. Files should be specified in the format 'bucketName/objectKey'.
+     * The files must be in S3, either in the Sleeper data bucket or in a source bucket that Sleeper has access to,
+     * usually by setting the instance property 'sleeper.ingest.source.bucket'.
+     * <p>
+     * The files can be either files or directories, specified like 'bucket-name/path/to/file.parquet'
+     * or 'bucket-name/path/to/folder'. If they are directories then all Parquet files under the directory will be
+     * ingested.
+     * <p>
+     * The ingest batcher can be configured in table properties in the ingest batcher property group. If it is set to
+     * use bulk import, it is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless
+     * there are a minimum number of partitions defined, set in the table
+     * property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param tableName the name of the Sleeper table to write to
      * @param files     a list of files containing the records to ingest
      */
     public void sendFilesToIngestBatcher(String tableName, List<String> files) {
         ingestBatcherSender.submit(new IngestBatcherSubmitRequest(tableName, files));
+    }
+
+    /**
+     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as
+     * an export job in a queue. The job will be processed asynchronously.
+     *
+     * @param  tableName the table to export data from
+     * @return           the id of the export for tracking
+     */
+    public String bulkExport(String tableName) {
+        String exportId = UUID.randomUUID().toString();
+        bulkExport(BulkExportQuery.builder()
+                .tableName(tableName)
+                .exportId(exportId)
+                .build());
+        return exportId;
+    }
+
+    /**
+     * Exports the data defined in a bulk export query using the bulk export method. This submits the query as
+     * export in a queue. The job will be processed asynchronously.
+     *
+     * @param query the bulk export query
+     */
+    public void bulkExport(BulkExportQuery query) {
+        bulkExportQuerySender.sendQueryToBulkExport(query);
     }
 
     @Override
@@ -291,6 +355,7 @@ public class SleeperClient implements AutoCloseable {
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
         private IngestJobSender ingestJobSender;
+        private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
@@ -403,6 +468,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder ingestBatcherSender(IngestBatcherSender ingestBatcherSender) {
             this.ingestBatcherSender = ingestBatcherSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to send a bulk export job.
+         *
+         * @param  bulkExportQuerySender the client
+         * @return                       this builder for chaining
+         */
+        public Builder bulkExportQuerySender(BulkExportQuerySender bulkExportQuerySender) {
+            this.bulkExportQuerySender = bulkExportQuerySender;
             return this;
         }
 

@@ -29,16 +29,13 @@ use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::eyre;
 use futures::Future;
 use object_store::{
-    ClientOptions, CredentialProvider, Error, Result,
+    ClientOptions, CredentialProvider, Error, ObjectStore,
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
 };
 use url::Url;
 
-use crate::{
-    readahead::ReadaheadStore,
-    store::{LoggingObjectStore, SizeHintableStore},
-};
+use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -102,11 +99,18 @@ pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
     Ok(config_for_s3_module(&creds, region))
 }
 
+/// Extract the S3 bucket name from a URL.
+fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
+    src.host_str()
+        .map(ToOwned::to_owned)
+        .ok_or(eyre!("invalid S3 bucket name"))
+}
+
 /// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
-    store_map: RefCell<HashMap<String, Arc<dyn SizeHintableStore>>>,
+    store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,
 }
 
 impl ObjectStoreFactory {
@@ -115,6 +119,26 @@ impl ObjectStoreFactory {
         Self {
             s3_config,
             store_map: RefCell::new(HashMap::new()),
+        }
+    }
+
+    /// Create a cache key for the given URL.
+    ///
+    /// Most are based purely off the scheme for the URL,
+    /// but some implementations like [`AmazonS3`] are configured
+    /// per bucket, so that needs to be part of the cache key.
+    ///
+    /// # Errors
+    /// If the URL host can't be obtained
+    fn make_cache_key_for(url: &Url) -> color_eyre::Result<String> {
+        let scheme = url.scheme();
+        match scheme {
+            "s3" => {
+                // Amazon S3 object store implementation is bucket specific
+                let host = extract_bucket(url)?;
+                Ok(format!("s3://{host}"))
+            }
+            _ => Ok(scheme.to_owned()),
         }
     }
 
@@ -129,11 +153,10 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
-        let scheme = src.scheme();
+    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
-        match borrow.entry(scheme.to_owned()) {
+        match borrow.entry(ObjectStoreFactory::make_cache_key_for(src)?) {
             // if entry found, then clone the shared pointer
             Entry::Occupied(occupied) => Ok(occupied.get().clone()),
             // otherwise, attempt to create the object store
@@ -153,23 +176,28 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
+    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn ObjectStore>> {
         match src.scheme() {
-            "s3" => Ok(self.connect_s3(src).map(|e| {
-                Arc::new(LoggingObjectStore::new(
-                    ReadaheadStore::new(e)
-                        .with_max_live_streams(
-                            std::thread::available_parallelism()
-                                .unwrap_or(NonZero::new(2usize).unwrap())
-                                .get(),
-                        )
-                        .with_max_stream_age(Duration::from_secs(60)),
-                    "DataFusion",
-                ))
-            })?),
+            "s3" => {
+                let bucket = format!("s3://{}", extract_bucket(src)?);
+                Ok(self.connect_s3(src).map(|e| {
+                    Arc::new(LoggingObjectStore::new(
+                        ReadaheadStore::new(e, bucket.clone())
+                            .with_max_live_streams(
+                                std::thread::available_parallelism()
+                                    .unwrap_or(NonZero::new(2usize).unwrap())
+                                    .get(),
+                            )
+                            .with_max_stream_age(Duration::from_secs(60)),
+                        "DataFusion",
+                        bucket,
+                    ))
+                })?)
+            }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
                 "Local",
+                "file:/",
             ))),
             _ => Err(eyre!("no object store for given schema")),
         }
@@ -185,5 +213,68 @@ impl ObjectStoreFactory {
                 "Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory"
             )),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use color_eyre::eyre::Result;
+    use url::Url;
+
+    use super::{ObjectStoreFactory, extract_bucket};
+
+    #[test]
+    fn should_extract_bucket() -> Result<()> {
+        // Given
+        let url = Url::parse("s3://some_bucket/some/path/object.ext")?;
+
+        // When
+        let bucket = extract_bucket(&url)?;
+
+        // Then
+        assert_eq!(bucket, "some_bucket");
+        Ok(())
+    }
+
+    #[test]
+    fn should_be_invalid_bucket() -> Result<()> {
+        // Given
+        let url = Url::parse("s3:/path/something.ext")?;
+
+        // When
+        let bucket = extract_bucket(&url);
+
+        // Then
+        assert!(bucket.is_err());
+        let s = bucket.unwrap_err().to_string();
+        assert_eq!(s, "invalid S3 bucket name");
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_create_scheme_cache_key_for_local() -> Result<()> {
+        // Given
+        let url = Url::parse("file:///some/file")?;
+
+        // When
+        let cache_key = ObjectStoreFactory::make_cache_key_for(&url)?;
+
+        // Then
+        assert_eq!(cache_key, "file");
+        Ok(())
+    }
+
+    #[test]
+    fn should_create_bucket_cache_key_for_s3() -> Result<()> {
+        // Given
+        let url = Url::parse("s3://test-bucket/key")?;
+
+        // When
+        let cache_key = ObjectStoreFactory::make_cache_key_for(&url)?;
+
+        // Then
+        assert_eq!(cache_key, "s3://test-bucket");
+        Ok(())
     }
 }

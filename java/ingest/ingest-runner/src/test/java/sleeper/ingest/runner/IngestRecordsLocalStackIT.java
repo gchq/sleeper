@@ -54,12 +54,12 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile(2L));
         //  - Read file and check it has correct records
-        assertThat(readRecords(fileReferences.get(0)))
+        assertThat(readRecords(fileReferences))
                 .containsExactlyElementsOf(records);
         //  - Local files should have been deleted
-        assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
+        assertThat(Paths.get(ingestLocalFiles)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
-        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0)))
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
                 .isEqualTo(SketchesDeciles.from(schema, records));
     }
 

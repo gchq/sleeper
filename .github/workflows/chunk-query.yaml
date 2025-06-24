@@ -14,7 +14,7 @@ on:
       - 'java/query/query-lambda/**'
       - 'java/athena/**'
       - 'java/trino/**'
-      - 'java/splitter/splitter-core/**'
+      - 'java/partitions/splitter/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/statestore/**'
       - 'java/common/common-job/**'

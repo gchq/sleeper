@@ -15,17 +15,15 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import sleeper.clients.QueryLambdaClient;
+import sleeper.clients.query.QueryLambdaClient;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -39,6 +37,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestRandomDataSettings;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -46,8 +45,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
@@ -57,8 +55,8 @@ public class MultipleQueries {
     private final long numQueries;
     private final SystemTestProperties systemTestProperties;
     private final SqsClient sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final S3Client s3Client;
+    private final DynamoDbClient dynamoClient;
     private final String tableName;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MultipleQueries.class);
@@ -68,8 +66,8 @@ public class MultipleQueries {
             long numQueries,
             SystemTestProperties systemTestProperties,
             SqsClient sqsClient,
-            AmazonS3 s3Client,
-            AmazonDynamoDB dynamoClient) {
+            S3Client s3Client,
+            DynamoDbClient dynamoClient) {
         this.tableName = tableName;
         this.numQueries = numQueries;
         this.systemTestProperties = systemTestProperties;
@@ -85,7 +83,7 @@ public class MultipleQueries {
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Supplier<Key> keySupplier = RandomRecordSupplier.getSupplier(schema.getRowKeyTypes(),
-                new RandomRecordSupplierConfig(systemTestProperties));
+                SystemTestRandomDataSettings.fromProperties(systemTestProperties.testPropertiesOnly()));
         // Submit queries to queue
         Instant startTime = Instant.now();
         LOGGER.info("Starting run() at {}", startTime);
@@ -147,15 +145,12 @@ public class MultipleQueries {
         String tableName = args[1];
         long numQueries = Long.parseLong(args[2]); // TODO Get from system test properties file
 
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        try (SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder())) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             MultipleQueries multipleQueries = new MultipleQueries(tableName, numQueries, systemTestProperties, sqsClient, s3Client, dynamoClient);
             multipleQueries.run();
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
         }
     }
 }

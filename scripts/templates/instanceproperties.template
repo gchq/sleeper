@@ -6,7 +6,7 @@
 # Template Values #
 ###################
 
-## The following properties are commonly used throughout Sleeper.
+## The following instance properties are commonly used throughout Sleeper.
 
 # A string to uniquely identify this deployment. This should be no longer than 20 chars. It should be
 # globally unique as it will be used to name AWS resources such as S3 buckets.
@@ -33,7 +33,7 @@ sleeper.subnets=changeme
 # Default Values #
 ##################
 
-## The following properties are commonly used throughout Sleeper.
+## The following instance properties are commonly used throughout Sleeper.
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
 # assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that bucket contains two iterator
@@ -60,6 +60,10 @@ sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportSt
 # The deployment type for AWS Lambda. Not case sensitive.
 # Valid values: [jar, container]
 sleeper.lambda.deploy.type=jar
+
+# The AWS endpoint URL. This should only be set for a non-standard service endpoint. Usually this is
+# used to set the URL to LocalStack for a locally deployed instance.
+# sleeper.endpoint.url=
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
@@ -137,7 +141,7 @@ sleeper.properties.force.reload=false
 sleeper.default.lambda.concurrency.max=10
 
 
-## The following properties relate to handling the state of Sleeper tables.
+## The following instance properties relate to handling the state of Sleeper tables.
 
 # Default value for amount of memory in MB for each lambda that holds the state of Sleeper tables in
 # memory. These use a state store provider which caches a number of tables at once, set in
@@ -281,7 +285,7 @@ sleeper.statestore.committer.concurrency.reserved=10
 sleeper.statestore.committer.concurrency.max=10
 
 
-## The following properties relate to standard ingest.
+## The following instance properties relate to standard ingest.
 
 # The maximum number of concurrent ECS tasks to run.
 sleeper.ingest.max.concurrent.tasks=200
@@ -323,10 +327,10 @@ sleeper.ingest.task.memory.mb=4096
 # refresh frequency.)
 sleeper.ingest.partition.refresh.period=120
 
-# A comma-separated list of buckets that contain files to be ingested via ingest jobs. The buckets
-# should already exist, i.e. they will not be created as part of the cdk deployment of this instance
-# of Sleeper. The ingest and bulk import stacks will be given read access to these buckets so that
-# they can consume data from them.
+# A comma-separated list of bucket names that contain files to be ingested in ingest or bulk import
+# jobs. Use this to specify your own buckets that already exist in the same AWS account. Sleeper will
+# not create these. The Sleeper CDK deployment will assign permissions to the ingest and bulk import
+# systems so that they can consume data from these buckets.
 # sleeper.ingest.source.bucket=
 
 # Flag to enable/disable storage of tracking information for ingest jobs and tasks.
@@ -398,16 +402,15 @@ sleeper.ingest.arrow.max.single.write.to.file.records=1024
 # "The provided S3AsyncClient is not an instance of S3CrtAsyncClient, and thus multipart
 # upload/download feature is not enabled and resumable file upload is not supported. To benefit from
 # maximum throughput, consider using S3AsyncClient.crtBuilder().build() instead."
-# (async partition file writer only)
 sleeper.ingest.async.client.type=crt
 
 # The part size in bytes to use for multipart uploads.
-# (CRT async ingest only) [128MB]
+# (CRT client type only) [128MB]
 sleeper.ingest.async.crt.part.size.bytes=134217728
 
 # The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded
 # simultaneously.
-# (CRT async ingest only)
+# (CRT client type only)
 sleeper.ingest.async.crt.target.throughput.gbps=10
 
 # The amount of memory in MB for the lambda that receives submitted requests to ingest files.
@@ -428,7 +431,7 @@ sleeper.ingest.batcher.job.creation.timeout.seconds=900
 sleeper.ingest.batcher.job.creation.period.minutes=1
 
 
-## The following properties relate to bulk export.
+## The following instance properties relate to bulk export.
 
 # The amount of memory in MB for lambda functions that start bulk export jobs.
 sleeper.bulk.export.memory.mb=4096
@@ -492,8 +495,8 @@ sleeper.bulk.export.task.wait.time.seconds=20
 sleeper.bulk.export.keepalive.period.seconds=300
 
 
-## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
-## or EKS.
+## The following instance properties relate to bulk import, i.e. ingesting data using Spark jobs
+## running on EMR or EKS.
 ## 
 ## Note that on EMR, the total resource allocation must align with the instance types used for the
 ## cluster. For the maximum memory usage, combine the memory and memory overhead properties, and
@@ -662,7 +665,7 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 sleeper.bulk.import.emr.serverless.architecture=X86_64
 
 # The version of EMR Serverless to use.
-sleeper.bulk.import.emr.serverless.release=emr-7.2.0
+sleeper.bulk.import.emr.serverless.release=emr-7.9.0
 
 # Set to true to allow an EMR Serverless Application to start automatically when a job is submitted.
 sleeper.bulk.import.emr.serverless.autostart.enabled=true
@@ -798,31 +801,35 @@ sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
-sleeper.default.bulk.import.emr.release.label=emr-7.2.0
+sleeper.default.bulk.import.emr.release.label=emr-7.9.0
 
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
-# import using EMR - Instance types section in docs/usage/ingest.md
+# import using EMR - Instance types section in docs/usage/bulk-import.md
 sleeper.default.bulk.import.emr.instance.architecture=arm64
 
 # (Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be used for the
 # master node of the EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.default.bulk.import.emr.master.x86.instance.types=m7i.xlarge
 
 # (Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be used for the
 # executor nodes of the EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.default.bulk.import.emr.executor.x86.instance.types=m7i.4xlarge
 
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used for the
 # master node of the EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.default.bulk.import.emr.master.arm.instance.types=m7g.xlarge
 
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used for the
 # executor nodes of the EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.default.bulk.import.emr.executor.arm.instance.types=m7g.4xlarge
 
 # (Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of
@@ -851,31 +858,35 @@ sleeper.default.bulk.import.emr.executor.initial.instances=2
 sleeper.default.bulk.import.emr.executor.max.instances=10
 
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
-sleeper.bulk.import.persistent.emr.release.label=emr-7.2.0
+sleeper.bulk.import.persistent.emr.release.label=emr-7.9.0
 
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
-# EMR - Instance types section in docs/usage/ingest.md
+# EMR - Instance types section in docs/usage/bulk-import.md
 sleeper.bulk.import.persistent.emr.instance.architecture=arm64
 
 # (Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the master node of the
 # persistent EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m7i.xlarge
 
 # (Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the executor nodes of
 # the persistent EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m7i.4xlarge
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the master node of the
 # persistent EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.bulk.import.persistent.emr.master.arm.instance.types=m7g.xlarge
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the executor nodes of
 # the persistent EMR cluster.
-# For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
+# For more information, see the Bulk import using EMR - Instance types section in
+# docs/usage/bulk-import.md
 sleeper.bulk.import.persistent.emr.executor.arm.instance.types=m7g.4xlarge
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
@@ -914,7 +925,7 @@ sleeper.bulk.import.persistent.emr.cluster.full.requeue.delay=60
 sleeper.bulk.import.eks.is.native.libs.image=false
 
 
-## The following properties relate to the splitting of partitions.
+## The following instance properties relate to the splitting of partitions.
 
 # The frequency in minutes with which the lambda runs to find partitions that need splitting and send
 # jobs to the splitting lambda.
@@ -964,7 +975,7 @@ sleeper.partition.splitting.reserved.concurrency=10
 sleeper.default.partition.splitting.threshold=1000000000
 
 
-## The following properties relate to garbage collection.
+## The following instance properties relate to garbage collection.
 
 # The frequency in minutes with which the garbage collector lambda is run.
 sleeper.gc.period.minutes=15
@@ -1013,7 +1024,7 @@ sleeper.gc.files.maximum=750000
 sleeper.default.gc.delay.minutes=15
 
 
-## The following properties relate to compactions.
+## The following instance properties relate to compactions.
 
 # The number of tables to perform compaction job creation for in a single invocation. This will be the
 # batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.
@@ -1291,7 +1302,7 @@ sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.part
 sleeper.default.table.compaction.method=JAVA
 
 
-## The following properties relate to queries.
+## The following instance properties relate to queries.
 
 # The maximum number of simultaneous connections to S3 from a single query runner. This is separated
 # from the main one as it's common for a query runner to need to open more files at once.
@@ -1341,7 +1352,7 @@ sleeper.default.query.results.page.size=131072
 sleeper.query.warm.lambda.period.minutes=5
 
 
-## The following properties relate to metrics.
+## The following instance properties relate to metrics.
 
 # The namespaces for the metrics used in the metrics stack.
 sleeper.metrics.namespace=Sleeper
@@ -1367,7 +1378,7 @@ sleeper.metrics.offline.enabled=false
 sleeper.dashboard.time.window.minutes=5
 
 
-## The following properties relate to logging.
+## The following instance properties relate to logging.
 
 # The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is
 # always set to INFO.
@@ -1386,7 +1397,7 @@ sleeper.dashboard.time.window.minutes=5
 # sleeper.logging.root.level=
 
 
-## The following properties relate to the integration with Athena.
+## The following instance properties relate to the integration with Athena.
 
 # The number of days before objects in the spill bucket are deleted.
 sleeper.athena.spill.bucket.ageoff.days=1
@@ -1405,7 +1416,7 @@ sleeper.athena.handler.timeout.seconds=900
 # sleeper.athena.spill.master.key.arn=
 
 
-## The following properties relate to default values used by table properties.
+## The following instance properties relate to default values used by table properties.
 
 # Default used during Parquet queries to determine whether the column indexes are used.
 sleeper.default.parquet.query.column.index.enabled=false

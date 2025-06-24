@@ -15,16 +15,13 @@
  */
 package sleeper.ingest.batcher.job.creator;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -46,21 +43,21 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class IngestBatcherJobCreatorLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherJobCreatorLambda.class);
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final String configBucket;
-    private final AmazonSQS sqs;
-    private final AmazonDynamoDB dynamoDB;
+    private final SqsClient sqs;
+    private final DynamoDbClient dynamoDB;
     private final Supplier<Instant> timeSupplier;
     private final Supplier<String> jobIdSupplier;
 
     public IngestBatcherJobCreatorLambda() {
-        this(AmazonS3ClientBuilder.defaultClient(), getConfigBucket(),
-                AmazonSQSClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(),
+        this(S3Client.create(), getConfigBucket(),
+                SqsClient.create(), DynamoDbClient.create(),
                 Instant::now, () -> UUID.randomUUID().toString());
     }
 
     public IngestBatcherJobCreatorLambda(
-            AmazonS3 s3, String configBucket, AmazonSQS sqs, AmazonDynamoDB dynamoDB,
+            S3Client s3, String configBucket, SqsClient sqs, DynamoDbClient dynamoDB,
             Supplier<Instant> timeSupplier, Supplier<String> jobIdSupplier) {
         this.s3Client = s3;
         this.configBucket = configBucket;

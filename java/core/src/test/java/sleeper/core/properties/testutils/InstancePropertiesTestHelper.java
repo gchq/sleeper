@@ -16,7 +16,7 @@
 package sleeper.core.properties.testutils;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -83,7 +83,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(ID, id);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
-        instanceProperties.set(JARS_BUCKET, "test-bucket");
+        instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results");
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(REGION, "test-region");

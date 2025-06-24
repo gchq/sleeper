@@ -22,8 +22,8 @@ passthrough = [
     "ACTIONS_RESULTS_URL",
     "ACTIONS_RUNTIME_TOKEN",
     "ACTIONS_CACHE_SERVICE_V2",
-    "CC=sccache clang-18",
-    "CXX=sccache clang++-18"
+    "CC=sccache clang-20",
+    "CXX=sccache clang++-20"
 ]
 
 [target.aarch64-unknown-linux-gnu]
@@ -33,4 +33,4 @@ dockerfile = "Dockerfile.sccache.aarch64-unknown-linux-gnu"
 dockerfile = "Dockerfile.sccache.x86_64-unknown-linux-gnu"
 
 [build]
-pre-build = ["apt-get update && apt-get --assume-yes install libssl-dev clang-18"]
+pre-build = "./cross-prebuild.sh"

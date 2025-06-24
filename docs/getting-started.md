@@ -5,33 +5,36 @@ There are 2 ways of deploying Sleeper and interacting with an instance. You can 
 local machine. The Docker version has limited functionality and will only work with small volumes of data, but will
 allow you to deploy an instance, ingest some files, and run reports and scripts against the instance.
 
-## Deploy to Docker
+## Sleeper in LocalStack
 
 The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
 LocalStack version has very limited functionality in comparison to the AWS version, and can only handle small volumes of
-data. See the documentation on [deploying to localstack](usage/deploy-to-localstack.md) for more information.
+data. See the documentation on [deploying to localstack](deployment/deploy-to-localstack.md) for more information.
 
-## Deploy to AWS
+The rest of this guide will deal with Sleeper in AWS.
 
-The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
-This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
-then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
-understand what the system is doing. It is best to do this from an EC2 instance as a significant amount of code needs to
-be uploaded to AWS.
+## Sleeper in AWS
 
-We'll use the Sleeper CLI to deploy an EC2 instance in an environment suitable for working with Sleeper.
+This Git repository contains scripts that let you build and/or deploy Sleeper with a single command, to minimise setup.
+The Sleeper CLI lets you run these scripts in a Docker container, with only Docker as a pre-installed dependency.
+
+It's currently necessary to build the system yourself to deploy or interact with Sleeper. In the future we may publish
+pre-built artefacts that will make this unnecessary.
+
+## Install Sleeper CLI
+
+The Sleeper CLI runs a Docker container that contains all the necessary tools to build and deploy Sleeper. This can give
+you a command line inside a container with these tools pre-installed, or run commands in such a container. This way you
+can avoid needing to install any dependencies other than Docker on your machine.
 
 ### Dependencies
 
-The Sleeper CLI has the following dependencies:
+The Sleeper CLI has the following dependencies, please install these first:
 
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2 to v5.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v24.0.2
+* [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/)
 
-### Install Sleeper CLI
-
-**Due to a bug in GitHub, only one version of the CLI is available.** See the following
-issue: https://github.com/gchq/sleeper/issues/2494
+### Install script
 
 You can run the following commands to install the latest version of the CLI from GitHub:
 
@@ -41,148 +44,97 @@ chmod +x ./sleeper-install.sh
 ./sleeper-install.sh
 ```
 
-The CLI consists of a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
-`sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
-AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
-you use `sleeper`.
+Relaunch your terminal and check that the command `sleeper version` gives a version number. Note that this will be the
+version of the CLI, rather than the version of Sleeper you will deploy.
 
-If you already have the CLI installed, you can upgrade to the latest version of the CLI using `sleeper cli upgrade`.
+### Commands
 
-### Authentication
+The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
+`cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set AWS environment variables or
+configuration on the host machine, that will be propagated to the Docker container when you use `sleeper`.
 
-To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. The AWS configuration will be
-mounted into Sleeper CLI Docker containers from your home directory on your host machine. AWS environment variables will
-also be propagated to Sleeper CLI containers if you set them on the host machine.
+The `sleeper builder` command gives you a command line in a Docker container with all the necessary tools to build
+Sleeper, and a workspace folder persisted in the host at `~/.sleeper/builder`. We will use this to deploy and interact
+with Sleeper.
 
-You can configure AWS without installing the AWS CLI by running `sleeper aws configure`, or any other AWS commands
-you may need with `sleeper aws`.
+You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
+build and deployment tools up to date.
 
-Most Sleeper clients also require you to set the default region.
+## Environment setup
 
-### Deployment environment
+If you already have an instance of Sleeper, please see the [usage guide](usage-guide.md) for how to interact with it.
+If you're deploying your own, you'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance
+to deploy from, to avoid lengthy uploads of large jar files and Docker images from outside AWS. You can use the Sleeper
+CLI to create both of these, see the documentation for
+the [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md).
 
-If the CDK has never been bootstrapped in your AWS account, this must be done first. This only needs to be done
-once in a given AWS account.
+If you prefer to use your own VPC, you'll need to ensure it meets Sleeper's requirements. It should ideally have
+multiple private subnets in different availability zones. Those subnets should have egress, e.g. via a NAT gateway. The
+VPC should have gateway endpoints for S3 and DynamoDB. If there is no gateway endpoint for S3, deployment of a Sleeper
+instance will fail in the CDK.
 
-```bash
-sleeper cdk bootstrap
-```
+If you prefer to use your own EC2, it should run on an x86_64 architecture, with Bash and Docker, and have enough
+resources to build code for Maven and Rust. We've tested with 8GB RAM and 2 vCPUs, with `t3.large`. We recommend 4 vCPUs
+(`t3.xlarge`), as that takes the build from over 40 minutes with 2 vCPUs, to around 20 minutes for the first build.
 
-Next, you'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance to deploy from, to
-avoid lengthy uploads of large jar files and Docker images. You can use the Sleeper CLI to create both of these.
+The [Sleeper CLI deployment environment](deployment/cli-deployment-environment.md) includes options to deploy an EC2 to
+an existing VPC, or a VPC on its own. If you don't use that, you will need to have bootstrapped CDK in your AWS account.
 
-If you prefer to use your own EC2, you'll need to build Sleeper there as described in
-the [developer guide](developer-guide.md). The EC2 should run on an x86_64 architecture. If you prefer to use your own VPC,
-you'll need to ensure it meets Sleeper's requirements. Deployment of an EC2 to an existing VPC is documented in
-the [deployment guide](deployment-guide.md#managing-environments).
+You can also refer to [environment setup](deployment/environment-setup.md) for how to authenticate with AWS, how to
+bootstrap CDK, and how to verify you have sufficient AWS Lambda concurrency quota in your account.
 
-#### Sleeper CLI environment
+Once you've got a suitable VPC, and an EC2 with the Sleeper CLI installed, you can either use our deployment scripts,
+or invoke the CDK yourself as described in the [deployment guide](deployment-guide.md).
 
-The Sleeper CLI can create an EC2 instance in a VPC that is suitable for deploying Sleeper. This will automatically
-configure authentication such that once you're in the EC2 instance you'll have administrator access to your AWS account.
-This is suitable for non-production use, see the [deployment guide](deployment-guide.md#deployment-environment) for
-further details.
+## Deployment
 
-You can deploy a fresh environment like this:
+The easiest way to deploy a full instance of Sleeper and interact with it is to use the "system test" functionality.
+This deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can
+then use the status scripts to see how much data is in the system, run some example queries, and view logs to help
+understand what the system is doing.
 
-```bash
-# Replace <environment-id> with your own unique environment ID.
-sleeper environment deploy <environment-id>
-```
+If you'd prefer to match how you would deploy to production, see the [deployment guide](deployment-guide.md).
 
-If someone else has already created an environment that you want to share, you can add it as long as you have access
-and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
-identity to a particular user. Anyone with access to the EC2 can connect as any user. Users will have separate instances
-of the Sleeper repository checked out with Git.
+The Git repository includes a manual system test deployment script that builds and deploys Sleeper, and starts random
+data generation in a separate "system test" ECS cluster. By default this generates 40 million records per ECS task. This
+script takes a globally unique Sleeper instance ID, and IDs of the VPC and subnets you want to deploy the instance to.
 
-```bash
-sleeper environment add <environment-id>
-# Make sure your username is different from other users.
-# If you already have a user on the EC2, you can use setuser instead of adduser.
-sleeper environment adduser <username>
-```
+The instance ID must be 20 characters or less, and should consist of lower case letters, numbers, and hyphens. We use
+the instance ID as part of the name of all AWS resources that are deployed.
 
-The `sleeper environment deploy` command will wait for the EC2 instance to be deployed.
-You can then SSH to it with EC2 Instance Connect and SSM Session Manager, using this command:
-
-```bash
-sleeper environment connect
-```
-
-Immediately after it's deployed, commands will run on this instance to install the Sleeper CLI. Once you're connected,
-you can check the progress of those commands like this:
-
-```bash
-cloud-init status
-```
-
-You can check the output like this (add `-f` if you'd like to follow the progress):
-
-```bash
-tail /var/log/cloud-init-output.log
-```
-
-This process will install the Sleeper CLI and clone the Sleeper Git repository. Once it has finished the EC2 will
-restart. If you added an existing environment, adding a user will clone your own copy of the repository, but cloud-init
-will already have been done, and the EC2 will not restart.
-
-Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository mounted into it:
-
-```bash
-sleeper environment connect      # Get a shell in the EC2 you deployed
-sleeper builder                  # Get a shell in a builder Docker container (hosted in the EC2)
-cd sleeper                       # Change directory to the root of the Git repository
-git checkout --track origin/main # Check out the latest release version
-```
-
-This Docker container includes the dependencies for building Sleeper. The rest of the guide assumes you're in the root
-of the Sleeper repository after using these commands. The directory with the Git repository will be persisted between
-executions of `sleeper builder`, and re-mounted to a fresh container each time you run it.
-
-If you run `sleeper builder` outside of the EC2, you'll get the same thing but in your local Docker host. Please ensure
-you connect to the EC2 first via `sleeper environment connect`, to avoid the deployment being slow uploading jars and
-Docker images.
-
-### System test
-
-The easiest way to deploy an instance of Sleeper is to use the scripts for manual system testing. First, set the
-environment variable `ID` to be a globally unique string. This is the instance id. It will be used as part of the name
-of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should conform to the naming requirements
-of those services. In general stick to lowercase letters, numbers, and hyphens. We use the instance id as part of the
-name of all the resources that are deployed. This makes it easy to find the resources that Sleeper has deployed within
-each service (go to the service in the AWS console and type the instance id into the search box).
-
-Avoid reusing the same instance id, as log groups from a deleted instance will still be present unless you delete them.
+Avoid reusing the same instance ID, as log groups from a deleted instance will still be present unless you delete them.
 An instance will fail to deploy if it would replace log groups from a deleted instance.
 
-Create an environment variable called `VPC` which is the id of the VPC you want to deploy Sleeper to, and create an
-environment variable called `SUBNETS` with the ids of subnets you wish to deploy Sleeper to (note that this is only
-relevant to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability
-zones). Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
+Subnets should be specified with commas in between the IDs, e.g. `subnet-a,subnet-b`.
 
-The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
+We will run the deployment in a Docker container in your EC2 instance, using the `sleeper builder` command. This Docker
+container will be deleted after you exit. This contains a workspace mounted from a folder in the host home directory,
+which will persist after the container exits, and will be reused by future calls to `sleeper builder`. It also inherits
+the AWS and Docker configuration from the host.
 
-Before you can run any scripts, you need to build the project. From the root of the Git repository, run:
-
-```bash
-./scripts/build/buildForTest.sh
-```
-
-Then you can deploy the system test instance by running the following command:
+From a command line in your EC2 instance, if you set environment variables for the instance `ID`, `VPC` and `SUBNETS`,
+you can run the script like this:
 
 ```bash
-./scripts/test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
+sleeper builder # Create a Docker container with a workspace mounted in from the host directory ~/.sleeper/builder
+git clone --branch main https://github.com/gchq/sleeper.git # Get the latest release version of Sleeper
+cd sleeper
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
-Note that this script currently needs to be run from an x86_64 machine as we do not yet have cross-architecture Docker
-builds. Then CDK will be used to deploy a Sleeper instance. This will take around 20 minutes. Once that is complete,
-some tasks are started on an ECS cluster. These tasks generate some random data and write it to Sleeper. 11 ECS tasks
-will be created. Each of these will write 40 million records. As all writes to Sleeper are asynchronous, it will take a
-while before the data appears (around 8 minutes).
+You may prefer to run this script in the background and redirect output to a file:
 
-You can watch what the ECS tasks that are writing data are doing by going to the ECS cluster named
-sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
+```bash
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS} &> test.log &
+less -R test.log # Press shift+F to follow the output in less
+```
+
+This should take around 20 minutes to build the code, and another 20 minutes to deploy the instance with the CDK. Once
+it finishes, you can watch the random data generation tasks in the AWS console by finding the ECS cluster
+named `sleeper-${ID}-system-test-cluster`. You can view logs for tasks in the cluster. It takes around 10 minutes to
+generate data. The data will appear in Sleeper in large batches as the tasks finish.
+
+### Interacting with Sleeper
 
 Run the following command to see how many records are currently in the system:
 
@@ -230,7 +182,7 @@ To tear all the infrastructure down, run
 ./scripts/test/tearDown.sh
 ```
 
-It is possible to run variations on this system-test by editing the system test properties, like this:
+It is possible to run variations on this system test by editing the system test properties, like this:
 
 ```bash
 cd ./scripts/test/deployAll

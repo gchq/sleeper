@@ -18,7 +18,7 @@ package sleeper.core.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.validation.DefaultAsyncCommitBehaviour;
+import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
@@ -37,7 +37,7 @@ public class TablePropertiesAsyncCommitsTest {
     void shouldEnableAsyncCommitsByDefaultForTransactionLogStateStore() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore");
+        tableProperties.set(STATESTORE_CLASSNAME, "DynamoDBTransactionLogStateStore");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
@@ -52,7 +52,7 @@ public class TablePropertiesAsyncCommitsTest {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore");
+        tableProperties.set(STATESTORE_CLASSNAME, "DynamoDBTransactionLogStateStore");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
@@ -65,7 +65,7 @@ public class TablePropertiesAsyncCommitsTest {
     void shouldDisableAsyncCommitsByDefaultForNonTransactionLogStateStore() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.SomeOtherStateStore");
+        tableProperties.set(STATESTORE_CLASSNAME, "SomeOtherStateStore");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))

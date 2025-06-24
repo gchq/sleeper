@@ -59,6 +59,9 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.sketches.store.LocalFileSystemSketchesStore;
+import sleeper.sketches.store.SketchesStore;
+import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -120,6 +123,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private String dataDir;
+    protected final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -158,19 +162,21 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> fileReferences = stateStore.getFileReferences();
+        assertThat(fileReferences).singleElement().satisfies(fileReference -> {
+            SketchesDeciles.fromFile(schema, fileReference, sketchesStore)
+                    .equals(SketchesDeciles.builder()
+                            .field("key", deciles -> deciles
+                                    .min(0).max(99)
+                                    .rank(0.1, 10).rank(0.2, 20).rank(0.3, 30)
+                                    .rank(0.4, 40).rank(0.5, 50).rank(0.6, 60)
+                                    .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
+                            .build());
+        });
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -206,17 +212,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -393,17 +391,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
+            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
@@ -423,7 +413,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(filename, schema)) {
             List<Record> readRecords = new ArrayList<>();
             Record record = reader.read();
             while (null != record) {
@@ -552,7 +542,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) {
         tablePropertiesStore(instanceProperties).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
         update(stateStore).initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
         return stateStore;
     }
@@ -568,7 +558,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job, Supplier<Instant> timeSupplier) throws IOException {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                 properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(

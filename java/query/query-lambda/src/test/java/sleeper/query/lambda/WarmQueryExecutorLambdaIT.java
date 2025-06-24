@@ -16,11 +16,11 @@
 package sleeper.query.lambda;
 
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -48,7 +48,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,10 +93,13 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         lambda.handleRequest(new ScheduledEvent(), null);
 
         // Then
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL)));
-        assertThat(result.getMessages()).hasSize(1);
+        ReceiveMessageResponse result = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(instanceProperties.get(QUERY_QUEUE_URL))
+                .build());
 
-        Query query = querySerDe.fromJson(result.getMessages().get(0).getBody());
+        assertThat(result.messages()).hasSize(1);
+
+        Query query = querySerDe.fromJson(result.messages().get(0).body());
         Query expected = buildExpectedQuery(query.getQueryId(), tableProperties.get(TABLE_NAME), schema,
                 new Field("test-key", new StringType()), "a");
 
@@ -132,11 +134,9 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(CONFIG_BUCKET, "testing");
-        instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL,
-                sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(QUERY_RESULTS_QUEUE_URL,
-                sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(QUERY_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(LEAF_PARTITION_QUERY_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(QUERY_RESULTS_QUEUE_URL, createSqsQueueGetUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
@@ -149,7 +149,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 
     private void createTable(TableProperties tableProperties) {
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         update(stateStore).initialise(tableProperties.getSchema());
     }

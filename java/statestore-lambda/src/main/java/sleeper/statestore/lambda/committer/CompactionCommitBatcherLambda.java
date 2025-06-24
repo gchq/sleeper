@@ -21,12 +21,10 @@ import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.compaction.core.job.commit.CompactionCommitBatcher;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageHandle;
@@ -51,8 +49,8 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     private final CompactionCommitBatcher batcher;
 
     public CompactionCommitBatcherLambda() {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        S3Client s3Client = S3Client.create();
+        SqsClient sqsClient = SqsClient.create();
         String bucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         this.batcher = createBatcher(instanceProperties, sqsClient, s3Client);
@@ -86,7 +84,7 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
      * @return                    the batcher
      */
     public static CompactionCommitBatcher createBatcher(
-            InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
+            InstanceProperties instanceProperties, SqsClient sqsClient, S3Client s3Client) {
         return new CompactionCommitBatcher(new SqsFifoStateStoreCommitRequestSender(
                 instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.forFileTransactions()));
     }

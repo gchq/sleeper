@@ -56,7 +56,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         // Given
         String bucketName = UUID.randomUUID().toString();
         createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);
@@ -82,7 +82,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         // Given
         String bucketName = UUID.randomUUID().toString();
         createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
 
         putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
@@ -109,7 +109,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         // Given
         String bucketName = UUID.randomUUID().toString();
         createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
         String alternativeBucket = bucketName + "-alternative";
 
         createBucket(alternativeBucket);
@@ -150,7 +150,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
                 .withResourceProperties(resourceProperties)
                 .build();
 
-        PropertiesWriterLambda lambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
+        PropertiesWriterLambda lambda = new PropertiesWriterLambda(s3Client, bucketName);
         lambda.handleEvent(event, null);
 
         // Then

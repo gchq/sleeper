@@ -26,6 +26,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
@@ -40,12 +41,12 @@ public class WriteRandomDataFiles {
     }
 
     public static String writeToS3GetDirectory(
-            SystemTestPropertyValues systemTestProperties, TableProperties tableProperties, Configuration hadoopConf, String jobId) throws IOException {
+            SystemTestPropertyValues systemTestProperties, TableProperties tableProperties, Configuration hadoopConf, SystemTestDataGenerationJob job) throws IOException {
 
-        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + jobId;
+        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + job.getJobId();
 
         writeToPath(dir, "s3a://", tableProperties,
-                WriteRandomData.createRecordIterator(systemTestProperties, tableProperties),
+                WriteRandomData.createRecordIterator(job, tableProperties),
                 hadoopConf);
         return dir;
     }

@@ -32,9 +32,9 @@ pub struct PositionedStream {
     // Underlying stream of Bytes
     inner: BoxStream<'static, Result<Bytes>>,
     // Absolute position in stream of object
-    pos: usize,
+    pos: u64,
     // Absolute position for where to stop this stream (exclusive)
-    stop_pos: usize,
+    stop_pos: u64,
     // Function to run when this instance is destructed
     des_func: Option<BoxFunc>,
 }
@@ -62,14 +62,14 @@ impl Drop for PositionedStream {
 impl PositionedStream {
     /// Wrap the given byte stream.
     #[allow(dead_code)]
-    pub fn new(inner: BoxStream<'static, Result<Bytes>>, pos: usize, stop_pos: usize) -> Self {
+    pub fn new(inner: BoxStream<'static, Result<Bytes>>, pos: u64, stop_pos: u64) -> Self {
         Self::new_with_disposal(inner, pos, stop_pos, None::<fn(&mut PositionedStream)>)
     }
     /// Wrap the given byte stream with a given function to call when instance is dropped.
     pub fn new_with_disposal<F: FnOnce(&mut PositionedStream) + Send + Sync + 'static>(
         inner: BoxStream<'static, Result<Bytes>>,
-        pos: usize,
-        stop_pos: usize,
+        pos: u64,
+        stop_pos: u64,
         des_func: Option<F>,
     ) -> Self {
         assert!(pos <= stop_pos, "Position greater than stop position");
@@ -93,7 +93,7 @@ impl PositionedStream {
     /// # Panics
     /// If `desired_pos` is less than the current position or greater than
     /// the stop position of the stream.
-    pub async fn skip_to(&mut self, desired_pos: usize) -> Result<Option<usize>> {
+    pub async fn skip_to(&mut self, desired_pos: u64) -> Result<Option<usize>> {
         assert!(
             desired_pos >= self.pos,
             "Desired position less than current position"
@@ -130,17 +130,23 @@ impl PositionedStream {
     /// # Panics
     /// If the desired position is less than the current stream position.
     ///
-    fn splice_bytes(&mut self, mut bytes: Bytes, desired_pos: usize) -> Bytes {
+    fn splice_bytes(&mut self, mut bytes: Bytes, desired_pos: u64) -> Bytes {
         assert!(
             desired_pos >= self.pos,
             "Desired position must be less than current position"
         );
         // Does this byte slice extend beyond the required position?
-        if self.pos + bytes.len() > desired_pos {
+        if self.pos + u64::try_from(bytes.len()).expect("Can't convert bytes length to u64")
+            > desired_pos
+        {
             // Calculate slice index
             let byte_slice_pos = desired_pos - self.pos;
             // Split byte array in two (O(1) operation) and mutate v
-            let remaining_bytes = bytes.split_off(byte_slice_pos);
+            let remaining_bytes = bytes.split_off(
+                byte_slice_pos
+                    .try_into()
+                    .expect("Can't convert byte_slice_pos to usize"),
+            );
             // Swap out the stream in the struct
             let remaining_stream = std::mem::replace(&mut self.inner, Box::pin(empty()));
             // Create a single element stream of the remaining bytes and then chain the rest of the stream
@@ -148,21 +154,21 @@ impl PositionedStream {
                 futures::stream::once(async { Ok(remaining_bytes) }).chain(remaining_stream);
             self.inner = Box::pin(stream);
         }
-        self.pos += bytes.len();
+        self.pos += u64::try_from(bytes.len()).expect("Can't convert usize to u64");
         bytes
     }
 
     /// Get the current absolute position of this stream.
     #[must_use]
     #[allow(dead_code)]
-    pub fn pos(&self) -> usize {
+    pub fn pos(&self) -> u64 {
         self.pos
     }
 
     /// Get the absolute stop position of this stream (exclusive).
     #[must_use]
     #[allow(dead_code)]
-    pub fn stop_pos(&self) -> usize {
+    pub fn stop_pos(&self) -> u64 {
         self.stop_pos
     }
 

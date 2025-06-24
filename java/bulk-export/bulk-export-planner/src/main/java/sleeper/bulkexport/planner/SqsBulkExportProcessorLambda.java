@@ -15,17 +15,14 @@
  */
 package sleeper.bulkexport.planner;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
@@ -35,6 +32,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.Optional;
 
@@ -48,36 +46,48 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 @SuppressWarnings("unused")
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsBulkExportProcessorLambda.class);
-
-    private InstanceProperties instanceProperties;
-    private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private SqsBulkExportProcessor processor;
-    private BulkExportQuerySerDe bulkExportQuerySerDe;
+    private final InstanceProperties instanceProperties;
+    private final SqsBulkExportProcessor processor;
+    private final BulkExportQuerySerDe bulkExportQuerySerDe;
 
     public SqsBulkExportProcessorLambda() throws ObjectFactoryException {
-        this(AmazonSQSClientBuilder.defaultClient(), AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient());
+        this(SqsClient.create(),
+                S3Client.create(),
+                DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient)
-            throws ObjectFactoryException {
-        this.sqsClient = sqsClient;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
+    public SqsBulkExportProcessorLambda(
+            SqsBulkExportProcessor processor,
+            BulkExportQuerySerDe bulkExportQuerySerDe,
+            InstanceProperties instanceProperties) {
+        this.processor = processor;
+        this.bulkExportQuerySerDe = bulkExportQuerySerDe;
+        this.instanceProperties = instanceProperties;
+    }
 
-        String bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucket);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
-                dynamoClient);
-        bulkExportQuerySerDe = new BulkExportQuerySerDe();
+    public SqsBulkExportProcessorLambda(SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoClient, String configBucket)
+            throws ObjectFactoryException {
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        this.bulkExportQuerySerDe = new BulkExportQuerySerDe();
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(
+                S3InstanceProperties.loadFromBucket(s3Client, configBucket), s3Client, dynamoClient);
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
-                .s3Client(s3Client)
-                .dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                .build();
+    }
+
+    public SqsBulkExportProcessorLambda(SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoClient, String configBucket, TablePropertiesProvider tablePropertiesProvider)
+            throws ObjectFactoryException {
+        bulkExportQuerySerDe = new BulkExportQuerySerDe();
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
+        processor = SqsBulkExportProcessor.builder()
+                .sqsClient(sqsClient)
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .build();
     }
 
@@ -86,12 +96,15 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
                 .peek(body -> LOGGER.debug("Received message with body {}", body))
-                .flatMap(body -> deserialiseAndValidate(body).stream())
+                .flatMap(body -> {
+                    return deserialiseAndValidate(body).stream();
+                })
                 .forEach(query -> {
                     try {
                         processor.processExport(query);
                     } catch (ObjectFactoryException e) {
                         LOGGER.error("Failed to process export query", e);
+                        throw new RuntimeException(e);
                     }
                 });
         return null;
@@ -104,10 +117,10 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
             return Optional.of(exportQuery);
         } catch (BulkExportQueryValidationException e) {
             LOGGER.error("QueryValidationException validating export query from JSON {}", message, e);
-            return Optional.empty();
+            throw e;
         } catch (RuntimeException e) {
             LOGGER.error("Failed deserialising export query from JSON {}", message, e);
-            return Optional.empty();
+            throw e;
         }
     }
 }

@@ -15,8 +15,8 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
@@ -41,8 +41,8 @@ public class AwsCreateCompactionJobs {
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            AmazonS3 s3Client,
-            AmazonSQS sqsClient) {
+            S3Client s3Client,
+            SqsClient sqsClient) {
         return new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
                 new CompactionBatchJobsWriterToS3(s3Client),

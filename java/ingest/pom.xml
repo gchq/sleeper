@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.30.1</version>
+        <version>0.31.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -28,7 +28,7 @@
 
     <modules>
         <module>ingest-core</module>
-        <module>ingest-starter</module>
+        <module>ingest-taskrunner</module>
         <module>ingest-runner</module>
         <module>ingest-tracker</module>
         <module>ingest-batcher-core</module>

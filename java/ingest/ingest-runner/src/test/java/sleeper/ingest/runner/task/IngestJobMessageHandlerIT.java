@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 
@@ -49,8 +50,8 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
     private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
-    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
-            properties, hadoopConf, tableIndex, tracker)
+    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer
+            .messageHandler(properties, tableIndex, tracker, s3Client)
             .jobIdSupplier(() -> "job-id")
             .timeSupplier(() -> validationTime)
             .build();
@@ -58,6 +59,7 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
     @BeforeEach
     void setup() {
         createBucket(testBucket);
+        properties.set(DATA_BUCKET, testBucket);
         tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
@@ -166,7 +168,7 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
             assertThat(job).isNotPresent();
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
 
         @Test
@@ -188,12 +190,12 @@ public class IngestJobMessageHandlerIT extends LocalStackTestBase {
             assertThat(job).isNotPresent();
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
-                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more paths")));
         }
     }
 
     private void uploadFileToS3(String filePath) {
-        s3Client.putObject(testBucket, filePath, "test");
+        putObject(testBucket, filePath, "test");
     }
 
     private static IngestJob jobWithFiles(String... files) {

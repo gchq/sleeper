@@ -90,6 +90,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     private void validate() throws IOException {
         Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
         Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
-        new NewInstanceValidator(s3ClientV2, dynamoClientV2).validate(instanceProperties, instancePropertiesPath);
+        new NewInstanceValidator(s3Client, dynamoClient).validate(instanceProperties, instancePropertiesPath);
     }
 }

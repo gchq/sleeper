@@ -76,6 +76,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+
         sendJobs(List.of(createJobWithTableAndFiles("job", tableProperties.getStatus(), files)));
 
         // When
@@ -90,7 +91,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -112,6 +113,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+
         sendJobs(ingestJobs);
 
         // When
@@ -132,13 +134,13 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .containsExactlyElementsOf(Collections.nCopies(10,
                         fileReferenceFactory.rootFile("anyfilename", 800)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
     private void sendJobs(List<IngestJob> jobs) {
-        jobs.forEach(job -> sqsClient.sendMessage(
-                instanceProperties.get(INGEST_JOB_QUEUE_URL),
-                new IngestJobSerDe().toJson(job)));
+        jobs.forEach(job -> sqsClient.sendMessage(builder -> builder
+                .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+                .messageBody(new IngestJobSerDe().toJson(job))));
     }
 }

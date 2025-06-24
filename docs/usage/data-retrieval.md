@@ -16,7 +16,7 @@ These instructions will assume you start in the project root directory and Sleep
 ## Running queries directly using the Java client
 
 The simplest way to retrieve data is to use the `query.sh` script. This simply calls the Java
-class `sleeper.clients.QueryClient`. This class retrieves data directly from S3 to this machine. It can be run using:
+class `sleeper.clients.query.QueryClient`. This class retrieves data directly from S3 to this machine. It can be run using:
 
 ```bash
 INSTANCE_ID=myInstanceId
@@ -58,7 +58,7 @@ SQS then the results are written to the SQS queue named `<instance-id>-QueryResu
 print the results when they are available use:
 
 ```bash
-java -cp scripts/jars/clients-*-utility.jar sleeper.clients.QueryResultsSQSQueuePoller ${INSTANCE_ID}
+java -cp scripts/jars/clients-*-utility.jar sleeper.clients.query.QueryResultsSQSQueuePoller ${INSTANCE_ID}
 ```
 
 This will print the results to standard out as they appear on the queue.

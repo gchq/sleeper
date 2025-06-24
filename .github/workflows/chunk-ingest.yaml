@@ -12,7 +12,7 @@ on:
       - 'java/bulk-import/pom.xml'
       - 'java/ingest/ingest-core/**'
       - 'java/ingest/ingest-tracker/**'
-      - 'java/ingest/ingest-starter/**'
+      - 'java/ingest/ingest-taskrunner/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/ingest/ingest-batcher-submitter/**'

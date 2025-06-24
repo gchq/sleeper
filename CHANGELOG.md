@@ -5,6 +5,74 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+## Version 0.31.0
+
+This includes the first version of bulk export, upgrading from AWS SDK v1 to AWS SDK v2, and upgrading EMR, Spark and
+Hadoop.
+
+Bulk export:
+- Added an optional `BulkExportStack` to export a whole Sleeper table
+  - Will write one Parquet file per Sleeper partition
+
+Compaction:
+- Better logging messages for DataFusion compactions
+- Added experimental support for aggregation and filtering in DataFusion compactions
+
+Bulk import:
+- Bulk import job definitions are now deleted from the bulk import bucket after they are read by Spark
+
+Clients:
+- Improved usability of Java `SleeperClient` with multiple instances of Sleeper
+- Can submit bulk export queries with `SleeperClient` in Java or Python
+- Can submit files to the ingest batcher with Python `SleeperClient`, which was previously only in Java
+- Added a limit for the number of records to read when estimating table split points
+- Admin client now lists tables when asking which table you want to use
+- Added a timeout to the web socket query client
+
+Documentation:
+- Restructured introductory documentation:
+  - Simplified readme
+  - Streamlined getting started guide
+  - Restructured deployment & usage guides
+- Improved ingest & tables documentation
+  - Added getting started section to ingest guide
+  - Improved guidance for choosing an ingest system
+  - Explained pre-splitting a Sleeper table
+- Separated user defined from CDK defined properties in documentation
+- Improved Javadoc for ingest with `SleeperClient`
+- Added design diagrams for:
+  - Ingest
+  - Bulk import
+  - Ingest batcher
+  - Garbage collection
+- Added coding conventions and test strategy under developer guide
+
+Upgrades:
+- Upgraded all AWS clients to Java SDK v2
+  - S3 SDK v1 is still used by the experimental Athena integration
+- Upgraded AWS EMR to 7.9.0
+- Upgraded Apache Spark to 3.5.5
+- Upgraded Hadoop to 3.4.1
+
+Build:
+- Enforced dependency version convergence in Maven build
+- Enforced no duplicate Maven dependencies in the same pom
+- Removed use of Hadoop in most modules
+- Added tests and linting for Python API
+
+System tests:
+- When draining an SQS queue for assertions, added retries if no messages are found, to capture full contents of queue
+- Support for future test parallelisation
+  - Multiple tests can run different data generation tasks in ECS at the same time
+  - Multiple tests can wait on deployment of data generation ECS cluster at the same time
+
+Bugfixes:
+- DataFusion can now write the output of a compaction to a different bucket than the input files
+- DataFusion can now read compaction input files from different buckets
+- Ingest batcher can no longer discard submitted files if there's a network failure
+- Compaction jobs report no longer crashes when a job run has no started status update
+- Scripts now work when multiple versions of Sleeper are present in the jars directory
+
 ## Version 0.30.1
 
 *Note: this may be a breaking change if you have deployed with your own custom-named ECR repositories, see below under Deployment.*

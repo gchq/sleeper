@@ -15,21 +15,22 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
+import sleeper.common.job.action.ActionException;
+import sleeper.common.job.action.MessageReference;
+import sleeper.common.job.action.thread.PeriodicActionRunnable;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.MessageReference;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -43,10 +44,10 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsCompactionQueueHandler.class);
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final InstanceProperties instanceProperties;
 
-    public SqsCompactionQueueHandler(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+    public SqsCompactionQueueHandler(SqsClient sqsClient, InstanceProperties instanceProperties) {
         this.sqsClient = sqsClient;
         this.instanceProperties = instanceProperties;
     }
@@ -55,19 +56,20 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
         int waitTimeSeconds = instanceProperties.getInt(COMPACTION_TASK_WAIT_TIME_IN_SECONDS);
         int keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
         String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                .withMaxNumberOfMessages(1)
-                .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
-        ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        if (receiveMessageResult.getMessages().isEmpty()) {
+        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
+                .queueUrl(sqsJobQueueUrl)
+                .maxNumberOfMessages(1)
+                .waitTimeSeconds(waitTimeSeconds).build();
+        ReceiveMessageResponse receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+        if (receiveMessageResult.messages().isEmpty()) {
             LOGGER.info("Received no messages in {} seconds", waitTimeSeconds);
             return Optional.empty();
         } else {
-            Message message = receiveMessageResult.getMessages().get(0);
+            Message message = receiveMessageResult.messages().get(0);
             LOGGER.info("Received message: {}", message);
-            CompactionJob compactionJob = new CompactionJobSerDe().fromJson(message.getBody());
+            CompactionJob compactionJob = new CompactionJobSerDe().fromJson(message.body());
             MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
-                    "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
+                    "Compaction job " + compactionJob.getId(), message.receiptHandle());
 
             // Create background thread to keep messages alive
             PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
@@ -114,7 +116,10 @@ public class SqsCompactionQueueHandler implements CompactionTask.MessageReceiver
             LOGGER.info("Compaction job {}: Returning message to queue", job.getId());
             int visibilityTimeout = instanceProperties.getInt(COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
-            sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
+            sqsClient.changeMessageVisibility(ChangeMessageVisibilityRequest.builder()
+                    .queueUrl(sqsJobQueueUrl)
+                    .receiptHandle(message.getReceiptHandle())
+                    .visibilityTimeout(visibilityTimeout).build());
         }
 
         @Override

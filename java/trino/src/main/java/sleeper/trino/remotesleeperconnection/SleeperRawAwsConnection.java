@@ -15,8 +15,6 @@
  */
 package sleeper.trino.remotesleeperconnection;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -26,7 +24,9 @@ import io.trino.spi.Page;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -54,6 +54,7 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -97,9 +98,9 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private static final int INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = 120;
     private final BufferAllocator rootBufferAllocator;
     private final SleeperConfig sleeperConfig;
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final S3AsyncClient s3AsyncClient;
-    private final AmazonDynamoDB dynamoDbClient;
+    private final DynamoDbClient dynamoDbClient;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
@@ -111,26 +112,24 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final LoadingCache<Pair<String, Instant>, SleeperTablePartitionStructure> sleeperTablePartitionStructureCache;
 
     SleeperRawAwsConnection(SleeperConfig sleeperConfig,
-            AmazonS3 s3Client,
+            S3Client s3Client,
             S3AsyncClient s3AsyncClient,
-            AmazonDynamoDB dynamoDbClient,
-            HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
+            HadoopConfigurationProvider hadoopConfigurationProvider,
+            DynamoDbClient dynamoDbClient) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
         this.sleeperConfig = sleeperConfig;
         this.s3Client = requireNonNull(s3Client);
         this.s3AsyncClient = requireNonNull(s3AsyncClient);
         this.dynamoDbClient = requireNonNull(dynamoDbClient);
-        this.hadoopConfigurationProvider = requireNonNull(hadoopConfigurationProvider);
+        this.hadoopConfigurationProvider = hadoopConfigurationProvider;
         this.rootBufferAllocator = new RootAllocator(sleeperConfig.getMaxArrowRootAllocatorBytes());
 
         // Member variables related to the Sleeper service
         // Note that the state-store provider is NOT thread-safe and so occasionally the state-store factory
         // will be used to create a new state store for each thread.
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, sleeperConfig.getConfigBucket());
-        this.stateStoreProvider = StateStoreFactory.createProvider(this.instanceProperties, this.s3Client, this.dynamoDbClient,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
-        this.stateStoreFactory = new StateStoreFactory(this.instanceProperties, this.s3Client, this.dynamoDbClient,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
+        this.stateStoreProvider = StateStoreFactory.createProvider(this.instanceProperties, this.s3Client, this.dynamoDbClient);
+        this.stateStoreFactory = new StateStoreFactory(this.instanceProperties, this.s3Client, this.dynamoDbClient);
 
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
@@ -144,7 +143,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         }
 
         // Member variables related to queries via direct statestore/S3
-        this.objectFactory = new S3UserJarsLoader(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory()).buildObjectFactory();
+        this.objectFactory = new S3UserJarsLoader(this.instanceProperties, this.s3Client, Path.of(sleeperConfig.getLocalWorkingDirectory())).buildObjectFactory();
         this.executorService = Executors.newFixedThreadPool(NO_OF_EXECUTOR_THREADS);
 
         // We store a time-limited cache for the table partition structure, to support transactions.
@@ -180,9 +179,9 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     @Override
     public void close() {
         LOGGER.info("Closing AWS clients");
-        s3Client.shutdown();
+        s3Client.close();
         s3AsyncClient.close();
-        dynamoDbClient.shutdown();
+        dynamoDbClient.close();
         rootBufferAllocator.close();
         LOGGER.info("AWS clients closed");
     }

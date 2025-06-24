@@ -80,13 +80,6 @@
             <outputDirectory>scripts/docker/bulk-import-runner/spark</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emr-serverless</directory>
-            <outputDirectory>scripts/docker/bulk-import-runner-emr-serverless</outputDirectory>
-            <excludes>
-                <exclude>*.jar</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../bulk-export/bulk-export-task-execution/docker</directory>
             <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
             <excludes>
@@ -119,13 +112,6 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
-            </source>
-            <outputDirectory>scripts/docker/bulk-import-runner-emr-serverless</outputDirectory>
-            <destName>bulk-import-runner.jar</destName>
-        </file>
-        <file>
-            <source>
                 ${project.basedir}/../compaction/compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
@@ -153,7 +139,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../splitter/splitter-lambda/target/splitter-lambda-${project.version}-utility.jar
+                ${project.basedir}/../partitions/splitter-lambda/target/splitter-lambda-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-splitter-${project.version}.jar</destName>
@@ -172,10 +158,10 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../ingest/ingest-starter/target/ingest-starter-${project.version}-utility.jar
+                ${project.basedir}/../ingest/ingest-taskrunner/target/ingest-taskrunner-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>ingest-starter-${project.version}.jar</destName>
+            <destName>ingest-taskrunner-${project.version}.jar</destName>
         </file>
         <file>
             <source>

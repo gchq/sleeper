@@ -15,20 +15,21 @@
  */
 package sleeper.bulkexport.taskexecution;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
+import sleeper.common.job.action.ActionException;
+import sleeper.common.job.action.MessageReference;
+import sleeper.common.job.action.thread.PeriodicActionRunnable;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.MessageReference;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -47,11 +48,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_P
 public class SqsBulkExportQueueHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsBulkExportQueueHandler.class);
 
-    private final AmazonSQS sqsClient;
+    private final SqsClient sqsClient;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public SqsBulkExportQueueHandler(AmazonSQS sqsClient, TablePropertiesProvider tablePropertiesProvider, InstanceProperties instanceProperties) {
+    public SqsBulkExportQueueHandler(SqsClient sqsClient, TablePropertiesProvider tablePropertiesProvider, InstanceProperties instanceProperties) {
         this.sqsClient = sqsClient;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -61,8 +62,8 @@ public class SqsBulkExportQueueHandler {
      * Receive a BulkExportLeafPartitionQuery message from the SQS queue and returns
      * a SqsMessageHandle that contains the deserialised message.
      *
-     * @return an Optional containing the SqsMessageHandle if a message was
-     *         received, or an empty Optional if no message was received
+     * @return             an Optional containing the SqsMessageHandle if a message was
+     *                     received, or an empty Optional if no message was received
      * @throws IOException if there was an error deserialising the message
      */
     public Optional<SqsMessageHandle> receiveMessage() throws IOException {
@@ -70,21 +71,21 @@ public class SqsBulkExportQueueHandler {
         int keepAliveFrequency = instanceProperties.getInt(BULK_EXPORT_KEEP_ALIVE_PERIOD_IN_SECONDS);
         String sqsJobQueueUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
 
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                .withMaxNumberOfMessages(1)
-                .withWaitTimeSeconds(waitTimeSeconds); // Must be >= 0 and <= 20
-        ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        if (receiveMessageResult.getMessages().isEmpty()) {
+        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder().queueUrl(sqsJobQueueUrl)
+                .maxNumberOfMessages(1)
+                .waitTimeSeconds(waitTimeSeconds).build(); // Must be >= 0 and <= 20
+        ReceiveMessageResponse receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+        if (receiveMessageResult.messages().isEmpty()) {
             LOGGER.info("Received no messages in {} seconds", waitTimeSeconds);
             return Optional.empty();
         } else {
-            Message message = receiveMessageResult.getMessages().get(0);
+            Message message = receiveMessageResult.messages().get(0);
             LOGGER.info("Received message: {}", message);
             BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(tablePropertiesProvider);
-            BulkExportLeafPartitionQuery bulkExportQuery = serDe.fromJson(message.getBody());
+            BulkExportLeafPartitionQuery bulkExportQuery = serDe.fromJson(message.body());
             LOGGER.info("Bulk Export bulkExportQuery {}: Deserialised message: {}", bulkExportQuery.getSubExportId(), bulkExportQuery);
             MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
-                    "Bulk Export job " + bulkExportQuery.getExportId(), message.getReceiptHandle());
+                    "Bulk Export job " + bulkExportQuery.getExportId(), message.receiptHandle());
 
             // Create background thread to keep messages alive
             PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
@@ -141,7 +142,11 @@ public class SqsBulkExportQueueHandler {
             LOGGER.info("Bulk Export job {}: Returning message to queue", job.getSubExportId());
             int visibilityTimeout = instanceProperties.getInt(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
             String sqsJobQueueUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
-            sqsClient.changeMessageVisibility(sqsJobQueueUrl, message.getReceiptHandle(), visibilityTimeout);
+            sqsClient.changeMessageVisibility(ChangeMessageVisibilityRequest.builder()
+                    .queueUrl(sqsJobQueueUrl)
+                    .receiptHandle(message.getReceiptHandle())
+                    .visibilityTimeout(visibilityTimeout)
+                    .build());
         }
 
         /**
