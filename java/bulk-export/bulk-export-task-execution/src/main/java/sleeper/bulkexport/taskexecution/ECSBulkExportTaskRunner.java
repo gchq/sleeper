@@ -105,29 +105,41 @@ public class ECSBulkExportTaskRunner {
      * This method initialises the SQS bulk export queue handler and processes
      * messages from the SQS queue for bulk export tasks.
      *
-     * @param  instanceProperties        the instance properties
-     * @param  tablePropertiesProvider   a table properties provider
-     * @param  sqsClient                 an SQS client
-     * @param  s3Client                  an S3 client
-     * @param  dynamoDBClient            a DynamoDB client
-     * @param  hadoopConf                a Hadoop configuration
-     * @throws IOException               if there is an error interacting with S3
-     * @throws IteratorCreationException if there is an error creating iterators
-     * @throws ObjectFactoryException    if there is an error creating objects
+     * @param  instanceProperties      the instance properties
+     * @param  tablePropertiesProvider a table properties provider
+     * @param  sqsClient               an SQS client
+     * @param  s3Client                an S3 client
+     * @param  dynamoDBClient          a DynamoDB client
+     * @param  hadoopConf              a Hadoop configuration
+     * @throws IOException             if there is an error interacting with S3
+     * @throws IllegalStateException   if there is an error receiving the message and deseralising it
      */
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
+            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
+            Configuration hadoopConf) throws IOException, IllegalStateException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
                 instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+        Optional<SqsMessageHandle> messageHandleOpt;
 
-        Optional<SqsMessageHandle> messageHandleOpt = exportQueueHandler.receiveMessage();
+        try {
+            messageHandleOpt = exportQueueHandler.receiveMessage();
+        } catch (IOException | IllegalStateException e) {
+            LOGGER.error("There is a problem getting the message.", e);
+            throw e;
+        }
+
         if (messageHandleOpt.isPresent()) {
             SqsMessageHandle messageHandle = messageHandleOpt.get();
             try {
-                BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
+                BulkExportLeafPartitionQuery exportTask;
+                if (messageHandle.getJob() == null) {
+                    throw new NullPointerException("No job found in bulk export message");
+                } else {
+                    exportTask = messageHandle.getJob();
+                }
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
 
@@ -138,7 +150,6 @@ public class ECSBulkExportTaskRunner {
                 LOGGER.error("Unexpected error processing bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
-                throw e;
             }
         }
     }
