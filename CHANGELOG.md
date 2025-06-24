@@ -13,7 +13,6 @@ Hadoop.
 Bulk export:
 - Added an optional `BulkExportStack` to export a whole Sleeper table
   - Will write one Parquet file per Sleeper partition
-- Can submit bulk export queries with `SleeperClient` in Java or Python
 
 Compaction:
 - Better logging messages for DataFusion compactions
@@ -23,7 +22,9 @@ Bulk import:
 - Bulk import job definitions are now deleted from the bulk import bucket after they are read by Spark
 
 Clients:
-- Improved usability of `SleeperClient` with multiple instances of Sleeper
+- Improved usability of Java `SleeperClient` with multiple instances of Sleeper
+- Can submit bulk export queries with `SleeperClient` in Java or Python
+- Can submit files to the ingest batcher with Python `SleeperClient`, which was previously only in Java
 - Added a limit for the number of records to read when estimating table split points
 - Admin client now lists tables when asking which table you want to use
 - Added a timeout to the web socket query client
