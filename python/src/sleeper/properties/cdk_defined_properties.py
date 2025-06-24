@@ -7,6 +7,7 @@ class IngestCdkProperty:
     BULK_IMPORT_PERSISTENT_EMR_QUEUE_URL = InstanceProperty("sleeper.bulk.import.persistent.emr.job.queue.url")
     BULK_IMPORT_EMR_SERVERLESS_QUEUE_URL = InstanceProperty("sleeper.bulk.import.emr.serverless.job.queue.url")
     BULK_IMPORT_EKS_QUEUE_URL = InstanceProperty("sleeper.bulk.import.eks.job.queue.url")
+    INGEST_BATCHER_SUBMIT_QUEUE_URL = InstanceProperty("sleeper.ingest.batcher.submit.queue.url")
 
 
 class QueryCdkProperty:
@@ -18,6 +19,7 @@ class QueryCdkProperty:
 
 class CommonCdkProperty:
     CONFIG_BUCKET = InstanceProperty("sleeper.config.bucket")
+    DATA_BUCKET = InstanceProperty("sleeper.data.bucket")
 
 
 def queue_name_from_url(queue_url: str) -> str:

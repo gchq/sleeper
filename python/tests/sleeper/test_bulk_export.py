@@ -35,6 +35,22 @@ def test_bulk_export_with_client(sleeper_client: SleeperClient, queue: Queue):
     assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
 
 
+def test_bulk_export_by_table_id():
+    # Given
+    query = BulkExportQuery(export_id="test-export", table_id="test-table")
+
+    # When / Then
+    assert {"exportId": "test-export", "tableId": "test-table"} == json.loads(query.to_json())
+
+
+def test_generate_export_id():
+    # When
+    query = BulkExportQuery(table_name="test-table")
+
+    # Then
+    assert len(query.export_id) == 36
+
+
 @pytest.fixture
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
     LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))

@@ -32,7 +32,7 @@ This is the initialiser for the SleeperClient class. This class is also how the 
 #### Example:
 
 ```python
-from sleeper.sleeper import SleeperClient
+from sleeper.client import SleeperClient
 my_sleeper = SleeperClient('my_sleeper_instance')
 ```
 
@@ -122,7 +122,7 @@ my_sleeper.exact_key_query('my_table', {"key": ["akey", "anotherkey", "yetanothe
 my_sleeper.exact_key_query('my_table', [{"key": "akey"}, {"key": "anotherkey"}, {"key": "yetanotherkey"}])
 ```
 
-And this would return something along the lines of 
+And this would return something along the lines of
 
 ```python
 [[('key', 'akey'), ('value', 'my_value')]]
@@ -161,7 +161,7 @@ And this would return something similar to
 Creates a writer for writing batches of records to Sleeper.
 
 * `table_name`: This is the name of the table to ingest data to.
-  
+
 The returned object is designed to be used within a Python context manager
 as follows:
 
