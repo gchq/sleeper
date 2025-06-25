@@ -21,6 +21,7 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 
-mvn verify -Pstyle,skipShade,skipSpotBugs,skipDependencies -DskipRust
+# SpotBugs is skipped because it's slow to run
+mvn verify -Pstyle,skipShade,skipSpotBugs -DskipRust
 
 popd
