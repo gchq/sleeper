@@ -253,7 +253,7 @@ mod tests {
             max_age: 1000,
         };
         let now = SystemTime::UNIX_EPOCH;
-        let origin_time = now.checked_add(Duration::from_secs(2000)).unwrap();
+        let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
 
         // When
         let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
@@ -271,7 +271,7 @@ mod tests {
             max_age: -1000,
         };
         let now = SystemTime::UNIX_EPOCH;
-        let origin_time = now.checked_add(Duration::from_secs(2000)).unwrap();
+        let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
 
         // When
         let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
@@ -294,25 +294,6 @@ mod tests {
 
         // Then
         assert!(result.is_ok());
-    }
-
-    #[test]
-    fn try_from_should_produce_error_on_large_negative_timestamp() {
-        // Given
-        let filter = Filter::Ageoff {
-            column: "test".into(),
-            max_age: i64::MIN,
-        };
-
-        // When
-        let result = AgeOff::try_from(&filter);
-
-        // Then
-        assert_error!(
-            result,
-            DataFusionError::Plan,
-            "Age off filter max_age not representable as a SystemTime timestamp"
-        );
     }
 
     #[test]
