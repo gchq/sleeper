@@ -1900,6 +1900,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>true</skipITs>
+                <skipRust>true</skipRust>
             </properties>
             <build>
                 <pluginManagement>
