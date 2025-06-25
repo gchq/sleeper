@@ -1026,7 +1026,7 @@ public class QueryExecutorIT {
                     .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
                             .stream()
                             .filter(r -> ((long) r.get("key")) == 5L)
-                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
                             .collect(Collectors.toList()));
         }
 
