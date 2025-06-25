@@ -117,7 +117,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
             sumOfOtherFileSizes += fileSizesInAscendingOrder.get(i);
         }
         LOGGER.debug("Sum of other file sizes is {}", sumOfOtherFileSizes);
-        LOGGER.debug("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
+        LOGGER.debug("Ratio * largestFileSize <= sumOfOtherFileSizes {}", ratio * largestFileSize <= sumOfOtherFileSizes);
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
 }
