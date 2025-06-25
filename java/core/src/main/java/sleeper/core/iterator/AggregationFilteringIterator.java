@@ -325,8 +325,8 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     private CloseableIterator<Record> maybeCreateFilter(CloseableIterator<Record> source) {
         return config.ageOffColumn().map(filter_col -> {
             AgeOffIterator ageoff = new AgeOffIterator();
-            // Age off iterator operates in milliseconds, so convert seconds value
-            ageoff.init(String.format("%s,%d", filter_col, config.maxAge() * 1000), schema);
+            // Age off iterator operates in milliseconds
+            ageoff.init(String.format("%s,%d", filter_col, config.maxAge()), schema);
             return ageoff.apply(source);
         }).orElse(source);
     }
