@@ -232,6 +232,9 @@
         <module name="FallThrough">
             <property name="id" value="fallThrough"/>
         </module>
+        <module name="StringLiteralEquality">
+            <property name="id" value="stringLiteralEquality"/>
+        </module>
 
         <module name="ArrayTypeStyle">
             <property name="id" value="arrayTypeStyle"/>
