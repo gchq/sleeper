@@ -239,6 +239,9 @@
         <module name="Indentation">
             <property name="id" value="indentation"/>
         </module>
+        <module name="UnnecessaryParentheses">
+            <property name="id" value="unnecessaryParentheses"/>
+        </module>
         <module name="UnnecessarySemicolonAfterOuterTypeDeclaration">
             <property name="id" value="unnecessarySemicolonAfterOuterTypeDeclaration"/>
         </module>
