@@ -39,7 +39,7 @@ use std::{
 /// lower than the given threshold, it will be filtered out.
 #[derive(Debug)]
 pub struct AgeOff {
-    /// Threshold value (seconds since UNIX epoch)
+    /// Threshold value (milliseconds since UNIX epoch)
     threshold: i64,
     /// Signature for this filter expression
     signature: Signature,
@@ -87,9 +87,9 @@ impl AgeOff {
                 // and then add or subtract the duration from the time_origin to derive
                 // the absolute threshold time.
                 let absolute_instant = if *max_age >= 0 {
-                    time_origin.checked_sub(Duration::from_secs(max_age.unsigned_abs()))
+                    time_origin.checked_sub(Duration::from_millis(max_age.unsigned_abs()))
                 } else {
-                    time_origin.checked_add(Duration::from_secs(max_age.unsigned_abs()))
+                    time_origin.checked_add(Duration::from_millis(max_age.unsigned_abs()))
                 }
                 // Convert Option to Result with DataFusionError
                 .ok_or(plan_datafusion_err!(
@@ -100,7 +100,7 @@ impl AgeOff {
                     let time_before_epoch = UNIX_EPOCH
                         .duration_since(absolute_instant)
                         .map_err(|e| DataFusionError::External(Box::new(e)))?
-                        .as_secs();
+                        .as_millis();
                     // Ensure time difference is negative in filter
                     0 - i64::try_from(time_before_epoch)
                         .map_err(|e| DataFusionError::External(Box::new(e)))?
@@ -108,7 +108,7 @@ impl AgeOff {
                     let time_after_epoch = absolute_instant
                         .duration_since(UNIX_EPOCH)
                         .map_err(|e| DataFusionError::External(Box::new(e)))?
-                        .as_secs();
+                        .as_millis();
                     i64::try_from(time_after_epoch)
                         .map_err(|e| DataFusionError::External(Box::new(e)))?
                 };
