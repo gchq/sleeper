@@ -28,12 +28,12 @@ import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
 import com.amazonaws.athena.connector.lambda.records.RecordResponse;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.partition.Partition;
@@ -333,8 +333,8 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
 
     private SimpleRecordHandler handler(InstanceProperties instanceProperties) {
         return new SimpleRecordHandler(
-                s3ClientV1, s3Client, dynamoClient,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+                mock(SecretsManagerClient.class), mock(AthenaClient.class));
     }
 }

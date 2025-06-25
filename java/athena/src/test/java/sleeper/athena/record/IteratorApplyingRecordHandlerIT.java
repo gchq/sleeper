@@ -28,13 +28,13 @@ import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
 import com.amazonaws.athena.connector.lambda.records.RecordResponse;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.S3TableProperties;
@@ -392,9 +392,9 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
     private IteratorApplyingRecordHandler handler(InstanceProperties instanceProperties) {
         return new IteratorApplyingRecordHandler(
-                s3ClientV1, s3Client, dynamoClient,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+                mock(SecretsManagerClient.class), mock(AthenaClient.class));
     }
 
     private void assertRecordContainedDay(Block records, int position, int year, Month month, int day) {

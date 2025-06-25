@@ -34,13 +34,13 @@ import com.amazonaws.athena.connector.lambda.metadata.GetTableLayoutResponse;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableRequest;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.partition.Partition;
@@ -84,7 +84,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
         GetTableLayoutRequest request = new GetTableLayoutRequest(TestUtils.createIdentity(),
                 "abc",
                 "def",
@@ -179,7 +179,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         Constraints queryConstraints = new Constraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 new GetTableLayoutRequest(TestUtils.createIdentity(),
@@ -226,7 +226,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         Constraints queryConstraints = new Constraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(), new GetTableLayoutRequest(
                 TestUtils.createIdentity(),
@@ -278,7 +278,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
         Constraints queryConstraints = new Constraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(), new GetTableLayoutRequest(
                 TestUtils.createIdentity(),
@@ -301,7 +301,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
     private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {
         return new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
+                mock(EncryptionKeyFactory.class), mock(SecretsManagerClient.class), mock(AthenaClient.class),
                 "spillBucket", "spillPrefix");
     }
 

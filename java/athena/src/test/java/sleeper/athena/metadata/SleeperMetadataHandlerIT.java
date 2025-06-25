@@ -36,15 +36,15 @@ import com.amazonaws.athena.connector.lambda.metadata.ListSchemasResponse;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.partition.Partition;
@@ -96,7 +96,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(),
-                        "abc", "def", tableName));
+                        "abc", "def", tableName, new HashMap<>()));
 
         BlockAllocatorImpl blockAllocator = new BlockAllocatorImpl();
         Map<String, ValueSet> predicate = new HashMap<>();
@@ -143,7 +143,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         BlockAllocatorImpl blockAllocator = new BlockAllocatorImpl();
         Map<String, ValueSet> predicate = new HashMap<>();
@@ -194,7 +194,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
         predicate.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -245,7 +245,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
         predicate.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -293,7 +293,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
         predicate.put("count", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -332,7 +332,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         SleeperMetadataHandlerImpl sleeperMetadataHandler = handler(instance);
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", new TableName("unused", tableName)));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", new TableName("unused", tableName), new HashMap<>()));
 
         // Then
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = new SchemaBuilder()
@@ -368,7 +368,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         Map<String, ValueSet> predicate = new HashMap<>();
         predicate.put("year", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
@@ -506,7 +506,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         Constraints queryConstraints = new Constraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(), new GetTableLayoutRequest(
                 TestUtils.createIdentity(),
@@ -554,7 +554,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         private SleeperMetadataHandlerImpl(S3Client s3Client, DynamoDbClient dynamoDBClient, String configBucket) {
             super(s3Client, dynamoDBClient, configBucket, mock(EncryptionKeyFactory.class),
-                    mock(AWSSecretsManager.class), mock(AmazonAthena.class), "abc", "def");
+                    mock(SecretsManagerClient.class), mock(AthenaClient.class), "abc", "def");
         }
 
         @Override
