@@ -202,6 +202,21 @@ public class FileReferenceFactory {
     }
 
     /**
+     * Creates a file in a specified partition with a jobId.
+     *
+     * @param  partitionId the partition ID
+     * @param  filename    the filename
+     * @param  records     the number of records in the file
+     * @return             the file reference
+     */
+    public FileReference partitionFileWithJobId(String partitionId, String filename, long records) {
+        return fileForPartitionBuilder(partitionId, records)
+                .filename(filePathGenerator.buildFilePath(partitionId, filename))
+                .jobId(filename)
+                .build();
+    }
+
+    /**
      * Creates a single file in every leaf partition with a given number of records.
      *
      * @param  records the number of records

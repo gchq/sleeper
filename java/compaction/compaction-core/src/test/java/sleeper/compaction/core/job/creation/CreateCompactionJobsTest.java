@@ -248,6 +248,38 @@ public class CreateCompactionJobsTest {
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "outputFile")
                     .isSubsetOf(job1, job2, job3);
         }
+
+        @Test
+        void shouldCreateJobsLimitedDownToCreationLimitWhenTheCompactionJobsExceedTheValueIncludingRunningJobs() throws Exception {
+            // Given normal compaction we set a limit for the creation to be less than the entries present
+            Random rand = new Random(0);
+
+            tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
+            tableProperties.set(COMPACTION_JOB_CREATION_LIMIT, "3");
+            update(stateStore).initialise(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "bbb")
+                    .splitToNewChildren("L", "LL", "LR", "aaa")
+                    .buildList());
+
+            FileReference fileReference1 = fileFactory().partitionFile("R", "file1", 200L);
+            FileReference fileReference2 = fileFactory().partitionFile("LL", "file2", 200L);
+            FileReference fileReference3 = fileFactory().partitionFileWithJobId("LR", "file3", 200L);
+            FileReference fileReference4 = fileFactory().partitionFileWithJobId("L", "file4", 200L);
+            update(stateStore).addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+
+            // When we force create jobs
+            createJobWithForceAllFiles(GenerateJobId.random(), rand);
+
+            // Then
+            CompactionJob job1 = compactionFactory().createCompactionJob("partition-R-job", List.of(fileReference1), "R");
+            CompactionJob job2 = compactionFactory().createCompactionJob("partition-LL-job", List.of(fileReference2), "LL");
+            assertThat(jobs).hasSize(1)
+                    // Output file is derived from job ID, and we don't want to be sensitive to order in which jobs are created.
+                    // We still assert on the input files and partition ID.
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "outputFile")
+                    .isSubsetOf(job1, job2);
+        }
     }
 
     @Nested
