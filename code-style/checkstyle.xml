@@ -236,6 +236,9 @@
         <module name="UnnecessaryNullCheckWithInstanceOf">
             <property name="id" value="unnecessaryNullCheckWithInstanceOf"/>
         </module>
+        <module name="UnusedLocalVariable">
+            <property name="id" value="unusedLocalVariable"/>
+        </module>
 
         <module name="ArrayTypeStyle">
             <property name="id" value="arrayTypeStyle"/>
