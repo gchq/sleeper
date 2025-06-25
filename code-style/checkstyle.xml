@@ -64,6 +64,9 @@
         <module name="JavadocContentLocation">
             <property name="id" value="javadocContentLocation"/>
         </module>
+        <module name="JavadocLeadingAsteriskAlign">
+            <property name="id" value="javadocLeadingAsteriskAlign"/>
+        </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
             <property name="allowMissingParamTags" value="true"/>
