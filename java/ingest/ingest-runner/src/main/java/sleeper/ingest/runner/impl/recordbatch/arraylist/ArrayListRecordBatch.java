@@ -194,7 +194,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      */
     @Override
     public CloseableIterator<Record> createOrderedRecordIterator() throws IOException {
-        if (!isWriteable || (internalOrderedRecordIterator != null)) {
+        if (!isWriteable || internalOrderedRecordIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
         isWriteable = false;
