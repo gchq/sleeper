@@ -33,6 +33,17 @@ def test_read_property():
     assert queue_name_from_url(properties.get(property)) == "MyQueue"
 
 
+def test_read_properties_string_with_percent():
+    # Given
+    string = "a.b.c=-XX:OnOutOfMemoryError='kill -9 %p'"
+
+    # When
+    properties = load_instance_properties_from_string(string)
+
+    # Then
+    assert properties.get("a.b.c") == "-XX:OnOutOfMemoryError='kill -9 %p'"
+
+
 def test_read_full_example_properties():
     # Given
     file = get_repository_path() / "example/full/instance.properties"
