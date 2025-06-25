@@ -117,5 +117,6 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
             keys2.add(rhs.get(key));
         }
         return Key.create(keys1).equals(Key.create(keys2));
+
     }
 }

@@ -17,15 +17,8 @@ package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.MapType;
-import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -287,13 +280,18 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     /**
      * Defines the filtering and aggregation configuration for this iterator.
      *
-     * @param groupingColumns the columns that the aggregation will "group by"
-     * @param ageOffColumn    the optional column to have an age-off filter applied
-     * @param maxAge          the maximum age in seconds for rows
-     * @param aggregations    the list of aggregations to apply
+     * @param  groupingColumns           the columns that the aggregation will "group by"
+     * @param  ageOffColumn              the optional column to have an age-off filter applied
+     * @param  maxAge                    the maximum age in seconds for rows
+     * @param  aggregations              the list of aggregations to apply
+     * @throws IllegalArgumentExpception if {@code groupingColumns} is empty
      */
     public record FilterAggregationConfig(List<String> groupingColumns, Optional<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
+
         public FilterAggregationConfig {
+            if (groupingColumns.isEmpty()) {
+                throw new IllegalArgumentException("must have at least one grouping column");
+            }
             Objects.requireNonNull(groupingColumns, "groupingColumns");
             Objects.requireNonNull(ageOffColumn, "ageOffColumn");
             Objects.requireNonNull(aggregations, "aggregations");
@@ -355,56 +353,6 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     @Override
     public List<String> getRequiredValueFields() {
         return Stream.concat(config.groupingColumns.stream(), config.aggregations.stream().map(Aggregation::column)).toList();
-    }
-
-    public static void main(String[] args) {
-        List<Field> rowKeys = List.of(new Field("col1", new IntType()), new Field("col2", new IntType()));
-        List<Field> sortCols = List.of(new Field("col3", new IntType()), new Field("col4", new IntType()));
-        List<Field> valueCols = List.of(new Field("col5", new IntType()), new Field("col6", new LongType()), new Field("col7", new StringType()), new Field("col8", new ByteArrayType()),
-                new Field("col9", new MapType(new StringType(), new IntType())));
-        Schema schema = Schema.builder().rowKeyFields(rowKeys).sortKeyFields(sortCols).valueFields(valueCols).build();
-        AggregationFilteringIterator afit = new AggregationFilteringIterator();
-        String oppy = "sum";
-        afit.init(String.format("col3,col4;,%1$s(col5),%1$s(col6),%1$s(col7),%1$s(col8),map_%1$s(col9)", oppy), schema);
-        List<Record> records = new ArrayList<>();
-        var record = new Record();
-        record.put("col1", 1);
-        record.put("col2", 1);
-        record.put("col3", 1);
-        record.put("col4", 1);
-        record.put("col5", 1);
-        record.put("col6", 1L);
-        record.put("col7", "1");
-        record.put("col8", new byte[]{1});
-        record.put("col9", Map.of("aaa", 5, "bbb", 2, "ccc", 14));
-        records.add(record);
-        record = new Record();
-        record.put("col1", 1);
-        record.put("col2", 1);
-        record.put("col3", 1);
-        record.put("col4", 1);
-        record.put("col5", 2);
-        record.put("col6", 2L);
-        record.put("col7", "2");
-        record.put("col8", new byte[]{2});
-        record.put("col9", Map.of("bbb", 5, "ccc", 3, "ddd", 10));
-        records.add(record);
-        record = new Record();
-        record.put("col1", 1);
-        record.put("col2", 1);
-        record.put("col3", 1);
-        record.put("col4", 2);
-        record.put("col5", 3);
-        record.put("col6", 3L);
-        record.put("col7", "3");
-        record.put("col8", new byte[]{3});
-        record.put("col9", Map.of("ccc", 100));
-        records.add(record);
-        CloseableIterator<Record> aggregated = afit.apply(new WrappedIterator<>(records.iterator()));
-        while (aggregated.hasNext()) {
-            var rec = aggregated.next();
-            System.out.println(rec);
-        }
     }
 
     /**
