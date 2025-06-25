@@ -264,9 +264,11 @@ public class CreateCompactionJobsTest {
 
             FileReference fileReference1 = fileFactory().partitionFile("R", "file1", 200L);
             FileReference fileReference2 = fileFactory().partitionFile("LL", "file2", 200L);
-            FileReference fileReference3 = fileFactory().partitionFileWithJobId("LR", "file3", 200L);
-            FileReference fileReference4 = fileFactory().partitionFileWithJobId("L", "file4", 200L);
+            FileReference fileReference3 = fileFactory().partitionFile("LR", "file3", 200L);
+            FileReference fileReference4 = fileFactory().partitionFile("L", "file4", 200L);
             update(stateStore).addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
+            update(stateStore).assignJobId("job-3", List.of(fileReference3));
+            update(stateStore).assignJobId("job-4", List.of(fileReference4));
 
             // When we force create jobs
             createJobWithForceAllFiles(GenerateJobId.random(), rand);
