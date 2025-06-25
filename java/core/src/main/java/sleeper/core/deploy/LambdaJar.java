@@ -30,9 +30,7 @@ public class LambdaJar {
     // The Athena plugin includes Hadoop, which makes the jar too big to deploy directly.
     // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
     public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
-    // The bulk import starter includes Hadoop, which makes the jar too big to deploy directly.
-    // Hadoop will be removed from this module in the following issue: https://github.com/gchq/sleeper/issues/4993
-    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImageDeployWithDocker("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
+    public static final LambdaJar BULK_IMPORT_STARTER = withFormatAndImage("bulk-import-starter-%s.jar", "bulk-import-starter-lambda");
     public static final LambdaJar BULK_EXPORT_PLANNER = withFormatAndImage("bulk-export-planner-%s.jar", "bulk-export-planner");
     public static final LambdaJar BULK_EXPORT_TASK_CREATOR = withFormatAndImage("bulk-export-task-creator-%s.jar", "bulk-export-task-creator");
     public static final LambdaJar INGEST_TASK_CREATOR = withFormatAndImage("ingest-taskrunner-%s.jar", "ingest-task-creator-lambda");
