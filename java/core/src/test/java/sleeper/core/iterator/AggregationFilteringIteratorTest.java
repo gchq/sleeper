@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.example.iterator;
+package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
+import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.example.iterator.AggregationFilteringIterator.AggregationOp;
-import sleeper.example.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 
 import java.util.ArrayList;
 import java.util.List;

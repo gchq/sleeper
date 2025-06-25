@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.example.iterator;
+package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
+import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
+import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.record.Record;
-import sleeper.example.iterator.AggregationFilteringIterator.Aggregation;
-import sleeper.example.iterator.AggregationFilteringIterator.AggregationOp;
-import sleeper.example.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +29,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
-import static sleeper.example.iterator.AggregatorIteratorImpl.aggregateOnTo;
+import static sleeper.core.iterator.AggregatorIteratorImpl.aggregateOnTo;
 
 public class AggregationIteratorImplTest {
 

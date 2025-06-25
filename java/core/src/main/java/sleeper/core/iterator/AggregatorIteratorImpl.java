@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.example.iterator;
+package sleeper.core.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
+import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
-import sleeper.example.iterator.AggregationFilteringIterator.Aggregation;
-import sleeper.example.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.example.iterator;
+package sleeper.core.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
@@ -197,7 +195,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
         @Override
         public Object apply(Object lhs, Object rhs) {
             if (!(lhs instanceof Map && rhs instanceof Map) && lhs.getClass() != rhs.getClass()) {
-                throw new IllegalArgumentException("lhs type: " + lhs.getClass() + " rhs type: " + rhs.getClass());
+                throw new IllegalArgumentException("different operands, lhs type: " + lhs.getClass() + " rhs type: " + rhs.getClass());
             }
             if (lhs instanceof Integer) {
                 return op((Integer) lhs, (Integer) rhs);
@@ -255,7 +253,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
                             });
                         }
                     } else {
-                        throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
+                        throw new IllegalArgumentException("Value type not implemented " + testValue.getClass());
                     }
                 }
                 return mapLhs;
@@ -289,10 +287,10 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     public record FilterAggregationConfig(List<String> groupingColumns, Optional<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
 
         public FilterAggregationConfig {
+            Objects.requireNonNull(groupingColumns, "groupingColumns");
             if (groupingColumns.isEmpty()) {
                 throw new IllegalArgumentException("must have at least one grouping column");
             }
-            Objects.requireNonNull(groupingColumns, "groupingColumns");
             Objects.requireNonNull(ageOffColumn, "ageOffColumn");
             Objects.requireNonNull(aggregations, "aggregations");
         }
@@ -412,7 +410,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
         // Finally, check all non row key and extra grouping columns have an aggregation specified
         for (String column : nonGroupingColumns) {
             if (!duplicateAggregationCheck.contains(column)) {
-                throw new IllegalArgumentException("Column " + column + " doesn't have a aggregation operator specified!");
+                throw new IllegalArgumentException("Column " + column + " doesn't have a aggregation operator specified");
             }
         }
     }
