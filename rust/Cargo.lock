@@ -1203,7 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "compaction"
-version = "0.31.0"
+version = "0.32.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1237,7 +1237,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.31.0"
+version = "0.32.0-SNAPSHOT"
 dependencies = [
  "assert_cmd",
  "chrono",
@@ -3922,7 +3922,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.31.0"
+version = "0.32.0-SNAPSHOT"
 dependencies = [
  "cargo_metadata",
  "cxx",
