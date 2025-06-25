@@ -239,4 +239,11 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-client@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-22201|CVE-2024-6762|CVE-2024-8184</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: http2-http-client-transport-11.0.17.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-http-client-transport@.*$</packageUrl>
+        <vulnerabilityName regex="true">CVE-2024-8184|CVE-2024-6762|CVE-2024-22201</vulnerabilityName>
+    </suppress>
 </suppressions>
