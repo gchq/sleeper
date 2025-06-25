@@ -221,6 +221,9 @@
         <module name="InterfaceIsType">
             <property name="id" value="interfaceIsType"/>
         </module>
+        <module name="MutableException">
+            <property name="id" value="mutableException"/>
+        </module>
 
         <module name="ArrayTypeStyle">
             <property name="id" value="arrayTypeStyle"/>
