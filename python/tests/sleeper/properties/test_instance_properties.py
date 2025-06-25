@@ -1,7 +1,9 @@
 import pytest
 
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
-from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty
+from sleeper.properties.instance_properties import InstanceProperties, InstanceProperty, load_instance_properties_from_string
+from sleeper.properties.user_defined_properties import CommonProperty
+from tests.sleeper.repository_path import get_repository_path
 
 
 def test_read_set_field():
@@ -29,3 +31,26 @@ def test_read_property():
     # When / Then
     assert properties.get(property) == "https://sqs.eu-west-2.amazonaws.com/123456789/MyQueue"
     assert queue_name_from_url(properties.get(property)) == "MyQueue"
+
+
+def test_read_properties_string_with_percent():
+    # Given
+    string = "a.b.c=-XX:OnOutOfMemoryError='kill -9 %p'"
+
+    # When
+    properties = load_instance_properties_from_string(string)
+
+    # Then
+    assert properties.get("a.b.c") == "-XX:OnOutOfMemoryError='kill -9 %p'"
+
+
+def test_read_full_example_properties():
+    # Given
+    file = get_repository_path() / "example/full/instance.properties"
+    content = file.read_text()
+
+    # When
+    properties = load_instance_properties_from_string(content)
+
+    # Then
+    assert properties.get(CommonProperty.ID) == "full-example"
