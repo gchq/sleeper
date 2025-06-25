@@ -275,7 +275,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     private String getValueIfSet(T property) {
         String rawValue = properties.getProperty(property.getPropertyName());
-        if (property.isIgnoreEmptyValue() && rawValue.equals("")) {
+        if (property.isIgnoreEmptyValue() && "".equals(rawValue)) {
             return null;
         } else {
             return rawValue;

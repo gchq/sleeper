@@ -224,6 +224,9 @@
         <module name="MutableException">
             <property name="id" value="mutableException"/>
         </module>
+        <module name="EqualsAvoidNull">
+            <property name="id" value="equalsAvoidNull"/>
+        </module>
 
         <module name="ArrayTypeStyle">
             <property name="id" value="arrayTypeStyle"/>

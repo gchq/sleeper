@@ -106,12 +106,12 @@ public class IngestFactory {
     private RecordBatchFactory<Record> standardRecordBatchFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
-        if (recordBatchType.equals("arraylist")) {
+        if ("arraylist".equals(recordBatchType)) {
             return ArrayListRecordBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
                     .buildAcceptingRecords();
-        } else if (recordBatchType.equals("arrow")) {
+        } else if ("arrow".equals(recordBatchType)) {
             return ArrowRecordBatchFactory.builderWith(instanceProperties)
                     .schema(parquetConfiguration.getTableProperties().getSchema())
                     .localWorkingDirectory(localDir)
@@ -124,13 +124,13 @@ public class IngestFactory {
     private PartitionFileWriterFactory standardPartitionFileWriterFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String fileWriterType = tableProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
-        if (fileWriterType.equals("direct")) {
+        if ("direct".equals(fileWriterType)) {
             return DirectPartitionFileWriterFactory.builder()
                     .parquetConfiguration(parquetConfiguration)
                     .filePathsAndSketchesStoreFromPropertiesAndClientOrDefault(instanceProperties, tableProperties, s3AsyncClient)
                     .fileNameGenerator(fileNameGenerator)
                     .build();
-        } else if (fileWriterType.equals("async")) {
+        } else if ("async".equals(fileWriterType)) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
             }

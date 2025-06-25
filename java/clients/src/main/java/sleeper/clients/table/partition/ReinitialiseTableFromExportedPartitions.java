@@ -94,7 +94,7 @@ public class ReinitialiseTableFromExportedPartitions {
                 + "by new partitions derived from the provided partitions file.");
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
-        if (!choice.equalsIgnoreCase("y")) {
+        if (!"y".equalsIgnoreCase(choice)) {
             System.exit(0);
         }
 
