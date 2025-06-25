@@ -14,7 +14,7 @@
 import random
 import string
 
-from sleeper.sleeper import SleeperClient
+from sleeper.client import SleeperClient
 
 """
 This example shows how to write data to Sleeper via writing in batches. Data will not
@@ -32,11 +32,11 @@ def random_string(size=6, chars=string.printable):
 
     :return: random string
     """
-    return ''.join(random.choice(chars) for _ in range(size))
+    return "".join(random.choice(chars) for _ in range(size))
 
 
 # Create Sleeper instance with base name of install
-my_sleeper = SleeperClient('my-sleeper-instance')
+my_sleeper = SleeperClient("my-sleeper-instance")
 
 table_name = "my_table"
 
@@ -46,12 +46,9 @@ num_batches = 1
 with my_sleeper.create_batch_writer(table_name) as writer:
     # Create records in a loop
     for x in range(num_batches):
-
         records = []
         for y in range(1000):
-            record = {"key": random_string(10, chars=string.digits),
-                      "value": random_string(30)
-                      }
+            record = {"key": random_string(10, chars=string.digits), "value": random_string(30)}
             records.append(record)
 
         # Write this batch to Sleeper

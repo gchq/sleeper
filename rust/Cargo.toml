@@ -16,7 +16,7 @@ members = ["compactor", "compaction", "rust_sketch"]
 resolver = "2"
 
 [workspace.package]
-version = "0.31.0-SNAPSHOT"
+version = "0.32.0-SNAPSHOT"
 edition = "2024"
 rust-version = "1.86"
 publish = false
@@ -50,7 +50,7 @@ num-format = { version = "0.4.4" }                  # Nicely formatted numbers
 num-traits = { version = "0.2.19" }                 # Unified traits for integral types
 object_store = { version = "0.12.2" }               # Remote cloud storage access
 openssl = { version = "0.10.73" }                   # Use vendored feature to build from source for cross compilation
-owo-colors = { version = "4.2.1" }                  # Colourised output
+owo-colors = { version = "4.2.2" }                  # Colourised output
 predicates = { version = "3.1.3" }                  # Test assertions
 rand = { version = "0.9.1" }                        # Random number generation
 regex = { version = "1.11.1" }                      # Regular expressions

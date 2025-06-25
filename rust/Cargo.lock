@@ -1203,7 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "compaction"
-version = "0.31.0-SNAPSHOT"
+version = "0.32.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1237,7 +1237,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.31.0-SNAPSHOT"
+version = "0.32.0-SNAPSHOT"
 dependencies = [
  "assert_cmd",
  "chrono",
@@ -3408,9 +3408,9 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "owo-colors"
-version = "4.2.1"
+version = "4.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26995317201fa17f3656c36716aed4a7c81743a9634ac4c99c0eeda495db0cec"
+checksum = "48dd4f4a2c8405440fd0462561f0e5806bd0f77e86f51c761481bdd4018b545e"
 
 [[package]]
 name = "parking_lot"
@@ -3922,7 +3922,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.31.0-SNAPSHOT"
+version = "0.32.0-SNAPSHOT"
 dependencies = [
  "cargo_metadata",
  "cxx",

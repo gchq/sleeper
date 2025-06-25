@@ -29,12 +29,20 @@ import java.io.IOException;
  */
 public class ParquetRecordReader extends ParquetReader<Record> {
 
-    public ParquetRecordReader(org.apache.hadoop.fs.Path file, Schema schema) throws IOException {
-        super(file, new RecordReadSupport(schema));
+    public ParquetRecordReader(String file, Schema schema) throws IOException {
+        super(new Path(file), new RecordReadSupport(schema));
+    }
+
+    public ParquetRecordReader(Path path, Schema schema) throws IOException {
+        super(path, new RecordReadSupport(schema));
     }
 
     public static class Builder extends ParquetReader.Builder<Record> {
         private final Schema schema;
+
+        public Builder(String path, Schema schema) {
+            this(new Path(path), schema);
+        }
 
         public Builder(Path path, Schema schema) {
             super(path);

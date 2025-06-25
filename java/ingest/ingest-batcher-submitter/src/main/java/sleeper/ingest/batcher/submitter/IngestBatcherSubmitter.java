@@ -18,13 +18,10 @@ package sleeper.ingest.batcher.submitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
+import sleeper.configuration.utils.S3ExpandDirectories;
+import sleeper.configuration.utils.S3FileNotFoundException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
@@ -32,7 +29,6 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public class IngestBatcherSubmitter {
@@ -41,21 +37,21 @@ public class IngestBatcherSubmitter {
     private final TableIndex tableIndex;
     private final IngestBatcherStore store;
     private final IngestBatcherSubmitDeadLetterQueue deadLetterQueue;
-    private final S3Client s3Client;
+    private final S3ExpandDirectories expandDirectories;
 
     public IngestBatcherSubmitter(TableIndex tableIndex, IngestBatcherStore store,
             IngestBatcherSubmitDeadLetterQueue deadLetterQueue, S3Client s3Client) {
         this.tableIndex = tableIndex;
         this.store = store;
         this.deadLetterQueue = deadLetterQueue;
-        this.s3Client = s3Client;
+        this.expandDirectories = new S3ExpandDirectories(s3Client);
     }
 
     public void submit(IngestBatcherSubmitRequest request, Instant receivedTime) {
         List<IngestBatcherTrackedFile> files;
         try {
             files = toTrackedFiles(request, receivedTime);
-        } catch (FileNotFoundException | NoSuchKeyException e) {
+        } catch (S3FileNotFoundException | NoSuchKeyException e) {
             LOGGER.info("File not found, sending request to dead letter queue: {}", request, e);
             deadLetterQueue.submit(request);
             return;
@@ -71,64 +67,14 @@ public class IngestBatcherSubmitter {
     private List<IngestBatcherTrackedFile> toTrackedFiles(IngestBatcherSubmitRequest request, Instant receivedTime) {
         String tableID = tableIndex.getTableByName(request.tableName())
                 .orElseThrow(() -> TableNotFoundException.withTableName(request.tableName())).getTableUniqueId();
-        List<IngestBatcherTrackedFile> list = new ArrayList<IngestBatcherTrackedFile>();
-
-        for (String filename : request.files()) {
-            if (!filename.contains("/")) {
-                list.addAll(getFilesByBucket(filename, tableID, receivedTime));
-            } else {
-                String bucket = filename.substring(0, filename.indexOf("/"));
-                String objectKey = filename.substring(filename.indexOf("/") + 1);
-                list.addAll(getFilesByPath(bucket, objectKey, tableID, receivedTime));
-            }
-        }
-        return list;
-    }
-
-    private List<IngestBatcherTrackedFile> getFilesByBucket(String bucket, String tableID, Instant receivedTime) {
-        return getFilesByPath(bucket, "", tableID, receivedTime);
-    }
-
-    private List<IngestBatcherTrackedFile> getFilesByPath(String bucket, String path, String tableID, Instant receivedTime) {
-        List<IngestBatcherTrackedFile> list = new ArrayList<>();
-        ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(
-                ListObjectsV2Request.builder()
-                        .bucket(bucket)
-                        .prefix(path)
-                        .build());
-
-        for (ListObjectsV2Response page : response) {
-            page.contents().forEach((S3Object object) -> {
-                list.add(getIndividualFile(bucket, object.key(), tableID, receivedTime));
-            });
-        }
-
-        if (list.isEmpty()) {
-            throw new FileNotFoundException(bucket, path);
-        }
-
-        return list;
-    }
-
-    private IngestBatcherTrackedFile getIndividualFile(String bucket, String key, String tableID, Instant receivedTime) {
-        return buildTrackedFile(bucket + "/" + key, getFileSizeBites(bucket, key), tableID, receivedTime);
-    }
-
-    private Long getFileSizeBites(String bucket, String key) {
-        return s3Client.headObject(
-                HeadObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(key)
+        return expandDirectories.expandPaths(request.files())
+                .streamFilesThrowIfAnyPathIsEmpty()
+                .map(file -> IngestBatcherTrackedFile.builder()
+                        .file(file.pathForJob())
+                        .fileSizeBytes(file.fileSizeBytes())
+                        .tableId(tableID)
+                        .receivedTime(receivedTime)
                         .build())
-                .contentLength();
-    }
-
-    private IngestBatcherTrackedFile buildTrackedFile(String filename, Long fileSizeBytes, String tableID, Instant receivedTime) {
-        return IngestBatcherTrackedFile.builder()
-                .file(filename)
-                .fileSizeBytes(fileSizeBytes)
-                .tableId(tableID)
-                .receivedTime(receivedTime)
-                .build();
+                .toList();
     }
 }

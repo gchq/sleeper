@@ -31,6 +31,7 @@ import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.IngestTask;
+import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
@@ -197,7 +198,7 @@ public class InMemoryIngestByQueue {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(jobTracker)
-                .expandDirectories(files -> files)
+                .expandDirectories(files -> new ExpandDirectoriesResult(files, List.of()))
                 .build();
     }
 
