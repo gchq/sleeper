@@ -1867,14 +1867,40 @@
             </build>
         </profile>
         <profile>
+            <id>skipShade</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>fat-jar</id>
+                                    <phase>none</phase>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-assembly-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>distro-assembly</id>
+                                    <phase>none</phase>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
             <id>style</id>
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>true</skipITs>
             </properties>
-        </profile>
-        <profile>
-            <id>skipShade</id>
             <build>
                 <pluginManagement>
                     <plugins>
