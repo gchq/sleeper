@@ -74,7 +74,8 @@ public interface StateListenerBeforeApply {
     /**
      * Creates a transaction listener that operates on just the state of partitions.
      *
-     * @return the listener
+     * @param  run the method to operate on the partitions
+     * @return     the listener
      */
     static StateListenerBeforeApply withPartitionsState(Consumer<StateStorePartitions> run) {
         return byTransactionType(PartitionTransaction.class,
@@ -84,7 +85,8 @@ public interface StateListenerBeforeApply {
     /**
      * Creates a transaction listener that operates on just the state of files.
      *
-     * @return the listener
+     * @param  run the method to operate on the files
+     * @return     the listener
      */
     static StateListenerBeforeApply withFilesState(Consumer<StateStoreFiles> run) {
         return byTransactionType(FileReferenceTransaction.class,
@@ -94,9 +96,11 @@ public interface StateListenerBeforeApply {
     /**
      * Creates a transaction listener that runs if the transaction is a certain type.
      *
-     * @param  <S> the type of state the transaction operates on
-     * @param  <T> the type of the transaction
-     * @return     the listener
+     * @param  <S>             the type of state the transaction operates on
+     * @param  <T>             the type of the transaction
+     * @param  transactionType the type of transaction to check for
+     * @param  listener        the listener to run against transactions of the given type
+     * @return                 the wrapped listener that will check the transaction type
      */
     static <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply byTransactionType(Class<T> transactionType, StateListenerBeforeApplyByType<S, T> listener) {
         return (entry, transaction, state) -> {

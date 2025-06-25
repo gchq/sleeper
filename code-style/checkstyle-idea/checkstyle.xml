@@ -71,7 +71,6 @@
         </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
-            <property name="allowMissingParamTags" value="true"/>
         </module>
         <module name="JavadocMissingLeadingAsterisk">
             <property name="id" value="javadocMissingLeadingAsterisk"/>

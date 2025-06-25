@@ -99,6 +99,8 @@ public class TransactionLogHead<T> {
      * Adds a transaction to the log. Brings the state as up to date as possible before writing to the log. Handles
      * conflicts with other processes writing to the log at the same time.
      *
+     * @param  updateTime          the time now
+     * @param  request             the request to add a transaction
      * @throws StateStoreException thrown if there's any failure reading or adding a transaction
      */
     void addTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException {

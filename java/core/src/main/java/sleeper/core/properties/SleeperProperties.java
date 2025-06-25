@@ -198,6 +198,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
+     * @param <E>      the enum type representing valid values of the property
      * @param property the property
      * @param value    the value, if the property is an enum type
      */
@@ -209,6 +210,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * Sets the value of a property. Please call the setter relevant to the type of the property, see other methods on
      * this class.
      *
+     * @param <E>      the enum type representing valid values of the property
      * @param property the property
      * @param list     the value, if the property is a list of an enum type
      */

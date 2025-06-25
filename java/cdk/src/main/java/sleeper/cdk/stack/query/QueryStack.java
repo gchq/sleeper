@@ -199,6 +199,7 @@ public class QueryStack extends NestedStack {
      * to their buckets and queues.
      *
      * @param lambda to apply the policy to
+     * @param id     an identifier to append to the policy name
      */
     private void attachPolicy(IFunction lambda, String id) {
         PolicyStatementProps policyStatementProps = PolicyStatementProps.builder()
@@ -219,6 +220,8 @@ public class QueryStack extends NestedStack {
      * Creates the queue used for internal sub-queries against a specific leaf partition.
      *
      * @param  instanceProperties containing configuration details
+     * @param  topic              the SNS topic to notify of any dead letters
+     * @param  errorMetrics       the metrics to track dead letters
      * @return                    the queue to be used for leaf partition queries
      */
     private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {

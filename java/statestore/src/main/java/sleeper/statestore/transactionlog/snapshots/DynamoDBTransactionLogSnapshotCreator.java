@@ -59,6 +59,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
      * @param  instanceProperties the Sleeper instance properties
      * @param  tableProperties    the Sleeper table properties
      * @param  s3Client           the client for interacting with S3
+     * @param  s3TransferManager  the transfer manager for uploading snapshots to S3
      * @param  dynamoDBClient     the client for interacting with DynamoDB
      * @return                    the snapshot creator
      */
