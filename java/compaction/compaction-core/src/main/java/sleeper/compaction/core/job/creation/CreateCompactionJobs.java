@@ -245,8 +245,9 @@ public class CreateCompactionJobs {
         Map<String, List<FileReference>> filesByPartitionId = new HashMap<>();
         leftoverFiles.stream()
                 .filter(fileReference -> leafPartitionIds.contains(fileReference.getPartitionId()))
-                .forEach(fileReference -> filesByPartitionId.computeIfAbsent(fileReference.getPartitionId(),
-                        (key) -> new ArrayList<>()).add(fileReference));
+                .forEach(fileReference -> filesByPartitionId.computeIfAbsent(
+                        fileReference.getPartitionId(), key -> new ArrayList<>())
+                        .add(fileReference));
         for (Partition partition : allPartitions) {
             List<FileReference> partitionFiles = filesByPartitionId.get(partition.getId());
             if (partitionFiles == null) {

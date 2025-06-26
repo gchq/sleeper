@@ -475,7 +475,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      */
     @Override
     public CloseableIterator<Record> createOrderedRecordIterator() throws IOException {
-        if (!isWriteable || (internalSortedRecordIterator != null)) {
+        if (!isWriteable || internalSortedRecordIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
         isWriteable = false;

@@ -34,7 +34,7 @@ public class JsonJobRunReporter {
     }
 
     public static JsonSerializer<JobRuns> jobRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {
-        return ((processRuns, type, context) -> createJobRunsJson(processRuns, context, getType));
+        return (processRuns, type, context) -> createJobRunsJson(processRuns, context, getType);
     }
 
     private static JsonElement createJobRunsJson(

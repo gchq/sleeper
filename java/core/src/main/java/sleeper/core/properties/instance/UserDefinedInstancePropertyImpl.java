@@ -52,7 +52,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
         includedInBasicTemplate = Optional.ofNullable(builder.includedInBasicTemplate)
-                .orElseGet(UserDefinedInstanceProperty.super::isIncludedInBasicTemplate);
+                .orElse(false);
         ignoreEmptyValue = builder.ignoreEmptyValue;
         defaultProperty = builder.defaultProperty;
     }
