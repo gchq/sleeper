@@ -458,16 +458,6 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
-                <artifactId>http-auth</artifactId>
-                <version>${aws-java-sdk-v2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>software.amazon.awssdk</groupId>
-                <artifactId>sdk-core</artifactId>
-                <version>${aws-java-sdk-v2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>software.amazon.awssdk</groupId>
                 <artifactId>metrics-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
