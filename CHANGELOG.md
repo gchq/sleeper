@@ -20,7 +20,7 @@ Bugfixes:
     - Setting a properties file based on the full example at [`example/full/instance.properties`](example/full/instance.properties)
 - The Python API can now reliably read SQS queue URLs
   - This was a new bug introduced in the previous release, as before that it looked up queues by their name
-  - Some queue URLs are saved in the instance properties file with an escaped colon character, like `\:`
+  - Some queue URLs are saved in the instance properties file with an escaped colon character, like `http\://...`
 
 Build:
 - Improved Checkstyle linting of Java code
