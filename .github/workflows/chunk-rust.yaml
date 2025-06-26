@@ -15,7 +15,6 @@ on:
       - 'java/sketches/**'
       - 'java/parquet/**'
       - 'java/core/**'
-      - 'java/example-iterators/**'
       - 'java/common/localstack-test/**'
 
 jobs:
