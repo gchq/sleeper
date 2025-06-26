@@ -81,7 +81,7 @@
             <property name="checkEmptyJavadoc" value="true"/>
         </module>
         <module name="JavadocType">
-            <property name="id" value="javadocStyle"/>
+            <property name="id" value="javadocType"/>
         </module>
         <module name="MissingJavadocMethod">
             <property name="id" value="missingJavadocMethod"/>
