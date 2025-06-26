@@ -10,6 +10,11 @@ available [here](docs/development/roadmap.md).
 
 This is a bug fix release for the Python API.
 
+Iterators:
+- Added Java `AggregationFilteringIterator` equivalent to experimental DataFusion aggregation support
+  - This can be used in compaction and/or queries, but will be replaced with generic support for filtering and aggregation
+- Converted experimental age off filter to use milliseconds rather than seconds
+
 Bugfixes:
 - The Python API can now read an instance properties file with a % sign in a property value
   - This was preventing the Python `SleeperClient` from being instantiated
