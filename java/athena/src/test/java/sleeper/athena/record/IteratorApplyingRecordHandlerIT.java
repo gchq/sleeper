@@ -19,7 +19,6 @@ import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
 import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
 import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
@@ -64,6 +63,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static sleeper.athena.TestUtils.createConstraints;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
@@ -117,7 +117,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000L));
 
@@ -170,7 +170,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -224,7 +224,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -267,7 +267,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -310,7 +310,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 0, "")
                         .add(MAX_ROW_KEY_PREFIX + 0, null)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -366,7 +366,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 

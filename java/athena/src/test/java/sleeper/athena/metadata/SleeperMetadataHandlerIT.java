@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static sleeper.athena.TestUtils.createConstraints;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -107,7 +108,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(predicate),
+                createConstraints(predicate),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
 
@@ -154,7 +155,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(predicate),
+                createConstraints(predicate),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
 
@@ -208,7 +209,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(predicate),
+                createConstraints(predicate),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
 
@@ -255,7 +256,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(predicate),
+                createConstraints(predicate),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
 
@@ -303,7 +304,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(predicate),
+                createConstraints(predicate),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
 
@@ -378,7 +379,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(predicate),
+                createConstraints(predicate),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
 
@@ -504,7 +505,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 false, false).add(firstHalfOf2018.getRegion().getRange("month").getMax()).build());
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 

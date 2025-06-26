@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
+import static sleeper.athena.TestUtils.createConstraints;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
@@ -89,7 +90,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
                 "abc",
                 "def",
                 tableName,
-                new Constraints(new HashMap<>()),
+                createConstraints(new HashMap<>()),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
@@ -141,7 +142,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
             getSplitsResponse = sleeperMetadataHandler.doGetSplits(blockAllocator,
                     new GetSplitsRequest(TestUtils.createIdentity(), "abc", "def", new TableName("myDB", "myTable"),
-                            partitions, new ArrayList<>(), new Constraints(new HashMap<>()), "unused"));
+                            partitions, new ArrayList<>(), createConstraints(new HashMap<>()), "unused"));
         }
 
         // Then
@@ -177,7 +178,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, 8, true)));
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
@@ -224,7 +225,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, firstHalfOf2018.getRegion().getRange("month").getMax(), false)));
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
@@ -276,7 +277,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 true, false).add(firstHalfOf2018.getRegion().getRange("month").getMax()).build());
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
