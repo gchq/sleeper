@@ -44,6 +44,19 @@ def test_read_properties_string_with_percent():
     assert properties.get("a.b.c") == "-XX:OnOutOfMemoryError='kill -9 %p'"
 
 
+def test_read_properties_string_with_escaped_colon():
+    # Given
+    string = "queue.url=https\://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ\n"
+
+    # When
+    properties = load_instance_properties_from_string(string)
+
+    # Then
+    assert properties.get("queue.url") == "https://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ"
+    assert properties.as_properties_str() == string
+    assert properties.as_dict() == {"queue.url": "https://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ"}
+
+
 def test_read_full_example_properties():
     # Given
     file = get_repository_path() / "example/full/instance.properties"

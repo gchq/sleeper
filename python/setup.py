@@ -22,6 +22,7 @@ setup(
         "boto3",
         "s3fs",
         "boto3-stubs[essential]",
+        "jproperties",
         "ruff",
         "pytest",
         "testcontainers[localstack]",
