@@ -14,7 +14,7 @@ def should_read_set_field():
     assert properties.get("a.b.c") == "value"
 
 
-def should_read_unset_field():
+def should_fail_to_read_unset_field():
     # Given
     properties = InstanceProperties({})
 
