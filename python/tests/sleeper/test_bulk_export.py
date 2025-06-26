@@ -13,7 +13,7 @@ from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
-def test_bulk_export(sender: BulkExportSender, queue: Queue):
+def should_send_bulk_export_query(sender: BulkExportSender, queue: Queue):
     # Given
     query = BulkExportQuery(export_id="test-export", table_name="test-table")
 
@@ -24,7 +24,7 @@ def test_bulk_export(sender: BulkExportSender, queue: Queue):
     assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
 
 
-def test_bulk_export_with_client(sleeper_client: SleeperClient, queue: Queue):
+def should_send_bulk_export_query_with_client(sleeper_client: SleeperClient, queue: Queue):
     # Given
     query = BulkExportQuery(export_id="test-export", table_name="test-table")
 
@@ -35,7 +35,7 @@ def test_bulk_export_with_client(sleeper_client: SleeperClient, queue: Queue):
     assert [{"exportId": "test-export", "tableName": "test-table"}] == receive_messages(queue)
 
 
-def test_bulk_export_by_table_id():
+def should_create_bulk_export_by_table_id():
     # Given
     query = BulkExportQuery(export_id="test-export", table_id="test-table")
 
@@ -43,7 +43,7 @@ def test_bulk_export_by_table_id():
     assert {"exportId": "test-export", "tableId": "test-table"} == json.loads(query.to_json())
 
 
-def test_generate_export_id():
+def should_generate_export_id():
     # When
     query = BulkExportQuery(table_name="test-table")
 
