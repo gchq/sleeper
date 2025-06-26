@@ -458,17 +458,27 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
+                <artifactId>sdk-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
                 <artifactId>metrics-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-     <!--       <dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>regions</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
-                <artifactId>json-protocol</artifactId>
+                <artifactId>aws-json-protocol</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <dependency>
@@ -486,11 +496,61 @@
                 <artifactId>json-utils</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-            <dependency>
+           <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>utils</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
-            </dependency>  -->
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>identity-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-client-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-aws</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>retries-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>protocol-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>profiles</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
             <!-- Data processing -->
             <dependency>
                 <groupId>com.joom.spark</groupId>
