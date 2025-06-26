@@ -5,7 +5,7 @@ from tests.sleeper.localstack import LocalStack
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
-def test_load_instance_properties():
+def should_load_instance_properties():
     # Given
     bucket = LocalStack.create_bucket()
     LocalStack.s3_resource().Object(bucket.name, "instance.properties").put(Body="a.b.c=value")
@@ -17,7 +17,7 @@ def test_load_instance_properties():
     assert properties.as_dict() == {"a.b.c": "value"}
 
 
-def test_save_load_instance_properties():
+def should_save_load_instance_properties():
     # Given
     properties = create_test_instance_properties()
     LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))

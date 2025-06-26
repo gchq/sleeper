@@ -6,7 +6,7 @@ from sleeper.properties.user_defined_properties import CommonProperty
 from tests.sleeper.repository_path import get_repository_path
 
 
-def test_read_set_field():
+def should_read_set_field():
     # Given
     properties = InstanceProperties({"a.b.c": "value"})
 
@@ -14,7 +14,7 @@ def test_read_set_field():
     assert properties.get("a.b.c") == "value"
 
 
-def test_read_unset_field():
+def should_read_unset_field():
     # Given
     properties = InstanceProperties({})
 
@@ -23,7 +23,7 @@ def test_read_unset_field():
         properties.get("a.b.c")
 
 
-def test_read_property():
+def should_read_property():
     # Given
     property = InstanceProperty("queue.url")
     properties = InstanceProperties({"queue.url": "https://sqs.eu-west-2.amazonaws.com/123456789/MyQueue"})
@@ -33,7 +33,7 @@ def test_read_property():
     assert queue_name_from_url(properties.get(property)) == "MyQueue"
 
 
-def test_read_properties_string_with_percent():
+def should_read_properties_string_with_percent():
     # Given
     string = "a.b.c=-XX:OnOutOfMemoryError='kill -9 %p'"
 
@@ -44,7 +44,7 @@ def test_read_properties_string_with_percent():
     assert properties.get("a.b.c") == "-XX:OnOutOfMemoryError='kill -9 %p'"
 
 
-def test_read_properties_string_with_escaped_colon():
+def should_read_properties_string_with_escaped_colon():
     # Given
     string = "queue.url=https\://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ\n"
 
@@ -57,7 +57,7 @@ def test_read_properties_string_with_escaped_colon():
     assert properties.as_dict() == {"queue.url": "https://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ"}
 
 
-def test_read_full_example_properties():
+def should_read_full_example_properties():
     # Given
     file = get_repository_path() / "example/full/instance.properties"
     content = file.read_text()

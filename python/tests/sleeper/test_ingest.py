@@ -13,7 +13,7 @@ from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
-def test_ingest(queue: Queue, sender: IngestJobSender):
+def should_send_ingest_job(queue: Queue, sender: IngestJobSender):
     # Given
     job = IngestJob(job_id="test-job", table_name="test-table", files=["file-1.parquet"])
 
@@ -24,7 +24,7 @@ def test_ingest(queue: Queue, sender: IngestJobSender):
     assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
 
 
-def test_ingest_with_client(queue: Queue, sleeper_client: SleeperClient):
+def should_send_ingest_job_with_client(queue: Queue, sleeper_client: SleeperClient):
     # When
     sleeper_client.ingest_parquet_files_from_s3("test-table", ["file-1.parquet"], "test-job")
 
@@ -32,7 +32,7 @@ def test_ingest_with_client(queue: Queue, sleeper_client: SleeperClient):
     assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
 
 
-def test_ingest_from_records_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
+def should_ingest_from_records_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
     # Given
     records = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
     LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
@@ -48,7 +48,7 @@ def test_ingest_from_records_with_client(queue: Queue, sleeper_client: SleeperCl
     assert {"tableName": "my_table"} == job
 
 
-def test_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
+def should_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
     # Given
     records = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
     LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
@@ -65,7 +65,7 @@ def test_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, 
     assert {"tableName": "my_table"} == job
 
 
-def test_ingest_by_table_id():
+def should_create_job_by_table_id():
     # When
     job = IngestJob(job_id="test-job", table_id="test-table", files=["file-1.parquet"])
 
@@ -73,7 +73,7 @@ def test_ingest_by_table_id():
     assert {"id": "test-job", "tableId": "test-table", "files": ["file-1.parquet"]} == json.loads(job.to_json())
 
 
-def test_generate_job_id():
+def should_generate_job_id():
     # When
     job = IngestJob(table_name="test-table", files=["file-1.parquet"])
 
