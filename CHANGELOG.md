@@ -18,6 +18,9 @@ Bugfixes:
   - Default values are normally only set explicitly when deploying in a couple of ways:
     - From templates, like `scripts/deploy/deployNew.sh ${ID} ${VPC} ${SUBNETS}` with no explicit properties file
     - Setting a properties file based on the full example at [`example/full/instance.properties`](example/full/instance.properties)
+- The Python API can now reliably read SQS queue URLs
+  - This was a new bug introduced in the previous release, as before that it looked up queues by their name
+  - Some queue URLs are saved in the instance properties file with an escaped colon character, like `\:`
 
 Build:
 - Improved Checkstyle linting of Java code
