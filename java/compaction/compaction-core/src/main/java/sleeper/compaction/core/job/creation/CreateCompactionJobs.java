@@ -188,7 +188,7 @@ public class CreateCompactionJobs {
 
     private int countCurrentRunningJobs(List<FileReference> index) {
         return index.stream()
-                .filter((file) -> file.getJobId() != null)
+                .filter(file -> file.getJobId() != null)
                 .map(FileReference::getJobId)
                 .collect(Collectors.toSet())
                 .size();
