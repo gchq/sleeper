@@ -45,6 +45,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
     /**
      * Sets up a aggregating iterator.
      *
+     * @param input  the record source iterator
      * @param config the configuration
      */
     public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<sleeper.core.record.Record> input) {
