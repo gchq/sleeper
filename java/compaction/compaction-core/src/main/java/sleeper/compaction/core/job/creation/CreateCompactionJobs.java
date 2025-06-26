@@ -155,7 +155,8 @@ public class CreateCompactionJobs {
         }
 
         Instant limitJobsStartTime = Instant.now();
-        int creationLimit = tableProperties.getInt(TableProperty.COMPACTION_JOB_CREATION_LIMIT);
+        int creationLimit = tableProperties.getInt(TableProperty.COMPACTION_JOB_CREATION_LIMIT) - countCurrentRunningJobs(fileReferences);
+
         if (compactionJobs.size() > creationLimit) {
             compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
         }
@@ -183,6 +184,14 @@ public class CreateCompactionJobs {
         LOGGER.info("Limiting compaction jobs took {}", LoggedDuration.withShortOutput(limitJobsStartTime, sendJobsStartTime));
         LOGGER.info("Sending compaction jobs took {}", LoggedDuration.withShortOutput(sendJobsStartTime, finishTime));
         return finishTime;
+    }
+
+    private int countCurrentRunningJobs(List<FileReference> index) {
+        return index.stream()
+                .filter((file) -> file.getJobId() != null)
+                .map(FileReference::getJobId)
+                .collect(Collectors.toSet())
+                .size();
     }
 
     private List<CompactionJob> reduceCompactionJobsDownToCreationLimit(List<CompactionJob> compactionJobs, int creationLimit) {
