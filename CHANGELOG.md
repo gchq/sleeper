@@ -10,6 +10,9 @@ available [here](docs/development/roadmap.md).
 
 This is a bug fix release for the Python API.
 
+Compaction:
+- Running compaction jobs are now included when limiting the number of jobs that should be created
+
 Iterators:
 - Added Java `AggregationFilteringIterator` equivalent to experimental DataFusion aggregation support
   - This can be used in compaction and/or queries, but will be replaced with generic support for filtering and aggregation
