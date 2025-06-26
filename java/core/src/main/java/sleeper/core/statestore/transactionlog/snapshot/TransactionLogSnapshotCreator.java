@@ -42,12 +42,13 @@ public class TransactionLogSnapshotCreator {
      * The state object held in the previous snapshot will be mutated and reused in the new snapshot object if one is
      * made.
      *
-     * @param  <T>             the type of the state derived from the log
-     * @param  lastSnapshot    the last snapshot
-     * @param  logStore        the transaction log to read from
-     * @param  transactionType the type of transactions to read from the log
-     * @param  tableStatus     the Sleeper table the log is for, to be used in logging
-     * @return                 the new snapshot, if there were updates since the last snapshot
+     * @param  <T>                  the type of the state derived from the log
+     * @param  lastSnapshot         the last snapshot
+     * @param  logStore             the transaction log to read from
+     * @param  transactionBodyStore the store to read the body of large transactions
+     * @param  transactionType      the type of transactions to read from the log
+     * @param  tableStatus          the Sleeper table the log is for, to be used in logging
+     * @return                      the new snapshot, if there were updates since the last snapshot
      */
     public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
             TransactionLogSnapshot lastSnapshot,

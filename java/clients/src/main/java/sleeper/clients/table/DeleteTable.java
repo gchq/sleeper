@@ -84,7 +84,7 @@ public class DeleteTable {
         if (!force) {
             ConsoleInput input = new ConsoleInput(System.console());
             String result = input.promptLine("Are you sure you want to delete the table " + tableName + "? [y/N]");
-            if (!result.equalsIgnoreCase("y")) {
+            if (!"y".equalsIgnoreCase(result)) {
                 return;
             }
         }

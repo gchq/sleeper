@@ -116,23 +116,23 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     /**
      * Construct an instance. Should be called by an {@link ArrowRecordBatchFactory}.
      *
-     * @param arrowBufferAllocator                   the {@link BufferAllocator} to use to allocate memory for this
-     *                                               buffer
-     * @param sleeperSchema                          The Sleeper {@link Schema} of the records to be stored
-     * @param localWorkingDirectory                  The local directory to use to store the spilled Arrow files
-     * @param workingArrowBufferAllocatorBytes       The size of the working buffer, which is used for sorting and small
-     *                                               batches during the writing process
+     * @param arrowBufferAllocator                   the allocator to use to allocate memory for this buffer
+     * @param sleeperSchema                          the schema of the records to be stored
+     * @param recordMapper                           a writer to add data to an Arrow buffer
+     * @param localWorkingDirectory                  the local directory to use to store the spilled Arrow files
+     * @param workingArrowBufferAllocatorBytes       The size of the working buffer, used for sorting and small batch
+     *                                               operations.
      * @param minBatchArrowBufferAllocatorBytes      The minimum size of the buffer to hold the main batch of data. If
      *                                               this amount of data is unavailable then the object cannot be
-     *                                               constructed
+     *                                               constructed.
      * @param maxBatchArrowBufferAllocatorBytes      The maximum size of the buffer to hold the main batch of data. This
      *                                               may be shared with other processes and so the data may be flushed
-     *                                               to local disk before this object has entirely filled it
+     *                                               to local disk before this object has entirely filled it.
      * @param maxNoOfBytesToWriteLocally             The maximum number of bytes to write to a local disk before this
-     *                                               batch is considered full (approximate only)
+     *                                               batch is considered full (approximate only).
      * @param maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
-     *                                               data of this size into a single file, to reduced the memory
-     *                                               footprint
+     *                                               data of this size into a single file, to reduce the memory
+     *                                               footprint.
      */
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public ArrowRecordBatch(BufferAllocator arrowBufferAllocator,

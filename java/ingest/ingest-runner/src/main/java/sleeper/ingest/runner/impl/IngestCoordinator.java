@@ -446,6 +446,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         /**
          * A factory to create new record batches.
          *
+         * @param  <R>                the type of data accepted
          * @param  recordBatchFactory the factory
          * @return                    the builder for call chaining
          */

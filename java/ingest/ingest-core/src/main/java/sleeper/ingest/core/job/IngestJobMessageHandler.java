@@ -229,6 +229,7 @@ public class IngestJobMessageHandler<T> {
         /**
          * Sets the deserialiser.
          *
+         * @param  <N>          the type of job to deserialise and validate
          * @param  deserialiser the deserialiser
          * @return              the builder
          */

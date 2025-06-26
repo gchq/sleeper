@@ -91,6 +91,7 @@ public class RustCompactionRunner implements CompactionRunner {
      * @param  job             compaction job
      * @param  tableProperties configuration for the Sleeper table
      * @param  region          region being compacted
+     * @param  awsConfig       settings to access AWS, or null to use defaults
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */

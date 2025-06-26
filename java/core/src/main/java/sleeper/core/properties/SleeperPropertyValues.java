@@ -145,8 +145,9 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * Retrieves the value of a property for a list of an enum type. Please call the getter relevant to the
      * type of the property, see other methods on this class.
      *
+     * @param  <E>       the enum type representing valid values of the property
      * @param  property  the property
-     * @param  enumClass the enum type
+     * @param  enumClass the class of the enum representing valid values of the property
      * @return           the value of the property
      */
     default <E extends Enum<E>> List<E> getEnumList(T property, Class<E> enumClass) {
@@ -157,8 +158,9 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * Streams the values of a property for a list of an enum type. Please call the getter relevant to the
      * type of the property, see other methods on this class.
      *
+     * @param  <E>       the enum type representing valid values of the property
      * @param  property  the property
-     * @param  enumClass the enum type
+     * @param  enumClass the class of the enum representing valid values of the property
      * @return           the values of the property
      */
     default <E extends Enum<E>> Stream<E> streamEnumList(T property, Class<E> enumClass) {
@@ -169,8 +171,9 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * Retrieves the value of a property of an enum type. Please call the getter relevant to the type of the property,
      * see other methods on this class.
      *
+     * @param  <E>       the enum type representing valid values of the property
      * @param  property  the property
-     * @param  enumClass the enum type
+     * @param  enumClass the class of the enum representing valid values of the property
      * @return           the value of the property
      */
     default <E extends Enum<E>> E getEnumValue(T property, Class<E> enumClass) {

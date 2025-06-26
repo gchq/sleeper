@@ -52,6 +52,7 @@ public class StaticRateLimit<T> {
      *
      * @param  <T>                 the request result type
      * @param  waitBetweenRequests the time to wait for between requests
+     * @param  timeSupplier        the method to retrieve the current time
      * @return                     the new instance
      */
     public static <T> StaticRateLimit<T> withWaitBetweenRequests(Duration waitBetweenRequests, Supplier<Instant> timeSupplier) {

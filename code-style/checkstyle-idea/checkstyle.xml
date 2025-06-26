@@ -66,9 +66,11 @@
         <module name="JavadocContentLocation">
             <property name="id" value="javadocContentLocation"/>
         </module>
+        <module name="JavadocLeadingAsteriskAlign">
+            <property name="id" value="javadocLeadingAsteriskAlign"/>
+        </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
-            <property name="allowMissingParamTags" value="true"/>
         </module>
         <module name="JavadocMissingLeadingAsterisk">
             <property name="id" value="javadocMissingLeadingAsterisk"/>
@@ -81,7 +83,7 @@
             <property name="checkEmptyJavadoc" value="true"/>
         </module>
         <module name="JavadocType">
-            <property name="id" value="javadocStyle"/>
+            <property name="id" value="javadocType"/>
         </module>
         <module name="MissingJavadocMethod">
             <property name="id" value="missingJavadocMethod"/>
@@ -222,6 +224,30 @@
         </module>
         <module name="InterfaceIsType">
             <property name="id" value="interfaceIsType"/>
+        </module>
+        <module name="MutableException">
+            <property name="id" value="mutableException"/>
+        </module>
+        <module name="EqualsAvoidNull">
+            <property name="id" value="equalsAvoidNull"/>
+        </module>
+        <module name="FallThrough">
+            <property name="id" value="fallThrough"/>
+        </module>
+        <module name="StringLiteralEquality">
+            <property name="id" value="stringLiteralEquality"/>
+        </module>
+        <module name="UnnecessaryNullCheckWithInstanceOf">
+            <property name="id" value="unnecessaryNullCheckWithInstanceOf"/>
+        </module>
+        <module name="UnusedLocalVariable">
+            <property name="id" value="unusedLocalVariable"/>
+        </module>
+        <module name="NoCodeInFile">
+            <property name="id" value="noCodeInFile"/>
+        </module>
+        <module name="OuterTypeFilename">
+            <property name="id" value="outerTypeFilename"/>
         </module>
 
         <module name="ArrayTypeStyle">

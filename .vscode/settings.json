@@ -9,8 +9,8 @@
   ],
   "files.autoSave": "onFocusChange",
   "files.trimTrailingWhitespace": true,
-  "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
-  "java.checkstyle.version": "10.18.0",
+  "java.checkstyle.configuration": "${workspaceFolder}/code-style/checkstyle-idea/checkstyle.xml",
+  "java.checkstyle.version": "10.26.0",
   "java.compile.nullAnalysis.mode": "automatic",
   "java.completion.importOrder": [
     "",

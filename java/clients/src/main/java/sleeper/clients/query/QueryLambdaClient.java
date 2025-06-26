@@ -108,16 +108,15 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             if ("".equals(type)) {
                 break;
             }
-            if (!type.equalsIgnoreCase("s") && !type.equalsIgnoreCase("q")) {
-                continue;
-            }
-            if (type.equalsIgnoreCase("s")) {
+            if ("s".equalsIgnoreCase(type)) {
                 // Nothing to do - empty resultsPublisherConfig will cause the
                 // results to be published to S3.
                 System.out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
-            } else {
+            } else if ("q".equals(type)) {
                 resultsPublisherConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
                 System.out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
+            } else {
+                continue;
             }
             break;
         }

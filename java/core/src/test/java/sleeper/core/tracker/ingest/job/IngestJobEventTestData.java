@@ -55,8 +55,9 @@ public class IngestJobEventTestData {
     /**
      * Creates a builder for an ingest job started event when the job was validated as a separate event.
      *
-     * @param  startTime the start time
-     * @return           the builder
+     * @param  validatedEvent the event when the job was validated
+     * @param  startTime      the start time
+     * @return                the builder
      */
     public static IngestJobStartedEvent.Builder ingestJobStartedAfterValidationEventBuilder(IngestJobValidatedEvent validatedEvent, Instant startTime) {
         return IngestJobStartedEvent.builder()
@@ -149,6 +150,7 @@ public class IngestJobEventTestData {
      *
      * @param  job         a previous event for the same job
      * @param  failureTime the time of the faiure
+     * @param  reasons     the reasons for the failure
      * @return             the builder
      */
     public static IngestJobFailedEvent.Builder ingestJobFailedEventBuilder(IngestJobEvent job, Instant failureTime, List<String> reasons) {
