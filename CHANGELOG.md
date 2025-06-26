@@ -13,7 +13,7 @@ This is a bug fix release for the Python API.
 Bugfixes:
 - The Python API can now read an instance properties file with a % sign in a property value
   - This was preventing the Python `SleeperClient` from being instantiated
-  - This was a conflict with Python's configparser variable interpolation, which is now disabled
+  - This was a conflict with Python's configparser variable interpolation, which we no longer use
   - This occurred when explicitly setting the default values for properties that include a % in their defaults
   - Default values are normally only set explicitly when deploying in a couple of ways:
     - From templates, like `scripts/deploy/deployNew.sh ${ID} ${VPC} ${SUBNETS}` with no explicit properties file
