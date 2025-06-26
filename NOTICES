@@ -21,7 +21,7 @@ AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.*)
 
 - Apache License, Version 2.0
 
-AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2023.*)
+AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2025.*)
 
 - Apache License, Version 2.0
 
