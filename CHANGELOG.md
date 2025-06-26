@@ -18,6 +18,9 @@ Iterators:
   - This can be used in compaction and/or queries, but will be replaced with generic support for filtering and aggregation
 - Converted experimental age off filter to use milliseconds rather than seconds
 
+Build:
+- Improved Checkstyle linting of Java code
+
 Bugfixes:
 - The Python API can now read an instance properties file with a % sign in a property value
   - This was preventing the Python `SleeperClient` from being instantiated
@@ -30,9 +33,6 @@ Bugfixes:
   - This was a new bug introduced in the previous release, as before that it looked up queues by their name
   - Some queue URLs are saved in the instance properties file with an escaped colon character, like `http\://...`
   - This prevented the Python API from sending messages to those queues
-
-Build:
-- Improved Checkstyle linting of Java code
 
 
 ## Version 0.31.0
