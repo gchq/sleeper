@@ -26,6 +26,7 @@ Bugfixes:
 - The Python API can now reliably read SQS queue URLs
   - This was a new bug introduced in the previous release, as before that it looked up queues by their name
   - Some queue URLs are saved in the instance properties file with an escaped colon character, like `http\://...`
+  - This prevented the Python API from sending messages to those queues
 
 Build:
 - Improved Checkstyle linting of Java code
