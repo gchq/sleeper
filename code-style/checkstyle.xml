@@ -241,6 +241,12 @@
         <module name="UnusedLocalVariable">
             <property name="id" value="unusedLocalVariable"/>
         </module>
+        <module name="NoCodeInFile">
+            <property name="id" value="noCodeInFile"/>
+        </module>
+        <module name="OuterTypeFilename">
+            <property name="id" value="outerTypeFilename"/>
+        </module>
 
         <module name="ArrayTypeStyle">
             <property name="id" value="arrayTypeStyle"/>
