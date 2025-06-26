@@ -245,7 +245,9 @@ pub fn validate_aggregations(
         let mut col_checks: HashSet<&String> = HashSet::new();
         for col in &agg_cols {
             if group_by_cols.contains(*col) {
-                return plan_err!("Row key/grouping column \"{col}\" cannot have an aggregation");
+                return plan_err!(
+                    "Row key/extra grouping column \"{col}\" cannot have an aggregation"
+                );
             }
             if !col_checks.insert(*col) {
                 return plan_err!("Aggregation column \"{col}\" duplicated");
@@ -255,8 +257,8 @@ pub fn validate_aggregations(
             }
         }
         // Check all non row key columns exist in aggregation column list
-        for col in non_row_key_cols {
-            if !agg_cols.contains(&&col) {
+        for col in &non_row_key_cols {
+            if !agg_cols.contains(&col) {
                 return plan_err!(
                     "Column \"{col}\" doesn't have a aggregation operator specified!"
                 );

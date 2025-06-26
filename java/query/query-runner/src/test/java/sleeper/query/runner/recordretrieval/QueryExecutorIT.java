@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
@@ -45,7 +46,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.example.iterator.AgeOffIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.LeafPartitionQuery;

@@ -87,12 +87,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>example-iterators</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
