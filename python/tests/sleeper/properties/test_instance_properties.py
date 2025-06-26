@@ -46,7 +46,7 @@ def should_read_properties_string_with_percent():
 
 def should_read_properties_string_with_escaped_colon():
     # Given
-    string = "queue.url=https\://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ\n"
+    string = "queue.url=https\\://sqs.eu-west-2.amazonaws.com/123456/sleeper-myinstance-IngestJobQ\n"
 
     # When
     properties = load_instance_properties_from_string(string)
