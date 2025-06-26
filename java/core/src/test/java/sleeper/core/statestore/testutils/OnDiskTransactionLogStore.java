@@ -55,6 +55,7 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
      * else.
      *
      * @param  directory the directory
+     * @param  serDe     the serialiser to convert between transactions and JSON
      * @return           the store
      */
     public static TransactionLogStore inDirectory(Path directory, TransactionSerDe serDe) {

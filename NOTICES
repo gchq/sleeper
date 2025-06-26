@@ -429,6 +429,25 @@ s3fs:
 
 - The 3-Clause BSD License
 
+boto3-stubs
+
+- MIT License
+
+jproperties
+
+- The 3-Clause BSD License; partially licensed under the Python Software Foundation License
+
+ruff
+
+- MIT License
+
+pytest
+
+- MIT License
+
+testcontainers
+
+- Apache License, Version 2.0
 
 
 Sleeper contains Rust code. This has the following dependencies.

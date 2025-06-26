@@ -18,7 +18,7 @@ package sleeper.clients.query.exception;
 import java.util.List;
 
 public class QueryWebSocketClientException extends Exception {
-    private List<WebSocketException> exceptions;
+    private final List<WebSocketException> exceptions;
 
     public QueryWebSocketClientException(List<WebSocketException> exceptions) {
         super("WebSocket client encountered " + exceptions.size() + " exceptions while running query",

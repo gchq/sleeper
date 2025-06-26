@@ -15,13 +15,14 @@ from setuptools import setup
 
 setup(
     name="sleeper",
-    version="0.32.0.dev1",
+    version="0.31.1.dev1",
     description="Python client for Sleeper",
     install_requires=[
         "pyarrow",
         "boto3",
         "s3fs",
         "boto3-stubs[essential]",
+        "jproperties",
         "ruff",
         "pytest",
         "testcontainers[localstack]",

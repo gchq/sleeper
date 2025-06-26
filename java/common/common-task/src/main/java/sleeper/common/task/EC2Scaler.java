@@ -44,13 +44,6 @@ public class EC2Scaler {
                 instanceType -> getEc2InstanceType(ec2Client, instanceType));
     }
 
-    /**
-     * Find the details of a given EC2 auto scaling group.
-     *
-     * @param  groupName the name of the auto scaling group
-     * @param  client    the client object
-     * @return           group data
-     */
     private static int getAutoScalingGroupMaxSize(String groupName, AutoScalingClient client) {
         DescribeAutoScalingGroupsResponse result = client.describeAutoScalingGroups(req -> req.autoScalingGroupNames(groupName).maxRecords(1));
         if (result.autoScalingGroups().size() != 1) {
@@ -75,11 +68,6 @@ public class EC2Scaler {
                 typeInfo.memoryInfo().sizeInMiB());
     }
 
-    /**
-     * Sets the desired size on the auto scaling group.
-     *
-     * @param newClusterSize new desired size to set
-     */
     private static void setClusterDesiredSize(AutoScalingClient asClient, String asGroupName, int newClusterSize) {
         LOGGER.info("Setting auto scaling group {} desired size to {}", asGroupName, newClusterSize);
         asClient.setDesiredCapacity(req -> req.autoScalingGroupName(asGroupName).desiredCapacity(newClusterSize));

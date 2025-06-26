@@ -66,8 +66,9 @@ public class InMemoryTransactionLogs {
     /**
      * Creates an instance of this class that will record the waits during transaction retries in a given list.
      *
-     * @param  retryWaits the list to record retry waits in
-     * @return            an instance of this class
+     * @param  transactionBodyStore the store of large transactions
+     * @param  retryWaits           the list to record retry waits in
+     * @return                      an instance of this class
      */
     public static InMemoryTransactionLogs recordRetryWaits(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
         return new InMemoryTransactionLogs(transactionBodyStore, retryWaits);

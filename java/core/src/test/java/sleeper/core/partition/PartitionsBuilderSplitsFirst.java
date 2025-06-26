@@ -41,6 +41,7 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
      * Creates partially constructed leaf partitions. Parent partitions must be defined separately that join the
      * partitions together into a tree.
      *
+     * @param  schema the Sleeper table schema
      * @param  ids    unique IDs for the leaves
      * @param  splits values of the first row key, for split points in between the new leaf partitions
      * @return        the builder
@@ -55,6 +56,7 @@ public class PartitionsBuilderSplitsFirst extends PartitionsBuilder {
      * Creates partially constructed leaf partitions split on a certain row key. Parent partitions must be defined
      * separately that join the partitions together into a tree.
      *
+     * @param  schema    the Sleeper table schema
      * @param  dimension index in the schema of the row key the partitions are split on
      * @param  ids       unique IDs for the leaves
      * @param  splits    values of the row key at the specified dimension, for split points in between the new leaf

@@ -48,7 +48,8 @@ public class SleeperSplit implements ConnectorSplit {
     /**
      * Constructor to create a split directly from a subquery.
      *
-     * @param leafPartitionQuery the {@link LeafPartitionQuery} to use to construct this split
+     * @param sleeperSchema      the Sleeper table schema
+     * @param leafPartitionQuery the query to use to construct this split
      */
     public SleeperSplit(Schema sleeperSchema, LeafPartitionQuery leafPartitionQuery) {
         this.sleeperSchema = sleeperSchema;
@@ -62,6 +63,9 @@ public class SleeperSplit implements ConnectorSplit {
      * are called and their values are placed into the serialised JSON. During deserialisation, those values are passed
      * from that JSON into this constructor, where the JsonProperty matches the name of the getter that originally
      * supplied the values.
+     *
+     * @param sleeperSchemaAsString      the Sleeper table schema, serialised as a string
+     * @param leafPartitionQueryAsString the query to use to construct this split, serialised as a string
      */
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     @JsonCreator

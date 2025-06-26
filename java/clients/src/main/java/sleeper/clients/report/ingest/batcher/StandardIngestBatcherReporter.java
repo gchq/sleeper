@@ -70,7 +70,7 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         long batchedFiles = statusList.stream().filter(IngestBatcherTrackedFile::isAssignedToJob).count();
         out.println("Total pending files: " + (statusList.size() - batchedFiles));
         if (queryType == BatcherQuery.Type.ALL) {
-            out.println("Total batched files: " + (batchedFiles));
+            out.println("Total batched files: " + batchedFiles);
         }
     }
 

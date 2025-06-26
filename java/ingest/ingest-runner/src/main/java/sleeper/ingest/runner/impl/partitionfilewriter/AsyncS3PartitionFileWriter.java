@@ -86,10 +86,11 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param  partition             the partition to write to
      * @param  parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition
      *                               file
-     * @param  s3TransferManager     the manager to use to perform the asynchronous upload
-     * @param  localWorkingDirectory the local directory to use to create temporary files
      * @param  s3BucketName          the S3 bucket name and prefix to write to
      * @param  filePaths             the file path generator for S3 objects to write
+     * @param  s3TransferManager     the manager to use to perform the asynchronous upload
+     * @param  localWorkingDirectory the local directory to use to create temporary files
+     * @param  fileName              an identifier for the file to write, e.g. a UUID
      * @throws IOException           if there was a failure writing the file
      */
     public AsyncS3PartitionFileWriter(
