@@ -5,6 +5,24 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+
+## Version 0.31.1
+
+This is a bug fix release for the Python API.
+
+Bugfixes:
+- The Python API can now read an instance properties file with a % sign in a property value
+  - This was preventing the Python `SleeperClient` from being instantiated
+  - This was a conflict with Python's configparser variable interpolation, which is now disabled
+  - This occurred when explicitly setting the default values for properties that include a % in their defaults
+  - Default values are normally only set explicitly when deploying in a couple of ways:
+    - From templates, like `scripts/deploy/deployNew.sh ${ID} ${VPC} ${SUBNETS}` with no explicit properties file
+    - Setting a properties file based on the full example at [`example/full/instance.properties`](example/full/instance.properties)
+
+Build:
+- Improved Checkstyle linting of Java code
+
+
 ## Version 0.31.0
 
 This includes the first version of bulk export, upgrading from AWS SDK v1 to AWS SDK v2, and upgrading EMR, Spark and
