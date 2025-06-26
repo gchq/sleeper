@@ -130,8 +130,9 @@ public class StateStoreFilesArrowFormat {
     /**
      * Reads the state of files from Arrow format.
      *
-     * @param  channel the channel to read from
-     * @return         the result, including the files in the state store
+     * @param  allocator the allocator for needed memory
+     * @param  channel   the channel to read from
+     * @return           the result, including the files in the state store
      */
     public static ReadResult read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
         int totalFileReferences = 0;

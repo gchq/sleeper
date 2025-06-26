@@ -138,11 +138,12 @@ public class IngestJobStatusFromJobTestData {
     /**
      * Creates a process run for an ingest job that was validated and finished.
      *
-     * @param  job            the ingest job
-     * @param  taskId         the ingest task ID
-     * @param  validationTime the validation time
-     * @param  summary        the records processed summary
-     * @return                a {@link JobRun}
+     * @param  job                  the ingest job
+     * @param  taskId               the ingest task ID
+     * @param  validationTime       the validation time
+     * @param  summary              the records processed summary
+     * @param  numFilesWrittenByJob the number of files that were written by the job
+     * @return                      a job run
      */
     public static JobRun acceptedRunWhichFinished(
             IngestJob job, String taskId, Instant validationTime, JobRunSummary summary, int numFilesWrittenByJob) {

@@ -152,8 +152,9 @@ public class StateStorePartitionsArrowFormat {
     /**
      * Reads the state of partitions from Arrow format.
      *
-     * @param  channel the channel to read from
-     * @return         the result, including the partitions in the state store
+     * @param  allocator the allocator for needed memory
+     * @param  channel   the channel to read from
+     * @return           the result, including the partitions in the state store
      */
     public static ReadResult read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
         List<Partition> partitions = new ArrayList<>();

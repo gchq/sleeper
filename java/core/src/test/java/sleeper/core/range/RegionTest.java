@@ -421,7 +421,7 @@ public class RegionTest {
         boolean test3 = region.isKeyInRegion(schema, key3);
         boolean test4 = region.isKeyInRegion(schema, key4);
         boolean test5 = region.isKeyInRegion(schema, key5);
-        boolean test6 = region.isKeyInRegion(schema, key4);
+        boolean test6 = region.isKeyInRegion(schema, key6);
 
         // Then
         assertThat(test1).isFalse();

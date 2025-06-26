@@ -144,6 +144,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
      *
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
+     * @param stateBefore  the state of the files in the store before the transaction
      */
     public void reportJobCommit(IngestJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore) {
         if (jobId == null) {
@@ -163,6 +164,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
      *
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
+     * @param stateBefore  the state of the files in the store before the transaction
      */
     public void reportJobCommitOrThrow(IngestJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore) {
         validateFiles(stateBefore);
