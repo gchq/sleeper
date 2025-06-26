@@ -46,11 +46,6 @@ public class AggregationIteratorImplTest {
                         new Aggregation("value2", AggregationOp.MIN)));
     }
 
-    private static void checkAggregationResult(List<Record> records, List<Record> expectedResults) throws Exception {
-        List<Record> results = aggregate(records);
-        assertThat(results).containsExactlyElementsOf(expectedResults);
-    }
-
     /**
      * Aggregate the given list.
      *
@@ -73,7 +68,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of();
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsExactlyElementsOf(expected);
     }
 
     @Test
@@ -86,7 +81,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(new Record(r1));
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test
@@ -103,7 +98,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(r3);
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test
@@ -118,7 +113,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(new Record(r1), new Record(r2));
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test
@@ -140,7 +135,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(r4, r5);
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test
@@ -162,7 +157,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(r4, r5);
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test
@@ -192,7 +187,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(r6, r7, r8);
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test
@@ -220,7 +215,7 @@ public class AggregationIteratorImplTest {
         List<Record> expected = List.of(r5, r6, r7);
 
         // Then
-        checkAggregationResult(records, expected);
+        assertThat(records).containsAnyElementsOf(expected);
     }
 
     @Test

@@ -29,12 +29,12 @@ import java.util.Objects;
 /**
  * Performs aggregation of record columns based on specified column names and aggregation operators.
  */
-public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.record.Record> {
+public class AggregatorIteratorImpl implements CloseableIterator<Record> {
 
     /** Which columns to group and aggregate. */
     private final FilterAggregationConfig config;
     /** Source iterator. */
-    private final CloseableIterator<sleeper.core.record.Record> input;
+    private final CloseableIterator<Record> input;
     /**
      * The record retrieved from the record source that is the start of the next aggregation group. If this is null,
      * then either we are at the start of the iteration (no input records retrieved yet), or the input iterator
@@ -48,7 +48,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
      * @param input  the record source iterator
      * @param config the configuration
      */
-    public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<sleeper.core.record.Record> input) {
+    public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Record> input) {
         this.config = Objects.requireNonNull(config, "config");
         this.input = Objects.requireNonNull(input, "input");
     }
@@ -66,7 +66,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<sleeper.core.re
     }
 
     @Override
-    public sleeper.core.record.Record next() {
+    public Record next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }

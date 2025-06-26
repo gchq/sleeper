@@ -39,7 +39,7 @@ public class AggregationFilteringIteratorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSumApply() {
+    public void shouldApplySum() {
         // Given
         AggregationOp sum = AggregationOp.SUM;
 
@@ -67,7 +67,7 @@ public class AggregationFilteringIteratorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testMinApply() {
+    public void shouldApplyMin() {
         // Given
         AggregationOp sum = AggregationOp.MIN;
 
@@ -95,7 +95,7 @@ public class AggregationFilteringIteratorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testMaxApply() {
+    public void shouldApplyMax() {
         // Given
         AggregationOp sum = AggregationOp.MAX;
 
@@ -237,7 +237,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckDuplicateGroupingColumnRowKey() {
+    public void shouldFailValidationWhenGroupingByRowKey() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -255,7 +255,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckDuplicateGroupingColumnSortKey() {
+    public void shouldFailValidationWhenDuplicatingGroupBySortKey() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -273,7 +273,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckNonExistantColumn() {
+    public void shouldFailValidationWhenGroupingByNonExistentColumn() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -291,7 +291,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckRowKeyCantHaveAggregation() {
+    public void shouldFailValidationWhenAggregatingRowKey() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -309,7 +309,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckAggregationColumnNonExistant() {
+    public void shouldFailValidationWhenAggregatingNonExistentColumn() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -327,7 +327,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckAggregationColumnDuplicated() {
+    public void shouldFailValidationWhenAggregatingColumnTwice() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -345,7 +345,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void validateCheckAllAggregationsSpecified() {
+    public void shouldFailValidationWhenOneColumnIsNotAggregated() {
         // Given
         AggregationFilteringIterator iterator = new AggregationFilteringIterator();
         Schema schema = Schema.builder()
