@@ -64,7 +64,7 @@ public class SleeperPropertyValueUtils {
      * @return         true if the value meets the requirement
      */
     public static boolean isPositiveIntegerOrNull(String integer) {
-        return (integer == null) || (isPositiveInteger(integer));
+        return integer == null || isPositiveInteger(integer);
     }
 
     /**
@@ -94,7 +94,7 @@ public class SleeperPropertyValueUtils {
      * @return         true if the value meets the requirement
      */
     public static boolean isNonNegativeIntegerOrNull(String integer) {
-        return (integer == null) || (isNonNegativeInteger(integer));
+        return integer == null || isNonNegativeInteger(integer);
     }
 
     /**

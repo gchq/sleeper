@@ -207,7 +207,7 @@ class IngesterIntoPartitions {
         }
         boolean hasOnePartition = partitionIdToRecordCount.keySet().size() == 1;
         return rootFileWriter.close().thenApply(rootFile -> partitionIdToRecordCount.entrySet().stream()
-                .map((entry) -> FileReference.builder()
+                .map(entry -> FileReference.builder()
                         .partitionId(entry.getKey())
                         .filename(rootFile.getFilename())
                         .numberOfRecords(entry.getValue())

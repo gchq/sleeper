@@ -529,7 +529,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Read file and check it has correct records
         assertThat(readRecords(fileReferences.get(0)))
                 .containsExactlyElementsOf(getUnsortedRecords().stream()
-                        .sorted(Comparator.comparing(o -> ((Long) o.get("key"))))
+                        .sorted(Comparator.comparing(o -> (Long) o.get("key")))
                         .collect(Collectors.toList()));
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))

@@ -53,7 +53,7 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Rec
 
     @Override
     public boolean hasNext() {
-        return (currentRecordNo < vectorSchemaRoot.getRowCount());
+        return currentRecordNo < vectorSchemaRoot.getRowCount();
     }
 
     @Override

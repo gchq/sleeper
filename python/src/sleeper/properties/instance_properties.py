@@ -1,3 +1,6 @@
+import configparser
+
+
 class InstanceProperties:
     def __init__(self, properties: dict = None):
         if properties is None:
@@ -27,3 +30,11 @@ def _property_name(property):
 class InstanceProperty:
     def __init__(self, property_name):
         self.property_name = property_name
+
+
+def load_instance_properties_from_string(properties: str) -> InstanceProperties:
+    config_str = "[asection]\n" + properties
+    config = configparser.RawConfigParser(allow_no_value=True)
+    config.read_string(config_str)
+    parsed = dict(config["asection"])
+    return InstanceProperties(parsed)

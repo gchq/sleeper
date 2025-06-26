@@ -75,7 +75,7 @@ public interface NonPersistentEMRProperty {
                     "Valid values are ON_DEMAND or SPOT.\n" +
                     "This property is a default which can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
-            .defaultValue("SPOT").validationPredicate(s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s)))
+            .defaultValue("SPOT").validationPredicate(s -> "SPOT".equals(s) || "ON_DEMAND".equals(s))
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.initial.instances")
             .description("(Non-persistent EMR mode only) The default initial number of capacity units to provision as EC2 " +

@@ -574,11 +574,11 @@ public class QueryExecutorIT {
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildList());
         Partition leftPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
+                .filter(p -> (long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE)
                 .findFirst()
                 .orElseThrow();
         Partition rightPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == 5L))
+                .filter(p -> (long) p.getRegion().getRange("key1").getMin() == 5L)
                 .findFirst()
                 .orElseThrow();
         for (int i = 0; i < 10; i++) {
@@ -1012,8 +1012,8 @@ public class QueryExecutorIT {
             assertThat(results).toIterable()
                     .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
                             .stream()
-                            .filter(r -> ((long) r.get("key")) == 1L)
-                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .filter(r -> (long) r.get("key") == 1L)
+                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
                             .collect(Collectors.toList()));
         }
 
@@ -1026,7 +1026,7 @@ public class QueryExecutorIT {
                     .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
                             .stream()
                             .filter(r -> ((long) r.get("key")) == 5L)
-                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
                             .collect(Collectors.toList()));
         }
 
