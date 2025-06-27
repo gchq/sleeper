@@ -19,9 +19,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
@@ -55,9 +58,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -81,8 +86,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         tableProperties.set(TABLE_ID, "t-id");
-        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
-        instanceProperties.setNumber(BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
+        instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
         instanceProperties.set(BULK_EXPORT_S3_BUCKET, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(BULK_EXPORT_S3_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
@@ -93,6 +98,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     public void shouldRunOneBulkExportSubQuery() throws Exception {
         // Given
+        configureJobQueuesWithMaxReceiveCount(1);
         Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
@@ -112,16 +118,59 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
         // Then the query region is ignored for now
         assertThat(readOutputFile(query)).containsExactly(record1, record2);
-        assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
+    }
+
+    @Test
+    public void shouldReturnMessageToQueueAfterFailure() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(2);
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL)))
+                .size().isEqualTo(0);
+        send("This will cause a failure!");
+
+        // When
+        try {
+            runTask();
+        } catch (Exception e) {
+            assertThat(e).hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+        }
+
+        // Then
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL)))
+                .hasSize(1);
+    }
+
+    @Test
+    public void shouldMoveMessageToDlqAftertwoFailures() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(1);
+        send("This will cause a failure!");
+
+        // When
+        // The task needs to be run twice for it to be moved to the DLQ
+        for (int i = 0; i < 2; i++) {
+            try {
+                runTask();
+            } catch (Exception e) {
+                assertThat(e).hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+            }
+        }
+
+        // Then
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL)))
+                .size().isEqualTo(1);
+
     }
 
     @Test
     public void shouldProcessNoMessages() throws Exception {
         // When
+        configureJobQueuesWithMaxReceiveCount(2);
         runTask();
 
         // Then
-        assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
     }
 
     private void runTask() throws Exception {
@@ -167,19 +216,47 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(
                 new FixedTablePropertiesProvider(tableProperties));
         String messageBody = serDe.toJson(query);
+        send(messageBody);
+    }
+
+    private void send(String messageBody) {
         sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .messageBody(messageBody)
                 .build());
     }
 
-    private List<String> getMessagesFromQueue() {
+    private List<String> getMessagesFromQueue(String url) {
         return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
+                .queueUrl(url)
                 .build())
                 .messages()
                 .stream()
                 .map(Message::body)
                 .toList();
+    }
+
+    private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
+        String jobQueueUrl = createSqsQueueGetUrl();
+        String jobDlqUrl = createSqsQueueGetUrl();
+        String jobDlqArn = sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder()
+                .queueUrl(jobDlqUrl)
+                .attributeNames(List.of(QueueAttributeName.QUEUE_ARN))
+                .build())
+                .attributes()
+                .get(QueueAttributeName.QUEUE_ARN);
+
+        String visibilityTimeoutSeconds = instanceProperties.get(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
+
+        Map<QueueAttributeName, String> attributes = Map.of(
+                QueueAttributeName.REDRIVE_POLICY, "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", \"deadLetterTargetArn\":\"" + jobDlqArn + "\"}",
+                QueueAttributeName.VISIBILITY_TIMEOUT, visibilityTimeoutSeconds);
+
+        sqsClient.setQueueAttributes(SetQueueAttributesRequest.builder()
+                .queueUrl(jobQueueUrl)
+                .attributes(attributes)
+                .build());
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, jobQueueUrl);
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL, jobDlqUrl);
     }
 }
