@@ -25,7 +25,7 @@ repository = "https://github.com/gchq/sleeper"
 authors = ["GCHQ"]
 
 [workspace.dependencies]
-arrow = { version = "55.1.0" }                      # Batch of reading from Parquet files
+arrow = { version = "55.2.0" }                      # Batch of reading from Parquet files
 assert_cmd = { version = "2.0.17" }                 # CLI interface testing
 async-trait = { version = "0.1.88" }
 aws-config = { version = "1.8.0" }                  # Credential loading
