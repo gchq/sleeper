@@ -24,9 +24,9 @@ import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
 import com.amazonaws.athena.connector.lambda.metadata.GetSplitsRequest;
 import com.amazonaws.athena.connector.lambda.metadata.GetSplitsResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -53,7 +53,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
             Block partitionsBlock = createPartitionsBlock(blockAllocator, "[ \"a/b/c.parquet\", \"d/e/f.parquet\"]");
             getSplitsResponse = simpleMetadataHandler.doGetSplits(blockAllocator, new GetSplitsRequest(TestUtils.createIdentity(),
                     "abc", "def", new TableName("mydb", "myTable"), partitionsBlock, new ArrayList<>(),
-                    new Constraints(new HashMap<>()), "continue"));
+                    new Constraints(new HashMap<>(), new ArrayList<>(), new ArrayList<>(), 1L, new HashMap<>()), "continue"));
         }
 
         // Then
@@ -75,7 +75,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
                     "[ \"g/h/i.parquet\", \"d/e/f.parquet\"]");
             getSplitsResponse = simpleMetadataHandler.doGetSplits(blockAllocator, new GetSplitsRequest(TestUtils.createIdentity(),
                     "abc", "def", new TableName("mydb", "myTable"), partitionsBlock, new ArrayList<>(),
-                    new Constraints(new HashMap<>()), "continue"));
+                    new Constraints(new HashMap<>(), new ArrayList<>(), new ArrayList<>(), 1L, new HashMap<>()), "continue"));
         }
 
         // Then
@@ -86,8 +86,8 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
 
     private SimpleMetadataHandler handler(InstanceProperties instanceProperties) {
         return new SimpleMetadataHandler(s3Client, dynamoClient,
-                instanceProperties.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
-                mock(AmazonAthena.class), "abc", "def");
+                instanceProperties.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(SecretsManagerClient.class),
+                mock(AthenaClient.class), "abc", "def");
     }
 
     private Block createPartitionsBlock(BlockAllocator blockAllocator, String... jsonSerialisedLists) {

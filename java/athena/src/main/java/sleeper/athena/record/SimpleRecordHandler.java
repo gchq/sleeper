@@ -16,16 +16,15 @@
 package sleeper.athena.record;
 
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.hadoop.ParquetReader;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.FilterTranslator;
 import sleeper.core.iterator.CloseableIterator;
@@ -50,8 +49,8 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
         super();
     }
 
-    public SimpleRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3ClientV1, s3Client, dynamoDB, configBucket, secretsManager, athena);
+    public SimpleRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, SecretsManagerClient secretsManager, AthenaClient athena) {
+        super(s3Client, dynamoDB, configBucket, secretsManager, athena);
     }
 
     /**

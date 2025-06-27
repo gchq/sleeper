@@ -187,7 +187,7 @@
         <aspectj.version>1.9.24</aspectj.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.81</bouncycastle.version>
-        <athena.version>2023.3.1</athena.version>
+        <athena.version>2025.15.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino requires an old version of JGraphT -->
         <trino.jgrapht.version>0.9.2</trino.jgrapht.version>
@@ -454,6 +454,101 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>apigatewaymanagementapi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>sdk-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>metrics-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>regions</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-json-protocol</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>endpoints-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>json-utils</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>utils</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>identity-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-client-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-aws</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>retries-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>protocol-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>profiles</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <!-- Data processing -->

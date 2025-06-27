@@ -23,12 +23,12 @@ import com.amazonaws.athena.connector.lambda.metadata.GetSplitsRequest;
 import com.amazonaws.athena.connector.lambda.metadata.GetSplitsResponse;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableLayoutRequest;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.core.partition.Partition;
 
@@ -50,8 +50,8 @@ public class SimpleMetadataHandler extends SleeperMetadataHandler {
 
     public SimpleMetadataHandler(
             S3Client s3Client, DynamoDbClient dynamoDBClient, String configBucket,
-            EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
-            AmazonAthena athena, String spillBucket, String spillPrefix) {
+            EncryptionKeyFactory encryptionKeyFactory, SecretsManagerClient secretsManager,
+            AthenaClient athena, String spillBucket, String spillPrefix) {
         super(s3Client, dynamoDBClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
     }
 

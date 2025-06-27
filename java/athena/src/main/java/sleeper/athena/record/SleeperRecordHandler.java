@@ -26,14 +26,13 @@ import com.amazonaws.athena.connector.lambda.data.writers.extractors.VarBinaryEx
 import com.amazonaws.athena.connector.lambda.data.writers.extractors.VarCharExtractor;
 import com.amazonaws.athena.connector.lambda.handlers.RecordHandler;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -71,13 +70,13 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     }
 
     public SleeperRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket) {
-        super(SOURCE_TYPE);
+        super(SOURCE_TYPE, System.getenv());
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }
 
-    public SleeperRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3ClientV1, secretsManager, athena, SOURCE_TYPE);
+    public SleeperRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, SecretsManagerClient secretsManager, AthenaClient athena) {
+        super(s3Client, secretsManager, athena, SOURCE_TYPE, System.getenv());
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }

@@ -37,16 +37,16 @@ import com.amazonaws.athena.connector.lambda.metadata.ListSchemasResponse;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -102,7 +102,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     }
 
     public SleeperMetadataHandler(S3Client s3Client, DynamoDbClient dynamoClient, String configBucket) {
-        super(SOURCE_TYPE);
+        super(SOURCE_TYPE, System.getenv());
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
@@ -111,9 +111,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     public SleeperMetadataHandler(
             S3Client s3Client, DynamoDbClient dynamoClient, String configBucket,
-            EncryptionKeyFactory encryptionKeyFactory, AWSSecretsManager secretsManager,
-            AmazonAthena athena, String spillBucket, String spillPrefix) {
-        super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
+            EncryptionKeyFactory encryptionKeyFactory, SecretsManagerClient secretsManager,
+            AthenaClient athena, String spillBucket, String spillPrefix) {
+        super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix, System.getenv());
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);

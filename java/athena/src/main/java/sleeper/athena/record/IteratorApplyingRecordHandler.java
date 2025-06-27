@@ -21,10 +21,6 @@ import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
 import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.util.Base64;
 import com.facebook.collections.Pair;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
@@ -33,8 +29,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.utils.BinaryUtils;
 
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.S3UserJarsLoader;
@@ -95,8 +94,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         objectFactory = createObjectFactory(s3Client);
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3ClientV1, s3Client, dynamoDB, configBucket, secretsManager, athena);
+    public IteratorApplyingRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, SecretsManagerClient secretsManager, AthenaClient athena) {
+        super(s3Client, dynamoDB, configBucket, secretsManager, athena);
         objectFactory = createObjectFactory(s3Client);
     }
 
@@ -162,7 +161,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         if (type instanceof StringType) {
             return Pair.of(index, stringValue);
         } else if (type instanceof ByteArrayType) {
-            return Pair.of(index, Base64.decode(stringValue));
+            return Pair.of(index, BinaryUtils.fromBase64(stringValue));
         } else if (type instanceof IntType) {
             return Pair.of(index, Integer.parseInt(stringValue));
         } else if (type instanceof LongType) {

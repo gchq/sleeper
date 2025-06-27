@@ -15,6 +15,8 @@
  */
 package sleeper.athena;
 
+import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
+import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.security.FederatedIdentity;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
@@ -44,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
@@ -133,4 +136,9 @@ public class TestUtils {
     public static FederatedIdentity createIdentity() {
         return new FederatedIdentity("arn", "account", new HashMap<>(), new ArrayList<>());
     }
+
+    public static Constraints createConstraints(Map<String, ValueSet> predicate) {
+        return new Constraints(predicate, new ArrayList<>(), new ArrayList<>(), Constraints.DEFAULT_NO_LIMIT, new HashMap<>());
+    }
+
 }
