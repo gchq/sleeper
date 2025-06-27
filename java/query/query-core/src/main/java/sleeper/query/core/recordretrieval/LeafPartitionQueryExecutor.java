@@ -21,12 +21,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.AggregatingWorkaroundObjectFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -63,11 +63,6 @@ public class LeafPartitionQueryExecutor {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
-        // TODO: Remove this when a proper compaction iterator specification is present
-        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(compactionIteratorClassName)) {
-            throw new QueryException(new UnsupportedOperationException("Queries are not currently possible on tables with a " + compactionIteratorClassName + " iterator specified."));
-        }
-
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
         SortedRecordIterator compactionIterator;
         SortedRecordIterator queryIterator;
@@ -136,7 +131,8 @@ public class LeafPartitionQueryExecutor {
         }
         SortedRecordIterator sortedRecordIterator;
         try {
-            sortedRecordIterator = objectFactory.getObject(iteratorClassName, SortedRecordIterator.class);
+            AggregatingWorkaroundObjectFactory iteratorSwap = new AggregatingWorkaroundObjectFactory(objectFactory);
+            sortedRecordIterator = iteratorSwap.getObject(iteratorClassName, SortedRecordIterator.class);
         } catch (ObjectFactoryException e) {
             throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
         }
