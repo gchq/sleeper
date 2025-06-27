@@ -15,8 +15,6 @@
  */
 package sleeper.trino.handle;
 
-import io.trino.spi.connector.ConnectorPartitionHandle;
-
 import sleeper.core.key.Key;
 
 import java.util.Objects;
@@ -25,7 +23,7 @@ import java.util.Objects;
  * This class holds the details about a single Trino partition. In this implementation, a Trino partition is described
  * by its lower bound.
  */
-public class SleeperPartitionHandle extends ConnectorPartitionHandle {
+public class SleeperPartitionHandle {
     private final Key trinoPartitionMin; // Inclusive
 
     public SleeperPartitionHandle(Key trinoPartitionMin) {

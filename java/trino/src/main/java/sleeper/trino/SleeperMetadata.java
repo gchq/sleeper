@@ -233,7 +233,6 @@ public class SleeperMetadata implements ConnectorMetadata {
                     TupleDomain.all(),
                     Optional.of(connectorTablePartitioning),
                     Optional.empty(),
-                    Optional.empty(),
                     localProperties);
         } else {
             return new ConnectorTableProperties();
