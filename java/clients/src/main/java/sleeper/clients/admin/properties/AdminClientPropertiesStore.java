@@ -109,9 +109,7 @@ public class AdminClientPropertiesStore {
                 LOGGER.info("Saving to AWS");
                 S3InstanceProperties.saveToS3(s3Client, properties);
             }
-        } catch (IOException | RuntimeException |
-
-                InterruptedException e) {
+        } catch (IOException | RuntimeException | InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {

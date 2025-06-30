@@ -346,14 +346,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
             StackDockerImage image = dockerBuildImage("ingest", OptionalStack.IngestStack);
-            verify(uploadDockerImages).upload(withImages(image));
-
             Path pathToFile = Path.of(tempDir.toString(), "imagesToUpload");
+
+            verify(uploadDockerImages).upload(withImages(image));
             assertThat(Files.exists(pathToFile)).isTrue();
             assertThat(Files.readString(pathToFile)).isEqualTo(image.toString() + "\n");
         }
