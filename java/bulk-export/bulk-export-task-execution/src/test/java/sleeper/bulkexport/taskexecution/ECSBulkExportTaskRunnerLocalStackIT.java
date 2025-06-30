@@ -140,6 +140,35 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldHandleExcpetionInProcessingAndSendToDlq() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(1);
+        Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
+        BulkExportLeafPartitionQuery query = BulkExportLeafPartitionQuery.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .exportId("e-id")
+                .subExportId("se-id")
+                .regions(List.of(new Region(rangeFactory.createRange(field, 1, true, 10, true))))
+                .leafPartitionId("LLLL")  // This will cause an exception as it doesn't exist
+                .partitionRegion(partitions.getPartition("L").getRegion())
+                .files(List.of(file.getFilename()))
+                .build();
+        send(query);
+
+        // When
+        assertThatThrownBy(() -> runTask())
+                .hasMessageContaining("Partition not found: LLLL");
+
+        runTask();
+
+        // Then
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL)))
+                .size().isEqualTo(1);
+    }
+
+    @Test
     public void shouldMoveMessageToDlqAftertwoFailures() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
