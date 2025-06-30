@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET;
@@ -130,11 +131,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         send("This will cause a failure!");
 
         // When
-        try {
-            runTask();
-        } catch (Exception e) {
-            assertThat(e).hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
-        }
+        assertThatThrownBy(() -> runTask())
+                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
 
         // Then
         assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL)))
@@ -149,18 +147,14 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
         // When
         // The task needs to be run twice for it to be moved to the DLQ
-        for (int i = 0; i < 2; i++) {
-            try {
-                runTask();
-            } catch (Exception e) {
-                assertThat(e).hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
-            }
-        }
+        assertThatThrownBy(() -> runTask())
+                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+
+        runTask();
 
         // Then
         assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL)))
                 .size().isEqualTo(1);
-
     }
 
     @Test

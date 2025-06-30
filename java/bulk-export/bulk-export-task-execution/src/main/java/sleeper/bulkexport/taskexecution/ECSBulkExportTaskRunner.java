@@ -124,22 +124,14 @@ public class ECSBulkExportTaskRunner {
                 instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
         Optional<SqsMessageHandle> messageHandleOpt;
 
-        try {
-            messageHandleOpt = exportQueueHandler.receiveMessage();
-        } catch (IOException | IllegalStateException e) {
-            LOGGER.error("There is a problem getting the message.", e);
-            throw e;
-        }
+        messageHandleOpt = exportQueueHandler.receiveMessage();
 
         if (messageHandleOpt.isPresent()) {
             SqsMessageHandle messageHandle = messageHandleOpt.get();
             try {
                 BulkExportLeafPartitionQuery exportTask;
-                if (messageHandle.getJob() == null) {
-                    throw new NullPointerException("No job found in bulk export message");
-                } else {
-                    exportTask = messageHandle.getJob();
-                }
+                exportTask = messageHandle.getJob();
+
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
 
