@@ -29,6 +29,10 @@ Trino (io.trino:trino-*:435)
 
 - Apache License, Version 2.0
 
+OpenTelemetry (io.opentelemetry:opentelemetry-*:1.*)
+
+- Apache License, Version 2.0
+
 WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.*, org.wildfly.common:wildfly-common:2.*)
 
 - Apache License, Version 2.0
