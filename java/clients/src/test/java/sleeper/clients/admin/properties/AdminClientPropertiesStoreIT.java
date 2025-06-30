@@ -33,6 +33,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -345,10 +346,16 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
+
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
+            StackDockerImage image = dockerBuildImage("ingest", OptionalStack.IngestStack);
+            verify(uploadDockerImages).upload(withImages(image));
+
+            Path pathToFile = Path.of(tempDir.toString(), "imagesToUpload");
+            assertThat(Files.exists(pathToFile)).isTrue();
+            assertThat(Files.readString(pathToFile)).isEqualTo(image.toString() + "\n");
         }
 
         @Test

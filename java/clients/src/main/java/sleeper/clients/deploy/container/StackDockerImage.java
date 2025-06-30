@@ -86,6 +86,20 @@ public class StackDockerImage {
                 .directoryName(imageName).build();
     }
 
+    /**
+     * Defines a Docker image to be built from a directory matching its image name, optional stack and with default
+     * settings.
+     *
+     * @param  imageName     the image name
+     * @param  optionalStack the optional stack the image is associated with
+     * @return               the Docker image details
+     */
+    public static StackDockerImage dockerBuildImage(String imageName, OptionalStack optionalStack) {
+        return builder().imageName(imageName)
+                .directoryName(imageName)
+                .optionalStack(optionalStack).build();
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -104,6 +118,10 @@ public class StackDockerImage {
 
     public boolean isCreateEmrServerlessPolicy() {
         return createEmrServerlessPolicy;
+    }
+
+    public OptionalStack geOptionalStack() {
+        return optionalStack;
     }
 
     public Optional<LambdaJar> getLambdaJar() {
