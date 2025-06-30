@@ -87,8 +87,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         tableProperties.set(TABLE_ID, "t-id");
-        instanceProperties.setNumber(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
-        instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
+        instanceProperties.setNumber(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
+        instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
         instanceProperties.set(BULK_EXPORT_S3_BUCKET, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(BULK_EXPORT_S3_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
@@ -223,6 +223,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     private List<String> getMessagesFromQueue(String url) {
         return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(url)
+                .waitTimeSeconds(2)
                 .build())
                 .messages()
                 .stream()

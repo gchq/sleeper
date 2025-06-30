@@ -111,13 +111,13 @@ public class ECSBulkExportTaskRunner {
      * @param  s3Client                an S3 client
      * @param  dynamoDBClient          a DynamoDB client
      * @param  hadoopConf              a Hadoop configuration
-     * @throws IOException             if there is an error interacting with S3
-     * @throws IllegalStateException   if there is an error receiving the message and deseralising it
+     * @throws Exception               if there is an error runing the task
+     *
      */
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
-            Configuration hadoopConf) throws IOException, IllegalStateException {
+            Configuration hadoopConf) throws Exception {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
@@ -142,6 +142,7 @@ public class ECSBulkExportTaskRunner {
                 LOGGER.error("Unexpected error processing bulk export job", e);
                 messageHandle.returnToQueue();
                 LOGGER.info("Returned message to queue due to unexpected error");
+                throw e;
             }
         }
     }
