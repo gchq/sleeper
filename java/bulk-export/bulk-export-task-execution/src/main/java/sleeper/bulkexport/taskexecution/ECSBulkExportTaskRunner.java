@@ -70,15 +70,10 @@ public class ECSBulkExportTaskRunner {
      * and table properties, and processes messages from the SQS queue for bulk
      * export tasks.
      *
-     * @param  args                      Command line arguments
-     * @throws ObjectFactoryException    If there is an error creating objects
-     *                                   dynamically.
-     * @throws IteratorCreationException If there is an error creating iterators for
-     *                                   processing.
-     * @throws IOException               If there is an error interacting with S3 or
-     *                                   other I/O operations.
+     * @param  args      Command line arguments
+     * @throws Exception if an error occurs during execution
      */
-    public static void main(String[] args) throws ObjectFactoryException, IOException, IteratorCreationException {
+    public static void main(String[] args) throws Exception {
 
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
