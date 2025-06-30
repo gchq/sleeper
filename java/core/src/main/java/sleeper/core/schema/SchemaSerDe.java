@@ -189,16 +189,16 @@ public class SchemaSerDe {
     }
 
     private static PrimitiveType getPrimitiveTypeFromString(String primitiveTypeString) {
-        if (primitiveTypeString.equals("IntType")) {
+        if ("IntType".equals(primitiveTypeString)) {
             return new IntType();
         }
-        if (primitiveTypeString.equals("LongType")) {
+        if ("LongType".equals(primitiveTypeString)) {
             return new LongType();
         }
-        if (primitiveTypeString.equals("StringType")) {
+        if ("StringType".equals(primitiveTypeString)) {
             return new StringType();
         }
-        if (primitiveTypeString.equals("ByteArrayType")) {
+        if ("ByteArrayType".equals(primitiveTypeString)) {
             return new ByteArrayType();
         }
         throw new RuntimeException("Unknown type " + primitiveTypeString);

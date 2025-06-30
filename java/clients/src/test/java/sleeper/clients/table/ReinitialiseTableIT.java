@@ -316,9 +316,9 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         Path path = tempDir.resolve("test-split-points.txt");
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             if (encoded) {
-                writer.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_1.getBytes(StandardCharsets.UTF_8))));
+                writer.write(Base64.encodeBase64String(SPLIT_PARTITION_STRING_1.getBytes(StandardCharsets.UTF_8)));
                 writer.newLine();
-                writer.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_2.getBytes(StandardCharsets.UTF_8))));
+                writer.write(Base64.encodeBase64String(SPLIT_PARTITION_STRING_2.getBytes(StandardCharsets.UTF_8)));
             } else {
                 writer.write(SPLIT_PARTITION_STRING_1);
                 writer.newLine();

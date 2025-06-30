@@ -31,14 +31,14 @@ public class JobQueryPrompt {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
-        } else if (type.equalsIgnoreCase("a")) {
+        } else if ("a".equalsIgnoreCase(type)) {
             return new AllJobsQuery(table);
-        } else if (type.equalsIgnoreCase("u")) {
+        } else if ("u".equalsIgnoreCase(type)) {
             return new UnfinishedJobsQuery(table);
-        } else if (type.equalsIgnoreCase("d")) {
+        } else if ("d".equalsIgnoreCase(type)) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);
-        } else if (type.equalsIgnoreCase("r")) {
+        } else if ("r".equalsIgnoreCase(type)) {
             return RangeJobsQuery.prompt(table, in, clock);
         } else if (extraQueries.containsKey(type)) {
             return extraQueries.get(type);

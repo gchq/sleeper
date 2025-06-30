@@ -76,7 +76,8 @@ public class StateStoreCommitRequest {
     /**
      * Retrieves the transaction if it is held directly. If it is held in S3, this returns an empty optional.
      *
-     * @return the transaction
+     * @param  <T> the type of transaction to return
+     * @return     the transaction
      */
     public <T extends StateStoreTransaction<?>> Optional<T> getTransactionIfHeld() {
         return (Optional<T>) Optional.ofNullable(transaction);

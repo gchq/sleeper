@@ -51,7 +51,7 @@ public class RustCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
 
     /** Maximum number of rows in a Parquet row group. */
-    private static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
+    public static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     private final AwsConfig awsConfig;
 
@@ -71,7 +71,7 @@ public class RustCompactionRunner implements CompactionRunner {
         RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), runtime);
+        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
 
@@ -91,12 +91,13 @@ public class RustCompactionRunner implements CompactionRunner {
      * @param  job             compaction job
      * @param  tableProperties configuration for the Sleeper table
      * @param  region          region being compacted
+     * @param  awsConfig       settings to access AWS, or null to use defaults
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
-            Region region, jnr.ffi.Runtime runtime) {
+    private static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+            Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICompactionParams params = new FFICompactionParams(runtime);
         if (awsConfig != null) {

@@ -77,7 +77,7 @@ public class S3UserJarsLoader {
         List<String> localJars = loadJars(jars);
         URL[] urls = new URL[localJars.size()];
         for (int i = 0; i < localJars.size(); i++) {
-            urls[i] = (new File(localJars.get(i)).toURI().toURL());
+            urls[i] = new File(localJars.get(i)).toURI().toURL();
         }
         return new URLClassLoader(urls, this.getClass().getClassLoader());
     }

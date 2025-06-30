@@ -27,6 +27,6 @@ public interface ShouldCreateJobsStrategy {
     long maxCompactionJobsToCreate(FilesInPartition filesInPartition);
 
     static ShouldCreateJobsStrategy yes() {
-        return (filesInPartition) -> Long.MAX_VALUE;
+        return filesInPartition -> Long.MAX_VALUE;
     }
 }

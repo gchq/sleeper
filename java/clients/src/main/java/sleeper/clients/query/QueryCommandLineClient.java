@@ -113,14 +113,13 @@ public abstract class QueryCommandLineClient {
             if ("".equals(type)) {
                 break;
             }
-            if (!type.equalsIgnoreCase("e") && !type.equalsIgnoreCase("r")) {
-                continue;
-            }
             Query query;
-            if (type.equalsIgnoreCase("e")) {
+            if ("e".equalsIgnoreCase(type)) {
                 query = constructExactQuery(tableName, schema, rangeFactory);
-            } else {
+            } else if ("r".equalsIgnoreCase(type)) {
                 query = constructRangeQuery(tableName, schema, rangeFactory);
+            } else {
+                continue;
             }
 
             submitQuery(tablePropertiesProvider.getByName(tableName), query);
@@ -158,8 +157,10 @@ public abstract class QueryCommandLineClient {
         String entry;
         while (true) {
             entry = in.promptLine(prompt + " (y/n) ");
-            if (entry.equalsIgnoreCase("y") || entry.equalsIgnoreCase("n")) {
-                return entry.equalsIgnoreCase("y");
+            if ("y".equalsIgnoreCase(entry)) {
+                return true;
+            } else if ("n".equalsIgnoreCase(entry)) {
+                return false;
             }
         }
     }

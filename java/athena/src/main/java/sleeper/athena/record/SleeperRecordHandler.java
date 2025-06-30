@@ -191,6 +191,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      *
      * @param rowWriterBuilder the WriterBuilder
      * @param name             the name of the field
+     * @param type             the type of the field
      */
     private void addListExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name, ListType type) {
         rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) -> (context, rowNum) -> {

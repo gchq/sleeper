@@ -13,7 +13,7 @@ from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
-def test_send_to_ingest_batcher(queue: Queue, sender: IngestBatcherSender):
+def should_send_to_ingest_batcher(queue: Queue, sender: IngestBatcherSender):
     # Given
     request = IngestBatcherSubmitRequest(table_name="test-table", files=["file-1.parquet"])
 
@@ -24,7 +24,7 @@ def test_send_to_ingest_batcher(queue: Queue, sender: IngestBatcherSender):
     assert [{"tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
 
 
-def test_send_to_ingest_batcher_with_client(queue: Queue, sleeper_client: SleeperClient):
+def should_send_to_ingest_batcher_with_client(queue: Queue, sleeper_client: SleeperClient):
     # When
     sleeper_client.submit_to_ingest_batcher("test-table", ["file-1.parquet"])
 

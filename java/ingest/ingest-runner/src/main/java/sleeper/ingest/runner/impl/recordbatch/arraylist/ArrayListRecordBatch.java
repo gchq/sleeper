@@ -83,9 +83,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      *                                   The Hadoop configuration is used during read and write of the Parquet files.
      *                                   Note that the library code uses caching and so unusual errors can occur if
      *                                   different configurations are used in different calls.
-     * @param localWorkingDirectory      A local directory to use to store temporary files
-     * @param maxNoOfRecordsInMemory     The maximum number of records to store in the internal ArrayList
-     * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
+     * @param recordMapper               a mapper to convert from the incoming data type to Sleeper records
+     * @param localWorkingDirectory      a local directory to use to store temporary files
+     * @param maxNoOfRecordsInMemory     the maximum number of records to store in the internal ArrayList
+     * @param maxNoOfRecordsInLocalStore the maximum number of records to store on the local disk
      */
     public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
             ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
@@ -194,7 +195,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      */
     @Override
     public CloseableIterator<Record> createOrderedRecordIterator() throws IOException {
-        if (!isWriteable || (internalOrderedRecordIterator != null)) {
+        if (!isWriteable || internalOrderedRecordIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
         isWriteable = false;
