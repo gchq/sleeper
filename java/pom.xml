@@ -219,7 +219,7 @@
         <testcontainers.version>1.21.2</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
-        <hamcrest.version>2.3</hamcrest.version>
+        <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>24.22.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.3</xmlunit.version>
@@ -1327,7 +1327,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-core</artifactId>
+                <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
             </dependency>
             <dependency>
