@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.util.ClientUtils;
@@ -100,6 +101,7 @@ public class AdminClientPropertiesStore {
                 Optional<UploadDockerImagesRequest> dockerUploadOpt = UploadDockerImagesRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
                 if (dockerUploadOpt.isPresent()) {
                     uploadDockerImages.upload(dockerUploadOpt.get());
+                    writeImagesToFile(dockerUploadOpt.get().getImages());
                 }
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
                 cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange());
@@ -107,7 +109,9 @@ public class AdminClientPropertiesStore {
                 LOGGER.info("Saving to AWS");
                 S3InstanceProperties.saveToS3(s3Client, properties);
             }
-        } catch (IOException | RuntimeException | InterruptedException e) {
+        } catch (IOException | RuntimeException |
+
+                InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {
@@ -204,5 +208,13 @@ public class AdminClientPropertiesStore {
             out.println(getMessage());
             out.println("Cause: " + getCause().getMessage());
         }
+    }
+
+    private void writeImagesToFile(List<StackDockerImage> images) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (StackDockerImage image : images) {
+            sb.append(image.toString() + "\n");
+        }
+        Files.writeString(generatedDirectory.resolve("imagesToUpload"), sb.toString());
     }
 }

@@ -18,6 +18,7 @@ package sleeper.clients.deploy.container;
 
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.model.OptionalStack;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class StackDockerImage {
     private final String directoryName;
     private final boolean multiplatform;
     private final boolean createEmrServerlessPolicy;
+    private final OptionalStack optionalStack;
     private final LambdaJar lambdaJar;
 
     private StackDockerImage(Builder builder) {
@@ -37,6 +39,7 @@ public class StackDockerImage {
         directoryName = builder.directoryName;
         multiplatform = builder.multiplatform;
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
+        optionalStack = builder.optionalStack;
         lambdaJar = builder.lambdaJar;
     }
 
@@ -53,6 +56,7 @@ public class StackDockerImage {
                 .directoryName(deployment.getDeploymentName())
                 .multiplatform(deployment.isMultiplatform())
                 .createEmrServerlessPolicy(deployment.isCreateEmrServerlessPolicy())
+                .optionalStack(deployment.getOptionalStack())
                 .build();
     }
 
@@ -128,7 +132,7 @@ public class StackDockerImage {
     public String toString() {
         return "StackDockerImage{imageName=" + imageName + ", directoryName=" + directoryName +
                 ", isBuildx=" + multiplatform + ", createEmrServerlessPolicy=" + createEmrServerlessPolicy +
-                ", lambdaJar=" + lambdaJar + "}";
+                ", optionalStack=" + optionalStack + ", lambdaJar=" + lambdaJar + "}";
     }
 
     /**
@@ -139,6 +143,7 @@ public class StackDockerImage {
         private String directoryName;
         private boolean multiplatform;
         private boolean createEmrServerlessPolicy;
+        private OptionalStack optionalStack;
         private LambdaJar lambdaJar;
 
         private Builder() {
@@ -187,6 +192,17 @@ public class StackDockerImage {
          */
         public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
             this.createEmrServerlessPolicy = createEmrServerlessPolicy;
+            return this;
+        }
+
+        /**
+         * Sets the OptionalStack of the image. This is used when documenting the images to be uploaded.
+         *
+         * @param  optionalStack the optional stack the image is associated with
+         * @return               this builder
+         */
+        public Builder optionalStack(OptionalStack optionalStack) {
+            this.optionalStack = optionalStack;
             return this;
         }
 
