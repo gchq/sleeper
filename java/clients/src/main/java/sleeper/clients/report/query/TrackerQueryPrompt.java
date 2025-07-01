@@ -30,15 +30,15 @@ public class TrackerQueryPrompt {
                 "c (Completed queries)\n" +
                 "f (Failed queries)\n\n" +
                 "Enter query type: ");
-        if (type.equalsIgnoreCase("a")) {
+        if ("a".equalsIgnoreCase(type)) {
             return TrackerQuery.ALL;
-        } else if (type.equalsIgnoreCase("q")) {
+        } else if ("q".equalsIgnoreCase(type)) {
             return TrackerQuery.QUEUED;
-        } else if (type.equalsIgnoreCase("i")) {
+        } else if ("i".equalsIgnoreCase(type)) {
             return TrackerQuery.IN_PROGRESS;
-        } else if (type.equalsIgnoreCase("c")) {
+        } else if ("c".equalsIgnoreCase(type)) {
             return TrackerQuery.COMPLETED;
-        } else if (type.equalsIgnoreCase("f")) {
+        } else if ("f".equalsIgnoreCase(type)) {
             return TrackerQuery.FAILED;
         } else {
             return from(in);

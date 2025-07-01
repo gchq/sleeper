@@ -329,7 +329,7 @@ class BulkImportExecutorTest {
     }
 
     private PlatformExecutor platformExecutorFails(RuntimeException failure) {
-        return (arguments) -> {
+        return arguments -> {
             throw failure;
         };
     }

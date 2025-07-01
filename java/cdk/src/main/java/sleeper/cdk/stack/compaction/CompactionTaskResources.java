@@ -128,7 +128,7 @@ public class CompactionTaskResources {
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         ITaskDefinition taskDefinition;
-        if (launchType.equalsIgnoreCase("FARGATE")) {
+        if ("FARGATE".equalsIgnoreCase(launchType)) {
             taskDefinition = new CompactionOnFargateResources(instanceProperties, stack, coreStacks)
                     .createTaskDefinition(containerImage, environmentVariables);
         } else {

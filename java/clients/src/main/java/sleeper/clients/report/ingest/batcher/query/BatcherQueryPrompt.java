@@ -25,9 +25,9 @@ public class BatcherQueryPrompt {
 
     public static BatcherQuery from(ConsoleInput in) {
         String type = in.promptLine("All (a) or Pending (p) query? ");
-        if (type.equalsIgnoreCase("a")) {
+        if ("a".equalsIgnoreCase(type)) {
             return new AllFilesQuery();
-        } else if (type.equalsIgnoreCase("p")) {
+        } else if ("p".equalsIgnoreCase(type)) {
             return new PendingFilesQuery();
         } else {
             return from(in);

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
@@ -45,7 +46,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.example.iterator.AgeOffIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -574,11 +574,11 @@ public class QueryExecutorIT {
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildList());
         Partition leftPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
+                .filter(p -> (long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE)
                 .findFirst()
                 .orElseThrow();
         Partition rightPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == 5L))
+                .filter(p -> (long) p.getRegion().getRange("key1").getMin() == 5L)
                 .findFirst()
                 .orElseThrow();
         for (int i = 0; i < 10; i++) {
@@ -1012,8 +1012,8 @@ public class QueryExecutorIT {
             assertThat(results).toIterable()
                     .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
                             .stream()
-                            .filter(r -> ((long) r.get("key")) == 1L)
-                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .filter(r -> (long) r.get("key") == 1L)
+                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
                             .collect(Collectors.toList()));
         }
 
@@ -1026,7 +1026,7 @@ public class QueryExecutorIT {
                     .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
                             .stream()
                             .filter(r -> ((long) r.get("key")) == 5L)
-                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
                             .collect(Collectors.toList()));
         }
 

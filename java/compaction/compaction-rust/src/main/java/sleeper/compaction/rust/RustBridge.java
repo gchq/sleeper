@@ -90,7 +90,8 @@ public class RustBridge {
      * The library named should be given without platform prefixes, e.g. "foo" will be expanded into
      * "libfoo.so" or "foo.dll" as appropriate for this platform.
      *
-     * @param  clazz                the Java interface type for the native library
+     * @param  <T>                  the type of the interface to the native code
+     * @param  clazz                the class of the interface to the native code
      * @param  libName              the library name to extract without platform prefixes.
      * @return                      the absolute extracted path, or null if the library couldn't be found
      * @throws IOException          if an error occured during file extraction
@@ -283,6 +284,35 @@ public class RustBridge {
         }
 
         /**
+         * Fetches the contents of this array back into a Java array.
+         *
+         * The items in this arrayn are read back from the direct heap storage
+         * where they will have been allocated by {@link Array#populate(Object[], boolean)}.
+         *
+         * @param  <E>                   the generic type of elements in the array
+         * @param  clazz                 the class type of generic parameter T
+         * @param  nullsAllowed          if nulls are allowed in this array
+         * @return                       Java array of object from this array
+         * @throws IllegalStateException if this array is not valid before calling this method
+         * @throws IllegalStateException if a {@code null} is found in a non-nullable array
+         * @throws NullPointerException  if parts of this object are {@null} when they shouldn't be, see
+         *                               {@link Array#validate()}
+         */
+        public <E> T[] readBack(Class<E> clazz, boolean nullsAllowed) {
+            validate();
+            final jnr.ffi.Runtime r = len.struct().getRuntime();
+            int len = items.length;
+
+            @SuppressWarnings("unchecked")
+            T[] values = (T[]) java.lang.reflect.Array.newInstance(clazz, len);
+
+            for (int i = 0; i < len; i++) {
+                values[i] = getValue(i, clazz, nullsAllowed, r);
+            }
+            return values;
+        }
+
+        /**
          * Check class invariants.
          *
          * @throws IllegalStateException if a violation is found
@@ -310,14 +340,13 @@ public class RustBridge {
          *
          * Intended for internal use only.
          *
-         * @param  <E>                       item type, must be int, long String or byte[], or boolean
          * @param  item                      the item to encode
          * @param  idx                       array position to use
          * @param  r                         struct runtime
          * @throws ClassCastException        if item is of wrong class
          * @throws IndexOutOfBoundsException if idx is invalid
          */
-        protected <E> void setValue(E item, int idx, jnr.ffi.Runtime r) {
+        protected void setValue(T item, int idx, jnr.ffi.Runtime r) {
             if (item == null) {
                 this.items[idx] = jnr.ffi.Pointer.wrap(r, 0);
             } else if (item instanceof Integer) {
@@ -351,6 +380,69 @@ public class RustBridge {
                 this.items[idx].putByte(0, e ? (byte) 1 : (byte) 0);
             } else {
                 throw new ClassCastException("Can't cast " + item.getClass() + " to a valid Sleeper row key type");
+            }
+        }
+
+        /**
+         * Reads a value from array.
+         *
+         * The value of the array element is read from previously allocated memory. The array MUST have been
+         * previously populated with {@link Array#populate(Object[], boolean)}. The type of the array item
+         * to read is given in the {@code clazz} argument. This should match the generic type given.
+         *
+         * If nulls are not allowed in this array, but a null pointer is found, then an exception is thrown.
+         *
+         * @param  <E>                       the generic type of elements in the array
+         * @param  idx                       the index to read
+         * @param  clazz                     the class type of generic parameter E
+         * @param  nullsAllowed              if nulls may be present in this array
+         * @param  r                         the runtime this array was allocated with
+         * @return                           the array element, or {@code null} if nulls are allowed and the pointer at
+         *                                   {@code idx} is 0.
+         * @throws IndexOutOfBoundsException if {@code idx} is out of range
+         * @throws IllegalStateException     if a pointer to 0 is found in a non-nullable array
+         */
+        @SuppressWarnings("unchecked")
+        protected <E> T getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
+            if (idx < 0 || idx >= items.length) {
+                throw new IndexOutOfBoundsException(String.format("idx %d length %d", idx, len.intValue()));
+            }
+            // Null handling
+            if (this.items[idx].address() == 0) {
+                if (nullsAllowed) {
+                    return (T) null;
+                } else {
+                    throw new IllegalStateException(String.format("Null found in non-nullable array at idx %d", idx));
+                }
+            }
+            if (clazz.equals(Integer.TYPE) || clazz.equals(Integer.class)) {
+                return (T) Integer.valueOf(this.items[idx].getInt(0));
+            } else if (clazz.equals(Long.TYPE) || clazz.equals(Long.class)) {
+                return (T) Long.valueOf(this.items[idx].getLong(0));
+            } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
+                return (T) Boolean.valueOf(this.items[idx].getByte(0) == 1);
+            } else if (clazz.equals(String.class)) {
+                // Read string length
+                int length = this.items[idx].getInt(0);
+                if (length < 0) {
+                    throw new IllegalStateException(String.format("Read string length of %d at index %d", length, idx));
+                }
+                // Decode the bytes as UTF-8
+                byte[] utf8String = new byte[length];
+                this.items[idx].get(4, utf8String, 0, length);
+                return (T) new String(utf8String, StandardCharsets.UTF_8);
+            } else if (clazz.equals(byte.class.arrayType())) {
+                // Read the length of the byte array
+                int length = this.items[idx].getInt(0);
+                if (length < 0) {
+                    throw new IllegalStateException(String.format("Read byte[] length of %d at index %d", length, idx));
+                }
+                // Grab the actual bytes into the new array
+                byte[] bytes = new byte[length];
+                this.items[idx].get(4, bytes, 0, length);
+                return (T) bytes;
+            } else {
+                throw new ClassCastException("Can't cast " + clazz + " to a valid Sleeper row key type");
             }
         }
     }

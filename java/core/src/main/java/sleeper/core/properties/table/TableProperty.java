@@ -273,8 +273,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.table.compaction.job.creation.limit")
             .defaultProperty(DEFAULT_COMPACTION_JOB_CREATION_LIMIT)
-            .description("The number of compaction jobs that are to be created as a limit during a single invocation. " +
-                    "If this limit is exceeded, the selection of jobs is randomised.")
+            .description("The maximum number of compaction jobs that can be running at once. " +
+                    "If this limit is exceeded when creating new jobs, the selection of jobs is randomised.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_SEND_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.job.send.batch.size")

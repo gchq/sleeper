@@ -111,6 +111,7 @@ public class FilesReportTestHelper {
     /**
      * Creates a report with specified files referenced in partitions, and files with no references.
      *
+     * @param  updateTime      the time all the files were last updated
      * @param  activeFiles     the file references
      * @param  readyForGCFiles the filenames with no references
      * @return                 the report

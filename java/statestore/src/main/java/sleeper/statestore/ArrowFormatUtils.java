@@ -108,8 +108,9 @@ public class ArrowFormatUtils {
     /**
      * Write a nullable byte array value to a VarBinary field.
      *
-     * @param writer the writer
-     * @param value  the value
+     * @param writer    the writer
+     * @param allocator the allocator for needed memory
+     * @param value     the value
      */
     public static void writeVarBinary(VarBinaryWriter writer, BufferAllocator allocator, byte[] value) {
         try (ArrowBuf buffer = allocator.buffer(value.length)) {

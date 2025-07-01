@@ -72,7 +72,8 @@ public class PollWithRetries {
     /**
      * Creates an instance of this class which will retry a fixed number of times without waiting between polls.
      *
-     * @return an instance of {@link PollWithRetries}
+     * @param  retries the number of retries
+     * @return         an instance of {@link PollWithRetries}
      */
     public static PollWithRetries immediateRetries(int retries) {
         return builder().immediateRetries(retries).build();

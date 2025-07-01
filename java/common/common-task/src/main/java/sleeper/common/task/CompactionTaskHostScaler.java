@@ -66,7 +66,7 @@ public class CompactionTaskHostScaler {
     public void scaleTo(int numberOfTasks) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         // Only need scaler for EC2
-        if (!launchType.equalsIgnoreCase("EC2")) {
+        if (!"EC2".equalsIgnoreCase(launchType)) {
             return;
         }
         int containersPerInstance = lookupInstanceType()

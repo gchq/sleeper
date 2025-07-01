@@ -54,7 +54,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     public static JsonSerializer<AllReferencesToAllFiles> allFileReferencesJsonSerializer() {
-        return ((files, type, context) -> createAllFileReferencesJson(files, context));
+        return (files, type, context) -> createAllFileReferencesJson(files, context);
     }
 
     private static JsonElement createAllFileReferencesJson(AllReferencesToAllFiles files, JsonSerializationContext context) {

@@ -60,6 +60,9 @@ public class QueryQueueStack extends NestedStack {
      * Creates the queue used for queries.
      *
      * @param  instanceProperties containing configuration details
+     * @param  topic              the SNS topic to notify of any dead letters
+     * @param  coreStacks         a reference to the core stacks, used for grants
+     * @param  errorMetrics       the metrics to track dead letters
      * @return                    the queue to be used for queries
      */
     private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {

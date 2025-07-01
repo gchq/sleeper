@@ -263,6 +263,7 @@ fn apply_aggregations(
             aggregation: Some(aggregation),
         }) = &filter_agg_conf
         {
+            info!("Applying Sleeper aggregation: {aggregation:?}");
             // Grab initial row key columns
             let mut group_by_cols = row_key_cols;
             let mut extra_agg_cols = vec![];

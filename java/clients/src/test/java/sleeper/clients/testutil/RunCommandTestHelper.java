@@ -37,7 +37,7 @@ public class RunCommandTestHelper {
     public static List<CommandPipeline> pipelinesRunOn(
             PipelineInvoker invoker, CommandPipelineRunner runner) throws IOException, InterruptedException {
         List<CommandPipeline> pipelines = new ArrayList<>();
-        CommandPipelineRunner runCommand = (pipeline) -> {
+        CommandPipelineRunner runCommand = pipeline -> {
             pipelines.add(pipeline);
             return runner.run(pipeline);
         };

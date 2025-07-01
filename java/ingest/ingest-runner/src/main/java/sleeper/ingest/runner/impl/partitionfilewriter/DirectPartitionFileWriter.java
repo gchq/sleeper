@@ -67,6 +67,8 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      *                              configuration is used to find the classes required to support the file system
      *                              specified in the filePathPrefix.
      * @param  filePaths            the file path generator for S3 objects to write
+     * @param  fileName             an identifier for the file to write, e.g. a UUID
+     * @param  sketchesStore        the store to write sketches of the file's data
      * @throws IOException          if there was a failure writing the file
      */
     public DirectPartitionFileWriter(

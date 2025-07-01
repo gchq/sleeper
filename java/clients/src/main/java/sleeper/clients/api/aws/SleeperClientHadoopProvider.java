@@ -29,7 +29,8 @@ public interface SleeperClientHadoopProvider {
     /**
      * Creates or retrieves the Hadoop configuration.
      *
-     * @return the Hadoop configuration
+     * @param  instanceProperties the Sleeper instance properties
+     * @return                    the Hadoop configuration
      */
     Configuration getConfiguration(InstanceProperties instanceProperties);
 

@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.example.iterator;
+package sleeper.core.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.FilteringIterator;
-import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 

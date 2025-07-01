@@ -86,9 +86,12 @@ public class GitHubWorkflowRun {
     }
 
     public boolean isFailCheckWithHead(GitHubHead head) {
-        return (COMPLETED.equals(status) && !SUCCESS.equals(conclusion))
-                // Fail if there's an old build we want to wait for but the wait timed out
-                || isWaitForOldBuildWithHead(head);
+        if (COMPLETED.equals(status) && !SUCCESS.equals(conclusion)) {
+            return true;
+        } else {
+            // Fail if there's an old build we want to wait for but the wait timed out
+            return isWaitForOldBuildWithHead(head);
+        }
     }
 
     public boolean isWaitForOldBuildWithHead(GitHubHead head) {

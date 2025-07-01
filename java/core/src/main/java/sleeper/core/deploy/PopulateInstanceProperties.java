@@ -102,6 +102,7 @@ public class PopulateInstanceProperties {
      * Sets instance properties when deploying a new instance against LocalStack.
      *
      * @param  properties the properties specified by the user
+     * @param  instanceId the Sleeper instance ID
      * @return            the populated properties
      */
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
