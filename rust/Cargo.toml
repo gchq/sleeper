@@ -56,7 +56,7 @@ rand = { version = "0.9.1" }                        # Random number generation
 regex = { version = "1.11.1" }                      # Regular expressions
 serde_json = { version = "1.0.140" }                # Process metadata JSON
 tempfile = { version = "3.20.0" }                   # Create temporary files
-test-log = { version = "0.2.17" }
+test-log = { version = "0.2.18" }
 testing_logger = { version = "0.1.1" }              # Assert on logger output in tests
 thiserror = { version = "2.0.12" }                  # Derivable error enums
 tokio = { version = "1.45.1", features = ["full"] } # Async runtime
