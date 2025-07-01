@@ -54,6 +54,11 @@
             <version>${airlift.httpclient.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-semconv</artifactId>
+            <version>${opentelemetry-semconv.version}</version>
+        </dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>query-runner</artifactId>
             <version>${project.parent.version}</version>
