@@ -39,20 +39,15 @@
             </exclusions>
         </dependency>
         <dependency>
-			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-semconv</artifactId>
-			<version>1.30.1-alpha</version>
-		</dependency>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-        </dependency>
-        <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-spi</artifactId>
             <version>${trino.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>http-client</artifactId>
+            <version>${airlift.httpclient.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
@@ -170,7 +165,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${trino.assertj.version}</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

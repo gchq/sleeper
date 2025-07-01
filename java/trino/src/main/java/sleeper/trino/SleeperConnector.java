@@ -16,6 +16,7 @@
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorCapabilities;
 import io.trino.spi.connector.ConnectorMetadata;
@@ -33,8 +34,6 @@ import sleeper.trino.procedure.SleeperProcedureHello;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 import sleeper.trino.systemtable.SleeperSystemTablePartitions;
 import sleeper.trino.systemtable.SleeperSystemTableRandom;
-
-import javax.inject.Inject;
 
 import java.util.Set;
 

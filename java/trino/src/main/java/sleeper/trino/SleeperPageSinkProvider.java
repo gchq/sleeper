@@ -15,6 +15,7 @@
  */
 package sleeper.trino;
 
+import com.google.inject.Inject;
 import io.trino.spi.connector.ConnectorInsertTableHandle;
 import io.trino.spi.connector.ConnectorOutputTableHandle;
 import io.trino.spi.connector.ConnectorPageSink;
@@ -25,8 +26,6 @@ import io.trino.spi.connector.ConnectorTransactionHandle;
 
 import sleeper.trino.handle.SleeperInsertTableHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-
-import javax.inject.Inject;
 
 /**
  * Provides page sinks to support INSERT operations. Note that CREATE TABLE...AS operations are not supported.
