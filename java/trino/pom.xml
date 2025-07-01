@@ -36,6 +36,10 @@
                     <groupId>io.opentelemetry.semconv</groupId>
 			        <artifactId>opentelemetry-semconv</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.airlift</groupId>
+                    <artifactId>http-client</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
