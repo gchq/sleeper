@@ -40,8 +40,8 @@ START_TESTS_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-start-$TEST_TYPE-tests.log"
 
 deleteOldLogs() {
     echo "Finding old logs to delete under $LOGS_DIR_HOST"
-    find "$LOGS_DIR_HOST"/* -maxdepth 0 -type d -mtime +7 -exec echo "Deleting directory:" {} \; -exec rm -rf {} \;
-    find "$LOGS_DIR_HOST"/* -maxdepth 0 -type f -mtime +7 -exec echo "Deleting file:" {} \; -exec rm -f {} \;
+    find "$LOGS_DIR_HOST"/* -maxdepth 0 -type d -daystart -mtime +7 -exec echo "Deleting directory:" {} \; -exec rm -rf {} \;
+    find "$LOGS_DIR_HOST"/* -maxdepth 0 -type f -daystart -mtime +7 -exec echo "Deleting file:" {} \; -exec rm -f {} \;
 }
 
 deleteOldLogs &> "$REMOVE_OLD_LOGS_LOG_HOST"
