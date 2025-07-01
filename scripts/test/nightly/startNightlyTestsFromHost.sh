@@ -33,10 +33,18 @@ SCRIPTS_DIR_DOCKER="$BUILDER_MOUNT_DOCKER/sleeper/scripts"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
+REMOVE_OLD_LOGS_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-remove-old-logs.log"
 DOCKER_PRUNE_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-docker-prune.log"
 CLI_UPGRADE_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-cli-upgrade.log"
 START_TESTS_LOG_HOST="$LOGS_DIR_HOST/$START_TIME-start-$TEST_TYPE-tests.log"
 
+deleteOldLogs() {
+    echo "Finding old logs to delete under $LOGS_DIR_HOST"
+    find "$LOGS_DIR_HOST"/* -maxdepth 0 -type d -mtime +7 -exec echo "Deleting directory:" {} \; -exec rm -rf {} \;
+    find "$LOGS_DIR_HOST"/* -maxdepth 0 -type f -mtime +7 -exec echo "Deleting file:" {} \; -exec rm -f {} \;
+}
+
+deleteOldLogs &> "$REMOVE_OLD_LOGS_LOG_HOST"
 docker system prune -af &> "$DOCKER_PRUNE_LOG_HOST"
 sleeper cli upgrade &> "$CLI_UPGRADE_LOG_HOST"
 sleeper builder "$SCRIPTS_DIR_DOCKER/test/nightly/updateAndRunTests.sh" "$SETTINGS_FILE_DOCKER" "$TEST_TYPE" &> "$START_TESTS_LOG_HOST"
