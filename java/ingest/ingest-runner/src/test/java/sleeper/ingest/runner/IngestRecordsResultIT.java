@@ -18,6 +18,7 @@ package sleeper.ingest.runner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -28,7 +29,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.example.iterator.AdditionIterator;
-import sleeper.example.iterator.AgeOffIterator;
 import sleeper.ingest.core.IngestResult;
 
 import java.util.Arrays;

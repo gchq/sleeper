@@ -64,7 +64,7 @@ public class SleeperPropertyValueUtils {
      * @return         true if the value meets the requirement
      */
     public static boolean isPositiveIntegerOrNull(String integer) {
-        return (integer == null) || (isPositiveInteger(integer));
+        return integer == null || isPositiveInteger(integer);
     }
 
     /**
@@ -94,7 +94,7 @@ public class SleeperPropertyValueUtils {
      * @return         true if the value meets the requirement
      */
     public static boolean isNonNegativeIntegerOrNull(String integer) {
-        return (integer == null) || (isNonNegativeInteger(integer));
+        return integer == null || isNonNegativeInteger(integer);
     }
 
     /**
@@ -393,8 +393,11 @@ public class SleeperPropertyValueUtils {
     /**
      * Streams the values of a property for a list of an enum type.
      *
-     * @param  value the value
-     * @return       the list of enum values
+     * @param  <E>       the enum type representing valid values of the property
+     * @param  property  the property
+     * @param  value     the raw value of the property
+     * @param  enumClass the class of the enum representing valid values of the property
+     * @return           the list of enum values
      */
     public static <E extends Enum<E>> Stream<E> streamEnumList(SleeperProperty property, String value, Class<E> enumClass) {
         return readList(value).stream()

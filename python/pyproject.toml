@@ -6,6 +6,11 @@ build-backend = "setuptools.build_meta"
 addopts = [
     "--import-mode=importlib",
 ]
+python_functions = "should_*"
+filterwarnings = [
+    "error",
+    "default::DeprecationWarning",
+]
 
 [tool.ruff]
 line-length = 200

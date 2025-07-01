@@ -63,7 +63,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
         new AdminClient(tableIndex, store, trackers,
                 editor, out.consoleOut(), in.consoleIn(),
-                queueClient, (properties -> Collections.emptyMap()))
+                queueClient, properties -> Collections.emptyMap())
                 .start(instanceId);
     }
 

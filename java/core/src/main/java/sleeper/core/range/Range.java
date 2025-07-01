@@ -107,12 +107,18 @@ public class Range {
         Comparable comparable = type.toComparable(value);
         Comparable minComparable = type.toComparable(min);
         int minCompare = PrimitiveType.COMPARATOR.compare(comparable, minComparable);
-        if (minCompare < 0 || (!minInclusive && minCompare == 0)) {
+        if (minCompare < 0) {
+            return false;
+        } else if (!minInclusive && minCompare == 0) {
             return false;
         }
         Comparable maxComparable = type.toComparable(max);
         int maxCompare = PrimitiveType.COMPARATOR.compare(comparable, maxComparable);
-        return maxCompare < 0 || (maxInclusive && maxCompare == 0);
+        if (maxCompare < 0) {
+            return true;
+        } else {
+            return maxInclusive && maxCompare == 0;
+        }
     }
 
     /**

@@ -194,7 +194,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             }
             // The record batch has now been consumed and so close it.
             currentRecordBatch.close();
-            currentRecordBatch = (isClosing) ? null : recordBatchFactory.createRecordBatch();
+            currentRecordBatch = isClosing ? null : recordBatchFactory.createRecordBatch();
         }
     }
 
@@ -446,6 +446,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         /**
          * A factory to create new record batches.
          *
+         * @param  <R>                the type of data accepted
          * @param  recordBatchFactory the factory
          * @return                    the builder for call chaining
          */

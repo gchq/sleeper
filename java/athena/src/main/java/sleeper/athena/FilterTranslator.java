@@ -51,7 +51,7 @@ public class FilterTranslator {
 
     public FilterTranslator(Schema schema) {
         Map<String, Type> types = new HashMap<>();
-        schema.getAllFields().forEach((field) -> types.put(field.getName(), field.getType()));
+        schema.getAllFields().forEach(field -> types.put(field.getName(), field.getType()));
         schemaTypes = ImmutableMap.copyOf(types);
     }
 
@@ -102,12 +102,12 @@ public class FilterTranslator {
         if (type instanceof StringType) {
             filters = createExactPredicates(columnName, acceptedValues,
                     FilterApi::binaryColumn,
-                    (o) -> Binary.fromString(o.toString()));
+                    o -> Binary.fromString(o.toString()));
 
         } else if (type instanceof ByteArrayType) {
             filters = createExactPredicates(columnName, acceptedValues,
                     FilterApi::binaryColumn,
-                    (bytes) -> Binary.fromConstantByteArray((byte[]) bytes));
+                    bytes -> Binary.fromConstantByteArray((byte[]) bytes));
 
         } else if (type instanceof IntType) {
             filters = createExactPredicates(columnName, acceptedValues,
@@ -139,7 +139,7 @@ public class FilterTranslator {
             String columnName,
             EquatableValueSet acceptedValues,
             Function<String, C> columnCreator) {
-        return createExactPredicates(columnName, acceptedValues, columnCreator, (o) -> (CT) o);
+        return createExactPredicates(columnName, acceptedValues, columnCreator, o -> (CT) o);
     }
 
     private <CT extends Comparable<CT>, C extends Operators.Column<CT> & Operators.SupportsEqNotEq> List<FilterPredicate> createExactPredicates(
@@ -161,12 +161,12 @@ public class FilterTranslator {
         if (type instanceof StringType) {
             filters = createRangePredicates(columnName, acceptedValues,
                     FilterApi::binaryColumn,
-                    (o) -> Binary.fromString(o.toString()));
+                    o -> Binary.fromString(o.toString()));
 
         } else if (type instanceof ByteArrayType) {
             filters = createRangePredicates(columnName, acceptedValues,
                     FilterApi::binaryColumn,
-                    (o) -> Binary.fromConstantByteArray((byte[]) o));
+                    o -> Binary.fromConstantByteArray((byte[]) o));
 
         } else if (type instanceof IntType) {
             filters = createRangePredicates(columnName, acceptedValues,
@@ -187,7 +187,7 @@ public class FilterTranslator {
             String columnName,
             SortedRangeSet valueSet,
             Function<String, C> columnCreator) {
-        return createRangePredicates(columnName, valueSet, columnCreator, (o) -> (CT) o);
+        return createRangePredicates(columnName, valueSet, columnCreator, o -> (CT) o);
 
     }
 

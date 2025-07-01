@@ -90,7 +90,8 @@ public class RustBridge {
      * The library named should be given without platform prefixes, e.g. "foo" will be expanded into
      * "libfoo.so" or "foo.dll" as appropriate for this platform.
      *
-     * @param  clazz                the Java interface type for the native library
+     * @param  <T>                  the type of the interface to the native code
+     * @param  clazz                the class of the interface to the native code
      * @param  libName              the library name to extract without platform prefixes.
      * @return                      the absolute extracted path, or null if the library couldn't be found
      * @throws IOException          if an error occured during file extraction

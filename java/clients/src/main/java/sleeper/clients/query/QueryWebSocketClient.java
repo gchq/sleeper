@@ -270,13 +270,13 @@ public class QueryWebSocketClient {
             String messageType = message.get("message").getAsString();
             String queryId = message.get("queryId").getAsString();
 
-            if (messageType.equals("error")) {
+            if ("error".equals(messageType)) {
                 handleError(message, queryId);
-            } else if (messageType.equals("subqueries")) {
+            } else if ("subqueries".equals(messageType)) {
                 handleSubqueries(message, queryId);
-            } else if (messageType.equals("records")) {
+            } else if ("records".equals(messageType)) {
                 handleRecords(message, queryId);
-            } else if (messageType.equals("completed")) {
+            } else if ("completed".equals(messageType)) {
                 handleCompleted(message, queryId);
             } else {
                 queryFailed = true;

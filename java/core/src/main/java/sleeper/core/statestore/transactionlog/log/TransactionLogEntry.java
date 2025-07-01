@@ -101,6 +101,7 @@ public class TransactionLogEntry {
     /**
      * Applies some operation on the transaction or the object key in the data bucket, whichever is held in the entry.
      *
+     * @param serDe           the serialiser to convert a transaction to JSON
      * @param withTransaction the operation on a transaction
      * @param withObjectKey   the operation on an object key
      */
@@ -118,6 +119,7 @@ public class TransactionLogEntry {
      * Returns the transaction object held in this entry. Loads it from a transaction body store if the entry is a
      * pointer.
      *
+     * @param  tableId   the Sleeper table internal ID
      * @param  bodyStore the transaction body store
      * @return           the transaction
      */

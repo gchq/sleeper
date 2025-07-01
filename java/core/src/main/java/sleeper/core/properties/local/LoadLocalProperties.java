@@ -97,6 +97,7 @@ public class LoadLocalProperties {
      * present. This should only be used with a class that extends {@link InstanceProperties}, to create an instance
      * of that class.
      *
+     * @param  <T>         the type of instance properties to create
      * @param  constructor a method to create instance properties from the given properties object
      * @param  file        the instance properties file
      * @return             the instance properties

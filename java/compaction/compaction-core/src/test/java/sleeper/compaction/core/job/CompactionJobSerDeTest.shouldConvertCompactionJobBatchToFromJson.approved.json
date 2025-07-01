@@ -19,7 +19,7 @@
       ],
       "outputFile": "outputfile2",
       "partitionId": "other-partition",
-      "iteratorClassName": "sleeper.example.iterator.AgeOffIterator",
+      "iteratorClassName": "sleeper.core.iterator.AgeOffIterator",
       "iteratorConfig": "key,600000"
     }
   ]
