@@ -199,11 +199,11 @@ Units (io.airlift:units:1.*)
 
 - Apache License, Version 2.0
 
-Slice (io.airlift:slice:0.*)
+Slice (io.airlift:slice:2.*)
 
 - Apache License, Version 2.0
 
-Google Guice (com.google.inject:guice:5.*)
+Google Guice (com.google.inject:guice:7.*)
 
 - Apache License, Version 2.0
 
@@ -263,7 +263,11 @@ AssertJ (org.assertj:assertj-core:3.*)
 
 - Apache License, Version 2.0
 
-Hamcrest (org.hamcrest:hamcrest-core:1.*)
+Inject (javax.inject:javax.inject:1)
+
+- Apache License, Version 2.0
+
+Hamcrest (org.hamcrest:hamcrest-core:3.*)
 
 - The 3-Clause BSD License
 
