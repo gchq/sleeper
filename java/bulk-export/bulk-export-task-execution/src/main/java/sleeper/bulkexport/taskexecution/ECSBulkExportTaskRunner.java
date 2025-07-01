@@ -90,6 +90,10 @@ public class ECSBulkExportTaskRunner {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
             runECSBulkExportTaskRunner(instanceProperties, tablePropertiesProvider, sqsClient, s3Client, dynamoDBClient, hadoopConf);
+        } catch (Exception e) {
+            LOGGER.error("An error has occured running the ECS task", e);
+            throw e;
+
         } finally {
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
