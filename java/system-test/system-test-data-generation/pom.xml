@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.31.1-SNAPSHOT</version>
+        <version>0.31.1</version>
     </parent>
 
     <artifactId>system-test-data-generation</artifactId>
