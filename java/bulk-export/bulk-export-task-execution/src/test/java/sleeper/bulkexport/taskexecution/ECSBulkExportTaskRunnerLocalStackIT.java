@@ -62,6 +62,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
@@ -188,12 +189,46 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     @Test
     public void shouldProcessNoMessages() throws Exception {
-        // When
+        // Given
         configureJobQueuesWithMaxReceiveCount(2);
+
+        // When
         runTask();
 
         // Then
         assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
+    }
+
+    @Test
+    public void shouldRunMainWithNoErrorrs() throws Exception {
+        //Given
+        String configBucket = instanceProperties.get(CONFIG_BUCKET);
+        createBucket(configBucket);
+        String[] args = {configBucket};
+
+        // When
+        ECSBulkExportTaskRunner.main(args);
+
+        // Then
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
+        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL)))
+                .size().isEqualTo(1);
+
+    }
+
+    @Test
+    public void shouldRunMainAndThrowExceptionConfigNotFound() throws Exception {
+        // Given
+        String[] args = {"CONFIG_BUCKET"};
+
+        // When // Then
+        assertThatThrownBy(() -> ECSBulkExportTaskRunner.main(args))
+                .hasMessage("The specified bucket does not exist");
+    }
+
+    @Test
+    public void shouldRunMainAndThrowExceptionWithNoArgs() throws Exception {
+        assertThatThrownBy(() -> ECSBulkExportTaskRunner.main(new String[0])).hasMessageContaining("must have 1 argument");
     }
 
     private void runTask() throws Exception {
