@@ -1476,6 +1476,7 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-aws::</ignoredUnusedDeclaredDependency>
                                 <!-- AspectJ wants to be declared as a compile dependency -->
                                 <ignoredUnusedDeclaredDependency>org.aspectj:aspectjrt::</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>com.github.tomakehurst:wiremock-jre8::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
