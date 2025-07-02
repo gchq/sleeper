@@ -203,11 +203,11 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
-    <!-- <suppress>
+    <suppress>
         <notes><![CDATA[
-        This dependency has a vulnerability which can cause connections to stop being accepted due to a state timing them out.
-        It is patched in later versions of the module, but we are unable to update further due needing to keep in line
-        with trino.
+        This dependency has several vulnerabilities in which remote connections can be used to overload the system.
+        These are patched out in later versions of the module, but we are unable to update further due needing to
+        keep in line with trino.
 
         file name: http2-client-11.0.17.jar
         ]]></notes>
@@ -216,24 +216,13 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This dependency allows for a possible DDoS avenue.
-        It is patched in later versions of the module, but we are unable to update further due to the limitation
-        of not moving past Java 17 compatibility at present.
-
-        file name: http2-http-client-transport-11.0.17.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-http-client-transport@.*$</packageUrl>
-        <vulnerabilityName regex="true">CVE-2024-8184|CVE-2024-6762|CVE-2024-22201</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        This vulnerability is for a rare event that is unlikely to seen within our application.
-        We are unable to upgrade past this version at present due to other dependencies forcing Java 17.
+        These vulnerabilities are present within wiremock however are unlikely to affect our application given it used
+        for testing.
+        We are unable to upgrade past this version at present due to other dependencies to keeping in line with trino.
 
         file name: wiremock-3.0.1.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.wiremock/wiremock@.*$</packageUrl>
-        <cve>CVE-2023-41329</cve>
         <vulnerabilityName regex="true">CVE-2023-41327|CVE-2023-41329</vulnerabilityName>
-    </suppress> -->
+    </suppress>
 </suppressions>
