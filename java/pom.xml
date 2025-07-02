@@ -120,7 +120,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.14.0</okio.version>
+        <okio.version>3.15.0</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
