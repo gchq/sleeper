@@ -123,7 +123,7 @@ Fasterxml Jackson (com.fasterxml.jackson.*:jackson-*:2.*)
 
 - Apache License, Version 2.0
 
-Wiremock (com.github.tomakehurst:wiremock-jre8:2.*)
+Wiremock (com.github.tomakehurst:wiremock-jre8:3.*)
 
 - Apache License, Version 2.0
 
