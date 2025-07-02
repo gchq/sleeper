@@ -328,7 +328,7 @@ Netty/TomcatNative (io.netty:netty-tcnative-boringssl-static:2.*)
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:10.*:*, org.eclipse.jetty.http2:10.*:*, org.eclipse.jetty.websocket:10.*:*)
+Eclipse Jetty (org.eclipse.jetty:11.*:*, org.eclipse.jetty.http2:11.*:*, org.eclipse.jetty.websocket:9.*:*)
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
