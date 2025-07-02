@@ -85,7 +85,7 @@ public class SleeperConnector implements Connector {
      * {@link SleeperMetadata} class that is returned also handles the application of a pushed-down filter to the
      * Sleeper table.
      *
-     * @param  session           The current conncertor session.
+     * @param  session           The current connector session.
      * @param  transactionHandle The current transaction. The metadata is assumed to be constant across transactions.
      * @return                   the {@link SleeperMetadata} object
      */

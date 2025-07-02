@@ -131,29 +131,4 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
             return sleeperPartitioningHandle.getPartitionNo(key);
         };
     }
-
-    /*
-     * Obtain a list of all of the partitions for a read operation. These partitions are passed to
-     * {@link SleeperSplitSource} so that separate batches of {@link SleeperSplit} objects can be generated for each
-     * partition.
-     * <p>
-     * In this implementation, the constant value NOT_PARTITIONED is returned, so that partitioning is not applied
-     * during read operations. Note that the framework does not apply partitioning during read operations, even if a
-     * list of partitions is provided here, and so it must be detecting that from somewhere else - perhaps from the
-     * response to {@link #getBucketNodeMap}.
-     *
-     * @param transactionHandle the transaction to run under
-     *
-     * @param session the session to run under
-     *
-     * @param partitioningHandle the partitioning scheme to use
-     *
-     * @return a list of {@link sleeper.trino.handle.SleeperPartitionHandle} objects
-     *
-     * @Override
-     * public List<ConnectorPartitionHandle> listPartitionHandles(ConnectorTransactionHandle transactionHandle,
-     * ConnectorSession session, ConnectorPartitioningHandle partitioningHandle) {
-     * return ImmutableList.of(NOT_PARTITIONED);
-     * } TODO Check if this is used elsewhere
-     */
 }
