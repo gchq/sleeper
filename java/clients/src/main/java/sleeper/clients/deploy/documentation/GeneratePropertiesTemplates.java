@@ -84,7 +84,6 @@ public class GeneratePropertiesTemplates {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println(args[0]);
         createTemplates(Path.of(args[0]));
         createDocumentation(Path.of(args[0]));
     }

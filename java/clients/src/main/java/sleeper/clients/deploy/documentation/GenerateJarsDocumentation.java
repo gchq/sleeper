@@ -20,7 +20,6 @@ import sleeper.clients.util.tablewriter.TableStructure;
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.deploy.DockerDeployment;
-import sleeper.core.properties.SleeperProperty;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,13 +38,12 @@ public class GenerateJarsDocumentation {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println(args[0]);
-        Path headPath = Path.of(args[0]).resolve("docs/deployment/jars-to-upload");
-        if (Files.exists(headPath)) {
-            Files.delete(headPath);
+        Path path = Path.of(args[0]).resolve("docs/deployment/jars-to-upload");
+        if (Files.exists(path)) {
+            Files.delete(path);
         }
-        Files.createFile(headPath);
-        writeFile(headPath, output -> writePropertiesMarkdownFile(output, "Deployment Jars",
+        Files.createFile(path);
+        writeFile(path, output -> writePropertiesMarkdownFile(output, "Deployment Jars",
                 createTableWriter(DockerDeployment.all())));
     }
 
@@ -67,10 +65,10 @@ public class GenerateJarsDocumentation {
                 }).build();
     }
 
-    private static <T extends SleeperProperty> void writePropertiesMarkdownFile(
-            OutputStream output, String groupNamePrefix, TableWriter tableWriter) {
+    private static void writePropertiesMarkdownFile(
+            OutputStream output, String sectionName, TableWriter tableWriter) {
         PrintStream out = printStream(output);
-        out.println("## " + groupNamePrefix);
+        out.println("## " + sectionName);
         out.println();
         tableWriter.write(out);
     }
