@@ -138,31 +138,22 @@
     </suppress>
     <!-- <suppress>
         <notes><![CDATA[
-        Joda Time is used by most of the AWS SDK v1 dependencies, by the Trino Plugin Toolkit, and by the AWS Lambda
-        API. There is currently no version of the library without this vulnerability, and the vulnerability itself is
-        disputed.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
-    </suppress> -->
-    <suppress>
-        <notes><![CDATA[
         Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
         the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.57 at time of
         writing.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
-    </suppress>
-    <suppress>
+    </suppress> -->
+    <!-- <suppress>
         <notes><![CDATA[
         We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
         directly.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty(/.*$|\.http2/http2.*$|\.websocket/websocket.*$)</packageUrl>
         <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
-    </suppress>
-    <suppress>
+    </suppress> -->
+    <!-- <suppress>
         <notes><![CDATA[
         This dependency is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
         the version we're using. It's listed as having arised in version 12.0.0, and we're using 9.4.57 at time of
@@ -170,8 +161,8 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-common@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-1948</vulnerabilityName>
-    </suppress>
-    <suppress>
+    </suppress> -->
+    <!-- <suppress>
         <notes><![CDATA[
         DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
         of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
@@ -179,7 +170,7 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-45801|CVE-2024-47875|CVE-2024-48910|CVE-2025-26791</vulnerabilityName>
-    </suppress>
+    </suppress> -->
     <suppress>
         <notes><![CDATA[
         This seems to be a false positive, as the CVE is for Eclipse Glassfish, which isn't on the classpath for Sleeper
@@ -190,13 +181,6 @@
         <packageUrl regex="true">^pkg:maven/org\.glassfish\.hk2/osgi-resource-locator@.*$</packageUrl>
         <cve>CVE-2024-9329</cve>
     </suppress>
-    <!-- <suppress>
-        <notes><![CDATA[
-        This library is only used during build time tests, with WireMock, JsonUnit and Trino testing.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
-    </suppress> -->
     <suppress>
         <notes><![CDATA[
         RoaringBitmap is a dependency of spark-core. At time of writing the latest version is still vulnerable.
@@ -215,10 +199,6 @@
         automatically.
         file name: aws-json-protocol-2.31.59.jar
         file name: json-utils-2.31.59.jar
-
-        json-unit-core is used as part of WireMock which is on an older version because it's used by Trino. After
-        Trino and WireMock are upgraded we should not have any usages of this old version remaining.
-        file name: json-unit-core-2.36.0.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
@@ -232,8 +212,12 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
-    <!-- <suppress>
+    <suppress>
         <notes><![CDATA[
+        This dependency has a vunerability which can cause connections to stop being accepted due to a state timing them out.
+        It is patched in later versions of the module, but we are unable to update further due to the limitation
+        of not moving past Java 17 compatibility at present.
+
         file name: http2-client-11.0.17.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-client@.*$</packageUrl>
@@ -241,6 +225,10 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        This dependency allows for a possible DDoS avenue.
+        It is patched in later versions of the module, but we are unable to update further due to the limitation
+        of not moving past Java 17 compatibility at present.
+
         file name: http2-http-client-transport-11.0.17.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-http-client-transport@.*$</packageUrl>
@@ -248,10 +236,13 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        This vunerability is for a rare event that is unlikely to seen within our application.
+        We are unable to upgrade past this version at present due to other dependencies forcing Java 17.
+
         file name: wiremock-3.0.1.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.wiremock/wiremock@.*$</packageUrl>
         <cve>CVE-2023-41329</cve>
         <vulnerabilityName regex="true">CVE-2023-41327|CVE-2023-41329</vulnerabilityName>
-    </suppress> -->
+    </suppress>
 </suppressions>
