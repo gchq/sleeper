@@ -136,7 +136,7 @@
         <packageUrl regex="true">^pkg:maven/org\.apfloat/apfloat@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-23084|CVE-2024-23085</vulnerabilityName>
     </suppress>
-    <suppress>
+    <!-- <suppress>
         <notes><![CDATA[
         Joda Time is used by most of the AWS SDK v1 dependencies, by the Trino Plugin Toolkit, and by the AWS Lambda
         API. There is currently no version of the library without this vulnerability, and the vulnerability itself is
@@ -144,7 +144,7 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
-    </suppress>
+    </suppress> -->
     <suppress>
         <notes><![CDATA[
         Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
@@ -190,13 +190,13 @@
         <packageUrl regex="true">^pkg:maven/org\.glassfish\.hk2/osgi-resource-locator@.*$</packageUrl>
         <cve>CVE-2024-9329</cve>
     </suppress>
-    <suppress>
+    <!-- <suppress>
         <notes><![CDATA[
         This library is only used during build time tests, with WireMock, JsonUnit and Trino testing.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
         <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
-    </suppress>
+    </suppress> -->
     <suppress>
         <notes><![CDATA[
         RoaringBitmap is a dependency of spark-core. At time of writing the latest version is still vulnerable.
@@ -220,7 +220,7 @@
         Trino and WireMock are upgraded we should not have any usages of this old version remaining.
         file name: json-unit-core-2.36.0.jar
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
     </suppress>
     <suppress>
@@ -232,7 +232,7 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
-    <suppress>
+    <!-- <suppress>
         <notes><![CDATA[
         file name: http2-client-11.0.17.jar
         ]]></notes>
@@ -253,5 +253,5 @@
         <packageUrl regex="true">^pkg:maven/org\.wiremock/wiremock@.*$</packageUrl>
         <cve>CVE-2023-41329</cve>
         <vulnerabilityName regex="true">CVE-2023-41327|CVE-2023-41329</vulnerabilityName>
-    </suppress>
+    </suppress> -->
 </suppressions>
