@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy.properties;
+package sleeper.clients.deploy.documentation;
 
 import org.apache.commons.io.file.PathUtils;
 
+import sleeper.clients.deploy.properties.SleeperPropertyMarkdownTable;
 import sleeper.clients.util.tablewriter.TableWriter;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
