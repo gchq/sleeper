@@ -136,24 +136,15 @@
         <packageUrl regex="true">^pkg:maven/org\.apfloat/apfloat@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-23084|CVE-2024-23085</vulnerabilityName>
     </suppress>
-    <!-- <suppress>
-        <notes><![CDATA[
-        Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
-        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.57 at time of
-        writing.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
-    </suppress> -->
-    <!-- <suppress>
+    <suppress>
         <notes><![CDATA[
         We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
         directly.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty(/.*$|\.http2/http2.*$|\.websocket/websocket.*$)</packageUrl>
         <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
-    </suppress> -->
-    <!-- <suppress>
+    </suppress>
+    <suppress>
         <notes><![CDATA[
         This dependency is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
         the version we're using. It's listed as having arised in version 12.0.0, and we're using 9.4.57 at time of
@@ -161,8 +152,8 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-common@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-1948</vulnerabilityName>
-    </suppress> -->
-    <!-- <suppress>
+    </suppress>
+    <suppress>
         <notes><![CDATA[
         DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
         of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
@@ -170,7 +161,7 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-45801|CVE-2024-47875|CVE-2024-48910|CVE-2025-26791</vulnerabilityName>
-    </suppress> -->
+    </suppress>
     <suppress>
         <notes><![CDATA[
         This seems to be a false positive, as the CVE is for Eclipse Glassfish, which isn't on the classpath for Sleeper
