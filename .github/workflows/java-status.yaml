@@ -59,7 +59,7 @@ jobs:
           CHANGED_FILES=$(git status --porcelain)
           if [ ${#CHANGED_FILES} -gt 0 ]; then
             echo "Found files changed by properties template generation."
-            echo "Please run scripts/dev/generatePropertiesTemplates.sh and commit."
+            echo "Please run scripts/dev/generateDocumentation.sh and commit."
             echo "$CHANGED_FILES"
             exit 1
           fi
