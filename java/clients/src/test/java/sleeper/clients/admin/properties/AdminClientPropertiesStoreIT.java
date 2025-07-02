@@ -33,7 +33,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -349,12 +348,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            StackDockerImage image = dockerBuildImage("ingest", OptionalStack.IngestStack);
-            Path pathToFile = Path.of(tempDir.toString(), "imagesToUpload");
-
-            verify(uploadDockerImages).upload(withImages(image));
-            assertThat(Files.exists(pathToFile)).isTrue();
-            assertThat(Files.readString(pathToFile)).isEqualTo(image.toString() + "\n");
+            verify(uploadDockerImages).upload(withImages(dockerBuildImage("ingest")));
         }
 
         @Test
