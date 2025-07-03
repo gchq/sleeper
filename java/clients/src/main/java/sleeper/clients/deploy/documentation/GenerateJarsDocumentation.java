@@ -40,7 +40,7 @@ public class GenerateJarsDocumentation {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Path.of(args[0]).resolve("docs/deployment/jars-to-upload");
+        Path path = Path.of(args[0]).resolve("docs/deployment/jars-to-upload.md");
         if (Files.exists(path)) {
             Files.delete(path);
         }
