@@ -8,7 +8,6 @@ These are the docker deployment Jars
 | bulk-import-runner         | EksBulkImportStack | false         |
 | compaction-job-execution   | CompactionStack    | true          |
 | bulk-export-task-execution | BulkExportStack    | false         |
-
 ## Lambda Jars
 
 These are the Lambda deploy jars
@@ -30,4 +29,3 @@ These are the Lambda deploy jars
 | cdk-custom-resources-0.31.1-SNAPSHOT.jar         | custom-resources-lambda           | false                |
 | metrics-0.31.1-SNAPSHOT.jar                      | metrics-lambda                    | false                |
 | statestore-lambda-0.31.1-SNAPSHOT.jar            | statestore-lambda                 | false                |
-
