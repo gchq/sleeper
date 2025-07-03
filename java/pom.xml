@@ -1463,7 +1463,6 @@
                                 <!-- For Trino -->
                                 <ignoredUnusedDeclaredDependency>io.trino:trino-plugin-toolkit::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.junit.vintage:junit-vintage-engine::</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>io.airlift:http-client::</ignoredUnusedDeclaredDependency>
                                 <!-- Hadoop client sets many exclusions in hadoop-common dependency, so we don't want to redeclare that -->
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-client::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-aws::</ignoredUnusedDeclaredDependency>
