@@ -53,6 +53,9 @@ jobs:
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl clients \
             -Dexec.mainClass=sleeper.clients.deploy.documentation.GeneratePropertiesTemplates \
             -Dexec.args="$PROJECT_ROOT"
+          mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl clients \
+            -Dexec.mainClass=sleeper.clients.deploy.documentation.GenerateJarsDocumentation \
+            -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
           if [ ${#CHANGED_FILES} -gt 0 ]; then
             echo "Found files changed by properties template generation."
