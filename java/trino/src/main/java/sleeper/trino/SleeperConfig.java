@@ -16,7 +16,7 @@
 package sleeper.trino;
 
 import io.airlift.configuration.Config;
-import software.amazon.awssdk.annotations.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * A Java copy of the Trino configuration information supplied in an etc/catalog/sleeper.properties file.
