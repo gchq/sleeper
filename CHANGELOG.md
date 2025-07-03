@@ -5,6 +5,36 @@ This page documents the releases of Sleeper. Performance figures for each releas
 are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
 available [here](docs/development/roadmap.md).
 
+
+## Version 0.31.1
+
+This is a bug fix release for the Python API.
+
+Compaction:
+- Running compaction jobs are now included when limiting the number of jobs that should be created
+
+Iterators:
+- Added Java `AggregationFilteringIterator` equivalent to experimental DataFusion aggregation support
+  - This can be used in compaction and/or queries, but will be replaced with generic support for filtering and aggregation
+- Converted experimental age off filter to use milliseconds rather than seconds
+
+Build:
+- Improved Checkstyle linting of Java code
+
+Bugfixes:
+- The Python API can now read an instance properties file with a % sign in a property value
+  - This was preventing the Python `SleeperClient` from being instantiated
+  - This was a conflict with Python's configparser variable interpolation, which we no longer use
+  - This occurred when explicitly setting the default values for properties that include a % in their defaults
+  - Default values are normally only set explicitly when deploying in a couple of ways:
+    - From templates, like `scripts/deploy/deployNew.sh ${ID} ${VPC} ${SUBNETS}` with no explicit properties file
+    - Setting a properties file based on the full example at [`example/full/instance.properties`](example/full/instance.properties)
+- The Python API can now reliably read SQS queue URLs
+  - This was a new bug introduced in the previous release, as before that it looked up queues by their name
+  - Some queue URLs are saved in the instance properties file with an escaped colon character, like `http\://...`
+  - This prevented the Python API from sending messages to those queues
+
+
 ## Version 0.31.0
 
 This includes the first version of bulk export, upgrading from AWS SDK v1 to AWS SDK v2, and upgrading EMR, Spark and
