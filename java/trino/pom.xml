@@ -31,65 +31,12 @@
             <groupId>io.trino</groupId>
             <artifactId>trino-plugin-toolkit</artifactId>
             <version>${trino.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.opentelemetry.semconv</groupId>
-			        <artifactId>opentelemetry-semconv</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>http-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>security</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>concurrent</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>stats</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>configuration</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>log</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>json</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.airlift</groupId>
-                    <artifactId>node</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-spi</artifactId>
             <version>${trino.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>http-client</artifactId>
-            <version>${airlift.httpclient.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.opentelemetry</groupId>
-                    <artifactId>opentelemetry-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.opentelemetry</groupId>
-                    <artifactId>opentelemetry-context</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
