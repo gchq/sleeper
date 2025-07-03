@@ -29,10 +29,6 @@ Trino (io.trino:trino-*:435)
 
 - Apache License, Version 2.0
 
-OpenTelemetry (io.opentelemetry:opentelemetry-*:1.*)
-
-- Apache License, Version 2.0
-
 WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.*, org.wildfly.common:wildfly-common:2.*)
 
 - Apache License, Version 2.0
@@ -328,7 +324,7 @@ Netty/TomcatNative (io.netty:netty-tcnative-boringssl-static:2.*)
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:11.*, org.eclipse.jetty.http2:*:11.*, org.eclipse.jetty.websocket:*:9.*)
+Eclipse Jetty (org.eclipse.jetty:*:11.*, org.eclipse.jetty.http2:*:11.*, org.eclipse.jetty.websocket:*:9.*, org.eclipse.jetty:*:9.*)
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
