@@ -95,7 +95,6 @@ public class GenerateJarsDocumentation {
         out.println(sectionDescription);
         out.println();
         tableWriter.write(out);
-        out.println();
     }
 
     private static void writeFile(Path file, Consumer<OutputStream> generator) {
