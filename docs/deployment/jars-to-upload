@@ -1,8 +1,0 @@
-## Deployment Jars
-
-| Property Name              | Optional Stack     | Multiplatform |
-|----------------------------|--------------------|---------------|
-| ingest                     | IngestStack        | false         |
-| bulk-import-runner         | EksBulkImportStack | false         |
-| compaction-job-execution   | CompactionStack    | true          |
-| bulk-export-task-execution | BulkExportStack    | false         |

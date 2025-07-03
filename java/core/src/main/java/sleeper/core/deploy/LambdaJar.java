@@ -19,6 +19,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -47,6 +48,10 @@ public class LambdaJar {
     public static final LambdaJar CUSTOM_RESOURCES = withFormatAndImage("cdk-custom-resources-%s.jar", "custom-resources-lambda");
     public static final LambdaJar METRICS = withFormatAndImage("metrics-%s.jar", "metrics-lambda");
     public static final LambdaJar STATESTORE = withFormatAndImage("statestore-lambda-%s.jar", "statestore-lambda");
+
+    public static final List<LambdaJar> ALL = List.of(ATHENA, BULK_IMPORT_STARTER, BULK_EXPORT_PLANNER, BULK_EXPORT_TASK_CREATOR, INGEST_TASK_CREATOR,
+            INGEST_BATCHER_SUBMITTER, INGEST_BATCHER_JOB_CREATOR, GARBAGE_COLLECTOR, COMPACTION_JOB_CREATOR, COMPACTION_TASK_CREATOR,
+            PARTITION_SPLITTER, QUERY, CUSTOM_RESOURCES, METRICS, STATESTORE);
 
     private final String filename;
     private final String imageName;
