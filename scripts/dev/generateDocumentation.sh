@@ -24,6 +24,10 @@ echo "Compiling..."
 mvn install -Pquick -q -pl clients -am
 echo "Regenerating templates..."
 mvn exec:java -q -pl clients \
-  -Dexec.mainClass="sleeper.clients.deploy.properties.GeneratePropertiesTemplates" \
+  -Dexec.mainClass="sleeper.clients.deploy.documentation.GeneratePropertiesTemplates" \
+  -Dexec.args="$PROJECT_ROOT"
+echo "Regenerating deployment jars..."
+mvn exec:java -e -q -pl clients \
+  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateJarsDocumentation" \
   -Dexec.args="$PROJECT_ROOT"
 popd
