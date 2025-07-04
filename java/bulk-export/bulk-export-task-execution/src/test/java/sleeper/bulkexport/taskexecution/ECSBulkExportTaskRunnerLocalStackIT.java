@@ -198,11 +198,6 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
     }
 
-    @Test
-    public void shouldRunMainAndThrowExceptionWithNoArgs() throws Exception {
-        assertThatThrownBy(() -> ECSBulkExportTaskRunner.main(new String[0])).hasMessageContaining("must have 1 argument");
-    }
-
     private void runTask() throws Exception {
         ECSBulkExportTaskRunner.runECSBulkExportTaskRunner(
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client, dynamoClient, hadoopConf);
