@@ -19,9 +19,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
@@ -30,8 +33,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -53,11 +54,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -72,17 +77,17 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
             .build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final RangeFactory rangeFactory = new RangeFactory(schema);
     private final PartitionTree partitions = new PartitionsBuilder(tableProperties)
             .rootFirst("root")
             .splitToNewChildren("root", "L", "R", 1000)
             .buildTree();
+    private final BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(schema);
 
     @BeforeEach
     void setUp() {
         tableProperties.set(TABLE_ID, "t-id");
-        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
-        instanceProperties.setNumber(BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
+        instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
         instanceProperties.set(BULK_EXPORT_S3_BUCKET, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(BULK_EXPORT_S3_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
@@ -93,35 +98,125 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     public void shouldRunOneBulkExportSubQuery() throws Exception {
         // Given
+        configureJobQueuesWithMaxReceiveCount(1);
         Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
-        BulkExportLeafPartitionQuery query = BulkExportLeafPartitionQuery.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .exportId("e-id")
-                .subExportId("se-id")
-                .regions(List.of(new Region(rangeFactory.createRange(field, 1, true, 10, true))))
-                .leafPartitionId("L")
-                .partitionRegion(partitions.getPartition("L").getRegion())
-                .files(List.of(file.getFilename()))
-                .build();
+        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-id", "se-id", file);
         send(query);
 
         // When
         runTask();
 
-        // Then the query region is ignored for now
+        // Then
         assertThat(readOutputFile(query)).containsExactly(record1, record2);
         assertThat(getMessagesFromQueue()).isEmpty();
     }
 
     @Test
+    public void shouldReturnMessageToQueueAfterFailure() throws Exception {
+        // Given
+        String messageString = "This will cause a failure!";
+        configureJobQueuesWithMaxReceiveCount(2);
+        send(messageString);
+
+        // When
+        assertThatThrownBy(() -> runTask())
+                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+
+        // Then
+        List<String> messages = getMessagesFromQueue();
+        assertThat(messages)
+                .size().isEqualTo(1);
+        assertThat(messages.get(0)).contains(messageString);
+    }
+
+    @Test
+    public void shouldHandleExceptionInProcessingAndSendToDlq() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(1);
+        Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
+        BulkExportLeafPartitionQuery query = createQueryWithIdsFilesAndBrokenPartition("e-id", "se-id", file);
+
+        send(query);
+
+        // When
+        assertThatThrownBy(() -> runTask())
+                .hasMessageContaining("Partition not found: NO-ID");
+
+        runTask();
+
+        // Then
+        List<String> messages = getMessagesFromDlq();
+        assertThat(messages)
+                .size().isEqualTo(1);
+
+        BulkExportLeafPartitionQuery receivedQuery = serDe.fromJson(messages.get(0));
+        assertThat(receivedQuery).isEqualTo(query);
+
+    }
+
+    @Test
+    public void shouldMoveMessageToDlqAfterTwoFailures() throws Exception {
+        // Given
+        String messageString = "This will cause a failure!";
+        configureJobQueuesWithMaxReceiveCount(1);
+        send(messageString);
+
+        // When
+        // The task needs to be run twice for it to be moved to the DLQ
+        assertThatThrownBy(() -> runTask())
+                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+
+        runTask();
+
+        // Then
+        List<String> messages = getMessagesFromDlq();
+        assertThat(messages)
+                .size().isEqualTo(1);
+        assertThat(messages.get(0)).contains(messageString);
+    }
+
+    @Test
     public void shouldProcessNoMessages() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(2);
+
         // When
         runTask();
 
         // Then
         assertThat(getMessagesFromQueue()).isEmpty();
+    }
+
+    private BulkExportLeafPartitionQuery createQueryWithIdsAndFiles(
+            String exportId, String subExportId, FileReference... files) {
+        String partitionId = files[0].getPartitionId();
+        return BulkExportLeafPartitionQuery.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of())
+                .leafPartitionId(partitionId)
+                .partitionRegion(partitions.getPartition(partitionId).getRegion())
+                .files(Stream.of(files).map(FileReference::getFilename).toList())
+                .build();
+    }
+
+    private BulkExportLeafPartitionQuery createQueryWithIdsFilesAndBrokenPartition(
+            String exportId, String subExportId, FileReference... files) {
+        return BulkExportLeafPartitionQuery.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of())
+                .leafPartitionId("NO-ID")
+                .partitionRegion(partitions.getPartition(files[0]
+                        .getPartitionId()).getRegion())
+                .files(Stream.of(files).map(FileReference::getFilename).toList())
+                .build();
     }
 
     private void runTask() throws Exception {
@@ -167,19 +262,60 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(
                 new FixedTablePropertiesProvider(tableProperties));
         String messageBody = serDe.toJson(query);
+        send(messageBody);
+    }
+
+    private void send(String messageBody) {
         sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .messageBody(messageBody)
                 .build());
     }
 
+    private void getJob() {
+
+    }
+
+    private List<String> getMessagesFromDlq() {
+        return getMessagesFromSuppliedQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL));
+    }
+
     private List<String> getMessagesFromQueue() {
+        return getMessagesFromSuppliedQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+    }
+
+    private List<String> getMessagesFromSuppliedQueue(String url) {
         return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
+                .queueUrl(url)
+                .waitTimeSeconds(2)
                 .build())
                 .messages()
                 .stream()
                 .map(Message::body)
                 .toList();
+    }
+
+    private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
+        String jobQueueUrl = createSqsQueueGetUrl();
+        String jobDlqUrl = createSqsQueueGetUrl();
+        String jobDlqArn = sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder()
+                .queueUrl(jobDlqUrl)
+                .attributeNames(List.of(QueueAttributeName.QUEUE_ARN))
+                .build())
+                .attributes()
+                .get(QueueAttributeName.QUEUE_ARN);
+
+        String visibilityTimeoutSeconds = instanceProperties.get(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
+
+        Map<QueueAttributeName, String> attributes = Map.of(
+                QueueAttributeName.REDRIVE_POLICY, "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", \"deadLetterTargetArn\":\"" + jobDlqArn + "\"}",
+                QueueAttributeName.VISIBILITY_TIMEOUT, visibilityTimeoutSeconds);
+
+        sqsClient.setQueueAttributes(SetQueueAttributesRequest.builder()
+                .queueUrl(jobQueueUrl)
+                .attributes(attributes)
+                .build());
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL, jobQueueUrl);
+        instanceProperties.set(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL, jobDlqUrl);
     }
 }
