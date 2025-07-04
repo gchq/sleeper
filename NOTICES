@@ -49,14 +49,6 @@ Snappy Java (org.xerial.snappy:snappy-java:1.*)
 
 - Apache License, Version 2.0
 
-Aircompressor (io.airlift:aircompressor:2.*)
-
-- Apache License, Version 2.0
-
-HttpClient (io.airlift:http-client:*)
-
-- Apache License, Version 2.0
-
 Protocol Buffers (com.google.protobuf:protobuf-java:4.*)
 
 - The 3-Clause BSD License
@@ -195,11 +187,23 @@ ZSTD JNI (com.github.luben:zstd-jni:1.*)
 
 - BSD 2-Clause License
 
+Airlift (io.airlift:*:241)
+
+- Apache License, Version 2.0
+
 Units (io.airlift:units:1.*)
 
 - Apache License, Version 2.0
 
 Slice (io.airlift:slice:2.*)
+
+- Apache License, Version 2.0
+
+Aircompressor (io.airlift:aircompressor:2.*)
+
+- Apache License, Version 2.0
+
+OpenTelemetry (io.opentelemetry:opentelemetry-*:1.*)
 
 - Apache License, Version 2.0
 
