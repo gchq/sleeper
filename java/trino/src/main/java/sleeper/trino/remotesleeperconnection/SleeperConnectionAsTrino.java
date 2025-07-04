@@ -18,6 +18,7 @@ package sleeper.trino.remotesleeperconnection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.SchemaTableName;
@@ -45,8 +46,6 @@ import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.utils.SleeperTypeConversionUtils;
-
-import javax.inject.Inject;
 
 import java.time.Instant;
 import java.util.Arrays;

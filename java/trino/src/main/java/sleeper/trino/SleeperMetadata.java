@@ -18,6 +18,7 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -54,8 +55,6 @@ import sleeper.trino.handle.SleeperInsertTableHandle;
 import sleeper.trino.handle.SleeperPartitioningHandle;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-
-import javax.inject.Inject;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -232,7 +231,6 @@ public class SleeperMetadata implements ConnectorMetadata {
             return new ConnectorTableProperties(
                     TupleDomain.all(),
                     Optional.of(connectorTablePartitioning),
-                    Optional.empty(),
                     Optional.empty(),
                     localProperties);
         } else {
