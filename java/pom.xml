@@ -130,7 +130,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.787</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.75</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.76</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
         <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
@@ -164,7 +164,7 @@
         <jline.version>3.30.4</jline.version>
         <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-3</zstd-jni.version>
+        <zstd-jni.version>1.5.7-4</zstd-jni.version>
         <airlift-units.version>1.10</airlift-units.version>
         <airlift-slice.version>0.41</airlift-slice.version>
         <guice.version>5.1.0</guice.version>
@@ -177,7 +177,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.39.0</google.errorprone.version>
-        <cdk.version>2.203.0</cdk.version>
+        <cdk.version>2.203.1</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.112.0</jsii.version>
@@ -246,7 +246,7 @@
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.4.2</jar.plugin.version>
         <compiler.plugin.version>3.14.0</compiler.plugin.version>
-        <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
+        <enforcer.plugin.version>3.6.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.9.3</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>

@@ -53,8 +53,9 @@ public class SleeperEnvironmentCdkApp {
                 .build();
         AppContext context = AppContext.of(app);
         String environmentId = context.get(INSTANCE_ID);
-        Stack stack = new Stack(app, "SleeperEnvironment", StackProps.builder()
-                .stackName(getStackNameForEnvironment(environmentId))
+        String stackName = getStackNameForEnvironment(environmentId);
+        Stack stack = new Stack(app, stackName, StackProps.builder()
+                .stackName(stackName)
                 .env(environment)
                 .build());
         NightlyTestDeployment nightlyTests = new NightlyTestDeployment(stack);
