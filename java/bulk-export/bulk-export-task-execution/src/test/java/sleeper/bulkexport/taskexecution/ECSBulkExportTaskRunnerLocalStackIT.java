@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -103,21 +104,13 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
-        BulkExportLeafPartitionQuery query = BulkExportLeafPartitionQuery.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .exportId("e-id")
-                .subExportId("se-id")
-                .regions(List.of(new Region(rangeFactory.createRange(field, 1, true, 10, true))))
-                .leafPartitionId("L")
-                .partitionRegion(partitions.getPartition("L").getRegion())
-                .files(List.of(file.getFilename()))
-                .build();
+        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-id", "se-id", file);
         send(query);
 
         // When
         runTask();
 
-        // Then the query region is ignored for now
+        // Then
         assertThat(readOutputFile(query)).containsExactly(record1, record2);
         assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
     }
@@ -196,6 +189,20 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
         // Then
         assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
+    }
+
+    private BulkExportLeafPartitionQuery createQueryWithIdsAndFiles(
+            String exportId, String subExportId, FileReference... files) {
+        String partitionId = files[0].getPartitionId();
+        return BulkExportLeafPartitionQuery.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of())
+                .leafPartitionId(partitionId)
+                .partitionRegion(partitions.getPartition(partitionId).getRegion())
+                .files(Stream.of(files).map(FileReference::getFilename).toList())
+                .build();
     }
 
     private void runTask() throws Exception {
