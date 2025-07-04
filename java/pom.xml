@@ -130,7 +130,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.787</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.76</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.77</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
         <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
