@@ -110,7 +110,7 @@
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.10</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
-        <okhttp3.version>4.12.0</okhttp3.version>
+        <okhttp3.version>5.0.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
