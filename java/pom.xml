@@ -167,9 +167,9 @@
         <zstd-jni.version>1.5.7-4</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
-        <!-- Depdendencies of Trino declare conflicting versions of Airlift. -->
+        <!-- Depdendencies of Trino declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
-        <!-- Depdendencies of Trino declare conflicting versions of OpenTelemetry. -->
+        <!-- Depdendencies of Trino declare different versions of OpenTelemetry. -->
         <opentelemetry.version>1.51.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
