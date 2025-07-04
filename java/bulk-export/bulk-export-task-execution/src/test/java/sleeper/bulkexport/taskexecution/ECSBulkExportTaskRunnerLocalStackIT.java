@@ -81,6 +81,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
             .rootFirst("root")
             .splitToNewChildren("root", "L", "R", 1000)
             .buildTree();
+    private final BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(schema);
 
     @BeforeEach
     void setUp() {
@@ -115,16 +116,19 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     public void shouldReturnMessageToQueueAfterFailure() throws Exception {
         // Given
+        String messageString = "This will cause a failure!";
         configureJobQueuesWithMaxReceiveCount(2);
-        send("This will cause a failure!");
+        send(messageString);
 
         // When
         assertThatThrownBy(() -> runTask())
                 .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
 
         // Then
-        assertThat(getMessagesFromQueue())
-                .hasSize(1);
+        List<String> messages = getMessagesFromQueue();
+        assertThat(messages)
+                .size().isEqualTo(1);
+        assertThat(messages.get(0)).contains(messageString);
     }
 
     @Test
@@ -145,15 +149,21 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         runTask();
 
         // Then
-        assertThat(getMessagesFromDlq())
+        List<String> messages = getMessagesFromDlq();
+        assertThat(messages)
                 .size().isEqualTo(1);
+
+        BulkExportLeafPartitionQuery receivedQuery = serDe.fromJson(messages.get(0));
+        assertThat(receivedQuery).isEqualTo(query);
+
     }
 
     @Test
     public void shouldMoveMessageToDlqAfterTwoFailures() throws Exception {
         // Given
+        String messageString = "This will cause a failure!";
         configureJobQueuesWithMaxReceiveCount(1);
-        send("This will cause a failure!");
+        send(messageString);
 
         // When
         // The task needs to be run twice for it to be moved to the DLQ
@@ -163,8 +173,10 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         runTask();
 
         // Then
-        assertThat(getMessagesFromDlq())
+        List<String> messages = getMessagesFromDlq();
+        assertThat(messages)
                 .size().isEqualTo(1);
+        assertThat(messages.get(0)).contains(messageString);
     }
 
     @Test
@@ -258,6 +270,10 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .messageBody(messageBody)
                 .build());
+    }
+
+    private void getJob() {
+
     }
 
     private List<String> getMessagesFromDlq() {
