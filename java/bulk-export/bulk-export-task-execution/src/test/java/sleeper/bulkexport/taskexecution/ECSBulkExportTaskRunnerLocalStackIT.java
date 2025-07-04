@@ -33,8 +33,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -79,7 +77,6 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
             .build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final RangeFactory rangeFactory = new RangeFactory(schema);
     private final PartitionTree partitions = new PartitionsBuilder(tableProperties)
             .rootFirst("root")
             .splitToNewChildren("root", "L", "R", 1000)
@@ -112,15 +109,13 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
         // Then
         assertThat(readOutputFile(query)).containsExactly(record1, record2);
-        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
+        assertThat(getMessagesFromQueue()).isEmpty();
     }
 
     @Test
     public void shouldReturnMessageToQueueAfterFailure() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(2);
-        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL)))
-                .size().isEqualTo(0);
         send("This will cause a failure!");
 
         // When
@@ -128,41 +123,34 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
 
         // Then
-        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL)))
+        assertThat(getMessagesFromQueue())
                 .hasSize(1);
     }
 
     @Test
-    public void shouldHandleExcpetionInProcessingAndSendToDlq() throws Exception {
+    public void shouldHandleExceptionInProcessingAndSendToDlq() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
         Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
-        BulkExportLeafPartitionQuery query = BulkExportLeafPartitionQuery.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .exportId("e-id")
-                .subExportId("se-id")
-                .regions(List.of(new Region(rangeFactory.createRange(field, 1, true, 10, true))))
-                .leafPartitionId("LLLL")  // This will cause an exception as it doesn't exist
-                .partitionRegion(partitions.getPartition("L").getRegion())
-                .files(List.of(file.getFilename()))
-                .build();
+        BulkExportLeafPartitionQuery query = createQueryWithIdsFilesAndBrokenPartition("e-id", "se-id", file);
+
         send(query);
 
         // When
         assertThatThrownBy(() -> runTask())
-                .hasMessageContaining("Partition not found: LLLL");
+                .hasMessageContaining("Partition not found: NO-ID");
 
         runTask();
 
         // Then
-        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL)))
+        assertThat(getMessagesFromDlq())
                 .size().isEqualTo(1);
     }
 
     @Test
-    public void shouldMoveMessageToDlqAftertwoFailures() throws Exception {
+    public void shouldMoveMessageToDlqAfterTwoFailures() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
         send("This will cause a failure!");
@@ -175,7 +163,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         runTask();
 
         // Then
-        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL)))
+        assertThat(getMessagesFromDlq())
                 .size().isEqualTo(1);
     }
 
@@ -188,7 +176,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         runTask();
 
         // Then
-        assertThat(getMessagesFromQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))).isEmpty();
+        assertThat(getMessagesFromQueue()).isEmpty();
     }
 
     private BulkExportLeafPartitionQuery createQueryWithIdsAndFiles(
@@ -201,6 +189,20 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .regions(List.of())
                 .leafPartitionId(partitionId)
                 .partitionRegion(partitions.getPartition(partitionId).getRegion())
+                .files(Stream.of(files).map(FileReference::getFilename).toList())
+                .build();
+    }
+
+    private BulkExportLeafPartitionQuery createQueryWithIdsFilesAndBrokenPartition(
+            String exportId, String subExportId, FileReference... files) {
+        return BulkExportLeafPartitionQuery.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of())
+                .leafPartitionId("NO-ID")
+                .partitionRegion(partitions.getPartition(files[0]
+                        .getPartitionId()).getRegion())
                 .files(Stream.of(files).map(FileReference::getFilename).toList())
                 .build();
     }
@@ -258,7 +260,15 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .build());
     }
 
-    private List<String> getMessagesFromQueue(String url) {
+    private List<String> getMessagesFromDlq() {
+        return getMessagesFromSuppliedQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL));
+    }
+
+    private List<String> getMessagesFromQueue() {
+        return getMessagesFromSuppliedQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+    }
+
+    private List<String> getMessagesFromSuppliedQueue(String url) {
         return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                 .queueUrl(url)
                 .waitTimeSeconds(2)

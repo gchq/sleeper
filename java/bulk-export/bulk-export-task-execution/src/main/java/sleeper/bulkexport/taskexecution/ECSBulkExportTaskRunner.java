@@ -70,10 +70,15 @@ public class ECSBulkExportTaskRunner {
      * and table properties, and processes messages from the SQS queue for bulk
      * export tasks.
      *
-     * @param  args      Command line arguments
-     * @throws Exception if an error occurs during execution
+     * @param  args                      Command line arguments
+     * @throws ObjectFactoryException    If there is an error creating objects
+     *                                   dynamically.
+     * @throws IteratorCreationException If there is an error creating iterators for
+     *                                   processing.
+     * @throws IOException               If there is an error interacting with S3 or
+     *                                   other I/O operations.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ObjectFactoryException, IOException, IteratorCreationException {
 
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
@@ -90,10 +95,6 @@ public class ECSBulkExportTaskRunner {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
             Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
             runECSBulkExportTaskRunner(instanceProperties, tablePropertiesProvider, sqsClient, s3Client, dynamoDBClient, hadoopConf);
-        } catch (Exception e) {
-            LOGGER.error("An error has occured running the ECS task", e);
-            throw e;
-
         } finally {
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
         }
@@ -104,19 +105,21 @@ public class ECSBulkExportTaskRunner {
      * This method initialises the SQS bulk export queue handler and processes
      * messages from the SQS queue for bulk export tasks.
      *
-     * @param  instanceProperties      the instance properties
-     * @param  tablePropertiesProvider a table properties provider
-     * @param  sqsClient               an SQS client
-     * @param  s3Client                an S3 client
-     * @param  dynamoDBClient          a DynamoDB client
-     * @param  hadoopConf              a Hadoop configuration
-     * @throws Exception               if there is an error runing the task
+     * @param  instanceProperties        the instance properties
+     * @param  tablePropertiesProvider   a table properties provider
+     * @param  sqsClient                 an SQS client
+     * @param  s3Client                  an S3 client
+     * @param  dynamoDBClient            a DynamoDB client
+     * @param  hadoopConf                a Hadoop configuration
+     * @throws IOException               if there is an error interacting with S3
+     * @throws IteratorCreationException if there is an error creating iterators
+     * @throws ObjectFactoryException    if there is an error creating objects
      *
      */
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
-            Configuration hadoopConf) throws Exception {
+            Configuration hadoopConf) throws RuntimeException, IOException, ObjectFactoryException, IteratorCreationException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
