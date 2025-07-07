@@ -15,13 +15,12 @@
  */
 package sleeper.core.deploy;
 
-import com.google.common.collect.ImmutableList;
-
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -60,7 +59,7 @@ public class LambdaJar {
 
     private LambdaJar(String filenameFormat, String version, String imageName, boolean alwaysDockerDeploy) {
         this.filenameFormat = Objects.requireNonNull(filenameFormat, "filename must not be null");
-        this.filename = Objects.requireNonNull(String.format(filenameFormat, SleeperVersion.getVersion()), "filename must not be null");
+        this.filename = String.format(filenameFormat, version);
         this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
         this.alwaysDockerDeploy = Objects.requireNonNull(alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
     }
@@ -142,6 +141,6 @@ public class LambdaJar {
     }
 
     public static List<LambdaJar> getAll() {
-        return ImmutableList.copyOf(ALL);
+        return Collections.unmodifiableList(ALL);
     }
 }
