@@ -1,10 +1,6 @@
 Sleeper is mainly written in Java and this is built using Maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
-AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.*, com.amazonaws:jmespath-java:1.*)
-
-- Apache License, Version 2.0
-
 AWS Java SDK v2 (software.amazon.awssdk:*:2.*)
 
 - Apache License, Version 2.0
