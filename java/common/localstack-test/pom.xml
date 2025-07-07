@@ -83,7 +83,9 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <exclusions>
+        <exclusions>
+                <!-- Package excluded as uses a version of Jetty that causes a conflict with Trino
+                Client not used so exclusion acceptable. -->
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-yarn-client</artifactId>
