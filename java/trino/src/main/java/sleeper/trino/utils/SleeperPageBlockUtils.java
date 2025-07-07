@@ -28,7 +28,14 @@ import io.trino.spi.type.VarcharType;
 
 import sleeper.trino.handle.SleeperColumnHandle;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.List;
+
+import static io.trino.spi.type.BigintType.BIGINT;
+import static io.trino.spi.type.IntegerType.INTEGER;
+import static io.trino.spi.type.VarcharType.VARCHAR;
 
 public class SleeperPageBlockUtils {
 
@@ -77,8 +84,28 @@ public class SleeperPageBlockUtils {
             // Null entries do not appear to need to be closed, and doing so adds an erroneous extra element
             blockBuilder.appendNull();
         } else {
-            Slice slice = Slices.utf8Slice((String) element);
-            blockBuilder.writeEntry(slice, 0, slice.length());
+            Type elementType = fieldType.getElementType();
+            if ((elementType.equals(BIGINT)) || elementType.equals(INTEGER)) {
+                byte[] data = convertObjectToBytes(element);
+                blockBuilder.writeEntry(data, 0, data.length);
+            } else if (elementType.equals(VARCHAR)) {
+                Slice slice = Slices.utf8Slice((String) element);
+                blockBuilder.writeEntry(slice, 0, slice.length());
+            } else {
+                throw new UnsupportedOperationException(
+                        String.format("Array elements of type %s are not currently supported", elementType));
+            }
+        }
+    }
+
+    private static byte[] convertObjectToBytes(Object obj) {
+        ByteArrayOutputStream boas = new ByteArrayOutputStream();
+        try (ObjectOutputStream ois = new ObjectOutputStream(boas)) {
+            ois.writeObject(obj);
+            return boas.toByteArray();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            throw new RuntimeException();
         }
     }
 }
