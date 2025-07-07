@@ -34,13 +34,13 @@ import com.amazonaws.athena.connector.lambda.metadata.GetTableLayoutResponse;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableRequest;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.partition.Partition;
@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
+import static sleeper.athena.TestUtils.createConstraints;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
@@ -84,12 +85,12 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         StateStore stateStore = stateStore(instance, table);
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
         GetTableLayoutRequest request = new GetTableLayoutRequest(TestUtils.createIdentity(),
                 "abc",
                 "def",
                 tableName,
-                new Constraints(new HashMap<>()),
+                createConstraints(new HashMap<>()),
                 getTableResponse.getSchema(),
                 getTableResponse.getPartitionColumns());
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
@@ -141,7 +142,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
 
             getSplitsResponse = sleeperMetadataHandler.doGetSplits(blockAllocator,
                     new GetSplitsRequest(TestUtils.createIdentity(), "abc", "def", new TableName("myDB", "myTable"),
-                            partitions, new ArrayList<>(), new Constraints(new HashMap<>()), "unused"));
+                            partitions, new ArrayList<>(), createConstraints(new HashMap<>()), "unused"));
         }
 
         // Then
@@ -177,9 +178,9 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, 8, true)));
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 new GetTableLayoutRequest(TestUtils.createIdentity(),
@@ -224,9 +225,9 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", SortedRangeSet.of(Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 5, true, firstHalfOf2018.getRegion().getRange("month").getMax(), false)));
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(), new GetTableLayoutRequest(
                 TestUtils.createIdentity(),
@@ -276,9 +277,9 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         valueSets.put("month", EquatableValueSet.newBuilder(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
                 true, false).add(firstHalfOf2018.getRegion().getRange("month").getMax()).build());
 
-        Constraints queryConstraints = new Constraints(valueSets);
+        Constraints queryConstraints = createConstraints(valueSets);
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
-                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
+                new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName, new HashMap<>()));
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(), new GetTableLayoutRequest(
                 TestUtils.createIdentity(),
@@ -301,7 +302,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
     private IteratorApplyingMetadataHandler handler(InstanceProperties instanceProperties) {
         return new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
-                mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
+                mock(EncryptionKeyFactory.class), mock(SecretsManagerClient.class), mock(AthenaClient.class),
                 "spillBucket", "spillPrefix");
     }
 
