@@ -196,7 +196,7 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This dependency includes a new vulnerability with latest version.
+        This is a false positive awhich is only used for testing given that it is a dependency of WireMock.
         Dependabot should update it automatically when a fixed version is available.
         file name: xmlunit-core-2.10.3.jar
         ]]></notes>
@@ -205,9 +205,11 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        These dependencies has several vulnerabilities in which remote connections can be used to overload the system.
-        These are patched out in later versions of the module, but we are unable to update further due needing to
-        keep in line with trino.
+        These dependencies have several vulnerabilities in which remote connections can be used to overload the system.
+        They are present within the Trino library, and dependant modules are used as config generation with our
+        application. Vunerability isn't reported in the dependant modules that we use.
+        The issues are patched out in later versions of the modules, but we are unable to update further due requirements
+        of the Java build version meaning we are unable to move past the version of Trino used at the moment.
 
         file name: http2-client-11.0.17.jar
         file name: http2-http-client-transport-11.0.19.jar
@@ -217,9 +219,10 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        These vulnerabilities are present within wiremock however are unlikely to affect our application given it used
-        for testing.
-        We are unable to upgrade past this version at present due to other dependencies to keeping in line with trino.
+        These vulnerabilities are present within Wiremock, however are unlikely to affect our application given Wiremock
+        is only used for testing.
+        We are unable to upgrade past this version at present due to Trino requiring library, and are unbale to update
+        Trino version at present due to limitation on what Java build we can use.
 
         file name: wiremock-3.0.1.jar
         ]]></notes>
