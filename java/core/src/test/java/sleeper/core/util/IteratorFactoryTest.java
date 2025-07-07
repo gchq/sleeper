@@ -22,7 +22,9 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
 
 import java.util.List;
 
@@ -57,7 +59,7 @@ public class IteratorFactoryTest {
         IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
 
         // When
-        StubIterator iterator = (StubIterator) iteratorFactory.getIterator("sleeper.core.util.IteratorFactoryTest.StubIterator", null, null);
+        StubIterator iterator = (StubIterator) iteratorFactory.getIterator(StubIterator.class.getName(), null, null);
 
         // Then
         assertThat(iterator.isInitialised).isTrue();
@@ -68,9 +70,11 @@ public class IteratorFactoryTest {
         // Given
         ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
         IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("test", new IntType())).build();
 
         // When
-        SortedRecordIterator iterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";,", null);
+        SortedRecordIterator iterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";,", schema);
 
         // Then
         assertThat(iterator).isInstanceOf(AggregationFilteringIterator.class);
