@@ -194,15 +194,15 @@
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
     </suppress>
-    <suppress>
+    <!-- <suppress>
         <notes><![CDATA[
-        This is a false positive awhich is only used for testing given that it is a dependency of WireMock.
+        This is a false positive which is only used for testing, given that it is a dependency of WireMock.
         Dependabot should update it automatically when a fixed version is available.
         file name: xmlunit-core-2.10.3.jar
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
-    </suppress>
+    </suppress> -->
     <suppress>
         <notes><![CDATA[
         These dependencies have several vulnerabilities in which remote connections can be used to overload the system.
@@ -216,17 +216,5 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-client@.*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-http-client-transport@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-22201|CVE-2024-6762|CVE-2024-8184</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        These vulnerabilities are present within Wiremock, however are unlikely to affect our application given Wiremock
-        is only used for testing.
-        We are unable to upgrade past this version at present due to Trino requiring library, and are unbale to update
-        Trino version at present due to limitation on what Java build we can use.
-
-        file name: wiremock-3.0.1.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wiremock/wiremock@.*$</packageUrl>
-        <vulnerabilityName regex="true">CVE-2023-41327|CVE-2023-41329</vulnerabilityName>
     </suppress>
 </suppressions>
