@@ -54,9 +54,11 @@ public class LambdaJar {
     private final String filename;
     private final String imageName;
     private final boolean alwaysDockerDeploy;
+    private final String filenameFormat;
 
-    private LambdaJar(String filename, String imageName, boolean alwaysDockerDeploy) {
-        this.filename = Objects.requireNonNull(filename, "filename must not be null");
+    private LambdaJar(String filenameFormat, String version, String imageName, boolean alwaysDockerDeploy) {
+        this.filenameFormat = Objects.requireNonNull(filenameFormat, "filename must not be null");
+        this.filename = Objects.requireNonNull(String.format(filenameFormat, SleeperVersion.getVersion()), "filename must not be null");
         this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
         this.alwaysDockerDeploy = Objects.requireNonNull(alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
         ALL.add(this);
@@ -70,7 +72,7 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImage(String format, String imageName) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, false);
+        return new LambdaJar(format, SleeperVersion.getVersion(), imageName, false);
     }
 
     /**
@@ -83,7 +85,7 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImageDeployWithDocker(String format, String imageName) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, true);
+        return new LambdaJar(format, SleeperVersion.getVersion(), imageName, true);
     }
 
     public String getFilename() {
@@ -96,6 +98,10 @@ public class LambdaJar {
 
     public boolean isAlwaysDockerDeploy() {
         return alwaysDockerDeploy;
+    }
+
+    public String getFilenameFormat() {
+        return filenameFormat;
     }
 
     /**

@@ -70,7 +70,7 @@ public class GenerateJarsDocumentation {
     }
 
     private static TableWriter createLambdaJarTableWriter(List<LambdaJar> deployments) {
-        TableFieldDefinition fileName = TableFieldDefinition.field("File Name");
+        TableFieldDefinition fileName = TableFieldDefinition.field("Filename");
         TableFieldDefinition imageName = TableFieldDefinition.field("Image Name");
         TableFieldDefinition isAlwaysDockerDeploy = TableFieldDefinition.field("Always docker deploy");
 
@@ -81,7 +81,7 @@ public class GenerateJarsDocumentation {
 
         return factory.tableBuilder()
                 .itemsAndWriter(deployments, (deployment, row) -> {
-                    row.value(fileName, deployment.getFilename());
+                    row.value(fileName, String.format(deployment.getFilenameFormat(), "XXX"));
                     row.value(imageName, deployment.getImageName());
                     row.value(isAlwaysDockerDeploy, deployment.isAlwaysDockerDeploy());
                 }).build();
