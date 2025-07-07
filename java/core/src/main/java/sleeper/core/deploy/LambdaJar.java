@@ -15,6 +15,8 @@
  */
 package sleeper.core.deploy;
 
+import com.google.common.collect.ImmutableList;
+
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -29,7 +31,7 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
-    public static final List<LambdaJar> ALL = new ArrayList<>();
+    private static final List<LambdaJar> ALL = new ArrayList<>();
     // The Athena plugin includes Hadoop, which makes the jar too big to deploy directly.
     // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
     public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
@@ -61,7 +63,6 @@ public class LambdaJar {
         this.filename = Objects.requireNonNull(String.format(filenameFormat, SleeperVersion.getVersion()), "filename must not be null");
         this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
         this.alwaysDockerDeploy = Objects.requireNonNull(alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
-        ALL.add(this);
     }
 
     /**
@@ -72,7 +73,9 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImage(String format, String imageName) {
-        return new LambdaJar(format, SleeperVersion.getVersion(), imageName, false);
+        LambdaJar jar = new LambdaJar(format, SleeperVersion.getVersion(), imageName, false);
+        ALL.add(jar);
+        return jar;
     }
 
     /**
@@ -85,7 +88,9 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImageDeployWithDocker(String format, String imageName) {
-        return new LambdaJar(format, SleeperVersion.getVersion(), imageName, true);
+        LambdaJar jar = new LambdaJar(format, SleeperVersion.getVersion(), imageName, true);
+        ALL.add(jar);
+        return jar;
     }
 
     public String getFilename() {
@@ -134,5 +139,9 @@ public class LambdaJar {
     @Override
     public String toString() {
         return "LambdaJar{filename=" + filename + ", imageName=" + imageName + "}";
+    }
+
+    public static List<LambdaJar> getAll() {
+        return ImmutableList.copyOf(ALL);
     }
 }
