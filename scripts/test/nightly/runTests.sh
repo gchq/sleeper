@@ -19,6 +19,7 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
+REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -58,7 +59,7 @@ source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
-OUTPUT_DIR="/tmp/sleeper/${MAIN_SUITE_NAME}Tests/$START_TIME"
+OUTPUT_DIR="$REPO_PARENT_DIR/logs/$START_TIME-$MAIN_SUITE_NAME"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh

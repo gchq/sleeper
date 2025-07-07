@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.31.1-SNAPSHOT</version>
+    <version>0.32.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -100,7 +100,7 @@
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.31.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.3.1</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -120,7 +120,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.13.0</okio.version>
+        <okio.version>3.15.0</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
@@ -130,7 +130,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
         <aws-java-sdk.version>1.12.787</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.71</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.31.77</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
         <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
@@ -164,7 +164,7 @@
         <jline.version>3.30.4</jline.version>
         <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-3</zstd-jni.version>
+        <zstd-jni.version>1.5.7-4</zstd-jni.version>
         <airlift-units.version>1.10</airlift-units.version>
         <airlift-slice.version>0.41</airlift-slice.version>
         <guice.version>5.1.0</guice.version>
@@ -177,7 +177,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.39.0</google.errorprone.version>
-        <cdk.version>2.202.0</cdk.version>
+        <cdk.version>2.204.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.112.0</jsii.version>
@@ -187,7 +187,7 @@
         <aspectj.version>1.9.24</aspectj.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.81</bouncycastle.version>
-        <athena.version>2023.3.1</athena.version>
+        <athena.version>2025.15.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino requires an old version of JGraphT -->
         <trino.jgrapht.version>0.9.2</trino.jgrapht.version>
@@ -213,10 +213,10 @@
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.13.2</junit.version>
-        <junit.platform.version>1.13.2</junit.platform.version>
+        <junit.version>5.13.3</junit.version>
+        <junit.platform.version>1.13.3</junit.platform.version>
         <mockito.version>5.18.0</mockito.version>
-        <testcontainers.version>1.21.2</testcontainers.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
         <hamcrest.version>1.3</hamcrest.version>
@@ -224,7 +224,7 @@
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.3</xmlunit.version>
         <jsonunit.version>4.1.1</jsonunit.version>
-        <checkstyle.version>10.26.0</checkstyle.version>
+        <checkstyle.version>10.26.1</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -246,7 +246,7 @@
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.4.2</jar.plugin.version>
         <compiler.plugin.version>3.14.0</compiler.plugin.version>
-        <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
+        <enforcer.plugin.version>3.6.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.9.3</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
@@ -454,6 +454,101 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>apigatewaymanagementapi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>sdk-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>metrics-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>regions</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-json-protocol</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>endpoints-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>json-utils</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>utils</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>identity-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-client-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-aws</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>retries-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>protocol-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>profiles</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+           <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <!-- Data processing -->
