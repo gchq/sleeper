@@ -15,7 +15,6 @@
  */
 package sleeper.localstack.test;
 
-import com.amazonaws.services.s3.AmazonS3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -48,7 +47,6 @@ import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
 public abstract class LocalStackTestBase {
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
-    protected final AmazonS3 s3ClientV1 = SleeperLocalStackClients.S3_CLIENT_V1;
     protected final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
     protected final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
     protected final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
