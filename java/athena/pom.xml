@@ -52,6 +52,11 @@
             <artifactId>aws-athena-federation-sdk</artifactId>
             <version>${athena.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>1.12.787</version>
+        </dependency>
         <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
