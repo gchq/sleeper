@@ -26,7 +26,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.AggregatingWorkaroundObjectFactory;
+import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -128,18 +128,12 @@ public class LeafPartitionQueryExecutor {
             String iteratorConfig) throws IteratorCreationException {
         if (iteratorClassName == null) {
             return null;
+        } else {
+            try {
+                return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
+            } catch (ObjectFactoryException e) {
+                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
+            }
         }
-        SortedRecordIterator sortedRecordIterator;
-        try {
-            AggregatingWorkaroundObjectFactory iteratorSwap = new AggregatingWorkaroundObjectFactory(objectFactory);
-            sortedRecordIterator = iteratorSwap.getObject(iteratorClassName, SortedRecordIterator.class);
-        } catch (ObjectFactoryException e) {
-            throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
-        }
-        LOGGER.debug("Created iterator of class {}", iteratorClassName);
-        sortedRecordIterator.init(iteratorConfig, schema);
-        LOGGER.debug("Initialised iterator with config " + iteratorConfig);
-
-        return sortedRecordIterator;
     }
 }

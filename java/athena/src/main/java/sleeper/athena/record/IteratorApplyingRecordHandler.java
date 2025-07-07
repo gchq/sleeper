@@ -49,6 +49,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.recordretrieval.RecordRetrievalException;
@@ -259,9 +260,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
             return mergingIterator;
         }
         String iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        SortedRecordIterator sortedRecordIterator = objectFactory.getObject(iteratorClass, SortedRecordIterator.class);
-        sortedRecordIterator.init(iteratorConfig, schema);
-        LOGGER.debug("Initialised iterator with config " + iteratorConfig);
+        SortedRecordIterator sortedRecordIterator = new IteratorFactory(objectFactory).getIterator(iteratorClass, iteratorConfig, schema);
         return sortedRecordIterator.apply(mergingIterator);
 
     }
