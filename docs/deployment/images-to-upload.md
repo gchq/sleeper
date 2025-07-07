@@ -1,6 +1,5 @@
-## Deployment Jars
-
-These are the docker deployment Jars
+## Docker Deployment Images
+These are the docker deployment Images
 
 | Property Name              | Optional Stack     | Multiplatform |
 |----------------------------|--------------------|---------------|
@@ -8,9 +7,9 @@ These are the docker deployment Jars
 | bulk-import-runner         | EksBulkImportStack | false         |
 | compaction-job-execution   | CompactionStack    | true          |
 | bulk-export-task-execution | BulkExportStack    | false         |
-## Lambda Jars
 
-These are the Lambda deploy jars
+## Lambda Deployment Images
+These are the Lambda deployment Images
 
 | Filename                             | Image Name                        | Always docker deploy |
 |--------------------------------------|-----------------------------------|----------------------|
@@ -29,3 +28,4 @@ These are the Lambda deploy jars
 | cdk-custom-resources-XXX.jar         | custom-resources-lambda           | false                |
 | metrics-XXX.jar                      | metrics-lambda                    | false                |
 | statestore-lambda-XXX.jar            | statestore-lambda                 | false                |
+

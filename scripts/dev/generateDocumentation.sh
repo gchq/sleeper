@@ -26,8 +26,8 @@ echo "Regenerating templates..."
 mvn exec:java -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
-echo "Regenerating deployment jars..."
+echo "Regenerating deployment images..."
 mvn exec:java -e -q -pl clients \
-  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateJarsDocumentation" \
+  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation" \
   -Dexec.args="$PROJECT_ROOT"
 popd

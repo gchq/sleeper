@@ -34,20 +34,20 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class GenerateJarsDocumentation {
+public class GenerateDockerImageDocumentation {
 
-    private GenerateJarsDocumentation() {
+    private GenerateDockerImageDocumentation() {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Path.of(args[0]).resolve("docs/deployment/jars-to-upload.md");
+        Path path = Path.of(args[0]).resolve("docs/deployment/images-to-upload.md");
         if (Files.exists(path)) {
             Files.delete(path);
         }
         Files.createFile(path);
-        writeFile(path, output -> writePropertiesMarkdownFile(output, "Deployment Jars", "These are the docker deployment Jars",
+        writeFile(path, output -> writePropertiesMarkdownFile(output, "Docker Deployment Images", "These are the docker deployment Images",
                 createDockerDeploymentTableWriter(DockerDeployment.all())));
-        writeFile(path, output -> writePropertiesMarkdownFile(output, "Lambda Jars", "These are the Lambda deploy jars",
+        writeFile(path, output -> writePropertiesMarkdownFile(output, "Lambda Deployment Images", "These are the Lambda deployment Images",
                 createLambdaJarTableWriter(LambdaJar.ALL)));
     }
 
@@ -91,10 +91,10 @@ public class GenerateJarsDocumentation {
             OutputStream output, String sectionName, String sectionDescription, TableWriter tableWriter) {
         PrintStream out = printStream(output);
         out.println("## " + sectionName);
-        out.println();
         out.println(sectionDescription);
         out.println();
         tableWriter.write(out);
+        out.println();
     }
 
     private static void writeFile(Path file, Consumer<OutputStream> generator) {
