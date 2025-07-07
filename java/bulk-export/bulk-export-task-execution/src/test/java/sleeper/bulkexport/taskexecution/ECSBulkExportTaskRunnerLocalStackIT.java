@@ -102,15 +102,23 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
-        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-id", "se-id", file);
-        send(query);
+        BulkExportLeafPartitionQuery firstQuery = null;
+        for (int i = 0; i < 2; i++) {
+            BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles(String.format("e-id-%d", i), String.format("se-id-%d", i), file);
+            send(query);
+            if (i == 0) {
+                // This needed for the assertion
+                firstQuery = query;
+            }
+        }
 
         // When
         runTask();
 
         // Then
-        assertThat(readOutputFile(query)).containsExactly(record1, record2);
-        assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(readOutputFile(firstQuery)).containsExactly(record1, record2);
+        assertThat(getMessagesFromDlq().size()).isEqualTo(0);
+        assertThat(getMessagesFromQueue().size()).isEqualTo(1);
     }
 
     @Test
@@ -125,6 +133,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
 
         // Then
+        assertThat(getMessagesFromDlq().size()).isEqualTo(0);
         List<String> messages = getMessagesFromQueue();
         assertThat(messages)
                 .size().isEqualTo(1);
@@ -155,6 +164,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
         BulkExportLeafPartitionQuery receivedQuery = serDe.fromJson(messages.get(0));
         assertThat(receivedQuery).isEqualTo(query);
+        assertThat(getMessagesFromQueue().size()).isEqualTo(0);
 
     }
 
@@ -177,6 +187,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(messages)
                 .size().isEqualTo(1);
         assertThat(messages.get(0)).contains(messageString);
+        assertThat(getMessagesFromQueue().size()).isEqualTo(0);
     }
 
     @Test
@@ -189,6 +200,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
 
         // Then
         assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(getMessagesFromDlq().size()).isEqualTo(0);
     }
 
     private BulkExportLeafPartitionQuery createQueryWithIdsAndFiles(
@@ -272,10 +284,6 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .build());
     }
 
-    private void getJob() {
-
-    }
-
     private List<String> getMessagesFromDlq() {
         return getMessagesFromSuppliedQueue(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL));
     }
@@ -285,14 +293,20 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<String> getMessagesFromSuppliedQueue(String url) {
-        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(url)
-                .waitTimeSeconds(2)
-                .build())
-                .messages()
-                .stream()
-                .map(Message::body)
-                .toList();
+        List<String> messageBodies = new ArrayList<>();
+        while (true) {
+            ReceiveMessageRequest request = ReceiveMessageRequest.builder()
+                    .queueUrl(url)
+                    .waitTimeSeconds(2)
+                    .maxNumberOfMessages(10)
+                    .build();
+            List<Message> messages = sqsClient.receiveMessage(request).messages();
+            if (messages.isEmpty()) {
+                break;
+            }
+            messageBodies.addAll(messages.stream().map(Message::body).toList());
+        }
+        return messageBodies;
     }
 
     private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
