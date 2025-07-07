@@ -127,9 +127,11 @@ pub async fn compact(
         .collect::<Vec<_>>();
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
-    frame = frame.sort(sort_order)?;
+    frame = frame.sort(sort_order.clone())?;
     frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
     frame = frame.select(col_names_expr)?;
+    // Sort again, to ensure correct coalescing of batches after parallel projection
+    frame = frame.sort(sort_order)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
