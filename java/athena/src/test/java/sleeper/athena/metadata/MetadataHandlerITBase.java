@@ -15,8 +15,6 @@
  */
 package sleeper.athena.metadata;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.athena.TestUtils;
@@ -31,9 +29,6 @@ import sleeper.localstack.test.LocalStackTestBase;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.amazonaws.SDKGlobalConfiguration.ACCESS_KEY_SYSTEM_PROPERTY;
-import static com.amazonaws.SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY;
-import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_SYSTEM_PROPERTY;
 import static java.nio.file.Files.createTempDirectory;
 
 public abstract class MetadataHandlerITBase extends LocalStackTestBase {
@@ -49,22 +44,6 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
                     new Field("day", new IntType()))
             .valueFields(new Field("count", new LongType()))
             .build();
-
-    @BeforeEach
-    public void setUpCredentials() {
-        // Annoyingly the MetadataHandler hard-codes the S3 client it uses to check the spill bucket. Therefore
-        // I need to set up some credentials in System properties so the default client will pick them up.
-        System.setProperty(ACCESS_KEY_SYSTEM_PROPERTY, localStackContainer.getAccessKey());
-        System.setProperty(SECRET_KEY_SYSTEM_PROPERTY, localStackContainer.getSecretKey());
-        System.setProperty(AWS_REGION_SYSTEM_PROPERTY, localStackContainer.getRegion());
-    }
-
-    @AfterEach
-    public void clearUpCredentials() {
-        System.clearProperty(ACCESS_KEY_SYSTEM_PROPERTY);
-        System.clearProperty(SECRET_KEY_SYSTEM_PROPERTY);
-        System.clearProperty(AWS_REGION_SYSTEM_PROPERTY);
-    }
 
     protected InstanceProperties createInstance() throws IOException {
         return TestUtils.createInstance(s3Client, dynamoClient,
