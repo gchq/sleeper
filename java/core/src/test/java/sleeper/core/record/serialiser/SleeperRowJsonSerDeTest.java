@@ -33,7 +33,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordJSONSerDeTest {
+public class SleeperRowJsonSerDeTest {
 
     @Test
     public void shouldSerDeRecordWithPrimitives() {
