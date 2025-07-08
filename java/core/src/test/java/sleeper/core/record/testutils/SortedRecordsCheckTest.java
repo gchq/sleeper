@@ -18,6 +18,7 @@ package sleeper.core.record.testutils;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
@@ -72,6 +73,38 @@ public class SortedRecordsCheckTest {
                 SortedRecordsCheck.outOfOrderAt(3,
                         new Record(Map.of("key", 30L)),
                         new Record(Map.of("key", 20L))));
+    }
+
+    @Test
+    void shouldFindRecordsAreSortedWithSameValue() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new LongType());
+        List<Record> records = List.of(
+                new Record(Map.of("key", 20L)),
+                new Record(Map.of("key", 20L)),
+                new Record(Map.of("key", 20L)));
+
+        // When / Then
+        assertThat(check(schema, records)).isEqualTo(SortedRecordsCheck.sorted(3));
+    }
+
+    @Test
+    void shouldFindRecordsAreOutOfOrderBySortKey() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("row", new LongType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .build();
+        List<Record> records = List.of(
+                new Record(Map.of("row", 10L, "sort", 10L)),
+                new Record(Map.of("row", 10L, "sort", 30L)),
+                new Record(Map.of("row", 10L, "sort", 20L)));
+
+        // When / Then
+        assertThat(check(schema, records)).isEqualTo(
+                SortedRecordsCheck.outOfOrderAt(3,
+                        new Record(Map.of("row", 10L, "sort", 30L)),
+                        new Record(Map.of("row", 10L, "sort", 20L))));
     }
 
     @Test
