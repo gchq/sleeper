@@ -40,7 +40,7 @@ public class SleeperBlockUtilsTest {
     @Test
     void shouldWriteBigIntToBlock() {
         // Given
-        Long testValue = 998819991197253l;
+        Long testValue = 998819991197253L;
 
         // When
         SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, new ArrayType(BIGINT), testValue);
