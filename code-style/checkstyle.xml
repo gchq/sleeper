@@ -261,8 +261,7 @@
                       value="^org\.junit\.jupiter\.api\.Assertions,
                              ^org\.junit\.(?!jupiter|platform).+,
                              ^org\.apache\.hadoop\.thirdparty.+,
-                             ^com\.amazonaws\.(?!services\.lambda\.runtime).+,
-                             ^com\.amazonaws\.(?!athena\.connector\.lambda).+"/>
+                             ^com\.amazonaws\.(?!services\.lambda\.runtime|athena\.connector\.lambda).+"/>
         </module>
         <module name="Indentation">
             <property name="id" value="indentation"/>
