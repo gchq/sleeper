@@ -203,18 +203,4 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
-    <!-- <suppress>
-        <notes><![CDATA[
-        These dependencies have several vulnerabilities in which remote connections can be used to overload the system.
-        They are present within the Trino library vunerability isn't reported in the dependent modules that we use.
-        The issues are patched out in later versions of the modules, but we are unable to update further due requirements
-        of the Java build version. AWS EMR requires java 17 as such, we are unable to move past the version of Trino
-        used at the moment at it the last variant before they moved to use Java 21.
-
-        file name: http2-client-11.0.17.jar
-        file name: http2-http-client-transport-11.0.19.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-client@.*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-http-client-transport@.*$</packageUrl>
-        <vulnerabilityName regex="true">CVE-2024-22201|CVE-2024-6762|CVE-2024-8184</vulnerabilityName>
-    </suppress> -->
 </suppressions>
