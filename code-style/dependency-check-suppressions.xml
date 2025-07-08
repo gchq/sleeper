@@ -203,7 +203,7 @@
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
     </suppress>
-    <suppress>
+    <!-- <suppress>
         <notes><![CDATA[
         These dependencies have several vulnerabilities in which remote connections can be used to overload the system.
         They are present within the Trino library vunerability isn't reported in the dependent modules that we use.
@@ -216,5 +216,5 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-client@.*$|^pkg:maven/org\.eclipse\.jetty\.http2/http2-http-client-transport@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-22201|CVE-2024-6762|CVE-2024-8184</vulnerabilityName>
-    </suppress>
+    </suppress> -->
 </suppressions>
