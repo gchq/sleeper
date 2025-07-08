@@ -47,11 +47,11 @@ import java.util.Map;
 /**
  * Serialises and deserialises a record to and from a JSON string.
  */
-public class RecordJSONSerDe {
+public class SleeperRowJsonSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
-    public RecordJSONSerDe(Schema schema) {
+    public SleeperRowJsonSerDe(Schema schema) {
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(SleeperRow.class, new RecordGsonSerialiser(schema))
                 .serializeNulls()

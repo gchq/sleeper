@@ -40,10 +40,10 @@ import java.util.Map;
 /**
  * Serialises and deserialises a record to and from a byte array.
  */
-public class RecordSerialiser {
+public class SleeperRowSerialiser {
     private final Schema schema;
 
-    public RecordSerialiser(Schema schema) {
+    public SleeperRowSerialiser(Schema schema) {
         this.schema = schema;
     }
 

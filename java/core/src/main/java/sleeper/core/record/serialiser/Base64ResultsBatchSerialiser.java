@@ -17,8 +17,8 @@ package sleeper.core.record.serialiser;
 
 import org.apache.commons.codec.binary.Base64;
 
-import sleeper.core.record.SleeperRow;
 import sleeper.core.record.ResultsBatch;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.io.ByteArrayInputStream;
@@ -34,12 +34,12 @@ import java.util.List;
  * Serialises and deserialises a list of records to and from a Base64 encoded string.
  */
 public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
-    private final RecordSerialiser recordSerialiser;
+    private final SleeperRowSerialiser sleeperRowSerialiser;
     private final Schema schema;
 
     public Base64ResultsBatchSerialiser(Schema schema) {
         this.schema = schema;
-        this.recordSerialiser = new RecordSerialiser(schema);
+        this.sleeperRowSerialiser = new SleeperRowSerialiser(schema);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
             int numRecords = resultsBatch.getRecords().size();
             dos.writeInt(numRecords);
             for (SleeperRow record : resultsBatch.getRecords()) {
-                byte[] serialisedValue = recordSerialiser.serialise(record);
+                byte[] serialisedValue = sleeperRowSerialiser.serialise(record);
                 dos.writeInt(serialisedValue.length);
                 dos.write(serialisedValue);
             }
@@ -76,7 +76,7 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
                 int length = dis.readInt();
                 byte[] serialisedRecord = new byte[length];
                 dis.readFully(serialisedRecord);
-                records.add(recordSerialiser.deserialise(serialisedRecord));
+                records.add(sleeperRowSerialiser.deserialise(serialisedRecord));
             }
             dis.close();
             return new ResultsBatch(queryId, schema, records);

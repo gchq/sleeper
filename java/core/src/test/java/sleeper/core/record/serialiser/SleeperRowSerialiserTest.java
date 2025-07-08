@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordSerialiserTest {
+public class SleeperRowSerialiserTest {
 
     @Test
     public void shouldSerialiseAndDeserialiseCorrectly() throws IOException {
@@ -46,7 +46,7 @@ public class RecordSerialiserTest {
         record.put("column4", new byte[]{1, 2, 3});
         record.put("column5", new byte[]{4, 5, 6, 7});
         record.put("column6", new byte[]{8, 9, 10, 11, 12});
-        RecordSerialiser serialiser = new RecordSerialiser(schema);
+        SleeperRowSerialiser serialiser = new SleeperRowSerialiser(schema);
 
         // When
         SleeperRow deserialised = serialiser.deserialise(serialiser.serialise(record));

@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.query.QueryWebSocketClient;
 import sleeper.core.record.SleeperRow;
-import sleeper.core.record.serialiser.RecordJSONSerDe;
+import sleeper.core.record.serialiser.SleeperRowJsonSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -51,7 +51,7 @@ public class WebSocketQueryDriver implements QueryDriver {
     public List<SleeperRow> run(Query query) {
         LOGGER.info("Submitting query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
-        RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
+        SleeperRowJsonSerDe recordSerDe = new SleeperRowJsonSerDe(schema);
         try {
             return queryWebSocketClient.submitQuery(query).join().stream()
                     .map(recordSerDe::fromJson)

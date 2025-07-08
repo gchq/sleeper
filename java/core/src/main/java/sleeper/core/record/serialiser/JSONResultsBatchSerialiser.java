@@ -26,8 +26,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.record.SleeperRow;
 import sleeper.core.record.ResultsBatch;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.Type;
@@ -88,7 +88,7 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             JsonObject jsonObject = json.getAsJsonObject();
             String queryId = jsonObject.get("queryId").getAsString();
             Schema schema = context.deserialize(jsonObject.get("schema"), Schema.class);
-            RecordJSONSerDe.RecordGsonSerialiser recordDeserialiser = new RecordJSONSerDe.RecordGsonSerialiser(schema);
+            SleeperRowJsonSerDe.RecordGsonSerialiser recordDeserialiser = new SleeperRowJsonSerDe.RecordGsonSerialiser(schema);
             List<SleeperRow> records = new ArrayList<>();
             jsonObject.getAsJsonArray("records").iterator()
                     .forEachRemaining(j -> records.add(recordDeserialiser.deserialize(j, SleeperRow.class, context)));
@@ -101,9 +101,9 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             jsonObject.addProperty("queryId", src.getQueryId());
             jsonObject.add("schema", context.serialize(src.getSchema(), Schema.class));
             JsonArray serialisedRecords = new JsonArray();
-            RecordJSONSerDe.RecordGsonSerialiser recordSerialiser = new RecordJSONSerDe.RecordGsonSerialiser(src.getSchema());
+            SleeperRowJsonSerDe.RecordGsonSerialiser sleeperRowSerialiser = new SleeperRowJsonSerDe.RecordGsonSerialiser(src.getSchema());
             src.getRecords().stream()
-                    .map(rec -> recordSerialiser.serialize(rec, SleeperRow.class, context))
+                    .map(rec -> sleeperRowSerialiser.serialize(rec, SleeperRow.class, context))
                     .forEach(serialisedRecords::add);
             jsonObject.add("records", serialisedRecords);
             return jsonObject;
