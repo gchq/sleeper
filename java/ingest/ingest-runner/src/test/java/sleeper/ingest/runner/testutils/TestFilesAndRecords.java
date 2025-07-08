@@ -18,7 +18,7 @@ package sleeper.ingest.runner.testutils;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -35,9 +35,9 @@ import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPart
 public class TestFilesAndRecords {
 
     private final List<FileReference> files;
-    private final Map<String, List<Record>> recordsByFilename;
+    private final Map<String, List<SleeperRow>> recordsByFilename;
 
-    private TestFilesAndRecords(List<FileReference> files, Map<String, List<Record>> recordsByFilename) {
+    private TestFilesAndRecords(List<FileReference> files, Map<String, List<SleeperRow>> recordsByFilename) {
         this.files = files;
         this.recordsByFilename = recordsByFilename;
     }
@@ -45,7 +45,7 @@ public class TestFilesAndRecords {
     public static TestFilesAndRecords loadActiveFiles(
             StateStore stateStore, Schema schema, Configuration configuration) {
         List<FileReference> fileReferences = stateStore.getFileReferences();
-        Map<String, List<Record>> recordsByFilename = fileReferences.stream()
+        Map<String, List<SleeperRow>> recordsByFilename = fileReferences.stream()
                 .map(file -> Map.entry(file.getFilename(), readRecordsFromPartitionDataFile(schema, file, configuration)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return new TestFilesAndRecords(fileReferences, recordsByFilename);
@@ -55,15 +55,15 @@ public class TestFilesAndRecords {
         return files;
     }
 
-    public Stream<Record> streamAllRecords() {
+    public Stream<SleeperRow> streamAllRecords() {
         return recordsByFilename.values().stream().flatMap(List::stream);
     }
 
-    public Set<Record> getSetOfAllRecords() {
+    public Set<SleeperRow> getSetOfAllRecords() {
         return streamAllRecords().collect(Collectors.toSet());
     }
 
-    public List<Record> getRecordsInFile(FileReference file) {
+    public List<SleeperRow> getRecordsInFile(FileReference file) {
         return recordsByFilename.get(file.getFilename());
     }
 
@@ -75,7 +75,7 @@ public class TestFilesAndRecords {
         List<FileReference> partitionFiles = files.stream()
                 .filter(file -> Objects.equals(partitionId, file.getPartitionId()))
                 .collect(Collectors.toUnmodifiableList());
-        Map<String, List<Record>> partitionRecords = partitionFiles.stream()
+        Map<String, List<SleeperRow>> partitionRecords = partitionFiles.stream()
                 .map(file -> Map.entry(file.getFilename(), recordsByFilename.get(file.getFilename())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return new TestFilesAndRecords(partitionFiles, partitionRecords);

@@ -20,7 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.parquet.record.ParquetReaderIterator;
 
 import java.io.IOException;
@@ -30,16 +30,16 @@ import java.util.concurrent.Callable;
  * Creates an iterator and pulls back the first element from that iterator. This is a relatively expensive process and
  * so should be done in parallel.
  */
-public class RetrieveTask implements Callable<Pair<Record, CloseableIterator<Record>>> {
-    private final ParquetReader<Record> reader;
+public class RetrieveTask implements Callable<Pair<SleeperRow, CloseableIterator<SleeperRow>>> {
+    private final ParquetReader<SleeperRow> reader;
 
-    public RetrieveTask(ParquetReader<Record> reader) {
+    public RetrieveTask(ParquetReader<SleeperRow> reader) {
         this.reader = reader;
     }
 
     @Override
-    public Pair<Record, CloseableIterator<Record>> call() {
-        CloseableIterator<Record> iterator;
+    public Pair<SleeperRow, CloseableIterator<SleeperRow>> call() {
+        CloseableIterator<SleeperRow> iterator;
         try {
             iterator = new ParquetReaderIterator(reader);
         } catch (IOException e) {

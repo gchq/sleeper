@@ -29,7 +29,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -139,7 +139,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReference fileReference = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime)
                 .rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 200);
 
@@ -183,9 +183,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -226,9 +226,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
         FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -274,9 +274,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -322,9 +322,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 1);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -377,9 +377,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 306);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 294);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -427,9 +427,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 2);
-        List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -481,9 +481,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 "/data/partition_right/rightFile.parquet", 2);
         FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
                 "/data/partition_left/leftFile.parquet", 2);
-        List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -529,9 +529,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 "/data/partition_left/leftFile.parquet", 112);
         FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
                 "/data/partition_right/rightFile.parquet", 88);
-        List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Record> allRecords = Stream.of(leftRecords, rightRecords)
+        List<SleeperRow> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<SleeperRow> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<SleeperRow> allRecords = Stream.of(leftRecords, rightRecords)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -577,7 +577,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference expectedFile = fileReferenceFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
@@ -619,7 +619,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(duplicatedRecordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(duplicatedRecordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/leftFile.parquet", 400);
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -654,7 +654,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         assertThat(actualFiles).isEmpty();
         assertThat(actualRecords).isEmpty();
     }
@@ -667,12 +667,12 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
                 Arrays.asList(1L, 2L, 3L, 4L));
-        List<Record> expectedRecords = List.of(
-                new Record(Map.of(
+        List<SleeperRow> expectedRecords = List.of(
+                new SleeperRow(Map.of(
                         "key", new byte[]{1, 1},
                         "sort", 1L,
                         "value", 3L)),
-                new Record(Map.of(
+                new SleeperRow(Map.of(
                         "key", new byte[]{11, 12},
                         "sort", 2L,
                         "value", 7L)));
@@ -693,7 +693,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 2);
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -715,9 +715,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             TestIngestType ingestType) throws IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(
+        try (IngestCoordinator<SleeperRow> ingestCoordinator = ingestType.createIngestCoordinator(
                 ingestCoordinatorTestParameters)) {
-            for (Record record : recordListAndSchema.recordList) {
+            for (SleeperRow record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }

@@ -18,7 +18,7 @@ package sleeper.core.iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 
@@ -34,18 +34,18 @@ import java.util.PriorityQueue;
  * Note: for performance reasons this does not check that the given iterators are sorted. As this class is only used
  * internally it should never be called with non-sorted iterators.
  */
-public class MergingIterator implements CloseableIterator<Record> {
+public class MergingIterator implements CloseableIterator<SleeperRow> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MergingIterator.class);
 
-    private final List<CloseableIterator<Record>> inputIterators;
+    private final List<CloseableIterator<SleeperRow>> inputIterators;
     private final PriorityQueue<RecordIteratorPair> queue;
     private long recordsRead;
 
-    public MergingIterator(Schema schema, List<CloseableIterator<Record>> inputIterators) {
+    public MergingIterator(Schema schema, List<CloseableIterator<SleeperRow>> inputIterators) {
         this.inputIterators = inputIterators;
         this.recordsRead = 0L;
         this.queue = new PriorityQueue<>(new RecordIteratorPairComparator(schema));
-        for (CloseableIterator<Record> iterator : inputIterators) {
+        for (CloseableIterator<SleeperRow> iterator : inputIterators) {
             if (iterator.hasNext()) {
                 queue.add(new RecordIteratorPair(iterator.next(), iterator));
                 this.recordsRead++;
@@ -59,7 +59,7 @@ public class MergingIterator implements CloseableIterator<Record> {
     }
 
     @Override
-    public Record next() {
+    public SleeperRow next() {
         RecordIteratorPair pair = queue.poll();
         if (pair.iterator.hasNext()) {
             RecordIteratorPair newPair = new RecordIteratorPair(pair.iterator.next(), pair.iterator);
@@ -74,7 +74,7 @@ public class MergingIterator implements CloseableIterator<Record> {
 
     @Override
     public void close() throws IOException {
-        for (CloseableIterator<Record> iterator : inputIterators) {
+        for (CloseableIterator<SleeperRow> iterator : inputIterators) {
             iterator.close();
         }
     }
@@ -87,10 +87,10 @@ public class MergingIterator implements CloseableIterator<Record> {
      * Holds the next record available for an iterator, and the iterator to retrieve further records.
      */
     private static class RecordIteratorPair {
-        private final Record record;
-        private final CloseableIterator<Record> iterator;
+        private final SleeperRow record;
+        private final CloseableIterator<SleeperRow> iterator;
 
-        RecordIteratorPair(Record record, CloseableIterator<Record> iterator) {
+        RecordIteratorPair(SleeperRow record, CloseableIterator<SleeperRow> iterator) {
             this.record = record;
             this.iterator = iterator;
         }

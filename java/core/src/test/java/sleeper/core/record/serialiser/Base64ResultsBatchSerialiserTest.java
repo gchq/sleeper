@@ -17,7 +17,7 @@ package sleeper.core.record.serialiser;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -42,9 +42,9 @@ public class Base64ResultsBatchSerialiserTest {
                 .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
                 .valueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()))
                 .build();
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("column1", i);
             record.put("column2", i * 100L);
             record.put("column3", "abc" + i);

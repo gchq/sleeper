@@ -28,7 +28,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
@@ -135,13 +135,13 @@ class SleeperClientTest {
         // Given
         addTable("test-table");
         ingest("test-table", List.of(
-                new Record(Map.of("key", "A")),
-                new Record(Map.of("key", "B"))));
+                new SleeperRow(Map.of("key", "A")),
+                new SleeperRow(Map.of("key", "B"))));
         QueryExecutor queryExecutor = sleeperClient.getQueryExecutor("test-table");
 
         // When
-        List<Record> records = new ArrayList<>();
-        try (CloseableIterator<Record> iterator = queryExecutor.execute(Query.builder()
+        List<SleeperRow> records = new ArrayList<>();
+        try (CloseableIterator<SleeperRow> iterator = queryExecutor.execute(Query.builder()
                 .tableName("test-table").queryId(UUID.randomUUID().toString())
                 .regions(List.of(new Region(rangeFactory().createExactRange("key", "B"))))
                 .build())) {
@@ -150,7 +150,7 @@ class SleeperClientTest {
 
         // Then
         assertThat(records).containsExactly(
-                new Record(Map.of("key", "B")));
+                new SleeperRow(Map.of("key", "B")));
     }
 
     @Test
@@ -232,9 +232,9 @@ class SleeperClientTest {
         sleeperClient.addTable(tableProperties, List.of());
     }
 
-    private void ingest(String tableName, List<Record> records) {
-        try (IngestCoordinator<Record> coordinator = instance.ingestByTableName(tableName).createCoordinator()) {
-            for (Record record : records) {
+    private void ingest(String tableName, List<SleeperRow> records) {
+        try (IngestCoordinator<SleeperRow> coordinator = instance.ingestByTableName(tableName).createCoordinator()) {
+            for (SleeperRow record : records) {
                 coordinator.write(record);
             }
         } catch (IteratorCreationException | IOException e) {

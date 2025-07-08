@@ -32,7 +32,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -93,8 +93,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     public void shouldRunOneBulkExportSubQuery() throws Exception {
         // Given
-        Record record1 = new Record(Map.of("key", 5, "value1", "5", "value2", "some value"));
-        Record record2 = new Record(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        SleeperRow record1 = new SleeperRow(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        SleeperRow record2 = new SleeperRow(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
         BulkExportLeafPartitionQuery query = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableProperties.get(TABLE_ID))
@@ -133,11 +133,11 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
-    private FileReference addPartitionFile(String partitionId, String name, List<Record> records) {
+    private FileReference addPartitionFile(String partitionId, String name, List<SleeperRow> records) {
         FileReference reference = fileFactory().partitionFile(partitionId, name, records.size());
         Path path = new Path(reference.getFilename());
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
-            for (Record record : records) {
+        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
+            for (SleeperRow record : records) {
                 writer.write(record);
             }
         } catch (IOException e) {
@@ -147,11 +147,11 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         return reference;
     }
 
-    private List<Record> readOutputFile(BulkExportLeafPartitionQuery query) {
+    private List<SleeperRow> readOutputFile(BulkExportLeafPartitionQuery query) {
         Path path = new Path(query.getOutputFile(instanceProperties));
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 new ParquetRecordReader.Builder(path, schema).withConf(hadoopConf).build())) {
-            List<Record> records = new ArrayList<>();
+            List<SleeperRow> records = new ArrayList<>();
             reader.forEachRemaining(records::add);
             return records;
         } catch (IOException e) {

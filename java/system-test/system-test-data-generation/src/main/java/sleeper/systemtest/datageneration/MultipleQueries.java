@@ -30,7 +30,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
@@ -123,7 +123,7 @@ public class MultipleQueries {
                 JSONResultsBatchSerialiser serialiser = new JSONResultsBatchSerialiser();
                 ResultsBatch resultsBatch = serialiser.deserialise(serialisedResults);
                 String queryId = resultsBatch.getQueryId();
-                List<Record> records = resultsBatch.getRecords();
+                List<SleeperRow> records = resultsBatch.getRecords();
                 System.out.println(records.size() + " results for query " + queryId);
                 totalResults += records.size();
                 records.forEach(System.out::println);

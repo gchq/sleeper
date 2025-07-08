@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -45,7 +45,7 @@ public class SetupInstanceTest {
     @Test
     void shouldIngestOneRecord(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        SleeperRow record = new SleeperRow(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));

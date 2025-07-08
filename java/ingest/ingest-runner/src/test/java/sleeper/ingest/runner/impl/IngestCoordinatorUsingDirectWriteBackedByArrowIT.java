@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
@@ -167,9 +167,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
-        try (IngestCoordinator<Record> ingestCoordinator = parameters.toBuilder()
+        try (IngestCoordinator<SleeperRow> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrow().setInstanceProperties(config).buildCoordinator()) {
-            for (Record record : recordListAndSchema.recordList) {
+            for (SleeperRow record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }

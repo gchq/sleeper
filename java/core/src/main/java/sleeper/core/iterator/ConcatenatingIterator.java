@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -25,11 +25,11 @@ import java.util.function.Supplier;
 /**
  * Iterates through a list of iterator suppliers and for each one, reads it fully.
  */
-public class ConcatenatingIterator implements CloseableIterator<Record> {
-    private final Iterator<Supplier<CloseableIterator<Record>>> iteratorSuppliers;
-    private CloseableIterator<Record> currentIterator;
+public class ConcatenatingIterator implements CloseableIterator<SleeperRow> {
+    private final Iterator<Supplier<CloseableIterator<SleeperRow>>> iteratorSuppliers;
+    private CloseableIterator<SleeperRow> currentIterator;
 
-    public ConcatenatingIterator(List<Supplier<CloseableIterator<Record>>> suppliers) {
+    public ConcatenatingIterator(List<Supplier<CloseableIterator<SleeperRow>>> suppliers) {
         if (suppliers != null) {
             this.iteratorSuppliers = suppliers.iterator();
             updateCurrentIterator();
@@ -40,7 +40,7 @@ public class ConcatenatingIterator implements CloseableIterator<Record> {
 
     private void updateCurrentIterator() {
         if (iteratorSuppliers.hasNext()) {
-            Supplier<CloseableIterator<Record>> supplier = iteratorSuppliers.next();
+            Supplier<CloseableIterator<SleeperRow>> supplier = iteratorSuppliers.next();
             if (supplier != null) {
                 currentIterator = supplier.get();
                 return;
@@ -79,7 +79,7 @@ public class ConcatenatingIterator implements CloseableIterator<Record> {
     }
 
     @Override
-    public Record next() {
+    public SleeperRow next() {
         return currentIterator.next();
     }
 }

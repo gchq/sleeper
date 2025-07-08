@@ -30,7 +30,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -123,7 +123,7 @@ public class QueryClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
 
-        CloseableIterator<Record> records;
+        CloseableIterator<SleeperRow> records;
         Instant startTime = Instant.now();
         try {
             records = runQuery(query);
@@ -142,7 +142,7 @@ public class QueryClient extends QueryCommandLineClient {
         out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " records");
     }
 
-    private CloseableIterator<Record> runQuery(Query query) throws QueryException {
+    private CloseableIterator<SleeperRow> runQuery(Query query) throws QueryException {
         QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
         return queryExecutor.execute(query);
     }

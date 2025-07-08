@@ -16,7 +16,7 @@
 package sleeper.query.core.recordretrieval;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 
@@ -38,5 +38,5 @@ public interface LeafPartitionRecordRetriever {
      *                                  be applied by the caller.
      * @throws RecordRetrievalException if the first record of any file could not be read
      */
-    CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
+    CloseableIterator<SleeperRow> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
 }

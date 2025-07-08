@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -36,25 +36,25 @@ public class AdditionIteratorTest {
     @Test
     public void shouldAddValues() {
         // Given
-        List<Record> records = getData1();
-        Iterator<Record> iterator = records.iterator();
+        List<SleeperRow> records = getData1();
+        Iterator<SleeperRow> iterator = records.iterator();
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", getSchema1());
 
         // When
-        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<SleeperRow> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        Record expectedRecord1 = new Record();
+        SleeperRow expectedRecord1 = new SleeperRow();
         expectedRecord1.put("id", "1");
         expectedRecord1.put("count", 6L);
-        Record expectedRecord2 = new Record();
+        SleeperRow expectedRecord2 = new SleeperRow();
         expectedRecord2.put("id", "2");
         expectedRecord2.put("count", 10L);
-        Record expectedRecord3 = new Record();
+        SleeperRow expectedRecord3 = new SleeperRow();
         expectedRecord3.put("id", "3");
         expectedRecord3.put("count", 1100L);
-        Record expectedRecord4 = new Record();
+        SleeperRow expectedRecord4 = new SleeperRow();
         expectedRecord4.put("id", "4");
         expectedRecord4.put("count", 1000000L);
         assertThat(aggregated).toIterable().containsExactly(
@@ -64,25 +64,25 @@ public class AdditionIteratorTest {
     @Test
     public void shouldAddValuesWithByteArrayKey() {
         // Given
-        List<Record> records = getData2();
-        Iterator<Record> iterator = records.iterator();
+        List<SleeperRow> records = getData2();
+        Iterator<SleeperRow> iterator = records.iterator();
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<SleeperRow> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        Record expectedRecord1 = new Record();
+        SleeperRow expectedRecord1 = new SleeperRow();
         expectedRecord1.put("id", new byte[]{1});
         expectedRecord1.put("count", 6L);
-        Record expectedRecord2 = new Record();
+        SleeperRow expectedRecord2 = new SleeperRow();
         expectedRecord2.put("id", new byte[]{2, 2});
         expectedRecord2.put("count", 10L);
-        Record expectedRecord3 = new Record();
+        SleeperRow expectedRecord3 = new SleeperRow();
         expectedRecord3.put("id", new byte[]{3, 1, 1});
         expectedRecord3.put("count", 1100L);
-        Record expectedRecord4 = new Record();
+        SleeperRow expectedRecord4 = new SleeperRow();
         expectedRecord4.put("id", new byte[]{4});
         expectedRecord4.put("count", 1000000L);
         assertThat(aggregated).toIterable().containsExactly(
@@ -92,12 +92,12 @@ public class AdditionIteratorTest {
     @Test
     public void shouldOutputNoRecordsIfNoRecordsInInput() {
         // Given
-        Iterator<Record> iterator = List.<Record>of().iterator();
+        Iterator<SleeperRow> iterator = List.<SleeperRow>of().iterator();
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<SleeperRow> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(aggregated).toIterable().isEmpty();
@@ -110,33 +110,33 @@ public class AdditionIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData1() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
+    private static List<SleeperRow> getData1() {
+        List<SleeperRow> records = new ArrayList<>();
+        SleeperRow record1 = new SleeperRow();
         record1.put("id", "1");
         record1.put("count", 1L);
         records.add(record1);
-        Record record2 = new Record();
+        SleeperRow record2 = new SleeperRow();
         record2.put("id", "1");
         record2.put("count", 2L);
         records.add(record2);
-        Record record3 = new Record();
+        SleeperRow record3 = new SleeperRow();
         record3.put("id", "1");
         record3.put("count", 3L);
         records.add(record3);
-        Record record4 = new Record();
+        SleeperRow record4 = new SleeperRow();
         record4.put("id", "2");
         record4.put("count", 10L);
         records.add(record4);
-        Record record5 = new Record();
+        SleeperRow record5 = new SleeperRow();
         record5.put("id", "3");
         record5.put("count", 100L);
         records.add(record5);
-        Record record6 = new Record();
+        SleeperRow record6 = new SleeperRow();
         record6.put("id", "3");
         record6.put("count", 1000L);
         records.add(record6);
-        Record record7 = new Record();
+        SleeperRow record7 = new SleeperRow();
         record7.put("id", "4");
         record7.put("count", 1000000L);
         records.add(record7);
@@ -150,33 +150,33 @@ public class AdditionIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData2() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
+    private static List<SleeperRow> getData2() {
+        List<SleeperRow> records = new ArrayList<>();
+        SleeperRow record1 = new SleeperRow();
         record1.put("id", new byte[]{1});
         record1.put("count", 1L);
         records.add(record1);
-        Record record2 = new Record();
+        SleeperRow record2 = new SleeperRow();
         record2.put("id", new byte[]{1});
         record2.put("count", 2L);
         records.add(record2);
-        Record record3 = new Record();
+        SleeperRow record3 = new SleeperRow();
         record3.put("id", new byte[]{1});
         record3.put("count", 3L);
         records.add(record3);
-        Record record4 = new Record();
+        SleeperRow record4 = new SleeperRow();
         record4.put("id", new byte[]{2, 2});
         record4.put("count", 10L);
         records.add(record4);
-        Record record5 = new Record();
+        SleeperRow record5 = new SleeperRow();
         record5.put("id", new byte[]{3, 1, 1});
         record5.put("count", 100L);
         records.add(record5);
-        Record record6 = new Record();
+        SleeperRow record6 = new SleeperRow();
         record6.put("id", new byte[]{3, 1, 1});
         record6.put("count", 1000L);
         records.add(record6);
-        Record record7 = new Record();
+        SleeperRow record7 = new SleeperRow();
         record7.put("id", new byte[]{4});
         record7.put("count", 1000000L);
         records.add(record7);

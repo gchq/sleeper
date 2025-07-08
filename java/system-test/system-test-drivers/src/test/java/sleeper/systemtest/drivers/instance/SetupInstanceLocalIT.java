@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 
@@ -49,7 +49,7 @@ public class SetupInstanceLocalIT {
     @Test
     void shouldIngestOneRecord(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        SleeperRow record = new SleeperRow(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));

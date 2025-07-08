@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.key.Key;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -53,21 +53,21 @@ public class AdditionIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> input) {
         return new AdditionIteratorInternal(input, rowKeyFieldNames, sortKeyFieldNames, valueFieldNames);
     }
 
     /**
      * Sums values for identical row and sort keys in the input iterator.
      */
-    public static class AdditionIteratorInternal implements CloseableIterator<Record> {
-        private final CloseableIterator<Record> input;
+    public static class AdditionIteratorInternal implements CloseableIterator<SleeperRow> {
+        private final CloseableIterator<SleeperRow> input;
         private final List<String> rowKeyFieldNames;
         private final List<String> sortKeyFieldNames;
         private final List<String> valueFieldNames;
-        private Record current;
+        private SleeperRow current;
 
-        public AdditionIteratorInternal(CloseableIterator<Record> input,
+        public AdditionIteratorInternal(CloseableIterator<SleeperRow> input,
                 List<String> rowKeyFieldNames,
                 List<String> sortKeyFieldNames,
                 List<String> valueFieldNames) {
@@ -84,9 +84,9 @@ public class AdditionIterator implements SortedRecordIterator {
         }
 
         @Override
-        public Record next() {
-            Record record = new Record(current);
-            Record next = getNextRecord();
+        public SleeperRow next() {
+            SleeperRow record = new SleeperRow(current);
+            SleeperRow next = getNextRecord();
             while (null != next && equalRowAndSort(current, next)) {
                 for (String fieldName : valueFieldNames) {
                     Long number1 = (Long) record.get(fieldName);
@@ -104,14 +104,14 @@ public class AdditionIterator implements SortedRecordIterator {
             input.close();
         }
 
-        private Record getNextRecord() {
+        private SleeperRow getNextRecord() {
             if (input.hasNext()) {
                 return input.next();
             }
             return null;
         }
 
-        private boolean equalRowAndSort(Record record1, Record record2) {
+        private boolean equalRowAndSort(SleeperRow record1, SleeperRow record2) {
             List<Object> keys1 = new ArrayList<>();
             List<Object> keys2 = new ArrayList<>();
             for (String rowKey : rowKeyFieldNames) {

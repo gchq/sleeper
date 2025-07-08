@@ -17,7 +17,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -54,8 +54,8 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
         for (SystemTestDataGenerationJob job : jobs) {
             TableProperties tableProperties = instance.getTablePropertiesByDeployedName(job.getTableName()).orElseThrow();
             for (int i = 0; i < job.getNumberOfIngests(); i++) {
-                try (IngestCoordinator<Record> coordinator = ingest(tableProperties).createCoordinator()) {
-                    for (Record record : generateRecords(job, tableProperties)) {
+                try (IngestCoordinator<SleeperRow> coordinator = ingest(tableProperties).createCoordinator()) {
+                    for (SleeperRow record : generateRecords(job, tableProperties)) {
                         coordinator.write(record);
                     }
                 } catch (IteratorCreationException e) {
@@ -74,7 +74,7 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
                 data, sketches);
     }
 
-    private Iterable<Record> generateRecords(SystemTestDataGenerationJob job, TableProperties tableProperties) {
+    private Iterable<SleeperRow> generateRecords(SystemTestDataGenerationJob job, TableProperties tableProperties) {
         List<Long> recordNumbers = LongStream.range(0, job.getRecordsPerIngest())
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());

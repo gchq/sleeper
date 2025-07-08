@@ -20,7 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.parquet.record.ParquetReaderIterator;
@@ -38,17 +38,17 @@ public class ResultVerifier {
     private ResultVerifier() {
     }
 
-    public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
+    public static List<SleeperRow> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
             List<FileReference> fileReferenceList,
             Configuration hadoopConfiguration) {
-        List<Record> recordsRead = new ArrayList<>();
+        List<SleeperRow> recordsRead = new ArrayList<>();
         Set<String> filenames = new HashSet<>();
         for (FileReference fileReference : fileReferenceList) {
             if (filenames.contains(fileReference.getFilename())) {
                 continue;
             }
             filenames.add(fileReference.getFilename());
-            try (CloseableIterator<Record> iterator = createParquetReaderIterator(
+            try (CloseableIterator<SleeperRow> iterator = createParquetReaderIterator(
                     sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
                 iterator.forEachRemaining(recordsRead::add);
             } catch (IOException e) {
@@ -58,13 +58,13 @@ public class ResultVerifier {
         return recordsRead;
     }
 
-    public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
+    public static List<SleeperRow> readRecordsFromPartitionDataFile(Schema sleeperSchema,
             FileReference fileReference,
             Configuration hadoopConfiguration) {
 
-        try (CloseableIterator<Record> iterator = createParquetReaderIterator(
+        try (CloseableIterator<SleeperRow> iterator = createParquetReaderIterator(
                 sleeperSchema, new Path(fileReference.getFilename()), hadoopConfiguration)) {
-            List<Record> recordsRead = new ArrayList<>();
+            List<SleeperRow> recordsRead = new ArrayList<>();
             iterator.forEachRemaining(recordsRead::add);
             return recordsRead;
         } catch (IOException e) {
@@ -76,7 +76,7 @@ public class ResultVerifier {
             Path filePath,
             Configuration hadoopConfiguration) {
         try {
-            ParquetReader<Record> recordParquetReader = new ParquetRecordReader.Builder(filePath, sleeperSchema)
+            ParquetReader<SleeperRow> recordParquetReader = new ParquetRecordReader.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
             return new ParquetReaderIterator(recordParquetReader);

@@ -24,7 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.range.Range;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
@@ -59,7 +59,8 @@ class IngesterIntoPartitions {
      *
      * @param sleeperSchema                the Sleeper schema
      * @param partitionFileWriterFactoryFn a function which takes a {@link Partition} and returns the
-     *                                     {@link PartitionFileWriter} which will write {@link Record} objects to that
+     *                                     {@link PartitionFileWriter} which will write {@link SleeperRow} objects to
+     *                                     that
      *                                     partition
      * @param ingestFileWritingStrategy    how files and references should be created during ingest
      */
@@ -107,7 +108,7 @@ class IngesterIntoPartitions {
      * method returns, all of the records will have been read from the iterator and the iterator may be discarded by the
      * caller.
      *
-     * @param  orderedRecordIterator the {@link Record} objects to write, passed in sort order
+     * @param  orderedRecordIterator the {@link SleeperRow} objects to write, passed in sort order
      * @param  partitionTree         the {@link PartitionTree} to used to determine which partition to place each record
      *                               in
      * @return                       a {@link CompletableFuture} which completes to return a list of
@@ -115,7 +116,7 @@ class IngesterIntoPartitions {
      * @throws IOException           if there was a failure writing the file
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
-            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+            CloseableIterator<SleeperRow> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_FILE_PER_LEAF) {
             return ingestOneFilePerLeafPartition(orderedRecordIterator, partitionTree);
         } else if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF) {
@@ -126,7 +127,7 @@ class IngesterIntoPartitions {
     }
 
     public CompletableFuture<List<FileReference>> ingestOneFilePerLeafPartition(
-            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+            CloseableIterator<SleeperRow> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
         Map<String, PartitionFileWriter> partitionIdToFileWriterMap = new HashMap<>();
@@ -149,7 +150,7 @@ class IngesterIntoPartitions {
         // longer sit inside that first dimension range.
         try {
             while (orderedRecordIterator.hasNext()) {
-                Record record = orderedRecordIterator.next();
+                SleeperRow record = orderedRecordIterator.next();
                 Key key = Key.create(record.getValues(rowKeyNames));
                 // Ensure that the current partition is the correct one for the new record
                 if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {
@@ -185,14 +186,14 @@ class IngesterIntoPartitions {
     }
 
     public CompletableFuture<List<FileReference>> ingestOneFileWithReferencesInLeafPartitions(
-            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+            CloseableIterator<SleeperRow> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         Map<String, Long> partitionIdToRecordCount = new HashMap<>();
         Partition currentPartition = null;
         PartitionFileWriter rootFileWriter = partitionFileWriterFactoryFn.apply(partitionTree.getRootPartition());
         try {
             while (orderedRecordIterator.hasNext()) {
-                Record record = orderedRecordIterator.next();
+                SleeperRow record = orderedRecordIterator.next();
                 rootFileWriter.append(record);
                 Key key = Key.create(record.getValues(rowKeyNames));
                 if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {

@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -48,18 +48,18 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Record> records) {
+    public void ingest(Path tempDir, Iterator<SleeperRow> records) {
         ingest(records, ingestCoordinatorBuilder(tempDir));
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles) {
+    public void ingest(Path tempDir, Iterator<SleeperRow> records, Consumer<List<FileReference>> addFiles) {
         ingest(records, ingestCoordinatorBuilder(tempDir)
                 .addFilesToStateStore(addFiles::accept));
     }
 
-    private void ingest(Iterator<Record> records, IngestCoordinator.Builder<Record> builder) {
-        try (IngestCoordinator<Record> coordinator = builder.build()) {
+    private void ingest(Iterator<SleeperRow> records, IngestCoordinator.Builder<SleeperRow> builder) {
+        try (IngestCoordinator<SleeperRow> coordinator = builder.build()) {
             while (records.hasNext()) {
                 coordinator.write(records.next());
             }
@@ -70,7 +70,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
         }
     }
 
-    private IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(Path tempDir) {
+    private IngestCoordinator.Builder<SleeperRow> ingestCoordinatorBuilder(Path tempDir) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         StateStore stateStore = instance.getStateStore(tableProperties);

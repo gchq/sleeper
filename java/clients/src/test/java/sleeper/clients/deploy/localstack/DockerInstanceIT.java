@@ -29,7 +29,7 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -139,9 +139,9 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .loadByName("system-test");
 
             // When
-            List<Record> records = List.of(
-                    new Record(Map.of("key", "test1")),
-                    new Record(Map.of("key", "test2")));
+            List<SleeperRow> records = List.of(
+                    new SleeperRow(Map.of("key", "test1")),
+                    new SleeperRow(Map.of("key", "test2")));
             ingestRecords(instanceProperties, tableProperties, records);
 
             // Then
@@ -150,7 +150,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         }
 
         private void ingestRecords(
-                InstanceProperties instanceProperties, TableProperties tableProperties, List<Record> records) throws Exception {
+                InstanceProperties instanceProperties, TableProperties tableProperties, List<SleeperRow> records) throws Exception {
             IngestFactory.builder()
                     .instanceProperties(instanceProperties)
                     .objectFactory(ObjectFactory.noUserJars())

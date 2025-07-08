@@ -31,7 +31,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
@@ -111,12 +111,12 @@ public class TestUtils {
         }
     }
 
-    private static List<Record> generateTimeSeriesData() {
+    private static List<SleeperRow> generateTimeSeriesData() {
         LocalDate startDate = LocalDate.of(2017, 1, 1);
         LocalDate endDate = LocalDate.of(2021, 1, 1);
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("year", date.getYear());
             record.put("month", date.getMonthValue());
             record.put("day", date.getDayOfMonth());

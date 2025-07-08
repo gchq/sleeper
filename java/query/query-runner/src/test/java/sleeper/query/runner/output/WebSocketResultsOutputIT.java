@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -75,12 +75,12 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
-        List<Record> records = new ArrayList<>();
-        records.add(new Record(Collections.singletonMap("id", "record1")));
-        records.add(new Record(Collections.singletonMap("id", "record2")));
-        records.add(new Record(Collections.singletonMap("id", "record3")));
-        records.add(new Record(Collections.singletonMap("id", "record4")));
-        records.add(new Record(Collections.singletonMap("id", "record5")));
+        List<SleeperRow> records = new ArrayList<>();
+        records.add(new SleeperRow(Collections.singletonMap("id", "record1")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record2")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record3")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record4")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record5")));
 
         // When
         ResultsOutputInfo result = out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(records.iterator()));
@@ -109,12 +109,12 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
-        List<Record> records = new ArrayList<>();
-        records.add(new Record(Collections.singletonMap("id", "record1")));
-        records.add(new Record(Collections.singletonMap("id", "record2")));
-        records.add(new Record(Collections.singletonMap("id", "record3")));
-        records.add(new Record(Collections.singletonMap("id", "record4")));
-        records.add(new Record(Collections.singletonMap("id", "record5")));
+        List<SleeperRow> records = new ArrayList<>();
+        records.add(new SleeperRow(Collections.singletonMap("id", "record1")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record2")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record3")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record4")));
+        records.add(new SleeperRow(Collections.singletonMap("id", "record5")));
 
         // When
         out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(records.iterator()));

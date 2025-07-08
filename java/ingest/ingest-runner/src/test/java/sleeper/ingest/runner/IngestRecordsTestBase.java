@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -72,18 +72,18 @@ public class IngestRecordsTestBase {
         this.schema = schema;
     }
 
-    protected IngestResult ingestRecords(StateStore stateStore, List<Record> records) throws Exception {
+    protected IngestResult ingestRecords(StateStore stateStore, List<SleeperRow> records) throws Exception {
         IngestFactory factory = createIngestFactory(stateStore);
 
         IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
         ingestRecords.init();
-        for (Record record : records) {
+        for (SleeperRow record : records) {
             ingestRecords.write(record);
         }
         return ingestRecords.close();
     }
 
-    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<SleeperRow> iterator) throws IteratorCreationException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
@@ -93,15 +93,15 @@ public class IngestRecordsTestBase {
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
 
-    protected static List<Record> readRecords(FileReference fileReference, Schema schema) throws Exception {
+    protected static List<SleeperRow> readRecords(FileReference fileReference, Schema schema) throws Exception {
         return readRecordsFromParquetFile(fileReference.getFilename(), schema);
     }
 
-    protected List<Record> readRecords(FileReference... fileReferences) {
+    protected List<SleeperRow> readRecords(FileReference... fileReferences) {
         return readRecords(Stream.of(fileReferences).map(FileReference::getFilename));
     }
 
-    protected List<Record> readRecords(Stream<String> filenames) {
+    protected List<SleeperRow> readRecords(Stream<String> filenames) {
         return filenames.map(filename -> {
             try {
                 return readRecordsFromParquetFile(filename, schema);

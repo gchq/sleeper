@@ -26,7 +26,7 @@ import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -91,12 +91,12 @@ public class CompactionRunnerTestBase {
         return new LocalFileSystemSketchesStore();
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
+    protected FileReference ingestRecordsGetFile(List<SleeperRow> records) throws Exception {
         return ingestRecordsGetFile(records, builder -> {
         });
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
+    protected FileReference ingestRecordsGetFile(List<SleeperRow> records, Consumer<IngestFactory.Builder> config) throws Exception {
         String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())

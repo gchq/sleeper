@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactoryException;
@@ -247,7 +247,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
 
         // Stream the results, as Record objects, and then convert them into a List<Object>
         try {
-            Stream<Record> resultRecordStream = this.sleeperRawAwsConnection.createResultRecordStream(
+            Stream<SleeperRow> resultRecordStream = this.sleeperRawAwsConnection.createResultRecordStream(
                     sleeperTransactionHandle.getTransactionStartInstant(),
                     leafPartitionQuery);
 

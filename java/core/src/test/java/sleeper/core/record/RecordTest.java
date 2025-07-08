@@ -24,7 +24,7 @@ public class RecordTest {
     @Test
     public void testAnFieldCanBeRemoved() {
         //Given
-        Record record = new Record();
+        SleeperRow record = new SleeperRow();
         record.put("key", "value");
 
         //when
@@ -37,7 +37,7 @@ public class RecordTest {
     @Test
     public void testAnNonExistentFieldCanBeRemoved() {
         //Given
-        Record record = new Record();
+        SleeperRow record = new SleeperRow();
 
         //when
         record.remove("key");
@@ -49,13 +49,13 @@ public class RecordTest {
     @Test
     public void testEqualsAndHashcode() {
         // Given
-        Record record1 = new Record();
+        SleeperRow record1 = new SleeperRow();
         record1.put("column1", 1);
         record1.put("column2", "A");
-        Record record2 = new Record();
+        SleeperRow record2 = new SleeperRow();
         record2.put("column1", 1);
         record2.put("column2", "A");
-        Record record3 = new Record();
+        SleeperRow record3 = new SleeperRow();
         record3.put("column1", 1);
         record3.put("column2", "B");
 
@@ -76,13 +76,13 @@ public class RecordTest {
     @Test
     public void testEqualsAndHashcodeWithAByteArrayValue() {
         // Given
-        Record record1 = new Record();
+        SleeperRow record1 = new SleeperRow();
         record1.put("column1", 1);
         record1.put("column2", new byte[]{1, 2});
-        Record record2 = new Record();
+        SleeperRow record2 = new SleeperRow();
         record2.put("column1", 1);
         record2.put("column2", new byte[]{1, 2});
-        Record record3 = new Record();
+        SleeperRow record3 = new SleeperRow();
         record3.put("column1", 1);
         record3.put("column2", new byte[]{1, 3});
 

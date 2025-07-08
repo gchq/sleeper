@@ -15,14 +15,14 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.io.IOException;
 
 /**
  * A test fake for an empty iterator that applies some action when it is closed.
  */
-public class EmptyIteratorWithFakeOnClose implements CloseableIterator<Record> {
+public class EmptyIteratorWithFakeOnClose implements CloseableIterator<SleeperRow> {
 
     private final OnClose onClose;
 
@@ -50,7 +50,7 @@ public class EmptyIteratorWithFakeOnClose implements CloseableIterator<Record> {
     }
 
     @Override
-    public Record next() {
+    public SleeperRow next() {
         return null;
     }
 

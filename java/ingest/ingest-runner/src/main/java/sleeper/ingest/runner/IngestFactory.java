@@ -22,7 +22,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
@@ -74,14 +74,15 @@ public class IngestFactory {
         return new Builder();
     }
 
-    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
+    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties,
+            CloseableIterator<SleeperRow> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
         try (recordIterator) {
             return ingestFromRecordIterator(tableProperties, recordIterator);
         }
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<SleeperRow> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
+        try (IngestCoordinator<SleeperRow> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
         }
     }
@@ -90,7 +91,7 @@ public class IngestFactory {
         return new IngestRecords(createIngestCoordinator(tableProperties));
     }
 
-    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(TableProperties tableProperties) {
+    public IngestCoordinator.Builder<SleeperRow> ingestCoordinatorBuilder(TableProperties tableProperties) {
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
@@ -99,11 +100,11 @@ public class IngestFactory {
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration));
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+    public IngestCoordinator<SleeperRow> createIngestCoordinator(TableProperties tableProperties) {
         return ingestCoordinatorBuilder(tableProperties).build();
     }
 
-    private RecordBatchFactory<Record> standardRecordBatchFactory(
+    private RecordBatchFactory<SleeperRow> standardRecordBatchFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         if ("arraylist".equals(recordBatchType)) {

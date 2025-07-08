@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.FilteringIterator;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.util.List;
@@ -32,7 +32,7 @@ public class FixedAgeOffIterator implements SortedRecordIterator {
     private long minValue;
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> input) {
         return new FilteringIterator<>(input, record -> {
             Long value = (Long) record.get(fieldName);
             return null != value && value >= minValue;

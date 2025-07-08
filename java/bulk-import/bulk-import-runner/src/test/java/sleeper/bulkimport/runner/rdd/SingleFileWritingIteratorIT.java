@@ -32,7 +32,7 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -219,12 +219,12 @@ class SingleFileWritingIteratorIT {
                 .build();
     }
 
-    private Record createRecord(Object... values) {
+    private SleeperRow createRecord(Object... values) {
         return createRecord(RowFactory.create(values), schema);
     }
 
-    private Record createRecord(Row row, Schema schema) {
-        Record record = new Record();
+    private SleeperRow createRecord(Row row, Schema schema) {
+        SleeperRow record = new SleeperRow();
         int i = 0;
         for (Field field : schema.getAllFields()) {
             record.put(field.getName(), row.get(i));
@@ -233,12 +233,12 @@ class SingleFileWritingIteratorIT {
         return record;
     }
 
-    private List<Record> readRecords(String path) {
+    private List<SleeperRow> readRecords(String path) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), schema)) {
-            List<Record> records = new ArrayList<>();
-            Record record = reader.read();
+            List<SleeperRow> records = new ArrayList<>();
+            SleeperRow record = reader.read();
             while (null != record) {
-                records.add(new Record(record));
+                records.add(new SleeperRow(record));
                 record = reader.read();
             }
             reader.close();

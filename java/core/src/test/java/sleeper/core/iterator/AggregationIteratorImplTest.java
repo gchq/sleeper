@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
 import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
 import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.util.List;
 import java.util.Map;
@@ -53,18 +53,18 @@ public class AggregationIteratorImplTest {
     @Test
     public void shouldThrowOnNullConfig() {
         assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(null,
-                new WrappedIterator<Record>(List.<Record>of().iterator())));
+                new WrappedIterator<SleeperRow>(List.<SleeperRow>of().iterator())));
     }
 
     @Test
     public void shouldAggregate() {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r1 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r2 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
 
-        Record expected = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow expected = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
         // When
         aggregateOnTo(r1, r2, createConfigWithAggregations());
@@ -76,12 +76,12 @@ public class AggregationIteratorImplTest {
     @Test
     public void shouldReturnFirstRecordNoAggregations() {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r1 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r2 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
 
-        Record expected = new Record(r1);
+        SleeperRow expected = new SleeperRow(r1);
         // When
         aggregateOnTo(r1, r2, createConfig());
 
@@ -92,12 +92,12 @@ public class AggregationIteratorImplTest {
     @Test
     public void shouldBeEqualRecords() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r1 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r2 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
         AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createConfig(),
-                new WrappedIterator<Record>(List.<Record>of().iterator()));
+                new WrappedIterator<SleeperRow>(List.<SleeperRow>of().iterator()));
 
         // When
         boolean equal = iteratorImpl.recordsEqual(r1, r2);
@@ -110,13 +110,13 @@ public class AggregationIteratorImplTest {
     @Test
     public void shouldBeNonEqualRecords() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r1 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
         // Make sort_key2 different
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        SleeperRow r2 = new SleeperRow(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 6, "value1", "testaaaaa", "value2", 7800));
         AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createConfig(),
-                new WrappedIterator<Record>(List.<Record>of().iterator()));
+                new WrappedIterator<SleeperRow>(List.<SleeperRow>of().iterator()));
 
         // When
         boolean equal = iteratorImpl.recordsEqual(r1, r2);

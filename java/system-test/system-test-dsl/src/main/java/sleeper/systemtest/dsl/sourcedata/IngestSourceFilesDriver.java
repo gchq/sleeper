@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.util.Iterator;
 
@@ -26,5 +26,5 @@ public interface IngestSourceFilesDriver {
 
     void writeFile(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            String path, boolean writeSketches, Iterator<Record> records);
+            String path, boolean writeSketches, Iterator<SleeperRow> records);
 }

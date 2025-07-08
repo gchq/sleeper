@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
@@ -46,14 +46,14 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
 
     public void writeFile(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            String path, boolean writeSketches, Iterator<Record> records) {
+            String path, boolean writeSketches, Iterator<SleeperRow> records) {
         Schema schema = tableProperties.getSchema();
         Configuration conf = clients.createHadoopConf(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         LOGGER.info("Writing to {}", path);
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), tableProperties, conf)) {
-            for (Record record : (Iterable<Record>) () -> records) {
+            for (SleeperRow record : (Iterable<SleeperRow>) () -> records) {
                 sketches.update(record);
                 writer.write(record);
             }

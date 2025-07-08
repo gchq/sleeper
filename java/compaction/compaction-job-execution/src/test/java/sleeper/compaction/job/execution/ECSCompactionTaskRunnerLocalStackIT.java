@@ -51,7 +51,7 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -165,19 +165,19 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             configureJobQueuesWithMaxReceiveCount(1);
             // - Create four files of sorted data
             StateStore stateStore = getStateStore();
-            FileReference fileReference1 = ingestFileWith100Records(i -> new Record(Map.of(
+            FileReference fileReference1 = ingestFileWith100Records(i -> new SleeperRow(Map.of(
                     "key", (long) 2 * i,
                     "value1", (long) 2 * i,
                     "value2", 987654321L)));
-            FileReference fileReference2 = ingestFileWith100Records(i -> new Record(Map.of(
+            FileReference fileReference2 = ingestFileWith100Records(i -> new SleeperRow(Map.of(
                     "key", (long) 2 * i + 1,
                     "value1", 1001L,
                     "value2", 123456789L)));
-            FileReference fileReference3 = ingestFileWith100Records(i -> new Record(Map.of(
+            FileReference fileReference3 = ingestFileWith100Records(i -> new SleeperRow(Map.of(
                     "key", (long) 2 * i,
                     "value1", (long) 2 * i,
                     "value2", 987654321L)));
-            FileReference fileReference4 = ingestFileWith100Records(i -> new Record(Map.of(
+            FileReference fileReference4 = ingestFileWith100Records(i -> new SleeperRow(Map.of(
                     "key", (long) 2 * i + 1,
                     "value1", 1001L,
                     "value2", 123456789L)));
@@ -303,7 +303,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         configureJobQueuesWithMaxReceiveCount(1);
         StateStore stateStore = getStateStore();
         FileReference fileReference = ingestFileWith100Records();
-        List<Record> expectedRecords = IntStream.range(0, 100)
+        List<SleeperRow> expectedRecords = IntStream.range(0, 100)
                 .mapToObj(defaultRecordCreator()::apply)
                 .collect(Collectors.toList());
         CompactionJob job = compactionJobForFiles("job1", fileReference);
@@ -349,7 +349,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         configureJobQueuesWithMaxReceiveCount(1);
         StateStore stateStore = getStateStore();
         FileReference fileReference = ingestFileWith100Records();
-        List<Record> expectedRecords = IntStream.range(0, 100)
+        List<SleeperRow> expectedRecords = IntStream.range(0, 100)
                 .mapToObj(defaultRecordCreator()::apply)
                 .collect(Collectors.toList());
         CompactionJob job = compactionJobForFiles("job1", fileReference);
@@ -478,8 +478,8 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return task;
     }
 
-    private Function<Integer, Record> defaultRecordCreator() {
-        return i -> new Record(Map.of(
+    private Function<Integer, SleeperRow> defaultRecordCreator() {
+        return i -> new SleeperRow(Map.of(
                 "key", (long) 2 * i,
                 "value1", (long) 2 * i,
                 "value2", 987654321L));
@@ -489,7 +489,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return ingestFileWith100Records(defaultRecordCreator());
     }
 
-    private FileReference ingestFileWith100Records(Function<Integer, Record> recordCreator) throws Exception {
+    private FileReference ingestFileWith100Records(Function<Integer, SleeperRow> recordCreator) throws Exception {
         IngestFactory ingestFactory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .hadoopConfiguration(hadoopConf)
@@ -498,7 +498,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();
-        IngestCoordinator<Record> coordinator = ingestFactory.createIngestCoordinator(tableProperties);
+        IngestCoordinator<SleeperRow> coordinator = ingestFactory.createIngestCoordinator(tableProperties);
         for (int i = 0; i < 100; i++) {
             coordinator.write(recordCreator.apply(i));
         }
@@ -553,11 +553,11 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return reference.toBuilder().jobId(job.getId()).build();
     }
 
-    private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
-            List<Record> records = new ArrayList<>();
-            for (Record record = reader.read(); record != null; record = reader.read()) {
-                records.add(new Record(record));
+    private List<SleeperRow> readRecords(String filename, Schema schema) {
+        try (ParquetReader<SleeperRow> reader = new ParquetRecordReader(new Path(filename), schema)) {
+            List<SleeperRow> records = new ArrayList<>();
+            for (SleeperRow record = reader.read(); record != null; record = reader.read()) {
+                records.add(new SleeperRow(record));
             }
             return records;
         } catch (IOException e) {

@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
@@ -29,18 +29,18 @@ import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryRecordBatch implements RecordBatch<Record> {
+public class InMemoryRecordBatch implements RecordBatch<SleeperRow> {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryRecordBatch.class);
 
     private final Schema schema;
-    private final List<Record> records = new ArrayList<>();
+    private final List<SleeperRow> records = new ArrayList<>();
 
     public InMemoryRecordBatch(Schema schema) {
         this.schema = schema;
     }
 
     @Override
-    public void append(Record data) {
+    public void append(SleeperRow data) {
         records.add(data);
     }
 
@@ -50,7 +50,7 @@ public class InMemoryRecordBatch implements RecordBatch<Record> {
     }
 
     @Override
-    public CloseableIterator<Record> createOrderedRecordIterator() {
+    public CloseableIterator<SleeperRow> createOrderedRecordIterator() {
         records.sort(new RecordComparator(schema));
         return new WrappedIterator<>(records.iterator());
     }

@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -42,7 +42,7 @@ public class QueryAllTablesSendAndWaitDriver implements QueryAllTablesDriver {
     }
 
     @Override
-    public Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
+    public Map<String, List<SleeperRow>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
         List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
         LOGGER.info("Sending {} queries, one for each table", queries.size());
         queries.stream().parallel().forEach(driver::send);
@@ -57,7 +57,7 @@ public class QueryAllTablesSendAndWaitDriver implements QueryAllTablesDriver {
     }
 
     @Override
-    public List<Record> run(Query query) {
+    public List<SleeperRow> run(Query query) {
         return driver.run(query);
     }
 }

@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
@@ -53,13 +53,13 @@ public class WriteRandomDataFiles {
 
     public static void writeFilesToDirectory(
             String directory, InstanceProperties instanceProperties,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException {
+            TableProperties tableProperties, Iterator<SleeperRow> recordIterator) throws IOException {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
         writeToPath(directory, "file:///", tableProperties, recordIterator, conf);
     }
 
     private static void writeToPath(
-            String dir, String filePathPrefix, TableProperties tableProperties, Iterator<Record> recordIterator,
+            String dir, String filePathPrefix, TableProperties tableProperties, Iterator<SleeperRow> recordIterator,
             Configuration conf) throws IOException {
         int fileNumber = 0;
         if (!dir.endsWith("/")) {
@@ -67,7 +67,7 @@ public class WriteRandomDataFiles {
         }
         String filename = dir + fileNumber + ".parquet";
         String path = filePathPrefix + filename;
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
         long count = 0L;
         LOGGER.info("Created writer to path {}", path);
         while (recordIterator.hasNext()) {

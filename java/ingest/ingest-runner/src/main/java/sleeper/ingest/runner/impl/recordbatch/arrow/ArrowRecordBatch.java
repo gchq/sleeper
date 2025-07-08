@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -110,7 +110,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     protected int currentInsertIndex;
     protected long noOfBytesInLocalFiles;
     protected int currentBatchNo;
-    protected CloseableIterator<Record> internalSortedRecordIterator;
+    protected CloseableIterator<SleeperRow> internalSortedRecordIterator;
     protected boolean isWriteable;
 
     /**
@@ -287,7 +287,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * @return                    an iterator of records read from the Arrow file
      * @throws IOException        if there was a failure reading from or writing to the Arrow file
      */
-    private static CloseableIterator<Record> createCloseableRecordIteratorForArrowFile(BufferAllocator bufferAllocator,
+    private static CloseableIterator<SleeperRow> createCloseableRecordIteratorForArrowFile(BufferAllocator bufferAllocator,
             String localArrowFileName) throws IOException {
         FileChannel inputFileChannel = FileChannel.open(Paths.get(localArrowFileName), StandardOpenOption.READ);
         ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputFileChannel, bufferAllocator);
@@ -474,7 +474,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * @return An iterator to iterate through all of the records in sorted order.
      */
     @Override
-    public CloseableIterator<Record> createOrderedRecordIterator() throws IOException {
+    public CloseableIterator<SleeperRow> createOrderedRecordIterator() throws IOException {
         if (!isWriteable || internalSortedRecordIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
@@ -500,7 +500,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * @return             An iterator to iterate through all of the records in sorted order.
      * @throws IOException if there was a failure writing the local file
      */
-    private CloseableIterator<Record> createSortedRecordIterator() throws IOException {
+    private CloseableIterator<SleeperRow> createSortedRecordIterator() throws IOException {
         if (currentInsertIndex > 0) {
             LOGGER.debug("Creating an iterator: flushing memory to disk");
             flushToLocalArrowFileThenClear();
@@ -513,7 +513,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
                     localArrowFileNames.get(localArrowFileNames.size() - 1));
         }
         // Create the variables for the iterators here so that they can be closed if an error occurs
-        List<CloseableIterator<Record>> sortedRecordIteratorsToMerge = new ArrayList<>(localArrowFileNames.size());
+        List<CloseableIterator<SleeperRow>> sortedRecordIteratorsToMerge = new ArrayList<>(localArrowFileNames.size());
         try {
             // Create an iterator from each local file
             localArrowFileNames.forEach(localFileName -> {

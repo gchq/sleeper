@@ -24,7 +24,7 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
@@ -59,7 +59,7 @@ public class LeafPartitionQueryExecutor {
         this.retriever = retriever;
     }
 
-    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
+    public CloseableIterator<SleeperRow> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
@@ -82,7 +82,7 @@ public class LeafPartitionQueryExecutor {
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
         try {
-            CloseableIterator<Record> iterator = retriever.getRecords(leafPartitionQuery, dataReadSchema);
+            CloseableIterator<SleeperRow> iterator = retriever.getRecords(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
             if (null != compactionIterator) {
                 iterator = compactionIterator.apply(iterator);

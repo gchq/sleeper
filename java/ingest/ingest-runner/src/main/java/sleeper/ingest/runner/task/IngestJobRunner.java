@@ -31,7 +31,7 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
@@ -126,12 +126,12 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
         // at the same time)
-        List<Supplier<CloseableIterator<Record>>> inputIterators = new ArrayList<>();
+        List<Supplier<CloseableIterator<SleeperRow>>> inputIterators = new ArrayList<>();
         for (String path : paths) {
             if (path.endsWith(".parquet")) {
                 inputIterators.add(() -> {
                     try {
-                        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).withConf(hadoopConfiguration).build();
+                        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(path, schema).withConf(hadoopConfiguration).build();
                         return new ParquetReaderIterator(reader);
                     } catch (IOException e) {
                         throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "
@@ -146,8 +146,8 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Concatenate iterators into one iterator and run the ingest
         IngestResult result;
-        try (CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-                IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+        try (CloseableIterator<SleeperRow> concatenatingIterator = new ConcatenatingIterator(inputIterators);
+                IngestCoordinator<SleeperRow> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                         .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
                         .build()) {
             result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();

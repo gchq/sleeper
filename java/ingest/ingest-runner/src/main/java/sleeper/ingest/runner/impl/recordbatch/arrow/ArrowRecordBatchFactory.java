@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
@@ -191,7 +191,7 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
             return (Builder<INCOMINGDATATYPE>) this;
         }
 
-        public ArrowRecordBatchFactory<Record> buildAcceptingRecords() {
+        public ArrowRecordBatchFactory<SleeperRow> buildAcceptingRecords() {
             return recordWriter(new ArrowRecordWriterAcceptingRecords()).build();
         }
 

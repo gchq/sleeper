@@ -19,7 +19,7 @@ import com.facebook.collections.ByteArray;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -48,37 +48,37 @@ public class CompactionRunnerTestData {
     private CompactionRunnerTestData() {
     }
 
-    public static List<Record> keyAndTwoValuesSortedEvenLongs() {
+    public static List<SleeperRow> keyAndTwoValuesSortedEvenLongs() {
         return streamKeyAndTwoValuesFromEvens(n -> (long) n)
                 .collect(Collectors.toList());
     }
 
-    public static List<Record> keyAndTwoValuesSortedOddLongs() {
+    public static List<SleeperRow> keyAndTwoValuesSortedOddLongs() {
         return streamKeyAndTwoValuesFromOdds(n -> (long) n)
                 .collect(Collectors.toList());
     }
 
-    public static List<Record> keyAndTwoValuesSortedEvenStrings() {
+    public static List<SleeperRow> keyAndTwoValuesSortedEvenStrings() {
         return streamKeyAndTwoValuesFromEvens(CompactionRunnerTestData::nthString)
                 .collect(Collectors.toList());
     }
 
-    public static List<Record> keyAndTwoValuesSortedOddStrings() {
+    public static List<SleeperRow> keyAndTwoValuesSortedOddStrings() {
         return streamKeyAndTwoValuesFromOdds(CompactionRunnerTestData::nthString)
                 .collect(Collectors.toList());
     }
 
-    public static List<Record> keyAndTwoValuesSortedEvenByteArrays() {
+    public static List<SleeperRow> keyAndTwoValuesSortedEvenByteArrays() {
         return streamKeyAndTwoValuesFromEvens(CompactionRunnerTestData::nthByteArray)
                 .collect(Collectors.toList());
     }
 
-    public static List<Record> keyAndTwoValuesSortedOddByteArrays() {
+    public static List<SleeperRow> keyAndTwoValuesSortedOddByteArrays() {
         return streamKeyAndTwoValuesFromOdds(CompactionRunnerTestData::nthByteArray)
                 .collect(Collectors.toList());
     }
 
-    private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
+    private static Stream<SleeperRow> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
         return streamFromEvens((even, record) -> {
             Object converted = convert.apply(even);
             record.put("key", converted);
@@ -87,7 +87,7 @@ public class CompactionRunnerTestData {
         });
     }
 
-    private static Stream<Record> streamKeyAndTwoValuesFromOdds(Function<Integer, Object> convert) {
+    private static Stream<SleeperRow> streamKeyAndTwoValuesFromOdds(Function<Integer, Object> convert) {
         Object value1 = convert.apply(1001);
         return streamFromOdds((odd, record) -> {
             record.put("key", convert.apply(odd));
@@ -96,29 +96,29 @@ public class CompactionRunnerTestData {
         });
     }
 
-    public static List<Record> specifiedFromEvens(BiConsumer<Integer, Record> setRecord) {
+    public static List<SleeperRow> specifiedFromEvens(BiConsumer<Integer, SleeperRow> setRecord) {
         return streamFromEvens(setRecord).collect(Collectors.toList());
     }
 
-    public static List<Record> specifiedFromOdds(BiConsumer<Integer, Record> setRecord) {
+    public static List<SleeperRow> specifiedFromOdds(BiConsumer<Integer, SleeperRow> setRecord) {
         return streamFromOdds(setRecord).collect(Collectors.toList());
     }
 
-    private static Stream<Record> streamFromEvens(BiConsumer<Integer, Record> setRecord) {
+    private static Stream<SleeperRow> streamFromEvens(BiConsumer<Integer, SleeperRow> setRecord) {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     int even = 2 * i;
-                    Record record = new Record();
+                    SleeperRow record = new SleeperRow();
                     setRecord.accept(even, record);
                     return record;
                 });
     }
 
-    private static Stream<Record> streamFromOdds(BiConsumer<Integer, Record> setRecord) {
+    private static Stream<SleeperRow> streamFromOdds(BiConsumer<Integer, SleeperRow> setRecord) {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     int odd = 2 * i + 1;
-                    Record record = new Record();
+                    SleeperRow record = new SleeperRow();
                     setRecord.accept(odd, record);
                     return record;
                 });
@@ -137,25 +137,25 @@ public class CompactionRunnerTestData {
         };
     }
 
-    public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2) {
+    public static List<SleeperRow> combineSortedBySingleKey(List<SleeperRow> data1, List<SleeperRow> data2) {
         return combineSortedBySingleKey(data1, data2, record -> record.get("key"));
     }
 
-    public static List<Record> combineSortedBySingleByteArrayKey(List<Record> data1, List<Record> data2) {
+    public static List<SleeperRow> combineSortedBySingleByteArrayKey(List<SleeperRow> data1, List<SleeperRow> data2) {
         return combineSortedBySingleKey(data1, data2, record -> ByteArray.wrap((byte[]) record.get("key")));
     }
 
-    public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2, Function<Record, Object> getKey) {
-        SortedMap<Object, Record> data = new TreeMap<>();
+    public static List<SleeperRow> combineSortedBySingleKey(List<SleeperRow> data1, List<SleeperRow> data2, Function<SleeperRow, Object> getKey) {
+        SortedMap<Object, SleeperRow> data = new TreeMap<>();
         data1.forEach(record -> data.put(getKey.apply(record), record));
         data2.forEach(record -> data.put(getKey.apply(record), record));
         return new ArrayList<>(data.values());
     }
 
-    public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<Record> records) throws Exception {
+    public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<SleeperRow> records) throws Exception {
         Sketches sketches = Sketches.from(schema);
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
-            for (Record record : records) {
+        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
+            for (SleeperRow record : records) {
                 writer.write(record);
                 sketches.update(record);
             }
@@ -166,17 +166,17 @@ public class CompactionRunnerTestData {
         return fileReference;
     }
 
-    public static List<Record> readDataFile(Schema schema, String filename) throws IOException {
-        List<Record> results = new ArrayList<>();
+    public static List<SleeperRow> readDataFile(Schema schema, String filename) throws IOException {
+        List<SleeperRow> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(filename), schema))) {
             while (reader.hasNext()) {
-                results.add(new Record(reader.next()));
+                results.add(new SleeperRow(reader.next()));
             }
         }
         return results;
     }
 
-    public static List<Record> readDataFile(Schema schema, FileReference file) throws IOException {
+    public static List<SleeperRow> readDataFile(Schema schema, FileReference file) throws IOException {
         return readDataFile(schema, file.getFilename());
     }
 }

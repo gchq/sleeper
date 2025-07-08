@@ -33,7 +33,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -104,8 +104,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 3);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 3);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -127,8 +127,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 3);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 3);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -150,8 +150,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -176,8 +176,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -201,8 +201,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 2, 5, 6, 7);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 2, 5, 6, 7);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -224,8 +224,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
 
@@ -248,8 +248,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(15, 16, 17, 18, 19);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(15, 16, 17, 18, 19);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -271,8 +271,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(2, 4);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(2, 4);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -386,8 +386,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 3, 5);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 3, 5);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -409,8 +409,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(4, 20);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(4, 20);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -432,8 +432,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 3, 5);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 3, 5);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -455,8 +455,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(4, 20);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(4, 20);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -478,8 +478,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 3, 5);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 3, 5);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -501,8 +501,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(4, 20);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(4, 20);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -524,8 +524,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1, 3, 5);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(1, 3, 5);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -547,8 +547,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(4, 20);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(4, 20);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -574,8 +574,8 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(6);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expectedRecords = generateRecords(6);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expectedRecords);
     }
@@ -601,7 +601,7 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(new ArrayList<>());
     }
@@ -638,18 +638,18 @@ public class FilterTranslatorIT {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expected = generateRecords(4);
-        List<Record> actualRecords = readData(dataFile, filterPredicate);
+        List<SleeperRow> expected = generateRecords(4);
+        List<SleeperRow> actualRecords = readData(dataFile, filterPredicate);
 
         assertThat(actualRecords).isEqualTo(expected);
     }
 
-    private List<Record> readData(String dataFile, FilterPredicate filterPredicate) throws IOException {
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(dataFile), SCHEMA)
+    private List<SleeperRow> readData(String dataFile, FilterPredicate filterPredicate) throws IOException {
+        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(new Path(dataFile), SCHEMA)
                 .withFilter(FilterCompat.get(filterPredicate))
                 .build();
 
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(reader);
 
         while (parquetReaderIterator.hasNext()) {
@@ -661,7 +661,7 @@ public class FilterTranslatorIT {
     }
 
     private void writeData(String dataDir) throws IOException {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(dataDir), SCHEMA);
+        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(dataDir), SCHEMA);
 
         generateRecords(0, 20).forEach(record -> {
             try {
@@ -674,30 +674,30 @@ public class FilterTranslatorIT {
         writer.close();
     }
 
-    private List<Record> generateRecords(int min, int max) {
-        List<Record> records = new ArrayList<>();
+    private List<SleeperRow> generateRecords(int min, int max) {
+        List<SleeperRow> records = new ArrayList<>();
 
         for (int i = min; i < max; i++) {
-            Record record = createRecord(i);
+            SleeperRow record = createRecord(i);
             records.add(record);
         }
 
         return records;
     }
 
-    private List<Record> generateRecords(Integer... values) {
-        List<Record> records = new ArrayList<>();
+    private List<SleeperRow> generateRecords(Integer... values) {
+        List<SleeperRow> records = new ArrayList<>();
 
         for (int i : values) {
-            Record record = createRecord(i);
+            SleeperRow record = createRecord(i);
             records.add(record);
         }
 
         return records;
     }
 
-    private Record createRecord(int i) {
-        Record record = new Record();
+    private SleeperRow createRecord(int i) {
+        SleeperRow record = new SleeperRow();
         record.put("int", i);
         record.put("long", i * 1_000_000_000L);
         record.put("string", Integer.toString(i));

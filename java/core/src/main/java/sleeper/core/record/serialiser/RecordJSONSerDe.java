@@ -27,7 +27,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -53,12 +53,12 @@ public class RecordJSONSerDe {
 
     public RecordJSONSerDe(Schema schema) {
         this.gson = new GsonBuilder()
-                .registerTypeAdapter(Record.class, new RecordGsonSerialiser(schema))
+                .registerTypeAdapter(SleeperRow.class, new RecordGsonSerialiser(schema))
                 .serializeNulls()
                 .create();
         this.gsonPrettyPrinting = new GsonBuilder()
                 .setPrettyPrinting()
-                .registerTypeAdapter(Record.class, new RecordGsonSerialiser(schema))
+                .registerTypeAdapter(SleeperRow.class, new RecordGsonSerialiser(schema))
                 .serializeNulls()
                 .create();
     }
@@ -69,7 +69,7 @@ public class RecordJSONSerDe {
      * @param  record the record
      * @return        a JSON string
      */
-    public String toJson(Record record) {
+    public String toJson(SleeperRow record) {
         return gson.toJson(record);
     }
 
@@ -80,7 +80,7 @@ public class RecordJSONSerDe {
      * @param  prettyPrint whether to pretty-print the JSON string
      * @return             a JSON string
      */
-    public String toJson(Record record, boolean prettyPrint) {
+    public String toJson(SleeperRow record, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(record);
         }
@@ -93,14 +93,14 @@ public class RecordJSONSerDe {
      * @param  jsonSchema the JSON string
      * @return            a record
      */
-    public Record fromJson(String jsonSchema) {
-        return gson.fromJson(jsonSchema, Record.class);
+    public SleeperRow fromJson(String jsonSchema) {
+        return gson.fromJson(jsonSchema, SleeperRow.class);
     }
 
     /**
      * A GSON plugin to serialise/deserialise a record.
      */
-    public static class RecordGsonSerialiser implements JsonSerializer<Record>, JsonDeserializer<Record> {
+    public static class RecordGsonSerialiser implements JsonSerializer<SleeperRow>, JsonDeserializer<SleeperRow> {
         private final Schema schema;
 
         public RecordGsonSerialiser(Schema schema) {
@@ -108,7 +108,7 @@ public class RecordJSONSerDe {
         }
 
         @Override
-        public JsonElement serialize(Record record, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+        public JsonElement serialize(SleeperRow record, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             for (Field field : schema.getAllFields()) {
                 addFieldToJsonObject(field, record.get(field.getName()), json);
@@ -117,11 +117,11 @@ public class RecordJSONSerDe {
         }
 
         @Override
-        public Record deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
+        public SleeperRow deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
             if (!jsonElement.isJsonObject()) {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             for (Field field : schema.getAllFields()) {
                 getFieldFromJsonObject(field, jsonElement.getAsJsonObject(), record);
             }
@@ -208,7 +208,7 @@ public class RecordJSONSerDe {
         json.add(field.getName(), map);
     }
 
-    private static void getFieldFromJsonObject(Field field, JsonObject json, Record record) {
+    private static void getFieldFromJsonObject(Field field, JsonObject json, SleeperRow record) {
         if (field.getType() instanceof IntType) {
             record.put(field.getName(), json.get(field.getName()).getAsInt());
         } else if (field.getType() instanceof LongType) {
@@ -227,7 +227,7 @@ public class RecordJSONSerDe {
         }
     }
 
-    private static void getListFromJsonObject(Field field, JsonObject json, Record record) {
+    private static void getListFromJsonObject(Field field, JsonObject json, SleeperRow record) {
         PrimitiveType elementType = ((ListType) field.getType()).getElementType();
         JsonArray array = json.get(field.getName()).getAsJsonArray();
         List<Object> list = new ArrayList<>();
@@ -248,7 +248,7 @@ public class RecordJSONSerDe {
         record.put(field.getName(), list);
     }
 
-    private static void getMapFromJsonObject(Field field, JsonObject json, Record record) {
+    private static void getMapFromJsonObject(Field field, JsonObject json, SleeperRow record) {
         PrimitiveType keyType = ((MapType) field.getType()).getKeyType();
         PrimitiveType valueType = ((MapType) field.getType()).getValueType();
 

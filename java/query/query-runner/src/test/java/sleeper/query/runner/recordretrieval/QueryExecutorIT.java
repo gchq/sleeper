@@ -34,7 +34,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -109,7 +109,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).isExhausted();
@@ -117,7 +117,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -151,7 +151,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable()
@@ -160,7 +160,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -168,7 +168,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable()
@@ -177,7 +177,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
             // Then 4
             assertThat(results).isExhausted();
         }
@@ -220,7 +220,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -229,7 +229,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -237,7 +237,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
@@ -284,7 +284,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -293,7 +293,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -301,7 +301,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
@@ -348,7 +348,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -357,7 +357,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
@@ -366,7 +366,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -374,7 +374,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
@@ -383,7 +383,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(90)
@@ -394,7 +394,7 @@ public class QueryExecutorIT {
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
             assertThat(results).toIterable().hasSize(80)
@@ -405,7 +405,7 @@ public class QueryExecutorIT {
 
         // When 7
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
             assertThat(results).toIterable().hasSize(90)
@@ -416,7 +416,7 @@ public class QueryExecutorIT {
 
         // When 8
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
             assertThat(results).toIterable().hasSize(100)
@@ -425,7 +425,7 @@ public class QueryExecutorIT {
 
         // When 9
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
             assertThat(results).toIterable().hasSize(60)
@@ -485,7 +485,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -494,7 +494,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
@@ -503,7 +503,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results.hasNext()).isFalse();
@@ -511,7 +511,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
@@ -520,7 +520,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(60)
@@ -600,7 +600,7 @@ public class QueryExecutorIT {
         Range range1 = rangeFactory.createExactRange(field1, 1L);
         Range range2 = rangeFactory.createExactRange(field2, "1");
         Region region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
@@ -611,7 +611,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createExactRange(field1, 5L);
         range2 = rangeFactory.createExactRange(field2, "5");
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
@@ -622,7 +622,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createExactRange(field1, 8L);
         range2 = rangeFactory.createExactRange(field2, "notthere");
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -632,7 +632,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
         range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
@@ -643,7 +643,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(30)
@@ -710,11 +710,11 @@ public class QueryExecutorIT {
         //        "" +-----------+-----------+
         //           ""         "I"          null      (Dimension 1)
         // Add 4 records - record i is in the center of partition i
-        Record record1 = createRecordMultidimensionalKey("D", "J", 10L, 100L);
-        Record record2 = createRecordMultidimensionalKey("K", "H", 1000L, 10000L);
-        Record record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
-        Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
-        List<Record> records = Arrays.asList(record1, record2, record3, record4);
+        SleeperRow record1 = createRecordMultidimensionalKey("D", "J", 10L, 100L);
+        SleeperRow record2 = createRecordMultidimensionalKey("K", "H", 1000L, 10000L);
+        SleeperRow record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
+        SleeperRow record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
+        List<SleeperRow> records = Arrays.asList(record1, record2, record3, record4);
 
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -770,7 +770,7 @@ public class QueryExecutorIT {
         Range range2 = rangeFactory.createRange(field2, "", true, null, false);
         Region region = new Region(Arrays.asList(range1, range2));
 
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different levels of the tree
@@ -781,7 +781,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "H", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(3)
@@ -792,7 +792,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "H", false);
         range2 = rangeFactory.createRange(field2, "", true, "S", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(3)
@@ -803,7 +803,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", false, "H", true);
         range2 = rangeFactory.createRange(field2, "", false, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(3)
@@ -814,7 +814,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", false, "H", false);
         range2 = rangeFactory.createRange(field2, "", false, "S", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(3)
@@ -825,7 +825,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
             assertThat(results).toIterable().hasSize(6)
@@ -836,7 +836,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "T", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
             assertThat(results).isExhausted();
@@ -845,7 +845,7 @@ public class QueryExecutorIT {
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
         region = new Region(range1);
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
             assertThat(results).toIterable().hasSize(6)
@@ -856,7 +856,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createExactRange(field1, "C");
         range2 = rangeFactory.createRange(field2, "", true, null, true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
             assertThat(results).toIterable().hasSize(3)
@@ -867,7 +867,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "D", false);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 10
             assertThat(results).isExhausted();
@@ -877,7 +877,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "", true, "D", true);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 11
             assertThat(results).toIterable().hasSize(3)
@@ -889,7 +889,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", true, "P", false);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 12
             assertThat(results).toIterable().hasSize(9)
@@ -901,7 +901,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", true, "P", true);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 13
             assertThat(results).toIterable().hasSize(12)
@@ -913,7 +913,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", false, "P", false);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 14
             assertThat(results).toIterable().hasSize(3)
@@ -925,7 +925,7 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 15
             assertThat(results).toIterable().hasSize(6)
@@ -1006,7 +1006,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable()
@@ -1019,7 +1019,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable()
@@ -1032,7 +1032,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -1052,7 +1052,7 @@ public class QueryExecutorIT {
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        List<Record> records = getRecordsForAgeOffIteratorTest();
+        List<SleeperRow> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
@@ -1060,7 +1060,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().containsExactly(records.get(0));
@@ -1068,7 +1068,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, "0"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -1076,7 +1076,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, "2"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -1084,7 +1084,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createExactRange(field, "3"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).isExhausted();
@@ -1092,7 +1092,7 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createExactRange(field, "4"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().containsExactly(records.get(3));
@@ -1129,10 +1129,10 @@ public class QueryExecutorIT {
                         .queryTimeIteratorConfig("securityLabel,notsecret")
                         .build())
                 .build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(query)) {
 
             // Then
-            Record expected = getRecordsForQueryTimeIteratorTest("notsecret").get(0);
+            SleeperRow expected = getRecordsForQueryTimeIteratorTest("notsecret").get(0);
             assertThat(results).toIterable().hasSize(5)
                     .allSatisfy(result -> assertThat(result).isEqualTo(expected));
         }
@@ -1161,11 +1161,11 @@ public class QueryExecutorIT {
                         .requestedValueFields(Lists.newArrayList("value2"))
                         .build())
                 .build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(query)) {
 
             // Then
             assertThat(results).toIterable().hasSize(1)
-                    .flatExtracting(Record::getKeys).doesNotContain("value1").contains("key", "value2");
+                    .flatExtracting(SleeperRow::getKeys).doesNotContain("value1").contains("key", "value2");
         }
     }
 
@@ -1194,7 +1194,7 @@ public class QueryExecutorIT {
                         .requestedValueFields(Lists.newArrayList("value"))
                         .build())
                 .build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<SleeperRow> results = queryExecutor.execute(query)) {
 
             // Then
             assertThat(results).hasNext().toIterable().allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
@@ -1233,7 +1233,7 @@ public class QueryExecutorIT {
     }
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, IteratorCreationException {
+            TableProperties tableProperties, Iterator<SleeperRow> recordIterator) throws IOException, IteratorCreationException {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -1245,9 +1245,9 @@ public class QueryExecutorIT {
         factory.ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
-    protected List<Record> getRecords() {
-        List<Record> records = new ArrayList<>();
-        Record record = new Record();
+    protected List<SleeperRow> getRecords() {
+        List<SleeperRow> records = new ArrayList<>();
+        SleeperRow record = new SleeperRow();
         record.put("key", 1L);
         record.put("value1", 10L);
         record.put("value2", 100L);
@@ -1255,18 +1255,18 @@ public class QueryExecutorIT {
         return records;
     }
 
-    protected List<Record> getMultipleIdenticalRecords() {
-        List<Record> records = new ArrayList<>();
+    protected List<SleeperRow> getMultipleIdenticalRecords() {
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             records.addAll(getRecords());
         }
         return records;
     }
 
-    protected List<Record> getMultipleRecords() {
-        List<Record> records = new ArrayList<>();
+    protected List<SleeperRow> getMultipleRecords() {
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", (long) i);
             record.put("value1", i * 10L);
             record.put("value2", i * 100L);
@@ -1275,10 +1275,10 @@ public class QueryExecutorIT {
         return records;
     }
 
-    protected List<Record> getMultipleRecordsMultidimRowKey() {
-        List<Record> records = new ArrayList<>();
+    protected List<SleeperRow> getMultipleRecordsMultidimRowKey() {
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key1", (long) i);
             record.put("key2", String.valueOf(i));
             record.put("value1", i * 10L);
@@ -1288,11 +1288,11 @@ public class QueryExecutorIT {
         return records;
     }
 
-    protected List<Record> getMultipleRecordsForTestingSorting() {
-        List<Record> records = new ArrayList<>();
+    protected List<SleeperRow> getMultipleRecordsForTestingSorting() {
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             for (int j = 1000; j >= 900; j--) {
-                Record record = new Record();
+                SleeperRow record = new SleeperRow();
                 record.put("key", (long) i);
                 record.put("value1", (long) j);
                 record.put("value2", i * 100L);
@@ -1302,31 +1302,31 @@ public class QueryExecutorIT {
         return records;
     }
 
-    protected List<Record> getRecordsForAgeOffIteratorTest() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
+    protected List<SleeperRow> getRecordsForAgeOffIteratorTest() {
+        List<SleeperRow> records = new ArrayList<>();
+        SleeperRow record1 = new SleeperRow();
         record1.put("id", "1");
         record1.put("timestamp", System.currentTimeMillis());
         records.add(record1);
-        Record record2 = new Record();
+        SleeperRow record2 = new SleeperRow();
         record2.put("id", "2");
         record2.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
         records.add(record2);
-        Record record3 = new Record();
+        SleeperRow record3 = new SleeperRow();
         record3.put("id", "3");
         record3.put("timestamp", System.currentTimeMillis() - 2_000_000L);
         records.add(record3);
-        Record record4 = new Record();
+        SleeperRow record4 = new SleeperRow();
         record4.put("id", "4");
         record4.put("timestamp", System.currentTimeMillis());
         records.add(record4);
         return records;
     }
 
-    protected List<Record> getRecordsForQueryTimeIteratorTest(String securityLabel) {
-        List<Record> records = new ArrayList<>();
+    protected List<SleeperRow> getRecordsForQueryTimeIteratorTest(String securityLabel) {
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", (long) i);
             record.put("value", i * 10L);
             record.put("securityLabel", securityLabel);
@@ -1335,8 +1335,8 @@ public class QueryExecutorIT {
         return records;
     }
 
-    private static Record createRecordMultidimensionalKey(String key1, String key2, long value1, long value2) {
-        Record record = new Record();
+    private static SleeperRow createRecordMultidimensionalKey(String key1, String key2, long value1, long value2) {
+        SleeperRow record = new SleeperRow();
         record.put("key1", key1);
         record.put("key2", key2);
         record.put("value1", value1);

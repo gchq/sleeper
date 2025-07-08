@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -23,16 +23,16 @@ import java.util.function.Supplier;
 /**
  * A test fake to supply an iterator of records.
  */
-public class FakeIteratorSupplier implements Supplier<CloseableIterator<Record>> {
-    private final List<Record> records;
+public class FakeIteratorSupplier implements Supplier<CloseableIterator<SleeperRow>> {
+    private final List<SleeperRow> records;
     private boolean hasSupplied = false;
 
-    public FakeIteratorSupplier(List<Record> records) {
+    public FakeIteratorSupplier(List<SleeperRow> records) {
         this.records = records;
     }
 
     @Override
-    public CloseableIterator<Record> get() {
+    public CloseableIterator<SleeperRow> get() {
         hasSupplied = true;
         return new WrappedIterator<>(records.iterator());
     }

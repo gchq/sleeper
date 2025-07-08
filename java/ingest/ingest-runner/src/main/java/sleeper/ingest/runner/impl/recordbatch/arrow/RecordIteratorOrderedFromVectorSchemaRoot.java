@@ -20,7 +20,7 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.util.NoSuchElementException;
@@ -30,7 +30,7 @@ import java.util.NoSuchElementException;
  * {@link VectorSchemaRoot}. The rows are sorted before they are returned, according to the row keys and sort keys
  * specified in the supplied Sleeper {@link Schema}.
  */
-class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Record> {
+class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<SleeperRow> {
     private final VectorSchemaRoot vectorSchemaRoot;
     private final IntVector sortOrder;
     private int currentRecordNo = 0;
@@ -57,13 +57,13 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Rec
     }
 
     @Override
-    public Record next() throws NoSuchElementException {
+    public SleeperRow next() throws NoSuchElementException {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
         // Read the value from row sortOrder(currentRecordNo) and use that row to construct a Record object.
         int rowNoToRead = sortOrder.get(currentRecordNo);
-        Record record = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(vectorSchemaRoot, rowNoToRead);
+        SleeperRow record = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(vectorSchemaRoot, rowNoToRead);
         currentRecordNo++;
         return record;
     }

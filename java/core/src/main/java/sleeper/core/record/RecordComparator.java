@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Compares records by row keys then sort keys.
  */
-public class RecordComparator implements Comparator<Record> {
+public class RecordComparator implements Comparator<SleeperRow> {
     private final List<String> rowKeyNames;
     private final List<String> sortKeyNames;
     private final KeyComparator rowKeyComparator;
@@ -40,7 +40,7 @@ public class RecordComparator implements Comparator<Record> {
     // TODO Optimise by avoiding creating lists of row keys and sort keys, and
     // just do the comparison directly here?
     @Override
-    public int compare(Record record1, Record record2) {
+    public int compare(SleeperRow record1, SleeperRow record2) {
         List<Object> record1Key = record1.getValues(rowKeyNames);
         List<Object> record2Key = record2.getValues(rowKeyNames);
         int keyComparison = rowKeyComparator.compare(Key.create(record1Key), Key.create(record2Key));

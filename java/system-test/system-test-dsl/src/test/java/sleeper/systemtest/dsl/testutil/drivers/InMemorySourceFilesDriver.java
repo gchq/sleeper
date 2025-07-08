@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.InMemorySketchesStore;
@@ -45,10 +45,10 @@ public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
 
     @Override
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
-            String path, boolean writeSketches, Iterator<Record> records) {
-        List<Record> recordList = new ArrayList<>();
+            String path, boolean writeSketches, Iterator<SleeperRow> records) {
+        List<SleeperRow> recordList = new ArrayList<>();
         Sketches sketches = Sketches.from(tableProperties.getSchema());
-        for (Record record : (Iterable<Record>) () -> records) {
+        for (SleeperRow record : (Iterable<SleeperRow>) () -> records) {
             recordList.add(record);
             sketches.update(record);
         }

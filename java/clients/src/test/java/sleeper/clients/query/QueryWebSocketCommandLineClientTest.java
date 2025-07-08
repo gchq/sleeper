@@ -29,7 +29,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
@@ -109,7 +109,7 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsForQuery() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
-            Record expectedRecord = new Record(Map.of("key", 123L));
+            SleeperRow expectedRecord = new SleeperRow(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
@@ -139,7 +139,7 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsForQueryWithOneSubquery() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
-            Record expectedRecord = new Record(Map.of("key", 123L));
+            SleeperRow expectedRecord = new SleeperRow(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
@@ -170,9 +170,9 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
             // Given
             Query expectedQuery = rangeQuery("test-query-id", 0L, 1000L);
-            Record expectedRecord1 = new Record(Map.of("key", 123L));
-            Record expectedRecord2 = new Record(Map.of("key", 456L));
-            Record expectedRecord3 = new Record(Map.of("key", 789L));
+            SleeperRow expectedRecord1 = new SleeperRow(Map.of("key", 123L));
+            SleeperRow expectedRecord2 = new SleeperRow(Map.of("key", 456L));
+            SleeperRow expectedRecord3 = new SleeperRow(Map.of("key", 789L));
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
@@ -209,7 +209,7 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsWhenRecordCountDoesNotMatchRecordsReceived() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
-            Record expectedRecord = new Record(Map.of("key", 123L));
+            SleeperRow expectedRecord = new SleeperRow(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);

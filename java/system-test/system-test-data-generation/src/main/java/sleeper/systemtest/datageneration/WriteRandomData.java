@@ -16,7 +16,7 @@
 package sleeper.systemtest.datageneration;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 
 import java.util.Iterator;
@@ -27,7 +27,7 @@ public class WriteRandomData {
     private WriteRandomData() {
     }
 
-    public static Iterator<Record> createRecordIterator(
+    public static Iterator<SleeperRow> createRecordIterator(
             SystemTestDataGenerationJob job, TableProperties tableProperties) {
         return Stream
                 .generate(new RandomRecordSupplier(tableProperties.getSchema(), job.getRandomDataSettings()))

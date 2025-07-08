@@ -30,7 +30,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
@@ -231,10 +231,10 @@ public class InMemoryCompaction {
     }
 
     private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
-        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
+        List<CloseableIterator<SleeperRow>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
-        CloseableIterator<Record> mergingIterator;
+        CloseableIterator<SleeperRow> mergingIterator;
         try {
             mergingIterator = JavaCompactionRunner.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
@@ -242,7 +242,7 @@ public class InMemoryCompaction {
             throw new RuntimeException(e);
         }
         Sketches sketches = Sketches.from(schema);
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
             records.add(record);
             sketches.update(record);
@@ -269,9 +269,9 @@ public class InMemoryCompaction {
         });
     }
 
-    private class CountingIterator implements CloseableIterator<Record> {
+    private class CountingIterator implements CloseableIterator<SleeperRow> {
 
-        private final Iterator<Record> iterator;
+        private final Iterator<SleeperRow> iterator;
         private long count = 0;
 
         CountingIterator(String filename, Region region, Schema schema) {
@@ -286,8 +286,8 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public Record next() {
-            Record record = iterator.next();
+        public SleeperRow next() {
+            SleeperRow record = iterator.next();
             count++;
             return record;
         }

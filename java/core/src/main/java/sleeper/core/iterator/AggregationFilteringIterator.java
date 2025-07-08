@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -297,12 +297,12 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> source) {
+    public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> source) {
         if (config == null) {
             throw new IllegalStateException("AggregatingIterator has not been initialised, call init()");
         }
         // See if we need to age-off data
-        CloseableIterator<Record> input = maybeCreateFilter(source);
+        CloseableIterator<SleeperRow> input = maybeCreateFilter(source);
 
         // Do any aggregations need to be performed?
         if (!config.aggregations().isEmpty()) {
@@ -322,7 +322,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
      * @param  source the input iterator
      * @return        the source iterator or a new filtering iterator
      */
-    private CloseableIterator<Record> maybeCreateFilter(CloseableIterator<Record> source) {
+    private CloseableIterator<SleeperRow> maybeCreateFilter(CloseableIterator<SleeperRow> source) {
         return config.ageOffColumn().map(filter_col -> {
             AgeOffIterator ageoff = new AgeOffIterator();
             // Age off iterator operates in milliseconds

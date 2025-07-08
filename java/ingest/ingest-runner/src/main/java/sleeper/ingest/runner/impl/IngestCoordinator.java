@@ -25,7 +25,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -62,7 +62,8 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
  * type are stored in a {@link RecordBatch} for that data type.
  * </li>
  * <li>
- * When the {@link RecordBatch} is full, the data is retrieved from the {@link RecordBatch} as {@link Record} objects,
+ * When the {@link RecordBatch} is full, the data is retrieved from the {@link RecordBatch} as {@link SleeperRow}
+ * objects,
  * in sorted order.
  * </li>
  * <li>
@@ -173,8 +174,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             updatePartitionTreeIfNecessary();
             // Apply the Sleeper iterator to the record batch, within a try-with-resources block. This will ensure that
             // the iterators are closed in both success and failure
-            try (CloseableIterator<Record> orderedRecordIteratorFromBatch = currentRecordBatch.createOrderedRecordIterator();
-                    CloseableIterator<Record> recordIteratorWithSleeperIteratorApplied = new RecordIteratorWithSleeperIteratorApplied(
+            try (CloseableIterator<SleeperRow> orderedRecordIteratorFromBatch = currentRecordBatch.createOrderedRecordIterator();
+                    CloseableIterator<SleeperRow> recordIteratorWithSleeperIteratorApplied = new RecordIteratorWithSleeperIteratorApplied(
                             objectFactory,
                             sleeperSchema,
                             sleeperIteratorClassName,

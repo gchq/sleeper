@@ -17,7 +17,7 @@ package sleeper.clients.table.partition;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -37,9 +37,9 @@ public class EstimateSplitPointsTest {
     public void shouldEstimateCorrectlyWithIntKey() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", 100 - i - 1); // Reverse order because the method shouldn't assume that the records are sorted
             records.add(record);
         }
@@ -55,9 +55,9 @@ public class EstimateSplitPointsTest {
     public void shouldEstimateCorrectlyWithLongKey() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", i * 100L);
             records.add(record);
         }
@@ -73,9 +73,9 @@ public class EstimateSplitPointsTest {
     public void shouldEstimateCorrectlyWithStringKey() {
         // Given
         Schema schema = createSchemaWithKey("key", new StringType());
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", String.format("%04d", i * 100L));
             records.add(record);
         }
@@ -91,9 +91,9 @@ public class EstimateSplitPointsTest {
     public void shouldEstimateCorrectlyWithByteArrayKey() {
         // Given
         Schema schema = createSchemaWithKey("key", new ByteArrayType());
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", new byte[]{(byte) i});
             records.add(record);
         }
@@ -111,9 +111,9 @@ public class EstimateSplitPointsTest {
     public void shouldRefuseToSplitIntoOnePartition() {
         // Given
         Schema schema = createSchemaWithKey("key", new ByteArrayType());
-        List<Record> records = new ArrayList<>();
+        List<SleeperRow> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", new byte[]{(byte) i});
             records.add(record);
         }
@@ -123,7 +123,7 @@ public class EstimateSplitPointsTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    private List<Object> estimateForPartitions(Schema schema, List<Record> records, int numPartitions) {
+    private List<Object> estimateForPartitions(Schema schema, List<SleeperRow> records, int numPartitions) {
         return new EstimateSplitPoints(schema, records, numPartitions, 32768).estimate();
     }
 }

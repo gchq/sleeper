@@ -17,7 +17,7 @@ package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -57,20 +57,20 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> input) {
         return new SecurityFilteringIteratorInternal(input, fieldName, auths);
     }
 
     /**
      * Discards records in the input iterator where the security label is not one of the permitted auths.
      */
-    public static class SecurityFilteringIteratorInternal implements CloseableIterator<Record> {
-        private final CloseableIterator<Record> iterator;
+    public static class SecurityFilteringIteratorInternal implements CloseableIterator<SleeperRow> {
+        private final CloseableIterator<SleeperRow> iterator;
         private final String fieldName;
         private final Set<String> auths;
-        private Record next;
+        private SleeperRow next;
 
-        public SecurityFilteringIteratorInternal(CloseableIterator<Record> iterator,
+        public SecurityFilteringIteratorInternal(CloseableIterator<SleeperRow> iterator,
                 String fieldName,
                 Set<String> auths) {
             this.iterator = iterator;
@@ -95,8 +95,8 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         }
 
         @Override
-        public Record next() {
-            Record toReturn = next;
+        public SleeperRow next() {
+            SleeperRow toReturn = next;
             updateNextToAllowedValue();
             return toReturn;
         }
@@ -107,7 +107,7 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         }
     }
 
-    private static boolean allowed(Record record, String securityFieldname, Set<String> auths) {
+    private static boolean allowed(SleeperRow record, String securityFieldname, Set<String> auths) {
         String securityLabel = (String) record.get(securityFieldname);
         if (null == securityLabel || 0 == securityLabel.length()) {
             return true;

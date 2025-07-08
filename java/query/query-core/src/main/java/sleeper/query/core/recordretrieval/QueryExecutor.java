@@ -24,7 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
@@ -136,13 +136,13 @@ public class QueryExecutor {
      * @return                an iterator containing the relevant records
      * @throws QueryException if it errors
      */
-    public CloseableIterator<Record> execute(Query query) throws QueryException {
+    public CloseableIterator<SleeperRow> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
-        List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
+        List<Supplier<CloseableIterator<SleeperRow>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
-    public CloseableIterator<Record> execute(LeafPartitionQuery query) throws QueryException {
+    public CloseableIterator<SleeperRow> execute(LeafPartitionQuery query) throws QueryException {
         return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }
 
@@ -195,8 +195,8 @@ public class QueryExecutor {
         return leafPartitionQueriesList;
     }
 
-    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
-        List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
+    private List<Supplier<CloseableIterator<SleeperRow>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
+        List<Supplier<CloseableIterator<SleeperRow>>> iterators = new ArrayList<>();
 
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {

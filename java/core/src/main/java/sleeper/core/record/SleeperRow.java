@@ -31,23 +31,23 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * The fundamental data item. A {@link Record} consists of a {@link Map} from
+ * The fundamental data item. A {@link SleeperRow} consists of a {@link Map} from
  * {@link String} to {@link Object} where the object will be one of the supported
  * types.
  */
-public class Record {
+public class SleeperRow {
     private final Map<String, Object> values;
 
-    public Record() {
+    public SleeperRow() {
         values = new HashMap<>();
     }
 
-    public Record(Map<String, Object> map) {
+    public SleeperRow(Map<String, Object> map) {
         this();
         this.values.putAll(map);
     }
 
-    public Record(Record record) {
+    public SleeperRow(SleeperRow record) {
         this();
         this.values.putAll(record.values);
     }
@@ -135,7 +135,7 @@ public class Record {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Record other = (Record) obj;
+        final SleeperRow other = (SleeperRow) obj;
 
         Map<String, Object> cloneWithWrappedByteArray = new HashMap<>();
         for (Map.Entry<String, Object> entry : values.entrySet()) {

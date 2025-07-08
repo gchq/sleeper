@@ -17,7 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.util.List;
 import java.util.Map;
@@ -30,12 +30,12 @@ public class FilteringIteratorTest {
     @Test
     void shouldFilterIterator() {
         // Given
-        Record record1 = new Record(Map.of("key", "A"));
-        Record record2 = new Record(Map.of("key", "B"));
-        CloseableIterator<Record> iterator = new WrappedIterator<>(List.of(record1, record2).iterator());
+        SleeperRow record1 = new SleeperRow(Map.of("key", "A"));
+        SleeperRow record2 = new SleeperRow(Map.of("key", "B"));
+        CloseableIterator<SleeperRow> iterator = new WrappedIterator<>(List.of(record1, record2).iterator());
 
         // When
-        FilteringIterator<Record> filtered = new FilteringIterator<>(iterator,
+        FilteringIterator<SleeperRow> filtered = new FilteringIterator<>(iterator,
                 record -> "A".equals(record.get("key")));
 
         // Then

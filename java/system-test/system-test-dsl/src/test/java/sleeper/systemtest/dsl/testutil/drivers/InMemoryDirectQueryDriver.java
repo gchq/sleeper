@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
@@ -51,14 +51,14 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
     }
 
     @Override
-    public List<Record> run(Query query) {
+    public List<SleeperRow> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
                 new InMemoryLeafPartitionRecordRetriever(dataStore), Instant.now());
         executor.init();
-        try (CloseableIterator<Record> iterator = executor.execute(query)) {
-            List<Record> records = new ArrayList<>();
+        try (CloseableIterator<SleeperRow> iterator = executor.execute(query)) {
+            List<SleeperRow> records = new ArrayList<>();
             iterator.forEachRemaining(records::add);
             return records;
         } catch (IOException | QueryException e) {

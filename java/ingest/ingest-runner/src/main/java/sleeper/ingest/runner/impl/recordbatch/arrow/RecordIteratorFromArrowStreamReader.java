@@ -19,19 +19,19 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
- * Reads through records read into memory with Arrow. This is a {@link CloseableIterator} of {@link Record}s, where
+ * Reads through records read into memory with Arrow. This is a {@link CloseableIterator} of {@link SleeperRow}s, where
  * those records are read from a {@link ArrowStreamReader}.
  * <p>
  * The rows are read from the file in small batches, which correspond to the small batches that were used when the file
  * was orginally written.
  */
-class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
+class RecordIteratorFromArrowStreamReader implements CloseableIterator<SleeperRow> {
     private final ArrowStreamReader arrowStreamReader;
     private int currentRecordNoInBatch;
     private long totalNoOfRecordsRead = 0L;
@@ -64,7 +64,7 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
     }
 
     @Override
-    public Record next() throws NoSuchElementException {
+    public SleeperRow next() throws NoSuchElementException {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
@@ -72,7 +72,7 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
             // Retrieve the current small batch from within the ArrowStreamReader, read the value from
             // row currentRecordNoInBatch and use these values to construct a Record object.
             VectorSchemaRoot smallBatchVectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
-            Record record = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(smallBatchVectorSchemaRoot, currentRecordNoInBatch);
+            SleeperRow record = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(smallBatchVectorSchemaRoot, currentRecordNoInBatch);
             currentRecordNoInBatch++;
             totalNoOfRecordsRead++;
             // Load a new batch when this one has been read fully

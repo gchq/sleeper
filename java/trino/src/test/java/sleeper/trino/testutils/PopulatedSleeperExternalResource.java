@@ -38,7 +38,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -104,7 +104,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     private void ingestData(
             InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws Exception {
+            TableProperties tableProperties, Iterator<SleeperRow> recordIterator) throws Exception {
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(UUID.randomUUID().toString()).toString())
@@ -205,10 +205,10 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         public final String tableName;
         public final Schema schema;
         public final List<Object> splitPoints;
-        public final Stream<Record> recordStream;
+        public final Stream<SleeperRow> recordStream;
 
         public TableDefinition(
-                String tableName, Schema schema, List<Object> splitPoints, Stream<Record> recordStream) {
+                String tableName, Schema schema, List<Object> splitPoints, Stream<SleeperRow> recordStream) {
             this.tableName = tableName;
             this.schema = schema;
             this.splitPoints = splitPoints;

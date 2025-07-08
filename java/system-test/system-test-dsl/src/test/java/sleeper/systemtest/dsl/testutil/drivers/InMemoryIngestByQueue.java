@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
@@ -173,9 +173,9 @@ public class InMemoryIngestByQueue {
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
-        Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
+        Iterator<SleeperRow> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
         InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
-        try (IngestCoordinator<Record> coordinator = ingest.coordinatorBuilder()
+        try (IngestCoordinator<SleeperRow> coordinator = ingest.coordinatorBuilder()
                 .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds))
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, iterator).write();

@@ -18,7 +18,7 @@ package sleeper.parquet.record;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -45,7 +45,7 @@ public class RecordWriter {
         this.schema = schema;
     }
 
-    public void write(Record record) {
+    public void write(SleeperRow record) {
         recordConsumer.startMessage();
         int count = 0;
         for (Field entry : schema.getAllFields()) {

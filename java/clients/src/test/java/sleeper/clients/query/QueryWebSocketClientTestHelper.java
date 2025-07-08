@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +54,7 @@ public class QueryWebSocketClientTestHelper {
                 "}";
     }
 
-    public static String queryResult(String queryId, Record... records) {
+    public static String queryResult(String queryId, SleeperRow... records) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"records\"," +
@@ -83,7 +83,7 @@ public class QueryWebSocketClientTestHelper {
         return client -> client.onError(error);
     }
 
-    public static String asJson(Record record) {
+    public static String asJson(SleeperRow record) {
         return GSON.toJson(record);
     }
 }

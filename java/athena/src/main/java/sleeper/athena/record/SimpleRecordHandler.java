@@ -29,7 +29,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import sleeper.athena.FilterTranslator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
@@ -92,13 +92,13 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
      * @throws Exception       if something goes wrong with the read
      */
     @Override
-    protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {
+    protected CloseableIterator<SleeperRow> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {
         String fileName = recordsRequest.getSplit().getProperty(RELEVANT_FILES_FIELD);
 
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = filterTranslator.toPredicate(recordsRequest.getConstraints().getSummary());
 
-        ParquetReader.Builder<Record> recordReaderBuilder = new ParquetRecordReader.Builder(new Path(fileName), schema)
+        ParquetReader.Builder<SleeperRow> recordReaderBuilder = new ParquetRecordReader.Builder(new Path(fileName), schema)
                 .withConf(getConfigurationForTable(tableProperties));
 
         if (filterPredicate != null) {

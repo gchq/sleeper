@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.util.Collections;
@@ -48,7 +48,7 @@ public class AgeOffIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> input) {
         return new FilteringIterator<>(input, record -> {
             Long value = (Long) record.get(fieldName);
             return null != value && System.currentTimeMillis() - value < ageOff;

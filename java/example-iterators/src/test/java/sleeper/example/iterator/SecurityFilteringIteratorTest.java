@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -35,13 +35,13 @@ public class SecurityFilteringIteratorTest {
     @Test
     public void shouldFilter() {
         // Given
-        List<Record> records = getData();
-        Iterator<Record> iterator = records.iterator();
+        List<SleeperRow> records = getData();
+        Iterator<SleeperRow> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel,public", getSchema());
 
         // When
-        Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<SleeperRow> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
@@ -51,13 +51,13 @@ public class SecurityFilteringIteratorTest {
     @Test
     public void shouldAllowRecordsWithEmptyVisibilitiesEvenIfNoAuths() {
         // Given
-        List<Record> records = getData();
-        Iterator<Record> iterator = records.iterator();
+        List<SleeperRow> records = getData();
+        Iterator<SleeperRow> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel", getSchema());
 
         // When
-        Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<SleeperRow> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
@@ -73,19 +73,19 @@ public class SecurityFilteringIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
+    private static List<SleeperRow> getData() {
+        List<SleeperRow> records = new ArrayList<>();
+        SleeperRow record1 = new SleeperRow();
         record1.put("field1", "1");
         record1.put("field2", 1000L);
         record1.put("securityLabel", "public");
         records.add(record1);
-        Record record2 = new Record();
+        SleeperRow record2 = new SleeperRow();
         record2.put("field1", "2");
         record2.put("field2", 10000L);
         record2.put("securityLabel", "private");
         records.add(record2);
-        Record record3 = new Record();
+        SleeperRow record3 = new SleeperRow();
         record3.put("field1", "2");
         record3.put("field2", 100000L);
         record3.put("securityLabel", "");

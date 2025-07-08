@@ -42,7 +42,7 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -428,15 +428,15 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         }
 
         @Override
-        public CloseableIterator<Record> apply(CloseableIterator<Record> recordCloseableIterator) {
+        public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> recordCloseableIterator) {
             return new CountAggregatorIteratorImpl(recordCloseableIterator);
         }
 
-        private static class CountAggregatorIteratorImpl implements CloseableIterator<Record> {
-            private final CloseableIterator<Record> records;
-            private Record previous = null;
+        private static class CountAggregatorIteratorImpl implements CloseableIterator<SleeperRow> {
+            private final CloseableIterator<SleeperRow> records;
+            private SleeperRow previous = null;
 
-            private CountAggregatorIteratorImpl(CloseableIterator<Record> consumedRecords) {
+            private CountAggregatorIteratorImpl(CloseableIterator<SleeperRow> consumedRecords) {
                 this.records = consumedRecords;
             }
 
@@ -451,8 +451,8 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
             }
 
             @Override
-            public Record next() {
-                Record current = records.next();
+            public SleeperRow next() {
+                SleeperRow current = records.next();
                 if (previous != null) {
                     current.put("count", (long) current.get("count") + (long) previous.get("count"));
                 }

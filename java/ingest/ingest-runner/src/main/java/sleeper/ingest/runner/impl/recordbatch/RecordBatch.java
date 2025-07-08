@@ -16,13 +16,13 @@
 package sleeper.ingest.runner.impl.recordbatch;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 
 import java.io.IOException;
 
 /**
  * A single-use batch of data, where the data is supplied in any format and is retrieved in sorted order. Converts the
- * source data to an iterator of Sleeper {@link Record} objects. Data may be supplied in any format and it is the
+ * source data to an iterator of Sleeper {@link SleeperRow} objects. Data may be supplied in any format and it is the
  * responsibility of implementing classes to handle any type conversion.
  *
  * @param <INCOMINGDATATYPE> The type of data that this record batch accepts
@@ -50,7 +50,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
      * @return             the iterator
      * @throws IOException if there was a failure writing the file
      */
-    CloseableIterator<Record> createOrderedRecordIterator() throws IOException;
+    CloseableIterator<SleeperRow> createOrderedRecordIterator() throws IOException;
 
     /**
      * Close the batch, freeing all memory, clearing temporary disk and other resources.

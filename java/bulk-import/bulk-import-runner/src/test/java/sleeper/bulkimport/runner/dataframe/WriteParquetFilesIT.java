@@ -25,7 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -94,11 +94,11 @@ class WriteParquetFilesIT {
         Iterator<Row> fileReferenceIterator = writeParquetFiles.call(rows);
 
         // Then
-        Record expectedRecord1 = new Record();
+        SleeperRow expectedRecord1 = new SleeperRow();
         expectedRecord1.put("key", 1);
         expectedRecord1.put("sort", 2L);
         expectedRecord1.put("value", "3");
-        Record expectedRecord2 = new Record();
+        SleeperRow expectedRecord2 = new SleeperRow();
         expectedRecord2.put("key", 4);
         expectedRecord2.put("sort", 5L);
         expectedRecord2.put("value", "6");
@@ -129,11 +129,11 @@ class WriteParquetFilesIT {
         Iterator<Row> fileReferenceIterator = writeParquetFiles.call(rows);
 
         // Then
-        Record expectedRecord1 = new Record();
+        SleeperRow expectedRecord1 = new SleeperRow();
         expectedRecord1.put("key", 1);
         expectedRecord1.put("sort", 2L);
         expectedRecord1.put("value", "3");
-        Record expectedRecord2 = new Record();
+        SleeperRow expectedRecord2 = new SleeperRow();
         expectedRecord2.put("key", 4);
         expectedRecord2.put("sort", 5L);
         expectedRecord2.put("value", "6");
@@ -155,11 +155,11 @@ class WriteParquetFilesIT {
                 .build();
     }
 
-    private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
-            List<Record> records = new ArrayList<>();
-            for (Record record = reader.read(); record != null; record = reader.read()) {
-                records.add(new Record(record));
+    private List<SleeperRow> readRecords(String filename, Schema schema) {
+        try (ParquetReader<SleeperRow> reader = new ParquetRecordReader(new Path(filename), schema)) {
+            List<SleeperRow> records = new ArrayList<>();
+            for (SleeperRow record = reader.read(); record != null; record = reader.read()) {
+                records.add(new SleeperRow(record));
             }
             return records;
         } catch (IOException e) {

@@ -39,7 +39,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -149,7 +149,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
-        List<Record> records = getRecords();
+        List<SleeperRow> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
@@ -172,15 +172,15 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                                     .rank(0.7, 70).rank(0.8, 80).rank(0.9, 90))
                             .build());
         });
-        List<Record> readRecords = new ArrayList<>();
+        List<SleeperRow> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            List<SleeperRow> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
             assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
             readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
-        List<Record> expectedRecords = new ArrayList<>(records);
+        List<SleeperRow> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
@@ -197,7 +197,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
-        List<Record> records = getRecordsIdenticalRowKey();
+        List<SleeperRow> records = getRecordsIdenticalRowKey();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
@@ -210,15 +210,15 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> fileReferences = stateStore.getFileReferences();
-        List<Record> readRecords = new ArrayList<>();
+        List<SleeperRow> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            List<SleeperRow> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
             assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
             readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
-        List<Record> expectedRecords = new ArrayList<>(records);
+        List<SleeperRow> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
@@ -235,7 +235,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
-        List<Record> records = getRecords();
+        List<SleeperRow> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
@@ -247,11 +247,11 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         runJob(runner, instanceProperties, job);
 
         // Then
-        List<Record> leftPartition = records.stream()
+        List<SleeperRow> leftPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) < 50)
                 .collect(Collectors.toList());
         sortRecords(leftPartition);
-        List<Record> rightPartition = records.stream()
+        List<SleeperRow> rightPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) >= 50)
                 .collect(Collectors.toList());
         sortRecords(rightPartition);
@@ -274,7 +274,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
-        List<Record> records = getLotsOfRecords();
+        List<SleeperRow> records = getLotsOfRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
@@ -313,8 +313,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                         }
                     })
                     .map(reader -> {
-                        List<Record> recordsRead = new ArrayList<>();
-                        Record record;
+                        List<SleeperRow> recordsRead = new ArrayList<>();
+                        SleeperRow record;
                         try {
                             record = reader.read();
                             while (record != null) {
@@ -342,7 +342,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
-        List<Record> records = getRecords();
+        List<SleeperRow> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         // - Write a dummy file
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(dataDir + "/import/b.txt", StandardCharsets.UTF_8))) {
@@ -376,7 +376,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     void shouldDeleteJsonFileAfterImport(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
-        List<Record> records = getRecords();
+        List<SleeperRow> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
@@ -389,15 +389,15 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> fileReferences = stateStore.getFileReferences();
-        List<Record> readRecords = new ArrayList<>();
+        List<SleeperRow> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
-            List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
+            List<SleeperRow> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
             assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
             readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
-        List<Record> expectedRecords = new ArrayList<>(records);
+        List<SleeperRow> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
@@ -412,12 +412,12 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
     }
 
-    private static List<Record> readRecords(String filename, Schema schema) {
+    private static List<SleeperRow> readRecords(String filename, Schema schema) {
         try (ParquetRecordReader reader = new ParquetRecordReader(filename, schema)) {
-            List<Record> readRecords = new ArrayList<>();
-            Record record = reader.read();
+            List<SleeperRow> readRecords = new ArrayList<>();
+            SleeperRow record = reader.read();
             while (null != record) {
-                readRecords.add(new Record(record));
+                readRecords.add(new SleeperRow(record));
                 record = reader.read();
             }
             return readRecords;
@@ -426,7 +426,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         }
     }
 
-    private static void sortRecords(List<Record> records) {
+    private static void sortRecords(List<SleeperRow> records) {
         RecordComparator recordComparator = new RecordComparator(getSchema());
         records.sort(recordComparator);
     }
@@ -463,10 +463,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                 .build();
     }
 
-    private static List<Record> getRecords() {
-        List<Record> records = new ArrayList<>(200);
+    private static List<SleeperRow> getRecords() {
+        List<SleeperRow> records = new ArrayList<>(200);
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", i);
             record.put("sort", (long) i);
             record.put("value1", "" + i);
@@ -476,7 +476,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             record.put("value3", map);
             records.add(record);
             // Add record again but with the sort field set to a different value
-            Record record2 = new Record(record);
+            SleeperRow record2 = new SleeperRow(record);
             record2.put("sort", ((long) record.get("sort")) - 1L);
             records.add(record2);
         }
@@ -484,10 +484,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return records;
     }
 
-    private static List<Record> getRecordsIdenticalRowKey() {
-        List<Record> records = new ArrayList<>(100);
+    private static List<SleeperRow> getRecordsIdenticalRowKey() {
+        List<SleeperRow> records = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", 1);
             record.put("sort", (long) i);
             record.put("value1", "" + i);
@@ -501,10 +501,10 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return records;
     }
 
-    private static List<Record> getLotsOfRecords() {
-        List<Record> records = new ArrayList<>(100000);
+    private static List<SleeperRow> getLotsOfRecords() {
+        List<SleeperRow> records = new ArrayList<>(100000);
         for (int i = 0; i < 50000; i++) {
-            Record record = new Record();
+            SleeperRow record = new SleeperRow();
             record.put("key", i);
             record.put("sort", (long) i);
             record.put("value1", "" + i);
@@ -514,7 +514,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             record.put("value3", map);
             records.add(record);
             // Add record again but with the sort field set to a different value
-            Record record2 = new Record(record);
+            SleeperRow record2 = new SleeperRow(record);
             record2.put("sort", ((long) record.get("sort")) - 1L);
             records.add(record2);
         }
@@ -532,9 +532,9 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         return splitPoints;
     }
 
-    private static void writeRecordsToFile(List<Record> records, String file) throws IllegalArgumentException, IOException {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file), getSchema());
-        for (Record record : records) {
+    private static void writeRecordsToFile(List<SleeperRow> records, String file) throws IllegalArgumentException, IOException {
+        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file), getSchema());
+        for (SleeperRow record : records) {
             writer.write(record);
         }
         writer.close();

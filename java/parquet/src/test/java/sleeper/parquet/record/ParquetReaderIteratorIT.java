@@ -21,7 +21,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -47,22 +47,22 @@ class ParquetReaderIteratorIT {
     void shouldReturnCorrectIterator() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
         map1.put("column3", 3L);
-        Record record1 = new Record(map1);
+        SleeperRow record1 = new SleeperRow(map1);
         writer.write(record1);
         Map<String, Object> map2 = new HashMap<>();
         map2.put("column1", 4L);
         map2.put("column2", 5L);
         map2.put("column3", 6L);
-        Record record2 = new Record(map2);
+        SleeperRow record2 = new SleeperRow(map2);
         writer.write(record2);
         writer.close();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
+        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(path, schema).build();
 
         // When
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
@@ -78,9 +78,9 @@ class ParquetReaderIteratorIT {
     void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
         writer.close();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
+        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(path, schema).build();
 
         // When
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);

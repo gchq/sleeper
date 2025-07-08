@@ -17,7 +17,7 @@ package sleeper.ingest.runner.testutils;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
@@ -41,11 +41,11 @@ public class InMemoryIngest {
         this.sketchesStore = sketchesStore;
     }
 
-    public IngestCoordinator<Record> createCoordinator() {
+    public IngestCoordinator<SleeperRow> createCoordinator() {
         return coordinatorBuilder().build();
     }
 
-    public IngestCoordinator.Builder<Record> coordinatorBuilder() {
+    public IngestCoordinator.Builder<SleeperRow> coordinatorBuilder() {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))

@@ -21,7 +21,7 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.text.RandomStringGenerator;
 
 import sleeper.core.key.Key;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 /**
  * A supplier of Sleeper records generated randomly that conform to the given schema.
  */
-public class RandomRecordSupplier implements Supplier<Record> {
+public class RandomRecordSupplier implements Supplier<SleeperRow> {
     private final Map<String, Supplier<Object>> fieldNameToSupplier;
 
     public RandomRecordSupplier(Schema schema, SystemTestRandomDataSettings settings) {
@@ -55,8 +55,8 @@ public class RandomRecordSupplier implements Supplier<Record> {
     }
 
     @Override
-    public Record get() {
-        Record record = new Record();
+    public SleeperRow get() {
+        SleeperRow record = new SleeperRow();
         for (Map.Entry<String, Supplier<Object>> entry : fieldNameToSupplier.entrySet()) {
             record.put(entry.getKey(), entry.getValue().get());
         }

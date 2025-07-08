@@ -17,7 +17,7 @@ package sleeper.core.record.serialiser;
 
 import org.apache.commons.codec.binary.Base64;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.schema.Schema;
 
@@ -50,7 +50,7 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
             dos.writeUTF(resultsBatch.getQueryId());
             int numRecords = resultsBatch.getRecords().size();
             dos.writeInt(numRecords);
-            for (Record record : resultsBatch.getRecords()) {
+            for (SleeperRow record : resultsBatch.getRecords()) {
                 byte[] serialisedValue = recordSerialiser.serialise(record);
                 dos.writeInt(serialisedValue.length);
                 dos.write(serialisedValue);
@@ -71,7 +71,7 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
             DataInputStream dis = new DataInputStream(bais);
             String queryId = dis.readUTF();
             int numRecords = dis.readInt();
-            List<Record> records = new ArrayList<>(numRecords);
+            List<SleeperRow> records = new ArrayList<>(numRecords);
             for (int i = 0; i < numRecords; i++) {
                 int length = dis.readInt();
                 byte[] serialisedRecord = new byte[length];

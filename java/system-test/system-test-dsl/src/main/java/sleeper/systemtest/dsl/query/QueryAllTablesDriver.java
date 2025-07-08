@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.query.core.model.Query;
 
 import java.util.List;
@@ -25,5 +25,5 @@ import java.util.function.Function;
 
 public interface QueryAllTablesDriver extends QueryDriver {
 
-    Map<String, List<Record>> runForAllTables(Function<QueryCreator, Query> query);
+    Map<String, List<SleeperRow>> runForAllTables(Function<QueryCreator, Query> query);
 }

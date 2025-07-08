@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.function.Function;
  * A function to transform an iterator of records. For example, this may exclude some records, perform an aggregation,
  * or perform some computation on the values to produce or remove fields.
  */
-public interface SortedRecordIterator extends Function<CloseableIterator<Record>, CloseableIterator<Record>> {
+public interface SortedRecordIterator extends Function<CloseableIterator<SleeperRow>, CloseableIterator<SleeperRow>> {
 
     /**
      * Configures the iterator to accept records.

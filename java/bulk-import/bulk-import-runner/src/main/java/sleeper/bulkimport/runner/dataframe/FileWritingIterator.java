@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ListType;
@@ -55,7 +55,7 @@ public class FileWritingIterator implements Iterator<Row> {
     private final TableProperties tableProperties;
     private final Supplier<String> outputFilenameSupplier;
     private String currentPartitionId;
-    private ParquetWriter<Record> parquetWriter;
+    private ParquetWriter<SleeperRow> parquetWriter;
     private Sketches sketches;
     private String path;
     private long numRecords;
@@ -131,7 +131,7 @@ public class FileWritingIterator implements Iterator<Row> {
             startTime = Instant.now();
         }
         // Append to current writer
-        Record record = getRecord(row);
+        SleeperRow record = getRecord(row);
         parquetWriter.write(record);
         numRecords++;
         if (numRecords % 1_000_000L == 0) {
@@ -161,8 +161,8 @@ public class FileWritingIterator implements Iterator<Row> {
                 numRecords, duration, rate);
     }
 
-    private Record getRecord(Row row) {
-        Record record = new Record();
+    private SleeperRow getRecord(Row row) {
+        SleeperRow record = new SleeperRow();
         int i = 0;
         for (Field field : allSchemaFields) {
             if (field.getType() instanceof ListType) {
@@ -177,7 +177,7 @@ public class FileWritingIterator implements Iterator<Row> {
         return record;
     }
 
-    private ParquetWriter<Record> createWriter(String partitionId) throws IOException {
+    private ParquetWriter<SleeperRow> createWriter(String partitionId) throws IOException {
         numRecords = 0L;
         path = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
                 .constructPartitionParquetFilePath(partitionId, outputFilenameSupplier.get());

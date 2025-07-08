@@ -34,7 +34,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -169,10 +169,10 @@ public class CheckTransactionLogs {
     private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
         var path = new org.apache.hadoop.fs.Path(filename);
         long count = 0;
-        try (ParquetReader<Record> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
+        try (ParquetReader<SleeperRow> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
                 .withConf(hadoopConf)
                 .build()) {
-            for (Record record = reader.read(); record != null; record = reader.read()) {
+            for (SleeperRow record = reader.read(); record != null; record = reader.read()) {
                 count++;
             }
         }

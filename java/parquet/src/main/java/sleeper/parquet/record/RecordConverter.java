@@ -20,7 +20,7 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -40,11 +40,11 @@ import java.util.Map;
  * Converts rows of Parquet data into Sleeper records.
  */
 public class RecordConverter extends GroupConverter {
-    private final Record currentRecord;
+    private final SleeperRow currentRecord;
     private final Converter[] converters;
 
     public RecordConverter(Schema schema) {
-        currentRecord = new Record();
+        currentRecord = new SleeperRow();
         List<Field> fields = schema.getAllFields();
         this.converters = new Converter[fields.size()];
         int count = 0;
@@ -86,15 +86,15 @@ public class RecordConverter extends GroupConverter {
     public void end() {
     }
 
-    public Record getRecord() {
+    public SleeperRow getRecord() {
         return currentRecord;
     }
 
     public static class IntConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final SleeperRow record;
 
-        public IntConverter(String name, Record record) {
+        public IntConverter(String name, SleeperRow record) {
             this.name = name;
             this.record = record;
         }
@@ -107,9 +107,9 @@ public class RecordConverter extends GroupConverter {
 
     public static class LongConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final SleeperRow record;
 
-        public LongConverter(String name, Record record) {
+        public LongConverter(String name, SleeperRow record) {
             this.name = name;
             this.record = record;
         }
@@ -122,9 +122,9 @@ public class RecordConverter extends GroupConverter {
 
     public static class StringConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final SleeperRow record;
 
-        public StringConverter(String name, Record record) {
+        public StringConverter(String name, SleeperRow record) {
             this.name = name;
             this.record = record;
         }
@@ -137,9 +137,9 @@ public class RecordConverter extends GroupConverter {
 
     public static class ByteArrayConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final SleeperRow record;
 
-        public ByteArrayConverter(String name, Record record) {
+        public ByteArrayConverter(String name, SleeperRow record) {
             this.name = name;
             this.record = record;
         }
@@ -152,11 +152,11 @@ public class RecordConverter extends GroupConverter {
 
     public static class ListConverter<E> extends GroupConverter {
         private final String name;
-        private final Record record;
+        private final SleeperRow record;
         private final List<E> elements;
         private final ElementConverter<E> elementConverter;
 
-        public ListConverter(String name, PrimitiveType elementType, Record record) {
+        public ListConverter(String name, PrimitiveType elementType, SleeperRow record) {
             this.name = name;
             this.record = record;
             this.elements = new ArrayList<>();
@@ -185,12 +185,12 @@ public class RecordConverter extends GroupConverter {
 
     public static class MapConverter<K, V> extends GroupConverter {
         private final String name;
-        private final Record record;
+        private final SleeperRow record;
         private final List<K> keys;
         private final List<V> values;
         private final KeyValueConverter<K, V> keyValueConverter;
 
-        public MapConverter(String name, PrimitiveType keyType, PrimitiveType valueType, Record record) {
+        public MapConverter(String name, PrimitiveType keyType, PrimitiveType valueType, SleeperRow record) {
             this.name = name;
             this.record = record;
             this.keys = new ArrayList<>();

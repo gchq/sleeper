@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
-import sleeper.core.record.Record;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.statestore.FileReference;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public interface PartitionFileWriter {
      * @param  record      the record to append
      * @throws IOException if there was a failure writing the file
      */
-    void append(Record record) throws IOException;
+    void append(SleeperRow record) throws IOException;
 
     /**
      * Close the file, possibly asynchronously. When the returned future completes, the partition file should be in its
