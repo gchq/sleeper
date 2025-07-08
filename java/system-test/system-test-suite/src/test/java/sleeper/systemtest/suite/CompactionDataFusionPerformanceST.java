@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -36,7 +38,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
-import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to compact this many records on fairly large ECS instances.
@@ -69,10 +70,14 @@ public class CompactionDataFusionPerformanceST {
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
         // Then
-        assertThat(sleeper.tableFiles().references())
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        assertThat(files.estimateRecordsInTable()).isEqualTo(4_400_000_000L);
+        assertThat(files.listFileReferences()).hasSize(10);
+        assertThat(files.getFilesWithReferences())
                 .hasSize(10)
-                .matches(files -> numberOfRecordsIn(files) == 4_400_000_000L,
-                        "contain 4.4 billion records");
+                .first()
+                .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRecordsCheck.sorted(file.estimateRecords())));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
                         && stats.isAverageRunRecordsPerSecondInRange(800_000, 2_800_000),
