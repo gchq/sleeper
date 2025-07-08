@@ -22,16 +22,21 @@ import sleeper.core.schema.Schema;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Checks whether a given set of records are sorted. Represents the results of a check.
+ *
+ * @param recordsRead the number of records that were read during the check
+ * @param outOfOrder  the first records that were found out of order
+ */
 public record SortedRecordsCheck(long recordsRead, List<Record> outOfOrder) {
 
-    public static SortedRecordsCheck sorted(long count) {
-        return new SortedRecordsCheck(count, List.of());
-    }
-
-    public static SortedRecordsCheck outOfOrderAt(long recordsRead, Record left, Record right) {
-        return new SortedRecordsCheck(recordsRead, List.of(left, right));
-    }
-
+    /**
+     * Checks whether a given set of records are sorted. Will read through all records.
+     *
+     * @param  schema  the schema of the records
+     * @param  records the records
+     * @return         the results of the check
+     */
     public static SortedRecordsCheck check(Schema schema, Iterator<Record> records) {
         if (!records.hasNext()) {
             return sorted(0);
@@ -49,6 +54,28 @@ public record SortedRecordsCheck(long recordsRead, List<Record> outOfOrder) {
             record = next;
         }
         return sorted(recordsRead);
+    }
+
+    /**
+     * Creates the results of a check reporting that records were sorted.
+     *
+     * @param  count the number of records
+     * @return       the check result
+     */
+    public static SortedRecordsCheck sorted(long count) {
+        return new SortedRecordsCheck(count, List.of());
+    }
+
+    /**
+     * Creates the results of a check reporting that some records were not sorted.
+     *
+     * @param  recordsRead the number of records that were read
+     * @param  left        the record that appeared first, but should have been later
+     * @param  right       the record that appeared second, but should have been earlier
+     * @return             the check result
+     */
+    public static SortedRecordsCheck outOfOrderAt(long recordsRead, Record left, Record right) {
+        return new SortedRecordsCheck(recordsRead, List.of(left, right));
     }
 
 }
