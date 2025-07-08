@@ -28,8 +28,8 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.RecordComparator;
 import sleeper.core.record.SleeperRow;
+import sleeper.core.record.SleeperRowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.RangeQueryUtils;
@@ -114,10 +114,10 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         }
 
         // Sort current values and create iterator
-        RecordComparator recordComparator = new RecordComparator(dataReadSchema);
+        SleeperRowComparator sleeperRowComparator = new SleeperRowComparator(dataReadSchema);
         Iterator<SleeperRow> currentValuesSorted = currentValues.values()
                 .stream()
-                .sorted(recordComparator)
+                .sorted(sleeperRowComparator)
                 .iterator();
 
         // Create list of iterators - one for each of the ParquetReaderIterators

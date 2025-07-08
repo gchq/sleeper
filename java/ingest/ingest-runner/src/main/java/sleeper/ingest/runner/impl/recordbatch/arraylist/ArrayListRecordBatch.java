@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.record.RecordComparator;
 import sleeper.core.record.SleeperRow;
+import sleeper.core.record.SleeperRowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
@@ -139,7 +139,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                     localWorkingDirectory,
                     uniqueIdentifier,
                     batchNo);
-            inMemoryBatch.sort(new RecordComparator(sleeperSchema));
+            inMemoryBatch.sort(new SleeperRowComparator(sleeperSchema));
             Instant writeTime = Instant.now();
             // Write the records to a local Parquet file. The try-with-resources block ensures that the writer
             // is closed in both success and failure.

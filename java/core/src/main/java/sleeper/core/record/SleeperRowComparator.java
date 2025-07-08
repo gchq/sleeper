@@ -24,13 +24,13 @@ import java.util.List;
 /**
  * Compares records by row keys then sort keys.
  */
-public class RecordComparator implements Comparator<SleeperRow> {
+public class SleeperRowComparator implements Comparator<SleeperRow> {
     private final List<String> rowKeyNames;
     private final List<String> sortKeyNames;
     private final KeyComparator rowKeyComparator;
     private final KeyComparator sortKeyComparator;
 
-    public RecordComparator(Schema schema) {
+    public SleeperRowComparator(Schema schema) {
         this.rowKeyNames = schema.getRowKeyFieldNames();
         this.sortKeyNames = schema.getSortKeyFieldNames();
         this.rowKeyComparator = new KeyComparator(schema.getRowKeyTypes());

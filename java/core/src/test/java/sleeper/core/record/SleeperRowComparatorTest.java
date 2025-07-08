@@ -26,7 +26,7 @@ import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordComparatorTest {
+public class SleeperRowComparatorTest {
 
     @Test
     public void shouldCompareCorrectlyWithIntRowKeyAndNoSortKeys() {
@@ -44,7 +44,7 @@ public class RecordComparatorTest {
         SleeperRow record3 = new SleeperRow();
         record3.put("key", 1);
         record3.put("value", 10000);
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
@@ -75,7 +75,7 @@ public class RecordComparatorTest {
         SleeperRow record3 = new SleeperRow();
         record3.put("key", 1L);
         record3.put("value", 10000L);
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
@@ -106,7 +106,7 @@ public class RecordComparatorTest {
         SleeperRow record3 = new SleeperRow();
         record3.put("key", "1");
         record3.put("value", "10000");
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
@@ -137,7 +137,7 @@ public class RecordComparatorTest {
         SleeperRow record3 = new SleeperRow();
         record3.put("key", new byte[]{1});
         record3.put("value", new byte[]{102});
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
@@ -180,7 +180,7 @@ public class RecordComparatorTest {
         record5.put("key", 2);
         record5.put("sort", 1);
         record5.put("value", 1000);
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
@@ -223,7 +223,7 @@ public class RecordComparatorTest {
         record5.put("key", new byte[]{0});
         record5.put("sort", new byte[]{50, 51});
         record5.put("value", 1000);
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
@@ -295,7 +295,7 @@ public class RecordComparatorTest {
         record8.put("sort2", new byte[]{50, 51});
         record8.put("value", 1000);
 
-        RecordComparator comparator = new RecordComparator(schema);
+        SleeperRowComparator comparator = new SleeperRowComparator(schema);
 
         // When
         int comparison1 = comparator.compare(record1, record2);
