@@ -31,9 +31,6 @@ import sleeper.localstack.test.LocalStackTestBase;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.amazonaws.SDKGlobalConfiguration.ACCESS_KEY_SYSTEM_PROPERTY;
-import static com.amazonaws.SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY;
-import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_SYSTEM_PROPERTY;
 import static java.nio.file.Files.createTempDirectory;
 
 public abstract class MetadataHandlerITBase extends LocalStackTestBase {
@@ -41,6 +38,10 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     // For storing data
     @TempDir
     public static Path tempDir;
+
+    private static final String ACCESS_KEY_SYSTEM_PROPERTY = "aws.accessKeyId";
+    private static final String AWS_REGION_SYSTEM_PROPERTY = "aws.region";
+    private static final String SECRET_KEY_SYSTEM_PROPERTY = "aws.secretAccessKey";
 
     protected static final Schema TIME_SERIES_SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -52,6 +53,7 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
 
     @BeforeEach
     public void setUpCredentials() {
+
         // Annoyingly the MetadataHandler hard-codes the S3 client it uses to check the spill bucket. Therefore
         // I need to set up some credentials in System properties so the default client will pick them up.
         System.setProperty(ACCESS_KEY_SYSTEM_PROPERTY, localStackContainer.getAccessKey());
