@@ -15,11 +15,13 @@
  */
 package sleeper.core.record.testutils;
 
+import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 
-import java.util.Iterator;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 /**
@@ -37,23 +39,27 @@ public record SortedRecordsCheck(long recordsRead, List<Record> outOfOrder) {
      * @param  records the records
      * @return         the results of the check
      */
-    public static SortedRecordsCheck check(Schema schema, Iterator<Record> records) {
-        if (!records.hasNext()) {
-            return sorted(0);
-        }
-        RecordComparator comparator = new RecordComparator(schema);
-        Record record = records.next();
-        long recordsRead = 1;
-        while (records.hasNext()) {
-            Record next = records.next();
-            recordsRead++;
-            int diff = comparator.compare(record, next);
-            if (diff > 0) {
-                return outOfOrderAt(recordsRead, record, next);
+    public static SortedRecordsCheck check(Schema schema, CloseableIterator<Record> records) {
+        try (records) {
+            if (!records.hasNext()) {
+                return sorted(0);
             }
-            record = next;
+            RecordComparator comparator = new RecordComparator(schema);
+            Record record = records.next();
+            long recordsRead = 1;
+            while (records.hasNext()) {
+                Record next = records.next();
+                recordsRead++;
+                int diff = comparator.compare(record, next);
+                if (diff > 0) {
+                    return outOfOrderAt(recordsRead, record, next);
+                }
+                record = next;
+            }
+            return sorted(recordsRead);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        return sorted(recordsRead);
     }
 
     /**

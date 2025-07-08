@@ -17,15 +17,21 @@ package sleeper.core.record.testutils;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SortedRecordsCheckTest {
@@ -128,8 +134,65 @@ public class SortedRecordsCheckTest {
         assertThat(check(schema, records)).isEqualTo(SortedRecordsCheck.sorted(0));
     }
 
+    @Test
+    void shouldCloseIterator() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new LongType());
+        AtomicBoolean closed = new AtomicBoolean(false);
+        OnCloseIterator<Record> iterator = new OnCloseIterator<Record>(() -> closed.set(true));
+
+        // When
+        SortedRecordsCheck.check(schema, iterator);
+
+        // Then
+        assertThat(closed).isTrue();
+    }
+
+    @Test
+    void shouldWrapIteratorCloseIOException() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new LongType());
+        IOException failure = new IOException("Unexpected failure");
+        OnCloseIterator<Record> iterator = new OnCloseIterator<Record>(() -> {
+            throw failure;
+        });
+
+        // When / Then
+        assertThatThrownBy(() -> SortedRecordsCheck.check(schema, iterator))
+                .isInstanceOf(UncheckedIOException.class)
+                .hasCause(failure);
+    }
+
     private SortedRecordsCheck check(Schema schema, List<Record> records) {
-        return SortedRecordsCheck.check(schema, records.iterator());
+        return SortedRecordsCheck.check(schema, new WrappedIterator<>(records.iterator()));
+    }
+
+    private static class OnCloseIterator<T> implements CloseableIterator<T> {
+
+        private final OnClose onClose;
+
+        OnCloseIterator(OnClose onClose) {
+            this.onClose = onClose;
+        }
+
+        @Override
+        public void close() throws IOException {
+            onClose.close();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+
+        @Override
+        public T next() {
+            throw new UnsupportedOperationException("Unimplemented method 'next'");
+        }
+    }
+
+    private interface OnClose {
+        void close() throws IOException;
     }
 
 }
