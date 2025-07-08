@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -90,7 +92,12 @@ public class CompactionTest {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
-        Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        Approvals.verify(printFiles(sleeper.partitioning().tree(), files));
+        assertThat(files.getFilesWithReferences())
+                .allSatisfy(file -> assertThat(
+                        SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRecordsCheck.sorted(file.estimateRecords())));
     }
 
 }
