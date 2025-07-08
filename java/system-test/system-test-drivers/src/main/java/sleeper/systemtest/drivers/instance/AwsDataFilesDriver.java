@@ -18,6 +18,8 @@ package sleeper.systemtest.drivers.instance;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 
 public class AwsDataFilesDriver implements DataFilesDriver {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AwsDataFilesDriver.class);
 
     private Configuration hadoopConf;
 
@@ -41,6 +44,7 @@ public class AwsDataFilesDriver implements DataFilesDriver {
     @Override
     public CloseableIterator<Record> getRecords(Schema schema, String filename) {
         try {
+            LOGGER.info("Reading records from file {}", filename);
             return new ParquetReaderIterator(
                     ParquetReader.builder(new RecordReadSupport(schema), new Path(filename))
                             .withConf(hadoopConf)
