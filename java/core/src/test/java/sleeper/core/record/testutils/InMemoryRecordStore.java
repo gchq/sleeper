@@ -72,6 +72,12 @@ public class InMemoryRecordStore {
                 .flatMap(this::getRecordsOrThrow);
     }
 
+    /**
+     * Creates an iterator over records in the given data file.
+     *
+     * @param  filename the filename
+     * @return          the records
+     */
     public CloseableIterator<Record> openFile(String filename) {
         return new WrappedIterator<>(getRecordsOrThrow(filename).iterator());
     }
