@@ -15,6 +15,7 @@
  */
 package sleeper.trino.utils;
 
+import io.airlift.slice.DynamicSliceOutput;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.trino.spi.Page;
@@ -28,9 +29,7 @@ import io.trino.spi.type.VarcharType;
 
 import sleeper.trino.handle.SleeperColumnHandle;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.List;
 
 import static io.trino.spi.type.BigintType.BIGINT;
@@ -85,9 +84,12 @@ public class SleeperPageBlockUtils {
             blockBuilder.appendNull();
         } else {
             Type elementType = fieldType.getElementType();
-            if ((elementType.equals(BIGINT)) || elementType.equals(INTEGER)) {
-                byte[] data = convertObjectToBytes(element);
-                blockBuilder.writeEntry(data, 0, data.length);
+            if (elementType.equals(BIGINT)) {
+                Slice slice = generateLongSlice(element);
+                blockBuilder.writeEntry(slice, 0, slice.length());
+            } else if (elementType.equals(INTEGER)) {
+                Slice slice = generateIntegerSlice(element);
+                blockBuilder.writeEntry(slice, 0, slice.length());
             } else if (elementType.equals(VARCHAR)) {
                 Slice slice = Slices.utf8Slice((String) element);
                 blockBuilder.writeEntry(slice, 0, slice.length());
@@ -98,13 +100,20 @@ public class SleeperPageBlockUtils {
         }
     }
 
-    private static byte[] convertObjectToBytes(Object obj) {
-        ByteArrayOutputStream boas = new ByteArrayOutputStream();
-        try (ObjectOutputStream ois = new ObjectOutputStream(boas)) {
-            ois.writeObject(obj);
-            return boas.toByteArray();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+    private static Slice generateLongSlice(Object value) {
+        try (DynamicSliceOutput output = new DynamicSliceOutput(0)) {
+            output.writeLong((Long) value);
+            return output.slice();
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
+    }
+
+    private static Slice generateIntegerSlice(Object value) {
+        try (DynamicSliceOutput output = new DynamicSliceOutput(0)) {
+            output.writeInt((Integer) value);
+            return output.slice();
+        } catch (IOException e) {
             throw new RuntimeException();
         }
     }

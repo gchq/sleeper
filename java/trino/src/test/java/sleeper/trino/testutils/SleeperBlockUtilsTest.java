@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.trino.utils.SleeperPageBlockUtils;
 
-import java.nio.ByteBuffer;
-
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.VarcharType.VARCHAR;
@@ -46,8 +44,7 @@ public class SleeperBlockUtilsTest {
         SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, new ArrayType(BIGINT), testValue);
 
         // Then
-        assertThat(blockBuilder.build().getSlice(0, 0, 1).byteArray())
-                .contains(ByteBuffer.allocate(Long.BYTES).putLong(testValue).array());
+        assertThat(blockBuilder.build().getLong(0, 0)).isEqualTo(testValue);
     }
 
     @Test
@@ -59,8 +56,7 @@ public class SleeperBlockUtilsTest {
         SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, new ArrayType(INTEGER), testValue);
 
         // Then
-        assertThat(blockBuilder.build().getSlice(0, 0, 1).byteArray())
-                .contains(ByteBuffer.allocate(Integer.BYTES).putInt(testValue).array());
+        assertThat(blockBuilder.build().getInt(0, 0)).isEqualTo(testValue);
     }
 
     @Test
