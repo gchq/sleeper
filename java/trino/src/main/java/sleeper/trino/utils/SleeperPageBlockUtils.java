@@ -29,7 +29,7 @@ import io.trino.spi.type.VarcharType;
 
 import sleeper.trino.handle.SleeperColumnHandle;
 
-import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 import static io.trino.spi.type.BigintType.BIGINT;
@@ -100,21 +100,15 @@ public class SleeperPageBlockUtils {
         }
     }
 
-    private static Slice generateLongSlice(Object value) {
-        try (DynamicSliceOutput output = new DynamicSliceOutput(0)) {
-            output.writeLong((Long) value);
-            return output.slice();
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
+    private static Slice generateLongSlice(Object value) throws UncheckedIOException {
+        DynamicSliceOutput output = new DynamicSliceOutput(0);
+        output.writeLong((Long) value);
+        return output.slice();
     }
 
-    private static Slice generateIntegerSlice(Object value) {
-        try (DynamicSliceOutput output = new DynamicSliceOutput(0)) {
-            output.writeInt((Integer) value);
-            return output.slice();
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
+    private static Slice generateIntegerSlice(Object value) throws UncheckedIOException {
+        DynamicSliceOutput output = new DynamicSliceOutput(0);
+        output.writeInt((Integer) value);
+        return output.slice();
     }
 }
