@@ -15,6 +15,8 @@
  */
 package sleeper.core.record.testutils;
 
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 
 import java.util.HashMap;
@@ -68,6 +70,10 @@ public class InMemoryRecordStore {
     public Stream<Record> streamRecords(List<String> files) {
         return files.stream()
                 .flatMap(this::getRecordsOrThrow);
+    }
+
+    public CloseableIterator<Record> openFile(String filename) {
+        return new WrappedIterator<>(getRecordsOrThrow(filename).iterator());
     }
 
     private Stream<Record> getRecordsOrThrow(String filename) throws NoSuchElementException {

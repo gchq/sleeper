@@ -28,6 +28,7 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -225,6 +226,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     @Override
     public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
         return new InMemoryDataGenerationTasksDriver(context.instance(), data, sketches);
+    }
+
+    @Override
+    public DataFilesDriver dataFiles(SystemTestContext context) {
+        return (schema, filename) -> data.openFile(filename);
     }
 
     @Override

@@ -13,28 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.parquet.testutils;
+package sleeper.systemtest.drivers.instance;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 
-import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.RecordReadSupport;
+import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-public class SortedParquetFileCheck {
+public class AwsDataFilesDriver implements DataFilesDriver {
 
-    private SortedParquetFileCheck() {
+    private Configuration hadoopConf;
+
+    public AwsDataFilesDriver(SystemTestClients clients) {
+        hadoopConf = clients.createHadoopConf();
     }
 
-    public static SortedRecordsCheck check(Path path, Schema schema) {
-        try (ParquetReaderIterator iterator = new ParquetReaderIterator(
-                ParquetReader.builder(new RecordReadSupport(schema), path).build())) {
-            return SortedRecordsCheck.check(schema, iterator);
+    @Override
+    public CloseableIterator<Record> getRecords(Schema schema, String filename) {
+        try {
+            return new ParquetReaderIterator(
+                    ParquetReader.builder(new RecordReadSupport(schema), new Path(filename))
+                            .withConf(hadoopConf)
+                            .build());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
