@@ -186,8 +186,8 @@ public class SystemTestInstance {
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
-        properties.set(COMPACTION_TASK_X86_CPU, "1024");
-        properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
+        properties.set(COMPACTION_TASK_X86_CPU, "4096");
+        properties.set(COMPACTION_TASK_X86_MEMORY, "8192");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
