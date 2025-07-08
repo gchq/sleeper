@@ -17,8 +17,8 @@ package sleeper.core.record.serialiser;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
 import sleeper.core.record.ResultsBatch;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;

@@ -18,8 +18,8 @@ package sleeper.core.iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.SleeperRow;
 import sleeper.core.record.RecordComparator;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;

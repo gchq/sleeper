@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.record.SleeperRow;
 import sleeper.core.record.RecordComparator;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.runner.impl.ParquetConfiguration;

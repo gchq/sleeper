@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.SleeperRow;
 import sleeper.core.record.RecordComparator;
+import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 
