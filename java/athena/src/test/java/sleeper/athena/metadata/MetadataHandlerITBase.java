@@ -39,6 +39,8 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     @TempDir
     public static Path tempDir;
 
+    // System properties used in this class are based on the AWS V2 values. See this page for details:
+    // https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/migration-env-and-system-props.html
     private static final String ACCESS_KEY_SYSTEM_PROPERTY = "aws.accessKeyId";
     private static final String AWS_REGION_SYSTEM_PROPERTY = "aws.region";
     private static final String SECRET_KEY_SYSTEM_PROPERTY = "aws.secretAccessKey";
