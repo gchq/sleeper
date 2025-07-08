@@ -33,7 +33,7 @@ import java.util.List;
 public record SortedRecordsCheck(long recordsRead, List<Record> outOfOrder) {
 
     /**
-     * Checks whether a given set of records are sorted. Will read through all records.
+     * Checks whether a given set of records are sorted. Will read through all records and close the given iterator.
      *
      * @param  schema  the schema of the records
      * @param  records the records
