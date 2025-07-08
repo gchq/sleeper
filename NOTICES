@@ -21,7 +21,7 @@ AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2025.*)
 
 - Apache License, Version 2.0
 
-Trino (io.trino:trino-*:390)
+Trino (io.trino:trino-*:435)
 
 - Apache License, Version 2.0
 
@@ -42,10 +42,6 @@ Apache Ivy (org.apache.ivy:ivy:2.*)
 - Apache License, Version 2.0
 
 Snappy Java (org.xerial.snappy:snappy-java:1.*)
-
-- Apache License, Version 2.0
-
-Aircompressor (io.airlift:aircompressor:2.*)
 
 - Apache License, Version 2.0
 
@@ -111,7 +107,7 @@ Fasterxml Jackson (com.fasterxml.jackson.*:jackson-*:2.*)
 
 - Apache License, Version 2.0
 
-Wiremock (com.github.tomakehurst:wiremock-jre8:2.*)
+Wiremock (org.wiremock:wiremock:3.*)
 
 - Apache License, Version 2.0
 
@@ -159,7 +155,7 @@ Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
 
 - Apache License, Version 2.0
 
-Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient4:4.*)
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
 
 - Apache License, Version 2.0
 
@@ -187,15 +183,27 @@ ZSTD JNI (com.github.luben:zstd-jni:1.*)
 
 - BSD 2-Clause License
 
+Airlift (io.airlift:*:241)
+
+- Apache License, Version 2.0
+
 Units (io.airlift:units:1.*)
 
 - Apache License, Version 2.0
 
-Slice (io.airlift:slice:0.*)
+Slice (io.airlift:slice:2.*)
 
 - Apache License, Version 2.0
 
-Google Guice (com.google.inject:guice:5.*)
+Aircompressor (io.airlift:aircompressor:2.*)
+
+- Apache License, Version 2.0
+
+OpenTelemetry (io.opentelemetry:opentelemetry-*:1.*)
+
+- Apache License, Version 2.0
+
+Google Guice (com.google.inject:guice:7.*)
 
 - Apache License, Version 2.0
 
@@ -255,7 +263,7 @@ AssertJ (org.assertj:assertj-core:3.*)
 
 - Apache License, Version 2.0
 
-Hamcrest (org.hamcrest:hamcrest-core:1.*)
+Hamcrest (org.hamcrest:hamcrest-core:3.*)
 
 - The 3-Clause BSD License
 
@@ -316,7 +324,7 @@ Netty/TomcatNative (io.netty:netty-tcnative-boringssl-static:2.*)
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.*, org.eclipse.jetty.http2:*:9.*, org.eclipse.jetty.websocket:*:9.*)
+Eclipse Jetty (org.eclipse.jetty:*:11.*, org.eclipse.jetty.http2:*:11.*)
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
