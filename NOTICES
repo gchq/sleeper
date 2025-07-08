@@ -111,7 +111,7 @@ Fasterxml Jackson (com.fasterxml.jackson.*:jackson-*:2.*)
 
 - Apache License, Version 2.0
 
-Wiremock (com.github.tomakehurst:wiremock-jre8:3.*)
+Wiremock (org.wiremock:wiremock:3.*)
 
 - Apache License, Version 2.0
 
@@ -159,7 +159,7 @@ Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
 
 - Apache License, Version 2.0
 
-Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient4:4.*)
+Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:httpclient5:5.*)
 
 - Apache License, Version 2.0
 
