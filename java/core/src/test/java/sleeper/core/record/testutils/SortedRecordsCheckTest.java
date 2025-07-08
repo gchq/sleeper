@@ -139,7 +139,7 @@ public class SortedRecordsCheckTest {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
         AtomicBoolean closed = new AtomicBoolean(false);
-        OnCloseIterator<Record> iterator = new OnCloseIterator<Record>(() -> closed.set(true));
+        OnCloseIterator iterator = new OnCloseIterator(() -> closed.set(true));
 
         // When
         SortedRecordsCheck.check(schema, iterator);
@@ -153,7 +153,7 @@ public class SortedRecordsCheckTest {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
         IOException failure = new IOException("Unexpected failure");
-        OnCloseIterator<Record> iterator = new OnCloseIterator<Record>(() -> {
+        OnCloseIterator iterator = new OnCloseIterator(() -> {
             throw failure;
         });
 
@@ -167,7 +167,7 @@ public class SortedRecordsCheckTest {
         return SortedRecordsCheck.check(schema, new WrappedIterator<>(records.iterator()));
     }
 
-    private static class OnCloseIterator<T> implements CloseableIterator<T> {
+    private static class OnCloseIterator implements CloseableIterator<Record> {
 
         private final OnClose onClose;
 
@@ -186,7 +186,7 @@ public class SortedRecordsCheckTest {
         }
 
         @Override
-        public T next() {
+        public Record next() {
             throw new UnsupportedOperationException("Unimplemented method 'next'");
         }
     }
