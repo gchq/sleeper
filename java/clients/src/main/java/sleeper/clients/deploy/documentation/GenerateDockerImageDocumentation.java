@@ -116,9 +116,10 @@ public class GenerateDockerImageDocumentation {
     private static String getECRDescription() {
         return "These are the Docker deployment images.<br>" +
                 "\nA build of Sleeper outputs several directories under scripts/docker. \nEach is the directory to build a Docker image, with a Dockerfile. " +
-                "\nSome of these are used for parts of Sleeper that are always deployed from Docker images, and those are listed here." +
-                "\nEach of these have a deployment name which is both the name of its directory under scripts/docker, and the name of the image when it's built and the repository it's uploaded to." +
-                "\nThey're each associated with an optional stack, and will only be used when that optional stack is deployed in an instance of Sleeper." +
+                "\nSome of these are used for parts of Sleeper that are always deployed from Docker images, and those are listed here.<br>" +
+                "\nEach of these have a deployment name which is both the name of its directory under scripts/docker, and the name of the image when it's built and the repository it's uploaded to.<br>"
+                +
+                "\nThey're each associated with an optional stack, and will only be used when that optional stack is deployed in an instance of Sleeper.<br>" +
                 "\nCompaction job execution is built as a multiplatform image, so it can be deployed in both x86 and ARM architectures.";
     }
 
@@ -128,10 +129,10 @@ public class GenerateDockerImageDocumentation {
                 "\nMost lambdas are usually deployed from a jar in the jars bucket, but some need to be deployed as a Docker container, and we have the option to deploy all lambdas as Docker containers as well."
                 +
                 "\nTo build a Docker image for a lambda, we copy its jar file from scripts/jars to scripts/docker/lambda/lambda.jar, and then run the Docker build for that directory." +
-                "\nThis results in a separate Docker image for each lambda jar." +
+                "\nThis results in a separate Docker image for each lambda jar.<br>" +
                 "\nThe filename is the name of the jar file that's output by the build in scripts/jars." +
-                "\nIt includes the version number you've built, which we've included as a placeholder here." +
-                "\nThe image name is the name of the Docker image that's built, and the name of the repository it's uploaded to." +
+                "\nIt includes the version number you've built, which we've included as a placeholder here.<br>" +
+                "\nThe image name is the name of the Docker image that's built, and the name of the repository it's uploaded to.<br>" +
                 "\nAlways Docker deploy means that that lambda will always be deployed with Docker, usually because the jar is too large to deploy directly.";
     }
 }
