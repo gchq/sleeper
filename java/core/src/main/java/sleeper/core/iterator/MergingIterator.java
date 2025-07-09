@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.row.Record;
-import sleeper.core.row.RecordComparator;
+import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -100,15 +100,15 @@ public class MergingIterator implements CloseableIterator<Record> {
      * Compares the state for two iterators to find the next record in the sort order.
      */
     private static class RecordIteratorPairComparator implements Comparator<RecordIteratorPair> {
-        private final RecordComparator recordComparator;
+        private final RowComparator rowComparator;
 
         RecordIteratorPairComparator(Schema schema) {
-            this.recordComparator = new RecordComparator(schema);
+            this.rowComparator = new RowComparator(schema);
         }
 
         @Override
         public int compare(RecordIteratorPair pair1, RecordIteratorPair pair2) {
-            return recordComparator.compare(pair1.record, pair2.record);
+            return rowComparator.compare(pair1.record, pair2.record);
         }
     }
 }

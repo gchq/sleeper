@@ -40,7 +40,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.row.Record;
-import sleeper.core.row.RecordComparator;
+import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -175,7 +175,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
             List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
-            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RowComparator(getSchema()));
             readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
@@ -213,7 +213,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
             List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
-            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RowComparator(getSchema()));
             readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
@@ -327,7 +327,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
                         return recordsRead;
                     })
-                    .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
+                    .forEach(read -> assertThat(read).isSortedAccordingTo(new RowComparator(getSchema())));
         }
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
@@ -392,7 +392,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         List<Record> readRecords = new ArrayList<>();
         for (FileReference fileReference : fileReferences) {
             List<Record> recordsInThisFile = readRecords(fileReference.getFilename(), schema);
-            assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            assertThat(recordsInThisFile).isSortedAccordingTo(new RowComparator(getSchema()));
             readRecords.addAll(recordsInThisFile);
         }
         assertThat(readRecords).hasSameSizeAs(records);
@@ -427,8 +427,8 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static void sortRecords(List<Record> records) {
-        RecordComparator recordComparator = new RecordComparator(getSchema());
-        records.sort(recordComparator);
+        RowComparator rowComparator = new RowComparator(getSchema());
+        records.sort(rowComparator);
     }
 
     public InstanceProperties createInstanceProperties(String dir) {

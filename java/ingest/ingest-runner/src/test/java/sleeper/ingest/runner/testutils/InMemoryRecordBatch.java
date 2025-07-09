@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.row.Record;
-import sleeper.core.row.RecordComparator;
+import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 
@@ -51,7 +51,7 @@ public class InMemoryRecordBatch implements RecordBatch<Record> {
 
     @Override
     public CloseableIterator<Record> createOrderedRecordIterator() {
-        records.sort(new RecordComparator(schema));
+        records.sort(new RowComparator(schema));
         return new WrappedIterator<>(records.iterator());
     }
 

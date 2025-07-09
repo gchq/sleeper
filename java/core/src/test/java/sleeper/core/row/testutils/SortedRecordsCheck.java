@@ -17,7 +17,7 @@ package sleeper.core.row.testutils;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Record;
-import sleeper.core.row.RecordComparator;
+import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public record SortedRecordsCheck(long recordsRead, List<Record> outOfOrder) {
             if (!records.hasNext()) {
                 return sorted(0);
             }
-            RecordComparator comparator = new RecordComparator(schema);
+            RowComparator comparator = new RowComparator(schema);
             Record record = records.next();
             long recordsRead = 1;
             while (records.hasNext()) {
