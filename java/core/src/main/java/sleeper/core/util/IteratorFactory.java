@@ -39,7 +39,7 @@ public class IteratorFactory {
     /**
      * Creates an initialises an iterator.
      *
-     * The named iterator class is created and its {@link SortedRecordIterator#init(String, Schema)} method is called.
+     * The named iterator class is created and its {@link SortedRowIterator#init(String, Schema)} method is called.
      * If the special keyword for aggregation is specified as the class name
      * {@link CompactionMethod#AGGREGATION_ITERATOR_NAME},
      * then an aggregation iterator is created and initialised.

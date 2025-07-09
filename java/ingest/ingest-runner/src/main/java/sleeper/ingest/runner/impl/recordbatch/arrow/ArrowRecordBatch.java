@@ -110,7 +110,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     protected int currentInsertIndex;
     protected long noOfBytesInLocalFiles;
     protected int currentBatchNo;
-    protected CloseableIterator<Row> internalSortedRecordIterator;
+    protected CloseableIterator<Row> internalSortedRowIterator;
     protected boolean isWriteable;
 
     /**
@@ -156,7 +156,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         this.noOfBytesInLocalFiles = 0L;
         this.localArrowFileNames = new ArrayList<>();
         this.uniqueIdentifier = UUID.randomUUID().toString();
-        this.internalSortedRecordIterator = null;
+        this.internalSortedRowIterator = null;
         this.isWriteable = true;
 
         try {
@@ -380,14 +380,14 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
     @Override
     public void close() {
         isWriteable = false;
-        if (internalSortedRecordIterator != null) {
+        if (internalSortedRowIterator != null) {
             try {
-                internalSortedRecordIterator.close();
+                internalSortedRowIterator.close();
             } catch (Exception e) {
-                LOGGER.error("Error closing internalSortedRecordIterator", e);
+                LOGGER.error("Error closing internalSortedRowIterator", e);
             }
         }
-        internalSortedRecordIterator = null;
+        internalSortedRowIterator = null;
         vectorSchemaRoot.close();
         workingBufferAllocator.close();
         batchBufferAllocator.close();
@@ -475,13 +475,13 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      */
     @Override
     public CloseableIterator<Row> createOrderedRowIterator() throws IOException {
-        if (!isWriteable || internalSortedRecordIterator != null) {
+        if (!isWriteable || internalSortedRowIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
         isWriteable = false;
         try {
-            internalSortedRecordIterator = createSortedRecordIterator();
-            return internalSortedRecordIterator;
+            internalSortedRowIterator = createSortedRowIterator();
+            return internalSortedRowIterator;
         } catch (Exception e1) {
             try {
                 close();
@@ -500,7 +500,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      * @return             An iterator to iterate through all of the records in sorted order.
      * @throws IOException if there was a failure writing the local file
      */
-    private CloseableIterator<Row> createSortedRecordIterator() throws IOException {
+    private CloseableIterator<Row> createSortedRowIterator() throws IOException {
         if (currentInsertIndex > 0) {
             LOGGER.debug("Creating an iterator: flushing memory to disk");
             flushToLocalArrowFileThenClear();
@@ -513,21 +513,21 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
                     localArrowFileNames.get(localArrowFileNames.size() - 1));
         }
         // Create the variables for the iterators here so that they can be closed if an error occurs
-        List<CloseableIterator<Row>> sortedRecordIteratorsToMerge = new ArrayList<>(localArrowFileNames.size());
+        List<CloseableIterator<Row>> sortedRowIteratorsToMerge = new ArrayList<>(localArrowFileNames.size());
         try {
             // Create an iterator from each local file
             localArrowFileNames.forEach(localFileName -> {
                 try {
-                    sortedRecordIteratorsToMerge.add(createCloseableRecordIteratorForArrowFile(workingBufferAllocator, localFileName));
+                    sortedRowIteratorsToMerge.add(createCloseableRecordIteratorForArrowFile(workingBufferAllocator, localFileName));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
             // Merge the local file iterators into one sorted iterator
-            return new MergingIterator(sleeperSchema, sortedRecordIteratorsToMerge);
+            return new MergingIterator(sleeperSchema, sortedRowIteratorsToMerge);
         } catch (Exception e1) {
             // Clean up carefully if something went wrong during the creation of this iterator
-            sortedRecordIteratorsToMerge.forEach(iterator -> {
+            sortedRowIteratorsToMerge.forEach(iterator -> {
                 try {
                     iterator.close();
                 } catch (Exception e2) {
