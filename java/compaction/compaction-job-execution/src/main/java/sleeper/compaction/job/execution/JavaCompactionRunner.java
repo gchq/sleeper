@@ -35,8 +35,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
@@ -143,15 +143,8 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
             SortedRowIterator iterator;
-            try {
-                iterator = objectFactory.getObject(compactionJob.getIteratorClassName(), SortedRowIterator.class);
-            } catch (ObjectFactoryException e) {
-                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
-            }
-
-            LOGGER.debug("Created iterator of class {}", compactionJob.getIteratorClassName());
-            iterator.init(compactionJob.getIteratorConfig(), schema);
-            LOGGER.debug("Initialised iterator with config {}", compactionJob.getIteratorConfig());
+            IteratorFactory iterFactory = new IteratorFactory(objectFactory);
+            iterator = iterFactory.getIterator(compactionJob.getIteratorClassName(), compactionJob.getIteratorConfig(), schema);
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;

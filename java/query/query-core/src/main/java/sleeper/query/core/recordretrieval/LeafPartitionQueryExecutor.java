@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
+
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -27,8 +28,8 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 
@@ -63,11 +64,6 @@ public class LeafPartitionQueryExecutor {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
-        // TODO: Remove this when a proper compaction iterator specification is present
-        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(compactionIteratorClassName)) {
-            throw new QueryException(new UnsupportedOperationException("Queries are not currently possible on tables with a " + compactionIteratorClassName + " iterator specified."));
-        }
-
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
@@ -133,6 +129,8 @@ public class LeafPartitionQueryExecutor {
             String iteratorConfig) throws IteratorCreationException {
         if (iteratorClassName == null) {
             return null;
+        } else {
+            return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
         }
         SortedRowIterator sortedRowIterator;
         try {
