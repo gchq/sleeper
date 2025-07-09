@@ -15,24 +15,30 @@
  */
 package sleeper.systemtest.suite.investigate;
 
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
@@ -136,5 +142,20 @@ public class CheckTransactionLogs {
             entry.apply(state);
         }
         return new PartitionTree(state.all());
+    }
+
+    public CompactionJob inferLastCompactionJobFromAssignJobIdsTransaction() {
+        AssignJobIdsTransaction transaction = lastTransactionOfType(AssignJobIdsTransaction.class);
+        AssignJobIdRequest request = Lists.reverse(transaction.getRequests()).stream().findFirst().orElseThrow();
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+        return jobFactory.createCompactionJobWithFilenames(request.getJobId(), request.getFilenames(), request.getPartitionId());
+    }
+
+    private <S, T extends StateStoreTransaction<S>> T lastTransactionOfType(Class<T> transactionClass) {
+        TransactionType transactionType = TransactionType.getType(transactionClass);
+        return Lists.reverse(filesLog).stream()
+                .filter(entry -> entry.isType(transactionType))
+                .map(entry -> entry.castTransaction(transactionClass))
+                .findFirst().orElseThrow();
     }
 }

@@ -69,4 +69,19 @@ public enum TransactionType {
         }
         throw new IllegalArgumentException("Transaction type not recognised: " + transaction.getClass());
     }
+
+    /**
+     * Retrieves the type of a transaction class.
+     *
+     * @param  transactionClass the transaction class
+     * @return                  the type
+     */
+    public static TransactionType getType(Class<? extends StateStoreTransaction<?>> transactionClass) {
+        for (TransactionType type : values()) {
+            if (type.getType().isAssignableFrom(transactionClass)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Transaction type not recognised: " + transactionClass);
+    }
 }

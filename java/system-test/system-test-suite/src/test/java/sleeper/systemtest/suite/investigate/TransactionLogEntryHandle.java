@@ -59,6 +59,10 @@ public record TransactionLogEntryHandle(TransactionLogEntry original, StateStore
         return (T) transaction;
     }
 
+    public <S, T extends StateStoreTransaction<S>> T castTransaction(Class<T> transactionType) {
+        return (T) transaction;
+    }
+
     public long transactionNumber() {
         return original.getTransactionNumber();
     }
