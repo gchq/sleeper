@@ -114,9 +114,7 @@ directory.
 For Sleeper to be deployed manually, some resources have to be uploaded to AWS first. The jar files need to be uploaded
 to an S3 bucket, and some Docker images need to be uploaded to an ECR repository.
 
-Details of images to be uploaded can be found [here](/docs/deployment/images-to-upload.md)
-
-The images to be uploaded to an S3 bucket can be found in /scripts/docker/jars with the Dockerfile being found at /scripts/docker/lambda
+Details of images to be uploaded can be found [here](/docs/deployment/images-to-upload.md).
 
 #### Upload the Docker images to ECR
 

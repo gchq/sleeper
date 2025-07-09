@@ -81,7 +81,7 @@ public class GenerateDockerImageDocumentation {
 
         return factory.tableBuilder()
                 .itemsAndWriter(deployments, (deployment, row) -> {
-                    row.value(fileName, String.format(deployment.getFilenameFormat(), "<version-number>"));
+                    row.value(fileName, String.format(deployment.getFilenameFormat(), "`<version-number>`"));
                     row.value(imageName, deployment.getImageName());
                     row.value(isAlwaysDockerDeploy, deployment.isAlwaysDockerDeploy());
                 }).build();
@@ -114,7 +114,7 @@ public class GenerateDockerImageDocumentation {
     }
 
     private static String getECRDescription() {
-        return "These are the docker deployment images." +
+        return "These are the Docker deployment images.<br>" +
                 "\nA build of Sleeper outputs several directories under scripts/docker. \nEach is the directory to build a Docker image, with a Dockerfile. " +
                 "\nSome of these are used for parts of Sleeper that are always deployed from Docker images, and those are listed here." +
                 "\nEach of these have a deployment name which is both the name of its directory under scripts/docker, and the name of the image when it's built and the repository it's uploaded to." +
@@ -123,7 +123,7 @@ public class GenerateDockerImageDocumentation {
     }
 
     private static String getLambdaDescription() {
-        return "These are the Lambda deployment images." +
+        return "These are the Lambda deployment images.<br>" +
                 "\nThese are all used with the Docker build directory that's output during a build of Sleeper at scripts/docker/lambda." +
                 "\nMost lambdas are usually deployed from a jar in the jars bucket, but some need to be deployed as a Docker container, and we have the option to deploy all lambdas as Docker containers as well."
                 +
