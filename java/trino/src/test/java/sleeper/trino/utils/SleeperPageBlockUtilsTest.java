@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.trino.testutils;
+package sleeper.trino.utils;
 
 import io.trino.spi.block.VariableWidthBlockBuilder;
 import io.trino.spi.type.ArrayType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.trino.utils.SleeperPageBlockUtils;
-
 import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SleeperBlockUtilsTest {
+public class SleeperPageBlockUtilsTest {
     VariableWidthBlockBuilder blockBuilder;
 
     @BeforeEach
@@ -68,6 +66,7 @@ public class SleeperBlockUtilsTest {
         SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, new ArrayType(VARCHAR), testValue);
 
         // Then
-        assertThat(blockBuilder.build().getSlice(0, 0, testValue.length()).toStringUtf8()).isEqualTo(testValue);
+        assertThat(blockBuilder.build().getSlice(0, 0, testValue.length()).toStringUtf8())
+                .isEqualTo(testValue);
     }
 }

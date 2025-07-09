@@ -26,6 +26,7 @@ import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -123,6 +124,8 @@ public interface SystemTestDrivers {
     PartitionReportDriver partitionReports(SystemTestContext context);
 
     TableMetricsDriver tableMetrics(SystemTestContext context);
+
+    DataFilesDriver dataFiles(SystemTestContext context);
 
     default PollWithRetriesDriver pollWithRetries() {
         return PollWithRetriesDriver.realWaits();
