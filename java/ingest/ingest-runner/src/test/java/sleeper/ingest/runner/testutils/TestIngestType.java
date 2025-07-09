@@ -16,7 +16,7 @@
 
 package sleeper.ingest.runner.testutils;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 
 public class TestIngestType {

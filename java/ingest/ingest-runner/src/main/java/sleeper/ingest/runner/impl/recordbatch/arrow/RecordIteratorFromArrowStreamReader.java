@@ -19,7 +19,7 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;

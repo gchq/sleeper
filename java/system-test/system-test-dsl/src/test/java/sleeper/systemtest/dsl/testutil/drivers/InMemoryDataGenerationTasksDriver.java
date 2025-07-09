@@ -17,8 +17,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;

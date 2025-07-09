@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;

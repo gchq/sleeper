@@ -20,7 +20,7 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.AbstractMap;
 import java.util.List;

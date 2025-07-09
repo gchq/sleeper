@@ -16,7 +16,7 @@
 package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.nio.file.Path;
 import java.util.Iterator;

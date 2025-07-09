@@ -23,7 +23,7 @@ import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils;
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;

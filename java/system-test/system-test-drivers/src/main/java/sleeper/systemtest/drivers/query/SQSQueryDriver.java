@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.core.model.Query;

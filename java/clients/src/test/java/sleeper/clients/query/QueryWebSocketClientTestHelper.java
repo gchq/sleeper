@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.List;
 import java.util.stream.Collectors;

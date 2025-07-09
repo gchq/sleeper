@@ -20,7 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;

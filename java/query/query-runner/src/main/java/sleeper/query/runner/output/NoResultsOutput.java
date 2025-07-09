@@ -16,7 +16,7 @@
 package sleeper.query.runner.output;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputConstants;

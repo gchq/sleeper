@@ -18,7 +18,7 @@ package sleeper.core.iterator;
 import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
 import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.key.Key;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.io.IOException;
 import java.util.ArrayList;

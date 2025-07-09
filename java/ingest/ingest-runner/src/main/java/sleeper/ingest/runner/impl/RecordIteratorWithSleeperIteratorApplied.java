@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;

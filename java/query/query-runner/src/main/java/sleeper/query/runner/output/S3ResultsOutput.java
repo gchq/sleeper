@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;

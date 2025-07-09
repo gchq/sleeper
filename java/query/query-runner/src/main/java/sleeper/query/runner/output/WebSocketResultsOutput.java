@@ -21,8 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
-import sleeper.core.record.serialiser.RecordJSONSerDe;
+import sleeper.core.row.Record;
+import sleeper.core.row.serialiser.RecordJSONSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;

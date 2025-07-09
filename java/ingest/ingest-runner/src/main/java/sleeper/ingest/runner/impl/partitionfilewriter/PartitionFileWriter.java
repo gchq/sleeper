@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.statestore.FileReference;
 
 import java.io.IOException;

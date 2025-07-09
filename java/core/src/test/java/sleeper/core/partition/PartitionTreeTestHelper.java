@@ -15,7 +15,7 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 

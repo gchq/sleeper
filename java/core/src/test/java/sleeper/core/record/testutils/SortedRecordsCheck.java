@@ -16,8 +16,8 @@
 package sleeper.core.record.testutils;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
-import sleeper.core.record.RecordComparator;
+import sleeper.core.row.Record;
+import sleeper.core.row.RecordComparator;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;

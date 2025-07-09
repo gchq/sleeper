@@ -29,7 +29,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import sleeper.athena.FilterTranslator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;

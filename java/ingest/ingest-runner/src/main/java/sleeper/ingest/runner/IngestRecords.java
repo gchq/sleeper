@@ -16,7 +16,7 @@
 package sleeper.ingest.runner;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.IngestCoordinator;

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 

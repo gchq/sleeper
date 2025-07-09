@@ -17,7 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.List;
 import java.util.Map;

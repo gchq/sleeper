@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.io.IOException;
 import java.util.Iterator;

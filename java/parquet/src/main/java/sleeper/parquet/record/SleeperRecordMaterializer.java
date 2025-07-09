@@ -17,7 +17,7 @@ package sleeper.parquet.record;
 
 import org.apache.parquet.io.api.GroupConverter;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 
 public class SleeperRecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Record> {

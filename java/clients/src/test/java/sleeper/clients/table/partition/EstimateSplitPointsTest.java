@@ -17,7 +17,7 @@ package sleeper.clients.table.partition;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;

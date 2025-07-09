@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;

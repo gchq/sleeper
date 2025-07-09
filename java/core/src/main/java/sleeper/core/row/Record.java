@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record;
+package sleeper.core.row;
 
 import com.facebook.collections.ByteArray;
 

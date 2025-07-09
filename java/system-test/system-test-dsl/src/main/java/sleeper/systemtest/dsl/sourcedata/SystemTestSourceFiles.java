@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 

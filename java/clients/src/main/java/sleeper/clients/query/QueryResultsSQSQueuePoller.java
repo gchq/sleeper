@@ -25,8 +25,8 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.ResultsBatch;
-import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
+import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 
 import java.io.IOException;
 

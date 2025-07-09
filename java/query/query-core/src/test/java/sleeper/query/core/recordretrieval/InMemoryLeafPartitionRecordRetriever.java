@@ -20,8 +20,8 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 

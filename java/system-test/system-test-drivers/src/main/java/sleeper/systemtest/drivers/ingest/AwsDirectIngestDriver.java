@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.ingest;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;

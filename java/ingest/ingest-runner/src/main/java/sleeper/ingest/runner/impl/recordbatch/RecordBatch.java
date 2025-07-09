@@ -16,7 +16,7 @@
 package sleeper.ingest.runner.impl.recordbatch;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.io.IOException;
 

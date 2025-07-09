@@ -23,7 +23,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
 
 import sleeper.core.key.Key;
-import sleeper.core.record.KeyComparator;
+import sleeper.core.row.KeyComparator;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.trino.utils.SleeperSerDeUtils;
 import sleeper.trino.utils.SleeperTypeConversionUtils;

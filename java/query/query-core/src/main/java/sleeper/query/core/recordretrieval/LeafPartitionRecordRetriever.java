@@ -16,7 +16,7 @@
 package sleeper.query.core.recordretrieval;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 

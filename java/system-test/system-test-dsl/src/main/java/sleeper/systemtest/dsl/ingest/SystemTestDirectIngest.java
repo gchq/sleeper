@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

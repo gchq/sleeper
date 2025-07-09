@@ -30,7 +30,7 @@ import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;

@@ -29,7 +29,7 @@ import java.util.Iterator;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
- * Writes sorted rows to a Parquet file. When it comes across a {@link sleeper.core.record.Record} belonging to a
+ * Writes sorted rows to a Parquet file. When it comes across a {@link sleeper.core.row.Record} belonging to a
  * different leaf partition (denoted by the "partitionId" column), the Parquet file is flushed to the file system along
  * with its accompanying sketches file.
  */

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
 import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
 import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.List;
 import java.util.Map;

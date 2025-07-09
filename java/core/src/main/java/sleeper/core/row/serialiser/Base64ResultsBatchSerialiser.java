@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record.serialiser;
+package sleeper.core.row.serialiser;
 
 import org.apache.commons.codec.binary.Base64;
 
-import sleeper.core.record.Record;
-import sleeper.core.record.ResultsBatch;
+import sleeper.core.row.Record;
+import sleeper.core.row.ResultsBatch;
 import sleeper.core.schema.Schema;
 
 import java.io.ByteArrayInputStream;

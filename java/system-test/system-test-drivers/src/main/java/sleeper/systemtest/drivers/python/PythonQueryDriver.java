@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.python;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

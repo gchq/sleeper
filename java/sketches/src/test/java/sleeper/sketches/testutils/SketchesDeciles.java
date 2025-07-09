@@ -18,7 +18,7 @@ package sleeper.sketches.testutils;
 import com.google.common.base.Strings;
 import org.apache.datasketches.quantiles.ItemsUnion;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;

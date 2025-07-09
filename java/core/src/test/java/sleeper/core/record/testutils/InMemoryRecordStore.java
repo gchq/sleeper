@@ -17,7 +17,7 @@ package sleeper.core.record.testutils;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.HashMap;
 import java.util.List;

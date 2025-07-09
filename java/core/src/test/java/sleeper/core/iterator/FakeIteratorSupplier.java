@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.List;
 import java.util.function.Supplier;

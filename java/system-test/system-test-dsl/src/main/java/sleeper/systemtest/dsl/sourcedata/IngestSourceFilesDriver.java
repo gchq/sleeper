@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.util.Iterator;
 

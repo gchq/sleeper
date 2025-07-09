@@ -20,7 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 import sleeper.parquet.record.ParquetReaderIterator;
 
 import java.io.IOException;

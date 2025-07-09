@@ -18,7 +18,7 @@ package sleeper.parquet.record;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Record;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;

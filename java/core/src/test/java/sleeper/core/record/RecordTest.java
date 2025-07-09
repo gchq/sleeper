@@ -17,6 +17,8 @@ package sleeper.core.record;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.row.Record;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class RecordTest {
