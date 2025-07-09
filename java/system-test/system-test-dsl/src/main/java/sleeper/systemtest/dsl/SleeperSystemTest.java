@@ -16,15 +16,18 @@
 
 package sleeper.systemtest.dsl;
 
+import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -182,6 +185,12 @@ public class SleeperSystemTest {
     public Path getSplitPointsDirectory() {
         return parameters.getScriptsDirectory()
                 .resolve("test/splitpoints");
+    }
+
+    public CloseableIterator<Record> getRecords(AllReferencesToAFile file) {
+        Schema schema = context.instance().getTableProperties().getSchema();
+        DataFilesDriver driver = context.instance().adminDrivers().dataFiles(context);
+        return driver.getRecords(schema, file.getFilename());
     }
 
     public void enableOptionalStack(OptionalStack stack) {
