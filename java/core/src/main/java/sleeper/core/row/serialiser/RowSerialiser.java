@@ -38,27 +38,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Serialises and deserialises a record to and from a byte array.
+ * Serialises and deserialises a row to and from a byte array.
  */
-public class RecordSerialiser {
+public class RowSerialiser {
     private final Schema schema;
 
-    public RecordSerialiser(Schema schema) {
+    public RowSerialiser(Schema schema) {
         this.schema = schema;
     }
 
     /**
-     * Serialises a record to a byte array.
+     * Serialises a row to a byte array.
      *
-     * @param  record      the record to serialise
-     * @return             a byte array representing the record
+     * @param  record      the row to serialise
+     * @return             a byte array representing the row
      * @throws IOException if a field type is unknown
      */
-    public byte[] serialise(Record record) throws IOException {
+    public byte[] serialise(Record row) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         for (Field field : schema.getAllFields()) {
-            Object value = record.get(field.getName());
+            Object value = row.get(field.getName());
             Type type = field.getType();
             if (type instanceof PrimitiveType) {
                 write(value, (PrimitiveType) type, dos);
@@ -89,20 +89,20 @@ public class RecordSerialiser {
     }
 
     /**
-     * Deserialises a byte array to a record.
+     * Deserialises a byte array to a row.
      *
-     * @param  serialised  a byte array representing the record
-     * @return             the deserialised record
+     * @param  serialised  a byte array representing the row
+     * @return             the deserialised row
      * @throws IOException if a field type is unknown
      */
     public Record deserialise(byte[] serialised) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(serialised);
         DataInputStream dis = new DataInputStream(bais);
-        Record record = new Record();
+        Record row = new Record();
         for (Field field : schema.getAllFields()) {
             Type type = field.getType();
             if (type instanceof PrimitiveType) {
-                record.put(field.getName(), read((PrimitiveType) type, dis));
+                row.put(field.getName(), read((PrimitiveType) type, dis));
             } else if (type instanceof MapType) {
                 MapType mapType = (MapType) type;
                 PrimitiveType keyType = mapType.getKeyType();
@@ -114,7 +114,7 @@ public class RecordSerialiser {
                     Object value = read(valueType, dis);
                     map.put(key, value);
                 }
-                record.put(field.getName(), map);
+                row.put(field.getName(), map);
             } else if (type instanceof ListType) {
                 ListType listType = (ListType) type;
                 PrimitiveType elementType = listType.getElementType();
@@ -124,13 +124,13 @@ public class RecordSerialiser {
                     Object object = read(elementType, dis);
                     list.add(object);
                 }
-                record.put(field.getName(), list);
+                row.put(field.getName(), list);
             } else {
                 throw new IOException("Unknown type " + type);
             }
         }
         dis.close();
-        return record;
+        return row;
     }
 
     private void write(Object value, PrimitiveType primitiveType, DataOutputStream dos) throws IOException {

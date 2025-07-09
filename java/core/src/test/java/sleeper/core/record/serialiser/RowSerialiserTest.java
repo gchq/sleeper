@@ -18,7 +18,7 @@ package sleeper.core.record.serialiser;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Record;
-import sleeper.core.row.serialiser.RecordSerialiser;
+import sleeper.core.row.serialiser.RowSerialiser;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -30,7 +30,7 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordSerialiserTest {
+public class RowSerialiserTest {
 
     @Test
     public void shouldSerialiseAndDeserialiseCorrectly() throws IOException {
@@ -47,7 +47,7 @@ public class RecordSerialiserTest {
         record.put("column4", new byte[]{1, 2, 3});
         record.put("column5", new byte[]{4, 5, 6, 7});
         record.put("column6", new byte[]{8, 9, 10, 11, 12});
-        RecordSerialiser serialiser = new RecordSerialiser(schema);
+        RowSerialiser serialiser = new RowSerialiser(schema);
 
         // When
         Record deserialised = serialiser.deserialise(serialiser.serialise(record));
