@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -124,6 +125,9 @@ public class CheckTransactionLogsTest {
         CheckTransactionLogs check = checkState();
 
         // Then
+        assertThat(check.inferLastCompactionJobFromAssignJobIdsTransaction()).isEqualTo(
+                new CompactionJobFactory(instanceProperties, tableProperties)
+                        .createCompactionJobWithFilenames("test-job", List.of("test1.parquet", "test2.parquet"), "root"));
         assertThat(check.lastCompactionJobFromAssignJobIdsTransactionToLocalFile(fakeFile)).isEqualTo(
                 CompactionJob.builder()
                         .jobId("test-job")

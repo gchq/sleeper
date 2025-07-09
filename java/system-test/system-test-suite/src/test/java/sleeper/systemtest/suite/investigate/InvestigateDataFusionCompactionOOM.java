@@ -15,16 +15,30 @@
  */
 package sleeper.systemtest.suite.investigate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.rust.RustCompactionRunner;
+import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.partition.PartitionTree;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * This was an investigation after a failed system test where compactions ran out of memory unexpectedly.
  */
 public class InvestigateDataFusionCompactionOOM {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InvestigateDataFusionCompactionOOM.class);
 
     private InvestigateDataFusionCompactionOOM() {
     }
@@ -41,8 +55,16 @@ public class InvestigateDataFusionCompactionOOM {
         }
     }
 
-    private static void examine(CheckTransactionLogs logs, S3Client s3Client, DynamoDbClient dynamoClient) {
-        // TODO
+    private static void examine(CheckTransactionLogs logs, S3Client s3Client, DynamoDbClient dynamoClient) throws IOException, IteratorCreationException {
+        PartitionTree partitionTree = logs.partitionTree();
+        Path tempDir = Files.createTempDirectory("sleeper-test");
+        Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
+        CompactionJob actualJob = logs.inferLastCompactionJobFromAssignJobIdsTransaction();
+        CompactionJobSerDe serDe = new CompactionJobSerDe();
+        LOGGER.info("Found compaction job from last assign job IDs transaction: {}", serDe.toJson(actualJob));
+        CompactionJob job = logs.lastCompactionJobFromAssignJobIdsTransactionToLocalFile(outputFile);
+        CompactionRunner runner = new RustCompactionRunner();
+        runner.compact(job, logs.tableProperties(), partitionTree.getPartition(job.getPartitionId()));
     }
 
 }

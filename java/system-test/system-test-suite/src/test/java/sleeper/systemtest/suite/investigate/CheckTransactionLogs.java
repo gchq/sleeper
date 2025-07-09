@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -146,8 +147,7 @@ public class CheckTransactionLogs {
     }
 
     public CompactionJob lastCompactionJobFromAssignJobIdsTransactionToLocalFile(Path file) {
-        AssignJobIdsTransaction transaction = lastTransactionOfType(AssignJobIdsTransaction.class);
-        AssignJobIdRequest request = Lists.reverse(transaction.getRequests()).stream().findFirst().orElseThrow();
+        AssignJobIdRequest request = lastAssignJobIdsRequest();
         return CompactionJob.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .jobId(request.getJobId())
@@ -155,6 +155,17 @@ public class CheckTransactionLogs {
                 .partitionId(request.getPartitionId())
                 .outputFile(file.toString())
                 .build();
+    }
+
+    public CompactionJob inferLastCompactionJobFromAssignJobIdsTransaction() {
+        AssignJobIdRequest request = lastAssignJobIdsRequest();
+        return new CompactionJobFactory(instanceProperties, tableProperties)
+                .createCompactionJobWithFilenames(request.getJobId(), request.getFilenames(), request.getPartitionId());
+    }
+
+    private AssignJobIdRequest lastAssignJobIdsRequest() {
+        AssignJobIdsTransaction transaction = lastTransactionOfType(AssignJobIdsTransaction.class);
+        return Lists.reverse(transaction.getRequests()).stream().findFirst().orElseThrow();
     }
 
     private <S, T extends StateStoreTransaction<S>> T lastTransactionOfType(Class<T> transactionClass) {
