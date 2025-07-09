@@ -413,7 +413,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     }
 
     /**
-     * Simple iterator which adds the count of the previous record to the current one.
+     * Simple iterator which adds the count of the previous row to the current one.
      */
     public static class CountAggregator implements SortedRowIterator {
 
@@ -428,31 +428,31 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         }
 
         @Override
-        public CloseableIterator<Row> apply(CloseableIterator<Row> recordCloseableIterator) {
-            return new CountAggregatorIteratorImpl(recordCloseableIterator);
+        public CloseableIterator<Row> apply(CloseableIterator<Row> rowCloseableIterator) {
+            return new CountAggregatorIteratorImpl(rowCloseableIterator);
         }
 
         private static class CountAggregatorIteratorImpl implements CloseableIterator<Row> {
-            private final CloseableIterator<Row> records;
+            private final CloseableIterator<Row> rows;
             private Row previous = null;
 
-            private CountAggregatorIteratorImpl(CloseableIterator<Row> consumedRecords) {
-                this.records = consumedRecords;
+            private CountAggregatorIteratorImpl(CloseableIterator<Row> consumedRows) {
+                this.rows = consumedRows;
             }
 
             @Override
             public void close() throws IOException {
-                records.close();
+                rows.close();
             }
 
             @Override
             public boolean hasNext() {
-                return records.hasNext();
+                return rows.hasNext();
             }
 
             @Override
             public Row next() {
-                Row current = records.next();
+                Row current = rows.next();
                 if (previous != null) {
                     current.put("count", (long) current.get("count") + (long) previous.get("count"));
                 }
