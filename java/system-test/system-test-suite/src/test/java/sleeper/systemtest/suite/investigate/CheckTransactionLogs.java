@@ -63,6 +63,33 @@ public class CheckTransactionLogs {
         this.partitionsLog = partitionsLog;
     }
 
+    public static CheckTransactionLogs load(String instanceId, String tableId, boolean cacheTransactions, S3Client s3Client, DynamoDbClient dynamoClient) {
+        Path cacheDirectory = OnDiskTransactionLogs.getLocalCacheDirectory(instanceId, tableId);
+        if (cacheTransactions && Files.isDirectory(cacheDirectory)) {
+            return from(OnDiskTransactionLogs.load(cacheDirectory));
+        }
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(tableId);
+        TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
+        TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+        TransactionLogStore partitionsLogStore = DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
+        if (cacheTransactions) {
+            return from(OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, partitionsLogStore, bodyStore, cacheDirectory));
+        } else {
+            return new CheckTransactionLogs(
+                    instanceProperties, tableProperties,
+                    TransactionLogEntryHandle.load(tableId, filesLogStore, bodyStore),
+                    TransactionLogEntryHandle.load(tableId, partitionsLogStore, bodyStore));
+        }
+    }
+
+    private static CheckTransactionLogs from(OnDiskTransactionLogs cache) {
+        return new CheckTransactionLogs(
+                cache.getInstanceProperties(), cache.getTableProperties(),
+                TransactionLogEntryHandle.load(cache.getFilesLogStore()),
+                TransactionLogEntryHandle.load(cache.getPartitionsLogStore()));
+    }
+
     public InstanceProperties instanceProperties() {
         return instanceProperties;
     }
@@ -109,32 +136,5 @@ public class CheckTransactionLogs {
             entry.apply(state);
         }
         return new PartitionTree(state.all());
-    }
-
-    public static CheckTransactionLogs load(String instanceId, String tableId, boolean cacheTransactions, S3Client s3Client, DynamoDbClient dynamoClient) {
-        Path cacheDirectory = OnDiskTransactionLogs.getLocalCacheDirectory(instanceId, tableId);
-        if (cacheTransactions && Files.isDirectory(cacheDirectory)) {
-            return from(OnDiskTransactionLogs.load(cacheDirectory));
-        }
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-        TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(tableId);
-        TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
-        TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
-        TransactionLogStore partitionsLogStore = DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
-        if (cacheTransactions) {
-            return from(OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, partitionsLogStore, bodyStore, cacheDirectory));
-        } else {
-            return new CheckTransactionLogs(
-                    instanceProperties, tableProperties,
-                    TransactionLogEntryHandle.load(tableId, filesLogStore, bodyStore),
-                    TransactionLogEntryHandle.load(tableId, partitionsLogStore, bodyStore));
-        }
-    }
-
-    private static CheckTransactionLogs from(OnDiskTransactionLogs cache) {
-        return new CheckTransactionLogs(
-                cache.getInstanceProperties(), cache.getTableProperties(),
-                TransactionLogEntryHandle.load(cache.getFilesLogStore()),
-                TransactionLogEntryHandle.load(cache.getPartitionsLogStore()));
     }
 }
