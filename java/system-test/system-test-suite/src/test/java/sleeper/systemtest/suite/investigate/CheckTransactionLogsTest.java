@@ -18,7 +18,6 @@ package sleeper.systemtest.suite.investigate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -32,7 +31,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
@@ -119,7 +117,6 @@ public class CheckTransactionLogsTest {
         FileReference file2 = fileFactory().rootFile("test2.parquet", 100);
         update(stateStore).addFiles(List.of(file1, file2));
         update(stateStore).assignJobId("test-job", List.of(file1, file2));
-        Path fakeFile = Path.of("test-output.parquet");
 
         // When
         CheckTransactionLogs check = checkState();
@@ -128,14 +125,6 @@ public class CheckTransactionLogsTest {
         assertThat(check.inferLastCompactionJobFromAssignJobIdsTransaction()).isEqualTo(
                 new CompactionJobFactory(instanceProperties, tableProperties)
                         .createCompactionJobWithFilenames("test-job", List.of("test1.parquet", "test2.parquet"), "root"));
-        assertThat(check.lastCompactionJobFromAssignJobIdsTransactionToLocalFile(fakeFile)).isEqualTo(
-                CompactionJob.builder()
-                        .jobId("test-job")
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .inputFiles(List.of("test1.parquet", "test2.parquet"))
-                        .partitionId("root")
-                        .outputFile("test-output.parquet")
-                        .build());
     }
 
     private FileReferenceFactory fileFactory() {

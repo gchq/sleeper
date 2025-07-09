@@ -56,13 +56,16 @@ public class InvestigateDataFusionCompactionOOM {
     }
 
     private static void examine(CheckTransactionLogs logs, S3Client s3Client, DynamoDbClient dynamoClient) throws IOException, IteratorCreationException {
+        // Find a compaction that was created
         PartitionTree partitionTree = logs.partitionTree();
-        Path tempDir = Files.createTempDirectory("sleeper-test");
-        Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob actualJob = logs.inferLastCompactionJobFromAssignJobIdsTransaction();
         CompactionJobSerDe serDe = new CompactionJobSerDe();
         LOGGER.info("Found compaction job from last assign job IDs transaction: {}", serDe.toJson(actualJob));
-        CompactionJob job = logs.lastCompactionJobFromAssignJobIdsTransactionToLocalFile(outputFile);
+
+        // Re-run it to a local file
+        Path tempDir = Files.createTempDirectory("sleeper-test");
+        Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
+        CompactionJob job = actualJob.toBuilder().outputFile(outputFile.toString()).build();
         CompactionRunner runner = new RustCompactionRunner();
         runner.compact(job, logs.tableProperties(), partitionTree.getPartition(job.getPartitionId()));
     }

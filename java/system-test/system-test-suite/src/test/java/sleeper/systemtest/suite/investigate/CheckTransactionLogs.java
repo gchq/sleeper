@@ -47,8 +47,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-
 /**
  * Checks transaction logs to aid with debugging. This is intended to be used after a failed system test to investigate
  * the state of the system. This will cache transaction logs locally to enable repeated runs to investigate the state,
@@ -144,17 +142,6 @@ public class CheckTransactionLogs {
             entry.apply(state);
         }
         return new PartitionTree(state.all());
-    }
-
-    public CompactionJob lastCompactionJobFromAssignJobIdsTransactionToLocalFile(Path file) {
-        AssignJobIdRequest request = lastAssignJobIdsRequest();
-        return CompactionJob.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .jobId(request.getJobId())
-                .inputFiles(request.getFilenames())
-                .partitionId(request.getPartitionId())
-                .outputFile(file.toString())
-                .build();
     }
 
     public CompactionJob inferLastCompactionJobFromAssignJobIdsTransaction() {
