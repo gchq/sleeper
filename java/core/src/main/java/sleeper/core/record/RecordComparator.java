@@ -15,8 +15,9 @@
  */
 package sleeper.core.record;
 
-import sleeper.core.key.Key;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,30 +26,31 @@ import java.util.List;
  * Compares records by row keys then sort keys.
  */
 public class RecordComparator implements Comparator<Record> {
-    private final List<String> rowKeyNames;
-    private final List<String> sortKeyNames;
-    private final KeyComparator rowKeyComparator;
-    private final KeyComparator sortKeyComparator;
+    private final Schema schema;
 
     public RecordComparator(Schema schema) {
-        this.rowKeyNames = schema.getRowKeyFieldNames();
-        this.sortKeyNames = schema.getSortKeyFieldNames();
-        this.rowKeyComparator = new KeyComparator(schema.getRowKeyTypes());
-        this.sortKeyComparator = new KeyComparator(schema.getSortKeyTypes());
+        this.schema = schema;
     }
 
-    // TODO Optimise by avoiding creating lists of row keys and sort keys, and
-    // just do the comparison directly here?
     @Override
     public int compare(Record record1, Record record2) {
-        List<Object> record1Key = record1.getValues(rowKeyNames);
-        List<Object> record2Key = record2.getValues(rowKeyNames);
-        int keyComparison = rowKeyComparator.compare(Key.create(record1Key), Key.create(record2Key));
-        if (0 != keyComparison) {
-            return keyComparison;
+        int rowKeyDiff = compare(schema.getRowKeyFields(), record1, record2);
+        if (rowKeyDiff != 0) {
+            return rowKeyDiff;
         }
-        List<Object> record1SortFields = record1.getValues(sortKeyNames);
-        List<Object> record2SortFields = record2.getValues(sortKeyNames);
-        return sortKeyComparator.compare(Key.create(record1SortFields), Key.create(record2SortFields));
+        return compare(schema.getSortKeyFields(), record1, record2);
+    }
+
+    private static int compare(List<Field> fields, Record record1, Record record2) {
+        for (Field field : fields) {
+            PrimitiveType type = (PrimitiveType) field.getType();
+            Object value1 = record1.get(field.getName());
+            Object value2 = record2.get(field.getName());
+            int diff = type.compare(value1, value2);
+            if (diff != 0) {
+                return diff;
+            }
+        }
+        return 0;
     }
 }

@@ -16,12 +16,14 @@
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorCapabilities;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorRecordSetProvider;
+import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.SystemTable;
@@ -32,8 +34,6 @@ import sleeper.trino.procedure.SleeperProcedureHello;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 import sleeper.trino.systemtable.SleeperSystemTablePartitions;
 import sleeper.trino.systemtable.SleeperSystemTableRandom;
-
-import javax.inject.Inject;
 
 import java.util.Set;
 
@@ -72,10 +72,11 @@ public class SleeperConnector implements Connector {
      *                        at the same time.
      * @param  readOnly       Single queries always have read-only set to false, even if they are SELECT queries, and
      *                        so we cannot use this parameter to reject a transaction is attempting to write data.
+     * @param  autoCommit     Whether the transaction uses auto-commit mode.
      * @return                the transaction handle
      */
     @Override
-    public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly) {
+    public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
         return sleeperConnectionAsTrino.getNewSleeperTransactionHandle();
     }
 
@@ -84,11 +85,12 @@ public class SleeperConnector implements Connector {
      * {@link SleeperMetadata} class that is returned also handles the application of a pushed-down filter to the
      * Sleeper table.
      *
+     * @param  session           The current connector session.
      * @param  transactionHandle The current transaction. The metadata is assumed to be constant across transactions.
      * @return                   the {@link SleeperMetadata} object
      */
     @Override
-    public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
+    public ConnectorMetadata getMetadata(ConnectorSession session, ConnectorTransactionHandle transactionHandle) {
         return sleeperMetadata;
     }
 
