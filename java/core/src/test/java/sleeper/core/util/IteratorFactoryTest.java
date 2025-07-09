@@ -17,53 +17,48 @@ package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.AggregationFilteringIterator;
+import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class IteratorFactoryTest {
-
-    public static class StubIterator implements SortedRecordIterator {
-
-        protected boolean isInitialised = false;
-
-        @Override
-        public CloseableIterator<Record> apply(CloseableIterator<Record> arg0) {
-            throw new UnsupportedOperationException("Unimplemented method 'apply'");
-        }
-
-        @Override
-        public void init(String configString, Schema schema) {
-            isInitialised = true;
-        }
-
-        @Override
-        public List<String> getRequiredValueFields() {
-            throw new UnsupportedOperationException("Unimplemented method 'getRequiredValueFields'");
-        }
-    }
 
     @Test
     public void shouldInitialiseIterator() throws IteratorCreationException {
         // Given
         ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
         IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        List<Record> records = List.of(
+                new Record(Map.of("key", "test", "value", 10L)),
+                new Record(Map.of("key", "test2", "value", 9999999999999999L)));
+        CloseableIterator<Record> iterator = new WrappedIterator<>(records.iterator());
 
         // When
-        StubIterator iterator = (StubIterator) iteratorFactory.getIterator(StubIterator.class.getName(), null, null);
+        SortedRecordIterator ageOffIterator = iteratorFactory.getIterator(AgeOffIterator.class.getName(), "value,1000", schema);
+        List<Record> filtered = new ArrayList<>();
+        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 
         // Then
-        assertThat(iterator.isInitialised).isTrue();
+        assertThat(filtered).containsExactly(new Record(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 
     @Test
@@ -72,12 +67,21 @@ public class IteratorFactoryTest {
         ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
         IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
         Schema schema = Schema.builder()
-                .rowKeyFields(new Field("test", new IntType())).build();
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        List<Record> records = List.of(
+                new Record(Map.of("key", "test", "value", 10L)),
+                new Record(Map.of("key", "test2", "value", 9999999999999999L)));
+        CloseableIterator<Record> iterator = new WrappedIterator<>(records.iterator());
 
         // When
-        SortedRecordIterator iterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";,", schema);
+        SortedRecordIterator ageOffIterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";ageoff=value,1000,", schema);
+        List<Record> filtered = new ArrayList<>();
+        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 
         // Then
-        assertThat(iterator).isInstanceOf(AggregationFilteringIterator.class);
+        assertThat(filtered).containsExactly(new Record(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 }
