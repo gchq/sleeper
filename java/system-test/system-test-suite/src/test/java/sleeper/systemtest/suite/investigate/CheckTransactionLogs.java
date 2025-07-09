@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.partition.PartitionTree;
@@ -46,6 +45,8 @@ import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Checks transaction logs to aid with debugging. This is intended to be used after a failed system test to investigate
@@ -144,11 +145,16 @@ public class CheckTransactionLogs {
         return new PartitionTree(state.all());
     }
 
-    public CompactionJob inferLastCompactionJobFromAssignJobIdsTransaction() {
+    public CompactionJob lastCompactionJobFromAssignJobIdsTransactionToLocalFile(Path file) {
         AssignJobIdsTransaction transaction = lastTransactionOfType(AssignJobIdsTransaction.class);
         AssignJobIdRequest request = Lists.reverse(transaction.getRequests()).stream().findFirst().orElseThrow();
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-        return jobFactory.createCompactionJobWithFilenames(request.getJobId(), request.getFilenames(), request.getPartitionId());
+        return CompactionJob.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .jobId(request.getJobId())
+                .inputFiles(request.getFilenames())
+                .partitionId(request.getPartitionId())
+                .outputFile(file.toString())
+                .build();
     }
 
     private <S, T extends StateStoreTransaction<S>> T lastTransactionOfType(Class<T> transactionClass) {
