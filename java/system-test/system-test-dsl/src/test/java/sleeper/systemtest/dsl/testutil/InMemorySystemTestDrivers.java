@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.sketches.testutils.InMemorySketchesStore;
@@ -74,8 +74,8 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemoryRecordStore sourceFiles = new InMemoryRecordStore();
-    private final InMemoryRecordStore data = new InMemoryRecordStore();
+    private final InMemoryRowStore sourceFiles = new InMemoryRowStore();
+    private final InMemoryRowStore data = new InMemoryRowStore();
     private final InMemorySketchesStore sketches = new InMemorySketchesStore();
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(transactionLogs);
@@ -252,7 +252,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return reports;
     }
 
-    public InMemoryRecordStore data() {
+    public InMemoryRowStore data() {
         return data;
     }
 

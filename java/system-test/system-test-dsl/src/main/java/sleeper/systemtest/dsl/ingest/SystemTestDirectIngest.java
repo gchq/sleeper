@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -59,7 +59,7 @@ public class SystemTestDirectIngest {
         return this;
     }
 
-    public void records(Record... records) {
-        driver.ingest(tempDir, List.of(records).iterator());
+    public void rows(Row... rows) {
+        driver.ingest(tempDir, List.of(rows).iterator());
     }
 }

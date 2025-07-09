@@ -29,7 +29,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
@@ -107,14 +107,14 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldIngestParquetFiles() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
         StateStore stateStore = initialiseStateStore();
 
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, 2);
-        List<Record> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
+        List<String> files = writeParquetFilesForIngest(rowListAndSchema, 2);
+        List<Row> doubledRecords = Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
@@ -122,25 +122,25 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(doubledRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(doubledRecords);
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldIgnoreFilesOfUnreadableFormats() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, 1);
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
+        List<String> files = writeParquetFilesForIngest(rowListAndSchema, 1);
         URI uri1 = new URI("s3a://" + ingestSourceBucketName + "/file-1.crc");
         FileSystem.get(uri1, hadoopConf).createNewFile(new Path(uri1));
         files.add(ingestSourceBucketName + "/file-1.crc");
@@ -154,24 +154,24 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 200));
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldIngestParquetFilesInNestedDirectories() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
         int noOfTopLevelDirectories = 2;
         int noOfNestings = 4;
         int noOfFilesPerDirectory = 2;
@@ -179,13 +179,13 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                 .mapToObj(topLevelDirNo -> IntStream.range(0, noOfNestings).mapToObj(nestingNo -> {
                     try {
                         String dirName = String.format("dir-%d%s", topLevelDirNo, String.join("", Collections.nCopies(nestingNo, "/nested-dir")));
-                        return writeParquetFilesForIngest(recordListAndSchema, dirName, noOfFilesPerDirectory);
+                        return writeParquetFilesForIngest(rowListAndSchema, dirName, noOfFilesPerDirectory);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }).flatMap(List::stream).collect(Collectors.toList()))
                 .flatMap(List::stream).collect(Collectors.toList());
-        List<Record> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
+        List<Row> expectedRows = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, rowListAndSchema.rowList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
         StateStore stateStore = initialiseStateStore();
 
@@ -194,38 +194,38 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 160));
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldWriteRecordsFromTwoBuckets() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema records1 = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rows1 = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        RecordGenerator.RecordListAndSchema records2 = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rows2 = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(10, 20).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(records1.sleeperSchema);
-        writeParquetFileForIngest(new Path("s3a://" + dataBucketName + "/ingest/file1.parquet"), records1);
-        writeParquetFileForIngest(new Path("s3a://" + ingestSourceBucketName + "/ingest/file2.parquet"), records2);
+        tableProperties.setSchema(rows1.sleeperSchema);
+        writeParquetFileForIngest(new Path("s3a://" + dataBucketName + "/ingest/file1.parquet"), rows1);
+        writeParquetFileForIngest(new Path("s3a://" + ingestSourceBucketName + "/ingest/file2.parquet"), rows2);
 
         IngestJob ingestJob = IngestJob.builder()
                 .tableName(tableName).tableId(tableId).id("id").files(List.of(
                         dataBucketName + "/ingest/file1.parquet",
                         ingestSourceBucketName + "/ingest/file2.parquet"))
                 .build();
-        List<Record> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(records1.recordList);
-        expectedRecords.addAll(records2.recordList);
+        List<Row> expectedRows = new ArrayList<>();
+        expectedRows.addAll(rows1.rowList);
+        expectedRows.addAll(rows2.rowList);
         StateStore stateStore = initialiseStateStore();
         fixTimes(Instant.parse("2024-06-20T15:33:01Z"), Instant.parse("2024-06-20T15:33:10Z"));
 
@@ -234,16 +234,16 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rows1.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(stateStore,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(records1.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(records1.sleeperSchema, expectedRecords));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        assertThat(SketchesDeciles.fromFileReferences(rows1.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rows1.sleeperSchema, expectedRows));
         assertThat(tracker.getAllJobs(tableId)).containsExactly(
                 ingestJobStatus(ingestJob, jobRunOnTask("test-task",
                         ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")),
@@ -253,14 +253,14 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldCommitFilesAsynchronously() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
         tableProperties.set(INGEST_FILES_COMMIT_ASYNC, "true");
         StateStore stateStore = initialiseStateStore();
 
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, 1);
+        List<String> files = writeParquetFilesForIngest(rowListAndSchema, 1);
         IngestJob job = IngestJob.builder()
                 .tableName(tableName)
                 .tableId(tableId)
@@ -275,15 +275,15 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         // Then
         List<StateStoreCommitRequest> commitRequests = getCommitRequestsFromQueue(tableProperties);
         List<FileReference> actualFiles = getFilesAdded(commitRequests);
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 10));
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
         assertThat(commitRequests).containsExactly(StateStoreCommitRequest.create(tableId,
                 AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId("test-task").jobRunId("test-job-run")
@@ -351,20 +351,20 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     }
 
     private List<String> writeParquetFilesForIngest(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema rowListAndSchema,
             int numberOfFiles) throws IOException {
-        return writeParquetFilesForIngestWithRoot(recordListAndSchema, ingestSourceBucketName, numberOfFiles);
+        return writeParquetFilesForIngestWithRoot(rowListAndSchema, ingestSourceBucketName, numberOfFiles);
     }
 
     private List<String> writeParquetFilesForIngest(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema rowListAndSchema,
             String subDirectory,
             int numberOfFiles) throws IOException {
-        return writeParquetFilesForIngestWithRoot(recordListAndSchema, ingestSourceBucketName + "/" + subDirectory, numberOfFiles);
+        return writeParquetFilesForIngestWithRoot(rowListAndSchema, ingestSourceBucketName + "/" + subDirectory, numberOfFiles);
     }
 
     private List<String> writeParquetFilesForIngestWithRoot(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema rowListAndSchema,
             String rootDirectory,
             int numberOfFiles) throws IOException {
         List<String> files = new ArrayList<>();
@@ -373,18 +373,18 @@ class IngestJobRunnerIT extends LocalStackTestBase {
             String fileWithoutSystemPrefix = String.format("%s/file-%d.parquet", rootDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path("s3a://" + fileWithoutSystemPrefix);
-            writeParquetFileForIngest(path, recordListAndSchema);
+            writeParquetFileForIngest(path, rowListAndSchema);
         }
 
         return files;
     }
 
     private void writeParquetFileForIngest(
-            Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory
-                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConf);
-        for (Record record : recordListAndSchema.recordList) {
-            writer.write(record);
+            Path path, RecordGenerator.RowListAndSchema rowListAndSchema) throws IOException {
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory
+                .createParquetRecordWriter(path, rowListAndSchema.sleeperSchema, hadoopConf);
+        for (Row row : rowListAndSchema.rowList) {
+            writer.write(row);
         }
         writer.close();
     }

@@ -35,13 +35,13 @@ public class RowComparatorTest {
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key", 1);
         row1.put("value", 100);
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key", 2);
         row2.put("value", 1000);
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key", 1);
         row3.put("value", 10000);
         RowComparator comparator = new RowComparator(schema);
@@ -66,13 +66,13 @@ public class RowComparatorTest {
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key", 1L);
         row1.put("value", 100L);
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key", 2L);
         row2.put("value", 1000L);
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key", 1L);
         row3.put("value", 10000L);
         RowComparator comparator = new RowComparator(schema);
@@ -97,13 +97,13 @@ public class RowComparatorTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key", "1");
         row1.put("value", "100");
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key", "2");
         row2.put("value", "1000");
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key", "1");
         row3.put("value", "10000");
         RowComparator comparator = new RowComparator(schema);
@@ -128,13 +128,13 @@ public class RowComparatorTest {
                 .rowKeyFields(new Field("key", new ByteArrayType()))
                 .valueFields(new Field("value", new ByteArrayType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key", new byte[]{1});
         row1.put("value", new byte[]{10});
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key", new byte[]{2});
         row2.put("value", new byte[]{100});
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key", new byte[]{1});
         row3.put("value", new byte[]{102});
         RowComparator comparator = new RowComparator(schema);
@@ -160,23 +160,23 @@ public class RowComparatorTest {
                 .sortKeyFields(new Field("sort", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key", 1);
         row1.put("sort", 2);
         row1.put("value", 100);
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key", 1);
         row2.put("sort", 5);
         row2.put("value", 1000);
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key", 1);
         row3.put("sort", 1);
         row3.put("value", 10000);
-        Record row4 = new Record();
+        Row row4 = new Row();
         row4.put("key", 2);
         row4.put("sort", 1);
         row4.put("value", 1000);
-        Record row5 = new Record();
+        Row row5 = new Row();
         row5.put("key", 2);
         row5.put("sort", 1);
         row5.put("value", 1000);
@@ -203,23 +203,23 @@ public class RowComparatorTest {
                 .sortKeyFields(new Field("sort", new ByteArrayType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key", new byte[]{1, 2});
         row1.put("sort", new byte[]{50, 51});
         row1.put("value", 100);
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key", new byte[]{1, 3});
         row2.put("sort", new byte[]{50, 51});
         row2.put("value", 1000);
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key", new byte[]{1, 2});
         row3.put("sort", new byte[]{50, 52});
         row3.put("value", 10000);
-        Record row4 = new Record();
+        Row row4 = new Row();
         row4.put("key", new byte[]{0});
         row4.put("sort", new byte[]{50, 51});
         row4.put("value", 1000);
-        Record row5 = new Record();
+        Row row5 = new Row();
         row5.put("key", new byte[]{0});
         row5.put("sort", new byte[]{50, 51});
         row5.put("value", 1000);
@@ -246,49 +246,49 @@ public class RowComparatorTest {
                 .sortKeyFields(new Field("sort1", new ByteArrayType()), new Field("sort2", new ByteArrayType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        Record row1 = new Record();
+        Row row1 = new Row();
         row1.put("key1", new byte[]{1, 2});
         row1.put("key2", new byte[]{1, 2});
         row1.put("sort1", new byte[]{50, 51});
         row1.put("sort2", new byte[]{50, 51});
         row1.put("value", 100);
-        Record row2 = new Record();
+        Row row2 = new Row();
         row2.put("key1", new byte[]{1, 3});
         row2.put("key2", new byte[]{1, 2});
         row2.put("sort1", new byte[]{50, 51});
         row2.put("sort2", new byte[]{50, 51});
         row2.put("value", 1000);
-        Record row3 = new Record();
+        Row row3 = new Row();
         row3.put("key1", new byte[]{1, 2});
         row3.put("key2", new byte[]{1, 3});
         row3.put("sort1", new byte[]{50, 51});
         row3.put("sort2", new byte[]{50, 51});
         row3.put("value", 100);
-        Record row4 = new Record();
+        Row row4 = new Row();
         row4.put("key1", new byte[]{1, 2});
         row4.put("key2", new byte[]{1, 2});
         row4.put("sort1", new byte[]{50, 52});
         row4.put("sort2", new byte[]{50, 51});
         row4.put("value", 1000);
-        Record row5 = new Record();
+        Row row5 = new Row();
         row5.put("key1", new byte[]{1, 2});
         row5.put("key2", new byte[]{1, 2});
         row5.put("sort1", new byte[]{50, 51});
         row5.put("sort2", new byte[]{50, 52});
         row5.put("value", 1000);
-        Record row6 = new Record();
+        Row row6 = new Row();
         row6.put("key1", new byte[]{1, 2});
         row6.put("key2", new byte[]{1, 3});
         row6.put("sort1", new byte[]{50, 52});
         row6.put("sort2", new byte[]{50, 51});
         row6.put("value", 10000);
-        Record row7 = new Record();
+        Row row7 = new Row();
         row7.put("key1", new byte[]{0});
         row7.put("key2", new byte[]{1, 2});
         row7.put("sort1", new byte[]{50, 51});
         row7.put("sort2", new byte[]{50, 51});
         row7.put("value", 1000);
-        Record row8 = new Record();
+        Row row8 = new Row();
         row8.put("key1", new byte[]{0});
         row8.put("key2", new byte[]{1, 2});
         row8.put("sort1", new byte[]{50, 51});

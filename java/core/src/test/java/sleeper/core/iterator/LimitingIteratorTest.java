@@ -17,7 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,7 +80,7 @@ public class LimitingIteratorTest {
         // Given
         AtomicBoolean closed = new AtomicBoolean(false);
         EmptyIteratorWithFakeOnClose source = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
-        LimitingIterator<Record> iterator = new LimitingIterator<>(10, source);
+        LimitingIterator<Row> iterator = new LimitingIterator<>(10, source);
 
         // When
         iterator.close();

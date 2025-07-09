@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
@@ -47,7 +47,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final Configuration hadoopConfiguration;
     private final String partitionParquetFileName;
     private final String quantileSketchesFileName;
-    private final ParquetWriter<Record> parquetWriter;
+    private final ParquetWriter<Row> parquetWriter;
     private final SketchesStore sketchesStore;
     private final Sketches sketches;
     private long recordsWrittenToCurrentPartition;
@@ -90,15 +90,15 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     }
 
     /**
-     * Append a record to the partition file.
+     * Append a row to the partition file.
      *
-     * @param  record      the record to append
+     * @param  row         the row to append
      * @throws IOException if there was a failure writing to the file
      */
     @Override
-    public void append(Record record) throws IOException {
-        parquetWriter.write(record);
-        sketches.update(record);
+    public void append(Row row) throws IOException {
+        parquetWriter.write(row);
+        sketches.update(row);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());

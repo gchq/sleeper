@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -53,17 +53,17 @@ public class SetupInstanceST {
     @Test
     void shouldIngestOneRecord(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
 
         // When
-        sleeper.ingest().direct(tempDir).records(record);
+        sleeper.ingest().direct(tempDir).rows(row);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+                .containsExactly(row);
     }
 
     @Test

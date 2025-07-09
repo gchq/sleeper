@@ -17,7 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.util.List;
 import java.util.Map;
@@ -30,16 +30,16 @@ public class FilteringIteratorTest {
     @Test
     void shouldFilterIterator() {
         // Given
-        Record record1 = new Record(Map.of("key", "A"));
-        Record record2 = new Record(Map.of("key", "B"));
-        CloseableIterator<Record> iterator = new WrappedIterator<>(List.of(record1, record2).iterator());
+        Row row1 = new Row(Map.of("key", "A"));
+        Row row2 = new Row(Map.of("key", "B"));
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(row1, row2).iterator());
 
         // When
-        FilteringIterator<Record> filtered = new FilteringIterator<>(iterator,
-                record -> "A".equals(record.get("key")));
+        FilteringIterator<Row> filtered = new FilteringIterator<>(iterator,
+                row -> "A".equals(row.get("key")));
 
         // Then
-        assertThat(filtered).toIterable().containsExactly(record1);
+        assertThat(filtered).toIterable().containsExactly(row1);
         assertThat(iterator).isExhausted();
     }
 
@@ -50,7 +50,7 @@ public class FilteringIteratorTest {
         EmptyIteratorWithFakeOnClose iterator = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
 
         // When
-        new FilteringIterator<>(iterator, record -> true).close();
+        new FilteringIterator<>(iterator, row -> true).close();
 
         // Then
         assertThat(closed).isTrue();

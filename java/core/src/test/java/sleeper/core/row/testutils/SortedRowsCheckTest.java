@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -34,104 +34,104 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class SortedRecordsCheckTest {
+public class SortedRowsCheckTest {
 
     @Test
-    void shouldFindRecordsAreSortedWithDifferentValues() {
+    void shouldFindRowsAreSortedWithDifferentValues() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 10L)),
-                new Record(Map.of("key", 20L)),
-                new Record(Map.of("key", 30L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 10L)),
+                new Row(Map.of("key", 20L)),
+                new Row(Map.of("key", 30L)));
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(SortedRecordsCheck.sorted(3));
+        assertThat(check(schema, rows)).isEqualTo(SortedRowsCheck.sorted(3));
     }
 
     @Test
-    void shouldFindFirstTwoRecordsAreOutOfOrder() {
+    void shouldFindFirstTwoRowsAreOutOfOrder() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 20L)),
-                new Record(Map.of("key", 10L)),
-                new Record(Map.of("key", 30L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 20L)),
+                new Row(Map.of("key", 10L)),
+                new Row(Map.of("key", 30L)));
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(
-                SortedRecordsCheck.outOfOrderAt(2,
-                        new Record(Map.of("key", 20L)),
-                        new Record(Map.of("key", 10L))));
+        assertThat(check(schema, rows)).isEqualTo(
+                SortedRowsCheck.outOfOrderAt(2,
+                        new Row(Map.of("key", 20L)),
+                        new Row(Map.of("key", 10L))));
     }
 
     @Test
-    void shouldFindLastTwoRecordsAreOutOfOrder() {
+    void shouldFindLastTwoRowsAreOutOfOrder() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 10L)),
-                new Record(Map.of("key", 30L)),
-                new Record(Map.of("key", 20L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 10L)),
+                new Row(Map.of("key", 30L)),
+                new Row(Map.of("key", 20L)));
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(
-                SortedRecordsCheck.outOfOrderAt(3,
-                        new Record(Map.of("key", 30L)),
-                        new Record(Map.of("key", 20L))));
+        assertThat(check(schema, rows)).isEqualTo(
+                SortedRowsCheck.outOfOrderAt(3,
+                        new Row(Map.of("key", 30L)),
+                        new Row(Map.of("key", 20L))));
     }
 
     @Test
-    void shouldFindRecordsAreSortedWithSameValue() {
+    void shouldFindRowsAreSortedWithSameValue() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 20L)),
-                new Record(Map.of("key", 20L)),
-                new Record(Map.of("key", 20L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 20L)),
+                new Row(Map.of("key", 20L)),
+                new Row(Map.of("key", 20L)));
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(SortedRecordsCheck.sorted(3));
+        assertThat(check(schema, rows)).isEqualTo(SortedRowsCheck.sorted(3));
     }
 
     @Test
-    void shouldFindRecordsAreOutOfOrderBySortKey() {
+    void shouldFindRowsAreOutOfOrderBySortKey() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("row", new LongType()))
                 .sortKeyFields(new Field("sort", new LongType()))
                 .build();
-        List<Record> records = List.of(
-                new Record(Map.of("row", 10L, "sort", 10L)),
-                new Record(Map.of("row", 10L, "sort", 30L)),
-                new Record(Map.of("row", 10L, "sort", 20L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("row", 10L, "sort", 10L)),
+                new Row(Map.of("row", 10L, "sort", 30L)),
+                new Row(Map.of("row", 10L, "sort", 20L)));
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(
-                SortedRecordsCheck.outOfOrderAt(3,
-                        new Record(Map.of("row", 10L, "sort", 30L)),
-                        new Record(Map.of("row", 10L, "sort", 20L))));
+        assertThat(check(schema, rows)).isEqualTo(
+                SortedRowsCheck.outOfOrderAt(3,
+                        new Row(Map.of("row", 10L, "sort", 30L)),
+                        new Row(Map.of("row", 10L, "sort", 20L))));
     }
 
     @Test
-    void shouldFindOneRecordIsSorted() {
+    void shouldFindOneRowIsSorted() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 10L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 10L)));
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(SortedRecordsCheck.sorted(1));
+        assertThat(check(schema, rows)).isEqualTo(SortedRowsCheck.sorted(1));
     }
 
     @Test
-    void shouldFindNoRecordsAreSorted() {
+    void shouldFindNoRowsAreSorted() {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of();
+        List<Row> rows = List.of();
 
         // When / Then
-        assertThat(check(schema, records)).isEqualTo(SortedRecordsCheck.sorted(0));
+        assertThat(check(schema, rows)).isEqualTo(SortedRowsCheck.sorted(0));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class SortedRecordsCheckTest {
         OnCloseIterator iterator = new OnCloseIterator(() -> closed.set(true));
 
         // When
-        SortedRecordsCheck.check(schema, iterator);
+        SortedRowsCheck.check(schema, iterator);
 
         // Then
         assertThat(closed).isTrue();
@@ -158,16 +158,16 @@ public class SortedRecordsCheckTest {
         });
 
         // When / Then
-        assertThatThrownBy(() -> SortedRecordsCheck.check(schema, iterator))
+        assertThatThrownBy(() -> SortedRowsCheck.check(schema, iterator))
                 .isInstanceOf(UncheckedIOException.class)
                 .hasCause(failure);
     }
 
-    private SortedRecordsCheck check(Schema schema, List<Record> records) {
-        return SortedRecordsCheck.check(schema, new WrappedIterator<>(records.iterator()));
+    private SortedRowsCheck check(Schema schema, List<Row> rows) {
+        return SortedRowsCheck.check(schema, new WrappedIterator<>(rows.iterator()));
     }
 
-    private static class OnCloseIterator implements CloseableIterator<Record> {
+    private static class OnCloseIterator implements CloseableIterator<Row> {
 
         private final OnClose onClose;
 
@@ -186,7 +186,7 @@ public class SortedRecordsCheckTest {
         }
 
         @Override
-        public Record next() {
+        public Row next() {
             throw new UnsupportedOperationException("Unimplemented method 'next'");
         }
     }

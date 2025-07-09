@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.AgeOffIterator;
-import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.row.Record;
+import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -52,13 +52,13 @@ class IngestRecordsResultIT extends IngestRecordsTestBase {
     @Test
     void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorReducesCount() throws Exception {
         // Given
-        List<Record> records = Arrays.asList(record("test-1", 1), record("test-1", 2), record("test-2", 3));
+        List<Row> rows = Arrays.asList(row("test-1", 1), row("test-1", 2), row("test-2", 3));
 
         // When
-        IngestResult result = ingestWithTableIterator(AdditionIterator.class, records);
+        IngestResult result = ingestWithTableIterator(AdditionIterator.class, rows);
 
         // Then
-        assertThat(readRecords(result)).containsExactly(record("test-1", 3), record("test-2", 3));
+        assertThat(readRecords(result)).containsExactly(row("test-1", 3), row("test-2", 3));
         assertThat(result).extracting("recordsRead", "recordsWritten")
                 .containsExactly(3L, 2L);
     }
@@ -66,10 +66,10 @@ class IngestRecordsResultIT extends IngestRecordsTestBase {
     @Test
     void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorFiltersOutAll() throws Exception {
         // Given
-        List<Record> records = Arrays.asList(record("test-1", 1), record("test-1", 2), record("test-2", 3));
+        List<Row> rows = Arrays.asList(row("test-1", 1), row("test-1", 2), row("test-2", 3));
 
         // When
-        IngestResult result = ingestWithTableIterator(AgeOffIterator.class, "value,0", records);
+        IngestResult result = ingestWithTableIterator(AgeOffIterator.class, "value,0", rows);
 
         // Then
         assertThat(readRecords(result)).isEmpty();
@@ -77,27 +77,27 @@ class IngestRecordsResultIT extends IngestRecordsTestBase {
                 .containsExactly(3L, 0L);
     }
 
-    private static Record record(String key, long value) {
-        Record record = new Record();
-        record.put("key", key);
-        record.put("value", value);
-        return record;
+    private static Row row(String key, long value) {
+        Row row = new Row();
+        row.put("key", key);
+        row.put("value", value);
+        return row;
     }
 
     private IngestResult ingestWithTableIterator(
-            Class<? extends SortedRecordIterator> iteratorClass, List<Record> records) throws Exception {
-        return ingestWithTableIterator(iteratorClass, null, records);
+            Class<? extends SortedRowIterator> iteratorClass, List<Row> rows) throws Exception {
+        return ingestWithTableIterator(iteratorClass, null, rows);
     }
 
     private IngestResult ingestWithTableIterator(
-            Class<? extends SortedRecordIterator> iteratorClass, String iteratorConfig, List<Record> records) throws Exception {
+            Class<? extends SortedRowIterator> iteratorClass, String iteratorConfig, List<Row> rows) throws Exception {
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClass.getName());
         tableProperties.set(ITERATOR_CONFIG, iteratorConfig);
         StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
-        return ingestRecords(stateStore, records);
+        return ingestRecords(stateStore, rows);
     }
 
-    private List<Record> readRecords(IngestResult result) {
+    private List<Row> readRecords(IngestResult result) {
         return readIngestedRecords(result, schema);
     }
 }

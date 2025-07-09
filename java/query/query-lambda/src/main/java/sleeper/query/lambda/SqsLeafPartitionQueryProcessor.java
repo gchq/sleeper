@@ -28,7 +28,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -97,7 +97,7 @@ public class SqsLeafPartitionQueryProcessor {
             Configuration conf = getConfiguration(tableProperties);
             LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
                     objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties));
-            CloseableIterator<Record> results = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
+            CloseableIterator<Row> results = leafPartitionQueryExecutor.getRows(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {
             LOGGER.error("Exception thrown executing leaf partition query {}", query.getQueryId(), e);
@@ -114,7 +114,7 @@ public class SqsLeafPartitionQueryProcessor {
         return configurationCache.get(tableName);
     }
 
-    private void publishResults(CloseableIterator<Record> results, QueryOrLeafPartitionQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
+    private void publishResults(CloseableIterator<Row> results, QueryOrLeafPartitionQuery query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         try {
             Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
             ResultsOutputInfo outputInfo = getResultsOutput(tableProperties, resultsPublisherConfig)

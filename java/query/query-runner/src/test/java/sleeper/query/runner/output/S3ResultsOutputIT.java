@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -72,7 +72,7 @@ class S3ResultsOutputIT {
     TableProperties tableProperties = new TableProperties(instanceProperties);
 
     Schema schema = setupSchema();
-    List<Record> recordList = setupData();
+    List<Row> rowList = setupData();
     String outputDir;
     Query query = Query.builder()
             .tableName("table")
@@ -94,12 +94,12 @@ class S3ResultsOutputIT {
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
 
         // When
-        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rowList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There is only one block as rowGroup size is large").isOne();
     }
 
@@ -112,12 +112,12 @@ class S3ResultsOutputIT {
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, config);
 
         // When
-        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rowList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
@@ -129,12 +129,12 @@ class S3ResultsOutputIT {
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
 
         // When
-        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(recordList.iterator()));
+        resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rowList.iterator()));
 
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
@@ -161,21 +161,21 @@ class S3ResultsOutputIT {
         }
     }
 
-    private List<Record> getRecordsFromOutput(String path) {
-        List<Record> records = new ArrayList<>();
+    private List<Row> getRecordsFromOutput(String path) {
+        List<Row> rows = new ArrayList<>();
         try {
             ParquetRecordReader reader = new ParquetRecordReader(path, schema);
 
-            Record record = reader.read();
-            while (null != record) {
-                records.add(new Record(record));
-                record = reader.read();
+            Row row = reader.read();
+            while (null != row) {
+                rows.add(new Row(row));
+                row = reader.read();
             }
             reader.close();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        return records;
+        return rows;
     }
 
     private static Schema setupSchema() {
@@ -194,26 +194,26 @@ class S3ResultsOutputIT {
                 .build();
     }
 
-    private static List<Record> setupData() {
+    private static List<Row> setupData() {
         int minYear = 2010;
         int maxYear = 2020;
         LocalDate startDate = LocalDate.of(minYear, 1, 1);
         LocalDate endDate = LocalDate.of(maxYear, 12, 31);
-        List<Record> recordList = new ArrayList<>();
+        List<Row> rowList = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            Record record = new Record();
-            record.put("year", date.getYear());
-            record.put("month", date.getMonthValue());
-            record.put("day", date.getDayOfMonth());
-            record.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
-            record.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
+            Row row = new Row();
+            row.put("year", date.getYear());
+            row.put("month", date.getMonthValue());
+            row.put("day", date.getDayOfMonth());
+            row.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
+            row.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
             HashMap<String, String> map = new HashMap<>();
             map.put(date.getMonth().name(), date.getMonth().name());
-            record.put("map", map);
-            record.put("list", Lists.newArrayList(date.getEra().toString()));
-            record.put("str", date.toString());
-            recordList.add(record);
+            row.put("map", map);
+            row.put("list", Lists.newArrayList(date.getEra().toString()));
+            row.put("str", date.toString());
+            rowList.add(row);
         }
-        return recordList;
+        return rowList;
     }
 }

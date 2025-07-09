@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -34,19 +34,19 @@ import java.util.Iterator;
 public class IngestRecordsFromIterator {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecordsFromIterator.class);
 
-    private final Iterator<Record> recordsIterator;
+    private final Iterator<Row> rowsIterator;
     private final IngestRecords ingestRecords;
 
-    public IngestRecordsFromIterator(IngestCoordinator<Record> ingestCoordinator, Iterator<Record> recordsIterator) {
-        this.recordsIterator = recordsIterator;
+    public IngestRecordsFromIterator(IngestCoordinator<Row> ingestCoordinator, Iterator<Row> rowsIterator) {
+        this.rowsIterator = rowsIterator;
         this.ingestRecords = new IngestRecords(ingestCoordinator);
     }
 
     public IngestResult write() throws StateStoreException, IteratorCreationException, IOException {
         ingestRecords.init();
         long count = 0L;
-        while (recordsIterator.hasNext()) {
-            ingestRecords.write(recordsIterator.next());
+        while (rowsIterator.hasNext()) {
+            ingestRecords.write(rowsIterator.next());
             count++;
         }
         LOGGER.info("Ingested {} records", count);

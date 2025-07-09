@@ -33,7 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -97,10 +97,10 @@ public class RustCompactionRunnerIT {
             Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", "record-1"));
-            Record record2 = new Record(Map.of("key", "record-2"));
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2));
+            Row row1 = new Row(Map.of("key", "row-1"));
+            Row row2 = new Row(Map.of("key", "row-2"));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
             // When
             RecordsProcessed summary = compact(job);
@@ -109,9 +109,9 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsRead()).isEqualTo(2);
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(record1, record2);
+                    .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
 
         @Test
@@ -120,10 +120,10 @@ public class RustCompactionRunnerIT {
             Schema schema = createSchemaWithKey("key", new LongType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", 1L));
-            Record record2 = new Record(Map.of("key", 2L));
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2));
+            Row row1 = new Row(Map.of("key", 1L));
+            Row row2 = new Row(Map.of("key", 2L));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
@@ -133,9 +133,9 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsRead()).isEqualTo(2);
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(record1, record2);
+                    .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
 
         @Test
@@ -144,10 +144,10 @@ public class RustCompactionRunnerIT {
             Schema schema = createSchemaWithKey("key", new IntType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", 1));
-            Record record2 = new Record(Map.of("key", 2));
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2));
+            Row row1 = new Row(Map.of("key", 1));
+            Row row2 = new Row(Map.of("key", 2));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
@@ -157,9 +157,9 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsRead()).isEqualTo(2);
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(record1, record2);
+                    .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
 
         @Test
@@ -168,10 +168,10 @@ public class RustCompactionRunnerIT {
             Schema schema = createSchemaWithKey("key", new ByteArrayType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", new byte[]{1, 2}));
-            Record record2 = new Record(Map.of("key", new byte[]{3, 4}));
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2));
+            Row row1 = new Row(Map.of("key", new byte[]{1, 2}));
+            Row row2 = new Row(Map.of("key", new byte[]{3, 4}));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
@@ -181,9 +181,9 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsRead()).isEqualTo(2);
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(record1, record2);
+                    .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
     }
 
@@ -197,9 +197,9 @@ public class RustCompactionRunnerIT {
             Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record = new Record(Map.of("key", "test-value"));
+            Row row = new Row(Map.of("key", "test-value"));
             String emptyFile = writeFileForPartition("root", List.of());
-            String nonEmptyFile = writeFileForPartition("root", List.of(record));
+            String nonEmptyFile = writeFileForPartition("root", List.of(row));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(emptyFile, nonEmptyFile));
 
             // When
@@ -209,7 +209,7 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsRead()).isEqualTo(1);
             assertThat(summary.getRecordsWritten()).isEqualTo(1);
             assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(record);
+                    .containsExactly(row);
         }
 
         @Test
@@ -242,10 +242,10 @@ public class RustCompactionRunnerIT {
             Schema schema = createSchemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", "record-1"));
-            Record record2 = new Record(Map.of("key", "record-2"));
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2));
+            Row row1 = new Row(Map.of("key", "row-1"));
+            Row row2 = new Row(Map.of("key", "row-2"));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
@@ -253,7 +253,7 @@ public class RustCompactionRunnerIT {
 
             // Then
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
     }
 
@@ -272,13 +272,13 @@ public class RustCompactionRunnerIT {
             tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
             tableProperties.set(TableProperty.ITERATOR_CONFIG, "sort;,sum(value),map_sum(map_value2)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
-            Record record2 = new Record(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2", Map.of("map_key1", 3L, "map_key2", 4L)));
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2));
+            Row row1 = new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
+            Row row2 = new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2", Map.of("map_key1", 3L, "map_key2", 4L)));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
-            Record output1 = new Record(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2", Map.of("map_key1", 4L, "map_key2", 7L)));
+            Row output1 = new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2", Map.of("map_key1", 4L, "map_key2", 7L)));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -304,15 +304,15 @@ public class RustCompactionRunnerIT {
             tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
             tableProperties.set(TableProperty.ITERATOR_CONFIG, "timestamp;ageoff=timestamp,10,sum(value)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Record record1 = new Record(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
-            Record record2 = new Record(Map.of("key", "a", "timestamp", 1L, "value", 2L));
-            Record record3 = new Record(Map.of("key", "a", "timestamp", 999999999999999L, "value", 3L));
+            Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
+            Row row2 = new Row(Map.of("key", "a", "timestamp", 1L, "value", 2L));
+            Row row3 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 3L));
 
-            String file1 = writeFileForPartition("root", List.of(record1));
-            String file2 = writeFileForPartition("root", List.of(record2, record3));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2, row3));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
-            Record output1 = new Record(Map.of("key", "a", "timestamp", 999999999999999L, "value", 4L));
+            Row output1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 4L));
 
             // When
             RecordsProcessed summary = compact(job);
@@ -336,14 +336,14 @@ public class RustCompactionRunnerIT {
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 
-    private String writeFileForPartition(String partitionId, List<Record> records) throws Exception {
+    private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
-            for (Record record : records) {
-                writer.write(record);
-                sketches.update(record);
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
+            for (Row row : rows) {
+                writer.write(row);
+                sketches.update(row);
             }
         }
         sketchesStore.saveFileSketches(dataFile, schema, sketches);
@@ -359,12 +359,12 @@ public class RustCompactionRunnerIT {
                 .constructPartitionParquetFilePath(partitionId, filename);
     }
 
-    private List<Record> readDataFile(Schema schema, String filename) throws IOException {
-        List<Record> results = new ArrayList<>();
+    private List<Row> readDataFile(Schema schema, String filename) throws IOException {
+        List<Row> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 ParquetReader.builder(new RecordReadSupport(schema), new org.apache.hadoop.fs.Path(filename)).build())) {
             while (reader.hasNext()) {
-                results.add(new Record(reader.next()));
+                results.add(new Row(reader.next()));
             }
         }
         return results;

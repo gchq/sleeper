@@ -29,7 +29,7 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -124,13 +124,13 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
     }
 
     @Nested
-    @DisplayName("Store records")
-    class StoreRecords {
+    @DisplayName("Store rows")
+    class StoreRows {
         @TempDir
         private Path tempDir;
 
         @Test
-        void shouldStoreRecords() throws Exception {
+        void shouldStoreRows() throws Exception {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId);
@@ -139,18 +139,18 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .loadByName("system-test");
 
             // When
-            List<Record> records = List.of(
-                    new Record(Map.of("key", "test1")),
-                    new Record(Map.of("key", "test2")));
-            ingestRecords(instanceProperties, tableProperties, records);
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", "test1")),
+                    new Row(Map.of("key", "test2")));
+            ingestRecords(instanceProperties, tableProperties, rows);
 
             // Then
             assertThat(queryAllRecords(instanceProperties, tableProperties))
-                    .toIterable().containsExactlyElementsOf(records);
+                    .toIterable().containsExactlyElementsOf(rows);
         }
 
         private void ingestRecords(
-                InstanceProperties instanceProperties, TableProperties tableProperties, List<Record> records) throws Exception {
+                InstanceProperties instanceProperties, TableProperties tableProperties, List<Row> rows) throws Exception {
             IngestFactory.builder()
                     .instanceProperties(instanceProperties)
                     .objectFactory(ObjectFactory.noUserJars())
@@ -158,7 +158,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .hadoopConfiguration(hadoopConf)
                     .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .s3AsyncClient(s3AsyncClient)
-                    .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
+                    .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(rows.iterator()));
         }
     }
 }

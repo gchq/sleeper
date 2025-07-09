@@ -21,7 +21,7 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.text.RandomStringGenerator;
 
 import sleeper.core.key.Key;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -41,12 +41,12 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * A supplier of Sleeper records generated randomly that conform to the given schema.
+ * A supplier of Sleeper rows generated randomly that conform to the given schema.
  */
-public class RandomRecordSupplier implements Supplier<Record> {
+public class RandomRowSupplier implements Supplier<Row> {
     private final Map<String, Supplier<Object>> fieldNameToSupplier;
 
-    public RandomRecordSupplier(Schema schema, SystemTestRandomDataSettings settings) {
+    public RandomRowSupplier(Schema schema, SystemTestRandomDataSettings settings) {
         fieldNameToSupplier = new HashMap<>();
         RandomGenerator generator = new JDKRandomGenerator();
         for (Field field : schema.getAllFields()) {
@@ -55,12 +55,12 @@ public class RandomRecordSupplier implements Supplier<Record> {
     }
 
     @Override
-    public Record get() {
-        Record record = new Record();
+    public Row get() {
+        Row row = new Row();
         for (Map.Entry<String, Supplier<Object>> entry : fieldNameToSupplier.entrySet()) {
-            record.put(entry.getKey(), entry.getValue().get());
+            row.put(entry.getKey(), entry.getValue().get());
         }
-        return record;
+        return row;
     }
 
     private static Supplier<Object> getSupplier(Type type, SystemTestRandomDataSettings settings, RandomGenerator generator) {

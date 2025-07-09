@@ -15,7 +15,7 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
@@ -65,6 +65,6 @@ public class PartitionTreeTestHelper {
          * @param  n the index of the record, starting from 0
          * @return   the record
          */
-        Record getNthRecord(long n);
+        Row getNthRecord(long n);
     }
 }

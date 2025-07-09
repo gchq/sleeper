@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -53,11 +53,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema).iterableFrom(LongStream.of(1, Long.MAX_VALUE)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "row-0000000000000000001",
                                 "sortkey", "sort-0000000000000000001",
                                 "value", "Value 0000000000000000001")),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "row-9223372036854775807",
                                 "sortkey", "sort-9223372036854775807",
                                 "value", "Value 9223372036854775807")));
@@ -75,11 +75,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema).iterableFrom(LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", 1,
                                 "sortkey", 1,
                                 "value", 1)),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", 2,
                                 "sortkey", 2,
                                 "value", 2)));
@@ -97,11 +97,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema).iterableFrom(LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", 1L,
                                 "sortkey", 1L,
                                 "value", 1L)),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", 2L,
                                 "sortkey", 2L,
                                 "value", 2L)));
@@ -119,11 +119,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema).iterableFrom(LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 1},
                                 "sortkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 1},
                                 "value", new byte[]{0, 0, 0, 0, 0, 0, 0, 1})),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 2},
                                 "sortkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 2},
                                 "value", new byte[]{0, 0, 0, 0, 0, 0, 0, 2})));
@@ -142,11 +142,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides).iterableFrom(LongStream.of(1, 999)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "001",
                                 "sortkey", "sort-0000000000000000001",
                                 "value", "Value 0000000000000000001")),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "999",
                                 "sortkey", "sort-0000000000000000999",
                                 "value", "Value 0000000000000000999")));
@@ -171,11 +171,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides).iterableFrom(LongStream.of(1, 999)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "customrow-001",
                                 "sortkey", "customsort-001",
                                 "value", "Custom value 001")),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "customrow-999",
                                 "sortkey", "customsort-999",
                                 "value", "Custom value 999")));
@@ -200,11 +200,11 @@ public class GenerateNumberedRecordsTest {
         // When/Then
         assertThat(GenerateNumberedRecords.from(schema, overrides).iterableFrom(LongStream.of(1, 12345)))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "rowkey-00001",
                                 "sortkey", "sortkey-00001",
                                 "value", "A value 00001")),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "rowkey", "rowkey-12345",
                                 "sortkey", "sortkey-12345",
                                 "value", "A value 12345")));

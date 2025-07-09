@@ -29,7 +29,7 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -156,13 +156,13 @@ public class ShowPageIndexesIT {
     }
 
     private static void writeRecords(Path file, TableProperties tableProperties,
-            LongStream range, BiConsumer<Long, Record> recordCreator) throws IOException {
-        try (ParquetWriter<Record> writer = createRecordWriter(file, tableProperties)) {
+            LongStream range, BiConsumer<Long, Row> recordCreator) throws IOException {
+        try (ParquetWriter<Row> writer = createRecordWriter(file, tableProperties)) {
             range.boxed().forEach(i -> {
-                Record record = new Record();
-                recordCreator.accept(i, record);
+                Row row = new Row();
+                recordCreator.accept(i, row);
                 try {
-                    writer.write(record);
+                    writer.write(row);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -176,7 +176,7 @@ public class ShowPageIndexesIT {
         return tableProperties;
     }
 
-    private static ParquetWriter<Record> createRecordWriter(Path file, TableProperties tableProperties) throws IOException {
+    private static ParquetWriter<Row> createRecordWriter(Path file, TableProperties tableProperties) throws IOException {
         return createParquetRecordWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
     }
 

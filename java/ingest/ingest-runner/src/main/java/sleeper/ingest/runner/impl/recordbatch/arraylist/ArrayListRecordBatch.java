@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
@@ -69,10 +69,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     private final long maxNoOfRecordsInLocalStore;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
-    private final List<Record> inMemoryBatch;
+    private final List<Row> inMemoryBatch;
     private final List<String> localFileNames;
     private long noOfRecordsInLocalStore;
-    private CloseableIterator<Record> internalOrderedRecordIterator;
+    private CloseableIterator<Row> internalOrderedRecordIterator;
     private boolean isWriteable;
     private int batchNo;
 
@@ -110,29 +110,29 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Internal method to add a record to the internal batch, flushing to local disk first if necessary.
+     * Internal method to add a row to the internal batch, flushing to local disk first if necessary.
      *
-     * @param  record      the record to add to the batch
+     * @param  row         the row to add to the batch
      * @throws IOException if there was a failure writing the local file
      */
-    protected void addRecordToBatch(Record record) throws IOException {
+    protected void addRecordToBatch(Row row) throws IOException {
         if (!isWriteable) {
             throw new AssertionError("Attempt to write to a batch where an iterator has already been created");
         }
         if (inMemoryBatch.size() >= maxNoOfRecordsInMemory) {
             flushToLocalDiskAndClear();
         }
-        inMemoryBatch.add(record);
+        inMemoryBatch.add(row);
     }
 
     /**
-     * Flushes the in-memory batch of records to a local file and then clears the in-memory batch.
+     * Flushes the in-memory batch of rows to a local file and then clears the in-memory batch.
      *
      * @throws IOException if there was a failure writing the local file
      */
     private void flushToLocalDiskAndClear() throws IOException {
         if (inMemoryBatch.isEmpty()) {
-            LOGGER.info("There are no records to flush");
+            LOGGER.info("There are no rows to flush");
         } else {
             Instant startTime = Instant.now();
             String outputFileName = String.format("%s/localfile-batch-%s-file-%09d.parquet",
@@ -141,18 +141,18 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                     batchNo);
             inMemoryBatch.sort(new RowComparator(sleeperSchema));
             Instant writeTime = Instant.now();
-            // Write the records to a local Parquet file. The try-with-resources block ensures that the writer
+            // Write the rows to a local Parquet file. The try-with-resources block ensures that the writer
             // is closed in both success and failure.
-            try (ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
-                for (Record record : inMemoryBatch) {
-                    parquetWriter.write(record);
+            try (ParquetWriter<Row> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
+                for (Row row : inMemoryBatch) {
+                    parquetWriter.write(row);
                 }
             }
             Instant finishTime = Instant.now();
             LoggedDuration wholeDuration = LoggedDuration.withShortOutput(startTime, finishTime);
             LoggedDuration sortDuration = LoggedDuration.withShortOutput(startTime, writeTime);
             LoggedDuration writeDuration = LoggedDuration.withShortOutput(writeTime, finishTime);
-            LOGGER.info("Wrote {} records to local file in {} ({}/s) " +
+            LOGGER.info("Wrote {} rows to local file in {} ({}/s) " +
                     "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
                     inMemoryBatch.size(),
                     wholeDuration,
@@ -176,7 +176,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
 
     /**
      * Indicates whether the batch is full. This is considered full when the in-memory batch is full and when, if it
-     * were written to disk, the total number of records on disk would exceed the limit specified during construction.
+     * were written to disk, the total number of rows on disk would exceed the limit specified during construction.
      *
      * @return a flag indicating whether or not the batch is full
      */
@@ -187,14 +187,14 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     }
 
     /**
-     * Merge-sort the sorted files on the local disk and records in memory into one iterator. Note that this method may
+     * Merge-sort the sorted files on the local disk and rows in memory into one iterator. Note that this method may
      * only be called once.
      *
-     * @return             an iterator of the sorted records
+     * @return             an iterator of the sorted rows
      * @throws IOException if there was a failure writing the local file
      */
     @Override
-    public CloseableIterator<Record> createOrderedRecordIterator() throws IOException {
+    public CloseableIterator<Row> createOrderedRowIterator() throws IOException {
         if (!isWriteable || internalOrderedRecordIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
@@ -202,10 +202,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         // Flush the current in-memory batch to disk, to free up as much memory as possible for the merge
         flushToLocalDiskAndClear();
         // Create an iterator for each one of the local Parquet files
-        List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
+        List<CloseableIterator<Row>> inputIterators = new ArrayList<>();
         try {
             for (String localFileName : localFileNames) {
-                ParquetReader<Record> readerForBatch = createParquetReader(localFileName);
+                ParquetReader<Row> readerForBatch = createParquetReader(localFileName);
                 ParquetReaderIterator recordIterator = new ParquetReaderIterator(readerForBatch);
                 inputIterators.add(recordIterator);
                 LOGGER.info("Created reader for file {}", localFileName);
@@ -247,8 +247,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @return             the {@link ParquetReader}
      * @throws IOException Thrown when the reader cannot be created
      */
-    private ParquetReader<Record> createParquetReader(String inputFile) throws IOException {
-        ParquetReader.Builder<Record> builder = new ParquetRecordReader.Builder(new Path(inputFile), sleeperSchema)
+    private ParquetReader<Row> createParquetReader(String inputFile) throws IOException {
+        ParquetReader.Builder<Row> builder = new ParquetRecordReader.Builder(new Path(inputFile), sleeperSchema)
                 .withConf(hadoopConfiguration);
         return builder.build();
     }

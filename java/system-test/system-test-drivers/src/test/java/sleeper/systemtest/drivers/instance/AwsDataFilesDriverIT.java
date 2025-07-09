@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 
@@ -46,7 +46,7 @@ public class AwsDataFilesDriverIT {
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    try (CloseableIterator<Record> iterator = sleeper.getRecords(file)) {
+                    try (CloseableIterator<Row> iterator = sleeper.getRecords(file)) {
                         assertThat(iterator)
                                 .toIterable()
                                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.of(1, 3, 2)));

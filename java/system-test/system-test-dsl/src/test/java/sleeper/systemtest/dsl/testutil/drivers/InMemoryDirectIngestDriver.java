@@ -19,8 +19,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -38,28 +38,28 @@ import java.util.function.Consumer;
 
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
-    private final InMemoryRecordStore data;
+    private final InMemoryRowStore data;
     private final InMemorySketchesStore sketches;
 
-    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryRecordStore data, InMemorySketchesStore sketches) {
+    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryRowStore data, InMemorySketchesStore sketches) {
         this.instance = instance;
         this.data = data;
         this.sketches = sketches;
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Record> records) {
+    public void ingest(Path tempDir, Iterator<Row> records) {
         ingest(records, ingestCoordinatorBuilder(tempDir));
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles) {
+    public void ingest(Path tempDir, Iterator<Row> records, Consumer<List<FileReference>> addFiles) {
         ingest(records, ingestCoordinatorBuilder(tempDir)
                 .addFilesToStateStore(addFiles::accept));
     }
 
-    private void ingest(Iterator<Record> records, IngestCoordinator.Builder<Record> builder) {
-        try (IngestCoordinator<Record> coordinator = builder.build()) {
+    private void ingest(Iterator<Row> records, IngestCoordinator.Builder<Row> builder) {
+        try (IngestCoordinator<Row> coordinator = builder.build()) {
             while (records.hasNext()) {
                 coordinator.write(records.next());
             }
@@ -70,7 +70,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
         }
     }
 
-    private IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(Path tempDir) {
+    private IngestCoordinator.Builder<Row> ingestCoordinatorBuilder(Path tempDir) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         StateStore stateStore = instance.getStateStore(tableProperties);

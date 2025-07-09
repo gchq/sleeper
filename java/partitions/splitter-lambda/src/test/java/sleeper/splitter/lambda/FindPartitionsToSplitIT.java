@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -180,45 +180,45 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
-    private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
-        List<List<Record>> recordLists = new ArrayList<>();
+    private List<List<Row>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
+        List<List<Row>> rowLists = new ArrayList<>();
         for (int i = 0; i < numberOfLists; i++) {
-            List<Record> records = new ArrayList<>();
+            List<Row> rows = new ArrayList<>();
             for (int j = 0; j < recordsPerList; j++) {
-                Record record = new Record();
-                record.put("key", j);
-                records.add(record);
+                Row row = new Row();
+                row.put("key", j);
+                rows.add(row);
             }
-            recordLists.add(records);
+            rowLists.add(rows);
         }
 
-        return recordLists;
+        return rowLists;
     }
 
-    private List<List<Record>> createAscendingRecordList(Integer startingRecordsPerList, Integer numberOfLists) {
-        List<List<Record>> recordLists = new ArrayList<>();
-        Integer recordsPerList = startingRecordsPerList;
+    private List<List<Row>> createAscendingRecordList(Integer startingRecordsPerList, Integer numberOfLists) {
+        List<List<Row>> rowLists = new ArrayList<>();
+        Integer rowsPerList = startingRecordsPerList;
         for (int i = 0; i < numberOfLists; i++) {
-            List<Record> records = new ArrayList<>();
-            for (int j = 0; j < recordsPerList; j++) {
-                Record record = new Record();
-                record.put("key", j);
-                records.add(record);
+            List<Row> rows = new ArrayList<>();
+            for (int j = 0; j < rowsPerList; j++) {
+                Row row = new Row();
+                row.put("key", j);
+                rows.add(row);
             }
-            recordLists.add(records);
-            recordsPerList++;
+            rowLists.add(rows);
+            rowsPerList++;
         }
 
-        return recordLists;
+        return rowLists;
     }
 
-    private void writeFiles(List<List<Record>> recordLists) {
+    private void writeFiles(List<List<Row>> rowLists) {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(SCHEMA, new Configuration());
-        recordLists.forEach(list -> {
+        rowLists.forEach(list -> {
             try {
                 File stagingArea = createTempDirectory(tempDir, null).toFile();
                 File directory = createTempDirectory(tempDir, null).toFile();
-                try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
+                try (IngestCoordinator<Row> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
                         ArrayListRecordBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .localWorkingDirectory(stagingArea.getAbsolutePath())

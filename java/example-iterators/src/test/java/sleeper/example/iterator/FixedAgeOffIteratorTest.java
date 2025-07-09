@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -40,7 +40,7 @@ public class FixedAgeOffIteratorTest {
     @Test
     public void shouldAgeOff() {
         // Given
-        List<Record> records = records(List.of(
+        List<Row> rows = rows(List.of(
                 Map.of("id", "1", "timestamp", 1000L),
                 Map.of("id", "2", "timestamp", 1300L),
                 Map.of("id", "3", "timestamp", 1500L),
@@ -49,18 +49,18 @@ public class FixedAgeOffIteratorTest {
         ageOffIterator.init("timestamp,1500", schema);
 
         // When
-        Iterator<Record> filtered = ageOffIterator.apply(new WrappedIterator<>(records.iterator()));
+        Iterator<Row> filtered = ageOffIterator.apply(new WrappedIterator<>(rows.iterator()));
 
         // Then
         assertThat(filtered).toIterable()
-                .extracting(record -> record.getValues(List.of("id", "timestamp")))
+                .extracting(row -> row.getValues(List.of("id", "timestamp")))
                 .containsExactly(
                         List.of("3", 1500L),
                         List.of("4", 1800L));
     }
 
-    private static List<Record> records(List<Map<String, Object>> records) {
-        return records.stream().map(map -> new Record(map)).toList();
+    private static List<Row> rows(List<Map<String, Object>> rows) {
+        return rows.stream().map(map -> new Row(map)).toList();
     }
 
 }

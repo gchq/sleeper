@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -75,20 +75,20 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
-        List<Record> records = new ArrayList<>();
-        records.add(new Record(Collections.singletonMap("id", "record1")));
-        records.add(new Record(Collections.singletonMap("id", "record2")));
-        records.add(new Record(Collections.singletonMap("id", "record3")));
-        records.add(new Record(Collections.singletonMap("id", "record4")));
-        records.add(new Record(Collections.singletonMap("id", "record5")));
+        List<Row> rows = new ArrayList<>();
+        rows.add(new Row(Collections.singletonMap("id", "row1")));
+        rows.add(new Row(Collections.singletonMap("id", "row2")));
+        rows.add(new Row(Collections.singletonMap("id", "row3")));
+        rows.add(new Row(Collections.singletonMap("id", "row4")));
+        rows.add(new Row(Collections.singletonMap("id", "row5")));
 
         // When
-        ResultsOutputInfo result = out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(records.iterator()));
+        ResultsOutputInfo result = out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
 
         // Then
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
-                        .and(matchingJsonPath("$.message", equalTo("records")))));
+                        .and(matchingJsonPath("$.message", equalTo("rows")))));
         assertThat(result.getRecordCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }
@@ -109,19 +109,19 @@ public class WebSocketResultsOutputIT {
         config.put(WebSocketOutput.SECRET_KEY, "secretKey");
         WebSocketResultsOutput out = new WebSocketResultsOutput(schema, config);
 
-        List<Record> records = new ArrayList<>();
-        records.add(new Record(Collections.singletonMap("id", "record1")));
-        records.add(new Record(Collections.singletonMap("id", "record2")));
-        records.add(new Record(Collections.singletonMap("id", "record3")));
-        records.add(new Record(Collections.singletonMap("id", "record4")));
-        records.add(new Record(Collections.singletonMap("id", "record5")));
+        List<Row> rows = new ArrayList<>();
+        rows.add(new Row(Collections.singletonMap("id", "row1")));
+        rows.add(new Row(Collections.singletonMap("id", "row2")));
+        rows.add(new Row(Collections.singletonMap("id", "row3")));
+        rows.add(new Row(Collections.singletonMap("id", "row4")));
+        rows.add(new Row(Collections.singletonMap("id", "row5")));
 
         // When
-        out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(records.iterator()));
+        out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
 
         // Then
-        verify(records.size(), postRequestedFor(url).withRequestBody(
+        verify(rows.size(), postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
-                        .and(matchingJsonPath("$.message", equalTo("records")))));
+                        .and(matchingJsonPath("$.message", equalTo("rows")))));
     }
 }

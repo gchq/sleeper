@@ -26,7 +26,7 @@ import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -91,12 +91,12 @@ public class CompactionRunnerTestBase {
         return new LocalFileSystemSketchesStore();
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
-        return ingestRecordsGetFile(records, builder -> {
+    protected FileReference ingestRecordsGetFile(List<Row> rowss) throws Exception {
+        return ingestRecordsGetFile(rowss, builder -> {
         });
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
+    protected FileReference ingestRecordsGetFile(List<Row> rows, Consumer<IngestFactory.Builder> config) throws Exception {
         String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -104,7 +104,7 @@ public class CompactionRunnerTestBase {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .instanceProperties(instanceProperties);
         config.accept(builder);
-        IngestResult result = builder.build().ingestFromRecordIterator(tableProperties, records.iterator());
+        IngestResult result = builder.build().ingestFromRowIterator(tableProperties, rows.iterator());
         List<FileReference> files = result.getFileReferenceList();
         if (files.size() != 1) {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);

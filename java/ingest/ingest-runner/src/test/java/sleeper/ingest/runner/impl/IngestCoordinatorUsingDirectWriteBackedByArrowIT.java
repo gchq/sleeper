@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
@@ -47,7 +47,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
@@ -76,7 +76,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile.parquet"));
 
         assertThat(actualActiveData.getSetOfAllRecords())
-                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+                .isEqualTo(new HashSet<>(recordListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
@@ -87,13 +87,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         .collect(Collectors.toList()));
         assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
                 .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
     }
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
@@ -123,7 +123,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile1.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile2.parquet"));
         assertThat(actualActiveData.getSetOfAllRecords())
-                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+                .isEqualTo(new HashSet<>(recordListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
                         file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
@@ -138,13 +138,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
         assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
                 .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
     }
 
     @Test
     void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
@@ -165,11 +165,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     }
 
     private static void ingestRecords(
-            RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
+            RecordGenerator.RowListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
-        try (IngestCoordinator<Record> ingestCoordinator = parameters.toBuilder()
+        try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrow().setInstanceProperties(config).buildCoordinator()) {
-            for (Record record : recordListAndSchema.recordList) {
+            for (Row record : recordListAndSchema.rowList) {
                 ingestCoordinator.write(record);
             }
         }

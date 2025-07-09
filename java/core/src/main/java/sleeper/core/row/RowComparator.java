@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Compares records by row keys then sort keys.
  */
-public class RowComparator implements Comparator<Record> {
+public class RowComparator implements Comparator<Row> {
     private final Schema schema;
 
     public RowComparator(Schema schema) {
@@ -33,7 +33,7 @@ public class RowComparator implements Comparator<Record> {
     }
 
     @Override
-    public int compare(Record row1, Record row2) {
+    public int compare(Row row1, Row row2) {
         int rowKeyDiff = compare(schema.getRowKeyFields(), row1, row2);
         if (rowKeyDiff != 0) {
             return rowKeyDiff;
@@ -41,7 +41,7 @@ public class RowComparator implements Comparator<Record> {
         return compare(schema.getSortKeyFields(), row1, row2);
     }
 
-    private static int compare(List<Field> fields, Record row1, Record row2) {
+    private static int compare(List<Field> fields, Row row1, Row row2) {
         for (Field field : fields) {
             PrimitiveType type = (PrimitiveType) field.getType();
             Object value1 = row1.get(field.getName());

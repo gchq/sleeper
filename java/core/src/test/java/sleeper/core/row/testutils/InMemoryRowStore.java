@@ -17,7 +17,7 @@ package sleeper.core.row.testutils;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,23 +26,23 @@ import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 /**
- * Holds Sleeper records in memory, indexed as separate data files.
+ * Holds Sleeper rows in memory, indexed as separate data files.
  */
-public class InMemoryRecordStore {
+public class InMemoryRowStore {
 
-    private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
+    private final Map<String, List<Row>> rowsByFilename = new HashMap<>();
 
     /**
      * Adds a Sleeper data file to the store.
      *
      * @param filename the filename
-     * @param records  the records
+     * @param rows     the rows
      */
-    public void addFile(String filename, List<Record> records) {
-        if (recordsByFilename.containsKey(filename)) {
+    public void addFile(String filename, List<Row> rows) {
+        if (rowsByFilename.containsKey(filename)) {
             throw new IllegalArgumentException("File already exists: " + filename);
         }
-        recordsByFilename.put(filename, records);
+        rowsByFilename.put(filename, rows);
     }
 
     /**
@@ -51,41 +51,41 @@ public class InMemoryRecordStore {
      * @param filename the filename
      */
     public void deleteFile(String filename) {
-        recordsByFilename.remove(filename);
+        rowsByFilename.remove(filename);
     }
 
     /**
      * Deletes all Sleeper data files from the store.
      */
     public void deleteAllFiles() {
-        recordsByFilename.clear();
+        rowsByFilename.clear();
     }
 
     /**
-     * Retrieves all Sleeper records in the given data files.
+     * Retrieves all Sleeper rows in the given data files.
      *
      * @param  files the filenames of the data files to retrieve
-     * @return       the records
+     * @return       the rows
      */
-    public Stream<Record> streamRecords(List<String> files) {
+    public Stream<Row> streamRows(List<String> files) {
         return files.stream()
-                .flatMap(this::getRecordsOrThrow);
+                .flatMap(this::getRowsOrThrow);
     }
 
     /**
-     * Creates an iterator over records in the given data file.
+     * Creates an iterator over rows in the given data file.
      *
      * @param  filename the filename
-     * @return          the records
+     * @return          the rows
      */
-    public CloseableIterator<Record> openFile(String filename) {
-        return new WrappedIterator<>(getRecordsOrThrow(filename).iterator());
+    public CloseableIterator<Row> openFile(String filename) {
+        return new WrappedIterator<>(getRowsOrThrow(filename).iterator());
     }
 
-    private Stream<Record> getRecordsOrThrow(String filename) throws NoSuchElementException {
-        if (!recordsByFilename.containsKey(filename)) {
+    private Stream<Row> getRowsOrThrow(String filename) throws NoSuchElementException {
+        if (!rowsByFilename.containsKey(filename)) {
             throw new NoSuchElementException("File not found: " + filename);
         }
-        return recordsByFilename.get(filename).stream();
+        return rowsByFilename.get(filename).stream();
     }
 }

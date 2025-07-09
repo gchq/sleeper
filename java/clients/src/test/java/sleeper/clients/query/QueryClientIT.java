@@ -27,7 +27,7 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -119,7 +119,7 @@ public class QueryClientIT {
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            Record record = new Record();
+            Row record = new Row();
             record.put("key", 123L);
             record.put("value", "abc");
             ingestData(tableProperties, List.of(record).iterator());
@@ -147,8 +147,8 @@ public class QueryClientIT {
             // Given
             Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Record> records = LongStream.rangeClosed(0, 10)
-                    .mapToObj(num -> new Record(Map.of("key", num)))
+            List<Row> records = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
             ingestData(tableProperties, records.iterator());
 
@@ -179,8 +179,8 @@ public class QueryClientIT {
             // Given
             Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Record> records = LongStream.rangeClosed(0, 3)
-                    .mapToObj(num -> new Record(Map.of("key", num)))
+            List<Row> records = LongStream.rangeClosed(0, 3)
+                    .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
             ingestData(tableProperties, records.iterator());
 
@@ -215,8 +215,8 @@ public class QueryClientIT {
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Record> records = LongStream.rangeClosed(0, 10)
-                    .mapToObj(num -> new Record(Map.of(
+            List<Row> records = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Row(Map.of(
                             "key1", num,
                             "key2", num + 100L,
                             "value", "test-" + num)))
@@ -336,11 +336,11 @@ public class QueryClientIT {
                 .run();
     }
 
-    private void ingestData(TableProperties tableProperties, Iterator<Record> recordIterator) throws Exception {
+    private void ingestData(TableProperties tableProperties, Iterator<Row> recordIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
                 InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
                 instanceProperties);
-        factory.ingestFromRecordIterator(tableProperties, recordIterator);
+        factory.ingestFromRowIterator(tableProperties, recordIterator);
     }
 }

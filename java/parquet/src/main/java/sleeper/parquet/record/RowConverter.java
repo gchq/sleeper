@@ -20,7 +20,7 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.PrimitiveConverter;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -37,35 +37,35 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Converts rows of Parquet data into Sleeper records.
+ * Converts rows of Parquet data into Sleeper rows.
  */
-public class RecordConverter extends GroupConverter {
-    private final Record currentRecord;
+public class RowConverter extends GroupConverter {
+    private final Row currentRow;
     private final Converter[] converters;
 
-    public RecordConverter(Schema schema) {
-        currentRecord = new Record();
+    public RowConverter(Schema schema) {
+        currentRow = new Row();
         List<Field> fields = schema.getAllFields();
         this.converters = new Converter[fields.size()];
         int count = 0;
         for (Field field : fields) {
             if (field.getType() instanceof IntType) {
-                this.converters[count] = new IntConverter(field.getName(), currentRecord);
+                this.converters[count] = new IntConverter(field.getName(), currentRow);
             } else if (field.getType() instanceof LongType) {
-                this.converters[count] = new LongConverter(field.getName(), currentRecord);
+                this.converters[count] = new LongConverter(field.getName(), currentRow);
             } else if (field.getType() instanceof StringType) {
-                this.converters[count] = new StringConverter(field.getName(), currentRecord);
+                this.converters[count] = new StringConverter(field.getName(), currentRow);
             } else if (field.getType() instanceof ByteArrayType) {
-                this.converters[count] = new ByteArrayConverter(field.getName(), currentRecord);
+                this.converters[count] = new ByteArrayConverter(field.getName(), currentRow);
             } else if (field.getType() instanceof MapType) {
                 MapType mapType = (MapType) field.getType();
                 PrimitiveType keyType = mapType.getKeyType();
                 PrimitiveType valueType = mapType.getValueType();
-                this.converters[count] = new MapConverter<>(field.getName(), keyType, valueType, currentRecord);
+                this.converters[count] = new MapConverter<>(field.getName(), keyType, valueType, currentRow);
             } else if (field.getType() instanceof ListType) {
                 ListType listType = (ListType) field.getType();
                 PrimitiveType elementType = listType.getElementType();
-                this.converters[count] = new ListConverter<>(field.getName(), elementType, currentRecord);
+                this.converters[count] = new ListConverter<>(field.getName(), elementType, currentRow);
             } else {
                 throw new IllegalArgumentException("Schema has a field with an unknown type (" + field + ")");
             }
@@ -86,79 +86,79 @@ public class RecordConverter extends GroupConverter {
     public void end() {
     }
 
-    public Record getRecord() {
-        return currentRecord;
+    public Row getRow() {
+        return currentRow;
     }
 
     public static class IntConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final Row row;
 
-        public IntConverter(String name, Record record) {
+        public IntConverter(String name, Row row) {
             this.name = name;
-            this.record = record;
+            this.row = row;
         }
 
         @Override
         public void addInt(int value) {
-            record.put(name, value);
+            row.put(name, value);
         }
     }
 
     public static class LongConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final Row row;
 
-        public LongConverter(String name, Record record) {
+        public LongConverter(String name, Row row) {
             this.name = name;
-            this.record = record;
+            this.row = row;
         }
 
         @Override
         public void addLong(long value) {
-            record.put(name, value);
+            row.put(name, value);
         }
     }
 
     public static class StringConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final Row row;
 
-        public StringConverter(String name, Record record) {
+        public StringConverter(String name, Row row) {
             this.name = name;
-            this.record = record;
+            this.row = row;
         }
 
         @Override
         public void addBinary(Binary value) {
-            record.put(name, value.toStringUsingUTF8());
+            row.put(name, value.toStringUsingUTF8());
         }
     }
 
     public static class ByteArrayConverter extends PrimitiveConverter {
         private final String name;
-        private final Record record;
+        private final Row row;
 
-        public ByteArrayConverter(String name, Record record) {
+        public ByteArrayConverter(String name, Row row) {
             this.name = name;
-            this.record = record;
+            this.row = row;
         }
 
         @Override
         public void addBinary(Binary value) {
-            record.put(name, value.getBytes());
+            row.put(name, value.getBytes());
         }
     }
 
     public static class ListConverter<E> extends GroupConverter {
         private final String name;
-        private final Record record;
+        private final Row row;
         private final List<E> elements;
         private final ElementConverter<E> elementConverter;
 
-        public ListConverter(String name, PrimitiveType elementType, Record record) {
+        public ListConverter(String name, PrimitiveType elementType, Row row) {
             this.name = name;
-            this.record = record;
+            this.row = row;
             this.elements = new ArrayList<>();
             this.elementConverter = new ElementConverter<>(elements, elementType);
         }
@@ -179,20 +179,20 @@ public class RecordConverter extends GroupConverter {
         @Override
         public void end() {
             List<E> list = new ArrayList<>(elements);
-            record.put(name, list);
+            row.put(name, list);
         }
     }
 
     public static class MapConverter<K, V> extends GroupConverter {
         private final String name;
-        private final Record record;
+        private final Row row;
         private final List<K> keys;
         private final List<V> values;
         private final KeyValueConverter<K, V> keyValueConverter;
 
-        public MapConverter(String name, PrimitiveType keyType, PrimitiveType valueType, Record record) {
+        public MapConverter(String name, PrimitiveType keyType, PrimitiveType valueType, Row row) {
             this.name = name;
-            this.record = record;
+            this.row = row;
             this.keys = new ArrayList<>();
             this.values = new ArrayList<>();
             this.keyValueConverter = new KeyValueConverter<>(keys, values, keyType, valueType);
@@ -218,7 +218,7 @@ public class RecordConverter extends GroupConverter {
             for (int i = 0; i < keys.size(); i++) {
                 map.put(keys.get(i), values.get(i));
             }
-            record.put(name, map);
+            row.put(name, map);
         }
     }
 

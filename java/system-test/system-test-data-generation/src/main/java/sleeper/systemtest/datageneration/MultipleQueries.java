@@ -29,10 +29,10 @@ import sleeper.core.key.Key;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.row.Record;
-import sleeper.core.row.ResultsBatch;
-import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.range.Region;
+import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.Row;
+import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
@@ -82,7 +82,7 @@ public class MultipleQueries {
 
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Supplier<Key> keySupplier = RandomRecordSupplier.getSupplier(schema.getRowKeyTypes(),
+        Supplier<Key> keySupplier = RandomRowSupplier.getSupplier(schema.getRowKeyTypes(),
                 SystemTestRandomDataSettings.fromProperties(systemTestProperties.testPropertiesOnly()));
         // Submit queries to queue
         Instant startTime = Instant.now();
@@ -123,10 +123,10 @@ public class MultipleQueries {
                 JSONResultsBatchSerialiser serialiser = new JSONResultsBatchSerialiser();
                 ResultsBatch resultsBatch = serialiser.deserialise(serialisedResults);
                 String queryId = resultsBatch.getQueryId();
-                List<Record> records = resultsBatch.getRecords();
-                System.out.println(records.size() + " results for query " + queryId);
-                totalResults += records.size();
-                records.forEach(System.out::println);
+                List<Row> rows = resultsBatch.getRows();
+                System.out.println(rows.size() + " results for query " + queryId);
+                totalResults += rows.size();
+                rows.forEach(System.out::println);
                 sqsClient.deleteMessage(request -> request
                         .queueUrl(systemTestProperties.get(QUERY_RESULTS_QUEUE_URL))
                         .receiptHandle(messageHandle));
@@ -134,7 +134,7 @@ public class MultipleQueries {
         }
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
         double rate = totalResults / (double) duration.getSeconds();
-        LOGGER.info("{} records returned in {} at {} per second)", totalResults, duration, String.format("%.2f", rate));
+        LOGGER.info("{} rows returned in {} at {} per second)", totalResults, duration, String.format("%.2f", rate));
     }
 
     public static void main(String[] args) {

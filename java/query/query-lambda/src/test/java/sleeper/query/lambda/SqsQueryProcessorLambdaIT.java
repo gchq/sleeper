@@ -42,7 +42,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -689,12 +689,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
-            try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
+            try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
                 ParquetReaderIterator it = new ParquetReaderIterator(reader);
                 while (it.hasNext()) {
                     it.next();
                 }
-                numberOfRecordsInOutput = it.getNumberOfRecordsRead();
+                numberOfRecordsInOutput = it.getNumberOfRowsRead();
             }
         }
         return numberOfRecordsInOutput;
@@ -743,32 +743,32 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConf)
                     .build();
-            factory.ingestFromRecordIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
+            factory.ingestFromRowIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
         } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }
 
-    private List<Record> generateTimeSeriesData(Integer minYear, Integer maxYear) {
+    private List<Row> generateTimeSeriesData(Integer minYear, Integer maxYear) {
         LocalDate startDate = LocalDate.of(minYear, 1, 1);
         LocalDate endDate = LocalDate.of(maxYear + 1, 1, 1);
-        List<Record> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            Record record = new Record();
-            record.put("year", date.getYear());
-            record.put("month", date.getMonthValue());
-            record.put("day", date.getDayOfMonth());
-            record.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
-            record.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
+            Row row = new Row();
+            row.put("year", date.getYear());
+            row.put("month", date.getMonthValue());
+            row.put("day", date.getDayOfMonth());
+            row.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
+            row.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
             HashMap<String, String> map = new HashMap<>();
             map.put(date.getMonth().name(), date.getMonth().name());
-            record.put("map", map);
-            record.put("list", Lists.newArrayList(date.getEra().toString()));
-            record.put("str", date.toString());
-            records.add(record);
+            row.put("map", map);
+            row.put("list", Lists.newArrayList(date.getEra().toString()));
+            row.put("str", date.toString());
+            rows.add(row);
         }
 
-        return records;
+        return rows;
     }
 
     private TableProperties createTimeSeriesTable(Integer minSplitPoint, Integer maxSplitPoint) {

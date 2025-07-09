@@ -15,8 +15,8 @@
  */
 package sleeper.ingest.runner.impl.recordbatch.arraylist;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 public interface ArrayListRecordMapper<T> {
-    Record map(T data);
+    Row map(T data);
 }

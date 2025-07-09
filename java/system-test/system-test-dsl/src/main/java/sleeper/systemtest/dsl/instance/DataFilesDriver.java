@@ -16,11 +16,11 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 public interface DataFilesDriver {
 
-    CloseableIterator<Record> getRecords(Schema schema, String filename);
+    CloseableIterator<Row> getRows(Schema schema, String filename);
 
 }

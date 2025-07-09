@@ -16,9 +16,9 @@
 package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.key.Key;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -27,12 +27,12 @@ import java.util.List;
 
 /**
  * Combines records with identical row keys and sort keys by summing the values in each column. It assumes that all
- * value fields are longs. This is an example implementation of a {@link SortedRecordIterator}. This implementation
+ * value fields are longs. This is an example implementation of a {@link SortedRowIterator}. This implementation
  * is very generic and is provided as an example. More efficient implementations can be written for any specific
  * schema, e.g. by directly comparing the key and sort fields in the equalRowAndSort method, rather than explicitly
  * constructing a {@link Key} object.
  */
-public class AdditionIterator implements SortedRecordIterator {
+public class AdditionIterator implements SortedRowIterator {
     private List<String> rowKeyFieldNames;
     private List<String> sortKeyFieldNames;
     private List<String> valueFieldNames;
@@ -53,21 +53,21 @@ public class AdditionIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
         return new AdditionIteratorInternal(input, rowKeyFieldNames, sortKeyFieldNames, valueFieldNames);
     }
 
     /**
      * Sums values for identical row and sort keys in the input iterator.
      */
-    public static class AdditionIteratorInternal implements CloseableIterator<Record> {
-        private final CloseableIterator<Record> input;
+    public static class AdditionIteratorInternal implements CloseableIterator<Row> {
+        private final CloseableIterator<Row> input;
         private final List<String> rowKeyFieldNames;
         private final List<String> sortKeyFieldNames;
         private final List<String> valueFieldNames;
-        private Record current;
+        private Row current;
 
-        public AdditionIteratorInternal(CloseableIterator<Record> input,
+        public AdditionIteratorInternal(CloseableIterator<Row> input,
                 List<String> rowKeyFieldNames,
                 List<String> sortKeyFieldNames,
                 List<String> valueFieldNames) {
@@ -75,7 +75,7 @@ public class AdditionIterator implements SortedRecordIterator {
             this.rowKeyFieldNames = rowKeyFieldNames;
             this.sortKeyFieldNames = sortKeyFieldNames;
             this.valueFieldNames = valueFieldNames;
-            this.current = getNextRecord();
+            this.current = getNextRow();
         }
 
         @Override
@@ -84,19 +84,19 @@ public class AdditionIterator implements SortedRecordIterator {
         }
 
         @Override
-        public Record next() {
-            Record record = new Record(current);
-            Record next = getNextRecord();
+        public Row next() {
+            Row row = new Row(current);
+            Row next = getNextRow();
             while (null != next && equalRowAndSort(current, next)) {
                 for (String fieldName : valueFieldNames) {
-                    Long number1 = (Long) record.get(fieldName);
+                    Long number1 = (Long) row.get(fieldName);
                     Long number2 = (Long) next.get(fieldName);
-                    record.put(fieldName, number1 + number2);
+                    row.put(fieldName, number1 + number2);
                 }
-                next = getNextRecord();
+                next = getNextRow();
             }
             current = next;
-            return record;
+            return row;
         }
 
         @Override
@@ -104,23 +104,23 @@ public class AdditionIterator implements SortedRecordIterator {
             input.close();
         }
 
-        private Record getNextRecord() {
+        private Row getNextRow() {
             if (input.hasNext()) {
                 return input.next();
             }
             return null;
         }
 
-        private boolean equalRowAndSort(Record record1, Record record2) {
+        private boolean equalRowAndSort(Row row1, Row row2) {
             List<Object> keys1 = new ArrayList<>();
             List<Object> keys2 = new ArrayList<>();
             for (String rowKey : rowKeyFieldNames) {
-                keys1.add(record1.get(rowKey));
-                keys2.add(record2.get(rowKey));
+                keys1.add(row1.get(rowKey));
+                keys2.add(row2.get(rowKey));
             }
             for (String sortKey : sortKeyFieldNames) {
-                keys1.add(record1.get(sortKey));
-                keys2.add(record2.get(sortKey));
+                keys1.add(row1.get(sortKey));
+                keys2.add(row2.get(sortKey));
             }
             return Key.create(keys1).equals(Key.create(keys2));
         }

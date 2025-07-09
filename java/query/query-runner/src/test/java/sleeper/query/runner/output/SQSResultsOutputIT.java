@@ -25,8 +25,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
 import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.Row;
 import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -61,16 +61,16 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     @Test
     void shouldSendResultsTOSQS() {
         // Given
-        List<Record> records = List.of(
-                new Record(Map.of("key", "value-1")),
-                new Record(Map.of("key", "value-2")));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", "value-1")),
+                new Row(Map.of("key", "value-2")));
 
         // When
-        output().publish(queryWithId("test-query"), new WrappedIterator<>(records.iterator()));
+        output().publish(queryWithId("test-query"), new WrappedIterator<>(rows.iterator()));
 
         // Then
         assertThat(receiveResults()).containsExactly(
-                new ResultsBatch("test-query", schema, records));
+                new ResultsBatch("test-query", schema, rows));
     }
 
     private SQSResultsOutput output() {

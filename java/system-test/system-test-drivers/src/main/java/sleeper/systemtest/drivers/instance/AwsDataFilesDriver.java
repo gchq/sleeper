@@ -20,7 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.RecordReadSupport;
@@ -39,7 +39,7 @@ public class AwsDataFilesDriver implements DataFilesDriver {
     }
 
     @Override
-    public CloseableIterator<Record> getRecords(Schema schema, String filename) {
+    public CloseableIterator<Row> getRows(Schema schema, String filename) {
         try {
             return new ParquetReaderIterator(
                     ParquetReader.builder(new RecordReadSupport(schema), new Path(filename))

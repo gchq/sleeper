@@ -31,8 +31,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.row.Record;
 import sleeper.core.range.Region;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
@@ -98,96 +98,96 @@ public class QueryWebSocketClientTest {
         void shouldReturnResultsForQuery() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123);
-            Record expectedRecord = new Record(Map.of("key", 123L));
+            Row expectedRow = new Row(Map.of("key", 123L));
 
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            message(queryResult("test-query-id", expectedRecord)),
+                            message(queryResult("test-query-id", expectedRow)),
                             message(completedQuery("test-query-id", 1L)))))
-                    .isCompletedWithValue(List.of(asJson(expectedRecord)));
+                    .isCompletedWithValue(List.of(asJson(expectedRow)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRecord));
+                    .containsExactly(asJson(expectedRow));
         }
 
         @Test
         void shouldReturnResultsForQueryWithOneSubquery() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123);
-            Record expectedRecord = new Record(Map.of("key", 123L));
+            Row expectedRow = new Row(Map.of("key", 123L));
 
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
-                            message(queryResult("test-subquery", expectedRecord)),
+                            message(queryResult("test-subquery", expectedRow)),
                             message(completedQuery("test-subquery", 1L)))))
-                    .isCompletedWithValue(List.of(asJson(expectedRecord)));
+                    .isCompletedWithValue(List.of(asJson(expectedRow)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRecord));
+                    .containsExactly(asJson(expectedRow));
             assertThat(client.getResults("test-subquery"))
-                    .containsExactly(asJson(expectedRecord));
+                    .containsExactly(asJson(expectedRow));
         }
 
         @Test
         void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
             // Given
             Query query = rangeQuery("test-query-id", 0L, 1000L);
-            Record expectedRecord1 = new Record(Map.of("key", 123L));
-            Record expectedRecord2 = new Record(Map.of("key", 456L));
-            Record expectedRecord3 = new Record(Map.of("key", 789L));
+            Row expectedRow1 = new Row(Map.of("key", 123L));
+            Row expectedRow2 = new Row(Map.of("key", 456L));
+            Row expectedRow3 = new Row(Map.of("key", 789L));
 
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
                             message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
-                            message(queryResult("subquery-1", expectedRecord1)),
+                            message(queryResult("subquery-1", expectedRow1)),
                             message(completedQuery("subquery-1", 1L)),
-                            message(queryResult("subquery-2", expectedRecord2)),
+                            message(queryResult("subquery-2", expectedRow2)),
                             message(completedQuery("subquery-2", 1L)),
-                            message(queryResult("subquery-3", expectedRecord3)),
+                            message(queryResult("subquery-3", expectedRow3)),
                             message(completedQuery("subquery-3", 1L)))))
-                    .isCompletedWithValue(List.of(asJson(expectedRecord1), asJson(expectedRecord2), asJson(expectedRecord3)));
+                    .isCompletedWithValue(List.of(asJson(expectedRow1), asJson(expectedRow2), asJson(expectedRow3)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRecord1), asJson(expectedRecord2), asJson(expectedRecord3));
+                    .containsExactly(asJson(expectedRow1), asJson(expectedRow2), asJson(expectedRow3));
             assertThat(client.getResults("subquery-1"))
-                    .containsExactly(asJson(expectedRecord1));
+                    .containsExactly(asJson(expectedRow1));
             assertThat(client.getResults("subquery-2"))
-                    .containsExactly(asJson(expectedRecord2));
+                    .containsExactly(asJson(expectedRow2));
             assertThat(client.getResults("subquery-3"))
-                    .containsExactly(asJson(expectedRecord3));
+                    .containsExactly(asJson(expectedRow3));
         }
 
         @Test
-        void shouldReturnResultsWhenRecordCountDoesNotMatchRecordsReceived() throws Exception {
+        void shouldReturnResultsWhenRecordCountDoesNotMatchRowsReceived() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123);
-            Record expectedRecord = new Record(Map.of("key", 123L));
+            Row expectedRow = new Row(Map.of("key", 123L));
 
             // When / Then
             assertThat(runQueryFuture(query,
                     withResponses(
-                            message(queryResult("test-query-id", expectedRecord)),
+                            message(queryResult("test-query-id", expectedRow)),
                             message(completedQuery("test-query-id", 2L)))))
-                    .isCompletedWithValue(List.of(asJson(expectedRecord)));
+                    .isCompletedWithValue(List.of(asJson(expectedRow)));
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(client.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRecord));
+                    .containsExactly(asJson(expectedRow));
         }
     }
 

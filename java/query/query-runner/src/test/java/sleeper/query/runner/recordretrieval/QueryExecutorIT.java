@@ -34,7 +34,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -109,7 +109,7 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).isExhausted();
@@ -117,7 +117,7 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -141,7 +141,7 @@ public class QueryExecutorIT {
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
@@ -151,16 +151,16 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable()
-                    .containsExactly(getRecords().get(0));
+                    .containsExactly(getRows().get(0));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -168,16 +168,16 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable()
-                    .containsExactly(getRecords().get(0));
+                    .containsExactly(getRows().get(0));
         }
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
             // Then 4
             assertThat(results).isExhausted();
         }
@@ -210,7 +210,7 @@ public class QueryExecutorIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
-        ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRows().iterator());
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
@@ -220,16 +220,16 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -237,11 +237,11 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
         }
 
         // When 4
@@ -273,7 +273,7 @@ public class QueryExecutorIT {
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
         }
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
@@ -284,16 +284,16 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -301,11 +301,11 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
         }
 
         // When 4
@@ -337,7 +337,7 @@ public class QueryExecutorIT {
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRows().iterator());
         }
         List<String> files = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
@@ -348,25 +348,25 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(4)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(4)));
         }
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -374,62 +374,62 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRecords());
+                    .hasSameElementsAs(getMultipleRows());
         }
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(90)
-                    .hasSameElementsAs(getMultipleRecords().stream()
+                    .hasSameElementsAs(getMultipleRows().stream()
                             .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L)
                             .collect(Collectors.toList()));
         }
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
             assertThat(results).toIterable().hasSize(80)
-                    .hasSameElementsAs(getMultipleRecords().stream()
+                    .hasSameElementsAs(getMultipleRows().stream()
                             .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
                             .collect(Collectors.toList()));
         }
 
         // When 7
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
             assertThat(results).toIterable().hasSize(90)
-                    .hasSameElementsAs(getMultipleRecords().stream()
+                    .hasSameElementsAs(getMultipleRows().stream()
                             .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L)
                             .collect(Collectors.toList()));
         }
 
         // When 8
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
             assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRecords());
+                    .hasSameElementsAs(getMultipleRows());
         }
 
         // When 9
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
             assertThat(results).toIterable().hasSize(60)
-                    .hasSameElementsAs(getMultipleRecords().stream()
+                    .hasSameElementsAs(getMultipleRows().stream()
                             .filter(r -> ((long) r.get("key")) >= 5L)
                             .collect(Collectors.toList()));
         }
@@ -469,7 +469,7 @@ public class QueryExecutorIT {
         Partition rightPartition = tree.getPartition("right");
 
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRows().iterator());
         }
         List<String> filesInLeftPartition = stateStore.getFileReferences().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
@@ -485,25 +485,25 @@ public class QueryExecutorIT {
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(4)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(4)));
         }
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results.hasNext()).isFalse();
@@ -511,20 +511,20 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRecords());
+                    .hasSameElementsAs(getMultipleRows());
         }
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(60)
-                    .hasSameElementsAs(getMultipleRecords()
+                    .hasSameElementsAs(getMultipleRows()
                             .stream().filter(r -> ((long) r.get("key")) >= 5L)
                             .collect(Collectors.toList()));
         }
@@ -582,7 +582,7 @@ public class QueryExecutorIT {
                 .findFirst()
                 .orElseThrow();
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsMultidimRowKey().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRowsMultidimRowKey().iterator());
         }
         List<String> filesInLeftPartition = stateStore.getFileReferences().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
@@ -600,29 +600,29 @@ public class QueryExecutorIT {
         Range range1 = rangeFactory.createExactRange(field1, 1L);
         Range range2 = rangeFactory.createExactRange(field2, "1");
         Region region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(0)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
         }
 
         // When 2
         range1 = rangeFactory.createExactRange(field1, 5L);
         range2 = rangeFactory.createExactRange(field2, "5");
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(4)));
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
         }
 
         // When 3
         range1 = rangeFactory.createExactRange(field1, 8L);
         range2 = rangeFactory.createExactRange(field2, "notthere");
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -632,22 +632,22 @@ public class QueryExecutorIT {
         range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
         range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRecordsMultidimRowKey());
+                    .hasSameElementsAs(getMultipleRowsMultidimRowKey());
         }
 
         // When 5
         range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(30)
-                    .hasSameElementsAs(getMultipleRecordsMultidimRowKey().stream()
+                    .hasSameElementsAs(getMultipleRowsMultidimRowKey().stream()
                             .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
                             .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
                             .collect(Collectors.toList()));
@@ -710,17 +710,17 @@ public class QueryExecutorIT {
         //        "" +-----------+-----------+
         //           ""         "I"          null      (Dimension 1)
         // Add 4 records - record i is in the center of partition i
-        Record record1 = createRecordMultidimensionalKey("D", "J", 10L, 100L);
-        Record record2 = createRecordMultidimensionalKey("K", "H", 1000L, 10000L);
-        Record record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
-        Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
-        List<Record> records = Arrays.asList(record1, record2, record3, record4);
+        Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
+        Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
+        Row row3 = createRowMultidimensionalKey("C", "X", 100000L, 1000000L);
+        Row row4 = createRowMultidimensionalKey("P", "Z", 10000000L, 100000000L);
+        List<Row> rows = Arrays.asList(row1, row2, row3, row4);
 
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .buildList());
 
-        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, rows.iterator());
 
         // Split the root partition into 2:
         PartitionTree partialTree = new PartitionsBuilder(schema)
@@ -730,7 +730,7 @@ public class QueryExecutorIT {
         update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
                 partialTree.getPartition("left"), partialTree.getPartition("right"));
 
-        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, rows.iterator());
 
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -742,7 +742,7 @@ public class QueryExecutorIT {
                 tree.getPartition("P1"), tree.getPartition("P3"));
         update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
                 tree.getPartition("P2"), tree.getPartition("P4"));
-        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, rows.iterator());
 
         List<String> filesInLeafPartition1 = stateStore.getFileReferences().stream()
                 .filter(f -> List.of("P1", "left", "root").contains(f.getPartitionId()))
@@ -770,73 +770,73 @@ public class QueryExecutorIT {
         Range range2 = rangeFactory.createRange(field2, "", true, null, false);
         Region region = new Region(Arrays.asList(range1, range2));
 
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different levels of the tree
-                    .hasSameElementsAs(records);
+                    .hasSameElementsAs(rows);
         }
 
         // When 2 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record1));
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
         // When 3 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", false);
         range2 = rangeFactory.createRange(field2, "", true, "S", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record1));
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
         // When 4 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", true);
         range2 = rangeFactory.createRange(field2, "", false, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record1));
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
         // When 5 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", false);
         range2 = rangeFactory.createRange(field2, "", false, "S", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record1));
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
         // When 6 - query for range within partitions 1 and 2
         range1 = rangeFactory.createRange(field1, "", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
             assertThat(results).toIterable().hasSize(6)
-                    .hasSameElementsAs(Arrays.asList(record1, record2));
+                    .hasSameElementsAs(Arrays.asList(row1, row2));
         }
 
         // When 7 - query for range to the right of the data in partitions 2 and 4
         range1 = rangeFactory.createRange(field1, "T", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
             assertThat(results).isExhausted();
@@ -845,91 +845,91 @@ public class QueryExecutorIT {
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
         region = new Region(range1);
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
             assertThat(results).toIterable().hasSize(6)
-                    .hasSameElementsAs(Arrays.asList(record2, record4));
+                    .hasSameElementsAs(Arrays.asList(row2, row4));
         }
 
         // When 9 - query for a range where the first dimension is constant
         range1 = rangeFactory.createExactRange(field1, "C");
         range2 = rangeFactory.createRange(field2, "", true, null, true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record3));
+                    .hasSameElementsAs(Collections.singletonList(row3));
         }
 
-        // When 10 - query for a range where the max equals record1 and max is not inclusive
+        // When 10 - query for a range where the max equals row1 and max is not inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", false);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 10
             assertThat(results).isExhausted();
         }
 
-        // When 11 - query for a range where the max equals record1 and max is inclusive
+        // When 11 - query for a range where the max equals row1 and max is inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", true);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 11
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record1));
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
-        // When 12 - query for a range where the boundaries cover all 4 records, min is inclusive, max is not inclusive
-        // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
+        // When 12 - query for a range where the boundaries cover all 4 rows, min is inclusive, max is not inclusive
+        // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
         range1 = rangeFactory.createRange(field1, "C", true, "P", false);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 12
             assertThat(results).toIterable().hasSize(9)
-                    .hasSameElementsAs(Arrays.asList(record1, record2, record3));
+                    .hasSameElementsAs(Arrays.asList(row1, row2, row3));
         }
 
-        // When 13 - query for a range where the boundaries cover all 4 records, min is inclusive, and max is inclusive
-        // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
+        // When 13 - query for a range where the boundaries cover all 4 rows, min is inclusive, and max is inclusive
+        // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
         range1 = rangeFactory.createRange(field1, "C", true, "P", true);
         range2 = rangeFactory.createRange(field2, "H", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 13
             assertThat(results).toIterable().hasSize(12)
-                    .hasSameElementsAs(Arrays.asList(record1, record2, record3, record4));
+                    .hasSameElementsAs(Arrays.asList(row1, row2, row3, row4));
         }
 
-        // When 14 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is not inclusive
-        // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
+        // When 14 - query for a range where the boundaries cover all 4 rows, min is not inclusive, and max is not inclusive
+        // Row i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
         range1 = rangeFactory.createRange(field1, "C", false, "P", false);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 14
             assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(record1));
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
-        // When 15 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is inclusive
-        // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
+        // When 15 - query for a range where the boundaries cover all 4 rows, min is not inclusive, and max is inclusive
+        // Row i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 15
             assertThat(results).toIterable().hasSize(6)
-                    .hasSameElementsAs(Arrays.asList(record1, record4));
+                    .hasSameElementsAs(Arrays.asList(row1, row4));
         }
 
         // When 16
@@ -999,18 +999,18 @@ public class QueryExecutorIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildList());
-        ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getMultipleRowsForTestingSorting().iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
             assertThat(results).toIterable()
-                    .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
+                    .containsExactlyElementsOf(getMultipleRowsForTestingSorting()
                             .stream()
                             .filter(r -> (long) r.get("key") == 1L)
                             .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
@@ -1019,11 +1019,11 @@ public class QueryExecutorIT {
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).toIterable()
-                    .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
+                    .containsExactlyElementsOf(getMultipleRowsForTestingSorting()
                             .stream()
                             .filter(r -> ((long) r.get("key")) == 5L)
                             .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
@@ -1032,7 +1032,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -1052,23 +1052,23 @@ public class QueryExecutorIT {
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        List<Record> records = getRecordsForAgeOffIteratorTest();
-        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+        List<Row> rows = getRowsForAgeOffIteratorTest();
+        ingestData(instanceProperties, stateStore, tableProperties, rows.iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
-            assertThat(results).toIterable().containsExactly(records.get(0));
+            assertThat(results).toIterable().containsExactly(rows.get(0));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, "0"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
             assertThat(results).isExhausted();
@@ -1076,7 +1076,7 @@ public class QueryExecutorIT {
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, "2"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
             assertThat(results).isExhausted();
@@ -1084,7 +1084,7 @@ public class QueryExecutorIT {
 
         // When 4
         region = new Region(rangeFactory.createExactRange(field, "3"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
             assertThat(results).isExhausted();
@@ -1092,10 +1092,10 @@ public class QueryExecutorIT {
 
         // When 5
         region = new Region(rangeFactory.createExactRange(field, "4"));
-        try (CloseableIterator<Record> results = queryExecutor.execute(queryWithRegion(region))) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
-            assertThat(results).toIterable().containsExactly(records.get(3));
+            assertThat(results).toIterable().containsExactly(rows.get(3));
         }
     }
 
@@ -1112,7 +1112,7 @@ public class QueryExecutorIT {
                 .buildList());
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties,
-                    getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
+                    getRowsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
         }
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
@@ -1129,10 +1129,10 @@ public class QueryExecutorIT {
                         .queryTimeIteratorConfig("securityLabel,notsecret")
                         .build())
                 .build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
 
             // Then
-            Record expected = getRecordsForQueryTimeIteratorTest("notsecret").get(0);
+            Row expected = getRowsForQueryTimeIteratorTest("notsecret").get(0);
             assertThat(results).toIterable().hasSize(5)
                     .allSatisfy(result -> assertThat(result).isEqualTo(expected));
         }
@@ -1146,7 +1146,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1161,11 +1161,11 @@ public class QueryExecutorIT {
                         .requestedValueFields(Lists.newArrayList("value2"))
                         .build())
                 .build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
 
             // Then
             assertThat(results).toIterable().hasSize(1)
-                    .flatExtracting(Record::getKeys).doesNotContain("value1").contains("key", "value2");
+                    .flatExtracting(Row::getKeys).doesNotContain("value1").contains("key", "value2");
         }
     }
 
@@ -1177,7 +1177,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getRowsForQueryTimeIteratorTest("secret").iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -1194,7 +1194,7 @@ public class QueryExecutorIT {
                         .requestedValueFields(Lists.newArrayList("value"))
                         .build())
                 .build();
-        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+        try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
 
             // Then
             assertThat(results).hasNext().toIterable().allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
@@ -1233,7 +1233,7 @@ public class QueryExecutorIT {
     }
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, IteratorCreationException {
+            TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -1242,106 +1242,106 @@ public class QueryExecutorIT {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
                 .build();
-        factory.ingestFromRecordIterator(tableProperties, recordIterator);
+        factory.ingestFromRowIterator(tableProperties, rowIterator);
     }
 
-    protected List<Record> getRecords() {
-        List<Record> records = new ArrayList<>();
-        Record record = new Record();
-        record.put("key", 1L);
-        record.put("value1", 10L);
-        record.put("value2", 100L);
-        records.add(record);
-        return records;
+    protected List<Row> getRows() {
+        List<Row> rows = new ArrayList<>();
+        Row row = new Row();
+        row.put("key", 1L);
+        row.put("value1", 10L);
+        row.put("value2", 100L);
+        rows.add(row);
+        return rows;
     }
 
-    protected List<Record> getMultipleIdenticalRecords() {
-        List<Record> records = new ArrayList<>();
+    protected List<Row> getMultipleIdenticalRows() {
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            records.addAll(getRecords());
+            rows.addAll(getRows());
         }
-        return records;
+        return rows;
     }
 
-    protected List<Record> getMultipleRecords() {
-        List<Record> records = new ArrayList<>();
+    protected List<Row> getMultipleRows() {
+        List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Record record = new Record();
-            record.put("key", (long) i);
-            record.put("value1", i * 10L);
-            record.put("value2", i * 100L);
-            records.add(record);
+            Row row = new Row();
+            row.put("key", (long) i);
+            row.put("value1", i * 10L);
+            row.put("value2", i * 100L);
+            rows.add(row);
         }
-        return records;
+        return rows;
     }
 
-    protected List<Record> getMultipleRecordsMultidimRowKey() {
-        List<Record> records = new ArrayList<>();
+    protected List<Row> getMultipleRowsMultidimRowKey() {
+        List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Record record = new Record();
-            record.put("key1", (long) i);
-            record.put("key2", String.valueOf(i));
-            record.put("value1", i * 10L);
-            record.put("value2", i * 100L);
-            records.add(record);
+            Row row = new Row();
+            row.put("key1", (long) i);
+            row.put("key2", String.valueOf(i));
+            row.put("value1", i * 10L);
+            row.put("value2", i * 100L);
+            rows.add(row);
         }
-        return records;
+        return rows;
     }
 
-    protected List<Record> getMultipleRecordsForTestingSorting() {
-        List<Record> records = new ArrayList<>();
+    protected List<Row> getMultipleRowsForTestingSorting() {
+        List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             for (int j = 1000; j >= 900; j--) {
-                Record record = new Record();
-                record.put("key", (long) i);
-                record.put("value1", (long) j);
-                record.put("value2", i * 100L);
-                records.add(record);
+                Row row = new Row();
+                row.put("key", (long) i);
+                row.put("value1", (long) j);
+                row.put("value2", i * 100L);
+                rows.add(row);
             }
         }
-        return records;
+        return rows;
     }
 
-    protected List<Record> getRecordsForAgeOffIteratorTest() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
-        record1.put("id", "1");
-        record1.put("timestamp", System.currentTimeMillis());
-        records.add(record1);
-        Record record2 = new Record();
-        record2.put("id", "2");
-        record2.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
-        records.add(record2);
-        Record record3 = new Record();
-        record3.put("id", "3");
-        record3.put("timestamp", System.currentTimeMillis() - 2_000_000L);
-        records.add(record3);
-        Record record4 = new Record();
-        record4.put("id", "4");
-        record4.put("timestamp", System.currentTimeMillis());
-        records.add(record4);
-        return records;
+    protected List<Row> getRowsForAgeOffIteratorTest() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("id", "1");
+        row1.put("timestamp", System.currentTimeMillis());
+        rows.add(row1);
+        Row row2 = new Row();
+        row2.put("id", "2");
+        row2.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
+        rows.add(row2);
+        Row row3 = new Row();
+        row3.put("id", "3");
+        row3.put("timestamp", System.currentTimeMillis() - 2_000_000L);
+        rows.add(row3);
+        Row row4 = new Row();
+        row4.put("id", "4");
+        row4.put("timestamp", System.currentTimeMillis());
+        rows.add(row4);
+        return rows;
     }
 
-    protected List<Record> getRecordsForQueryTimeIteratorTest(String securityLabel) {
-        List<Record> records = new ArrayList<>();
+    protected List<Row> getRowsForQueryTimeIteratorTest(String securityLabel) {
+        List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Record record = new Record();
-            record.put("key", (long) i);
-            record.put("value", i * 10L);
-            record.put("securityLabel", securityLabel);
-            records.add(record);
+            Row row = new Row();
+            row.put("key", (long) i);
+            row.put("value", i * 10L);
+            row.put("securityLabel", securityLabel);
+            rows.add(row);
         }
-        return records;
+        return rows;
     }
 
-    private static Record createRecordMultidimensionalKey(String key1, String key2, long value1, long value2) {
-        Record record = new Record();
-        record.put("key1", key1);
-        record.put("key2", key2);
-        record.put("value1", value1);
-        record.put("value2", value2);
-        return record;
+    private static Row createRowMultidimensionalKey(String key1, String key2, long value1, long value2) {
+        Row row = new Row();
+        row.put("key1", key1);
+        row.put("key2", key2);
+        row.put("value1", value1);
+        row.put("value2", value2);
+        return row;
     }
 
     private InstanceProperties createInstanceProperties() throws IOException {

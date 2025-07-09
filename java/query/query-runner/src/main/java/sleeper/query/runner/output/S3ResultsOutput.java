@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -76,13 +76,13 @@ public class S3ResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         String outputFile = fileSystem + s3Bucket + "/query-" + query.getQueryId() + "/" + UUID.randomUUID() + ".parquet";
         ResultsOutputLocation outputLocation = new ResultsOutputLocation("s3", outputFile);
 
         LOGGER.info("Opening writer for results of query {} to {}", query.getQueryId(), outputFile);
         long count = 0L;
-        try (ParquetWriter<Record> writer = buildParquetWriter(new Path(outputFile))) {
+        try (ParquetWriter<Row> writer = buildParquetWriter(new Path(outputFile))) {
             Instant startTime = Instant.now();
             while (results.hasNext()) {
                 writer.write(results.next());
@@ -108,7 +108,7 @@ public class S3ResultsOutput implements ResultsOutput {
         }
     }
 
-    private ParquetWriter<Record> buildParquetWriter(Path path) throws IOException {
+    private ParquetWriter<Row> buildParquetWriter(Path path) throws IOException {
         String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
         String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
         ParquetRecordWriterFactory.Builder builder = parquetRecordWriterBuilder(path, tableProperties)

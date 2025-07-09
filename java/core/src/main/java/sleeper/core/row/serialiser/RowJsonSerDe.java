@@ -27,7 +27,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -53,12 +53,12 @@ public class RowJsonSerDe {
 
     public RowJsonSerDe(Schema schema) {
         this.gson = new GsonBuilder()
-                .registerTypeAdapter(Record.class, new RowGsonSerialiser(schema))
+                .registerTypeAdapter(Row.class, new RowGsonSerialiser(schema))
                 .serializeNulls()
                 .create();
         this.gsonPrettyPrinting = new GsonBuilder()
                 .setPrettyPrinting()
-                .registerTypeAdapter(Record.class, new RowGsonSerialiser(schema))
+                .registerTypeAdapter(Row.class, new RowGsonSerialiser(schema))
                 .serializeNulls()
                 .create();
     }
@@ -69,7 +69,7 @@ public class RowJsonSerDe {
      * @param  row the row
      * @return     a JSON string
      */
-    public String toJson(Record row) {
+    public String toJson(Row row) {
         return gson.toJson(row);
     }
 
@@ -80,7 +80,7 @@ public class RowJsonSerDe {
      * @param  prettyPrint whether to pretty-print the JSON string
      * @return             a JSON string
      */
-    public String toJson(Record row, boolean prettyPrint) {
+    public String toJson(Row row, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(row);
         }
@@ -93,14 +93,14 @@ public class RowJsonSerDe {
      * @param  jsonSchema the JSON string
      * @return            a row
      */
-    public Record fromJson(String jsonSchema) {
-        return gson.fromJson(jsonSchema, Record.class);
+    public Row fromJson(String jsonSchema) {
+        return gson.fromJson(jsonSchema, Row.class);
     }
 
     /**
      * A GSON plugin to serialise/deserialise a row.
      */
-    public static class RowGsonSerialiser implements JsonSerializer<Record>, JsonDeserializer<Record> {
+    public static class RowGsonSerialiser implements JsonSerializer<Row>, JsonDeserializer<Row> {
         private final Schema schema;
 
         public RowGsonSerialiser(Schema schema) {
@@ -108,7 +108,7 @@ public class RowJsonSerDe {
         }
 
         @Override
-        public JsonElement serialize(Record row, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+        public JsonElement serialize(Row row, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             for (Field field : schema.getAllFields()) {
                 addFieldToJsonObject(field, row.get(field.getName()), json);
@@ -117,11 +117,11 @@ public class RowJsonSerDe {
         }
 
         @Override
-        public Record deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
+        public Row deserialize(JsonElement jsonElement, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) throws JsonParseException {
             if (!jsonElement.isJsonObject()) {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
-            Record row = new Record();
+            Row row = new Row();
             for (Field field : schema.getAllFields()) {
                 getFieldFromJsonObject(field, jsonElement.getAsJsonObject(), row);
             }
@@ -208,7 +208,7 @@ public class RowJsonSerDe {
         json.add(field.getName(), map);
     }
 
-    private static void getFieldFromJsonObject(Field field, JsonObject json, Record row) {
+    private static void getFieldFromJsonObject(Field field, JsonObject json, Row row) {
         if (field.getType() instanceof IntType) {
             row.put(field.getName(), json.get(field.getName()).getAsInt());
         } else if (field.getType() instanceof LongType) {
@@ -227,7 +227,7 @@ public class RowJsonSerDe {
         }
     }
 
-    private static void getListFromJsonObject(Field field, JsonObject json, Record row) {
+    private static void getListFromJsonObject(Field field, JsonObject json, Row row) {
         PrimitiveType elementType = ((ListType) field.getType()).getElementType();
         JsonArray array = json.get(field.getName()).getAsJsonArray();
         List<Object> list = new ArrayList<>();
@@ -248,7 +248,7 @@ public class RowJsonSerDe {
         row.put(field.getName(), list);
     }
 
-    private static void getMapFromJsonObject(Field field, JsonObject json, Record row) {
+    private static void getMapFromJsonObject(Field field, JsonObject json, Row row) {
         PrimitiveType keyType = ((MapType) field.getType()).getKeyType();
         PrimitiveType valueType = ((MapType) field.getType()).getValueType();
 

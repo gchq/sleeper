@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
@@ -39,26 +39,26 @@ import java.util.List;
 public class InMemoryDirectQueryDriver implements QueryDriver {
 
     private final SystemTestInstanceContext instance;
-    private final InMemoryRecordStore dataStore;
+    private final InMemoryRowStore dataStore;
 
-    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
+    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryRowStore dataStore) {
         this.instance = instance;
         this.dataStore = dataStore;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRowStore dataStore) {
         return new QueryAllTablesInParallelDriver(instance, new InMemoryDirectQueryDriver(instance, dataStore));
     }
 
     @Override
-    public List<Record> run(Query query) {
+    public List<Row> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
                 new InMemoryLeafPartitionRecordRetriever(dataStore), Instant.now());
         executor.init();
-        try (CloseableIterator<Record> iterator = executor.execute(query)) {
-            List<Record> records = new ArrayList<>();
+        try (CloseableIterator<Row> iterator = executor.execute(query)) {
+            List<Row> records = new ArrayList<>();
             iterator.forEachRemaining(records::add);
             return records;
         } catch (IOException | QueryException e) {

@@ -37,7 +37,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -240,12 +240,12 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @throws QueryException     if something goes wrong
      * @throws ExecutionException if something goes wrong
      */
-    public Stream<Record> createResultRecordStream(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException {
-        CloseableIterator<Record> resultRecordIterator = createResultRecordIterator(asOfInstant, query);
-        Spliterator<Record> resultRecordSpliterator = Spliterators.spliteratorUnknownSize(
+    public Stream<Row> createResultRecordStream(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException {
+        CloseableIterator<Row> resultRecordIterator = createResultRecordIterator(asOfInstant, query);
+        Spliterator<Row> resultRecordSpliterator = Spliterators.spliteratorUnknownSize(
                 resultRecordIterator,
                 Spliterator.NONNULL | Spliterator.IMMUTABLE);
-        Stream<Record> resultRecordStream = StreamSupport.stream(resultRecordSpliterator, false);
+        Stream<Row> resultRecordStream = StreamSupport.stream(resultRecordSpliterator, false);
         return resultRecordStream.onClose(() -> {
             try {
                 resultRecordIterator.close();
@@ -297,7 +297,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @throws ExecutionException          if something goes wrong
      * @throws UncheckedExecutionException if something goes wrong
      */
-    private CloseableIterator<Record> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
+    private CloseableIterator<Row> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
         TableProperties tableProperties = tablePropertiesProvider.getById(query.getTableId());
         StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(query.getTableId(), asOfInstant));

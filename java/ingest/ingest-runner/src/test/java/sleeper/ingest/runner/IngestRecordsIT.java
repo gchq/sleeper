@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -375,7 +375,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        List<Record> records = new ArrayList<>(getRecords());
+        List<Row> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
         long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
 
@@ -417,7 +417,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
-        List<Record> records = getLotsOfRecords();
+        List<Row> records = getLotsOfRecords();
 
         // When
         long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
@@ -438,12 +438,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
 
         FileReference leftFile = fileReferences.get(0);
         FileReference rightFile = fileReferences.get(1);
-        List<Record> leftRecords = records.stream()
+        List<Row> leftRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(leftFile, schema))
                 .containsExactlyInAnyOrderElementsOf(leftRecords);
-        List<Record> rightRecords = records.stream()
+        List<Row> rightRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(rightFile, schema))
@@ -476,20 +476,20 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
-        List<Record> records = getLotsOfRecords();
+        List<Row> rows = getLotsOfRecords();
 
         // When
-        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, rows).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(records.size());
+        assertThat(numWritten).isEqualTo(rows.size());
         //  - Check that the correct number of files have been written
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
         assertThat(partitionToFileMapping.get("L")).hasSize(40);
         assertThat(partitionToFileMapping.get("R")).hasSize(40);
         //  - Check that the files in each partition contain the correct data
-        List<Record> expectedLeftRecords = records.stream()
+        List<Row> expectedLeftRecords = rows.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(partitionToFileMapping.get("L").stream()))
@@ -497,7 +497,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Merge the sketch files for the partition and check it has the right properties
         assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("L"), sketchesStore))
                 .isEqualTo(SketchesDeciles.from(schema, expectedLeftRecords));
-        List<Record> expectedRightRecords = records.stream()
+        List<Row> expectedRightRecords = rows.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(partitionToFileMapping.get("R").stream()))
@@ -570,11 +570,11 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Read file and check it has correct records
         assertThat(readRecords(fileReferences.get(0), schema))
                 .containsExactly(
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "key", new byte[]{1, 1},
                                 "sort", 2L,
                                 "value", 7L)),
-                        new Record(Map.of(
+                        new Row(Map.of(
                                 "key", new byte[]{11, 2},
                                 "sort", 1L,
                                 "value", 4L)));

@@ -32,7 +32,6 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -85,13 +84,13 @@ class SingleFileWritingIteratorIT {
 
             // Then
             assertThat(fileWritingIterator).toIterable()
-                    .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                    .extracting(row -> readRows(readPathFromOutputFileMetadata(row)))
                     .containsExactly(
                             Arrays.asList(
-                                    createRecord("a", 1, 2),
-                                    createRecord("b", 1, 2),
-                                    createRecord("c", 1, 2),
-                                    createRecord("d", 1, 2)));
+                                    createRow("a", 1, 2),
+                                    createRow("b", 1, 2),
+                                    createRow("c", 1, 2),
+                                    createRow("d", 1, 2)));
         }
 
         @Test
@@ -148,13 +147,13 @@ class SingleFileWritingIteratorIT {
         void shouldAssumeAllRowsAreInTheSamePartition() {
             // Then
             assertThat(fileWritingIterator).toIterable()
-                    .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                    .extracting(row -> readRows(readPathFromOutputFileMetadata(row)))
                     .containsExactly(
                             Arrays.asList(
-                                    createRecord("a", 1, 2),
-                                    createRecord("b", 1, 2),
-                                    createRecord("d", 1, 2),
-                                    createRecord("e", 1, 2)));
+                                    createRow("a", 1, 2),
+                                    createRow("b", 1, 2),
+                                    createRow("d", 1, 2),
+                                    createRow("e", 1, 2)));
         }
     }
 
@@ -185,21 +184,21 @@ class SingleFileWritingIteratorIT {
         }
     }
 
-    private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
-        return createIteratorOverRecordsWithPartitions(records,
+    private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> rows) {
+        return createIteratorOverRecordsWithPartitions(rows,
                 PartitionsFromSplitPoints.treeFrom(schema, List.of("T")));
     }
 
     private SingleFileWritingIterator createIteratorOverRecordsWithPartitions(
-            Iterator<Row> records, PartitionTree partitionTree) {
-        return new SingleFileWritingIterator(records,
+            Iterator<Row> rows, PartitionTree partitionTree) {
+        return new SingleFileWritingIterator(rows,
                 instanceProperties, tableProperties,
                 new Configuration(), new LocalFileSystemSketchesStore(), partitionTree);
     }
 
     private SingleFileWritingIterator createIteratorOverRecordsWithPartitionsAndOutputFilename(
-            Iterator<Row> records, PartitionTree partitionTree, String filename) {
-        return new SingleFileWritingIterator(records,
+            Iterator<Row> rows, PartitionTree partitionTree, String filename) {
+        return new SingleFileWritingIterator(rows,
                 instanceProperties, tableProperties,
                 new Configuration(), partitionTree, new LocalFileSystemSketchesStore(), filename);
     }
@@ -219,30 +218,30 @@ class SingleFileWritingIteratorIT {
                 .build();
     }
 
-    private Record createRecord(Object... values) {
-        return createRecord(RowFactory.create(values), schema);
+    private sleeper.core.row.Row createRow(Object... values) {
+        return createRow(RowFactory.create(values), schema);
     }
 
-    private Record createRecord(Row row, Schema schema) {
-        Record record = new Record();
+    private sleeper.core.row.Row createRow(Row row, Schema schema) {
+        sleeper.core.row.Row outRow = new sleeper.core.row.Row();
         int i = 0;
         for (Field field : schema.getAllFields()) {
-            record.put(field.getName(), row.get(i));
+            outRow.put(field.getName(), row.get(i));
             i++;
         }
-        return record;
+        return outRow;
     }
 
-    private List<Record> readRecords(String path) {
+    private List<sleeper.core.row.Row> readRows(String path) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), schema)) {
-            List<Record> records = new ArrayList<>();
-            Record record = reader.read();
-            while (null != record) {
-                records.add(new Record(record));
-                record = reader.read();
+            List<sleeper.core.row.Row> rows = new ArrayList<>();
+            sleeper.core.row.Row row = reader.read();
+            while (null != row) {
+                rows.add(new sleeper.core.row.Row(row));
+                row = reader.read();
             }
             reader.close();
-            return records;
+            return rows;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

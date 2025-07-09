@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
@@ -29,19 +29,19 @@ import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryRecordBatch implements RecordBatch<Record> {
+public class InMemoryRecordBatch implements RecordBatch<Row> {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryRecordBatch.class);
 
     private final Schema schema;
-    private final List<Record> records = new ArrayList<>();
+    private final List<Row> rows = new ArrayList<>();
 
     public InMemoryRecordBatch(Schema schema) {
         this.schema = schema;
     }
 
     @Override
-    public void append(Record data) {
-        records.add(data);
+    public void append(Row data) {
+        rows.add(data);
     }
 
     @Override
@@ -50,13 +50,13 @@ public class InMemoryRecordBatch implements RecordBatch<Record> {
     }
 
     @Override
-    public CloseableIterator<Record> createOrderedRecordIterator() {
-        records.sort(new RowComparator(schema));
-        return new WrappedIterator<>(records.iterator());
+    public CloseableIterator<Row> createOrderedRowIterator() {
+        rows.sort(new RowComparator(schema));
+        return new WrappedIterator<>(rows.iterator());
     }
 
     @Override
     public void close() {
-        LOGGER.info("Closing batch with {} records", records.size());
+        LOGGER.info("Closing batch with {} rows", rows.size());
     }
 }

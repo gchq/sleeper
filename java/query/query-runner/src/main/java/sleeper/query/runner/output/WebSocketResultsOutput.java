@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.row.serialiser.RowJsonSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -50,7 +50,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
 
     public WebSocketResultsOutput(Schema schema, Map<String, String> config) {
         this.serde = new GsonBuilder()
-                .registerTypeAdapter(Record.class, new RowJsonSerDe.RowGsonSerialiser(schema))
+                .registerTypeAdapter(Row.class, new RowJsonSerDe.RowGsonSerialiser(schema))
                 .create();
         this.output = ApiGatewayWebSocketOutput.fromConfig(config);
         String maxBatchSize = config.get(WebSocketOutput.MAX_BATCH_SIZE);
@@ -60,34 +60,34 @@ public class WebSocketResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         String queryId = query.getQueryId();
 
         Map<String, Object> message = new HashMap<>();
-        message.put("message", "records");
+        message.put("message", "rows");
         message.put("queryId", queryId);
-        message.put("records", Collections.emptyList());
+        message.put("rows", Collections.emptyList());
         int baseMessageLength = serde.toJson(message).length();
 
-        List<Record> batch = new ArrayList<>();
+        List<Row> batch = new ArrayList<>();
         long count = 0;
         int remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength;
 
         try {
             while (results.hasNext()) {
-                Record record = results.next();
+                Row row = results.next();
 
                 boolean batchReady = false;
                 if (maxBatchSize != null && maxBatchSize > 0 && batch.size() >= maxBatchSize) {
                     batchReady = true;
                 } else {
-                    String recordJson = serde.toJson(record);
-                    int recordJsonLength = recordJson.length() + 1; // +1 for comma that seperates records
-                    if (recordJsonLength >= remainingMessageLength) {
+                    String rowJson = serde.toJson(row);
+                    int rowJsonLength = rowJson.length() + 1; // +1 for comma that seperates rows
+                    if (rowJsonLength >= remainingMessageLength) {
                         batchReady = true;
-                        remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength - recordJsonLength;
+                        remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength - rowJsonLength;
                     } else {
-                        remainingMessageLength -= recordJsonLength;
+                        remainingMessageLength -= rowJsonLength;
                     }
                 }
 
@@ -97,7 +97,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
                     batch.clear();
                 }
 
-                batch.add(record);
+                batch.add(row);
             }
 
             if (!batch.isEmpty()) {
@@ -119,9 +119,9 @@ public class WebSocketResultsOutput implements ResultsOutput {
         return new ResultsOutputInfo(count, outputLocations);
     }
 
-    private void publishBatch(Map<String, Object> message, List<Record> records) throws IOException {
-        LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
-        message.put("records", records);
+    private void publishBatch(Map<String, Object> message, List<Row> rows) throws IOException {
+        LOGGER.info("Publishing batch of {} rows to WebSocket connection", rows.size());
+        message.put("rows", rows);
         output.sendString(serde.toJson(message));
     }
 }

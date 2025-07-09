@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -53,11 +53,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -66,14 +66,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, properties -> {
+        ingestRecords(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 128 * 1024 * 1024L);
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -82,7 +82,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile.parquet"));
 
         assertThat(actualActiveData.getSetOfAllRecords())
-                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+                .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
@@ -91,18 +91,18 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
-                .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
+                .usingComparator(SketchesDecilesComparator.longsMaxDiff(rowListAndSchema.sleeperSchema, 50))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -111,14 +111,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, properties -> {
+        ingestRecords(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 2 * 1024 * 1024L);
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -128,7 +128,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile1.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile2.parquet"));
         assertThat(actualActiveData.getSetOfAllRecords())
-                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+                .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
                         file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
@@ -141,19 +141,19 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                                 data.getRecordsInFile(file),
                                 "key0", LongStream.range(0, 10_000))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
-                .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
+                .usingComparator(SketchesDecilesComparator.longsMaxDiff(rowListAndSchema.sleeperSchema, 50))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
         update(stateStore).initialise(
-                new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                         .rootFirst("root")
                         .splitToNewChildren("root", "left", "right", 0L)
                         .buildList());
@@ -162,65 +162,65 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
 
         // When
-        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, properties -> {
+        assertThatThrownBy(() -> ingestRecords(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 32 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 32 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 64 * 1024 * 1024L);
         })).isInstanceOf(OutOfMemoryException.class).hasNoSuppressedExceptions();
     }
 
-    private static List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
-        RecordList[] recordLists = new RecordList[5];
-        for (int i = 0; i < recordLists.length; i++) {
-            recordLists[i] = new RecordList();
+    private static List<RowList> buildScrambledRecordLists(RecordGenerator.RowListAndSchema rowListAndSchema) {
+        RowList[] rowLists = new RowList[5];
+        for (int i = 0; i < rowLists.length; i++) {
+            rowLists[i] = new RowList();
         }
         int i = 0;
-        for (Record record : recordListAndSchema.recordList) {
-            recordLists[i].addRecord(record);
+        for (Row row : rowListAndSchema.rowList) {
+            rowLists[i].addRow(row);
             i++;
             if (i == 5) {
                 i = 0;
             }
         }
-        return List.of(recordLists);
+        return List.of(rowLists);
     }
 
     private static void ingestRecords(
-            RecordGenerator.RecordListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
+            RecordGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
-        try (IngestCoordinator<RecordList> ingestCoordinator = parameters
+        try (IngestCoordinator<RowList> ingestCoordinator = parameters
                 .toBuilder().localDirectWrite().setInstanceProperties(config).build()
                 .buildCoordinatorWithArrowWriter(new ArrowRecordWriterAcceptingRecordList())) {
-            for (RecordList recordList : buildScrambledRecordLists(recordListAndSchema)) {
-                ingestCoordinator.write(recordList);
+            for (RowList rowList : buildScrambledRecordLists(rowListAndSchema)) {
+                ingestCoordinator.write(rowList);
             }
         }
     }
 
-    static class RecordList {
-        private final List<Record> records;
+    static class RowList {
+        private final List<Row> rows;
 
-        RecordList() {
-            this.records = new ArrayList<>();
+        RowList() {
+            this.rows = new ArrayList<>();
         }
 
-        public void addRecord(Record record) {
-            records.add(record);
+        public void addRow(Row row) {
+            rows.add(row);
         }
 
-        public List<Record> getRecords() {
-            return records;
+        public List<Row> getRows() {
+            return rows;
         }
     }
 
-    static class ArrowRecordWriterAcceptingRecordList implements ArrowRecordWriter<RecordList> {
+    static class ArrowRecordWriterAcceptingRecordList implements ArrowRecordWriter<RowList> {
 
         @Override
-        public int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RecordList recordList, int startInsertAtRowNo) {
+        public int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RowList rowList, int startInsertAtRowNo) {
             int i = 0;
-            for (Record record : recordList.getRecords()) {
+            for (Row row : rowList.getRows()) {
                 ArrowRecordWriterAcceptingRecords.writeRecord(
-                        allFields, vectorSchemaRoot, record, startInsertAtRowNo + i);
+                        allFields, vectorSchemaRoot, row, startInsertAtRowNo + i);
                 i++;
             }
             int finalRowCount = startInsertAtRowNo + i;

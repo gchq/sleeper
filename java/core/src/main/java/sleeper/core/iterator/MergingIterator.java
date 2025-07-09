@@ -18,7 +18,7 @@ package sleeper.core.iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 
@@ -29,26 +29,26 @@ import java.util.PriorityQueue;
 
 /**
  * Merges a list of sorted iterators into one fully sorted iterator. This is done by using a {@link PriorityQueue} where
- * the smallest record is returned first.
+ * the smallest row is returned first.
  * <p>
  * Note: for performance reasons this does not check that the given iterators are sorted. As this class is only used
  * internally it should never be called with non-sorted iterators.
  */
-public class MergingIterator implements CloseableIterator<Record> {
+public class MergingIterator implements CloseableIterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MergingIterator.class);
 
-    private final List<CloseableIterator<Record>> inputIterators;
-    private final PriorityQueue<RecordIteratorPair> queue;
-    private long recordsRead;
+    private final List<CloseableIterator<Row>> inputIterators;
+    private final PriorityQueue<RowIteratorPair> queue;
+    private long rowsRead;
 
-    public MergingIterator(Schema schema, List<CloseableIterator<Record>> inputIterators) {
+    public MergingIterator(Schema schema, List<CloseableIterator<Row>> inputIterators) {
         this.inputIterators = inputIterators;
-        this.recordsRead = 0L;
-        this.queue = new PriorityQueue<>(new RecordIteratorPairComparator(schema));
-        for (CloseableIterator<Record> iterator : inputIterators) {
+        this.rowsRead = 0L;
+        this.queue = new PriorityQueue<>(new RowIteratorPairComparator(schema));
+        for (CloseableIterator<Row> iterator : inputIterators) {
             if (iterator.hasNext()) {
-                queue.add(new RecordIteratorPair(iterator.next(), iterator));
-                this.recordsRead++;
+                queue.add(new RowIteratorPair(iterator.next(), iterator));
+                this.rowsRead++;
             }
         }
     }
@@ -59,56 +59,56 @@ public class MergingIterator implements CloseableIterator<Record> {
     }
 
     @Override
-    public Record next() {
-        RecordIteratorPair pair = queue.poll();
+    public Row next() {
+        RowIteratorPair pair = queue.poll();
         if (pair.iterator.hasNext()) {
-            RecordIteratorPair newPair = new RecordIteratorPair(pair.iterator.next(), pair.iterator);
+            RowIteratorPair newPair = new RowIteratorPair(pair.iterator.next(), pair.iterator);
             queue.add(newPair);
-            recordsRead++;
-            if (0 == recordsRead % 1_000_000) {
-                LOGGER.info("Read {} records", recordsRead);
+            rowsRead++;
+            if (0 == rowsRead % 1_000_000) {
+                LOGGER.info("Read {} rows", rowsRead);
             }
         }
-        return pair.record;
+        return pair.row;
     }
 
     @Override
     public void close() throws IOException {
-        for (CloseableIterator<Record> iterator : inputIterators) {
+        for (CloseableIterator<Row> iterator : inputIterators) {
             iterator.close();
         }
     }
 
-    public long getNumberOfRecordsRead() {
-        return recordsRead;
+    public long getNumberOfRowsRead() {
+        return rowsRead;
     }
 
     /**
-     * Holds the next record available for an iterator, and the iterator to retrieve further records.
+     * Holds the next row available for an iterator, and the iterator to retrieve further rows.
      */
-    private static class RecordIteratorPair {
-        private final Record record;
-        private final CloseableIterator<Record> iterator;
+    private static class RowIteratorPair {
+        private final Row row;
+        private final CloseableIterator<Row> iterator;
 
-        RecordIteratorPair(Record record, CloseableIterator<Record> iterator) {
-            this.record = record;
+        RowIteratorPair(Row row, CloseableIterator<Row> iterator) {
+            this.row = row;
             this.iterator = iterator;
         }
     }
 
     /**
-     * Compares the state for two iterators to find the next record in the sort order.
+     * Compares the state for two iterators to find the next row in the sort order.
      */
-    private static class RecordIteratorPairComparator implements Comparator<RecordIteratorPair> {
+    private static class RowIteratorPairComparator implements Comparator<RowIteratorPair> {
         private final RowComparator rowComparator;
 
-        RecordIteratorPairComparator(Schema schema) {
+        RowIteratorPairComparator(Schema schema) {
             this.rowComparator = new RowComparator(schema);
         }
 
         @Override
-        public int compare(RecordIteratorPair pair1, RecordIteratorPair pair2) {
-            return rowComparator.compare(pair1.record, pair2.record);
+        public int compare(RowIteratorPair pair1, RowIteratorPair pair2) {
+            return rowComparator.compare(pair1.row, pair2.row);
         }
     }
 }

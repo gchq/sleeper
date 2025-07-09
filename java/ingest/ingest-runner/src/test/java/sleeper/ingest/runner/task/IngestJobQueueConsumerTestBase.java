@@ -26,7 +26,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
@@ -96,7 +96,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     }
 
     protected List<String> writeParquetFilesForIngest(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema rowListAndSchema,
             String subDirectory,
             int numberOfFiles) {
         List<String> files = new ArrayList<>();
@@ -109,10 +109,10 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                    path, recordListAndSchema.sleeperSchema, hadoopConf)) {
-                for (Record record : recordListAndSchema.recordList) {
-                    writer.write(record);
+            try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                    path, rowListAndSchema.sleeperSchema, hadoopConf)) {
+                for (Row row : rowListAndSchema.rowList) {
+                    writer.write(row);
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

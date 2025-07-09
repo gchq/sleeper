@@ -16,7 +16,7 @@
 
 package sleeper.ingest.runner.testutils;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 
 public class TestIngestType {
@@ -29,7 +29,7 @@ public class TestIngestType {
         this.writeTarget = writeTarget;
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters) {
+    public IngestCoordinator<Row> createIngestCoordinator(IngestCoordinatorTestParameters parameters) {
         return coordinatorFactory.createIngestCoordinator(parameters);
     }
 
@@ -76,7 +76,7 @@ public class TestIngestType {
     }
 
     private interface CoordinatorFactory {
-        IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
+        IngestCoordinator<Row> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
     }
 
     public enum WriteTarget {

@@ -16,7 +16,7 @@
 package sleeper.query.core.output;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 
 /**
@@ -24,5 +24,5 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
  */
 public interface ResultsOutput {
 
-    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results);
+    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results);
 }

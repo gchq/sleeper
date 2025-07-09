@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -35,33 +35,33 @@ public class SecurityFilteringIteratorTest {
     @Test
     public void shouldFilter() {
         // Given
-        List<Record> records = getData();
-        Iterator<Record> iterator = records.iterator();
+        List<Row> rows = getData();
+        Iterator<Row> iterator = rows.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel,public", getSchema());
 
         // When
-        Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
-                .containsExactly(records.get(0), records.get(2));
+                .containsExactly(rows.get(0), rows.get(2));
     }
 
     @Test
-    public void shouldAllowRecordsWithEmptyVisibilitiesEvenIfNoAuths() {
+    public void shouldAllowRowsWithEmptyVisibilitiesEvenIfNoAuths() {
         // Given
-        List<Record> records = getData();
-        Iterator<Record> iterator = records.iterator();
+        List<Row> rows = getData();
+        Iterator<Row> iterator = rows.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel", getSchema());
 
         // When
-        Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
-                .containsExactly(records.get(2));
+                .containsExactly(rows.get(2));
     }
 
     private static Schema getSchema() {
@@ -73,23 +73,23 @@ public class SecurityFilteringIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
-        record1.put("field1", "1");
-        record1.put("field2", 1000L);
-        record1.put("securityLabel", "public");
-        records.add(record1);
-        Record record2 = new Record();
-        record2.put("field1", "2");
-        record2.put("field2", 10000L);
-        record2.put("securityLabel", "private");
-        records.add(record2);
-        Record record3 = new Record();
-        record3.put("field1", "2");
-        record3.put("field2", 100000L);
-        record3.put("securityLabel", "");
-        records.add(record3);
-        return records;
+    private static List<Row> getData() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("field1", "1");
+        row1.put("field2", 1000L);
+        row1.put("securityLabel", "public");
+        rows.add(row1);
+        Row row2 = new Row();
+        row2.put("field1", "2");
+        row2.put("field2", 10000L);
+        row2.put("securityLabel", "private");
+        rows.add(row2);
+        Row row3 = new Row();
+        row3.put("field1", "2");
+        row3.put("field2", 100000L);
+        row3.put("securityLabel", "");
+        rows.add(row3);
+        return rows;
     }
 }

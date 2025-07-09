@@ -17,8 +17,8 @@ package sleeper.core.row.serialiser;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
 import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -42,19 +42,19 @@ public class Base64ResultsBatchSerialiserTest {
                 .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
                 .valueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()))
                 .build();
-        List<Record> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            Record record = new Record();
-            record.put("column1", i);
-            record.put("column2", i * 100L);
-            record.put("column3", "abc" + i);
-            record.put("column4", new byte[]{(byte) i, (byte) (i + 1), (byte) (i + 2)});
-            record.put("column5", new byte[]{(byte) (i + 4), (byte) (i + 5), (byte) (i + 6), (byte) (i + 7)});
-            record.put("column6", new byte[]{(byte) (i + 8), (byte) (i + 9), (byte) (i + 10), (byte) (i + 11), (byte) (i + 12)});
-            records.add(record);
+            Row row = new Row();
+            row.put("column1", i);
+            row.put("column2", i * 100L);
+            row.put("column3", "abc" + i);
+            row.put("column4", new byte[]{(byte) i, (byte) (i + 1), (byte) (i + 2)});
+            row.put("column5", new byte[]{(byte) (i + 4), (byte) (i + 5), (byte) (i + 6), (byte) (i + 7)});
+            row.put("column6", new byte[]{(byte) (i + 8), (byte) (i + 9), (byte) (i + 10), (byte) (i + 11), (byte) (i + 12)});
+            rows.add(row);
         }
         Base64ResultsBatchSerialiser serialiser = new Base64ResultsBatchSerialiser(schema);
-        ResultsBatch resultsBatch = new ResultsBatch(queryId, schema, records);
+        ResultsBatch resultsBatch = new ResultsBatch(queryId, schema, rows);
 
         // When
         String serialised = serialiser.serialise(resultsBatch);

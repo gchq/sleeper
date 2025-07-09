@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
@@ -47,7 +47,7 @@ public class InMemorySleeperInstance {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InMemoryTransactionLogsPerTable transactionLogsPerTable = new InMemoryTransactionLogsPerTable();
     private final StateStoreProvider stateStoreProvider;
-    private final InMemoryRecordStore dataStore = new InMemoryRecordStore();
+    private final InMemoryRowStore dataStore = new InMemoryRowStore();
     private final InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     private final Queue<IngestJob> ingestQueue = new LinkedList<>();
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
@@ -113,7 +113,7 @@ public class InMemorySleeperInstance {
         return stateStoreProvider;
     }
 
-    public InMemoryRecordStore dataStore() {
+    public InMemoryRowStore dataStore() {
         return dataStore;
     }
 

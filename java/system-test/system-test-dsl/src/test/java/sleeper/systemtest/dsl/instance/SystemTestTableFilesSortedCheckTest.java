@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.testutils.SortedRecordsCheck;
+import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -47,8 +47,8 @@ public class SystemTestTableFilesSortedCheckTest {
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                            .isEqualTo(SortedRecordsCheck.sorted(3));
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                            .isEqualTo(SortedRowsCheck.sorted(3));
                 });
     }
 
@@ -61,8 +61,8 @@ public class SystemTestTableFilesSortedCheckTest {
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                            .isEqualTo(SortedRecordsCheck.outOfOrderAt(3,
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                            .isEqualTo(SortedRowsCheck.outOfOrderAt(3,
                                     sleeper.numberedRecords().generateRecord(3),
                                     sleeper.numberedRecords().generateRecord(2)));
                 });

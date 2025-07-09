@@ -65,7 +65,7 @@ public class QueryResultsSQSQueuePoller {
                 JSONResultsBatchSerialiser serialiser = new JSONResultsBatchSerialiser();
                 ResultsBatch resultsBatch = serialiser.deserialise(message.body());
                 LOGGER.info("{} results for query {}", receiveMessageResponse.messages().size(), resultsBatch.getQueryId());
-                resultsBatch.getRecords().forEach(
+                resultsBatch.getRows().forEach(
                         record -> System.out.println(record.toString(resultsBatch.getSchema())));
                 sqsClient.deleteMessage(request -> request
                         .queueUrl(resultsSQSQueueUrl)

@@ -16,13 +16,13 @@
 package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.nio.file.Path;
 import java.util.Iterator;
 
 public interface IngestLocalFilesDriver {
 
-    void writeFile(TableProperties tableProperties, Path filePath, Iterator<Record> records);
+    void writeFile(TableProperties tableProperties, Path filePath, Iterator<Row> rows);
 
 }

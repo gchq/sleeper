@@ -27,7 +27,7 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -48,7 +48,7 @@ import static sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatch.MAP_
 /**
  * Accepts data for an Arrow record batch as Sleeper records. Used by {@link ArrowRecordBatch}.
  */
-public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Record> {
+public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Row> {
 
     /**
      * Add a single Record to a VectorSchemaRoot at a specified row. Note that the field order in the supplied Sleeper
@@ -58,7 +58,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
      *                              This is used instead of the raw {@link Schema} as the {@link Schema#getAllFields()}
      *                              is a bit too expensive to call on every record.
      * @param  vectorSchemaRoot     the Arrow store to write into
-     * @param  record               the {@link Record} to write
+     * @param  row                  the {@link Row} to write
      * @param  insertAtRowNo        the row number to write to
      * @return                      the row number to use when this method is next called
      * @throws OutOfMemoryException when the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
@@ -67,16 +67,16 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
     @Override
     public int insert(List<Field> allFields,
             VectorSchemaRoot vectorSchemaRoot,
-            Record record,
+            Row row,
             int insertAtRowNo) throws OutOfMemoryException {
-        writeRecord(allFields, vectorSchemaRoot, record, insertAtRowNo);
+        writeRecord(allFields, vectorSchemaRoot, row, insertAtRowNo);
         int finalRowCount = insertAtRowNo + 1;
         vectorSchemaRoot.setRowCount(finalRowCount);
         return finalRowCount;
     }
 
     public static void writeRecord(
-            List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Record record, int insertAtRowNo) {
+            List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Row row, int insertAtRowNo) {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the mutate
         // Note that setSafe() is used throughout so that more memory will be requested if required.
@@ -87,31 +87,31 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
             Type sleeperType = sleeperField.getType();
             if (sleeperType instanceof IntType) {
                 IntVector intVector = (IntVector) vectorSchemaRoot.getVector(fieldNo);
-                Integer value = (Integer) record.get(fieldName);
+                Integer value = (Integer) row.get(fieldName);
                 intVector.setSafe(insertAtRowNo, value);
             } else if (sleeperType instanceof LongType) {
                 BigIntVector bigIntVector = (BigIntVector) vectorSchemaRoot.getVector(fieldNo);
-                Long value = (Long) record.get(fieldName);
+                Long value = (Long) row.get(fieldName);
                 bigIntVector.setSafe(insertAtRowNo, value);
             } else if (sleeperType instanceof StringType) {
                 VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(fieldNo);
-                String value = (String) record.get(fieldName);
+                String value = (String) row.get(fieldName);
                 varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
             } else if (sleeperType instanceof ByteArrayType) {
                 VarBinaryVector varBinaryVector = (VarBinaryVector) vectorSchemaRoot.getVector(fieldNo);
-                byte[] value = (byte[]) record.get(fieldName);
+                byte[] value = (byte[]) row.get(fieldName);
                 varBinaryVector.setSafe(insertAtRowNo, value);
             } else if (sleeperType instanceof ListType) {
                 writeList(
                         ((ListType) sleeperType).getElementType(),
-                        (List<?>) record.get(fieldName),
+                        (List<?>) row.get(fieldName),
                         (ListVector) vectorSchemaRoot.getVector(fieldNo),
                         insertAtRowNo);
             } else if (sleeperType instanceof MapType) {
                 writeMap(
                         ((MapType) sleeperType).getKeyType(),
                         ((MapType) sleeperType).getValueType(),
-                        (Map<?, ?>) record.get(fieldName),
+                        (Map<?, ?>) row.get(fieldName),
                         (ListVector) vectorSchemaRoot.getVector(fieldNo),
                         insertAtRowNo);
             } else {

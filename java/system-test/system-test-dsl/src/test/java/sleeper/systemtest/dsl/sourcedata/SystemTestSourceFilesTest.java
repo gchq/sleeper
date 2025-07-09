@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -34,14 +34,14 @@ public class SystemTestSourceFilesTest {
     @Test
     void shouldGenerateFilenameForSourceFile(SleeperSystemTest sleeper, SystemTestContext context) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
 
         // When
-        sleeper.sourceFiles().create("test.parquet", record);
+        sleeper.sourceFiles().create("test.parquet", row);
 
         // Then
         assertThat(context.sourceFiles().getFilePath("test.parquet"))

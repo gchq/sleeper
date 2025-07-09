@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.LimitingIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.parquet.record.ParquetReaderIterator;
@@ -71,7 +71,7 @@ public class EstimateSplitPointsClient {
     public static List<Object> estimate(
             Schema schema, Configuration conf, int numPartitions, long recordsPerFile, int sketchSize,
             List<org.apache.hadoop.fs.Path> parquetPaths) throws IOException {
-        try (CloseableIterator<Record> iterator = openRecordIterator(schema, conf, recordsPerFile, parquetPaths)) {
+        try (CloseableIterator<Row> iterator = openRecordIterator(schema, conf, recordsPerFile, parquetPaths)) {
             return new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
         }
     }
@@ -83,7 +83,7 @@ public class EstimateSplitPointsClient {
                 .collect(toUnmodifiableList()));
     }
 
-    private static Supplier<CloseableIterator<Record>> recordIteratorSupplier(
+    private static Supplier<CloseableIterator<Row>> recordIteratorSupplier(
             Schema schema, Configuration conf, long maxRecords, org.apache.hadoop.fs.Path dataFile) {
         return () -> {
             try {

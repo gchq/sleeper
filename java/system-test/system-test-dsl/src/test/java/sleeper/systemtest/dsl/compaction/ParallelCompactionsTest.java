@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -97,9 +97,9 @@ public class ParallelCompactionsTest {
                         LongStream.range(0, 10000))));
     }
 
-    private static Map<Record, Integer> inAnyOrder(Iterable<Record> records) {
-        Map<Record, Integer> map = new HashMap<>();
-        records.forEach(record -> map.compute(record, (r, count) -> count == null ? 1 : count + 1));
+    private static Map<Row, Integer> inAnyOrder(Iterable<Row> rows) {
+        Map<Row, Integer> map = new HashMap<>();
+        rows.forEach(row -> map.compute(row, (r, count) -> count == null ? 1 : count + 1));
         return map;
     }
 

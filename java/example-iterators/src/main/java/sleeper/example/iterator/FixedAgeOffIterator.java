@@ -17,22 +17,22 @@ package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.FilteringIterator;
-import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.row.Record;
+import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.util.List;
 
 /**
  * Filter to exclude records from before a certain date. This is an example implementation of
- * {@link SortedRecordIterator}.
+ * {@link SortedRowIterator}.
  */
-public class FixedAgeOffIterator implements SortedRecordIterator {
+public class FixedAgeOffIterator implements SortedRowIterator {
     private String fieldName;
     private long minValue;
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
         return new FilteringIterator<>(input, record -> {
             Long value = (Long) record.get(fieldName);
             return null != value && value >= minValue;

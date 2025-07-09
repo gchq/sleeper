@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -56,12 +56,12 @@ public class SimpleKeyValueSchemaInsertIT {
                 .build();
     }
 
-    private static Stream<Record> generateSimpleRecordStream() {
+    private static Stream<Row> generateSimpleRecordStream() {
         return IntStream.range(0, NO_OF_RECORDS).mapToObj(recordNo -> {
-            Record record = new Record();
-            record.put("key", String.format("key-%09d", recordNo));
-            record.put("value", String.format("val-%09d", recordNo));
-            return record;
+            Row row = new Row();
+            row.put("key", String.format("key-%09d", recordNo));
+            row.put("value", String.format("val-%09d", recordNo));
+            return row;
         });
     }
 

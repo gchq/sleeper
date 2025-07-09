@@ -21,7 +21,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -47,29 +47,29 @@ class ParquetReaderIteratorIT {
     void shouldReturnCorrectIterator() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
         map1.put("column3", 3L);
-        Record record1 = new Record(map1);
-        writer.write(record1);
+        Row row1 = new Row(map1);
+        writer.write(row1);
         Map<String, Object> map2 = new HashMap<>();
         map2.put("column1", 4L);
         map2.put("column2", 5L);
         map2.put("column3", 6L);
-        Record record2 = new Record(map2);
-        writer.write(record2);
+        Row row2 = new Row(map2);
+        writer.write(row2);
         writer.close();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRecordReader.Builder(path, schema).build();
 
         // When
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
-        assertThat(iterator).toIterable().containsExactly(record1, record2);
-        assertThat(iterator.getNumberOfRecordsRead()).isEqualTo(2L);
+        assertThat(iterator).toIterable().containsExactly(row1, row2);
+        assertThat(iterator.getNumberOfRowsRead()).isEqualTo(2L);
 
         iterator.close();
     }
@@ -78,16 +78,16 @@ class ParquetReaderIteratorIT {
     void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
         writer.close();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRecordReader.Builder(path, schema).build();
 
         // When
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
         assertThat(iterator).isExhausted();
-        assertThat(iterator.getNumberOfRecordsRead()).isZero();
+        assertThat(iterator.getNumberOfRowsRead()).isZero();
 
         iterator.close();
     }

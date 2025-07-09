@@ -19,7 +19,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.api.ReadSupport;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * Reads Parquet files. Uses {@link RecordReadSupport}.
  */
-public class ParquetRecordReader extends ParquetReader<Record> {
+public class ParquetRecordReader extends ParquetReader<Row> {
 
     public ParquetRecordReader(String file, Schema schema) throws IOException {
         super(new Path(file), new RecordReadSupport(schema));
@@ -37,7 +37,7 @@ public class ParquetRecordReader extends ParquetReader<Record> {
         super(path, new RecordReadSupport(schema));
     }
 
-    public static class Builder extends ParquetReader.Builder<Record> {
+    public static class Builder extends ParquetReader.Builder<Row> {
         private final Schema schema;
 
         public Builder(String path, Schema schema) {
@@ -51,7 +51,7 @@ public class ParquetRecordReader extends ParquetReader<Record> {
         }
 
         @Override
-        protected ReadSupport<Record> getReadSupport() {
+        protected ReadSupport<Row> getReadSupport() {
             return new RecordReadSupport(schema);
         }
     }

@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.garbagecollector.GarbageCollector;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -25,9 +25,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver {
 
     private final SystemTestInstanceContext instance;
-    private final InMemoryRecordStore data;
+    private final InMemoryRowStore data;
 
-    public InMemoryGarbageCollectionDriver(SystemTestInstanceContext instance, InMemoryRecordStore data) {
+    public InMemoryGarbageCollectionDriver(SystemTestInstanceContext instance, InMemoryRowStore data) {
         this.instance = instance;
         this.data = data;
     }

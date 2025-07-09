@@ -30,8 +30,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
@@ -74,10 +74,10 @@ public class InMemoryCompaction {
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     private final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
-    private final InMemoryRecordStore dataStore;
+    private final InMemoryRowStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
-    public InMemoryCompaction(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore) {
+    public InMemoryCompaction(InMemoryRowStore dataStore, InMemorySketchesStore sketchesStore) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
     }
@@ -231,10 +231,10 @@ public class InMemoryCompaction {
     }
 
     private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
-        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
+        List<CloseableIterator<Row>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
-        CloseableIterator<Record> mergingIterator;
+        CloseableIterator<Row> mergingIterator;
         try {
             mergingIterator = JavaCompactionRunner.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
@@ -242,7 +242,7 @@ public class InMemoryCompaction {
             throw new RuntimeException(e);
         }
         Sketches sketches = Sketches.from(schema);
-        List<Record> records = new ArrayList<>();
+        List<Row> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
             records.add(record);
             sketches.update(record);
@@ -269,13 +269,13 @@ public class InMemoryCompaction {
         });
     }
 
-    private class CountingIterator implements CloseableIterator<Record> {
+    private class CountingIterator implements CloseableIterator<Row> {
 
-        private final Iterator<Record> iterator;
+        private final Iterator<Row> iterator;
         private long count = 0;
 
         CountingIterator(String filename, Region region, Schema schema) {
-            iterator = dataStore.streamRecords(List.of(filename))
+            iterator = dataStore.streamRows(List.of(filename))
                     .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
                     .iterator();
         }
@@ -286,8 +286,8 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public Record next() {
-            Record record = iterator.next();
+        public Row next() {
+            Row record = iterator.next();
             count++;
             return record;
         }

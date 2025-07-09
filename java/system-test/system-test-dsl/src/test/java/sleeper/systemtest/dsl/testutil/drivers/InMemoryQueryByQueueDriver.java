@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -36,11 +36,11 @@ public class InMemoryQueryByQueueDriver implements QuerySendAndWaitDriver {
     private final Set<String> inFlightQueryIds = Collections.synchronizedSet(new HashSet<>());
     private final Set<String> completedQueryIds = Collections.synchronizedSet(new HashSet<>());
 
-    private InMemoryQueryByQueueDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
+    private InMemoryQueryByQueueDriver(SystemTestInstanceContext instance, InMemoryRowStore dataStore) {
         driver = new InMemoryDirectQueryDriver(instance, dataStore);
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRowStore dataStore) {
         return new QueryAllTablesSendAndWaitDriver(instance, new InMemoryQueryByQueueDriver(instance, dataStore));
     }
 
@@ -58,7 +58,7 @@ public class InMemoryQueryByQueueDriver implements QuerySendAndWaitDriver {
     }
 
     @Override
-    public List<Record> getResults(Query query) {
+    public List<Row> getResults(Query query) {
         if (!completedQueryIds.remove(query.getQueryId())) {
             throw new IllegalStateException("Query not completed");
         }

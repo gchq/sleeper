@@ -38,7 +38,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -104,7 +104,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     private void ingestData(
             InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws Exception {
+            TableProperties tableProperties, Iterator<Row> rowIterator) throws Exception {
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(UUID.randomUUID().toString()).toString())
@@ -112,7 +112,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient)
-                .build().ingestFromRecordIterator(tableProperties, recordIterator);
+                .build().ingestFromRowIterator(tableProperties, rowIterator);
     }
 
     private TableProperties createTable(InstanceProperties instanceProperties, TableDefinition tableDefinition) {
@@ -158,7 +158,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 update(stateStore).initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
-                ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
+                ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.rowStream.iterator());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -205,14 +205,14 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         public final String tableName;
         public final Schema schema;
         public final List<Object> splitPoints;
-        public final Stream<Record> recordStream;
+        public final Stream<Row> rowStream;
 
         public TableDefinition(
-                String tableName, Schema schema, List<Object> splitPoints, Stream<Record> recordStream) {
+                String tableName, Schema schema, List<Object> splitPoints, Stream<Row> rowStream) {
             this.tableName = tableName;
             this.schema = schema;
             this.splitPoints = splitPoints;
-            this.recordStream = recordStream;
+            this.rowStream = rowStream;
         }
     }
 }

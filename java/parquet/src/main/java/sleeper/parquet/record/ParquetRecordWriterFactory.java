@@ -26,7 +26,7 @@ import org.apache.parquet.schema.MessageType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -48,21 +48,21 @@ public class ParquetRecordWriterFactory {
     private ParquetRecordWriterFactory() {
     }
 
-    public static ParquetWriter<Record> createParquetRecordWriter(Path path, Schema schema) throws IOException {
+    public static ParquetWriter<Row> createParquetRecordWriter(Path path, Schema schema) throws IOException {
         return createParquetRecordWriter(path, schema, new Configuration());
     }
 
-    public static ParquetWriter<Record> createParquetRecordWriter(Path path, Schema schema, Configuration conf) throws IOException {
+    public static ParquetWriter<Row> createParquetRecordWriter(Path path, Schema schema, Configuration conf) throws IOException {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(schema);
         return createParquetRecordWriter(path, tableProperties, conf);
     }
 
-    public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
+    public static ParquetWriter<Row> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
         return createParquetRecordWriter(path, tableProperties, conf, ParquetFileWriter.Mode.CREATE);
     }
 
-    public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf, ParquetFileWriter.Mode writeMode) throws IOException {
+    public static ParquetWriter<Row> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf, ParquetFileWriter.Mode writeMode) throws IOException {
         return parquetRecordWriterBuilder(path, tableProperties)
                 .withConf(conf)
                 .withWriteMode(writeMode).build();
@@ -81,7 +81,7 @@ public class ParquetRecordWriterFactory {
                 .withWriterVersion(WriterVersion.fromString(tableProperties.get(PARQUET_WRITER_VERSION)));
     }
 
-    public static class Builder extends ParquetWriter.Builder<Record, Builder> {
+    public static class Builder extends ParquetWriter.Builder<Row, Builder> {
         private final MessageType messageType;
         private final Schema schema;
 
@@ -92,7 +92,7 @@ public class ParquetRecordWriterFactory {
         }
 
         @Override
-        protected WriteSupport<Record> getWriteSupport(Configuration conf) {
+        protected WriteSupport<Row> getWriteSupport(Configuration conf) {
             return new RecordWriteSupport(messageType, schema);
         }
 

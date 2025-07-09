@@ -17,7 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -34,17 +34,17 @@ public class AgeOffIteratorTest {
     @Test
     public void shouldAgeOff() {
         // Given
-        List<Record> records = getData();
-        Iterator<Record> iterator = records.iterator();
+        List<Row> rows = getData();
+        Iterator<Row> iterator = rows.iterator();
         AgeOffIterator ageOffIterator = new AgeOffIterator();
         ageOffIterator.init("timestamp,1000000", getSchema());
 
         // When
-        Iterator<Record> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
-                .containsExactly(records.get(1), records.get(4));
+                .containsExactly(rows.get(1), rows.get(4));
     }
 
     private static Schema getSchema() {
@@ -54,28 +54,28 @@ public class AgeOffIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
-        record1.put("id", "1");
-        record1.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
-        records.add(record1);
-        Record record2 = new Record();
-        record2.put("id", "1");
-        record2.put("timestamp", System.currentTimeMillis());
-        records.add(record2);
-        Record record3 = new Record();
-        record3.put("id", "2");
-        record3.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
-        records.add(record3);
-        Record record4 = new Record();
-        record4.put("id", "3");
-        record4.put("timestamp", System.currentTimeMillis() - 2_000_000L);
-        records.add(record4);
-        Record record5 = new Record();
-        record5.put("id", "4");
-        record5.put("timestamp", System.currentTimeMillis());
-        records.add(record5);
-        return records;
+    private static List<Row> getData() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("id", "1");
+        row1.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
+        rows.add(row1);
+        Row row2 = new Row();
+        row2.put("id", "1");
+        row2.put("timestamp", System.currentTimeMillis());
+        rows.add(row2);
+        Row row3 = new Row();
+        row3.put("id", "2");
+        row3.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
+        rows.add(row3);
+        Row row4 = new Row();
+        row4.put("id", "3");
+        row4.put("timestamp", System.currentTimeMillis() - 2_000_000L);
+        rows.add(row4);
+        Row row5 = new Row();
+        row5.put("id", "4");
+        row5.put("timestamp", System.currentTimeMillis());
+        rows.add(row5);
+        return rows;
     }
 }

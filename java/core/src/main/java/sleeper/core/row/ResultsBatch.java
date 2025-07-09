@@ -29,12 +29,12 @@ import java.util.List;
 public class ResultsBatch {
     private final String queryId;
     private final Schema schema;
-    private final List<Record> records;
+    private final List<Row> rows;
 
-    public ResultsBatch(String queryId, Schema schema, List<Record> records) {
+    public ResultsBatch(String queryId, Schema schema, List<Row> rows) {
         this.queryId = queryId;
         this.schema = schema;
-        this.records = records;
+        this.rows = rows;
     }
 
     public String getQueryId() {
@@ -45,8 +45,8 @@ public class ResultsBatch {
         return schema;
     }
 
-    public List<Record> getRecords() {
-        return records;
+    public List<Row> getRows() {
+        return rows;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class ResultsBatch {
         return new EqualsBuilder()
                 .append(queryId, that.queryId)
                 .append(schema, that.schema)
-                .append(records, that.records)
+                .append(rows, that.rows)
                 .isEquals();
     }
 
@@ -71,7 +71,7 @@ public class ResultsBatch {
         return new HashCodeBuilder(13, 53)
                 .append(queryId)
                 .append(schema)
-                .append(records)
+                .append(rows)
                 .toHashCode();
     }
 
@@ -80,7 +80,7 @@ public class ResultsBatch {
         return new ToStringBuilder(this)
                 .append("queryId", queryId)
                 .append("schema", schema)
-                .append("records", records)
+                .append("rows", rows)
                 .toString();
     }
 }

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 
 import java.nio.file.Path;
@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 public interface DirectIngestDriver {
 
-    void ingest(Path tempDir, Iterator<Record> records);
+    void ingest(Path tempDir, Iterator<Row> rows);
 
-    void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles);
+    void ingest(Path tempDir, Iterator<Row> rows, Consumer<List<FileReference>> addFiles);
 }

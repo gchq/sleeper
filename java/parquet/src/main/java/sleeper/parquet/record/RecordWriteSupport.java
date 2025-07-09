@@ -21,7 +21,7 @@ import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.util.HashMap;
@@ -29,7 +29,7 @@ import java.util.HashMap;
 /**
  * Support for writing Sleeper records to Parquet files.
  */
-public class RecordWriteSupport extends WriteSupport<Record> {
+public class RecordWriteSupport extends WriteSupport<Row> {
     private final MessageType messageType;
     private final Schema schema;
     private RecordWriter recordWriter;
@@ -49,7 +49,7 @@ public class RecordWriteSupport extends WriteSupport<Record> {
     }
 
     @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
-    public void write(Record record) {
+    public void write(Row record) {
         recordWriter.write(record);
     }
 }

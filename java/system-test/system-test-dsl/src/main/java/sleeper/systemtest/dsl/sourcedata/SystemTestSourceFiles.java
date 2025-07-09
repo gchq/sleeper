@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -56,17 +56,17 @@ public class SystemTestSourceFiles {
         return create(schema, filename, instance.numberedRecords(schema).streamFrom(numbers));
     }
 
-    public SystemTestSourceFiles create(String filename, Record... records) {
-        return create(filename, Stream.of(records));
+    public SystemTestSourceFiles create(String filename, Row... rows) {
+        return create(filename, Stream.of(rows));
     }
 
-    private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        context.writeFile(driver, filename, writeSketches, records);
+    private SystemTestSourceFiles create(String filename, Stream<Row> rows) {
+        context.writeFile(driver, filename, writeSketches, rows);
         return this;
     }
 
-    private SystemTestSourceFiles create(Schema schema, String filename, Stream<Record> records) {
-        context.writeFile(driver, schema, filename, writeSketches, records);
+    private SystemTestSourceFiles create(Schema schema, String filename, Stream<Row> rows) {
+        context.writeFile(driver, schema, filename, writeSketches, rows);
         return this;
     }
 }

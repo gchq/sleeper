@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.ingest;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
@@ -44,20 +44,20 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
         s3Async = clients.getS3Async();
     }
 
-    public void ingest(Path tempDir, Iterator<Record> records) {
-        ingest(records, ingestCoordinatorBuilder(tempDir));
+    public void ingest(Path tempDir, Iterator<Row> rows) {
+        ingest(rows, ingestCoordinatorBuilder(tempDir));
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Record> records, Consumer<List<FileReference>> addFiles) {
-        ingest(records, ingestCoordinatorBuilder(tempDir)
+    public void ingest(Path tempDir, Iterator<Row> rows, Consumer<List<FileReference>> addFiles) {
+        ingest(rows, ingestCoordinatorBuilder(tempDir)
                 .addFilesToStateStore(addFiles::accept));
     }
 
-    private void ingest(Iterator<Record> records, IngestCoordinator.Builder<Record> builder) {
-        try (IngestCoordinator<Record> coordinator = builder.build()) {
-            while (records.hasNext()) {
-                coordinator.write(records.next());
+    private void ingest(Iterator<Row> rows, IngestCoordinator.Builder<Row> builder) {
+        try (IngestCoordinator<Row> coordinator = builder.build()) {
+            while (rows.hasNext()) {
+                coordinator.write(rows.next());
             }
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
@@ -66,7 +66,7 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
         }
     }
 
-    private IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(Path tempDir) {
+    private IngestCoordinator.Builder<Row> ingestCoordinatorBuilder(Path tempDir) {
         return factory(tempDir).ingestCoordinatorBuilder(instance.getTableProperties());
     }
 

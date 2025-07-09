@@ -18,7 +18,7 @@ package sleeper.parquet.record;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -26,35 +26,35 @@ import java.util.NoSuchElementException;
 /**
  * Iterates through records read from a Parquet file. Wraps a {@link ParquetReader}.
  */
-public class ParquetReaderIterator implements CloseableIterator<Record> {
-    private final ParquetReader<Record> reader;
-    private Record record;
-    private long recordsRead;
+public class ParquetReaderIterator implements CloseableIterator<Row> {
+    private final ParquetReader<Row> reader;
+    private Row row;
+    private long rowsRead;
 
-    public ParquetReaderIterator(ParquetReader<Record> reader) throws IOException {
+    public ParquetReaderIterator(ParquetReader<Row> reader) throws IOException {
         this.reader = reader;
-        this.record = reader.read();
-        this.recordsRead = 0L;
-        if (null != this.record) {
-            this.recordsRead++;
+        this.row = reader.read();
+        this.rowsRead = 0L;
+        if (null != this.row) {
+            this.rowsRead++;
         }
     }
 
     @Override
     public boolean hasNext() {
-        return null != record;
+        return null != row;
     }
 
     @Override
-    public Record next() throws NoSuchElementException {
+    public Row next() throws NoSuchElementException {
         if (!hasNext()) {
             return null;
         }
-        Record copy = new Record(record);
+        Row copy = new Row(row);
         try {
-            record = reader.read();
-            if (null != record) {
-                recordsRead++;
+            row = reader.read();
+            if (null != row) {
+                rowsRead++;
             }
         } catch (IOException e) {
             throw new RuntimeException("IOException when reading from ParquetReader: ", e);
@@ -67,7 +67,7 @@ public class ParquetReaderIterator implements CloseableIterator<Record> {
         reader.close();
     }
 
-    public long getNumberOfRecordsRead() {
-        return recordsRead;
+    public long getNumberOfRowsRead() {
+        return rowsRead;
     }
 }

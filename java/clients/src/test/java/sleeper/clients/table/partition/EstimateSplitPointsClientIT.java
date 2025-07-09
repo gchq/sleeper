@@ -20,7 +20,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -49,17 +49,17 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldEstimateSplitPointsFromFileInS3() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 1L)),
-                new Record(Map.of("key", 2L)),
-                new Record(Map.of("key", 3L)),
-                new Record(Map.of("key", 4L)),
-                new Record(Map.of("key", 5L)),
-                new Record(Map.of("key", 6L)),
-                new Record(Map.of("key", 7L)),
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 9L)),
-                new Record(Map.of("key", 10L)));
+        List<Row> records = List.of(
+                new Row(Map.of("key", 1L)),
+                new Row(Map.of("key", 2L)),
+                new Row(Map.of("key", 3L)),
+                new Row(Map.of("key", 4L)),
+                new Row(Map.of("key", 5L)),
+                new Row(Map.of("key", 6L)),
+                new Row(Map.of("key", 7L)),
+                new Row(Map.of("key", 8L)),
+                new Row(Map.of("key", 9L)),
+                new Row(Map.of("key", 10L)));
         Path dataFile = dataFilePath("file.parquet");
         writeRecords(dataFile, schema, records);
 
@@ -75,9 +75,9 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldLimitNumberOfRecordsToRead() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<Record> records = new ArrayList<>();
+        List<Row> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            Row record = new Row();
             record.put("key", i);
             records.add(record);
         }
@@ -96,9 +96,9 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldLimitNumberOfRecordsToReadPerFileWithMultipleFiles() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<Record> records = new ArrayList<>();
+        List<Row> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            Record record = new Record();
+            Row record = new Row();
             record.put("key", i);
             records.add(record);
         }
@@ -119,9 +119,9 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
         return new Path("s3a://" + bucketName + "/" + filename);
     }
 
-    private void writeRecords(Path path, Schema schema, List<Record> records) throws IOException {
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
-            for (Record record : records) {
+    private void writeRecords(Path path, Schema schema, List<Row> records) throws IOException {
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
+            for (Row record : records) {
                 writer.write(record);
             }
         }

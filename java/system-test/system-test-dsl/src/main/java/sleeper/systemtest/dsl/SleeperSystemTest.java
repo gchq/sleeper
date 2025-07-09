@@ -21,7 +21,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
@@ -170,11 +170,11 @@ public class SleeperSystemTest {
         return context.instance().numberedRecords();
     }
 
-    public Iterable<Record> generateNumberedRecords(LongStream numbers) {
+    public Iterable<Row> generateNumberedRecords(LongStream numbers) {
         return context.instance().numberedRecords().iterableFrom(numbers);
     }
 
-    public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
+    public Iterable<Row> generateNumberedRecords(Schema schema, LongStream numbers) {
         return context.instance().numberedRecords(schema).iterableFrom(numbers);
     }
 
@@ -187,10 +187,10 @@ public class SleeperSystemTest {
                 .resolve("test/splitpoints");
     }
 
-    public CloseableIterator<Record> getRecords(AllReferencesToAFile file) {
+    public CloseableIterator<Row> getRecords(AllReferencesToAFile file) {
         Schema schema = context.instance().getTableProperties().getSchema();
         DataFilesDriver driver = context.instance().adminDrivers().dataFiles(context);
-        return driver.getRecords(schema, file.getFilename());
+        return driver.getRows(schema, file.getFilename());
     }
 
     public void enableOptionalStack(OptionalStack stack) {

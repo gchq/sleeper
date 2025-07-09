@@ -19,52 +19,52 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordTest {
+public class RowTest {
 
     @Test
     public void testAnFieldCanBeRemoved() {
         //Given
-        Record record = new Record();
-        record.put("key", "value");
+        Row row = new Row();
+        row.put("key", "value");
 
         //when
-        record.remove("key");
+        row.remove("key");
 
         //then
-        assertThat(record.get("key")).isNull();
+        assertThat(row.get("key")).isNull();
     }
 
     @Test
     public void testAnNonExistentFieldCanBeRemoved() {
         //Given
-        Record record = new Record();
+        Row row = new Row();
 
         //when
-        record.remove("key");
+        row.remove("key");
 
         //then
-        assertThat(record.get("key")).isNull();
+        assertThat(row.get("key")).isNull();
     }
 
     @Test
     public void testEqualsAndHashcode() {
         // Given
-        Record record1 = new Record();
-        record1.put("column1", 1);
-        record1.put("column2", "A");
-        Record record2 = new Record();
-        record2.put("column1", 1);
-        record2.put("column2", "A");
-        Record record3 = new Record();
-        record3.put("column1", 1);
-        record3.put("column2", "B");
+        Row row1 = new Row();
+        row1.put("column1", 1);
+        row1.put("column2", "A");
+        Row row2 = new Row();
+        row2.put("column1", 1);
+        row2.put("column2", "A");
+        Row row3 = new Row();
+        row3.put("column1", 1);
+        row3.put("column2", "B");
 
         // When
-        boolean test1 = record1.equals(record2);
-        boolean test2 = record1.equals(record3);
-        int hashCode1 = record1.hashCode();
-        int hashCode2 = record2.hashCode();
-        int hashCode3 = record3.hashCode();
+        boolean test1 = row1.equals(row2);
+        boolean test2 = row1.equals(row3);
+        int hashCode1 = row1.hashCode();
+        int hashCode2 = row2.hashCode();
+        int hashCode3 = row3.hashCode();
 
         // Then
         assertThat(test1).isTrue();
@@ -76,22 +76,22 @@ public class RecordTest {
     @Test
     public void testEqualsAndHashcodeWithAByteArrayValue() {
         // Given
-        Record record1 = new Record();
-        record1.put("column1", 1);
-        record1.put("column2", new byte[]{1, 2});
-        Record record2 = new Record();
-        record2.put("column1", 1);
-        record2.put("column2", new byte[]{1, 2});
-        Record record3 = new Record();
-        record3.put("column1", 1);
-        record3.put("column2", new byte[]{1, 3});
+        Row row1 = new Row();
+        row1.put("column1", 1);
+        row1.put("column2", new byte[]{1, 2});
+        Row row2 = new Row();
+        row2.put("column1", 1);
+        row2.put("column2", new byte[]{1, 2});
+        Row row3 = new Row();
+        row3.put("column1", 1);
+        row3.put("column2", new byte[]{1, 3});
 
         // When
-        boolean test1 = record1.equals(record2);
-        boolean test2 = record1.equals(record3);
-        int hashCode1 = record1.hashCode();
-        int hashCode2 = record2.hashCode();
-        int hashCode3 = record3.hashCode();
+        boolean test1 = row1.equals(row2);
+        boolean test2 = row1.equals(row3);
+        int hashCode1 = row1.hashCode();
+        int hashCode2 = row2.hashCode();
+        int hashCode3 = row3.hashCode();
 
         // Then
         assertThat(test1).isTrue();

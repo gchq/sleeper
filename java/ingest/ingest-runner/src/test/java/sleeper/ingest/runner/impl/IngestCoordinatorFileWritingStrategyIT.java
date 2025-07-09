@@ -29,7 +29,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
@@ -110,7 +110,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
@@ -128,20 +128,20 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             FileReference rootFile = fileReferenceFactory.rootFile(
                     ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 100L);
-            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
 
         @Test
         public void shouldWriteOneFileToOneLeafPartition() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -161,20 +161,20 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             FileReference lFile = fileReferenceFactory.partitionFile("L",
                     ingestType.getFilePrefix(parameters) + "/data/partition_L/lFile.parquet", 25L);
-            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(lFile);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
 
         @Test
         public void shouldWriteOneFileInEachLeafPartition() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -203,20 +203,20 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rrFile = fileReferenceFactory.partitionFile("RR",
                     ingestType.getFilePrefix(parameters) + "/data/partition_RR/rrFile.parquet", 20L);
 
-            List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(llFile, lrFile, rlFile, rrFile), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llFile, lrFile, rlFile, rrFile);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
 
         @Test
         public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -251,14 +251,14 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     ingestType.getFilePrefix(parameters) + "/data/partition_R/rightFile2.parquet", "R", 4L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
     }
 
@@ -273,7 +273,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
@@ -292,20 +292,20 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rootFile = accurateFileReferenceBuilder(rootFilename, "root", 100L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
 
         @Test
         public void shouldWriteOneFileWithReferenceInOneLeafPartition() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -326,20 +326,20 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             String rootFilename = ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet";
             FileReference lReference = fileReferenceFactory.partitionFile("L", rootFilename, 25L);
 
-            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lReference, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(lReference);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
 
         @Test
         public void shouldWriteOneFileWithReferencesInLeafPartitions() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -366,20 +366,20 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rlReference = accurateSplitFileReference(rootFile, "RL", 30L, stateStoreUpdateTime);
             FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L, stateStoreUpdateTime);
 
-            List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llReference, lrReference, rlReference, rrReference);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
 
         @Test
         public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
             // Given
-            RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            RecordGenerator.RowListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -410,14 +410,14 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
             FileReference leftFile2 = accurateSplitFileReference(rootFile2, "L", 6L, stateStoreUpdateTime);
             FileReference rightFile2 = accurateSplitFileReference(rootFile2, "R", 4L, stateStoreUpdateTime);
-            List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(rootFile1, rootFile2), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
-            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+            assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+                    .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
         }
     }
 
@@ -430,27 +430,27 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
     }
 
     private static void ingestRecords(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters parameters,
             int maxRecordsInMemory,
             long maxRecordsToWriteToLocalStore) throws IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = parameters.toBuilder()
+        try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrayList().setInstanceProperties(properties -> {
                     properties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
                     properties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
                 }).buildCoordinator()) {
-            for (Record record : recordListAndSchema.recordList) {
+            for (Row record : recordListAndSchema.rowList) {
                 ingestCoordinator.write(record);
             }
         }
     }
 
     private static void ingestRecords(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
+        try (IngestCoordinator<Row> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
                 .createIngestCoordinator(ingestCoordinatorTestParameters)) {
-            for (Record record : recordListAndSchema.recordList) {
+            for (Row record : recordListAndSchema.rowList) {
                 ingestCoordinator.write(record);
             }
         }
@@ -469,7 +469,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                 .stateStore(stateStore);
     }
 
-    private static RecordGenerator.RecordListAndSchema generateStringRecords(String formatString, LongStream range) {
+    private static RecordGenerator.RowListAndSchema generateStringRecords(String formatString, LongStream range) {
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = range

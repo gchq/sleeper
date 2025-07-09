@@ -22,8 +22,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
@@ -40,14 +40,14 @@ import java.util.concurrent.CompletableFuture;
 public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPartitionFileWriter.class);
 
-    private final InMemoryRecordStore dataStore;
+    private final InMemoryRowStore dataStore;
     private final InMemorySketchesStore sketchesStore;
     private final Partition partition;
     private final String filename;
-    private final List<Record> records = new ArrayList<>();
+    private final List<Row> records = new ArrayList<>();
     private final Sketches sketches;
 
-    private InMemoryPartitionFileWriter(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
+    private InMemoryPartitionFileWriter(InMemoryRowStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
         this.partition = partition;
@@ -56,14 +56,14 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     }
 
     public static PartitionFileWriterFactory factory(
-            InMemoryRecordStore data, InMemorySketchesStore sketches, InstanceProperties instanceProperties, TableProperties tableProperties) {
+            InMemoryRowStore data, InMemorySketchesStore sketches, InstanceProperties instanceProperties, TableProperties tableProperties) {
         TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         return partition -> new InMemoryPartitionFileWriter(
                 data, sketches, partition, filePaths.constructPartitionParquetFilePath(partition, UUID.randomUUID().toString()), tableProperties.getSchema());
     }
 
     @Override
-    public void append(Record record) {
+    public void append(Row record) {
         records.add(record);
         sketches.update(record);
     }

@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,19 +54,19 @@ public class QueryWebSocketClientTestHelper {
                 "}";
     }
 
-    public static String queryResult(String queryId, Record... records) {
+    public static String queryResult(String queryId, Row... rows) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"records\"," +
-                "\"records\":" + GSON.toJson(List.of(records)) +
+                "\"message\":\"rows\"," +
+                "\"rows\":" + GSON.toJson(List.of(rows)) +
                 "}";
     }
 
-    public static String completedQuery(String queryId, long recordCount) {
+    public static String completedQuery(String queryId, long rowCount) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"completed\"," +
-                "\"recordCount\":\"" + recordCount + "\"," +
+                "\"rowCount\":\"" + rowCount + "\"," +
                 "\"locations\":[{\"type\":\"websocket-endpoint\"}]" +
                 "}";
     }
@@ -83,7 +83,7 @@ public class QueryWebSocketClientTestHelper {
         return client -> client.onError(error);
     }
 
-    public static String asJson(Record record) {
-        return GSON.toJson(record);
+    public static String asJson(Row row) {
+        return GSON.toJson(row);
     }
 }

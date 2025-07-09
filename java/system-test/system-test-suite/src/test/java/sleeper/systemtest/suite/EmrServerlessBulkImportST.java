@@ -19,7 +19,7 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -44,7 +44,7 @@ public class EmrServerlessBulkImportST {
     void shouldBulkImportOneRecordWithEmrServerlessByQueue(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        Record record = new Record(Map.of(
+        Row record = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
@@ -62,7 +62,7 @@ public class EmrServerlessBulkImportST {
     @Test
     void shouldBulkImportOneRecordWithEmrServerlessDirectly(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row record = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));

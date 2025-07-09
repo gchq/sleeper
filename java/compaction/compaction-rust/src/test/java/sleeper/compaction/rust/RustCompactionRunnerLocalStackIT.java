@@ -29,7 +29,7 @@ import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
@@ -82,10 +82,10 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
         Schema schema = createSchemaWithKey("key", new StringType());
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        Record record1 = new Record(Map.of("key", "record-1"));
-        Record record2 = new Record(Map.of("key", "record-2"));
-        String file1 = writeFileForPartition("root", List.of(record1));
-        String file2 = writeFileForPartition("root", List.of(record2));
+        Row row1 = new Row(Map.of("key", "row-1"));
+        Row row2 = new Row(Map.of("key", "row-2"));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
         CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
         // When
@@ -95,9 +95,9 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(summary.getRecordsRead()).isEqualTo(2);
         assertThat(summary.getRecordsWritten()).isEqualTo(2);
         assertThat(readDataFile(schema, job.getOutputFile()))
-                .containsExactly(record1, record2);
+                .containsExactly(row1, row2);
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
+                .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
     }
 
     protected CompactionJobFactory compactionFactory() {
@@ -120,14 +120,14 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 .build();
     }
 
-    private String writeFileForPartition(String partitionId, List<Record> records) throws Exception {
+    private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
-            for (Record record : records) {
-                writer.write(record);
-                sketches.update(record);
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
+            for (Row row : rows) {
+                writer.write(row);
+                sketches.update(row);
             }
         }
         sketchesStore.saveFileSketches(dataFile, schema, sketches);
@@ -143,13 +143,13 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 .constructPartitionParquetFilePath(partitionId, filename);
     }
 
-    private List<Record> readDataFile(Schema schema, String filename) throws IOException {
-        List<Record> results = new ArrayList<>();
+    private List<Row> readDataFile(Schema schema, String filename) throws IOException {
+        List<Row> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 ParquetReader.builder(new RecordReadSupport(schema), new org.apache.hadoop.fs.Path(filename))
                         .withConf(hadoopConf).build())) {
             while (reader.hasNext()) {
-                results.add(new Record(reader.next()));
+                results.add(new Row(reader.next()));
             }
         }
         return results;

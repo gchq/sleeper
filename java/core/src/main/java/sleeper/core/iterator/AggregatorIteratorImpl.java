@@ -18,7 +18,7 @@ package sleeper.core.iterator;
 import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
 import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.key.Key;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,18 +29,18 @@ import java.util.Objects;
 /**
  * Performs aggregation of record columns based on specified column names and aggregation operators.
  */
-public class AggregatorIteratorImpl implements CloseableIterator<Record> {
+public class AggregatorIteratorImpl implements CloseableIterator<Row> {
 
     /** Which columns to group and aggregate. */
     private final FilterAggregationConfig config;
     /** Source iterator. */
-    private final CloseableIterator<Record> input;
+    private final CloseableIterator<Row> input;
     /**
      * The record retrieved from the record source that is the start of the next aggregation group. If this is null,
      * then either we are at the start of the iteration (no input records retrieved yet), or the input iterator
      * has run out of records.
      */
-    private Record startOfNextAggregationGroup = null;
+    private Row startOfNextAggregationGroup = null;
 
     /**
      * Sets up a aggregating iterator.
@@ -48,7 +48,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Record> {
      * @param input  the record source iterator
      * @param config the configuration
      */
-    public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Record> input) {
+    public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Row> input) {
         this.config = Objects.requireNonNull(config, "config");
         this.input = Objects.requireNonNull(input, "input");
     }
@@ -66,17 +66,17 @@ public class AggregatorIteratorImpl implements CloseableIterator<Record> {
     }
 
     @Override
-    public Record next() {
+    public Row next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
         // There must be at least one more record, either stashed by us or in the input iterator
-        Record aggregated = (startOfNextAggregationGroup != null) ? startOfNextAggregationGroup : input.next();
+        Row aggregated = (startOfNextAggregationGroup != null) ? startOfNextAggregationGroup : input.next();
         // We may have just re-assigned the startOfNextAggregation group, so null it out
         startOfNextAggregationGroup = null;
         // Now aggregate more records on to this one until we find an unequal one or run out of data
         while (startOfNextAggregationGroup == null && input.hasNext()) {
-            Record next = input.next();
+            Row next = input.next();
             if (recordsEqual(aggregated, next)) {
                 aggregateOnTo(aggregated, next, config);
             } else {
@@ -93,7 +93,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Record> {
      * @param toBeAggregated the record containing new values
      * @param config         the aggregation configuration
      */
-    public static void aggregateOnTo(Record aggregated, Record toBeAggregated, FilterAggregationConfig config) {
+    public static void aggregateOnTo(Row aggregated, Row toBeAggregated, FilterAggregationConfig config) {
         for (Aggregation agg : config.aggregations()) {
             // Extract current and new value
             Object currentValue = aggregated.get(agg.column());
@@ -109,7 +109,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Record> {
      * @param  rhs record
      * @return     true if they are considered equal
      */
-    public boolean recordsEqual(Record lhs, Record rhs) {
+    public boolean recordsEqual(Row lhs, Row rhs) {
         List<Object> keys1 = new ArrayList<>();
         List<Object> keys2 = new ArrayList<>();
         for (String key : config.groupingColumns()) {

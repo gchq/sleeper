@@ -23,7 +23,7 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
@@ -48,8 +48,8 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+        List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -61,7 +61,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
+        List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
@@ -74,8 +74,8 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
-        List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+        List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -102,9 +102,9 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         @Test
         void shouldGenerateTestData200EvenAndOddStrings() {
             // When
-            List<Record> evens = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
-            List<Record> odds = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
-            List<Record> combined = CompactionRunnerTestData.combineSortedBySingleKey(evens, odds);
+            List<Row> evens = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
+            List<Row> odds = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
+            List<Row> combined = CompactionRunnerTestData.combineSortedBySingleKey(evens, odds);
 
             // Then
             assertThat(evens).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
@@ -123,8 +123,8 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-            List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
-            List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
+            List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
+            List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
             FileReference file1 = ingestRecordsGetFile(data1);
             FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -136,7 +136,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             // Then
             //  - Read output file and check that it contains the right results
-            List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
+            List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
@@ -150,9 +150,9 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         @Test
         void shouldGenerateTestData200EvenAndOddByteArrays() {
             // When
-            List<Record> evens = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
-            List<Record> odds = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
-            List<Record> combined = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(evens, odds);
+            List<Row> evens = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
+            List<Row> odds = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
+            List<Row> combined = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(evens, odds);
 
             // Then
             assertThat(evens).hasSize(100)
@@ -176,8 +176,8 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-            List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
-            List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
+            List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
+            List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
             FileReference file1 = ingestRecordsGetFile(data1);
             FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -189,7 +189,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             // Then
             //  - Read output file and check that it contains the right results
-            List<Record> expectedResults = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(data1, data2);
+            List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(data1, data2);
             assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
             assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);

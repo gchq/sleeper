@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
 import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
@@ -111,8 +111,8 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
             return (Builder<INCOMINGDATATYPE>) this;
         }
 
-        public ArrayListRecordBatchFactory<Record> buildAcceptingRecords() {
-            return recordMapper((ArrayListRecordMapper<Record>) data -> data).build();
+        public ArrayListRecordBatchFactory<Row> buildAcceptingRecords() {
+            return recordMapper((ArrayListRecordMapper<Row>) data -> data).build();
         }
 
         public ArrayListRecordBatchFactory<T> build() {

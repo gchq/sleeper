@@ -16,8 +16,8 @@
 package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.row.Record;
+import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -31,9 +31,9 @@ import java.util.Set;
  * Filters out records that a user is not allowed to see. This is intended to be used in a query, adding the user's
  * authorisations to the query in the iterator configuration. If the visibility field equals one of these authorisations
  * then the user is allowed to see the record. If the visibility field is the empty or null string then the user is also
- * allowed to see the record. This is an example implementation of {@link SortedRecordIterator}.
+ * allowed to see the record. This is an example implementation of {@link SortedRowIterator}.
  */
-public class SecurityFilteringIterator implements SortedRecordIterator {
+public class SecurityFilteringIterator implements SortedRowIterator {
     private String fieldName;
     private Set<String> auths;
 
@@ -57,20 +57,20 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
         return new SecurityFilteringIteratorInternal(input, fieldName, auths);
     }
 
     /**
      * Discards records in the input iterator where the security label is not one of the permitted auths.
      */
-    public static class SecurityFilteringIteratorInternal implements CloseableIterator<Record> {
-        private final CloseableIterator<Record> iterator;
+    public static class SecurityFilteringIteratorInternal implements CloseableIterator<Row> {
+        private final CloseableIterator<Row> iterator;
         private final String fieldName;
         private final Set<String> auths;
-        private Record next;
+        private Row next;
 
-        public SecurityFilteringIteratorInternal(CloseableIterator<Record> iterator,
+        public SecurityFilteringIteratorInternal(CloseableIterator<Row> iterator,
                 String fieldName,
                 Set<String> auths) {
             this.iterator = iterator;
@@ -95,8 +95,8 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         }
 
         @Override
-        public Record next() {
-            Record toReturn = next;
+        public Row next() {
+            Row toReturn = next;
             updateNextToAllowedValue();
             return toReturn;
         }
@@ -107,8 +107,8 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         }
     }
 
-    private static boolean allowed(Record record, String securityFieldname, Set<String> auths) {
-        String securityLabel = (String) record.get(securityFieldname);
+    private static boolean allowed(Row row, String securityFieldname, Set<String> auths) {
+        String securityLabel = (String) row.get(securityFieldname);
         if (null == securityLabel || 0 == securityLabel.length()) {
             return true;
         }

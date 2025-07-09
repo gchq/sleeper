@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -30,5 +30,5 @@ public interface PythonQueryTypesDriver {
 
     void range(Path outputDir, String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive);
 
-    Stream<Record> results(Path outputDir, String queryId);
+    Stream<Row> results(Path outputDir, String queryId);
 }

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
 import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -202,22 +202,22 @@ public class AggregationFilteringIteratorTest {
                 .valueFields(new Field("value", new StringType()))
                 .build();
 
-        CloseableIterator<Record> recordIter = new WrappedIterator<>(List.of(
-                new Record(Map.of("key", "a", "timestamp", 10L, "value", "test_value")),
-                new Record(Map.of("key", "b", "timestamp", 999999999999999L, "value", "test_value2")),
-                new Record(Map.of("key", "c", "timestamp", 10L, "value", "test_value3"))
+        CloseableIterator<Row> rowIter = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "a", "timestamp", 10L, "value", "test_value")),
+                new Row(Map.of("key", "b", "timestamp", 999999999999999L, "value", "test_value2")),
+                new Row(Map.of("key", "c", "timestamp", 10L, "value", "test_value3"))
 
         ).iterator());
 
         // When
         iterator.init(";ageoff=timestamp,10,", schema);
-        CloseableIterator<Record> filtered = iterator.apply(recordIter);
-        List<Record> result = new ArrayList<>();
+        CloseableIterator<Row> filtered = iterator.apply(rowIter);
+        List<Row> result = new ArrayList<>();
         filtered.forEachRemaining(result::add);
 
         // Then
         assertThat(result).containsExactly(
-                new Record(Map.of("key", "b", "timestamp", 999999999999999L, "value", "test_value2")));
+                new Row(Map.of("key", "b", "timestamp", 999999999999999L, "value", "test_value2")));
     }
 
     @Test
@@ -364,171 +364,171 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Test
-    public void shouldAggregateZeroRecords() throws Exception {
+    public void shouldAggregateZeroRows() throws Exception {
         // Given
-        List<Record> records = List.of();
-        List<Record> expected = List.of();
+        List<Row> rows = List.of();
+        List<Row> expected = List.of();
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
-    public void shouldAggregateOneRecord() throws Exception {
+    public void shouldAggregateOneRow() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 5,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 5,
                 "sort_key2", 2, "value1", "test", "value2", 12));
 
-        List<Record> records = List.of(r1);
-        List<Record> expected = List.of(new Record(r1));
+        List<Row> rows = List.of(r1);
+        List<Row> expected = List.of(new Row(r1));
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
-    public void shouldAggregateTwoEqualKeyRecords() throws Exception {
+    public void shouldAggregateTwoEqualKeyRows() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 34));
 
-        Record r3 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "testtest", "value2", 12));
 
-        List<Record> records = List.of(r1, r2);
-        List<Record> expected = List.of(r3);
+        List<Row> rows = List.of(r1, r2);
+        List<Row> expected = List.of(r3);
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
-    public void shouldAggregateTwoDifferentKeyRecords() throws Exception {
+    public void shouldAggregateTwoDifferentKeyRows() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 99999, "value1", "test", "value2", 34));
 
-        List<Record> records = List.of(r1, r2);
-        List<Record> expected = List.of(new Record(r1), new Record(r2));
+        List<Row> rows = List.of(r1, r2);
+        List<Row> expected = List.of(new Row(r1), new Row(r2));
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
-    public void shouldAggregateTwoEqualThenOneDifferentRecord() throws Exception {
+    public void shouldAggregateTwoEqualThenOneDifferentRow() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 34));
-        Record r3 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 9999999, "value1", "test", "value2", 34));
 
-        Record r4 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r4 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "testtest", "value2", 12));
-        Record r5 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 9999999, "value1", "test", "value2", 34));
 
-        List<Record> records = List.of(r1, r2, r3);
-        List<Record> expected = List.of(r4, r5);
+        List<Row> rows = List.of(r1, r2, r3);
+        List<Row> expected = List.of(r4, r5);
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
-    public void shouldAggregateOneDifferentThenTwoEqualRecord() throws Exception {
+    public void shouldAggregateOneDifferentThenTwoEqualRow() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "other_value", "sort_key", 9,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "other_value", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 34));
-        Record r3 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 5));
 
-        Record r4 = new Record(Map.of("key1", 12, "key2", "other_value", "sort_key", 9,
+        Row r4 = new Row(Map.of("key1", 12, "key2", "other_value", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r5 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "testtest", "value2", 5));
 
-        List<Record> records = List.of(r1, r2, r3);
-        List<Record> expected = List.of(r4, r5);
+        List<Row> rows = List.of(r1, r2, r3);
+        List<Row> expected = List.of(r4, r5);
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
-    public void shouldAggregateTwoSameThenOneDifferentThenTwoEqualRecord() throws Exception {
+    public void shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 34));
 
-        Record r3 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 9999, "value1", "test", "value2", 5));
 
-        Record r4 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r4 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 56));
-        Record r5 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 23));
 
-        Record r6 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r6 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "testtest", "value2", 12));
-        Record r7 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r7 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 9999, "value1", "test", "value2", 5));
-        Record r8 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r8 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtest", "value2", 23));
-        List<Record> records = List.of(r1, r2, r3, r4, r5);
+        List<Row> rows = List.of(r1, r2, r3, r4, r5);
 
-        List<Record> expected = List.of(r6, r7, r8);
+        List<Row> expected = List.of(r6, r7, r8);
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldAggregateOneDifferentThenTwoSameThenOneDifferent() throws Exception {
         // Given
-        Record r1 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
 
-        Record r2 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 76));
-        Record r3 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 56));
 
-        Record r4 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r4 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 99999, "value1", "test", "value2", 23));
 
-        Record r5 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 2, "value1", "test", "value2", 12));
-        Record r6 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r6 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtest", "value2", 56));
-        Record r7 = new Record(Map.of("key1", 12, "key2", "test", "sort_key", 9,
+        Row r7 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 99999, "value1", "test", "value2", 23));
-        List<Record> records = List.of(r1, r2, r3, r4);
+        List<Row> rows = List.of(r1, r2, r3, r4);
 
-        List<Record> expected = List.of(r5, r6, r7);
+        List<Row> expected = List.of(r5, r6, r7);
 
         // Then
-        assertThat(aggregate(records)).containsExactlyElementsOf(expected);
+        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
     }
 
     /**
      * Aggregate the given list.
      *
-     * @param  records to aggregate
-     * @return         aggregated list
+     * @param  rows to aggregate
+     * @return      aggregated list
      */
-    private static List<Record> aggregate(List<Record> records) throws Exception {
-        CloseableIterator<Record> it = new WrappedIterator<>(records.iterator());
+    private static List<Row> aggregate(List<Row> rows) throws Exception {
+        CloseableIterator<Row> it = new WrappedIterator<>(rows.iterator());
 
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new StringType()))
@@ -538,8 +538,8 @@ public class AggregationFilteringIteratorTest {
         AggregationFilteringIterator aggregationIterator = new AggregationFilteringIterator();
         aggregationIterator.init("sort_key,sort_key2;,sum(value1),min(value2)", schema);
 
-        try (CloseableIterator<Record> aggregator = aggregationIterator.apply(it)) {
-            List<Record> list = new ArrayList<>();
+        try (CloseableIterator<Row> aggregator = aggregationIterator.apply(it)) {
+            List<Row> list = new ArrayList<>();
             aggregator.forEachRemaining(list::add);
             return list;
         }

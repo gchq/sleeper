@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.ingest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -46,11 +46,11 @@ public class SystemTestIngestTest {
     @Test
     void shouldIngestByQueue(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.sourceFiles().create("test.parquet", record);
+        sleeper.sourceFiles().create("test.parquet", row);
 
         // When
         sleeper.ingest().byQueue()
@@ -59,7 +59,7 @@ public class SystemTestIngestTest {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+                .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
     }
@@ -67,11 +67,11 @@ public class SystemTestIngestTest {
     @Test
     void shouldBulkImportByQueue(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.sourceFiles().create("test.parquet", record);
+        sleeper.sourceFiles().create("test.parquet", row);
 
         // When
         sleeper.ingest().bulkImportByQueue()
@@ -79,7 +79,7 @@ public class SystemTestIngestTest {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+                .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
     }

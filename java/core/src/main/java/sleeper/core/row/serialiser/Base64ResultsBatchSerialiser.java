@@ -17,8 +17,8 @@ package sleeper.core.row.serialiser;
 
 import org.apache.commons.codec.binary.Base64;
 
-import sleeper.core.row.Record;
 import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.io.ByteArrayInputStream;
@@ -48,10 +48,10 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeUTF(resultsBatch.getQueryId());
-            int numRecords = resultsBatch.getRecords().size();
+            int numRecords = resultsBatch.getRows().size();
             dos.writeInt(numRecords);
-            for (Record record : resultsBatch.getRecords()) {
-                byte[] serialisedValue = rowSerialiser.serialise(record);
+            for (Row row : resultsBatch.getRows()) {
+                byte[] serialisedValue = rowSerialiser.serialise(row);
                 dos.writeInt(serialisedValue.length);
                 dos.write(serialisedValue);
             }
@@ -71,15 +71,15 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
             DataInputStream dis = new DataInputStream(bais);
             String queryId = dis.readUTF();
             int numRecords = dis.readInt();
-            List<Record> records = new ArrayList<>(numRecords);
+            List<Row> rows = new ArrayList<>(numRecords);
             for (int i = 0; i < numRecords; i++) {
                 int length = dis.readInt();
-                byte[] serialisedRecord = new byte[length];
-                dis.readFully(serialisedRecord);
-                records.add(rowSerialiser.deserialise(serialisedRecord));
+                byte[] serialisedRow = new byte[length];
+                dis.readFully(serialisedRow);
+                rows.add(rowSerialiser.deserialise(serialisedRow));
             }
             dis.close();
-            return new ResultsBatch(queryId, schema, records);
+            return new ResultsBatch(queryId, schema, rows);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

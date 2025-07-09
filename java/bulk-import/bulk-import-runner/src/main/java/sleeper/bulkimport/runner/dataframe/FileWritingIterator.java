@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ListType;
@@ -55,10 +54,10 @@ public class FileWritingIterator implements Iterator<Row> {
     private final TableProperties tableProperties;
     private final Supplier<String> outputFilenameSupplier;
     private String currentPartitionId;
-    private ParquetWriter<Record> parquetWriter;
+    private ParquetWriter<sleeper.core.row.Row> parquetWriter;
     private Sketches sketches;
     private String path;
-    private long numRecords;
+    private long numRows;
     private boolean hasMore = false;
     private Instant startTime = null;
 
@@ -104,10 +103,10 @@ public class FileWritingIterator implements Iterator<Row> {
                     if (currentPartitionId != null) {
                         // Write file and sketches
                         writeFiles();
-                        Row fileReference = RowFactory.create(currentPartitionId, path, numRecords);
+                        Row fileReference = RowFactory.create(currentPartitionId, path, numRows);
                         initialiseState(partitionId);
                         write(row);
-                        // Set flag in case this is the last record in the iterator
+                        // Set flag in case this is the last row in the iterator
                         hasMore = true;
                         return fileReference;
                     } else {
@@ -120,7 +119,7 @@ public class FileWritingIterator implements Iterator<Row> {
             // Flush final file
             writeFiles();
             hasMore = false;
-            return RowFactory.create(currentPartitionId, path, numRecords);
+            return RowFactory.create(currentPartitionId, path, numRows);
         } catch (IOException e) {
             throw new RuntimeException("Encountered error while writing files", e);
         }
@@ -131,13 +130,13 @@ public class FileWritingIterator implements Iterator<Row> {
             startTime = Instant.now();
         }
         // Append to current writer
-        Record record = getRecord(row);
-        parquetWriter.write(record);
-        numRecords++;
-        if (numRecords % 1_000_000L == 0) {
-            LOGGER.info("Wrote {} records", numRecords);
+        sleeper.core.row.Row writeRow = getRow(row);
+        parquetWriter.write(writeRow);
+        numRows++;
+        if (numRows % 1_000_000L == 0) {
+            LOGGER.info("Wrote {} rows", numRows);
         }
-        sketches.update(record);
+        sketches.update(writeRow);
     }
 
     private void initialiseState(String partitionId) throws IOException {
@@ -149,36 +148,36 @@ public class FileWritingIterator implements Iterator<Row> {
     }
 
     private void writeFiles() throws IOException {
-        LOGGER.info("Flushing files to S3 containing {} records", numRecords);
+        LOGGER.info("Flushing files to S3 containing {} rows", numRows);
         if (parquetWriter == null) {
             return;
         }
         parquetWriter.close();
         sketchesStore.saveFileSketches(path, schema, sketches);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-        double rate = numRecords / (double) duration.getSeconds();
-        LOGGER.info("Overall written {} records in {} (rate was {} per second)",
-                numRecords, duration, rate);
+        double rate = numRows / (double) duration.getSeconds();
+        LOGGER.info("Overall written {} rows in {} (rate was {} per second)",
+                numRows, duration, rate);
     }
 
-    private Record getRecord(Row row) {
-        Record record = new Record();
+    private sleeper.core.row.Row getRow(Row row) {
+        sleeper.core.row.Row outRow = new sleeper.core.row.Row();
         int i = 0;
         for (Field field : allSchemaFields) {
             if (field.getType() instanceof ListType) {
-                record.put(field.getName(), row.getList(i));
+                outRow.put(field.getName(), row.getList(i));
             } else if (field.getType() instanceof MapType) {
-                record.put(field.getName(), row.getJavaMap(i));
+                outRow.put(field.getName(), row.getJavaMap(i));
             } else {
-                record.put(field.getName(), row.get(i));
+                outRow.put(field.getName(), row.get(i));
             }
             i++;
         }
-        return record;
+        return outRow;
     }
 
-    private ParquetWriter<Record> createWriter(String partitionId) throws IOException {
-        numRecords = 0L;
+    private ParquetWriter<sleeper.core.row.Row> createWriter(String partitionId) throws IOException {
+        numRows = 0L;
         path = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
                 .constructPartitionParquetFilePath(partitionId, outputFilenameSupplier.get());
 

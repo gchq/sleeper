@@ -17,7 +17,7 @@ package sleeper.ingest.runner.testutils;
 
 import org.apache.commons.text.RandomStringGenerator;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -41,7 +41,7 @@ public class RecordGenerator {
     private RecordGenerator() {
     }
 
-    public static <T> RecordListAndSchema genericKey1D(Type sleeperKeyTypeDimension0, List<T> keyObjectsDimension0) {
+    public static <T> RowListAndSchema genericKey1D(Type sleeperKeyTypeDimension0, List<T> keyObjectsDimension0) {
         int noOfRecords = keyObjectsDimension0.size();
         Random valueRandom = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
@@ -51,32 +51,32 @@ public class RecordGenerator {
                 .rowKeyFields(new Field("key0", sleeperKeyTypeDimension0))
                 .valueFields(valueFields())
                 .build();
-        List<Record> recordList = IntStream.range(0, noOfRecords)
+        List<Row> rowList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
-                    Record record = new Record();
-                    record.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
-                    record.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
-                    record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
-                    record.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
-                    record.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
-                    record.put(
+                    Row row = new Row();
+                    row.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
+                    row.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
+                    row.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
+                    row.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
+                    row.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
+                    row.put(
                             sleeperSchema.getValueFieldNames().get(4),
                             IntStream.range(0, valueRandom.nextInt(10))
                                     .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
                                     .collect(Collectors.toList()));
-                    record.put(
+                    row.put(
                             sleeperSchema.getValueFieldNames().get(5),
                             IntStream.range(0, valueRandom.nextInt(10)).boxed()
                                     .collect(Collectors.toMap(
                                             dummy -> valueRandom.nextLong(),
                                             dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
-                    return record;
+                    return row;
                 }).collect(Collectors.toList());
-        Collections.shuffle(recordList, new Random(0));
-        return new RecordListAndSchema(recordList, sleeperSchema);
+        Collections.shuffle(rowList, new Random(0));
+        return new RowListAndSchema(rowList, sleeperSchema);
     }
 
-    public static <T, U> RecordListAndSchema genericKey2D(
+    public static <T, U> RowListAndSchema genericKey2D(
             Type sleeperKeyTypeDimension0, Type sleeperKeyTypeDimension1,
             List<T> keyObjectsDimension0, List<U> keyObjectsDimension1) {
         int noOfRecords = keyObjectsDimension0.size();
@@ -93,33 +93,33 @@ public class RecordGenerator {
                         new Field("key1", sleeperKeyTypeDimension1))
                 .valueFields(valueFields())
                 .build();
-        List<Record> recordList = IntStream.range(0, noOfRecords)
+        List<Row> rowList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
-                    Record record = new Record();
-                    record.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
-                    record.put(sleeperSchema.getRowKeyFieldNames().get(1), keyObjectsDimension1.get(i));
-                    record.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
-                    record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
-                    record.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
-                    record.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
-                    record.put(
+                    Row row = new Row();
+                    row.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
+                    row.put(sleeperSchema.getRowKeyFieldNames().get(1), keyObjectsDimension1.get(i));
+                    row.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
+                    row.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
+                    row.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
+                    row.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
+                    row.put(
                             sleeperSchema.getValueFieldNames().get(4),
                             IntStream.range(0, valueRandom.nextInt(10))
                                     .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
                                     .collect(Collectors.toList()));
-                    record.put(
+                    row.put(
                             sleeperSchema.getValueFieldNames().get(5),
                             IntStream.range(0, valueRandom.nextInt(10)).boxed()
                                     .collect(Collectors.toMap(
                                             dummy -> valueRandom.nextLong(),
                                             dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
-                    return record;
+                    return row;
                 }).collect(Collectors.toList());
-        Collections.shuffle(recordList, new Random(0));
-        return new RecordListAndSchema(recordList, sleeperSchema);
+        Collections.shuffle(rowList, new Random(0));
+        return new RowListAndSchema(rowList, sleeperSchema);
     }
 
-    public static <T, U> RecordListAndSchema genericKey1DSort1D(
+    public static <T, U> RowListAndSchema genericKey1DSort1D(
             Type sleeperKeyTypeDimension0, Type sleeperSortKeyTypeDimension0,
             List<T> keyObjectsDimension0, List<U> sortKeyObjectsDimension0) {
         int noOfRecords = keyObjectsDimension0.size();
@@ -135,33 +135,33 @@ public class RecordGenerator {
                 .sortKeyFields(new Field("sortKey0", sleeperSortKeyTypeDimension0))
                 .valueFields(valueFields())
                 .build();
-        List<Record> recordList = IntStream.range(0, noOfRecords)
+        List<Row> rowList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
-                    Record record = new Record();
-                    record.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
-                    record.put(sleeperSchema.getSortKeyFieldNames().get(0), sortKeyObjectsDimension0.get(i));
-                    record.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
-                    record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
-                    record.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
-                    record.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
-                    record.put(
+                    Row row = new Row();
+                    row.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
+                    row.put(sleeperSchema.getSortKeyFieldNames().get(0), sortKeyObjectsDimension0.get(i));
+                    row.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
+                    row.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
+                    row.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
+                    row.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
+                    row.put(
                             sleeperSchema.getValueFieldNames().get(4),
                             IntStream.range(0, valueRandom.nextInt(10))
                                     .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
                                     .collect(Collectors.toList()));
-                    record.put(
+                    row.put(
                             sleeperSchema.getValueFieldNames().get(5),
                             IntStream.range(0, valueRandom.nextInt(10)).boxed()
                                     .collect(Collectors.toMap(
                                             dummy -> valueRandom.nextLong(),
                                             dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
-                    return record;
+                    return row;
                 }).collect(Collectors.toList());
-        Collections.shuffle(recordList, new Random(0));
-        return new RecordListAndSchema(recordList, sleeperSchema);
+        Collections.shuffle(rowList, new Random(0));
+        return new RowListAndSchema(rowList, sleeperSchema);
     }
 
-    public static RecordListAndSchema byteArrayRowKeyLongSortKey(
+    public static RowListAndSchema byteArrayRowKeyLongSortKey(
             List<byte[]> byteArrayKeys, List<Long> sortKeys, List<Long> values) {
         if (!(byteArrayKeys.size() == sortKeys.size() && sortKeys.size() == values.size())) {
             throw new AssertionError();
@@ -172,24 +172,24 @@ public class RecordGenerator {
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        List<Record> recordList = IntStream.range(0, byteArrayKeys.size())
+        List<Row> rowList = IntStream.range(0, byteArrayKeys.size())
                 .mapToObj(i -> {
-                    Record record = new Record();
-                    record.put(sleeperSchema.getRowKeyFieldNames().get(0), byteArrayKeys.get(i));
-                    record.put(sleeperSchema.getSortKeyFieldNames().get(0), sortKeys.get(i));
-                    record.put(sleeperSchema.getValueFieldNames().get(0), values.get(i));
-                    return record;
+                    Row row = new Row();
+                    row.put(sleeperSchema.getRowKeyFieldNames().get(0), byteArrayKeys.get(i));
+                    row.put(sleeperSchema.getSortKeyFieldNames().get(0), sortKeys.get(i));
+                    row.put(sleeperSchema.getValueFieldNames().get(0), values.get(i));
+                    return row;
                 }).collect(Collectors.toList());
-        Collections.shuffle(recordList, new Random(0));
-        return new RecordListAndSchema(recordList, sleeperSchema);
+        Collections.shuffle(rowList, new Random(0));
+        return new RowListAndSchema(rowList, sleeperSchema);
     }
 
-    public static class RecordListAndSchema {
-        public List<Record> recordList;
+    public static class RowListAndSchema {
+        public List<Row> rowList;
         public Schema sleeperSchema;
 
-        public RecordListAndSchema(List<Record> recordList, Schema sleeperSchema) {
-            this.recordList = recordList;
+        public RowListAndSchema(List<Row> rowList, Schema sleeperSchema) {
+            this.rowList = rowList;
             this.sleeperSchema = sleeperSchema;
         }
     }

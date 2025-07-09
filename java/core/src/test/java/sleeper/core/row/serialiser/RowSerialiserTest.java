@@ -17,7 +17,7 @@ package sleeper.core.row.serialiser;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -39,19 +39,19 @@ public class RowSerialiserTest {
                 .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
                 .valueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()))
                 .build();
-        Record record = new Record();
-        record.put("column1", 19);
-        record.put("column2", 100L);
-        record.put("column3", "abc");
-        record.put("column4", new byte[]{1, 2, 3});
-        record.put("column5", new byte[]{4, 5, 6, 7});
-        record.put("column6", new byte[]{8, 9, 10, 11, 12});
+        Row row = new Row();
+        row.put("column1", 19);
+        row.put("column2", 100L);
+        row.put("column3", "abc");
+        row.put("column4", new byte[]{1, 2, 3});
+        row.put("column5", new byte[]{4, 5, 6, 7});
+        row.put("column6", new byte[]{8, 9, 10, 11, 12});
         RowSerialiser serialiser = new RowSerialiser(schema);
 
         // When
-        Record deserialised = serialiser.deserialise(serialiser.serialise(record));
+        Row deserialised = serialiser.deserialise(serialiser.serialise(row));
 
         // Then
-        assertThat(deserialised).isEqualTo(record);
+        assertThat(deserialised).isEqualTo(row);
     }
 }

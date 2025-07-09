@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
@@ -35,16 +35,16 @@ public class ReadRecordsFromS3 {
     private ReadRecordsFromS3() {
     }
 
-    public static Stream<Record> getRecords(String bucketName, String objectKey, Schema schema, Configuration conf) {
+    public static Stream<Row> getRows(String bucketName, String objectKey, Schema schema, Configuration conf) {
         String path = "s3a://" + bucketName + "/" + objectKey;
-        List<Record> records = new ArrayList<>();
-        try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), schema)
+        List<Row> rows = new ArrayList<>();
+        try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(path), schema)
                 .withConf(conf).build();
                 ParquetReaderIterator iterator = new ParquetReaderIterator(reader)) {
-            iterator.forEachRemaining(records::add);
+            iterator.forEachRemaining(rows::add);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        return records.stream();
+        return rows.stream();
     }
 }

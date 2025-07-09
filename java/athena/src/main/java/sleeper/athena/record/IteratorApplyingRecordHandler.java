@@ -38,9 +38,9 @@ import software.amazon.awssdk.utils.BinaryUtils;
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -122,7 +122,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     }
 
     @Override
-    protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema,
+    protected CloseableIterator<Row> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema,
             TableProperties tableProperties) throws RecordRetrievalException, ObjectFactoryException {
         Split split = recordsRequest.getSplit();
         Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
@@ -185,7 +185,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * @throws ObjectFactoryException   if something goes wrong creating the iterators
      * @throws RecordRetrievalException if something goes wrong retrieving records
      */
-    private CloseableIterator<Record> createIterator(
+    private CloseableIterator<Row> createIterator(
             Set<String> relevantFiles, List<Object> minRowKeys, List<Object> maxRowKeys,
             Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws ObjectFactoryException, RecordRetrievalException {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
@@ -194,7 +194,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
         LeafPartitionRecordRetrieverImpl recordRetriever = new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties);
 
-        CloseableIterator<Record> iterator = recordRetriever.getRecords(new ArrayList<>(relevantFiles), schema, filterPredicate);
+        CloseableIterator<Row> iterator = recordRetriever.getRecords(new ArrayList<>(relevantFiles), schema, filterPredicate);
 
         // Apply Compaction time iterator
         return applyCompactionIterators(iterator, schema, tableProperties);
@@ -252,13 +252,13 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * @return                        a combined iterator
      * @throws ObjectFactoryException if the iterator can't be instantiated
      */
-    private CloseableIterator<Record> applyCompactionIterators(CloseableIterator<Record> mergingIterator, Schema schema, TableProperties tableProperties) throws ObjectFactoryException {
+    private CloseableIterator<Row> applyCompactionIterators(CloseableIterator<Row> mergingIterator, Schema schema, TableProperties tableProperties) throws ObjectFactoryException {
         String iteratorClass = tableProperties.get(ITERATOR_CLASS_NAME);
         if (iteratorClass == null) {
             return mergingIterator;
         }
         String iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        SortedRecordIterator sortedRecordIterator = objectFactory.getObject(iteratorClass, SortedRecordIterator.class);
+        SortedRowIterator sortedRecordIterator = objectFactory.getObject(iteratorClass, SortedRowIterator.class);
         sortedRecordIterator.init(iteratorConfig, schema);
         LOGGER.debug("Initialised iterator with config " + iteratorConfig);
         return sortedRecordIterator.apply(mergingIterator);

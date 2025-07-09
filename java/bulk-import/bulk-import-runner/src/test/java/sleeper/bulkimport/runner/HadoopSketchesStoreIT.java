@@ -19,7 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -51,7 +51,7 @@ public class HadoopSketchesStoreIT extends LocalStackTestBase {
                 .build();
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(new Record(Map.of(
+            sketches.update(new Row(Map.of(
                     "key1", i,
                     "key2", i + 1_000_000L,
                     "key3", "" + (i + 1_000_000L),

@@ -19,8 +19,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
@@ -70,12 +70,12 @@ public class InMemoryIngestByQueue {
     private final List<IngestTask> runningTasks = new ArrayList<>();
     private final IngestTaskTracker taskTracker = new InMemoryIngestTaskTracker();
     private final IngestJobTracker jobTracker = new InMemoryIngestJobTracker();
-    private final InMemoryRecordStore sourceFiles;
-    private final InMemoryRecordStore data;
+    private final InMemoryRowStore sourceFiles;
+    private final InMemoryRowStore data;
     private final InMemorySketchesStore sketches;
     private final Supplier<Instant> timeSupplier = () -> Instant.now().plus(Duration.ofSeconds(1));
 
-    public InMemoryIngestByQueue(InMemoryRecordStore sourceFiles, InMemoryRecordStore data, InMemorySketchesStore sketches) {
+    public InMemoryIngestByQueue(InMemoryRowStore sourceFiles, InMemoryRowStore data, InMemorySketchesStore sketches) {
         this.sourceFiles = sourceFiles;
         this.data = data;
         this.sketches = sketches;
@@ -173,9 +173,9 @@ public class InMemoryIngestByQueue {
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
-        Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
+        Iterator<Row> iterator = sourceFiles.streamRows(filesWithFs(instanceProperties, job)).iterator();
         InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
-        try (IngestCoordinator<Record> coordinator = ingest.coordinatorBuilder()
+        try (IngestCoordinator<Row> coordinator = ingest.coordinatorBuilder()
                 .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds))
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, iterator).write();

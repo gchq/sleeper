@@ -15,7 +15,7 @@
  */
 package sleeper.core.row.serialiser;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -54,7 +54,7 @@ public class RowSerialiser {
      * @return             a byte array representing the row
      * @throws IOException if a field type is unknown
      */
-    public byte[] serialise(Record row) throws IOException {
+    public byte[] serialise(Row row) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         for (Field field : schema.getAllFields()) {
@@ -95,10 +95,10 @@ public class RowSerialiser {
      * @return             the deserialised row
      * @throws IOException if a field type is unknown
      */
-    public Record deserialise(byte[] serialised) throws IOException {
+    public Row deserialise(byte[] serialised) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(serialised);
         DataInputStream dis = new DataInputStream(bais);
-        Record row = new Record();
+        Row row = new Row();
         for (Field field : schema.getAllFields()) {
             Type type = field.getType();
             if (type instanceof PrimitiveType) {

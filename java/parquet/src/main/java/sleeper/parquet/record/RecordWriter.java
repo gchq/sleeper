@@ -18,7 +18,7 @@ package sleeper.parquet.record;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -45,7 +45,7 @@ public class RecordWriter {
         this.schema = schema;
     }
 
-    public void write(Record record) {
+    public void write(Row row) {
         recordConsumer.startMessage();
         int count = 0;
         for (Field entry : schema.getAllFields()) {
@@ -53,17 +53,17 @@ public class RecordWriter {
             Type type = entry.getType();
             recordConsumer.startField(name, count);
             if (type instanceof IntType) {
-                recordConsumer.addInteger((int) record.get(name));
+                recordConsumer.addInteger((int) row.get(name));
             } else if (type instanceof LongType) {
-                recordConsumer.addLong((long) record.get(name));
+                recordConsumer.addLong((long) row.get(name));
             } else if (type instanceof StringType) {
-                recordConsumer.addBinary(Binary.fromString((String) record.get(name)));
+                recordConsumer.addBinary(Binary.fromString((String) row.get(name)));
             } else if (type instanceof ByteArrayType) {
-                recordConsumer.addBinary(Binary.fromConstantByteArray((byte[]) record.get(name)));
+                recordConsumer.addBinary(Binary.fromConstantByteArray((byte[]) row.get(name)));
             } else if (type instanceof MapType) {
-                addMap(recordConsumer, (MapType) type, (Map<?, ?>) record.get(name));
+                addMap(recordConsumer, (MapType) type, (Map<?, ?>) row.get(name));
             } else if (type instanceof ListType) {
-                addList(recordConsumer, (ListType) type, (List<?>) record.get(name));
+                addList(recordConsumer, (ListType) type, (List<?>) row.get(name));
             } else {
                 throw new RuntimeException("Unknown type " + type);
             }

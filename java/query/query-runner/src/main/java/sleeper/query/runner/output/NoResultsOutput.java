@@ -16,7 +16,7 @@
 package sleeper.query.runner.output;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputConstants;
@@ -38,7 +38,7 @@ public class NoResultsOutput implements ResultsOutput {
 
     @Override
     public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query,
-            CloseableIterator<Record> results) {
+            CloseableIterator<Row> results) {
         return new ResultsOutputInfo(0, outputLocations);
     }
 }

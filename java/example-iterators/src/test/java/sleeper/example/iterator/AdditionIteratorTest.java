@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -36,68 +36,68 @@ public class AdditionIteratorTest {
     @Test
     public void shouldAddValues() {
         // Given
-        List<Record> records = getData1();
-        Iterator<Record> iterator = records.iterator();
+        List<Row> rows = getData1();
+        Iterator<Row> iterator = rows.iterator();
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", getSchema1());
 
         // When
-        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        Record expectedRecord1 = new Record();
-        expectedRecord1.put("id", "1");
-        expectedRecord1.put("count", 6L);
-        Record expectedRecord2 = new Record();
-        expectedRecord2.put("id", "2");
-        expectedRecord2.put("count", 10L);
-        Record expectedRecord3 = new Record();
-        expectedRecord3.put("id", "3");
-        expectedRecord3.put("count", 1100L);
-        Record expectedRecord4 = new Record();
-        expectedRecord4.put("id", "4");
-        expectedRecord4.put("count", 1000000L);
+        Row expectedRow1 = new Row();
+        expectedRow1.put("id", "1");
+        expectedRow1.put("count", 6L);
+        Row expectedRow2 = new Row();
+        expectedRow2.put("id", "2");
+        expectedRow2.put("count", 10L);
+        Row expectedRow3 = new Row();
+        expectedRow3.put("id", "3");
+        expectedRow3.put("count", 1100L);
+        Row expectedRow4 = new Row();
+        expectedRow4.put("id", "4");
+        expectedRow4.put("count", 1000000L);
         assertThat(aggregated).toIterable().containsExactly(
-                expectedRecord1, expectedRecord2, expectedRecord3, expectedRecord4);
+                expectedRow1, expectedRow2, expectedRow3, expectedRow4);
     }
 
     @Test
     public void shouldAddValuesWithByteArrayKey() {
         // Given
-        List<Record> records = getData2();
-        Iterator<Record> iterator = records.iterator();
+        List<Row> rows = getData2();
+        Iterator<Row> iterator = rows.iterator();
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        Record expectedRecord1 = new Record();
-        expectedRecord1.put("id", new byte[]{1});
-        expectedRecord1.put("count", 6L);
-        Record expectedRecord2 = new Record();
-        expectedRecord2.put("id", new byte[]{2, 2});
-        expectedRecord2.put("count", 10L);
-        Record expectedRecord3 = new Record();
-        expectedRecord3.put("id", new byte[]{3, 1, 1});
-        expectedRecord3.put("count", 1100L);
-        Record expectedRecord4 = new Record();
-        expectedRecord4.put("id", new byte[]{4});
-        expectedRecord4.put("count", 1000000L);
+        Row expectedRow1 = new Row();
+        expectedRow1.put("id", new byte[]{1});
+        expectedRow1.put("count", 6L);
+        Row expectedRow2 = new Row();
+        expectedRow2.put("id", new byte[]{2, 2});
+        expectedRow2.put("count", 10L);
+        Row expectedRow3 = new Row();
+        expectedRow3.put("id", new byte[]{3, 1, 1});
+        expectedRow3.put("count", 1100L);
+        Row expectedRow4 = new Row();
+        expectedRow4.put("id", new byte[]{4});
+        expectedRow4.put("count", 1000000L);
         assertThat(aggregated).toIterable().containsExactly(
-                expectedRecord1, expectedRecord2, expectedRecord3, expectedRecord4);
+                expectedRow1, expectedRow2, expectedRow3, expectedRow4);
     }
 
     @Test
-    public void shouldOutputNoRecordsIfNoRecordsInInput() {
+    public void shouldOutputNoRecordsIfNoRowsInInput() {
         // Given
-        Iterator<Record> iterator = List.<Record>of().iterator();
+        Iterator<Row> iterator = List.<Row>of().iterator();
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(aggregated).toIterable().isEmpty();
@@ -110,37 +110,37 @@ public class AdditionIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData1() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
-        record1.put("id", "1");
-        record1.put("count", 1L);
-        records.add(record1);
-        Record record2 = new Record();
-        record2.put("id", "1");
-        record2.put("count", 2L);
-        records.add(record2);
-        Record record3 = new Record();
-        record3.put("id", "1");
-        record3.put("count", 3L);
-        records.add(record3);
-        Record record4 = new Record();
-        record4.put("id", "2");
-        record4.put("count", 10L);
-        records.add(record4);
-        Record record5 = new Record();
-        record5.put("id", "3");
-        record5.put("count", 100L);
-        records.add(record5);
-        Record record6 = new Record();
-        record6.put("id", "3");
-        record6.put("count", 1000L);
-        records.add(record6);
-        Record record7 = new Record();
-        record7.put("id", "4");
-        record7.put("count", 1000000L);
-        records.add(record7);
-        return records;
+    private static List<Row> getData1() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("id", "1");
+        row1.put("count", 1L);
+        rows.add(row1);
+        Row row2 = new Row();
+        row2.put("id", "1");
+        row2.put("count", 2L);
+        rows.add(row2);
+        Row row3 = new Row();
+        row3.put("id", "1");
+        row3.put("count", 3L);
+        rows.add(row3);
+        Row row4 = new Row();
+        row4.put("id", "2");
+        row4.put("count", 10L);
+        rows.add(row4);
+        Row row5 = new Row();
+        row5.put("id", "3");
+        row5.put("count", 100L);
+        rows.add(row5);
+        Row row6 = new Row();
+        row6.put("id", "3");
+        row6.put("count", 1000L);
+        rows.add(row6);
+        Row row7 = new Row();
+        row7.put("id", "4");
+        row7.put("count", 1000000L);
+        rows.add(row7);
+        return rows;
     }
 
     private static Schema getSchema2() {
@@ -150,36 +150,36 @@ public class AdditionIteratorTest {
                 .build();
     }
 
-    private static List<Record> getData2() {
-        List<Record> records = new ArrayList<>();
-        Record record1 = new Record();
-        record1.put("id", new byte[]{1});
-        record1.put("count", 1L);
-        records.add(record1);
-        Record record2 = new Record();
-        record2.put("id", new byte[]{1});
-        record2.put("count", 2L);
-        records.add(record2);
-        Record record3 = new Record();
-        record3.put("id", new byte[]{1});
-        record3.put("count", 3L);
-        records.add(record3);
-        Record record4 = new Record();
-        record4.put("id", new byte[]{2, 2});
-        record4.put("count", 10L);
-        records.add(record4);
-        Record record5 = new Record();
-        record5.put("id", new byte[]{3, 1, 1});
-        record5.put("count", 100L);
-        records.add(record5);
-        Record record6 = new Record();
-        record6.put("id", new byte[]{3, 1, 1});
-        record6.put("count", 1000L);
-        records.add(record6);
-        Record record7 = new Record();
-        record7.put("id", new byte[]{4});
-        record7.put("count", 1000000L);
-        records.add(record7);
-        return records;
+    private static List<Row> getData2() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("id", new byte[]{1});
+        row1.put("count", 1L);
+        rows.add(row1);
+        Row row2 = new Row();
+        row2.put("id", new byte[]{1});
+        row2.put("count", 2L);
+        rows.add(row2);
+        Row row3 = new Row();
+        row3.put("id", new byte[]{1});
+        row3.put("count", 3L);
+        rows.add(row3);
+        Row row4 = new Row();
+        row4.put("id", new byte[]{2, 2});
+        row4.put("count", 10L);
+        rows.add(row4);
+        Row row5 = new Row();
+        row5.put("id", new byte[]{3, 1, 1});
+        row5.put("count", 100L);
+        rows.add(row5);
+        Row row6 = new Row();
+        row6.put("id", new byte[]{3, 1, 1});
+        row6.put("count", 1000L);
+        rows.add(row6);
+        Row row7 = new Row();
+        row7.put("id", new byte[]{4});
+        row7.put("count", 1000000L);
+        rows.add(row7);
+        return rows;
     }
 }

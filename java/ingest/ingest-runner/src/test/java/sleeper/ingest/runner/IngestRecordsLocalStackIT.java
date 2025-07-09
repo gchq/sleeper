@@ -17,7 +17,7 @@ package sleeper.ingest.runner;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -37,14 +37,14 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
-        List<Record> records = getRecords();
+        List<Row> rows = getRecords();
 
         // When
-        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, rows).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(records.size());
+        assertThat(numWritten).isEqualTo(rows.size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences().stream()
@@ -55,12 +55,12 @@ public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
                 .containsExactly(fileReferenceFactory.rootFile(2L));
         //  - Read file and check it has correct records
         assertThat(readRecords(fileReferences))
-                .containsExactlyElementsOf(records);
+                .containsExactlyElementsOf(rows);
         //  - Local files should have been deleted
         assertThat(Paths.get(ingestLocalFiles)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
-                .isEqualTo(SketchesDeciles.from(schema, records));
+                .isEqualTo(SketchesDeciles.from(schema, rows));
     }
 
     @Test

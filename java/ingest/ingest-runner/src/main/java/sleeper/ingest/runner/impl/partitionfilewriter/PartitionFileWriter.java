@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.runner.impl.partitionfilewriter;
 
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 
 import java.io.IOException;
@@ -28,13 +28,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface PartitionFileWriter {
     /**
-     * Append a record to the partition file. This method must always be called with records increasing in sort
+     * Append a row to the partition file. This method must always be called with rows increasing in sort
      * order.
      *
-     * @param  record      the record to append
+     * @param  row         the row to append
      * @throws IOException if there was a failure writing the file
      */
-    void append(Record record) throws IOException;
+    void append(Row row) throws IOException;
 
     /**
      * Close the file, possibly asynchronously. When the returned future completes, the partition file should be in its

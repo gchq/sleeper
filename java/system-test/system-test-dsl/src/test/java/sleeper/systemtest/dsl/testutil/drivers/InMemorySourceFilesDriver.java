@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Record;
-import sleeper.core.row.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
@@ -32,12 +32,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 
 public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
 
-    private final InMemoryRecordStore sourceFiles;
-    private final InMemoryRecordStore dataStore;
+    private final InMemoryRowStore sourceFiles;
+    private final InMemoryRowStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
     public InMemorySourceFilesDriver(
-            InMemoryRecordStore sourceFiles, InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore) {
+            InMemoryRowStore sourceFiles, InMemoryRowStore dataStore, InMemorySketchesStore sketchesStore) {
         this.sourceFiles = sourceFiles;
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
@@ -45,17 +45,17 @@ public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
 
     @Override
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
-            String path, boolean writeSketches, Iterator<Record> records) {
-        List<Record> recordList = new ArrayList<>();
+            String path, boolean writeSketches, Iterator<Row> rows) {
+        List<Row> rowList = new ArrayList<>();
         Sketches sketches = Sketches.from(tableProperties.getSchema());
-        for (Record record : (Iterable<Record>) () -> records) {
-            recordList.add(record);
-            sketches.update(record);
+        for (Row row : (Iterable<Row>) () -> rows) {
+            rowList.add(row);
+            sketches.update(row);
         }
         if (path.contains(instanceProperties.get(DATA_BUCKET))) {
-            dataStore.addFile(path, recordList);
+            dataStore.addFile(path, rowList);
         } else {
-            sourceFiles.addFile(path, recordList);
+            sourceFiles.addFile(path, rowList);
         }
         if (writeSketches) {
             sketchesStore.saveFileSketches(path, sketches);

@@ -24,7 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
-import sleeper.core.row.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
@@ -136,13 +136,13 @@ public class QueryExecutor {
      * @return                an iterator containing the relevant records
      * @throws QueryException if it errors
      */
-    public CloseableIterator<Record> execute(Query query) throws QueryException {
+    public CloseableIterator<Row> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
-        List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
+        List<Supplier<CloseableIterator<Row>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
-    public CloseableIterator<Record> execute(LeafPartitionQuery query) throws QueryException {
+    public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {
         return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }
 
@@ -195,14 +195,14 @@ public class QueryExecutor {
         return leafPartitionQueriesList;
     }
 
-    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
-        List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
+    private List<Supplier<CloseableIterator<Row>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
+        List<Supplier<CloseableIterator<Row>>> iterators = new ArrayList<>();
 
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {
                     LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, recordRetriever);
-                    return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
+                    return leafPartitionQueryExecutor.getRows(leafPartitionQuery);
                 } catch (QueryException e) {
                     throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery, e);
                 }
