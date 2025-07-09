@@ -38,11 +38,13 @@ public class UploadDockerImagesToRepository {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final CopyFile copyFile;
+    private final String repositoryHost;
 
     private UploadDockerImagesToRepository(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
+        repositoryHost = requireNonNull(builder.repositoryHost, "repositoryHost must not be null");
     }
 
     public static Builder builder() {
@@ -57,9 +59,7 @@ public class UploadDockerImagesToRepository {
         List<StackDockerImage> stacksToUpload = request.getImages();
         LOGGER.info("Images expected: {}", stacksToUpload);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
-                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, request))
                 .collect(Collectors.toUnmodifiableList());
-        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
 
         if (stacksToBuild.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
@@ -77,8 +77,8 @@ public class UploadDockerImagesToRepository {
 
         for (StackDockerImage stackImage : stacksToBuild) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
-            String repositoryName = request.getEcrPrefix() + "/" + stackImage.getImageName();
-            String tag = repositoryHost + "/" + repositoryName + ":" + request.getVersion();
+            String imageName = stackImage.getImageName();
+            String tag = repositoryHost + "/" + imageName + ":" + request.getVersion();
 
             stackImage.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
@@ -99,24 +99,11 @@ public class UploadDockerImagesToRepository {
         }
     }
 
-    private boolean imageDoesNotExistInRepositoryWithVersion(
-            StackDockerImage stackDockerImage, UploadDockerImagesRequest request) {
-        //String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        //if (ecrClient.versionExistsInRepository(imagePath, request.getVersion())) {
-        //    LOGGER.info("Stack image {} already exists in ECR with version {}",
-        //            stackDockerImage.getImageName(), request.getVersion());
-        //    return false;
-        //} else {
-        //    LOGGER.info("Stack image {} does not exist in ECR with version {}",
-        //            stackDockerImage.getImageName(), request.getVersion());
-        return true;
-        //}
-    }
-
     public static final class Builder {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+        private String repositoryHost;
 
         private Builder() {
         }
@@ -133,6 +120,11 @@ public class UploadDockerImagesToRepository {
 
         public Builder copyFile(CopyFile copyFile) {
             this.copyFile = copyFile;
+            return this;
+        }
+
+        public Builder repositoryHost(String repositoryHost) {
+            this.repositoryHost = repositoryHost;
             return this;
         }
 
