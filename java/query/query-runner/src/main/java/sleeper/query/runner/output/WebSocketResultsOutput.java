@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Record;
-import sleeper.core.row.serialiser.RecordJSONSerDe;
+import sleeper.core.row.serialiser.RowJsonSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
@@ -50,7 +50,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
 
     public WebSocketResultsOutput(Schema schema, Map<String, String> config) {
         this.serde = new GsonBuilder()
-                .registerTypeAdapter(Record.class, new RecordJSONSerDe.RecordGsonSerialiser(schema))
+                .registerTypeAdapter(Record.class, new RowJsonSerDe.RowGsonSerialiser(schema))
                 .create();
         this.output = ApiGatewayWebSocketOutput.fromConfig(config);
         String maxBatchSize = config.get(WebSocketOutput.MAX_BATCH_SIZE);

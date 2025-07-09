@@ -88,11 +88,11 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             JsonObject jsonObject = json.getAsJsonObject();
             String queryId = jsonObject.get("queryId").getAsString();
             Schema schema = context.deserialize(jsonObject.get("schema"), Schema.class);
-            RecordJSONSerDe.RecordGsonSerialiser recordDeserialiser = new RecordJSONSerDe.RecordGsonSerialiser(schema);
-            List<Record> records = new ArrayList<>();
-            jsonObject.getAsJsonArray("records").iterator()
-                    .forEachRemaining(j -> records.add(recordDeserialiser.deserialize(j, Record.class, context)));
-            return new ResultsBatch(queryId, schema, records);
+            RowJsonSerDe.RowGsonSerialiser rowDeserialiser = new RowJsonSerDe.RowGsonSerialiser(schema);
+            List<Record> rows = new ArrayList<>();
+            jsonObject.getAsJsonArray("rows").iterator()
+                    .forEachRemaining(j -> rows.add(rowDeserialiser.deserialize(j, Record.class, context)));
+            return new ResultsBatch(queryId, schema, rows);
         }
 
         @Override
@@ -100,12 +100,12 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("queryId", src.getQueryId());
             jsonObject.add("schema", context.serialize(src.getSchema(), Schema.class));
-            JsonArray serialisedRecords = new JsonArray();
-            RecordJSONSerDe.RecordGsonSerialiser recordSerialiser = new RecordJSONSerDe.RecordGsonSerialiser(src.getSchema());
+            JsonArray serialisedRows = new JsonArray();
+            RowJsonSerDe.RowGsonSerialiser rowSerialiser = new RowJsonSerDe.RowGsonSerialiser(src.getSchema());
             src.getRecords().stream()
-                    .map(rec -> recordSerialiser.serialize(rec, Record.class, context))
-                    .forEach(serialisedRecords::add);
-            jsonObject.add("records", serialisedRecords);
+                    .map(rec -> rowSerialiser.serialize(rec, Record.class, context))
+                    .forEach(serialisedRows::add);
+            jsonObject.add("records", serialisedRows);
             return jsonObject;
         }
     }

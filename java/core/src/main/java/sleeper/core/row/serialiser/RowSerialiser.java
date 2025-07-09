@@ -50,7 +50,7 @@ public class RowSerialiser {
     /**
      * Serialises a row to a byte array.
      *
-     * @param  record      the row to serialise
+     * @param  row         the row to serialise
      * @return             a byte array representing the row
      * @throws IOException if a field type is unknown
      */

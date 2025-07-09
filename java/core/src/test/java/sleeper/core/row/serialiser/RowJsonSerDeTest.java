@@ -33,7 +33,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordJSONSerDeTest {
+public class RowJsonSerDeTest {
 
     @Test
     public void shouldSerDeRecordWithPrimitives() {
@@ -47,7 +47,7 @@ public class RecordJSONSerDeTest {
         record.put("field1", 1);
         record.put("field2", 100L);
         record.put("field3", "ABC");
-        RecordJSONSerDe jsonSerDe = new RecordJSONSerDe(schema);
+        RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
@@ -68,7 +68,7 @@ public class RecordJSONSerDeTest {
         record.put("field1", new byte[]{});
         record.put("field2", new byte[]{1});
         record.put("field3", new byte[]{2, 3, 4});
-        RecordJSONSerDe jsonSerDe = new RecordJSONSerDe(schema);
+        RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
@@ -89,7 +89,7 @@ public class RecordJSONSerDeTest {
         record.put("field1", 1);
         record.put("field2", 100L);
         record.put("field3", Arrays.asList("A", "B", "C"));
-        RecordJSONSerDe jsonSerDe = new RecordJSONSerDe(schema);
+        RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
@@ -114,7 +114,7 @@ public class RecordJSONSerDeTest {
         map.put("B", 2L);
         map.put("C", 3L);
         record.put("field3", map);
-        RecordJSONSerDe jsonSerDe = new RecordJSONSerDe(schema);
+        RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
