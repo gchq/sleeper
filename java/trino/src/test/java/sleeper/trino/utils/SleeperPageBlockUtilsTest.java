@@ -66,7 +66,7 @@ public class SleeperPageBlockUtilsTest {
         SleeperPageBlockUtils.writeElementToBuilder(blockBuilder, new ArrayType(VARCHAR), testValue);
 
         // Then
-        assertThat(blockBuilder.build().getSlice(0, 0, 11).toStringUtf8())
+        assertThat(blockBuilder.build().getSlice(0, 0, testValue.length()).toStringUtf8())
                 .isEqualTo(testValue);
     }
 }
