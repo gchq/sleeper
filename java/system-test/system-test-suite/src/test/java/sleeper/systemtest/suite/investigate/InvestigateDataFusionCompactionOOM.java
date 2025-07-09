@@ -65,7 +65,7 @@ public class InvestigateDataFusionCompactionOOM {
         // Re-run it to a local file
         Path tempDir = Files.createTempDirectory("sleeper-test");
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
-        CompactionJob localJob = inferredJob.toBuilder().outputFile(outputFile.toString()).build();
+        CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
         CompactionRunner runner = new RustCompactionRunner();
         runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()));
     }
