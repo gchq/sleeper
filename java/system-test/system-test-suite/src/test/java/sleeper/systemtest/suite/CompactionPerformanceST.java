@@ -72,7 +72,7 @@ public class CompactionPerformanceST {
         assertThat(sumFileReferenceRecordCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);
         assertThat(files.getFilesWithReferences()).hasSize(10)
-                .first()
+                .first() // Only check one file because it's time consuming to read all records
                 .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
                         .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
