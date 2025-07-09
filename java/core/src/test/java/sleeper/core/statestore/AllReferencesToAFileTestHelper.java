@@ -39,6 +39,16 @@ public class AllReferencesToAFileTestHelper {
     }
 
     /**
+     * Builds an estimate of the number of records in all files by adding up all records in each file reference.
+     *
+     * @param  files the files
+     * @return       the number of records
+     */
+    public static long sumFileReferenceRecordCounts(AllReferencesToAllFiles files) {
+        return files.streamFileReferences().mapToLong(FileReference::getNumberOfRecords).sum();
+    }
+
+    /**
      * Creates a file record with no references. This will be as it is before being added to the state store, with no
      * update time.
      *

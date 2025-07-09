@@ -80,15 +80,6 @@ public class AllReferencesToAllFiles {
     }
 
     /**
-     * Builds an estimate of the number of records in the table by adding up all records in each file reference.
-     *
-     * @return the number of records
-     */
-    public long estimateRecordsInTable() {
-        return streamFileReferences().mapToLong(FileReference::getNumberOfRecords).sum();
-    }
-
-    /**
      * Counts the number of file references in the report.
      *
      * @return the count
@@ -103,7 +94,7 @@ public class AllReferencesToAllFiles {
      *
      * @return the references
      */
-    private Stream<FileReference> streamFileReferences() {
+    public Stream<FileReference> streamFileReferences() {
         return getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream());
     }

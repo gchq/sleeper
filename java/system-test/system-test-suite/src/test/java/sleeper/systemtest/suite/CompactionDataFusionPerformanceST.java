@@ -72,7 +72,7 @@ public class CompactionDataFusionPerformanceST {
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(files.estimateRecordsInTable()).isEqualTo(4_400_000_000L);
+        assertThat(sumFileReferenceRecordCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.listFileReferences()).hasSize(10);
         assertThat(files.getFilesWithReferences()).hasSize(10)
                 .first()

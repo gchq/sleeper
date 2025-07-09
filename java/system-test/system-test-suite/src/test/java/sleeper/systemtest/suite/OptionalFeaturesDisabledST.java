@@ -34,6 +34,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEATURES_DISABLED;
 
 @SystemTest
@@ -83,7 +84,7 @@ public class OptionalFeaturesDisabledST {
 
         // Then
         sleeper.tableFiles().waitForState(
-                files -> files.estimateRecordsInTable() == 46
+                files -> sumFileReferenceRecordCounts(files) == 46
                         && files.getFilesWithReferences().size() == 1,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)));
         assertThat(sleeper.directQuery().allRecordsInTable())
