@@ -21,11 +21,21 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A test helper to create file records for a state store.
+ * A test helper to work with file records for a state store.
  */
 public class AllReferencesToAFileTestHelper {
 
     private AllReferencesToAFileTestHelper() {
+    }
+
+    /**
+     * Builds an estimate of the number of records in a file by adding up all records in each file reference.
+     *
+     * @param  file the file
+     * @return      the number of records
+     */
+    public static long sumFileReferenceRecordCounts(AllReferencesToAFile file) {
+        return file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
     /**

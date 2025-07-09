@@ -35,6 +35,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
@@ -76,7 +77,7 @@ public class CompactionDataFusionPerformanceST {
         assertThat(files.getFilesWithReferences()).hasSize(10)
                 .first()
                 .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRecordsCheck.sorted(file.estimateRecords())));
+                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
                         && stats.isAverageRunRecordsPerSecondInRange(800_000, 2_800_000),

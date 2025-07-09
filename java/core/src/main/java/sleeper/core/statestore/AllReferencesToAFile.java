@@ -95,15 +95,6 @@ public class AllReferencesToAFile {
                 .build();
     }
 
-    /**
-     * Builds an estimate of the number of records in the file by adding up all records in each file reference.
-     *
-     * @return the number of records
-     */
-    public long estimateRecords() {
-        return references.stream().mapToLong(FileReference::getNumberOfRecords).sum();
-    }
-
     public String getFilename() {
         return filename;
     }

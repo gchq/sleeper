@@ -37,6 +37,7 @@ import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_REFERE
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -97,7 +98,7 @@ public class CompactionTest {
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
                         SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRecordsCheck.sorted(file.estimateRecords())));
+                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
     }
 
 }
