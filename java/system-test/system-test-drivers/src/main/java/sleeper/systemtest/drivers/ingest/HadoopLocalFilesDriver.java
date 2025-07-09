@@ -19,7 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 
@@ -31,11 +31,11 @@ import java.util.Iterator;
 public class HadoopLocalFilesDriver implements IngestLocalFilesDriver {
 
     @Override
-    public void writeFile(TableProperties tableProperties, Path filePath, Iterator<SleeperRow> records) {
-        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+    public void writeFile(TableProperties tableProperties, Path filePath, Iterator<Row> records) {
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new org.apache.hadoop.fs.Path("file://" + filePath),
                 tableProperties, new Configuration())) {
-            for (SleeperRow record : (Iterable<SleeperRow>) () -> records) {
+            for (Row record : (Iterable<Row>) () -> records) {
                 writer.write(record);
             }
         } catch (IOException e) {

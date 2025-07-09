@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.serialiser.SleeperRowJsonSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -50,7 +50,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
 
     public WebSocketResultsOutput(Schema schema, Map<String, String> config) {
         this.serde = new GsonBuilder()
-                .registerTypeAdapter(SleeperRow.class, new SleeperRowJsonSerDe.RecordGsonSerialiser(schema))
+                .registerTypeAdapter(Row.class, new SleeperRowJsonSerDe.RecordGsonSerialiser(schema))
                 .create();
         this.output = ApiGatewayWebSocketOutput.fromConfig(config);
         String maxBatchSize = config.get(WebSocketOutput.MAX_BATCH_SIZE);
@@ -60,7 +60,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<SleeperRow> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         String queryId = query.getQueryId();
 
         Map<String, Object> message = new HashMap<>();
@@ -69,13 +69,13 @@ public class WebSocketResultsOutput implements ResultsOutput {
         message.put("records", Collections.emptyList());
         int baseMessageLength = serde.toJson(message).length();
 
-        List<SleeperRow> batch = new ArrayList<>();
+        List<Row> batch = new ArrayList<>();
         long count = 0;
         int remainingMessageLength = MAX_PAYLOAD_SIZE - baseMessageLength;
 
         try {
             while (results.hasNext()) {
-                SleeperRow record = results.next();
+                Row record = results.next();
 
                 boolean batchReady = false;
                 if (maxBatchSize != null && maxBatchSize > 0 && batch.size() >= maxBatchSize) {
@@ -119,7 +119,7 @@ public class WebSocketResultsOutput implements ResultsOutput {
         return new ResultsOutputInfo(count, outputLocations);
     }
 
-    private void publishBatch(Map<String, Object> message, List<SleeperRow> records) throws IOException {
+    private void publishBatch(Map<String, Object> message, List<Row> records) throws IOException {
         LOGGER.info("Publishing batch of {} records to WebSocket connection", records.size());
         message.put("records", records);
         output.sendString(serde.toJson(message));

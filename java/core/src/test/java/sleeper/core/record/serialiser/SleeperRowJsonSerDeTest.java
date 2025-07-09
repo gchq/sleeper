@@ -17,7 +17,7 @@ package sleeper.core.record.serialiser;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -43,14 +43,14 @@ public class SleeperRowJsonSerDeTest {
                 .sortKeyFields(new Field("field2", new LongType()))
                 .valueFields(new Field("field3", new StringType()))
                 .build();
-        SleeperRow record = new SleeperRow();
+        Row record = new Row();
         record.put("field1", 1);
         record.put("field2", 100L);
         record.put("field3", "ABC");
         SleeperRowJsonSerDe jsonSerDe = new SleeperRowJsonSerDe(schema);
 
         // When
-        SleeperRow deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
+        Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
         assertThat(deserialised).isEqualTo(record);
@@ -64,14 +64,14 @@ public class SleeperRowJsonSerDeTest {
                 .sortKeyFields(new Field("field2", new ByteArrayType()))
                 .valueFields(new Field("field3", new ByteArrayType()))
                 .build();
-        SleeperRow record = new SleeperRow();
+        Row record = new Row();
         record.put("field1", new byte[]{});
         record.put("field2", new byte[]{1});
         record.put("field3", new byte[]{2, 3, 4});
         SleeperRowJsonSerDe jsonSerDe = new SleeperRowJsonSerDe(schema);
 
         // When
-        SleeperRow deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
+        Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
         assertThat(deserialised).isEqualTo(record);
@@ -85,14 +85,14 @@ public class SleeperRowJsonSerDeTest {
                 .sortKeyFields(new Field("field2", new LongType()))
                 .valueFields(new Field("field3", new ListType(new StringType())))
                 .build();
-        SleeperRow record = new SleeperRow();
+        Row record = new Row();
         record.put("field1", 1);
         record.put("field2", 100L);
         record.put("field3", Arrays.asList("A", "B", "C"));
         SleeperRowJsonSerDe jsonSerDe = new SleeperRowJsonSerDe(schema);
 
         // When
-        SleeperRow deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
+        Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
         assertThat(deserialised).isEqualTo(record);
@@ -106,7 +106,7 @@ public class SleeperRowJsonSerDeTest {
                 .sortKeyFields(new Field("field2", new LongType()))
                 .valueFields(new Field("field3", new MapType(new StringType(), new LongType())))
                 .build();
-        SleeperRow record = new SleeperRow();
+        Row record = new Row();
         record.put("field1", 1);
         record.put("field2", 100L);
         Map<String, Long> map = new HashMap<>();
@@ -117,7 +117,7 @@ public class SleeperRowJsonSerDeTest {
         SleeperRowJsonSerDe jsonSerDe = new SleeperRowJsonSerDe(schema);
 
         // When
-        SleeperRow deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
+        Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
         assertThat(deserialised).isEqualTo(record);

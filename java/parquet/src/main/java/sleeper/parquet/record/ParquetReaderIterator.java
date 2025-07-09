@@ -18,7 +18,7 @@ package sleeper.parquet.record;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -26,12 +26,12 @@ import java.util.NoSuchElementException;
 /**
  * Iterates through records read from a Parquet file. Wraps a {@link ParquetReader}.
  */
-public class ParquetReaderIterator implements CloseableIterator<SleeperRow> {
-    private final ParquetReader<SleeperRow> reader;
-    private SleeperRow record;
+public class ParquetReaderIterator implements CloseableIterator<Row> {
+    private final ParquetReader<Row> reader;
+    private Row record;
     private long recordsRead;
 
-    public ParquetReaderIterator(ParquetReader<SleeperRow> reader) throws IOException {
+    public ParquetReaderIterator(ParquetReader<Row> reader) throws IOException {
         this.reader = reader;
         this.record = reader.read();
         this.recordsRead = 0L;
@@ -46,11 +46,11 @@ public class ParquetReaderIterator implements CloseableIterator<SleeperRow> {
     }
 
     @Override
-    public SleeperRow next() throws NoSuchElementException {
+    public Row next() throws NoSuchElementException {
         if (!hasNext()) {
             return null;
         }
-        SleeperRow copy = new SleeperRow(record);
+        Row copy = new Row(record);
         try {
             record = reader.read();
             if (null != record) {

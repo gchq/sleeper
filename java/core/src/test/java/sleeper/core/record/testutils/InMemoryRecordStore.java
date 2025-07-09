@@ -15,7 +15,7 @@
  */
 package sleeper.core.record.testutils;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  */
 public class InMemoryRecordStore {
 
-    private final Map<String, List<SleeperRow>> recordsByFilename = new HashMap<>();
+    private final Map<String, List<Row>> recordsByFilename = new HashMap<>();
 
     /**
      * Adds a Sleeper data file to the store.
@@ -36,7 +36,7 @@ public class InMemoryRecordStore {
      * @param filename the filename
      * @param records  the records
      */
-    public void addFile(String filename, List<SleeperRow> records) {
+    public void addFile(String filename, List<Row> records) {
         if (recordsByFilename.containsKey(filename)) {
             throw new IllegalArgumentException("File already exists: " + filename);
         }
@@ -65,12 +65,12 @@ public class InMemoryRecordStore {
      * @param  files the filenames of the data files to retrieve
      * @return       the records
      */
-    public Stream<SleeperRow> streamRecords(List<String> files) {
+    public Stream<Row> streamRecords(List<String> files) {
         return files.stream()
                 .flatMap(this::getRecordsOrThrow);
     }
 
-    private Stream<SleeperRow> getRecordsOrThrow(String filename) throws NoSuchElementException {
+    private Stream<Row> getRecordsOrThrow(String filename) throws NoSuchElementException {
         if (!recordsByFilename.containsKey(filename)) {
             throw new NoSuchElementException("File not found: " + filename);
         }

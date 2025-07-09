@@ -20,7 +20,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -49,19 +49,19 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldEstimateSplitPointsFromFileInS3() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new LongType());
-        List<SleeperRow> records = List.of(
-                new SleeperRow(Map.of("key", 1L)),
-                new SleeperRow(Map.of("key", 2L)),
-                new SleeperRow(Map.of("key", 3L)),
-                new SleeperRow(Map.of("key", 4L)),
-                new SleeperRow(Map.of("key", 5L)),
-                new SleeperRow(Map.of("key", 6L)),
-                new SleeperRow(Map.of("key", 7L)),
-                new SleeperRow(Map.of("key", 8L)),
-                new SleeperRow(Map.of("key", 9L)),
-                new SleeperRow(Map.of("key", 10L)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 1L)),
+                new Row(Map.of("key", 2L)),
+                new Row(Map.of("key", 3L)),
+                new Row(Map.of("key", 4L)),
+                new Row(Map.of("key", 5L)),
+                new Row(Map.of("key", 6L)),
+                new Row(Map.of("key", 7L)),
+                new Row(Map.of("key", 8L)),
+                new Row(Map.of("key", 9L)),
+                new Row(Map.of("key", 10L)));
         Path dataFile = dataFilePath("file.parquet");
-        writeRecords(dataFile, schema, records);
+        writeRows(dataFile, schema, rows);
 
         // When
         List<Object> splitPoints = EstimateSplitPointsClient.estimate(
@@ -75,14 +75,14 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldLimitNumberOfRecordsToRead() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<SleeperRow> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            SleeperRow record = new SleeperRow();
-            record.put("key", i);
-            records.add(record);
+            Row row = new Row();
+            row.put("key", i);
+            rows.add(row);
         }
         Path dataFile = dataFilePath("file.parquet");
-        writeRecords(dataFile, schema, records);
+        writeRows(dataFile, schema, rows);
 
         // When
         List<Object> splitPoints = EstimateSplitPointsClient.estimate(
@@ -96,16 +96,16 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     void shouldLimitNumberOfRecordsToReadPerFileWithMultipleFiles() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<SleeperRow> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            SleeperRow record = new SleeperRow();
-            record.put("key", i);
-            records.add(record);
+            Row row = new Row();
+            row.put("key", i);
+            rows.add(row);
         }
         Path dataFile1 = dataFilePath("file1.parquet");
         Path dataFile2 = dataFilePath("file2.parquet");
-        writeRecords(dataFile1, schema, records);
-        writeRecords(dataFile2, schema, records.subList(10, records.size()));
+        writeRows(dataFile1, schema, rows);
+        writeRows(dataFile2, schema, rows.subList(10, rows.size()));
 
         // When
         List<Object> splitPoints = EstimateSplitPointsClient.estimate(
@@ -119,10 +119,10 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
         return new Path("s3a://" + bucketName + "/" + filename);
     }
 
-    private void writeRecords(Path path, Schema schema, List<SleeperRow> records) throws IOException {
-        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
-            for (SleeperRow record : records) {
-                writer.write(record);
+    private void writeRows(Path path, Schema schema, List<Row> rows) throws IOException {
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
+            for (Row row : rows) {
+                writer.write(row);
             }
         }
     }

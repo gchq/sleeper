@@ -17,7 +17,7 @@ package sleeper.ingest.runner;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -34,7 +34,7 @@ public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalSta
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
-        List<SleeperRow> records = getRecords();
+        List<Row> records = getRecords();
 
         // When
         long numWritten = ingestFromRecordIterator(stateStore, records.iterator()).getRecordsWritten();

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -101,7 +101,7 @@ public class UserJarsST {
                 ITERATOR_CONFIG, "timestamp,50"));
 
         // When
-        List<SleeperRow> records = sleeper.query().byQueue().allRecordsInTable();
+        List<Row> records = sleeper.query().byQueue().allRecordsInTable();
 
         // Then
         assertThat(records)
@@ -114,7 +114,7 @@ public class UserJarsST {
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
-        List<SleeperRow> records = sleeper.query().byQueue().allRecordsWithProcessingConfig(builder -> builder
+        List<Row> records = sleeper.query().byQueue().allRecordsWithProcessingConfig(builder -> builder
                 .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
                 .queryTimeIteratorConfig("timestamp,50"));
 

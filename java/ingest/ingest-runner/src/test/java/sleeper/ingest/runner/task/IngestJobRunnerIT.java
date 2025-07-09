@@ -29,7 +29,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
@@ -114,7 +114,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         StateStore stateStore = initialiseStateStore();
 
         List<String> files = writeParquetFilesForIngest(recordListAndSchema, 2);
-        List<SleeperRow> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
+        List<Row> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
@@ -122,7 +122,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -154,7 +154,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -185,7 +185,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                     }
                 }).flatMap(List::stream).collect(Collectors.toList()))
                 .flatMap(List::stream).collect(Collectors.toList());
-        List<SleeperRow> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
+        List<Row> expectedRecords = Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
         StateStore stateStore = initialiseStateStore();
 
@@ -194,7 +194,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -223,7 +223,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
                         dataBucketName + "/ingest/file1.parquet",
                         ingestSourceBucketName + "/ingest/file2.parquet"))
                 .build();
-        List<SleeperRow> expectedRecords = new ArrayList<>();
+        List<Row> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records1.recordList);
         expectedRecords.addAll(records2.recordList);
         StateStore stateStore = initialiseStateStore();
@@ -234,7 +234,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(records1.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(stateStore,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         assertThat(localDir).isEmptyDirectory();
@@ -275,7 +275,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         // Then
         List<StateStoreCommitRequest> commitRequests = getCommitRequestsFromQueue(tableProperties);
         List<FileReference> actualFiles = getFilesAdded(commitRequests);
-        List<SleeperRow> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -381,9 +381,9 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private void writeParquetFileForIngest(
             Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
-        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory
                 .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConf);
-        for (SleeperRow record : recordListAndSchema.recordList) {
+        for (Row record : recordListAndSchema.recordList) {
             writer.write(record);
         }
         writer.close();

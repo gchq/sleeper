@@ -26,7 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.ResultsBatch;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -61,9 +61,9 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     @Test
     void shouldSendResultsTOSQS() {
         // Given
-        List<SleeperRow> records = List.of(
-                new SleeperRow(Map.of("key", "value-1")),
-                new SleeperRow(Map.of("key", "value-2")));
+        List<Row> records = List.of(
+                new Row(Map.of("key", "value-1")),
+                new Row(Map.of("key", "value-2")));
 
         // When
         output().publish(queryWithId("test-query"), new WrappedIterator<>(records.iterator()));

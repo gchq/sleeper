@@ -28,7 +28,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.SleeperRowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordReader;
@@ -71,13 +71,13 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         return tableProperties -> new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties);
     }
 
-    public CloseableIterator<SleeperRow> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RecordRetrievalException {
+    public CloseableIterator<Row> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RecordRetrievalException {
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
         }
 
         ArrayList<RetrieveTask> tasks = new ArrayList<>();
-        Map<Integer, CloseableIterator<SleeperRow>> indexToReader = new HashMap<>();
+        Map<Integer, CloseableIterator<Row>> indexToReader = new HashMap<>();
         for (String file : files) {
             try {
                 tasks.add(new RetrieveTask(createParquetReader(dataReadSchema, file, filterPredicate)));
@@ -87,7 +87,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
             LOGGER.debug("Created reader for file {}", file);
         }
 
-        List<Future<Pair<SleeperRow, CloseableIterator<SleeperRow>>>> futures;
+        List<Future<Pair<Row, CloseableIterator<Row>>>> futures;
         try {
             futures = executorService.invokeAll(tasks);
         } catch (InterruptedException e) {
@@ -97,10 +97,10 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         // First record from each iterator is returned separately - this forces
         // the initialisation of the reader and the retrieval of the first
         // batch to be done in parallel.
-        Map<Integer, SleeperRow> currentValues = new HashMap<>();
+        Map<Integer, Row> currentValues = new HashMap<>();
         int count = 0;
-        for (Future<Pair<SleeperRow, CloseableIterator<SleeperRow>>> future : futures) {
-            Pair<SleeperRow, CloseableIterator<SleeperRow>> pair;
+        for (Future<Pair<Row, CloseableIterator<Row>>> future : futures) {
+            Pair<Row, CloseableIterator<Row>> pair;
             try {
                 pair = future.get();
             } catch (InterruptedException | ExecutionException e) {
@@ -115,14 +115,14 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
 
         // Sort current values and create iterator
         SleeperRowComparator sleeperRowComparator = new SleeperRowComparator(dataReadSchema);
-        Iterator<SleeperRow> currentValuesSorted = currentValues.values()
+        Iterator<Row> currentValuesSorted = currentValues.values()
                 .stream()
                 .sorted(sleeperRowComparator)
                 .iterator();
 
         // Create list of iterators - one for each of the ParquetReaderIterators
         // and one for the values that have already been read.
-        List<CloseableIterator<SleeperRow>> iterators = new ArrayList<>();
+        List<CloseableIterator<Row>> iterators = new ArrayList<>();
         iterators.add(new WrappedIterator<>(currentValuesSorted));
         iterators.addAll(indexToReader.values());
 
@@ -130,7 +130,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
     }
 
     @Override
-    public CloseableIterator<SleeperRow> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
+    public CloseableIterator<Row> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
@@ -141,7 +141,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         return getRecords(files, dataReadSchema, filterPredicate);
     }
 
-    private ParquetReader<SleeperRow> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
+    private ParquetReader<Row> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
         // NB Do not create a ParquetReaderIterator here as that forces the
         // opening of the file which needs to be done in parallel.
         return new ParquetRecordReader.Builder(new Path(fileName), readSchema)

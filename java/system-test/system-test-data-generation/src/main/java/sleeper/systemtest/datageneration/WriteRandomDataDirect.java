@@ -17,7 +17,7 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
@@ -58,9 +58,9 @@ public class WriteRandomDataDirect {
     public static void writeWithIngestFactory(
             IngestFactory ingestFactory, AddFilesToStateStore addFilesToStateStore,
             SystemTestDataGenerationJob job, TableProperties tableProperties) throws IOException {
-        Iterator<SleeperRow> recordIterator = WriteRandomData.createRecordIterator(job, tableProperties);
+        Iterator<Row> recordIterator = WriteRandomData.createRecordIterator(job, tableProperties);
 
-        try (IngestCoordinator<SleeperRow> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+        try (IngestCoordinator<Row> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                 .addFilesToStateStore(addFilesToStateStore)
                 .build()) {
             new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();

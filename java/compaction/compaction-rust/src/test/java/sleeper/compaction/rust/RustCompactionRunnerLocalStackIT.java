@@ -29,7 +29,7 @@ import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
@@ -82,8 +82,8 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
         Schema schema = createSchemaWithKey("key", new StringType());
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        SleeperRow record1 = new SleeperRow(Map.of("key", "record-1"));
-        SleeperRow record2 = new SleeperRow(Map.of("key", "record-2"));
+        Row record1 = new Row(Map.of("key", "record-1"));
+        Row record2 = new Row(Map.of("key", "record-2"));
         String file1 = writeFileForPartition("root", List.of(record1));
         String file2 = writeFileForPartition("root", List.of(record2));
         CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
@@ -120,12 +120,12 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 .build();
     }
 
-    private String writeFileForPartition(String partitionId, List<SleeperRow> records) throws Exception {
+    private String writeFileForPartition(String partitionId, List<Row> records) throws Exception {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
-            for (SleeperRow record : records) {
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
+            for (Row record : records) {
                 writer.write(record);
                 sketches.update(record);
             }
@@ -143,13 +143,13 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 .constructPartitionParquetFilePath(partitionId, filename);
     }
 
-    private List<SleeperRow> readDataFile(Schema schema, String filename) throws IOException {
-        List<SleeperRow> results = new ArrayList<>();
+    private List<Row> readDataFile(Schema schema, String filename) throws IOException {
+        List<Row> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 ParquetReader.builder(new RecordReadSupport(schema), new org.apache.hadoop.fs.Path(filename))
                         .withConf(hadoopConf).build())) {
             while (reader.hasNext()) {
-                results.add(new SleeperRow(reader.next()));
+                results.add(new Row(reader.next()));
             }
         }
         return results;

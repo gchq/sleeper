@@ -35,13 +35,13 @@ public class SleeperRowComparatorTest {
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key", 1);
         record1.put("value", 100);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 2);
         record2.put("value", 1000);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 1);
         record3.put("value", 10000);
         SleeperRowComparator comparator = new SleeperRowComparator(schema);
@@ -66,13 +66,13 @@ public class SleeperRowComparatorTest {
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key", 1L);
         record1.put("value", 100L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 2L);
         record2.put("value", 1000L);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 1L);
         record3.put("value", 10000L);
         SleeperRowComparator comparator = new SleeperRowComparator(schema);
@@ -97,13 +97,13 @@ public class SleeperRowComparatorTest {
                 .rowKeyFields(new Field("key", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key", "1");
         record1.put("value", "100");
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", "2");
         record2.put("value", "1000");
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", "1");
         record3.put("value", "10000");
         SleeperRowComparator comparator = new SleeperRowComparator(schema);
@@ -128,13 +128,13 @@ public class SleeperRowComparatorTest {
                 .rowKeyFields(new Field("key", new ByteArrayType()))
                 .valueFields(new Field("value", new ByteArrayType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key", new byte[]{1});
         record1.put("value", new byte[]{10});
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", new byte[]{2});
         record2.put("value", new byte[]{100});
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", new byte[]{1});
         record3.put("value", new byte[]{102});
         SleeperRowComparator comparator = new SleeperRowComparator(schema);
@@ -160,23 +160,23 @@ public class SleeperRowComparatorTest {
                 .sortKeyFields(new Field("sort", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key", 1);
         record1.put("sort", 2);
         record1.put("value", 100);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 1);
         record2.put("sort", 5);
         record2.put("value", 1000);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 1);
         record3.put("sort", 1);
         record3.put("value", 10000);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("key", 2);
         record4.put("sort", 1);
         record4.put("value", 1000);
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", 2);
         record5.put("sort", 1);
         record5.put("value", 1000);
@@ -203,23 +203,23 @@ public class SleeperRowComparatorTest {
                 .sortKeyFields(new Field("sort", new ByteArrayType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key", new byte[]{1, 2});
         record1.put("sort", new byte[]{50, 51});
         record1.put("value", 100);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", new byte[]{1, 3});
         record2.put("sort", new byte[]{50, 51});
         record2.put("value", 1000);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", new byte[]{1, 2});
         record3.put("sort", new byte[]{50, 52});
         record3.put("value", 10000);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("key", new byte[]{0});
         record4.put("sort", new byte[]{50, 51});
         record4.put("value", 1000);
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", new byte[]{0});
         record5.put("sort", new byte[]{50, 51});
         record5.put("value", 1000);
@@ -246,49 +246,49 @@ public class SleeperRowComparatorTest {
                 .sortKeyFields(new Field("sort1", new ByteArrayType()), new Field("sort2", new ByteArrayType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        SleeperRow record1 = new SleeperRow();
+        Row record1 = new Row();
         record1.put("key1", new byte[]{1, 2});
         record1.put("key2", new byte[]{1, 2});
         record1.put("sort1", new byte[]{50, 51});
         record1.put("sort2", new byte[]{50, 51});
         record1.put("value", 100);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key1", new byte[]{1, 3});
         record2.put("key2", new byte[]{1, 2});
         record2.put("sort1", new byte[]{50, 51});
         record2.put("sort2", new byte[]{50, 51});
         record2.put("value", 1000);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key1", new byte[]{1, 2});
         record3.put("key2", new byte[]{1, 3});
         record3.put("sort1", new byte[]{50, 51});
         record3.put("sort2", new byte[]{50, 51});
         record3.put("value", 100);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("key1", new byte[]{1, 2});
         record4.put("key2", new byte[]{1, 2});
         record4.put("sort1", new byte[]{50, 52});
         record4.put("sort2", new byte[]{50, 51});
         record4.put("value", 1000);
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key1", new byte[]{1, 2});
         record5.put("key2", new byte[]{1, 2});
         record5.put("sort1", new byte[]{50, 51});
         record5.put("sort2", new byte[]{50, 52});
         record5.put("value", 1000);
-        SleeperRow record6 = new SleeperRow();
+        Row record6 = new Row();
         record6.put("key1", new byte[]{1, 2});
         record6.put("key2", new byte[]{1, 3});
         record6.put("sort1", new byte[]{50, 52});
         record6.put("sort2", new byte[]{50, 51});
         record6.put("value", 10000);
-        SleeperRow record7 = new SleeperRow();
+        Row record7 = new Row();
         record7.put("key1", new byte[]{0});
         record7.put("key2", new byte[]{1, 2});
         record7.put("sort1", new byte[]{50, 51});
         record7.put("sort2", new byte[]{50, 51});
         record7.put("value", 1000);
-        SleeperRow record8 = new SleeperRow();
+        Row record8 = new Row();
         record8.put("key1", new byte[]{0});
         record8.put("key2", new byte[]{1, 2});
         record8.put("sort1", new byte[]{50, 51});

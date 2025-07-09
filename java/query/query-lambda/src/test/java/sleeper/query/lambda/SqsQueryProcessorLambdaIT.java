@@ -42,7 +42,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -689,7 +689,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
-            try (ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
+            try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
                 ParquetReaderIterator it = new ParquetReaderIterator(reader);
                 while (it.hasNext()) {
                     it.next();
@@ -749,12 +749,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         }
     }
 
-    private List<SleeperRow> generateTimeSeriesData(Integer minYear, Integer maxYear) {
+    private List<Row> generateTimeSeriesData(Integer minYear, Integer maxYear) {
         LocalDate startDate = LocalDate.of(minYear, 1, 1);
         LocalDate endDate = LocalDate.of(maxYear + 1, 1, 1);
-        List<SleeperRow> records = new ArrayList<>();
+        List<Row> records = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            SleeperRow record = new SleeperRow();
+            Row record = new Row();
             record.put("year", date.getYear());
             record.put("month", date.getMonthValue());
             record.put("day", date.getDayOfMonth());

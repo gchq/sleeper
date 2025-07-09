@@ -17,10 +17,10 @@ package sleeper.parquet.record;
 
 import org.apache.parquet.io.api.GroupConverter;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 
-public class SleeperRecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<SleeperRow> {
+public class SleeperRecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Row> {
     private final RecordConverter recordConverter;
 
     public SleeperRecordMaterializer(Schema schema) {
@@ -28,7 +28,7 @@ public class SleeperRecordMaterializer extends org.apache.parquet.io.api.RecordM
     }
 
     @Override
-    public SleeperRow getCurrentRecord() {
+    public Row getCurrentRecord() {
         return recordConverter.getRecord();
     }
 

@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.ResultsBatch;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -68,14 +68,14 @@ public class SQSResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<SleeperRow> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         String queryId = query.getQueryId();
         long count = 0;
         try {
             if (!results.hasNext()) {
                 sendBatchToSQS(new ResultsBatch(queryId, schema, List.of()), 0, sqsUrl);
             } else {
-                List<SleeperRow> batch = new ArrayList<>();
+                List<Row> batch = new ArrayList<>();
                 int size = 0;
                 int batchNumber = 1;
                 while (results.hasNext()) {

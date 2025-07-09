@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -81,34 +81,34 @@ public class QueryExecutorTest {
         @Test
         void shouldReturnSubRangeInSinglePartition() throws Exception {
             // Given
-            addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When
-            List<SleeperRow> records = getRecords(queryRange(100L, 200L));
+            List<Row> records = getRecords(queryRange(100L, 200L));
 
             // Then
-            assertThat(records).containsExactly(new SleeperRow(Map.of("key", 123L)));
+            assertThat(records).containsExactly(new Row(Map.of("key", 123L)));
         }
 
         @Test
         void shouldReturnRecordInOneOfTwoRanges() throws Exception {
             // Given
-            addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When
-            List<SleeperRow> records = getRecords(queryRegions(range(100L, 200L), range(400L, 500L)));
+            List<Row> records = getRecords(queryRegions(range(100L, 200L), range(400L, 500L)));
 
             // Then
-            assertThat(records).containsExactly(new SleeperRow(Map.of("key", 123L)));
+            assertThat(records).containsExactly(new Row(Map.of("key", 123L)));
         }
 
         @Test
         void shouldNotFindRecordOutsideSubRangeInSinglePartition() throws Exception {
             // Given
-            addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When
-            List<SleeperRow> records = getRecords(queryRange(200L, 300L));
+            List<Row> records = getRecords(queryRange(200L, 300L));
 
             // Then
             assertThat(records).isEmpty();
@@ -122,15 +122,15 @@ public class QueryExecutorTest {
                     .splitToNewChildren("root", "L", "R", 5L)
                     .buildList());
             addPartitionFile("R", "file.parquet", List.of(
-                    new SleeperRow(Map.of("key", 2L)),
-                    new SleeperRow(Map.of("key", 7L))));
+                    new Row(Map.of("key", 2L)),
+                    new Row(Map.of("key", 7L))));
 
             // When
-            List<SleeperRow> records = getRecords(queryAllRecords());
+            List<Row> records = getRecords(queryAllRecords());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of("key", 7L)));
+                    new Row(Map.of("key", 7L)));
         }
 
         @Test
@@ -169,18 +169,18 @@ public class QueryExecutorTest {
         void shouldReturnAllFieldsWhenNotRequestingValueFields() throws Exception {
             // Given
             addRootFile("file.parquet", List.of(
-                    new SleeperRow(Map.of(
+                    new Row(Map.of(
                             "key", 1L,
                             "A", "first",
                             "B", 11L,
                             "C", new byte[]{1, 1}))));
 
             // When
-            List<SleeperRow> records = getRecords(queryAllRecords());
+            List<Row> records = getRecords(queryAllRecords());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of(
+                    new Row(Map.of(
                             "key", 1L,
                             "A", "first",
                             "B", 11L,
@@ -191,20 +191,20 @@ public class QueryExecutorTest {
         void shouldExcludeFieldsWhenRequestingValueFields() throws Exception {
             // Given
             addRootFile("file.parquet", List.of(
-                    new SleeperRow(Map.of(
+                    new Row(Map.of(
                             "key", 1L,
                             "A", "first",
                             "B", 11L,
                             "C", new byte[]{1, 1}))));
 
             // When
-            List<SleeperRow> records = getRecords(queryAllRecordsBuilder()
+            List<Row> records = getRecords(queryAllRecordsBuilder()
                     .processingConfig(requestValueFields("A"))
                     .build());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of("key", 1L, "A", "first")));
+                    new Row(Map.of("key", 1L, "A", "first")));
         }
     }
 
@@ -222,10 +222,10 @@ public class QueryExecutorTest {
             tableProperties.setSchema(schema);
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             addRootFile("file.parquet", List.of(
-                    new SleeperRow(Map.of("key", "A", "value", 2L)),
-                    new SleeperRow(Map.of("key", "A", "value", 2L)),
-                    new SleeperRow(Map.of("key", "B", "value", 3L)),
-                    new SleeperRow(Map.of("key", "B", "value", 4L))));
+                    new Row(Map.of("key", "A", "value", 2L)),
+                    new Row(Map.of("key", "A", "value", 2L)),
+                    new Row(Map.of("key", "B", "value", 3L)),
+                    new Row(Map.of("key", "B", "value", 4L))));
         }
 
         @Test
@@ -234,38 +234,38 @@ public class QueryExecutorTest {
             tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName());
 
             // When
-            List<SleeperRow> records = getRecords(queryAllRecords());
+            List<Row> records = getRecords(queryAllRecords());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of("key", "A", "value", 4L)),
-                    new SleeperRow(Map.of("key", "B", "value", 7L)));
+                    new Row(Map.of("key", "A", "value", 4L)),
+                    new Row(Map.of("key", "B", "value", 7L)));
         }
 
         @Test
         void shouldApplyQueryIterator() throws Exception {
             // When
-            List<SleeperRow> records = getRecords(queryAllRecordsBuilder()
+            List<Row> records = getRecords(queryAllRecordsBuilder()
                     .processingConfig(applyIterator(AdditionIterator.class))
                     .build());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of("key", "A", "value", 4L)),
-                    new SleeperRow(Map.of("key", "B", "value", 7L)));
+                    new Row(Map.of("key", "A", "value", 4L)),
+                    new Row(Map.of("key", "B", "value", 7L)));
         }
 
         @Test
         void shouldApplyQueryIteratorWithConfig() throws Exception {
             // When
-            List<SleeperRow> records = getRecords(queryAllRecordsBuilder()
+            List<Row> records = getRecords(queryAllRecordsBuilder()
                     .processingConfig(applyIterator(SecurityFilteringIterator.class, "key,B"))
                     .build());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of("key", "B", "value", 3L)),
-                    new SleeperRow(Map.of("key", "B", "value", 4L)));
+                    new Row(Map.of("key", "B", "value", 3L)),
+                    new Row(Map.of("key", "B", "value", 4L)));
         }
 
         @Test
@@ -275,13 +275,13 @@ public class QueryExecutorTest {
             tableProperties.set(ITERATOR_CONFIG, "key,B");
 
             // When
-            List<SleeperRow> records = getRecords(queryAllRecordsBuilder()
+            List<Row> records = getRecords(queryAllRecordsBuilder()
                     .processingConfig(applyIterator(AdditionIterator.class))
                     .build());
 
             // Then
             assertThat(records).containsExactly(
-                    new SleeperRow(Map.of("key", "B", "value", 7L)));
+                    new Row(Map.of("key", "B", "value", 7L)));
         }
     }
 
@@ -294,14 +294,14 @@ public class QueryExecutorTest {
             // Given files are added after the executor is first initialised
             tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
-            addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When the first initialisation has expired
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:35:00Z"));
 
             // Then the records that were added are found
             assertThat(getRecords(queryExecutor, queryAllRecords()))
-                    .containsExactly(new SleeperRow(Map.of("key", 123L)));
+                    .containsExactly(new Row(Map.of("key", 123L)));
         }
 
         @Test
@@ -309,7 +309,7 @@ public class QueryExecutorTest {
             // Given files are added after the executor is first initialised
             tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
             QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
-            addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+            addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When the first initialisation has not yet expired
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:31:00Z"));
@@ -319,15 +319,15 @@ public class QueryExecutorTest {
         }
     }
 
-    private void addRootFile(String filename, List<SleeperRow> records) {
+    private void addRootFile(String filename, List<Row> records) {
         addFile(fileReferenceFactory().rootFile(filename, records.size()), records);
     }
 
-    private void addPartitionFile(String partitionId, String filename, List<SleeperRow> records) {
+    private void addPartitionFile(String partitionId, String filename, List<Row> records) {
         addFile(fileReferenceFactory().partitionFile(partitionId, filename, records.size()), records);
     }
 
-    private void addFile(FileReference fileReference, List<SleeperRow> records) {
+    private void addFile(FileReference fileReference, List<Row> records) {
         addFileMetadata(fileReference);
         recordStore.addFile(fileReference.getFilename(), records);
     }
@@ -351,11 +351,11 @@ public class QueryExecutorTest {
                 new InMemoryLeafPartitionRecordRetriever(recordStore), time);
     }
 
-    private List<SleeperRow> getRecords(Query query) throws Exception {
+    private List<Row> getRecords(Query query) throws Exception {
         return getRecords(executor(), query);
     }
 
-    private List<SleeperRow> getRecords(QueryExecutor executor, Query query) {
+    private List<Row> getRecords(QueryExecutor executor, Query query) {
         try (var it = executor.execute(query)) {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, IMMUTABLE), false)
                     .collect(Collectors.toUnmodifiableList());

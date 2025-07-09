@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -34,7 +34,7 @@ public class SystemTestSourceFilesTest {
     @Test
     void shouldGenerateFilenameForSourceFile(SleeperSystemTest sleeper, SystemTestContext context) {
         // Given
-        SleeperRow record = new SleeperRow(Map.of(
+        Row record = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));

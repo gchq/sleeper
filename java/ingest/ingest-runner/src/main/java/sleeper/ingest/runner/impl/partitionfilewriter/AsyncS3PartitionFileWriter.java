@@ -25,7 +25,7 @@ import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
@@ -71,7 +71,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final String partitionParquetS3Key;
     private final String quantileSketchesLocalFileName;
     private final String quantileSketchesS3Key;
-    private final ParquetWriter<SleeperRow> parquetWriter;
+    private final ParquetWriter<Row> parquetWriter;
     private final Sketches sketches;
     private long recordsWrittenToCurrentPartition;
 
@@ -161,7 +161,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @throws IOException if there was a failure writing to the file
      */
     @Override
-    public void append(SleeperRow record) throws IOException {
+    public void append(Row record) throws IOException {
         parquetWriter.write(record);
         sketches.update(record);
         recordsWrittenToCurrentPartition++;

@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.ingest;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
@@ -44,18 +44,18 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
         s3Async = clients.getS3Async();
     }
 
-    public void ingest(Path tempDir, Iterator<SleeperRow> records) {
+    public void ingest(Path tempDir, Iterator<Row> records) {
         ingest(records, ingestCoordinatorBuilder(tempDir));
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<SleeperRow> records, Consumer<List<FileReference>> addFiles) {
+    public void ingest(Path tempDir, Iterator<Row> records, Consumer<List<FileReference>> addFiles) {
         ingest(records, ingestCoordinatorBuilder(tempDir)
                 .addFilesToStateStore(addFiles::accept));
     }
 
-    private void ingest(Iterator<SleeperRow> records, IngestCoordinator.Builder<SleeperRow> builder) {
-        try (IngestCoordinator<SleeperRow> coordinator = builder.build()) {
+    private void ingest(Iterator<Row> records, IngestCoordinator.Builder<Row> builder) {
+        try (IngestCoordinator<Row> coordinator = builder.build()) {
             while (records.hasNext()) {
                 coordinator.write(records.next());
             }
@@ -66,7 +66,7 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
         }
     }
 
-    private IngestCoordinator.Builder<SleeperRow> ingestCoordinatorBuilder(Path tempDir) {
+    private IngestCoordinator.Builder<Row> ingestCoordinatorBuilder(Path tempDir) {
         return factory(tempDir).ingestCoordinatorBuilder(instance.getTableProperties());
     }
 

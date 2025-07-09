@@ -20,7 +20,7 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 
 import java.util.AbstractMap;
 import java.util.List;
@@ -39,9 +39,9 @@ public class ArrowToRecordConversionUtils {
      * @param  rowNo            the index to read from each vector
      * @return                  a new Record object holding those values
      */
-    public static SleeperRow convertVectorSchemaRootToRecord(VectorSchemaRoot vectorSchemaRoot, int rowNo) {
+    public static Row convertVectorSchemaRootToRecord(VectorSchemaRoot vectorSchemaRoot, int rowNo) {
         int noOfFields = vectorSchemaRoot.getSchema().getFields().size();
-        SleeperRow record = new SleeperRow();
+        Row record = new Row();
         for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {
             FieldVector fieldVector = vectorSchemaRoot.getVector(fieldNo);
             Object value = fieldVector.getObject(rowNo);

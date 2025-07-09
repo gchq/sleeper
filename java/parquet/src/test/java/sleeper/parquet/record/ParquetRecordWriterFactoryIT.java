@@ -28,7 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -59,25 +59,25 @@ class ParquetRecordWriterFactoryIT {
                 .valueFields(new Field("column2", new StringType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
         map1.put("column2", "B");
-        SleeperRow record1 = new SleeperRow(map1);
+        Row record1 = new Row(map1);
         writer.write(record1);
         Map<String, Object> map2 = new HashMap<>();
         map2.put("column1", "C");
         map2.put("column2", "D");
-        SleeperRow record2 = new SleeperRow(map2);
+        Row record2 = new Row(map2);
         writer.write(record2);
         writer.close();
 
         // When
-        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(path, schema).build();
-        SleeperRow readRecord1 = new SleeperRow(reader.read());
-        SleeperRow readRecord2 = new SleeperRow(reader.read());
-        SleeperRow readRecord3 = reader.read();
+        ParquetReader<Row> reader = new ParquetRecordReader.Builder(path, schema).build();
+        Row readRecord1 = new Row(reader.read());
+        Row readRecord2 = new Row(reader.read());
+        Row readRecord3 = reader.read();
 
         // Then
         assertThat(readRecord1.get("column1")).isEqualTo("A");
@@ -96,27 +96,27 @@ class ParquetRecordWriterFactoryIT {
                 .valueFields(new Field("column3", new LongType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
         map1.put("column3", 3L);
-        SleeperRow record1 = new SleeperRow(map1);
+        Row record1 = new Row(map1);
         writer.write(record1);
         Map<String, Object> map2 = new HashMap<>();
         map2.put("column1", 4L);
         map2.put("column2", 5L);
         map2.put("column3", 6L);
-        SleeperRow record2 = new SleeperRow(map2);
+        Row record2 = new Row(map2);
         writer.write(record2);
         writer.close();
 
         // When
-        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(path, schema).build();
-        SleeperRow readRecord1 = new SleeperRow(reader.read());
-        SleeperRow readRecord2 = new SleeperRow(reader.read());
-        SleeperRow readRecord3 = reader.read();
+        ParquetReader<Row> reader = new ParquetRecordReader.Builder(path, schema).build();
+        Row readRecord1 = new Row(reader.read());
+        Row readRecord2 = new Row(reader.read());
+        Row readRecord3 = reader.read();
 
         // Then
         assertThat(readRecord1.get("column1")).isEqualTo(1L);
@@ -140,25 +140,25 @@ class ParquetRecordWriterFactoryIT {
                 .valueFields(new Field("column2", new ByteArrayType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", byteArray1);
         map1.put("column2", byteArray2);
-        SleeperRow record1 = new SleeperRow(map1);
+        Row record1 = new Row(map1);
         writer.write(record1);
         Map<String, Object> map2 = new HashMap<>();
         map2.put("column1", byteArray3);
         map2.put("column2", byteArray4);
-        SleeperRow record2 = new SleeperRow(map2);
+        Row record2 = new Row(map2);
         writer.write(record2);
         writer.close();
 
         // When
-        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(path, schema).build();
-        SleeperRow readRecord1 = new SleeperRow(reader.read());
-        SleeperRow readRecord2 = new SleeperRow(reader.read());
-        SleeperRow readRecord3 = reader.read();
+        ParquetReader<Row> reader = new ParquetRecordReader.Builder(path, schema).build();
+        Row readRecord1 = new Row(reader.read());
+        Row readRecord2 = new Row(reader.read());
+        Row readRecord3 = reader.read();
 
         // Then
         assertThat((byte[]) readRecord1.get("column1")).containsExactly(byteArray1);
@@ -184,7 +184,7 @@ class ParquetRecordWriterFactoryIT {
         map1.put("column1", byteArray1);
         map1.put("column2", "ABC");
         map1.put("column3", byteArray2);
-        SleeperRow record = new SleeperRow(map1);
+        Row record = new Row(map1);
         // When/Then - Dictionary encoding on
         tableProperties.set(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS, "true");
         tableProperties.set(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS, "true");
@@ -212,13 +212,13 @@ class ParquetRecordWriterFactoryIT {
         }
     }
 
-    private void writeParquetFile(Path path, TableProperties tableProperties, SleeperRow record) throws IOException {
-        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, new Configuration());
+    private void writeParquetFile(Path path, TableProperties tableProperties, Row record) throws IOException {
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, new Configuration());
         writeRecordNTimes(writer, record, 10_000);
         writer.close();
     }
 
-    private void writeRecordNTimes(ParquetWriter<SleeperRow> writer, SleeperRow record, int numTimes) throws IOException {
+    private void writeRecordNTimes(ParquetWriter<Row> writer, Row record, int numTimes) throws IOException {
         for (int i = 0; i < numTimes; i++) {
             writer.write(record);
         }

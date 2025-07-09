@@ -22,7 +22,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
@@ -55,7 +55,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .build().deploy(instanceId);
     }
 
-    public CloseableIterator<SleeperRow> queryAllRecords(
+    public CloseableIterator<Row> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);

@@ -29,7 +29,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
@@ -128,7 +128,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             FileReference rootFile = fileReferenceFactory.rootFile(
                     ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 100L);
-            List<SleeperRow> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -161,7 +161,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             FileReference lFile = fileReferenceFactory.partitionFile("L",
                     ingestType.getFilePrefix(parameters) + "/data/partition_L/lFile.parquet", 25L);
-            List<SleeperRow> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -203,7 +203,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rrFile = fileReferenceFactory.partitionFile("RR",
                     ingestType.getFilePrefix(parameters) + "/data/partition_RR/rrFile.parquet", 20L);
 
-            List<SleeperRow> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(llFile, lrFile, rlFile, rrFile), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -251,7 +251,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     ingestType.getFilePrefix(parameters) + "/data/partition_R/rightFile2.parquet", "R", 4L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            List<SleeperRow> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -292,7 +292,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rootFile = accurateFileReferenceBuilder(rootFilename, "root", 100L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            List<SleeperRow> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -326,7 +326,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             String rootFilename = ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet";
             FileReference lReference = fileReferenceFactory.partitionFile("L", rootFilename, 25L);
 
-            List<SleeperRow> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lReference, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -366,7 +366,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rlReference = accurateSplitFileReference(rootFile, "RL", 30L, stateStoreUpdateTime);
             FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L, stateStoreUpdateTime);
 
-            List<SleeperRow> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -410,7 +410,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
             FileReference leftFile2 = accurateSplitFileReference(rootFile2, "L", 6L, stateStoreUpdateTime);
             FileReference rightFile2 = accurateSplitFileReference(rootFile2, "R", 4L, stateStoreUpdateTime);
-            List<SleeperRow> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(rootFile1, rootFile2), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -434,12 +434,12 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             IngestCoordinatorTestParameters parameters,
             int maxRecordsInMemory,
             long maxRecordsToWriteToLocalStore) throws IteratorCreationException, IOException {
-        try (IngestCoordinator<SleeperRow> ingestCoordinator = parameters.toBuilder()
+        try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrayList().setInstanceProperties(properties -> {
                     properties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
                     properties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
                 }).buildCoordinator()) {
-            for (SleeperRow record : recordListAndSchema.recordList) {
+            for (Row record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }
@@ -448,9 +448,9 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
     private static void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws IteratorCreationException, IOException {
-        try (IngestCoordinator<SleeperRow> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
+        try (IngestCoordinator<Row> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
                 .createIngestCoordinator(ingestCoordinatorTestParameters)) {
-            for (SleeperRow record : recordListAndSchema.recordList) {
+            for (Row record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
         }

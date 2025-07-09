@@ -17,7 +17,7 @@ package sleeper.core.partition;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.testutils.printers.PartitionsPrinter;
@@ -35,10 +35,10 @@ public class PartitionTreeTestHelperTest {
     void shouldCreateSplitPointsFromRecordRangeAndRecordsPerPartition() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<SleeperRow> records = List.of(
-                new SleeperRow(Map.of("key", 10)),
-                new SleeperRow(Map.of("key", 20)),
-                new SleeperRow(Map.of("key", 30)));
+        List<Row> records = List.of(
+                new Row(Map.of("key", 10)),
+                new Row(Map.of("key", 20)),
+                new Row(Map.of("key", 30)));
 
         // When
         PartitionTree tree = createPartitionTreeWithRecordsPerPartition(1, records, schema);
@@ -59,7 +59,7 @@ public class PartitionTreeTestHelperTest {
                         """);
     }
 
-    private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<SleeperRow> records, Schema schema) {
+    private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<Row> records, Schema schema) {
         return createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, records.size(),
                 index -> records.get((int) index),
                 schema);

@@ -29,7 +29,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
@@ -109,13 +109,13 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsForQuery() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
-            SleeperRow expectedRecord = new SleeperRow(Map.of("key", 123L));
+            Row expectedRow = new Row(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message(queryResult("test-query-id", expectedRecord)),
+                            message(queryResult("test-query-id", expectedRow)),
                             message(completedQuery("test-query-id", 1L))));
 
             // Then
@@ -126,8 +126,8 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord) + "\n" +
-                            "Query took 1 second to return 1 records\n" +
+                            asJson(expectedRow) + "\n" +
+                            "Query took 1 second to return 1 row\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -139,14 +139,14 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsForQueryWithOneSubquery() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
-            SleeperRow expectedRecord = new SleeperRow(Map.of("key", 123L));
+            Row expectedRows = new Row(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
                             message(createdSubQueries("test-query-id", "test-subquery")),
-                            message(queryResult("test-subquery", expectedRecord)),
+                            message(queryResult("test-subquery", expectedRows)),
                             message(completedQuery("test-subquery", 1L))));
 
             // Then
@@ -157,8 +157,8 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord) + "\n" +
-                            "Query took 1 second to return 1 records\n" +
+                            asJson(expectedRows) + "\n" +
+                            "Query took 1 second to return 1 row\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -170,20 +170,20 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldReturnResultsForQueryWithMultipleSubqueries() throws Exception {
             // Given
             Query expectedQuery = rangeQuery("test-query-id", 0L, 1000L);
-            SleeperRow expectedRecord1 = new SleeperRow(Map.of("key", 123L));
-            SleeperRow expectedRecord2 = new SleeperRow(Map.of("key", 456L));
-            SleeperRow expectedRecord3 = new SleeperRow(Map.of("key", 789L));
+            Row expectedRow1 = new Row(Map.of("key", 123L));
+            Row expectedRow2 = new Row(Map.of("key", 456L));
+            Row expectedRow3 = new Row(Map.of("key", 789L));
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
                             message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
-                            message(queryResult("subquery-1", expectedRecord1)),
+                            message(queryResult("subquery-1", expectedRow1)),
                             message(completedQuery("subquery-1", 1L)),
-                            message(queryResult("subquery-2", expectedRecord2)),
+                            message(queryResult("subquery-2", expectedRow2)),
                             message(completedQuery("subquery-2", 1L)),
-                            message(queryResult("subquery-3", expectedRecord3)),
+                            message(queryResult("subquery-3", expectedRow3)),
                             message(completedQuery("subquery-3", 1L))));
 
             // Then
@@ -194,10 +194,10 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_RANGE_QUERY +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord1) + "\n" +
-                            asJson(expectedRecord2) + "\n" +
-                            asJson(expectedRecord3) + "\n" +
-                            "Query took 1 second to return 3 records\n" +
+                            asJson(expectedRow1) + "\n" +
+                            asJson(expectedRow2) + "\n" +
+                            asJson(expectedRow3) + "\n" +
+                            "Query took 1 second to return 3 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -206,16 +206,16 @@ public class QueryWebSocketCommandLineClientTest {
         }
 
         @Test
-        void shouldReturnResultsWhenRecordCountDoesNotMatchRecordsReceived() throws Exception {
+        void shouldReturnResultsWhenRecordCountDoesNotMatchRowsReceived() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
-            SleeperRow expectedRecord = new SleeperRow(Map.of("key", 123L));
+            Row expectedRow = new Row(Map.of("key", 123L));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
             runQueryClient("test-query-id",
                     withResponses(
-                            message(queryResult("test-query-id", expectedRecord)),
+                            message(queryResult("test-query-id", expectedRow)),
                             message(completedQuery("test-query-id", 2L))));
 
             // Then
@@ -226,8 +226,8 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
-                            asJson(expectedRecord) + "\n" +
-                            "Query took 1 second to return 1 records\n" +
+                            asJson(expectedRow) + "\n" +
+                            "Query took 1 second to return 1 row\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -259,7 +259,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -287,7 +287,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -314,7 +314,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries: Failure message\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -341,7 +341,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Unknown message type received: unknown\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -368,7 +368,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Received malformed message JSON: {\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -395,7 +395,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Message missing required field queryId: {\"message\":\"error\"}\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -422,7 +422,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Message missing required field message: {\"queryId\":\"test-query-id\"}\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -449,7 +449,7 @@ public class QueryWebSocketCommandLineClientTest {
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();

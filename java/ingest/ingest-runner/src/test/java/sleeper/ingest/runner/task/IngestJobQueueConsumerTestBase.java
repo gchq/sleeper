@@ -26,7 +26,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
@@ -109,9 +109,9 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+            try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                     path, recordListAndSchema.sleeperSchema, hadoopConf)) {
-                for (SleeperRow record : recordListAndSchema.recordList) {
+                for (Row record : recordListAndSchema.recordList) {
                     writer.write(record);
                 }
             } catch (IOException e) {

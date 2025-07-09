@@ -20,7 +20,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
@@ -167,11 +167,11 @@ public class SleeperSystemTest {
         return context.instance().numberedRecords();
     }
 
-    public Iterable<SleeperRow> generateNumberedRecords(LongStream numbers) {
+    public Iterable<Row> generateNumberedRecords(LongStream numbers) {
         return context.instance().numberedRecords().iterableFrom(numbers);
     }
 
-    public Iterable<SleeperRow> generateNumberedRecords(Schema schema, LongStream numbers) {
+    public Iterable<Row> generateNumberedRecords(Schema schema, LongStream numbers) {
         return context.instance().numberedRecords(schema).iterableFrom(numbers);
     }
 

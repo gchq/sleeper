@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -375,7 +375,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        List<SleeperRow> records = new ArrayList<>(getRecords());
+        List<Row> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
         long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
 
@@ -417,7 +417,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
-        List<SleeperRow> records = getLotsOfRecords();
+        List<Row> records = getLotsOfRecords();
 
         // When
         long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
@@ -438,12 +438,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
 
         FileReference leftFile = fileReferences.get(0);
         FileReference rightFile = fileReferences.get(1);
-        List<SleeperRow> leftRecords = records.stream()
+        List<Row> leftRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(leftFile, schema))
                 .containsExactlyInAnyOrderElementsOf(leftRecords);
-        List<SleeperRow> rightRecords = records.stream()
+        List<Row> rightRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(rightFile, schema))
@@ -476,7 +476,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
-        List<SleeperRow> records = getLotsOfRecords();
+        List<Row> records = getLotsOfRecords();
 
         // When
         long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
@@ -489,7 +489,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(partitionToFileMapping.get("L")).hasSize(40);
         assertThat(partitionToFileMapping.get("R")).hasSize(40);
         //  - Check that the files in each partition contain the correct data
-        List<SleeperRow> expectedLeftRecords = records.stream()
+        List<Row> expectedLeftRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(partitionToFileMapping.get("L").stream()))
@@ -497,7 +497,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Merge the sketch files for the partition and check it has the right properties
         assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("L"), sketchesStore))
                 .isEqualTo(SketchesDeciles.from(schema, expectedLeftRecords));
-        List<SleeperRow> expectedRightRecords = records.stream()
+        List<Row> expectedRightRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
         assertThat(readRecords(partitionToFileMapping.get("R").stream()))
@@ -570,11 +570,11 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Read file and check it has correct records
         assertThat(readRecords(fileReferences.get(0), schema))
                 .containsExactly(
-                        new SleeperRow(Map.of(
+                        new Row(Map.of(
                                 "key", new byte[]{1, 1},
                                 "sort", 2L,
                                 "value", 7L)),
-                        new SleeperRow(Map.of(
+                        new Row(Map.of(
                                 "key", new byte[]{11, 2},
                                 "sort", 1L,
                                 "value", 4L)));

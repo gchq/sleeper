@@ -17,7 +17,7 @@ package sleeper.ingest.runner.testutils;
 
 import org.apache.commons.text.RandomStringGenerator;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -51,9 +51,9 @@ public class RecordGenerator {
                 .rowKeyFields(new Field("key0", sleeperKeyTypeDimension0))
                 .valueFields(valueFields())
                 .build();
-        List<SleeperRow> recordList = IntStream.range(0, noOfRecords)
+        List<Row> recordList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
-                    SleeperRow record = new SleeperRow();
+                    Row record = new Row();
                     record.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
                     record.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
                     record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
@@ -93,9 +93,9 @@ public class RecordGenerator {
                         new Field("key1", sleeperKeyTypeDimension1))
                 .valueFields(valueFields())
                 .build();
-        List<SleeperRow> recordList = IntStream.range(0, noOfRecords)
+        List<Row> recordList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
-                    SleeperRow record = new SleeperRow();
+                    Row record = new Row();
                     record.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
                     record.put(sleeperSchema.getRowKeyFieldNames().get(1), keyObjectsDimension1.get(i));
                     record.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
@@ -135,9 +135,9 @@ public class RecordGenerator {
                 .sortKeyFields(new Field("sortKey0", sleeperSortKeyTypeDimension0))
                 .valueFields(valueFields())
                 .build();
-        List<SleeperRow> recordList = IntStream.range(0, noOfRecords)
+        List<Row> recordList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
-                    SleeperRow record = new SleeperRow();
+                    Row record = new Row();
                     record.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
                     record.put(sleeperSchema.getSortKeyFieldNames().get(0), sortKeyObjectsDimension0.get(i));
                     record.put(sleeperSchema.getValueFieldNames().get(0), valueRandom.nextInt());
@@ -172,9 +172,9 @@ public class RecordGenerator {
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        List<SleeperRow> recordList = IntStream.range(0, byteArrayKeys.size())
+        List<Row> recordList = IntStream.range(0, byteArrayKeys.size())
                 .mapToObj(i -> {
-                    SleeperRow record = new SleeperRow();
+                    Row record = new Row();
                     record.put(sleeperSchema.getRowKeyFieldNames().get(0), byteArrayKeys.get(i));
                     record.put(sleeperSchema.getSortKeyFieldNames().get(0), sortKeys.get(i));
                     record.put(sleeperSchema.getValueFieldNames().get(0), values.get(i));
@@ -185,10 +185,10 @@ public class RecordGenerator {
     }
 
     public static class RecordListAndSchema {
-        public List<SleeperRow> recordList;
+        public List<Row> recordList;
         public Schema sleeperSchema;
 
-        public RecordListAndSchema(List<SleeperRow> recordList, Schema sleeperSchema) {
+        public RecordListAndSchema(List<Row> recordList, Schema sleeperSchema) {
             this.recordList = recordList;
             this.sleeperSchema = sleeperSchema;
         }

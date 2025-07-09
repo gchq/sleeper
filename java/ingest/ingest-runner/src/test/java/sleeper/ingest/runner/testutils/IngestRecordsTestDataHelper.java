@@ -22,7 +22,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -93,21 +93,21 @@ public class IngestRecordsTestDataHelper {
                 .build();
     }
 
-    public static List<SleeperRow> getSingleRecord() {
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getSingleRecord() {
+        Row record1 = new Row();
         record1.put("key", 1L);
         record1.put("value1", 2L);
         record1.put("value2", 3L);
         return Collections.singletonList(record1);
     }
 
-    public static List<SleeperRow> getRecords() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getRecords() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", 1L);
         record1.put("value1", 2L);
         record1.put("value2", 3L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 3L);
         record2.put("value1", 4L);
         record2.put("value2", 6L);
@@ -116,14 +116,14 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getLotsOfRecords() {
-        List<SleeperRow> records = new ArrayList<>();
+    public static List<Row> getLotsOfRecords() {
+        List<Row> records = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
-            SleeperRow record1 = new SleeperRow();
+            Row record1 = new Row();
             record1.put("key", 1L - i);
             record1.put("value1", 2L * i);
             record1.put("value2", 3L * i);
-            SleeperRow record2 = new SleeperRow();
+            Row record2 = new Row();
             record2.put("key", 2L + i);
             record2.put("value1", 4L * i);
             record2.put("value2", 6L * i);
@@ -133,13 +133,13 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getRecordsInFirstPartitionOnly() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getRecordsInFirstPartitionOnly() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", 1L);
         record1.put("value1", 2L);
         record1.put("value2", 3L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 0L);
         record2.put("value1", 4L);
         record2.put("value2", 6L);
@@ -148,17 +148,17 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getRecordsByteArrayKey() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getRecordsByteArrayKey() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", new byte[]{1, 1});
         record1.put("value1", 2L);
         record1.put("value2", 3L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", new byte[]{2, 2});
         record2.put("value1", 2L);
         record2.put("value2", 3L);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", new byte[]{64, 65});
         record3.put("value1", 4L);
         record3.put("value2", 6L);
@@ -168,24 +168,24 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getRecords2DimByteArrayKey() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getRecords2DimByteArrayKey() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key1", new byte[]{1, 1});
         record1.put("key2", new byte[]{2, 3});
         record1.put("value1", 2L);
         record1.put("value2", 3L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key1", new byte[]{11, 2});
         record2.put("key2", new byte[]{2, 2});
         record2.put("value1", 2L);
         record2.put("value2", 3L);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key1", new byte[]{64, 65});
         record3.put("key2", new byte[]{67, 68});
         record3.put("value1", 4L);
         record3.put("value2", 6L);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("key1", new byte[]{5});
         record4.put("key2", new byte[]{99});
         record4.put("value1", 2L);
@@ -198,15 +198,15 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getUnsortedRecords() {
-        List<SleeperRow> records = new ArrayList<>();
+    public static List<Row> getUnsortedRecords() {
+        List<Row> records = new ArrayList<>();
         for (int i = 10; i > 0; i--) {
-            SleeperRow record1 = new SleeperRow();
+            Row record1 = new Row();
             record1.put("key", (long) i);
             record1.put("value1", 2L);
             record1.put("value2", 3L);
             records.add(record1);
-            SleeperRow record2 = new SleeperRow();
+            Row record2 = new Row();
             record2.put("key", 5L);
             record2.put("value1", 4L);
             record2.put("value2", 6L);
@@ -215,21 +215,21 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getRecordsForAggregationIteratorTest() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getRecordsForAggregationIteratorTest() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", new byte[]{1, 1});
         record1.put("sort", 2L);
         record1.put("value", 1L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", new byte[]{11, 2});
         record2.put("sort", 1L);
         record2.put("value", 1L);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", new byte[]{1, 1});
         record3.put("sort", 2L);
         record3.put("value", 6L);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("key", new byte[]{11, 2});
         record4.put("sort", 1L);
         record4.put("value", 3L);
@@ -240,24 +240,24 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> getRecordsOscillatingBetween2Partitions() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    public static List<Row> getRecordsOscillatingBetween2Partitions() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key1", 0);
         record1.put("key2", 1L);
         record1.put("value1", 2L);
         record1.put("value2", 1L);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key1", 0);
         record2.put("key2", 20L);
         record2.put("value1", 200L);
         record2.put("value2", 100L);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key1", 100);
         record3.put("key2", 1L);
         record3.put("value1", 20000L);
         record3.put("value2", 10000L);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("key1", 100);
         record4.put("key2", 50L);
         record4.put("value1", 2000000L);
@@ -269,14 +269,14 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public static List<SleeperRow> readIngestedRecords(IngestResult result, Schema schema) {
+    public static List<Row> readIngestedRecords(IngestResult result, Schema schema) {
         return result.getFileReferenceList().stream()
                 .map(FileReference::getFilename)
                 .flatMap(filename -> readRecordsFromParquetFileOrThrow(filename, schema).stream())
                 .collect(Collectors.toList());
     }
 
-    public static List<SleeperRow> readRecordsFromParquetFileOrThrow(String filename, Schema schema) {
+    public static List<Row> readRecordsFromParquetFileOrThrow(String filename, Schema schema) {
         try {
             return readRecordsFromParquetFile(filename, schema);
         } catch (IOException e) {
@@ -284,10 +284,10 @@ public class IngestRecordsTestDataHelper {
         }
     }
 
-    public static List<SleeperRow> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
-        ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
-        List<SleeperRow> readRecords = new ArrayList<>();
-        SleeperRow record = reader.read();
+    public static List<Row> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
+        ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
+        List<Row> readRecords = new ArrayList<>();
+        Row record = reader.read();
         while (null != record) {
             readRecords.add(cloneRecord(record, schema));
             record = reader.read();
@@ -296,8 +296,8 @@ public class IngestRecordsTestDataHelper {
         return readRecords;
     }
 
-    private static SleeperRow cloneRecord(SleeperRow record, Schema schema) {
-        SleeperRow clonedRecord = new SleeperRow();
+    private static Row cloneRecord(Row record, Schema schema) {
+        Row clonedRecord = new Row();
         for (Field field : schema.getAllFields()) {
             clonedRecord.put(field.getName(), record.get(field.getName()));
         }

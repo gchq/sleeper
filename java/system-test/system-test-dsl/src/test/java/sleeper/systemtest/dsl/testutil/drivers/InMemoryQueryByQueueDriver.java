@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -58,7 +58,7 @@ public class InMemoryQueryByQueueDriver implements QuerySendAndWaitDriver {
     }
 
     @Override
-    public List<SleeperRow> getResults(Query query) {
+    public List<Row> getResults(Query query) {
         if (!completedQueryIds.remove(query.getQueryId())) {
             throw new IllegalStateException("Query not completed");
         }

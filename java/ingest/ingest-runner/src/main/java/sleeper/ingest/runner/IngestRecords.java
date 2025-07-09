@@ -16,7 +16,7 @@
 package sleeper.ingest.runner;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -28,9 +28,9 @@ import java.io.IOException;
  */
 public class IngestRecords {
 
-    private final IngestCoordinator<SleeperRow> ingestCoordinator;
+    private final IngestCoordinator<Row> ingestCoordinator;
 
-    public IngestRecords(IngestCoordinator<SleeperRow> ingestCoordinator) {
+    public IngestRecords(IngestCoordinator<Row> ingestCoordinator) {
         this.ingestCoordinator = ingestCoordinator;
     }
 
@@ -38,7 +38,7 @@ public class IngestRecords {
         // Do nothing
     }
 
-    public void write(SleeperRow record) throws IOException, IteratorCreationException, StateStoreException {
+    public void write(Row record) throws IOException, IteratorCreationException, StateStoreException {
         ingestCoordinator.write(record);
     }
 

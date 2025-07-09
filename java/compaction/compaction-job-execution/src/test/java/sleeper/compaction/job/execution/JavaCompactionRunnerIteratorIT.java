@@ -23,7 +23,7 @@ import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils;
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -46,12 +46,12 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<SleeperRow> data1 = CompactionRunnerTestData.specifiedFromEvens((even, record) -> {
+        List<Row> data1 = CompactionRunnerTestData.specifiedFromEvens((even, record) -> {
             record.put("key", (long) even);
             record.put("timestamp", System.currentTimeMillis());
             record.put("value", 987654321L);
         });
-        List<SleeperRow> data2 = CompactionRunnerTestData.specifiedFromOdds((odd, record) -> {
+        List<Row> data2 = CompactionRunnerTestData.specifiedFromOdds((odd, record) -> {
             record.put("key", (long) odd);
             record.put("timestamp", 0L);
             record.put("value", 123456789L);

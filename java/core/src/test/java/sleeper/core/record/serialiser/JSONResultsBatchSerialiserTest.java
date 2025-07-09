@@ -18,7 +18,7 @@ package sleeper.core.record.serialiser;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.ResultsBatch;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -42,9 +42,9 @@ public class JSONResultsBatchSerialiserTest {
                 .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
                 .valueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()))
                 .build();
-        List<SleeperRow> records = new ArrayList<>();
+        List<Row> records = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            SleeperRow record = new SleeperRow();
+            Row record = new Row();
             record.put("column1", i);
             record.put("column2", i * 100L);
             record.put("column3", "abc" + i);

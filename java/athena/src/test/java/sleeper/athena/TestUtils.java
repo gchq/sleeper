@@ -31,7 +31,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
@@ -111,26 +111,26 @@ public class TestUtils {
         }
     }
 
-    private static List<SleeperRow> generateTimeSeriesData() {
+    private static List<Row> generateTimeSeriesData() {
         LocalDate startDate = LocalDate.of(2017, 1, 1);
         LocalDate endDate = LocalDate.of(2021, 1, 1);
-        List<SleeperRow> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            SleeperRow record = new SleeperRow();
-            record.put("year", date.getYear());
-            record.put("month", date.getMonthValue());
-            record.put("day", date.getDayOfMonth());
-            record.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
-            record.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
+            Row row = new Row();
+            row.put("year", date.getYear());
+            row.put("month", date.getMonthValue());
+            row.put("day", date.getDayOfMonth());
+            row.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
+            row.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
             HashMap<String, String> map = new HashMap<>();
             map.put(date.getMonth().name(), date.getMonth().name());
-            record.put("map", map);
-            record.put("list", Lists.newArrayList(date.getEra().toString()));
-            record.put("str", date.toString());
-            records.add(record);
+            row.put("map", map);
+            row.put("list", Lists.newArrayList(date.getEra().toString()));
+            row.put("str", date.toString());
+            rows.add(row);
         }
 
-        return records;
+        return rows;
     }
 
     public static FederatedIdentity createIdentity() {

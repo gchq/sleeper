@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -175,7 +175,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
             recordLists[i] = new RecordList();
         }
         int i = 0;
-        for (SleeperRow record : recordListAndSchema.recordList) {
+        for (Row record : recordListAndSchema.recordList) {
             recordLists[i].addRecord(record);
             i++;
             if (i == 5) {
@@ -198,17 +198,17 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
     }
 
     static class RecordList {
-        private final List<SleeperRow> records;
+        private final List<Row> records;
 
         RecordList() {
             this.records = new ArrayList<>();
         }
 
-        public void addRecord(SleeperRow record) {
+        public void addRecord(Row record) {
             records.add(record);
         }
 
-        public List<SleeperRow> getRecords() {
+        public List<Row> getRecords() {
             return records;
         }
     }
@@ -218,7 +218,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         @Override
         public int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RecordList recordList, int startInsertAtRowNo) {
             int i = 0;
-            for (SleeperRow record : recordList.getRecords()) {
+            for (Row record : recordList.getRecords()) {
                 ArrowRecordWriterAcceptingRecords.writeRecord(
                         allFields, vectorSchemaRoot, record, startInsertAtRowNo + i);
                 i++;

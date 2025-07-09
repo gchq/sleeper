@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.SleeperRowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
@@ -69,10 +69,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     private final long maxNoOfRecordsInLocalStore;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
-    private final List<SleeperRow> inMemoryBatch;
+    private final List<Row> inMemoryBatch;
     private final List<String> localFileNames;
     private long noOfRecordsInLocalStore;
-    private CloseableIterator<SleeperRow> internalOrderedRecordIterator;
+    private CloseableIterator<Row> internalOrderedRecordIterator;
     private boolean isWriteable;
     private int batchNo;
 
@@ -115,7 +115,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @param  record      the record to add to the batch
      * @throws IOException if there was a failure writing the local file
      */
-    protected void addRecordToBatch(SleeperRow record) throws IOException {
+    protected void addRecordToBatch(Row record) throws IOException {
         if (!isWriteable) {
             throw new AssertionError("Attempt to write to a batch where an iterator has already been created");
         }
@@ -143,8 +143,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
             Instant writeTime = Instant.now();
             // Write the records to a local Parquet file. The try-with-resources block ensures that the writer
             // is closed in both success and failure.
-            try (ParquetWriter<SleeperRow> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
-                for (SleeperRow record : inMemoryBatch) {
+            try (ParquetWriter<Row> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
+                for (Row record : inMemoryBatch) {
                     parquetWriter.write(record);
                 }
             }
@@ -194,7 +194,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @throws IOException if there was a failure writing the local file
      */
     @Override
-    public CloseableIterator<SleeperRow> createOrderedRecordIterator() throws IOException {
+    public CloseableIterator<Row> createOrderedRecordIterator() throws IOException {
         if (!isWriteable || internalOrderedRecordIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
@@ -202,10 +202,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         // Flush the current in-memory batch to disk, to free up as much memory as possible for the merge
         flushToLocalDiskAndClear();
         // Create an iterator for each one of the local Parquet files
-        List<CloseableIterator<SleeperRow>> inputIterators = new ArrayList<>();
+        List<CloseableIterator<Row>> inputIterators = new ArrayList<>();
         try {
             for (String localFileName : localFileNames) {
-                ParquetReader<SleeperRow> readerForBatch = createParquetReader(localFileName);
+                ParquetReader<Row> readerForBatch = createParquetReader(localFileName);
                 ParquetReaderIterator recordIterator = new ParquetReaderIterator(readerForBatch);
                 inputIterators.add(recordIterator);
                 LOGGER.info("Created reader for file {}", localFileName);
@@ -247,8 +247,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @return             the {@link ParquetReader}
      * @throws IOException Thrown when the reader cannot be created
      */
-    private ParquetReader<SleeperRow> createParquetReader(String inputFile) throws IOException {
-        ParquetReader.Builder<SleeperRow> builder = new ParquetRecordReader.Builder(new Path(inputFile), sleeperSchema)
+    private ParquetReader<Row> createParquetReader(String inputFile) throws IOException {
+        ParquetReader.Builder<Row> builder = new ParquetRecordReader.Builder(new Path(inputFile), sleeperSchema)
                 .withConf(hadoopConfiguration);
         return builder.build();
     }

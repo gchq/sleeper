@@ -27,7 +27,7 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -48,7 +48,7 @@ import static sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatch.MAP_
 /**
  * Accepts data for an Arrow record batch as Sleeper records. Used by {@link ArrowRecordBatch}.
  */
-public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<SleeperRow> {
+public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Row> {
 
     /**
      * Add a single Record to a VectorSchemaRoot at a specified row. Note that the field order in the supplied Sleeper
@@ -58,7 +58,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Slee
      *                              This is used instead of the raw {@link Schema} as the {@link Schema#getAllFields()}
      *                              is a bit too expensive to call on every record.
      * @param  vectorSchemaRoot     the Arrow store to write into
-     * @param  record               the {@link SleeperRow} to write
+     * @param  record               the {@link Row} to write
      * @param  insertAtRowNo        the row number to write to
      * @return                      the row number to use when this method is next called
      * @throws OutOfMemoryException when the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
@@ -67,7 +67,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Slee
     @Override
     public int insert(List<Field> allFields,
             VectorSchemaRoot vectorSchemaRoot,
-            SleeperRow record,
+            Row record,
             int insertAtRowNo) throws OutOfMemoryException {
         writeRecord(allFields, vectorSchemaRoot, record, insertAtRowNo);
         int finalRowCount = insertAtRowNo + 1;
@@ -76,7 +76,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Slee
     }
 
     public static void writeRecord(
-            List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, SleeperRow record, int insertAtRowNo) {
+            List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Row record, int insertAtRowNo) {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the mutate
         // Note that setSafe() is used throughout so that more memory will be requested if required.

@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
@@ -44,7 +44,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     private final InMemorySketchesStore sketchesStore;
     private final Partition partition;
     private final String filename;
-    private final List<SleeperRow> records = new ArrayList<>();
+    private final List<Row> records = new ArrayList<>();
     private final Sketches sketches;
 
     private InMemoryPartitionFileWriter(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
@@ -63,7 +63,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     }
 
     @Override
-    public void append(SleeperRow record) {
+    public void append(Row record) {
         records.add(record);
         sketches.update(record);
     }

@@ -20,7 +20,7 @@ import com.google.common.collect.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +39,14 @@ public class ConcatenatingIteratorTest {
     @BeforeEach
     public void resetSuppliers() {
         testSupplier1 = new FakeIteratorSupplier(List.of(
-                new SleeperRow(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))));
+                new Row(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))));
 
         testSupplier2 = new FakeIteratorSupplier(Lists.newArrayList(
-                new SleeperRow(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))));
+                new Row(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))));
     }
 
     @Test
@@ -56,12 +56,12 @@ public class ConcatenatingIteratorTest {
 
         // Then
         assertThat(concatenatingIterator).toIterable().containsExactly(
-                new SleeperRow(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf)));
+                new Row(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf)));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldReturnFalseForHasNextIfSuppliedIteratorIsNull() {
         // Given
-        Supplier<CloseableIterator<SleeperRow>> nullSupplier = () -> null;
+        Supplier<CloseableIterator<Row>> nullSupplier = () -> null;
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(nullSupplier));
@@ -123,7 +123,7 @@ public class ConcatenatingIteratorTest {
     public void shouldReturnFalseForHasNextIfSuppliedWithBothNullsAndMultipleEmptyIterators() {
         // Given
         FakeIteratorSupplier testSupplier = new FakeIteratorSupplier(new ArrayList<>());
-        Supplier<CloseableIterator<SleeperRow>> nullSupplier = () -> null;
+        Supplier<CloseableIterator<Row>> nullSupplier = () -> null;
         FakeIteratorSupplier otherTestSupplier = new FakeIteratorSupplier(new ArrayList<>());
 
         // When
@@ -139,7 +139,7 @@ public class ConcatenatingIteratorTest {
     public void shouldReturnTrueForHasNextIfSuppliedWithBothNullsAndMultipleEmptyIteratorsAndOnePopulatedIterator() {
         // Given
         FakeIteratorSupplier testSupplier = new FakeIteratorSupplier(new ArrayList<>());
-        Supplier<CloseableIterator<SleeperRow>> nullSupplier = () -> null;
+        Supplier<CloseableIterator<Row>> nullSupplier = () -> null;
         FakeIteratorSupplier otherTestSupplier = new FakeIteratorSupplier(new ArrayList<>());
 
         // When
@@ -153,9 +153,9 @@ public class ConcatenatingIteratorTest {
         assertThat(testSupplier1.hasSupplied()).isTrue();
 
         assertThat(concatenatingIterator).toIterable().containsExactly(
-                new SleeperRow(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
-                new SleeperRow(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf)));
+                new Row(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
+                new Row(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf)));
     }
 
     @Test
@@ -178,7 +178,7 @@ public class ConcatenatingIteratorTest {
         EmptyIteratorWithFakeOnClose testIterator = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
 
         // When
-        ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<SleeperRow>>) () -> testIterator));
+        ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Row>>) () -> testIterator));
 
         // Then
         assertThat(concatenatingIterator).isExhausted();
@@ -202,7 +202,7 @@ public class ConcatenatingIteratorTest {
         });
 
         // When
-        ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<SleeperRow>>) () -> failingIterator));
+        ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Row>>) () -> failingIterator));
 
         // Then
         assertThatThrownBy(concatenatingIterator::hasNext)

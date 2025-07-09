@@ -16,11 +16,11 @@
 
 package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.query.core.model.Query;
 
 import java.util.List;
 
 public interface QueryDriver {
-    List<SleeperRow> run(Query query);
+    List<Row> run(Query query);
 }

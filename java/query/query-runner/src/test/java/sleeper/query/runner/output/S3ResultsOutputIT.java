@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -72,7 +72,7 @@ class S3ResultsOutputIT {
     TableProperties tableProperties = new TableProperties(instanceProperties);
 
     Schema schema = setupSchema();
-    List<SleeperRow> recordList = setupData();
+    List<Row> recordList = setupData();
     String outputDir;
     Query query = Query.builder()
             .tableName("table")
@@ -161,14 +161,14 @@ class S3ResultsOutputIT {
         }
     }
 
-    private List<SleeperRow> getRecordsFromOutput(String path) {
-        List<SleeperRow> records = new ArrayList<>();
+    private List<Row> getRecordsFromOutput(String path) {
+        List<Row> records = new ArrayList<>();
         try {
             ParquetRecordReader reader = new ParquetRecordReader(path, schema);
 
-            SleeperRow record = reader.read();
+            Row record = reader.read();
             while (null != record) {
-                records.add(new SleeperRow(record));
+                records.add(new Row(record));
                 record = reader.read();
             }
             reader.close();
@@ -194,14 +194,14 @@ class S3ResultsOutputIT {
                 .build();
     }
 
-    private static List<SleeperRow> setupData() {
+    private static List<Row> setupData() {
         int minYear = 2010;
         int maxYear = 2020;
         LocalDate startDate = LocalDate.of(minYear, 1, 1);
         LocalDate endDate = LocalDate.of(maxYear, 12, 31);
-        List<SleeperRow> recordList = new ArrayList<>();
+        List<Row> recordList = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            SleeperRow record = new SleeperRow();
+            Row record = new Row();
             record.put("year", date.getYear());
             record.put("month", date.getMonthValue());
             record.put("day", date.getDayOfMonth());

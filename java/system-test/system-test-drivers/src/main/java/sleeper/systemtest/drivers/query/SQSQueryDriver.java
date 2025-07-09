@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.core.model.Query;
@@ -106,7 +106,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     }
 
     @Override
-    public List<SleeperRow> getResults(Query query) {
+    public List<Row> getResults(Query query) {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
         String bucketName = instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET);

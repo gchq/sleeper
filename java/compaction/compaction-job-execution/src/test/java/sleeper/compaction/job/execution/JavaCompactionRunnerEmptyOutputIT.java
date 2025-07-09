@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -46,7 +46,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<SleeperRow> data = keyAndTwoValuesSortedEvenLongs();
+        List<Row> data = keyAndTwoValuesSortedEvenLongs();
         FileReference file1 = ingestRecordsGetFile(data);
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 

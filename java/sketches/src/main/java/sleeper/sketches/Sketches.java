@@ -19,7 +19,7 @@ import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -75,13 +75,13 @@ public class Sketches {
                 .map(entry -> new FieldSketch(schema.getField(entry.getKey()).orElseThrow(), entry.getValue()));
     }
 
-    public void update(SleeperRow record) {
+    public void update(Row record) {
         for (Field rowKeyField : schema.getRowKeyFields()) {
             update(getQuantilesSketch(rowKeyField.getName()), record, rowKeyField);
         }
     }
 
-    public static void update(ItemsSketch sketch, SleeperRow record, Field field) {
+    public static void update(ItemsSketch sketch, Row record, Field field) {
         sketch.update(convertValueForSketch(record, field));
     }
 
@@ -95,7 +95,7 @@ public class Sketches {
         }
     }
 
-    private static Object convertValueForSketch(SleeperRow record, Field field) {
+    private static Object convertValueForSketch(Row record, Field field) {
         Object value = record.get(field.getName());
         if (value == null) {
             return null;

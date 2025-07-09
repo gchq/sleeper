@@ -17,7 +17,7 @@ package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
@@ -57,20 +57,20 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<SleeperRow> apply(CloseableIterator<SleeperRow> input) {
+    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
         return new SecurityFilteringIteratorInternal(input, fieldName, auths);
     }
 
     /**
      * Discards records in the input iterator where the security label is not one of the permitted auths.
      */
-    public static class SecurityFilteringIteratorInternal implements CloseableIterator<SleeperRow> {
-        private final CloseableIterator<SleeperRow> iterator;
+    public static class SecurityFilteringIteratorInternal implements CloseableIterator<Row> {
+        private final CloseableIterator<Row> iterator;
         private final String fieldName;
         private final Set<String> auths;
-        private SleeperRow next;
+        private Row next;
 
-        public SecurityFilteringIteratorInternal(CloseableIterator<SleeperRow> iterator,
+        public SecurityFilteringIteratorInternal(CloseableIterator<Row> iterator,
                 String fieldName,
                 Set<String> auths) {
             this.iterator = iterator;
@@ -95,8 +95,8 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         }
 
         @Override
-        public SleeperRow next() {
-            SleeperRow toReturn = next;
+        public Row next() {
+            Row toReturn = next;
             updateNextToAllowedValue();
             return toReturn;
         }
@@ -107,7 +107,7 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         }
     }
 
-    private static boolean allowed(SleeperRow record, String securityFieldname, Set<String> auths) {
+    private static boolean allowed(Row record, String securityFieldname, Set<String> auths) {
         String securityLabel = (String) record.get(securityFieldname);
         if (null == securityLabel || 0 == securityLabel.length()) {
             return true;

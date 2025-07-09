@@ -30,7 +30,7 @@ import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -84,8 +84,8 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         update(stateStore).initialise(tree.getAllPartitions());
 
-        List<SleeperRow> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
-        List<SleeperRow> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
+        List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
+        List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
         FileReference file1 = ingestRecordsGetFile(data1);
         FileReference file2 = ingestRecordsGetFile(data2);
 
@@ -97,7 +97,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<SleeperRow> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
+        List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
         assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
@@ -105,7 +105,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
                 .isEqualTo(SketchesDeciles.from(schema, expectedResults));
     }
 
-    protected FileReference ingestRecordsGetFile(List<SleeperRow> records) throws Exception {
+    protected FileReference ingestRecordsGetFile(List<Row> records) throws Exception {
         return ingestRecordsGetFile(records, builder -> builder
                 .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient));

@@ -29,7 +29,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
@@ -98,8 +98,8 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
         AllReferencesToAFile file = ingestRecords(table, List.of(
-                new SleeperRow(Map.of("key1", 25L)),
-                new SleeperRow(Map.of("key1", 100L))));
+                new Row(Map.of("key1", 25L)),
+                new Row(Map.of("key1", 100L))));
         assertThat(listDataBucketObjectKeys())
                 .extracting(FilenameUtils::getName)
                 .containsExactly(
@@ -124,7 +124,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         StateStore stateStore1 = createStateStore(table1);
         update(stateStore1).initialise(schema);
         AllReferencesToAFile file1 = ingestRecords(table1, List.of(
-                new SleeperRow(Map.of("key1", 25L))));
+                new Row(Map.of("key1", 25L))));
         assertThat(listDataBucketObjectKeys())
                 .extracting(FilenameUtils::getName)
                 .containsExactly(
@@ -133,7 +133,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
         StateStore stateStore2 = createStateStore(table2);
         update(stateStore2).initialise(schema);
-        AllReferencesToAFile file2 = ingestRecords(table2, List.of(new SleeperRow(Map.of("key1", 25L))));
+        AllReferencesToAFile file2 = ingestRecords(table2, List.of(new Row(Map.of("key1", 25L))));
 
         // When
         deleteTable("table-1");
@@ -164,8 +164,8 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
         AllReferencesToAFile file = ingestRecords(table, List.of(
-                new SleeperRow(Map.of("key1", 25L)),
-                new SleeperRow(Map.of("key1", 100L))));
+                new Row(Map.of("key1", 25L)),
+                new Row(Map.of("key1", 100L))));
 
         DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
                 .createSnapshot();
@@ -218,7 +218,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
-    private AllReferencesToAFile ingestRecords(TableProperties tableProperties, List<SleeperRow> records) throws Exception {
+    private AllReferencesToAFile ingestRecords(TableProperties tableProperties, List<Row> records) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
@@ -230,7 +230,7 @@ public class DeleteTableIT extends LocalStackTestBase {
 
         IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
         ingestRecords.init();
-        for (SleeperRow record : records) {
+        for (Row record : records) {
             ingestRecords.write(record);
         }
         IngestResult result = ingestRecords.close();

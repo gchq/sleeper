@@ -17,7 +17,7 @@ package sleeper.core.record.serialiser;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -39,7 +39,7 @@ public class SleeperRowSerialiserTest {
                 .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
                 .valueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()))
                 .build();
-        SleeperRow record = new SleeperRow();
+        Row record = new Row();
         record.put("column1", 19);
         record.put("column2", 100L);
         record.put("column3", "abc");
@@ -49,7 +49,7 @@ public class SleeperRowSerialiserTest {
         SleeperRowSerialiser serialiser = new SleeperRowSerialiser(schema);
 
         // When
-        SleeperRow deserialised = serialiser.deserialise(serialiser.serialise(record));
+        Row deserialised = serialiser.deserialise(serialiser.serialise(record));
 
         // Then
         assertThat(deserialised).isEqualTo(record);

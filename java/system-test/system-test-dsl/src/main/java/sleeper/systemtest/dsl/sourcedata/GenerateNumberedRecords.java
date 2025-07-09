@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
@@ -49,20 +49,20 @@ public class GenerateNumberedRecords {
                 .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
     }
 
-    public Stream<SleeperRow> streamFrom(LongStream numbers) {
+    public Stream<Row> streamFrom(LongStream numbers) {
         return numbers.mapToObj(this::generateRecord);
     }
 
-    public Iterator<SleeperRow> iteratorFrom(LongStream numbers) {
+    public Iterator<Row> iteratorFrom(LongStream numbers) {
         return streamFrom(numbers).iterator();
     }
 
-    public Iterable<SleeperRow> iterableFrom(LongStream numbers) {
+    public Iterable<Row> iterableFrom(LongStream numbers) {
         return () -> iteratorFrom(numbers);
     }
 
-    public SleeperRow generateRecord(long number) {
-        return new SleeperRow(mapForNumber(number));
+    public Row generateRecord(long number) {
+        return new Row(mapForNumber(number));
     }
 
     private Map<String, Object> mapForNumber(long number) {

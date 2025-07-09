@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
@@ -89,7 +89,7 @@ public class IngestCoordinatorTestParameters {
         return "s3a://" + Objects.requireNonNull(dataBucketName, "dataBucketName must not be null") + "/" + tableId;
     }
 
-    public IngestCoordinator<SleeperRow> buildCoordinator() {
+    public IngestCoordinator<Row> buildCoordinator() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         setProperties.setProperties(instanceProperties, tableProperties, this);
@@ -109,7 +109,7 @@ public class IngestCoordinatorTestParameters {
                 .build();
     }
 
-    private IngestCoordinator.Builder<SleeperRow> coordinatorBuilder(
+    private IngestCoordinator.Builder<Row> coordinatorBuilder(
             InstanceProperties instanceProperties, TableProperties tableProperties) {
         return IngestFactory.builder()
                 .instanceProperties(instanceProperties)
@@ -261,7 +261,7 @@ public class IngestCoordinatorTestParameters {
             return new IngestCoordinatorTestParameters(this);
         }
 
-        public IngestCoordinator<SleeperRow> buildCoordinator() {
+        public IngestCoordinator<Row> buildCoordinator() {
             return build().buildCoordinator();
         }
     }

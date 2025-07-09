@@ -26,7 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
@@ -123,13 +123,13 @@ public class SleeperInstanceTablesTest {
             sleeper.table("B").ingest().direct(null).numberedRecords(LongStream.of(3, 4));
 
             // When / Then
-            Map<String, List<SleeperRow>> expectedRecords = Map.of(
+            Map<String, List<Row>> expectedRecords = Map.of(
                     "A", List.of(
-                            new SleeperRow(Map.of("key", 1L)),
-                            new SleeperRow(Map.of("key", 2L))),
+                            new Row(Map.of("key", 1L)),
+                            new Row(Map.of("key", 2L))),
                     "B", List.of(
-                            new SleeperRow(Map.of("key", 3L)),
-                            new SleeperRow(Map.of("key", 4L))));
+                            new Row(Map.of("key", 3L)),
+                            new Row(Map.of("key", 4L))));
             assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRecords);
             assertThat(sleeper.query().byQueue().allRecordsByTable()).isEqualTo(expectedRecords);
         }
@@ -140,7 +140,7 @@ public class SleeperInstanceTablesTest {
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
 
             // When / Then
-            Map<String, List<SleeperRow>> expectedRecords = Map.of(
+            Map<String, List<Row>> expectedRecords = Map.of(
                     "A", List.of(),
                     "B", List.of());
             assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRecords);

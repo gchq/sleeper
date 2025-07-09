@@ -40,7 +40,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -97,7 +97,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         TableProperties tableProperties = tablePropertiesProvider.getByName(recordsRequest.getTableName().getTableName());
 
         Schema schema = createSchemaForDataRead(tableProperties.getSchema(), recordsRequest);
-        CloseableIterator<SleeperRow> recordIterator = createRecordIterator(recordsRequest, schema, tableProperties);
+        CloseableIterator<Row> recordIterator = createRecordIterator(recordsRequest, schema, tableProperties);
 
         // Null indicates there is no data to read
         if (recordIterator == null) {
@@ -110,7 +110,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         GeneratedRowWriter writer = rowWriterBuilder.build();
 
         while (recordIterator.hasNext()) {
-            SleeperRow next = recordIterator.next();
+            Row next = recordIterator.next();
             spiller.writeRows((block, rowNum) -> writer.writeRow(block, rowNum, next) ? 1 : 0);
         }
 
@@ -139,7 +139,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * @implNote                 do not use the schema in the table properties as it could differ from the schema
      *                           provided
      */
-    protected abstract CloseableIterator<SleeperRow> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
+    protected abstract CloseableIterator<Row> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
 
     /**
      * Configures the writer so that it can write records from Sleeper to Athena.
@@ -179,7 +179,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addByteArrayExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarBinaryExtractor) (context, dst) -> {
-            SleeperRow record = (SleeperRow) context;
+            Row record = (Row) context;
             dst.isSet = 1;
             dst.value = (byte[]) record.get(name);
         });
@@ -194,7 +194,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addListExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name, ListType type) {
         rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) -> (context, rowNum) -> {
-            SleeperRow record = (SleeperRow) context;
+            Row record = (Row) context;
             Object object = record.get(name);
             if (object != null) {
                 BlockUtils.setComplexValue(vector, rowNum, FieldResolver.DEFAULT, object);
@@ -211,7 +211,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addStringExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarCharExtractor) (context, dst) -> {
-            SleeperRow record = (SleeperRow) context;
+            Row record = (Row) context;
             dst.isSet = 1;
             dst.value = (String) record.get(name);
         });
@@ -225,7 +225,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addLongExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (BigIntExtractor) (context, dst) -> {
-            SleeperRow record = (SleeperRow) context;
+            Row record = (Row) context;
             dst.isSet = 1;
             dst.value = (Long) record.get(name);
         });
@@ -239,7 +239,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addIntExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (IntExtractor) (context, dst) -> {
-            SleeperRow record = (SleeperRow) context;
+            Row record = (Row) context;
             dst.isSet = 1;
             dst.value = (Integer) record.get(name);
         });

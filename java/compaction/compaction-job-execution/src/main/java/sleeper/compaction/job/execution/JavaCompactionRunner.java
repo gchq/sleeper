@@ -32,7 +32,7 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
@@ -69,9 +69,9 @@ public class JavaCompactionRunner implements CompactionRunner {
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
-        List<CloseableIterator<SleeperRow>> inputIterators = createInputIterators(compactionJob, partition, schema);
+        List<CloseableIterator<Row>> inputIterators = createInputIterators(compactionJob, partition, schema);
 
-        CloseableIterator<SleeperRow> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
+        CloseableIterator<Row> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
         // Merge these iterator into one sorted iterator
 
         // Create writer
@@ -80,7 +80,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
         // update the state store, it will overwrite the existing output file written
         // by the previous run
-        ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
@@ -88,7 +88,7 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         long recordsWritten = 0L;
         while (mergingIterator.hasNext()) {
-            SleeperRow record = mergingIterator.next();
+            Row record = mergingIterator.next();
             sketches.update(record);
             // Write out
             writer.write(record);
@@ -103,13 +103,13 @@ public class JavaCompactionRunner implements CompactionRunner {
         sketchesStore.saveFileSketches(compactionJob.getOutputFile(), schema, sketches);
         LOGGER.info("Compaction job {}: Wrote sketches file for {}", compactionJob.getId(), compactionJob.getOutputFile());
 
-        for (CloseableIterator<SleeperRow> iterator : inputIterators) {
+        for (CloseableIterator<Row> iterator : inputIterators) {
             iterator.close();
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
         long totalNumberOfRecordsRead = 0L;
-        for (CloseableIterator<SleeperRow> iterator : inputIterators) {
+        for (CloseableIterator<Row> iterator : inputIterators) {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
@@ -117,12 +117,12 @@ public class JavaCompactionRunner implements CompactionRunner {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private List<CloseableIterator<SleeperRow>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
-        List<CloseableIterator<SleeperRow>> inputIterators = new ArrayList<>();
+    private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
+        List<CloseableIterator<Row>> inputIterators = new ArrayList<>();
 
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<SleeperRow> reader = new ParquetRecordReader.Builder(new Path(file), schema)
+            ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(file), schema)
                     .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();
@@ -135,10 +135,10 @@ public class JavaCompactionRunner implements CompactionRunner {
         return inputIterators;
     }
 
-    public static CloseableIterator<SleeperRow> getMergingIterator(
+    public static CloseableIterator<Row> getMergingIterator(
             ObjectFactory objectFactory, Schema schema, CompactionJob compactionJob,
-            List<CloseableIterator<SleeperRow>> inputIterators) throws IteratorCreationException {
-        CloseableIterator<SleeperRow> mergingIterator = new MergingIterator(schema, inputIterators);
+            List<CloseableIterator<Row>> inputIterators) throws IteratorCreationException {
+        CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {

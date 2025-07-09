@@ -27,7 +27,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
@@ -79,7 +79,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     void shouldCommitToStateStoreDirectly() throws Exception {
         // Given
         List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
-                .mapToObj(i -> new SleeperRow(Map.of("key", i))));
+                .mapToObj(i -> new Row(Map.of("key", i))));
 
         // When
         lambdaWithNewPartitionIds("L", "R").splitPartitionFromJson(
@@ -101,7 +101,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
-                .mapToObj(i -> new SleeperRow(Map.of("key", i))));
+                .mapToObj(i -> new Row(Map.of("key", i))));
 
         // When
         lambdaWithNewPartitionIds("L", "R").splitPartitionFromJson(
@@ -169,7 +169,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         return new SplitPartitionLambda(instanceProperties, s3Client, dynamoClient, sqsClient, List.of(ids).iterator()::next);
     }
 
-    private List<String> ingestRecordsGetFilenames(Stream<SleeperRow> records) throws Exception {
+    private List<String> ingestRecordsGetFilenames(Stream<Row> records) throws Exception {
         IngestResult result = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(tempDir.toString())

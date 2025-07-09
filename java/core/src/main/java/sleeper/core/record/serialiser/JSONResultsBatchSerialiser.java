@@ -27,7 +27,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import sleeper.core.record.ResultsBatch;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.Type;
@@ -89,9 +89,9 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             String queryId = jsonObject.get("queryId").getAsString();
             Schema schema = context.deserialize(jsonObject.get("schema"), Schema.class);
             SleeperRowJsonSerDe.RecordGsonSerialiser recordDeserialiser = new SleeperRowJsonSerDe.RecordGsonSerialiser(schema);
-            List<SleeperRow> records = new ArrayList<>();
+            List<Row> records = new ArrayList<>();
             jsonObject.getAsJsonArray("records").iterator()
-                    .forEachRemaining(j -> records.add(recordDeserialiser.deserialize(j, SleeperRow.class, context)));
+                    .forEachRemaining(j -> records.add(recordDeserialiser.deserialize(j, Row.class, context)));
             return new ResultsBatch(queryId, schema, records);
         }
 
@@ -103,7 +103,7 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             JsonArray serialisedRecords = new JsonArray();
             SleeperRowJsonSerDe.RecordGsonSerialiser sleeperRowSerialiser = new SleeperRowJsonSerDe.RecordGsonSerialiser(src.getSchema());
             src.getRecords().stream()
-                    .map(rec -> sleeperRowSerialiser.serialize(rec, SleeperRow.class, context))
+                    .map(rec -> sleeperRowSerialiser.serialize(rec, Row.class, context))
                     .forEach(serialisedRecords::add);
             jsonObject.add("records", serialisedRecords);
             return jsonObject;

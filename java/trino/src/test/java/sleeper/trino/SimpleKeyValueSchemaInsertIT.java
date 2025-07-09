@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -56,19 +56,19 @@ public class SimpleKeyValueSchemaInsertIT {
                 .build();
     }
 
-    private static Stream<SleeperRow> generateSimpleRecordStream() {
+    private static Stream<Row> generateSimpleRowStream() {
         return IntStream.range(0, NO_OF_RECORDS).mapToObj(recordNo -> {
-            SleeperRow record = new SleeperRow();
-            record.put("key", String.format("key-%09d", recordNo));
-            record.put("value", String.format("val-%09d", recordNo));
-            return record;
+            Row row = new Row();
+            row.put("key", String.format("key-%09d", recordNo));
+            row.put("value", String.format("val-%09d", recordNo));
+            return row;
         });
     }
 
     @BeforeAll
     public static void beforeClass() {
         assertions = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions();
-        String valuesTerms = generateSimpleRecordStream()
+        String valuesTerms = generateSimpleRowStream()
                 .map(record -> String.format("('%s', '%s')", record.get("key"), record.get("value")))
                 .collect(Collectors.joining(","));
         POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions().execute(

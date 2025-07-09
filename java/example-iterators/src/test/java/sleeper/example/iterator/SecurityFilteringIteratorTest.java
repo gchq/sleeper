@@ -18,7 +18,7 @@ package sleeper.example.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -35,13 +35,13 @@ public class SecurityFilteringIteratorTest {
     @Test
     public void shouldFilter() {
         // Given
-        List<SleeperRow> records = getData();
-        Iterator<SleeperRow> iterator = records.iterator();
+        List<Row> records = getData();
+        Iterator<Row> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel,public", getSchema());
 
         // When
-        Iterator<SleeperRow> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
@@ -51,13 +51,13 @@ public class SecurityFilteringIteratorTest {
     @Test
     public void shouldAllowRecordsWithEmptyVisibilitiesEvenIfNoAuths() {
         // Given
-        List<SleeperRow> records = getData();
-        Iterator<SleeperRow> iterator = records.iterator();
+        List<Row> records = getData();
+        Iterator<Row> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel", getSchema());
 
         // When
-        Iterator<SleeperRow> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
@@ -73,19 +73,19 @@ public class SecurityFilteringIteratorTest {
                 .build();
     }
 
-    private static List<SleeperRow> getData() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    private static List<Row> getData() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("field1", "1");
         record1.put("field2", 1000L);
         record1.put("securityLabel", "public");
         records.add(record1);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("field1", "2");
         record2.put("field2", 10000L);
         record2.put("securityLabel", "private");
         records.add(record2);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("field1", "2");
         record3.put("field2", 100000L);
         record3.put("securityLabel", "");

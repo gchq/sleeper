@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -59,11 +59,11 @@ public class IngestSourceFilesContext {
         testFolderName = () -> instance.getTableProperties().get(TABLE_ID);
     }
 
-    public void writeFile(IngestSourceFilesDriver driver, String filename, boolean writeSketches, Stream<SleeperRow> records) {
+    public void writeFile(IngestSourceFilesDriver driver, String filename, boolean writeSketches, Stream<Row> records) {
         writeFile(driver, instance.getInstanceProperties(), instance.getTableProperties(), filename, writeSketches, records);
     }
 
-    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, boolean writeSketches, Stream<SleeperRow> records) {
+    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, boolean writeSketches, Stream<Row> records) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -72,7 +72,7 @@ public class IngestSourceFilesContext {
 
     private void writeFile(
             IngestSourceFilesDriver driver, InstanceProperties instanceProperties, TableProperties tableProperties,
-            String filename, boolean writeSketches, Stream<SleeperRow> records) {
+            String filename, boolean writeSketches, Stream<Row> records) {
         String path = instance.getInstanceProperties().get(FILE_SYSTEM) + generateFilePathNoFs(filename);
         driver.writeFile(instanceProperties, tableProperties, path, writeSketches, records.iterator());
         filenameToPath.put(filename, path);

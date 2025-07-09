@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.query;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
@@ -58,11 +58,11 @@ public class DirectQueryDriver implements QueryDriver {
         return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance, clients));
     }
 
-    public List<SleeperRow> run(Query query) {
+    public List<Row> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
-        try (CloseableIterator<SleeperRow> recordIterator = executor(tableProperties, stateStore, tree).execute(query)) {
+        try (CloseableIterator<Row> recordIterator = executor(tableProperties, stateStore, tree).execute(query)) {
             return stream(recordIterator)
                     .collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {

@@ -17,7 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -34,13 +34,13 @@ public class AgeOffIteratorTest {
     @Test
     public void shouldAgeOff() {
         // Given
-        List<SleeperRow> records = getData();
-        Iterator<SleeperRow> iterator = records.iterator();
+        List<Row> records = getData();
+        Iterator<Row> iterator = records.iterator();
         AgeOffIterator ageOffIterator = new AgeOffIterator();
         ageOffIterator.init("timestamp,1000000", getSchema());
 
         // When
-        Iterator<SleeperRow> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
@@ -54,25 +54,25 @@ public class AgeOffIteratorTest {
                 .build();
     }
 
-    private static List<SleeperRow> getData() {
-        List<SleeperRow> records = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+    private static List<Row> getData() {
+        List<Row> records = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("id", "1");
         record1.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
         records.add(record1);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("id", "1");
         record2.put("timestamp", System.currentTimeMillis());
         records.add(record2);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("id", "2");
         record3.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
         records.add(record3);
-        SleeperRow record4 = new SleeperRow();
+        Row record4 = new Row();
         record4.put("id", "3");
         record4.put("timestamp", System.currentTimeMillis() - 2_000_000L);
         records.add(record4);
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("id", "4");
         record5.put("timestamp", System.currentTimeMillis());
         records.add(record5);

@@ -31,25 +31,25 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * The fundamental data item. A {@link SleeperRow} consists of a {@link Map} from
+ * The fundamental data item. A {@link Row} consists of a {@link Map} from
  * {@link String} to {@link Object} where the object will be one of the supported
  * types.
  */
-public class SleeperRow {
+public class Row {
     private final Map<String, Object> values;
 
-    public SleeperRow() {
+    public Row() {
         values = new HashMap<>();
     }
 
-    public SleeperRow(Map<String, Object> map) {
+    public Row(Map<String, Object> map) {
         this();
         this.values.putAll(map);
     }
 
-    public SleeperRow(SleeperRow record) {
+    public Row(Row row) {
         this();
-        this.values.putAll(record.values);
+        this.values.putAll(row.values);
     }
 
     /**
@@ -65,7 +65,7 @@ public class SleeperRow {
     /**
      * Gets a key containing the values of all row keys.
      *
-     * @param  schema the schema for this record
+     * @param  schema the schema for this row
      * @return        a {@link Key} containing all row key values
      */
     public Key getRowKeys(Schema schema) {
@@ -135,7 +135,7 @@ public class SleeperRow {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SleeperRow other = (SleeperRow) obj;
+        final Row other = (Row) obj;
 
         Map<String, Object> cloneWithWrappedByteArray = new HashMap<>();
         for (Map.Entry<String, Object> entry : values.entrySet()) {
@@ -166,19 +166,19 @@ public class SleeperRow {
                 cloneWithWrappedByteArray.put(entry.getKey(), entry.getValue());
             }
         }
-        return "Record{" + "values=" + cloneWithWrappedByteArray + '}';
+        return "Row{" + "values=" + cloneWithWrappedByteArray + '}';
     }
 
     /**
-     * Returns a string representation of this record. The only fields that are shown are those present in the schema.
+     * Returns a string representation of this row. The only fields that are shown are those present in the schema.
      *
      * @param  schema the schema to filter fields by
-     * @return        a string representation of this record
+     * @return        a string representation of this row
      */
     public String toString(Schema schema) {
         StringBuilder stringBuilder = new StringBuilder();
         List<String> terms = new ArrayList<>();
-        stringBuilder.append("Record{");
+        stringBuilder.append("Row{");
         append(schema.getRowKeyFields(), terms);
         append(schema.getSortKeyFields(), terms);
         append(schema.getValueFields(), terms);

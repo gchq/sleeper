@@ -18,7 +18,7 @@ package sleeper.clients.table.partition;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -36,16 +36,16 @@ import static java.util.stream.Collectors.toList;
 
 public class EstimateSplitPoints {
     private final Field rowKey1;
-    private final Iterable<SleeperRow> records;
+    private final Iterable<Row> rows;
     private final int numPartitions;
     private final int sketchSize;
 
-    public EstimateSplitPoints(Schema schema, Iterable<SleeperRow> records, int numPartitions, int sketchSize) {
+    public EstimateSplitPoints(Schema schema, Iterable<Row> rows, int numPartitions, int sketchSize) {
         if (numPartitions < 2) {
             throw new IllegalArgumentException("Number of partitions must be >= 2");
         }
         this.rowKey1 = schema.getRowKeyFields().get(0);
-        this.records = records;
+        this.rows = rows;
         this.numPartitions = numPartitions;
         this.sketchSize = sketchSize;
     }
@@ -57,8 +57,8 @@ public class EstimateSplitPoints {
 
         // Add all the values to the sketch
         ItemsSketch sketch = Sketches.createSketch(rowKey1.getType(), sketchSize);
-        for (SleeperRow record : records) {
-            Sketches.update(sketch, record, rowKey1);
+        for (Row row : rows) {
+            Sketches.update(sketch, row, rowKey1);
         }
 
         // The getQuantiles method returns the min and median and max given a value of 3; hence need to add one to get

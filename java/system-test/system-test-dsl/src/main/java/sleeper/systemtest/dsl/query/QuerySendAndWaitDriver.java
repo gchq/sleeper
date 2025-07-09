@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.query.core.model.Query;
 
 import java.util.List;
@@ -27,9 +27,9 @@ public interface QuerySendAndWaitDriver extends QueryDriver {
 
     void waitFor(Query query);
 
-    List<SleeperRow> getResults(Query query);
+    List<Row> getResults(Query query);
 
-    default List<SleeperRow> run(Query query) {
+    default List<Row> run(Query query) {
         send(query);
         waitFor(query);
         return getResults(query);

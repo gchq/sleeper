@@ -23,7 +23,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -56,18 +56,18 @@ public class BulkExportQuerySplitterTest {
     private Supplier<String> idSupplier = fixIds("test-leaf-export");
     private Supplier<Instant> timeSupplier = fixTime(Instant.parse("2025-01-13T09:23:00Z"));
 
-    private final List<SleeperRow> right = List.of(
-            new SleeperRow(Map.of("key", 2L)),
-            new SleeperRow(Map.of("key", 7L)));
-    private final List<SleeperRow> left = List.of(
-            new SleeperRow(Map.of("key", 8L)),
-            new SleeperRow(Map.of("key", 13L)));
-    private final List<SleeperRow> leftleft = List.of(
-            new SleeperRow(Map.of("key", 8L)),
-            new SleeperRow(Map.of("key", 13L)));
-    private final List<SleeperRow> leftright = List.of(
-            new SleeperRow(Map.of("key", 15)),
-            new SleeperRow(Map.of("key", 20L)));
+    private final List<Row> right = List.of(
+            new Row(Map.of("key", 2L)),
+            new Row(Map.of("key", 7L)));
+    private final List<Row> left = List.of(
+            new Row(Map.of("key", 8L)),
+            new Row(Map.of("key", 13L)));
+    private final List<Row> leftleft = List.of(
+            new Row(Map.of("key", 8L)),
+            new Row(Map.of("key", 13L)));
+    private final List<Row> leftright = List.of(
+            new Row(Map.of("key", 15)),
+            new Row(Map.of("key", 20L)));
 
     @Test
     public void shouldExportWholeTree() throws Exception {
@@ -79,7 +79,7 @@ public class BulkExportQuerySplitterTest {
                 .splitToNewChildren("L", "LL", "LR", 5L)
                 .buildTree();
         update(stateStore).initialise(tree.traverseLeavesFirst().toList());
-        addRootFile("root.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+        addRootFile("root.parquet", List.of(new Row(Map.of("key", 123L))));
         addPartitionFile("R", "right.parquet", right);
         addPartitionFile("L", "left.parquet", left);
         addPartitionFile("LL", "leftleft.parquet", leftleft);
@@ -133,7 +133,7 @@ public class BulkExportQuerySplitterTest {
 
         // When files are added after the executor is first initialised
         BulkExportQuerySplitter splitter = splitter();
-        addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+        addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
         splitter.initIfNeeded();
 
         // Then active files are reloaded
@@ -151,10 +151,10 @@ public class BulkExportQuerySplitterTest {
 
         // When files are added after the executor is first initialised
         BulkExportQuerySplitter splitter = splitter();
-        addRootFile("file.parquet", List.of(new SleeperRow(Map.of("key", 123L))));
+        addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
         splitter.initIfNeeded();
 
-        // Then the records that were added are not found
+        // Then the rows that were added are not found
         assertThat(splitter.splitIntoLeafPartitionQueries(bulkExportQuery)).isEmpty();
     }
 
@@ -170,15 +170,15 @@ public class BulkExportQuerySplitterTest {
         this.timeSupplier = timeSupplier;
     }
 
-    private void addRootFile(String filename, List<SleeperRow> records) {
-        addFile(fileReferenceFactory().rootFile(filename, records.size()), records);
+    private void addRootFile(String filename, List<Row> rows) {
+        addFile(fileReferenceFactory().rootFile(filename, rows.size()), rows);
     }
 
-    private void addPartitionFile(String partitionId, String filename, List<SleeperRow> records) {
-        addFile(fileReferenceFactory().partitionFile(partitionId, filename, records.size()), records);
+    private void addPartitionFile(String partitionId, String filename, List<Row> rows) {
+        addFile(fileReferenceFactory().partitionFile(partitionId, filename, rows.size()), rows);
     }
 
-    private void addFile(FileReference fileReference, List<SleeperRow> records) {
+    private void addFile(FileReference fileReference, List<Row> rows) {
         addFileMetadata(fileReference);
     }
 

@@ -29,9 +29,9 @@ import java.util.List;
 public class ResultsBatch {
     private final String queryId;
     private final Schema schema;
-    private final List<SleeperRow> records;
+    private final List<Row> records;
 
-    public ResultsBatch(String queryId, Schema schema, List<SleeperRow> records) {
+    public ResultsBatch(String queryId, Schema schema, List<Row> records) {
         this.queryId = queryId;
         this.schema = schema;
         this.records = records;
@@ -45,7 +45,7 @@ public class ResultsBatch {
         return schema;
     }
 
-    public List<SleeperRow> getRecords() {
+    public List<Row> getRecords() {
         return records;
     }
 

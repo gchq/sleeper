@@ -30,7 +30,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -123,10 +123,10 @@ public class QueryClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
 
-        CloseableIterator<SleeperRow> records;
+        CloseableIterator<Row> rows;
         Instant startTime = Instant.now();
         try {
-            records = runQuery(query);
+            rows = runQuery(query);
         } catch (QueryException e) {
             out.println("Encountered an error while running query " + query.getQueryId());
             e.printStackTrace(out.printStream());
@@ -134,15 +134,15 @@ public class QueryClient extends QueryCommandLineClient {
         }
         out.println("Returned Records:");
         long count = 0L;
-        while (records.hasNext()) {
-            out.println(records.next().toString(schema));
+        while (rows.hasNext()) {
+            out.println(rows.next().toString(schema));
             count++;
         }
 
         out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " records");
     }
 
-    private CloseableIterator<SleeperRow> runQuery(Query query) throws QueryException {
+    private CloseableIterator<Row> runQuery(Query query) throws QueryException {
         QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
         return queryExecutor.execute(query);
     }

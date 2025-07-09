@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -38,7 +38,7 @@ public class QueryAllTablesInParallelDriver implements QueryAllTablesDriver {
     }
 
     @Override
-    public Map<String, List<SleeperRow>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
+    public Map<String, List<Row>> runForAllTables(Function<QueryCreator, Query> queryFactory) {
         List<Query> queries = QueryCreator.forAllTables(instance, queryFactory);
         return queries.stream().parallel()
                 .map(query -> entry(instance.getTestTableName(query.getTableName()), driver.run(query)))
@@ -46,7 +46,7 @@ public class QueryAllTablesInParallelDriver implements QueryAllTablesDriver {
     }
 
     @Override
-    public List<SleeperRow> run(Query query) {
+    public List<Row> run(Query query) {
         return driver.run(query);
     }
 }

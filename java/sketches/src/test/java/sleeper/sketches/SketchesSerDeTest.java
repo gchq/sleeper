@@ -17,7 +17,7 @@ package sleeper.sketches;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -42,7 +42,7 @@ public class SketchesSerDeTest {
         Schema schema = createSchemaWithKey("key", new IntType());
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(new SleeperRow(Map.of("key", i)));
+            sketches.update(new Row(Map.of("key", i)));
         }
 
         // When
@@ -64,7 +64,7 @@ public class SketchesSerDeTest {
         Schema schema = createSchemaWithKey("key", new LongType());
         Sketches sketches = Sketches.from(schema);
         for (long i = 0; i < 100; i++) {
-            sketches.update(new SleeperRow(Map.of("key", i)));
+            sketches.update(new Row(Map.of("key", i)));
         }
 
         // When
@@ -86,7 +86,7 @@ public class SketchesSerDeTest {
         Schema schema = createSchemaWithKey("key", new StringType());
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(new SleeperRow(Map.of("key", "" + i)));
+            sketches.update(new Row(Map.of("key", "" + i)));
         }
 
         // When
@@ -108,7 +108,7 @@ public class SketchesSerDeTest {
         Schema schema = createSchemaWithKey("key", new ByteArrayType());
         Sketches sketches = Sketches.from(schema);
         for (byte i = 0; i < 100; i++) {
-            sketches.update(new SleeperRow(Map.of("key", new byte[]{i, (byte) (i + 1)})));
+            sketches.update(new Row(Map.of("key", new byte[]{i, (byte) (i + 1)})));
         }
 
         // When
@@ -136,7 +136,7 @@ public class SketchesSerDeTest {
                 .build();
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(new SleeperRow(Map.of(
+            sketches.update(new Row(Map.of(
                     "key1", i,
                     "key2", i + 1_000_000L,
                     "key3", "" + (i + 1_000_000L),
@@ -181,7 +181,7 @@ public class SketchesSerDeTest {
                 new Field("key4", new ByteArrayType()))
                 .build();
         Sketches sketches = Sketches.from(schema);
-        sketches.update(new SleeperRow());
+        sketches.update(new Row());
 
         // When
         byte[] bytes = serialise(sketches, schema);

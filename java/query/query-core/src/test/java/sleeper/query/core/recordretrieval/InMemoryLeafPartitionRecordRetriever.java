@@ -20,7 +20,7 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.key.Key;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -42,7 +42,7 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
     }
 
     @Override
-    public CloseableIterator<SleeperRow> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
+    public CloseableIterator<Row> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
         return new WrappedIterator<>(getRecordsOrRecordRetrievalException(leafPartitionQuery.getFiles())
                 .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
                 .map(record -> mapToReadSchema(record, dataReadSchema))
@@ -54,7 +54,7 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
         return this;
     }
 
-    private Stream<SleeperRow> getRecordsOrRecordRetrievalException(List<String> files) throws RecordRetrievalException {
+    private Stream<Row> getRecordsOrRecordRetrievalException(List<String> files) throws RecordRetrievalException {
         try {
             return recordStore.streamRecords(files)
                     .collect(toUnmodifiableList())
@@ -64,7 +64,7 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
         }
     }
 
-    private static boolean isRecordInRegion(SleeperRow record, LeafPartitionQuery query, Schema tableSchema) {
+    private static boolean isRecordInRegion(Row record, LeafPartitionQuery query, Schema tableSchema) {
         if (!isInRegion(record, query.getPartitionRegion(), tableSchema)) {
             return false;
         }
@@ -76,13 +76,13 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
         return false;
     }
 
-    private static boolean isInRegion(SleeperRow record, Region region, Schema tableSchema) {
+    private static boolean isInRegion(Row record, Region region, Schema tableSchema) {
         Key key = Key.create(record.getValues(tableSchema.getRowKeyFieldNames()));
         return region.isKeyInRegion(tableSchema, key);
     }
 
-    private static SleeperRow mapToReadSchema(SleeperRow record, Schema dataReadSchema) {
-        return new SleeperRow(dataReadSchema.getAllFieldNames().stream()
+    private static Row mapToReadSchema(Row record, Schema dataReadSchema) {
+        return new Row(dataReadSchema.getAllFieldNames().stream()
                 .collect(Collectors.toMap(Function.identity(), record::get)));
     }
 }

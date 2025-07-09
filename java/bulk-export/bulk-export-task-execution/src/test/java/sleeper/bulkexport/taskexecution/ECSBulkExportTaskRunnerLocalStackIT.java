@@ -32,7 +32,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -93,9 +93,9 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     @Test
     public void shouldRunOneBulkExportSubQuery() throws Exception {
         // Given
-        SleeperRow record1 = new SleeperRow(Map.of("key", 5, "value1", "5", "value2", "some value"));
-        SleeperRow record2 = new SleeperRow(Map.of("key", 15, "value1", "15", "value2", "other value"));
-        FileReference file = addPartitionFile("L", "file", List.of(record1, record2));
+        Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
         BulkExportLeafPartitionQuery query = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .exportId("e-id")
@@ -111,7 +111,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         runTask();
 
         // Then the query region is ignored for now
-        assertThat(readOutputFile(query)).containsExactly(record1, record2);
+        assertThat(readOutputFile(query)).containsExactly(row1, row2);
         assertThat(getMessagesFromQueue()).isEmpty();
     }
 
@@ -133,12 +133,12 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
-    private FileReference addPartitionFile(String partitionId, String name, List<SleeperRow> records) {
-        FileReference reference = fileFactory().partitionFile(partitionId, name, records.size());
+    private FileReference addPartitionFile(String partitionId, String name, List<Row> rows) {
+        FileReference reference = fileFactory().partitionFile(partitionId, name, rows.size());
         Path path = new Path(reference.getFilename());
-        try (ParquetWriter<SleeperRow> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
-            for (SleeperRow record : records) {
-                writer.write(record);
+        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
+            for (Row row : rows) {
+                writer.write(row);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -147,13 +147,13 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         return reference;
     }
 
-    private List<SleeperRow> readOutputFile(BulkExportLeafPartitionQuery query) {
+    private List<Row> readOutputFile(BulkExportLeafPartitionQuery query) {
         Path path = new Path(query.getOutputFile(instanceProperties));
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 new ParquetRecordReader.Builder(path, schema).withConf(hadoopConf).build())) {
-            List<SleeperRow> records = new ArrayList<>();
-            reader.forEachRemaining(records::add);
-            return records;
+            List<Row> rows = new ArrayList<>();
+            reader.forEachRemaining(rows::add);
+            return rows;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

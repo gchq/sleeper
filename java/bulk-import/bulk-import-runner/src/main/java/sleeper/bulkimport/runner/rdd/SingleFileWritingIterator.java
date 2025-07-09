@@ -28,7 +28,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ListType;
@@ -56,7 +55,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private final Configuration conf;
     private final PartitionTree partitionTree;
     private final SketchesStore sketchesStore;
-    private ParquetWriter<SleeperRow> parquetWriter;
+    private ParquetWriter<Row> parquetWriter;
     private Sketches sketches;
     private String path;
     private long numRecords;
@@ -115,7 +114,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     }
 
     private void write(Row row) throws IOException {
-        SleeperRow record = getRecord(row);
+        Row record = getRecord(row);
         parquetWriter.write(record);
         numRecords++;
         if (numRecords % 1_000_000L == 0) {
@@ -144,8 +143,8 @@ public class SingleFileWritingIterator implements Iterator<Row> {
                 numRecords, path, duration, rate);
     }
 
-    private SleeperRow getRecord(Row row) {
-        SleeperRow record = new SleeperRow();
+    private Row getRecord(Row row) {
+        Row record = new Row();
         int i = 0;
         for (Field field : allSchemaFields) {
             if (field.getType() instanceof ListType) {
@@ -160,7 +159,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         return record;
     }
 
-    private ParquetWriter<SleeperRow> createWriter(String partitionId) throws IOException {
+    private ParquetWriter<Row> createWriter(String partitionId) throws IOException {
         numRecords = 0L;
         path = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
                 .constructPartitionParquetFilePath(partitionId, outputFilename);
@@ -170,7 +169,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     }
 
     private String getPartitionId(Row row) {
-        SleeperRow record = getRecord(row);
+        Row record = getRecord(row);
         List<String> rowKeyFieldNames = schema.getRowKeyFieldNames();
         Key key = Key.create(record.getValues(rowKeyFieldNames));
         Partition partition = partitionTree.getLeafPartition(schema, key);

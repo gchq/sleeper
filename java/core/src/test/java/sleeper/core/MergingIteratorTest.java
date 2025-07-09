@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -51,36 +51,36 @@ public class MergingIteratorTest {
     public void shouldMergeSortedIterablesCorrectlyIntKey() {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new IntType(), new IntType(), new IntType());
-        List<SleeperRow> list1 = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+        List<Row> list1 = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", 1);
         record1.put("sort", 1);
         record1.put("value", 1);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 1);
         record2.put("sort", 2);
         record2.put("value", -1);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 3);
         record3.put("sort", 1);
         record3.put("value", 3);
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<SleeperRow> list2 = new ArrayList<>();
-        SleeperRow record4 = new SleeperRow();
+        List<Row> list2 = new ArrayList<>();
+        Row record4 = new Row();
         record4.put("key", 1);
         record4.put("sort", 1);
         record4.put("value", 1);
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", 2);
         record5.put("sort", 1000000);
         record5.put("value", 1);
-        SleeperRow record6 = new SleeperRow();
+        Row record6 = new Row();
         record6.put("key", 4);
         record6.put("sort", 1000000);
         record6.put("value", 4);
-        SleeperRow record7 = new SleeperRow();
+        Row record7 = new Row();
         record7.put("key", 5);
         record7.put("sort", 1000000);
         record7.put("value", 6);
@@ -90,8 +90,8 @@ public class MergingIteratorTest {
         list2.add(record7);
 
         // When
-        CloseableIterator<SleeperRow> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<SleeperRow> iterator2 = new WrappedIterator<>(list2.iterator());
+        CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Row> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
@@ -104,36 +104,36 @@ public class MergingIteratorTest {
     public void shouldMergeSortedIterablesCorrectlyLongKey() {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new LongType(), new LongType(), new StringType());
-        List<SleeperRow> list1 = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+        List<Row> list1 = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", 1L);
         record1.put("sort", 1L);
         record1.put("value", "1");
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 1L);
         record2.put("sort", 2L);
         record2.put("value", "-1");
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 3L);
         record3.put("sort", 1L);
         record3.put("value", "3");
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<SleeperRow> list2 = new ArrayList<>();
-        SleeperRow record4 = new SleeperRow();
+        List<Row> list2 = new ArrayList<>();
+        Row record4 = new Row();
         record4.put("key", 1L);
         record4.put("sort", 1L);
         record4.put("value", "1");
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", 2L);
         record5.put("sort", 1000000L);
         record5.put("value", "1");
-        SleeperRow record6 = new SleeperRow();
+        Row record6 = new Row();
         record6.put("key", 4L);
         record6.put("sort", 1000000L);
         record6.put("value", "4");
-        SleeperRow record7 = new SleeperRow();
+        Row record7 = new Row();
         record7.put("key", 5);
         record7.put("sort", 1000000L);
         record7.put("value", "6");
@@ -143,8 +143,8 @@ public class MergingIteratorTest {
         list2.add(record7);
 
         // When
-        CloseableIterator<SleeperRow> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<SleeperRow> iterator2 = new WrappedIterator<>(list2.iterator());
+        CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Row> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
@@ -157,36 +157,36 @@ public class MergingIteratorTest {
     public void shouldMergeSortedIterablesCorrectlyStringKey() {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new StringType(), new LongType(), new StringType());
-        List<SleeperRow> list1 = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+        List<Row> list1 = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", "A");
         record1.put("sort", 1L);
         record1.put("value", "1");
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", "A");
         record2.put("sort", 2L);
         record2.put("value", "-1");
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", "C");
         record3.put("sort", 1L);
         record3.put("value", "3");
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<SleeperRow> list2 = new ArrayList<>();
-        SleeperRow record4 = new SleeperRow();
+        List<Row> list2 = new ArrayList<>();
+        Row record4 = new Row();
         record4.put("key", "A");
         record4.put("sort", 1L);
         record4.put("value", "1");
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", "B");
         record5.put("sort", 1000000L);
         record5.put("value", "1");
-        SleeperRow record6 = new SleeperRow();
+        Row record6 = new Row();
         record6.put("key", "D");
         record6.put("sort", 1000000L);
         record6.put("value", "4");
-        SleeperRow record7 = new SleeperRow();
+        Row record7 = new Row();
         record7.put("key", "E");
         record7.put("sort", 1000000L);
         record7.put("value", "6");
@@ -196,8 +196,8 @@ public class MergingIteratorTest {
         list2.add(record7);
 
         // When
-        CloseableIterator<SleeperRow> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<SleeperRow> iterator2 = new WrappedIterator<>(list2.iterator());
+        CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Row> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
@@ -210,36 +210,36 @@ public class MergingIteratorTest {
     public void shouldMergeSortedIterablesCorrectlyByteArrayKey() {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new ByteArrayType(), new LongType(), new StringType());
-        List<SleeperRow> list1 = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+        List<Row> list1 = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", new byte[]{1});
         record1.put("sort", 1L);
         record1.put("value", "1");
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", new byte[]{1});
         record2.put("sort", 2L);
         record2.put("value", "-1");
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", new byte[]{3});
         record3.put("sort", 1L);
         record3.put("value", "3");
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<SleeperRow> list2 = new ArrayList<>();
-        SleeperRow record4 = new SleeperRow();
+        List<Row> list2 = new ArrayList<>();
+        Row record4 = new Row();
         record4.put("key", new byte[]{1});
         record4.put("sort", 1L);
         record4.put("value", "1");
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", new byte[]{2});
         record5.put("sort", 1000000L);
         record5.put("value", "1");
-        SleeperRow record6 = new SleeperRow();
+        Row record6 = new Row();
         record6.put("key", new byte[]{4, 4});
         record6.put("sort", 1000000L);
         record6.put("value", "4");
-        SleeperRow record7 = new SleeperRow();
+        Row record7 = new Row();
         record7.put("key", new byte[]{5});
         record7.put("sort", 1000000L);
         record7.put("value", "6");
@@ -249,8 +249,8 @@ public class MergingIteratorTest {
         list2.add(record7);
 
         // When
-        CloseableIterator<SleeperRow> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<SleeperRow> iterator2 = new WrappedIterator<>(list2.iterator());
+        CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Row> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
@@ -266,30 +266,30 @@ public class MergingIteratorTest {
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        List<SleeperRow> list1 = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+        List<Row> list1 = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", 1);
         record1.put("value", 1);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 1);
         record2.put("value", 1);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 3);
         record3.put("value", 3);
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<SleeperRow> list2 = new ArrayList<>();
-        SleeperRow record4 = new SleeperRow();
+        List<Row> list2 = new ArrayList<>();
+        Row record4 = new Row();
         record4.put("key", 1);
         record4.put("value", 1);
-        SleeperRow record5 = new SleeperRow();
+        Row record5 = new Row();
         record5.put("key", 2);
         record5.put("value", 1);
-        SleeperRow record6 = new SleeperRow();
+        Row record6 = new Row();
         record6.put("key", 4);
         record6.put("value", 4);
-        SleeperRow record7 = new SleeperRow();
+        Row record7 = new Row();
         record7.put("key", 5);
         record7.put("value", 6);
         list2.add(record4);
@@ -298,8 +298,8 @@ public class MergingIteratorTest {
         list2.add(record7);
 
         // When
-        CloseableIterator<SleeperRow> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<SleeperRow> iterator2 = new WrappedIterator<>(list2.iterator());
+        CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Row> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
@@ -315,14 +315,14 @@ public class MergingIteratorTest {
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
-        List<SleeperRow> list1 = new ArrayList<>();
-        SleeperRow record1 = new SleeperRow();
+        List<Row> list1 = new ArrayList<>();
+        Row record1 = new Row();
         record1.put("key", 1);
         record1.put("value", 1);
-        SleeperRow record2 = new SleeperRow();
+        Row record2 = new Row();
         record2.put("key", 1);
         record2.put("value", 1);
-        SleeperRow record3 = new SleeperRow();
+        Row record3 = new Row();
         record3.put("key", 3);
         record3.put("value", 3);
         list1.add(record1);
@@ -330,8 +330,8 @@ public class MergingIteratorTest {
         list1.add(record3);
 
         // When
-        CloseableIterator<SleeperRow> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<SleeperRow> iterator2 = new WrappedIterator<>(Collections.emptyIterator());
+        CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Row> iterator2 = new WrappedIterator<>(Collections.emptyIterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.python;
 
-import sleeper.core.record.SleeperRow;
+import sleeper.core.record.Row;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -63,7 +63,7 @@ public class SystemTestPythonQuery {
         return this;
     }
 
-    public Stream<SleeperRow> results() {
+    public Stream<Row> results() {
         return queryIds.stream().flatMap(queryId -> driver.results(outputDir, queryId));
     }
 }
