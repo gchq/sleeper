@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;

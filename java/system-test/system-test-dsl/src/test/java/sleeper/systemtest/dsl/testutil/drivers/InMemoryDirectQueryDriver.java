@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.row.Record;
+import sleeper.core.row.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;

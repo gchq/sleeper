@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.row.Record;
+import sleeper.core.row.testutils.InMemoryRecordStore;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;

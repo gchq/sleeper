@@ -17,8 +17,8 @@ package sleeper.ingest.runner.testutils;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.row.Record;
+import sleeper.core.row.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;

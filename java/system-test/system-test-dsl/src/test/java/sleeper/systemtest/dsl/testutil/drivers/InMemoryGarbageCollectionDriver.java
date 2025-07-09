@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRecordStore;
 import sleeper.garbagecollector.GarbageCollector;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

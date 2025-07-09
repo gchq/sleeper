@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.sketches.testutils.InMemorySketchesStore;

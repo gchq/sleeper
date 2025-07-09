@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.row.testutils.SortedRecordsCheck;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
