@@ -77,8 +77,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 
 public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
@@ -120,11 +120,11 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
         update(stateStore).initialise(tree.getAllPartitions());
@@ -135,34 +135,34 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReference fileReference = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime)
                 .rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 200);
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(fileReference);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(actualRows).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2)
                 .buildTree();
@@ -174,7 +174,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -183,31 +183,31 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Row> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(-100, 2).boxed().toArray());
-        assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(2, 100).boxed().toArray());
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
@@ -219,27 +219,27 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
         FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Row> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(-100, 2).boxed().toArray());
-        assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(2, 100).boxed().toArray());
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
@@ -251,9 +251,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         List<String> keys = LongStream.range(0, 200)
                 .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
                 .collect(Collectors.toList());
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(new StringType(), keys);
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "000000102")
                 .buildTree();
@@ -265,7 +265,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -274,34 +274,34 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 102);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 98);
-        List<Row> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(0, 102));
-        assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(102, 200));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
                         new byte[]{1, 1},
                         new byte[]{2, 2},
                         new byte[]{64, 65}));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", new byte[]{64, 64})
                 .buildTree();
@@ -313,7 +313,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -322,20 +322,20 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 1);
-        List<Row> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{1, 1}, new byte[]{2, 2});
-        assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{64, 65});
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
@@ -351,12 +351,12 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         List<Long> longKeys = LongStream.range(-100, 100).boxed()
                 .flatMap(longValue -> Stream.of(longValue - 1000L, longValue, longValue + 1000L))
                 .collect(Collectors.toList());
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1DSort1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1DSort1D(
                 new StringType(),
                 new LongType(),
                 stringKeys, longKeys);
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "000000102")
                 .buildTree();
@@ -368,7 +368,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -377,36 +377,36 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 306);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 294);
-        List<Row> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(stringKeys.subList(0, 306));
-        assertThat(leftRecords).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
+        assertThat(leftRows).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(0, 306));
-        assertThat(rightRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(stringKeys.subList(306, 600));
-        assertThat(rightRecords).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
+        assertThat(rightRows).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(306, 600));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
                 Arrays.asList(new byte[]{2, 3}, new byte[]{2, 2}, new byte[]{67, 68}, new byte[]{99}));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, new byte[]{10})
                 .buildTree();
@@ -418,7 +418,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -427,40 +427,40 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
         FileReference rightFile = fileReferenceFactory.partitionFile("right",
                 ingestType.getFilePrefix(parameters) + "/data/partition_right/rightFile.parquet", 2);
-        List<Row> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords)
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows)
                 .extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{1, 1}, new byte[]{5});
-        assertThat(leftRecords)
+        assertThat(leftRows)
                 .extracting(record -> record.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 3}, new byte[]{99});
-        assertThat(rightRecords)
+        assertThat(rightRows)
                 .extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{11, 2}, new byte[]{64, 65});
-        assertThat(rightRecords)
+        assertThat(rightRows)
                 .extracting(record -> record.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
                 Arrays.asList(1L, 20L, 1L, 50L));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, 10L)
                 .buildTree();
@@ -472,7 +472,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -481,34 +481,34 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 "/data/partition_right/rightFile.parquet", 2);
         FileReference leftFile = fileReferenceFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
                 "/data/partition_left/leftFile.parquet", 2);
-        List<Row> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = ResultVerifier.readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = ResultVerifier.readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords)
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 1L), List.of(100, 1L));
-        assertThat(rightRecords)
+        assertThat(rightRows)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 20L), List.of(100, 50L));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
                 LongStream.range(-100L, 100L).mapToObj(Long::toString).collect(Collectors.toList()));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, "2")
                 .buildTree();
@@ -520,7 +520,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -529,39 +529,39 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 "/data/partition_left/leftFile.parquet", 112);
         FileReference rightFile = fileReferenceFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
                 "/data/partition_right/rightFile.parquet", 88);
-        List<Row> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConf);
-        List<Row> allRecords = Stream.of(leftRecords, rightRecords)
+        List<Row> leftRows = ResultVerifier.readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = ResultVerifier.readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> allRows = Stream.of(leftRows, rightRows)
                 .flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(leftRecords)
+        assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(leftRows)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(-100L, 2L), LongStream.range(10L, 20L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
                         .collect(Collectors.toList()));
-        assertThat(rightRecords)
+        assertThat(rightRows)
                 .extracting(record -> record.getValues(List.of("key0", "key1")))
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(2L, 10L), LongStream.range(20L, 100L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
                         .collect(Collectors.toList()));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
@@ -573,21 +573,21 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference expectedFile = fileReferenceFactory.partitionFile("left",
                 ingestType.getFilePrefix(parameters) + "/data/partition_left/leftFile.parquet", 2);
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.rowList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(actualRows).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactly(List.of(0L), List.of(1L));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
@@ -595,16 +595,16 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     public void shouldWriteDuplicateRecords(
             TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        RecordGenerator.RowListAndSchema duplicatedRecordListAndSchema = new RecordGenerator.RowListAndSchema(
-                Stream.of(recordListAndSchema.rowList, recordListAndSchema.rowList)
+        RecordGenerator.RowListAndSchema duplicatedrowListAndSchema = new RecordGenerator.RowListAndSchema(
+                Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
                         .flatMap(List::stream)
                         .collect(Collectors.toList()),
-                recordListAndSchema.sleeperSchema);
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(duplicatedRecordListAndSchema.sleeperSchema)
+                rowListAndSchema.sleeperSchema);
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(duplicatedrowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
         update(stateStore).initialise(tree.getAllPartitions());
@@ -615,33 +615,33 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(duplicatedRecordListAndSchema, parameters, ingestType);
+        ingestRecords(duplicatedrowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(duplicatedRecordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(duplicatedrowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/leftFile.parquet", 400);
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(duplicatedRecordListAndSchema.rowList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(duplicatedrowListAndSchema.rowList);
+        assertThat(actualRows).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .flatMap(longValue -> Stream.of(longValue, longValue))
                         .collect(Collectors.toList()));
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
         update(stateStore).initialise(tree.getAllPartitions());
@@ -650,24 +650,24 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         assertThat(actualFiles).isEmpty();
-        assertThat(actualRecords).isEmpty();
+        assertThat(actualRows).isEmpty();
     }
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldApplyIterator(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
                 Arrays.asList(1L, 2L, 3L, 4L));
-        List<Row> expectedRecords = List.of(
+        List<Row> expectedRows = List.of(
                 new Row(Map.of(
                         "key", new byte[]{1, 1},
                         "sort", 1L,
@@ -676,8 +676,8 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                         "key", new byte[]{11, 12},
                         "sort", 2L,
                         "value", 7L)));
-        setSchema(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        setSchema(rowListAndSchema.sleeperSchema);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
         update(stateStore).initialise(tree.getAllPartitions());
@@ -689,18 +689,18 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        ingestRecords(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference expectedFile = fileReferenceFactory.rootFile(ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 2);
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
-        assertThat(actualRecords).containsExactlyElementsOf(expectedRecords);
-        assertThat(readSketchesDeciles(recordListAndSchema.sleeperSchema, actualFiles, ingestType))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, expectedRecords));
+        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
+        assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, expectedRows));
     }
 
     private static Supplier<String> randomStringGeneratorWithMaxLength(Integer maxLength) {
@@ -712,12 +712,12 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema recordListAndSchema,
+            RecordGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             TestIngestType ingestType) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = ingestType.createIngestCoordinator(
                 ingestCoordinatorTestParameters)) {
-            for (Row record : recordListAndSchema.rowList) {
+            for (Row record : rowListAndSchema.rowList) {
                 ingestCoordinator.write(record);
             }
         }

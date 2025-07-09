@@ -71,8 +71,8 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.accurateFileReferenceBuilder;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 import static sleeper.ingest.runner.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
 public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
@@ -128,7 +128,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             FileReference rootFile = fileReferenceFactory.rootFile(
                     ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 100L);
-            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRowsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -161,7 +161,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
             FileReference lFile = fileReferenceFactory.partitionFile("L",
                     ingestType.getFilePrefix(parameters) + "/data/partition_L/lFile.parquet", 25L);
-            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRowsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -203,7 +203,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rrFile = fileReferenceFactory.partitionFile("RR",
                     ingestType.getFilePrefix(parameters) + "/data/partition_RR/rrFile.parquet", 20L);
 
-            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRowsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(llFile, lrFile, rlFile, rrFile), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -251,7 +251,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     ingestType.getFilePrefix(parameters) + "/data/partition_R/rightFile2.parquet", "R", 4L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRowsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -292,7 +292,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rootFile = accurateFileReferenceBuilder(rootFilename, "root", 100L, stateStoreUpdateTime)
                     .onlyContainsDataForThisPartition(true)
                     .build();
-            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRowsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -326,7 +326,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             String rootFilename = ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet";
             FileReference lReference = fileReferenceFactory.partitionFile("L", rootFilename, 25L);
 
-            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRowsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lReference, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -366,7 +366,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             FileReference rlReference = accurateSplitFileReference(rootFile, "RL", 30L, stateStoreUpdateTime);
             FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L, stateStoreUpdateTime);
 
-            List<Row> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readRowsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
@@ -410,7 +410,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
             FileReference leftFile2 = accurateSplitFileReference(rootFile2, "L", 6L, stateStoreUpdateTime);
             FileReference rightFile2 = accurateSplitFileReference(rootFile2, "R", 4L, stateStoreUpdateTime);
-            List<Row> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
+            List<Row> allRecords = readMergedRowsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(rootFile1, rootFile2), hadoopConf);
 
             assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();

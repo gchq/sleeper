@@ -52,42 +52,42 @@ public class MergingIteratorTest {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new IntType(), new IntType(), new IntType());
         List<Row> list1 = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", 1);
-        record1.put("sort", 1);
-        record1.put("value", 1);
-        Row record2 = new Row();
-        record2.put("key", 1);
-        record2.put("sort", 2);
-        record2.put("value", -1);
-        Row record3 = new Row();
-        record3.put("key", 3);
-        record3.put("sort", 1);
-        record3.put("value", 3);
-        list1.add(record1);
-        list1.add(record2);
-        list1.add(record3);
+        Row row1 = new Row();
+        row1.put("key", 1);
+        row1.put("sort", 1);
+        row1.put("value", 1);
+        Row row2 = new Row();
+        row2.put("key", 1);
+        row2.put("sort", 2);
+        row2.put("value", -1);
+        Row row3 = new Row();
+        row3.put("key", 3);
+        row3.put("sort", 1);
+        row3.put("value", 3);
+        list1.add(row1);
+        list1.add(row2);
+        list1.add(row3);
         List<Row> list2 = new ArrayList<>();
-        Row record4 = new Row();
-        record4.put("key", 1);
-        record4.put("sort", 1);
-        record4.put("value", 1);
-        Row record5 = new Row();
-        record5.put("key", 2);
-        record5.put("sort", 1000000);
-        record5.put("value", 1);
-        Row record6 = new Row();
-        record6.put("key", 4);
-        record6.put("sort", 1000000);
-        record6.put("value", 4);
-        Row record7 = new Row();
-        record7.put("key", 5);
-        record7.put("sort", 1000000);
-        record7.put("value", 6);
-        list2.add(record4);
-        list2.add(record5);
-        list2.add(record6);
-        list2.add(record7);
+        Row row4 = new Row();
+        row4.put("key", 1);
+        row4.put("sort", 1);
+        row4.put("value", 1);
+        Row row5 = new Row();
+        row5.put("key", 2);
+        row5.put("sort", 1000000);
+        row5.put("value", 1);
+        Row row6 = new Row();
+        row6.put("key", 4);
+        row6.put("sort", 1000000);
+        row6.put("value", 4);
+        Row row7 = new Row();
+        row7.put("key", 5);
+        row7.put("sort", 1000000);
+        row7.put("value", 6);
+        list2.add(row4);
+        list2.add(row5);
+        list2.add(row6);
+        list2.add(row7);
 
         // When
         CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
@@ -96,7 +96,7 @@ public class MergingIteratorTest {
 
         // Then
         assertThat(mergingIterator).toIterable().containsExactly(
-                record1, record4, record2, record5, record3, record6, record7);
+                row1, row4, row2, row5, row3, row6, row7);
         assertThat(mergingIterator.getNumberOfRowsRead()).isEqualTo(7L);
     }
 
@@ -105,42 +105,42 @@ public class MergingIteratorTest {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new LongType(), new LongType(), new StringType());
         List<Row> list1 = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", 1L);
-        record1.put("sort", 1L);
-        record1.put("value", "1");
-        Row record2 = new Row();
-        record2.put("key", 1L);
-        record2.put("sort", 2L);
-        record2.put("value", "-1");
-        Row record3 = new Row();
-        record3.put("key", 3L);
-        record3.put("sort", 1L);
-        record3.put("value", "3");
-        list1.add(record1);
-        list1.add(record2);
-        list1.add(record3);
+        Row row1 = new Row();
+        row1.put("key", 1L);
+        row1.put("sort", 1L);
+        row1.put("value", "1");
+        Row row2 = new Row();
+        row2.put("key", 1L);
+        row2.put("sort", 2L);
+        row2.put("value", "-1");
+        Row row3 = new Row();
+        row3.put("key", 3L);
+        row3.put("sort", 1L);
+        row3.put("value", "3");
+        list1.add(row1);
+        list1.add(row2);
+        list1.add(row3);
         List<Row> list2 = new ArrayList<>();
-        Row record4 = new Row();
-        record4.put("key", 1L);
-        record4.put("sort", 1L);
-        record4.put("value", "1");
-        Row record5 = new Row();
-        record5.put("key", 2L);
-        record5.put("sort", 1000000L);
-        record5.put("value", "1");
-        Row record6 = new Row();
-        record6.put("key", 4L);
-        record6.put("sort", 1000000L);
-        record6.put("value", "4");
-        Row record7 = new Row();
-        record7.put("key", 5);
-        record7.put("sort", 1000000L);
-        record7.put("value", "6");
-        list2.add(record4);
-        list2.add(record5);
-        list2.add(record6);
-        list2.add(record7);
+        Row row4 = new Row();
+        row4.put("key", 1L);
+        row4.put("sort", 1L);
+        row4.put("value", "1");
+        Row row5 = new Row();
+        row5.put("key", 2L);
+        row5.put("sort", 1000000L);
+        row5.put("value", "1");
+        Row row6 = new Row();
+        row6.put("key", 4L);
+        row6.put("sort", 1000000L);
+        row6.put("value", "4");
+        Row row7 = new Row();
+        row7.put("key", 5);
+        row7.put("sort", 1000000L);
+        row7.put("value", "6");
+        list2.add(row4);
+        list2.add(row5);
+        list2.add(row6);
+        list2.add(row7);
 
         // When
         CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
@@ -149,7 +149,7 @@ public class MergingIteratorTest {
 
         // Then
         assertThat(mergingIterator).toIterable().containsExactly(
-                record1, record4, record2, record5, record3, record6, record7);
+                row1, row4, row2, row5, row3, row6, row7);
         assertThat(mergingIterator.getNumberOfRowsRead()).isEqualTo(7L);
     }
 
@@ -158,42 +158,42 @@ public class MergingIteratorTest {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new StringType(), new LongType(), new StringType());
         List<Row> list1 = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", "A");
-        record1.put("sort", 1L);
-        record1.put("value", "1");
-        Row record2 = new Row();
-        record2.put("key", "A");
-        record2.put("sort", 2L);
-        record2.put("value", "-1");
-        Row record3 = new Row();
-        record3.put("key", "C");
-        record3.put("sort", 1L);
-        record3.put("value", "3");
-        list1.add(record1);
-        list1.add(record2);
-        list1.add(record3);
+        Row row1 = new Row();
+        row1.put("key", "A");
+        row1.put("sort", 1L);
+        row1.put("value", "1");
+        Row row2 = new Row();
+        row2.put("key", "A");
+        row2.put("sort", 2L);
+        row2.put("value", "-1");
+        Row row3 = new Row();
+        row3.put("key", "C");
+        row3.put("sort", 1L);
+        row3.put("value", "3");
+        list1.add(row1);
+        list1.add(row2);
+        list1.add(row3);
         List<Row> list2 = new ArrayList<>();
-        Row record4 = new Row();
-        record4.put("key", "A");
-        record4.put("sort", 1L);
-        record4.put("value", "1");
-        Row record5 = new Row();
-        record5.put("key", "B");
-        record5.put("sort", 1000000L);
-        record5.put("value", "1");
-        Row record6 = new Row();
-        record6.put("key", "D");
-        record6.put("sort", 1000000L);
-        record6.put("value", "4");
-        Row record7 = new Row();
-        record7.put("key", "E");
-        record7.put("sort", 1000000L);
-        record7.put("value", "6");
-        list2.add(record4);
-        list2.add(record5);
-        list2.add(record6);
-        list2.add(record7);
+        Row row4 = new Row();
+        row4.put("key", "A");
+        row4.put("sort", 1L);
+        row4.put("value", "1");
+        Row row5 = new Row();
+        row5.put("key", "B");
+        row5.put("sort", 1000000L);
+        row5.put("value", "1");
+        Row row6 = new Row();
+        row6.put("key", "D");
+        row6.put("sort", 1000000L);
+        row6.put("value", "4");
+        Row row7 = new Row();
+        row7.put("key", "E");
+        row7.put("sort", 1000000L);
+        row7.put("value", "6");
+        list2.add(row4);
+        list2.add(row5);
+        list2.add(row6);
+        list2.add(row7);
 
         // When
         CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
@@ -202,7 +202,7 @@ public class MergingIteratorTest {
 
         // Then
         assertThat(mergingIterator).toIterable().containsExactly(
-                record1, record4, record2, record5, record3, record6, record7);
+                row1, row4, row2, row5, row3, row6, row7);
         assertThat(mergingIterator.getNumberOfRowsRead()).isEqualTo(7L);
     }
 
@@ -211,42 +211,42 @@ public class MergingIteratorTest {
         // Given
         Schema schema = schemaWithKeySortAndValueTypes(new ByteArrayType(), new LongType(), new StringType());
         List<Row> list1 = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", new byte[]{1});
-        record1.put("sort", 1L);
-        record1.put("value", "1");
-        Row record2 = new Row();
-        record2.put("key", new byte[]{1});
-        record2.put("sort", 2L);
-        record2.put("value", "-1");
-        Row record3 = new Row();
-        record3.put("key", new byte[]{3});
-        record3.put("sort", 1L);
-        record3.put("value", "3");
-        list1.add(record1);
-        list1.add(record2);
-        list1.add(record3);
+        Row row1 = new Row();
+        row1.put("key", new byte[]{1});
+        row1.put("sort", 1L);
+        row1.put("value", "1");
+        Row row2 = new Row();
+        row2.put("key", new byte[]{1});
+        row2.put("sort", 2L);
+        row2.put("value", "-1");
+        Row row3 = new Row();
+        row3.put("key", new byte[]{3});
+        row3.put("sort", 1L);
+        row3.put("value", "3");
+        list1.add(row1);
+        list1.add(row2);
+        list1.add(row3);
         List<Row> list2 = new ArrayList<>();
-        Row record4 = new Row();
-        record4.put("key", new byte[]{1});
-        record4.put("sort", 1L);
-        record4.put("value", "1");
-        Row record5 = new Row();
-        record5.put("key", new byte[]{2});
-        record5.put("sort", 1000000L);
-        record5.put("value", "1");
-        Row record6 = new Row();
-        record6.put("key", new byte[]{4, 4});
-        record6.put("sort", 1000000L);
-        record6.put("value", "4");
-        Row record7 = new Row();
-        record7.put("key", new byte[]{5});
-        record7.put("sort", 1000000L);
-        record7.put("value", "6");
-        list2.add(record4);
-        list2.add(record5);
-        list2.add(record6);
-        list2.add(record7);
+        Row row4 = new Row();
+        row4.put("key", new byte[]{1});
+        row4.put("sort", 1L);
+        row4.put("value", "1");
+        Row row5 = new Row();
+        row5.put("key", new byte[]{2});
+        row5.put("sort", 1000000L);
+        row5.put("value", "1");
+        Row row6 = new Row();
+        row6.put("key", new byte[]{4, 4});
+        row6.put("sort", 1000000L);
+        row6.put("value", "4");
+        Row row7 = new Row();
+        row7.put("key", new byte[]{5});
+        row7.put("sort", 1000000L);
+        row7.put("value", "6");
+        list2.add(row4);
+        list2.add(row5);
+        list2.add(row6);
+        list2.add(row7);
 
         // When
         CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
@@ -255,7 +255,7 @@ public class MergingIteratorTest {
 
         // Then
         assertThat(mergingIterator).toIterable().containsExactly(
-                record1, record4, record2, record5, record3, record6, record7);
+                row1, row4, row2, row5, row3, row6, row7);
         assertThat(mergingIterator.getNumberOfRowsRead()).isEqualTo(7L);
     }
 
@@ -267,35 +267,35 @@ public class MergingIteratorTest {
                 .valueFields(new Field("value", new IntType()))
                 .build();
         List<Row> list1 = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", 1);
-        record1.put("value", 1);
-        Row record2 = new Row();
-        record2.put("key", 1);
-        record2.put("value", 1);
-        Row record3 = new Row();
-        record3.put("key", 3);
-        record3.put("value", 3);
-        list1.add(record1);
-        list1.add(record2);
-        list1.add(record3);
+        Row row1 = new Row();
+        row1.put("key", 1);
+        row1.put("value", 1);
+        Row row2 = new Row();
+        row2.put("key", 1);
+        row2.put("value", 1);
+        Row row3 = new Row();
+        row3.put("key", 3);
+        row3.put("value", 3);
+        list1.add(row1);
+        list1.add(row2);
+        list1.add(row3);
         List<Row> list2 = new ArrayList<>();
-        Row record4 = new Row();
-        record4.put("key", 1);
-        record4.put("value", 1);
-        Row record5 = new Row();
-        record5.put("key", 2);
-        record5.put("value", 1);
-        Row record6 = new Row();
-        record6.put("key", 4);
-        record6.put("value", 4);
-        Row record7 = new Row();
-        record7.put("key", 5);
-        record7.put("value", 6);
-        list2.add(record4);
-        list2.add(record5);
-        list2.add(record6);
-        list2.add(record7);
+        Row row4 = new Row();
+        row4.put("key", 1);
+        row4.put("value", 1);
+        Row row5 = new Row();
+        row5.put("key", 2);
+        row5.put("value", 1);
+        Row row6 = new Row();
+        row6.put("key", 4);
+        row6.put("value", 4);
+        Row row7 = new Row();
+        row7.put("key", 5);
+        row7.put("value", 6);
+        list2.add(row4);
+        list2.add(row5);
+        list2.add(row6);
+        list2.add(row7);
 
         // When
         CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
@@ -304,7 +304,7 @@ public class MergingIteratorTest {
 
         // Then
         assertThat(mergingIterator).toIterable().containsExactly(
-                record1, record2, record4, record5, record3, record6, record7);
+                row1, row2, row4, row5, row3, row6, row7);
         assertThat(mergingIterator.getNumberOfRowsRead()).isEqualTo(7L);
     }
 
@@ -316,18 +316,18 @@ public class MergingIteratorTest {
                 .valueFields(new Field("value", new IntType()))
                 .build();
         List<Row> list1 = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", 1);
-        record1.put("value", 1);
-        Row record2 = new Row();
-        record2.put("key", 1);
-        record2.put("value", 1);
-        Row record3 = new Row();
-        record3.put("key", 3);
-        record3.put("value", 3);
-        list1.add(record1);
-        list1.add(record2);
-        list1.add(record3);
+        Row row1 = new Row();
+        row1.put("key", 1);
+        row1.put("value", 1);
+        Row row2 = new Row();
+        row2.put("key", 1);
+        row2.put("value", 1);
+        Row row3 = new Row();
+        row3.put("key", 3);
+        row3.put("value", 3);
+        list1.add(row1);
+        list1.add(row2);
+        list1.add(row3);
 
         // When
         CloseableIterator<Row> iterator1 = new WrappedIterator<>(list1.iterator());
@@ -336,7 +336,7 @@ public class MergingIteratorTest {
 
         // Then
         assertThat(mergingIterator).toIterable().containsExactly(
-                record1, record2, record3);
+                row1, row2, row3);
         assertThat(mergingIterator.getNumberOfRowsRead()).isEqualTo(3L);
     }
 }

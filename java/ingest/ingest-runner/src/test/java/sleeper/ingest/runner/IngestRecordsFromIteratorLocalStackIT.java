@@ -27,14 +27,14 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
 
 public class IngestRecordsFromIteratorLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
-        List<Row> rows = getRecords();
+        List<Row> rows = getRows();
 
         // When
         long numWritten = ingestFromRowIterator(stateStore, rows.iterator()).getRecordsWritten();

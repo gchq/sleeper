@@ -93,180 +93,180 @@ public class IngestRecordsTestDataHelper {
                 .build();
     }
 
-    public static List<Row> getSingleRecord() {
-        Row record1 = new Row();
-        record1.put("key", 1L);
-        record1.put("value1", 2L);
-        record1.put("value2", 3L);
-        return Collections.singletonList(record1);
+    public static List<Row> getSingleRow() {
+        Row row1 = new Row();
+        row1.put("key", 1L);
+        row1.put("value1", 2L);
+        row1.put("value2", 3L);
+        return Collections.singletonList(row1);
     }
 
-    public static List<Row> getRecords() {
-        List<Row> records = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", 1L);
-        record1.put("value1", 2L);
-        record1.put("value2", 3L);
-        Row record2 = new Row();
-        record2.put("key", 3L);
-        record2.put("value1", 4L);
-        record2.put("value2", 6L);
-        records.add(record1);
-        records.add(record2);
-        return records;
+    public static List<Row> getRows() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key", 1L);
+        row1.put("value1", 2L);
+        row1.put("value2", 3L);
+        Row row2 = new Row();
+        row2.put("key", 3L);
+        row2.put("value1", 4L);
+        row2.put("value2", 6L);
+        rows.add(row1);
+        rows.add(row2);
+        return rows;
     }
 
-    public static List<Row> getLotsOfRecords() {
-        List<Row> records = new ArrayList<>();
+    public static List<Row> getLotsOfRows() {
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
-            Row record1 = new Row();
-            record1.put("key", 1L - i);
-            record1.put("value1", 2L * i);
-            record1.put("value2", 3L * i);
-            Row record2 = new Row();
-            record2.put("key", 2L + i);
-            record2.put("value1", 4L * i);
-            record2.put("value2", 6L * i);
-            records.add(record1);
-            records.add(record2);
+            Row row1 = new Row();
+            row1.put("key", 1L - i);
+            row1.put("value1", 2L * i);
+            row1.put("value2", 3L * i);
+            Row row2 = new Row();
+            row2.put("key", 2L + i);
+            row2.put("value1", 4L * i);
+            row2.put("value2", 6L * i);
+            rows.add(row1);
+            rows.add(row2);
         }
-        return records;
+        return rows;
     }
 
-    public static List<Row> getRecordsInFirstPartitionOnly() {
-        List<Row> records = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", 1L);
-        record1.put("value1", 2L);
-        record1.put("value2", 3L);
-        Row record2 = new Row();
-        record2.put("key", 0L);
-        record2.put("value1", 4L);
-        record2.put("value2", 6L);
-        records.add(record1);
-        records.add(record2);
-        return records;
+    public static List<Row> getRowsInFirstPartitionOnly() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key", 1L);
+        row1.put("value1", 2L);
+        row1.put("value2", 3L);
+        Row row2 = new Row();
+        row2.put("key", 0L);
+        row2.put("value1", 4L);
+        row2.put("value2", 6L);
+        rows.add(row1);
+        rows.add(row2);
+        return rows;
     }
 
-    public static List<Row> getRecordsByteArrayKey() {
-        List<Row> records = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", new byte[]{1, 1});
-        record1.put("value1", 2L);
-        record1.put("value2", 3L);
-        Row record2 = new Row();
-        record2.put("key", new byte[]{2, 2});
-        record2.put("value1", 2L);
-        record2.put("value2", 3L);
-        Row record3 = new Row();
-        record3.put("key", new byte[]{64, 65});
-        record3.put("value1", 4L);
-        record3.put("value2", 6L);
-        records.add(record1);
-        records.add(record2);
-        records.add(record3);
-        return records;
+    public static List<Row> getRowsByteArrayKey() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key", new byte[]{1, 1});
+        row1.put("value1", 2L);
+        row1.put("value2", 3L);
+        Row row2 = new Row();
+        row2.put("key", new byte[]{2, 2});
+        row2.put("value1", 2L);
+        row2.put("value2", 3L);
+        Row row3 = new Row();
+        row3.put("key", new byte[]{64, 65});
+        row3.put("value1", 4L);
+        row3.put("value2", 6L);
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        return rows;
     }
 
-    public static List<Row> getRecords2DimByteArrayKey() {
-        List<Row> records = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key1", new byte[]{1, 1});
-        record1.put("key2", new byte[]{2, 3});
-        record1.put("value1", 2L);
-        record1.put("value2", 3L);
-        Row record2 = new Row();
-        record2.put("key1", new byte[]{11, 2});
-        record2.put("key2", new byte[]{2, 2});
-        record2.put("value1", 2L);
-        record2.put("value2", 3L);
-        Row record3 = new Row();
-        record3.put("key1", new byte[]{64, 65});
-        record3.put("key2", new byte[]{67, 68});
-        record3.put("value1", 4L);
-        record3.put("value2", 6L);
-        Row record4 = new Row();
-        record4.put("key1", new byte[]{5});
-        record4.put("key2", new byte[]{99});
-        record4.put("value1", 2L);
-        record4.put("value2", 3L);
-        records.add(record1);
-        records.add(record2);
-        records.add(record3);
-        records.add(record3); // Add twice so that one file has more entries so we can tell them apart
-        records.add(record4);
-        return records;
+    public static List<Row> getRows2DimByteArrayKey() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key1", new byte[]{1, 1});
+        row1.put("key2", new byte[]{2, 3});
+        row1.put("value1", 2L);
+        row1.put("value2", 3L);
+        Row row2 = new Row();
+        row2.put("key1", new byte[]{11, 2});
+        row2.put("key2", new byte[]{2, 2});
+        row2.put("value1", 2L);
+        row2.put("value2", 3L);
+        Row row3 = new Row();
+        row3.put("key1", new byte[]{64, 65});
+        row3.put("key2", new byte[]{67, 68});
+        row3.put("value1", 4L);
+        row3.put("value2", 6L);
+        Row row4 = new Row();
+        row4.put("key1", new byte[]{5});
+        row4.put("key2", new byte[]{99});
+        row4.put("value1", 2L);
+        row4.put("value2", 3L);
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        rows.add(row3); // Add twice so that one file has more entries so we can tell them apart
+        rows.add(row4);
+        return rows;
     }
 
-    public static List<Row> getUnsortedRecords() {
-        List<Row> records = new ArrayList<>();
+    public static List<Row> getUnsortedRows() {
+        List<Row> rows = new ArrayList<>();
         for (int i = 10; i > 0; i--) {
-            Row record1 = new Row();
-            record1.put("key", (long) i);
-            record1.put("value1", 2L);
-            record1.put("value2", 3L);
-            records.add(record1);
-            Row record2 = new Row();
-            record2.put("key", 5L);
-            record2.put("value1", 4L);
-            record2.put("value2", 6L);
-            records.add(record2);
+            Row row1 = new Row();
+            row1.put("key", (long) i);
+            row1.put("value1", 2L);
+            row1.put("value2", 3L);
+            rows.add(row1);
+            Row row2 = new Row();
+            row2.put("key", 5L);
+            row2.put("value1", 4L);
+            row2.put("value2", 6L);
+            rows.add(row2);
         }
-        return records;
+        return rows;
     }
 
-    public static List<Row> getRecordsForAggregationIteratorTest() {
-        List<Row> records = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key", new byte[]{1, 1});
-        record1.put("sort", 2L);
-        record1.put("value", 1L);
-        Row record2 = new Row();
-        record2.put("key", new byte[]{11, 2});
-        record2.put("sort", 1L);
-        record2.put("value", 1L);
-        Row record3 = new Row();
-        record3.put("key", new byte[]{1, 1});
-        record3.put("sort", 2L);
-        record3.put("value", 6L);
-        Row record4 = new Row();
-        record4.put("key", new byte[]{11, 2});
-        record4.put("sort", 1L);
-        record4.put("value", 3L);
-        records.add(record1);
-        records.add(record2);
-        records.add(record3);
-        records.add(record4);
-        return records;
+    public static List<Row> getRowsForAggregationIteratorTest() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key", new byte[]{1, 1});
+        row1.put("sort", 2L);
+        row1.put("value", 1L);
+        Row row2 = new Row();
+        row2.put("key", new byte[]{11, 2});
+        row2.put("sort", 1L);
+        row2.put("value", 1L);
+        Row row3 = new Row();
+        row3.put("key", new byte[]{1, 1});
+        row3.put("sort", 2L);
+        row3.put("value", 6L);
+        Row row4 = new Row();
+        row4.put("key", new byte[]{11, 2});
+        row4.put("sort", 1L);
+        row4.put("value", 3L);
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        rows.add(row4);
+        return rows;
     }
 
-    public static List<Row> getRecordsOscillatingBetween2Partitions() {
-        List<Row> records = new ArrayList<>();
-        Row record1 = new Row();
-        record1.put("key1", 0);
-        record1.put("key2", 1L);
-        record1.put("value1", 2L);
-        record1.put("value2", 1L);
-        Row record2 = new Row();
-        record2.put("key1", 0);
-        record2.put("key2", 20L);
-        record2.put("value1", 200L);
-        record2.put("value2", 100L);
-        Row record3 = new Row();
-        record3.put("key1", 100);
-        record3.put("key2", 1L);
-        record3.put("value1", 20000L);
-        record3.put("value2", 10000L);
-        Row record4 = new Row();
-        record4.put("key1", 100);
-        record4.put("key2", 50L);
-        record4.put("value1", 2000000L);
-        record4.put("value2", 1000000L);
-        records.add(record1);
-        records.add(record2);
-        records.add(record3);
-        records.add(record4);
-        return records;
+    public static List<Row> getRowsOscillatingBetween2Partitions() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key1", 0);
+        row1.put("key2", 1L);
+        row1.put("value1", 2L);
+        row1.put("value2", 1L);
+        Row row2 = new Row();
+        row2.put("key1", 0);
+        row2.put("key2", 20L);
+        row2.put("value1", 200L);
+        row2.put("value2", 100L);
+        Row row3 = new Row();
+        row3.put("key1", 100);
+        row3.put("key2", 1L);
+        row3.put("value1", 20000L);
+        row3.put("value2", 10000L);
+        Row row4 = new Row();
+        row4.put("key1", 100);
+        row4.put("key2", 50L);
+        row4.put("value1", 2000000L);
+        row4.put("value2", 1000000L);
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        rows.add(row4);
+        return rows;
     }
 
     public static List<Row> readIngestedRecords(IngestResult result, Schema schema) {
@@ -286,21 +286,21 @@ public class IngestRecordsTestDataHelper {
 
     public static List<Row> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
         ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
-        List<Row> readRecords = new ArrayList<>();
-        Row record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord(record, schema));
-            record = reader.read();
+        List<Row> readRows = new ArrayList<>();
+        Row row = reader.read();
+        while (null != row) {
+            readRows.add(cloneRow(row, schema));
+            row = reader.read();
         }
         reader.close();
-        return readRecords;
+        return readRows;
     }
 
-    private static Row cloneRecord(Row record, Schema schema) {
-        Row clonedRecord = new Row();
+    private static Row cloneRow(Row row, Schema schema) {
+        Row clonedRow = new Row();
         for (Field field : schema.getAllFields()) {
-            clonedRecord.put(field.getName(), record.get(field.getName()));
+            clonedRow.put(field.getName(), row.get(field.getName()));
         }
-        return clonedRecord;
+        return clonedRow;
     }
 }

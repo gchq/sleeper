@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getSingleRecord;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getSingleRow;
 
 class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
 
@@ -50,11 +50,11 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRowIterator(stateStore, getRecords().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, getRows().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(getRecords().size());
+        assertThat(numWritten).isEqualTo(getRows().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences()
@@ -70,9 +70,9 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         FileReference leftFile = fileReferences.get(0);
         FileReference rightFile = fileReferences.get(1);
         assertThat(readRecords(leftFile))
-                .containsExactly(getRecords().get(0));
+                .containsExactly(getRows().get(0));
         assertThat(readRecords(rightFile))
-                .containsExactly(getRecords().get(1));
+                .containsExactly(getRows().get(1));
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, leftFile, sketchesStore))
                 .isEqualTo(SketchesDeciles.builder()
@@ -101,11 +101,11 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRowIterator(stateStore, getSingleRecord().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, getSingleRow().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(getSingleRecord().size());
+        assertThat(numWritten).isEqualTo(getSingleRow().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences()
@@ -117,7 +117,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .containsExactly(fileReferenceFactory.partitionFile("L", 1L));
         //  - Read files and check they have the correct records
         assertThat(readRecords(fileReferences.get(0)))
-                .containsExactly(getSingleRecord().get(0));
+                .containsExactly(getSingleRow().get(0));
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
                 .isEqualTo(SketchesDeciles.builder()

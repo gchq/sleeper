@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
 
 public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
-        List<Row> rows = getRecords();
+        List<Row> rows = getRows();
 
         // When
         long numWritten = ingestRecords(stateStore, rows).getRecordsWritten();

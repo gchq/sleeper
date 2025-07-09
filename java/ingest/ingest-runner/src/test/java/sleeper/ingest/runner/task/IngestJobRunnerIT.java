@@ -78,7 +78,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAdde
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
 class IngestJobRunnerIT extends LocalStackTestBase {
 
@@ -122,7 +122,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -154,7 +154,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -194,7 +194,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)
@@ -234,7 +234,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rows1.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rows1.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(stateStore,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         assertThat(localDir).isEmptyDirectory();
@@ -275,7 +275,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         // Then
         List<StateStoreCommitRequest> commitRequests = getCommitRequestsFromQueue(tableProperties);
         List<FileReference> actualFiles = getFilesAdded(commitRequests);
-        List<Row> actualRows = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
         assertThat(actualFiles)

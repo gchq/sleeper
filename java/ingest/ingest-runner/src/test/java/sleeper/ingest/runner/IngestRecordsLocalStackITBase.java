@@ -48,7 +48,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
 public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     @TempDir
@@ -91,7 +91,7 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
     }
 
     protected List<Row> readRecords(List<FileReference> fileReferences) {
-        return readMergedRecordsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
+        return readMergedRowsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
     }
 
     private IngestFactory createIngestFactory(StateStore stateStore) {

@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 
 public class TestFilesAndRecords {
 
@@ -46,7 +46,7 @@ public class TestFilesAndRecords {
             StateStore stateStore, Schema schema, Configuration configuration) {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         Map<String, List<Row>> rowsByFilename = fileReferences.stream()
-                .map(file -> Map.entry(file.getFilename(), readRecordsFromPartitionDataFile(schema, file, configuration)))
+                .map(file -> Map.entry(file.getFilename(), readRowsFromPartitionDataFile(schema, file, configuration)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return new TestFilesAndRecords(fileReferences, rowsByFilename);
     }

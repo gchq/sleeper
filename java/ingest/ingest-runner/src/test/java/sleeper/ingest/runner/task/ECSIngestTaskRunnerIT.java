@@ -46,7 +46,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
 public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
@@ -87,7 +87,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         FileReference expectedFile = fileReferenceFactory.rootFile(actualFiles.get(0).getFilename(), 400);
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRowsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
@@ -121,7 +121,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRecords = readMergedRowsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();

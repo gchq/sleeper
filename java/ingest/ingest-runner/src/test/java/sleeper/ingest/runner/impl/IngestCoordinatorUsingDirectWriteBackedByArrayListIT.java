@@ -62,8 +62,8 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 
 public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalStackTestBase {
 
@@ -112,8 +112,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference leftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/leftFile.parquet", 100);
         FileReference rightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/rightFile.parquet", 100);
-        List<Row> leftRows = readRecordsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
-        List<Row> rightRows = readRecordsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
+        List<Row> leftRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, leftFile, hadoopConf);
+        List<Row> rightRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, rightFile, hadoopConf);
         List<Row> allRows = Stream.of(leftRows, rightRows).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
@@ -141,9 +141,9 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/file0.parquet", 5);
         FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/file1.parquet", 5);
-        List<Row> actualRecords = readMergedRecordsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
-        List<Row> firstLeftFileRecords = readRecordsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstLeftFile, hadoopConf);
-        List<Row> firstRightFileRecords = readRecordsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstRightFile, hadoopConf);
+        List<Row> actualRecords = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> firstLeftFileRecords = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstLeftFile, hadoopConf);
+        List<Row> firstRightFileRecords = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstRightFile, hadoopConf);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).hasSize(40)

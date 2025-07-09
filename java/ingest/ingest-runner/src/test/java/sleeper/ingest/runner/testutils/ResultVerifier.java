@@ -38,7 +38,7 @@ public class ResultVerifier {
     private ResultVerifier() {
     }
 
-    public static List<Row> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
+    public static List<Row> readMergedRowsFromPartitionDataFiles(Schema sleeperSchema,
             List<FileReference> fileReferenceList,
             Configuration hadoopConfiguration) {
         List<Row> rowsRead = new ArrayList<>();
@@ -58,7 +58,7 @@ public class ResultVerifier {
         return rowsRead;
     }
 
-    public static List<Row> readRecordsFromPartitionDataFile(Schema sleeperSchema,
+    public static List<Row> readRowsFromPartitionDataFile(Schema sleeperSchema,
             FileReference fileReference,
             Configuration hadoopConfiguration) {
 
