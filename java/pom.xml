@@ -219,7 +219,7 @@
         <junit.platform.version>1.13.3</junit.platform.version>
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <wiremock.version>3.11.0</wiremock.version>
+        <wiremock.version>3.13.1</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>24.22.0</approvaltests.version>
