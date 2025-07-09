@@ -73,7 +73,7 @@ public class GarbageCollectionST {
         // Then
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
-            assertThat(files.listFileReferences()).hasSize(1);
+            assertThat(files.streamFileReferences()).hasSize(1);
         });
     }
 }
