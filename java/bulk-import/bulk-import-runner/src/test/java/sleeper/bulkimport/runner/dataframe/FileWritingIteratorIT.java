@@ -26,7 +26,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.SleeperRow;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -125,7 +124,7 @@ class FileWritingIteratorIT {
 
         // Then
         assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(row.getString(1)))
+                .extracting(row -> readRows(row.getString(1)))
                 .containsExactly(
                         List.of(
                                 createRecord("a", 1, 2, "a"),
@@ -150,7 +149,7 @@ class FileWritingIteratorIT {
 
         // Then
         assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(row.getString(1)))
+                .extracting(row -> readRows(row.getString(1)))
                 .containsExactly(
                         List.of(
                                 createRecord("a", 1, 2, "a"),
@@ -206,30 +205,30 @@ class FileWritingIteratorIT {
         return instanceProperties;
     }
 
-    private SleeperRow createRecord(Object... values) {
-        return createRecord(RowFactory.create(values), createSchema());
+    private sleeper.core.record.Row createRecord(Object... values) {
+        return createRow(RowFactory.create(values), createSchema());
     }
 
-    private SleeperRow createRecord(Row row, Schema schema) {
-        SleeperRow record = new SleeperRow();
+    private sleeper.core.record.Row createRow(Row row, Schema schema) {
+        sleeper.core.record.Row outRow = new sleeper.core.record.Row();
         int i = 0;
         for (Field field : schema.getAllFields()) {
-            record.put(field.getName(), row.get(i));
+            outRow.put(field.getName(), row.get(i));
             i++;
         }
-        return record;
+        return outRow;
     }
 
-    private List<SleeperRow> readRecords(String path) {
+    private List<sleeper.core.record.Row> readRows(String path) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), createSchema())) {
-            List<SleeperRow> records = new ArrayList<>();
-            SleeperRow record = reader.read();
-            while (null != record) {
-                records.add(new SleeperRow(record));
-                record = reader.read();
+            List<sleeper.core.record.Row> rows = new ArrayList<>();
+            sleeper.core.record.Row row = reader.read();
+            while (null != row) {
+                rows.add(new sleeper.core.record.Row(row));
+                row = reader.read();
             }
             reader.close();
-            return records;
+            return rows;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
