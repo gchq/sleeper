@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.AggregationFilteringIterator;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.schema.Schema;
@@ -43,25 +44,30 @@ public class IteratorFactory {
      * {@link CompactionMethod#AGGREGATION_ITERATOR_NAME},
      * then an aggregation iterator is created and initialised.
      *
-     * @param  iteratorClassName      the fully qualified iterator class name or aggregation keyword
-     * @param  iteratorConfig         the iterator configuration string
-     * @param  schema                 the schema the iterator should be configured for
-     * @return                        an initialised iterator
-     * @throws ObjectFactoryException if an iterator can't be created, for example it's class definition can't be found
-     * @see                           AggregationFilteringIterator
+     * @param  iteratorClassName         the fully qualified iterator class name or aggregation keyword
+     * @param  iteratorConfig            the iterator configuration string
+     * @param  schema                    the schema the iterator should be configured for
+     * @return                           an initialised iterator
+     * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
+     *                                   found
+     * @see                              AggregationFilteringIterator
      */
-    public SortedRecordIterator getIterator(String iteratorClassName, String iteratorConfig, Schema schema) throws ObjectFactoryException {
-        SortedRecordIterator iterator;
+    public SortedRecordIterator getIterator(String iteratorClassName, String iteratorConfig, Schema schema) throws IteratorCreationException {
+        try {
+            SortedRecordIterator iterator;
 
-        // If aggregation keyword is used, create specific iterator
-        if (iteratorClassName.equalsIgnoreCase(CompactionMethod.AGGREGATION_ITERATOR_NAME)) {
-            iterator = new AggregationFilteringIterator();
-        } else {
-            iterator = inner.getObject(iteratorClassName, SortedRecordIterator.class);
+            // If aggregation keyword is used, create specific iterator
+            if (iteratorClassName.equalsIgnoreCase(CompactionMethod.AGGREGATION_ITERATOR_NAME)) {
+                iterator = new AggregationFilteringIterator();
+            } else {
+                iterator = inner.getObject(iteratorClassName, SortedRecordIterator.class);
+            }
+            LOGGER.debug("Created iterator of class {}", iteratorClassName);
+            iterator.init(iteratorConfig, schema);
+            LOGGER.debug("Initialised iterator with config {}", iteratorConfig);
+            return iterator;
+        } catch (ObjectFactoryException exc) {
+            throw new IteratorCreationException(exc);
         }
-        LOGGER.debug("Created iterator of class {}", iteratorClassName);
-        iterator.init(iteratorConfig, schema);
-        LOGGER.debug("Initialised iterator with config " + iteratorConfig);
-        return iterator;
     }
 }

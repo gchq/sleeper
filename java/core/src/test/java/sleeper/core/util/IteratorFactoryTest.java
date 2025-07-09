@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.AggregationFilteringIterator;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.record.Record;
@@ -53,7 +54,7 @@ public class IteratorFactoryTest {
     }
 
     @Test
-    public void shouldInitialiseIterator() throws ObjectFactoryException {
+    public void shouldInitialiseIterator() throws IteratorCreationException {
         // Given
         ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
         IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
@@ -66,7 +67,7 @@ public class IteratorFactoryTest {
     }
 
     @Test
-    public void shouldCreateAggregatingIterator() throws ObjectFactoryException {
+    public void shouldCreateAggregatingIterator() throws IteratorCreationException {
         // Given
         ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
         IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);

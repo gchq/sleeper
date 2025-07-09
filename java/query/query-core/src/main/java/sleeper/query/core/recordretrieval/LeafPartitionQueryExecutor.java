@@ -28,7 +28,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 
@@ -129,11 +128,7 @@ public class LeafPartitionQueryExecutor {
         if (iteratorClassName == null) {
             return null;
         } else {
-            try {
-                return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
-            } catch (ObjectFactoryException e) {
-                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
-            }
+            return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
         }
     }
 }

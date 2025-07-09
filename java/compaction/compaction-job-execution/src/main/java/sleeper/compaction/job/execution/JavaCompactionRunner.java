@@ -37,7 +37,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
@@ -144,12 +143,8 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
             SortedRecordIterator iterator;
-            try {
-                IteratorFactory iterFactory = new IteratorFactory(objectFactory);
-                iterator = iterFactory.getIterator(compactionJob.getIteratorClassName(), compactionJob.getIteratorConfig(), schema);
-            } catch (ObjectFactoryException e) {
-                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
-            }
+            IteratorFactory iterFactory = new IteratorFactory(objectFactory);
+            iterator = iterFactory.getIterator(compactionJob.getIteratorClassName(), compactionJob.getIteratorConfig(), schema);
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;
