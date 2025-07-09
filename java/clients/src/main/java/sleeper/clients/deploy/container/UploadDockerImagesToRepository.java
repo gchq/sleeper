@@ -38,13 +38,11 @@ public class UploadDockerImagesToRepository {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final CopyFile copyFile;
-    private final EcrRepositoryCreator.Client ecrClient;
 
     private UploadDockerImagesToRepository(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
     }
 
     public static Builder builder() {
@@ -69,7 +67,6 @@ public class UploadDockerImagesToRepository {
         } else {
             LOGGER.info("Building and uploading images: {}", stacksToBuild);
             runCommand.runOrThrow(pipeline(
-                    command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
@@ -81,9 +78,6 @@ public class UploadDockerImagesToRepository {
         for (StackDockerImage stackImage : stacksToBuild) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
             String repositoryName = request.getEcrPrefix() + "/" + stackImage.getImageName();
-            if (!ecrClient.repositoryExists(repositoryName)) {
-                ecrClient.createRepository(repositoryName);
-            }
             String tag = repositoryHost + "/" + repositoryName + ":" + request.getVersion();
 
             stackImage.getLambdaJar().ifPresent(jar -> {
@@ -93,9 +87,6 @@ public class UploadDockerImagesToRepository {
             });
 
             try {
-                if (stackImage.isCreateEmrServerlessPolicy()) {
-                    ecrClient.createEmrServerlessAccessPolicy(repositoryName);
-                }
                 if (stackImage.isMultiplatform()) {
                     runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
@@ -103,7 +94,6 @@ public class UploadDockerImagesToRepository {
                     runCommand.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {
-                ecrClient.deleteRepository(repositoryName);
                 throw e;
             }
         }
@@ -111,23 +101,22 @@ public class UploadDockerImagesToRepository {
 
     private boolean imageDoesNotExistInRepositoryWithVersion(
             StackDockerImage stackDockerImage, UploadDockerImagesRequest request) {
-        String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (ecrClient.versionExistsInRepository(imagePath, request.getVersion())) {
-            LOGGER.info("Stack image {} already exists in ECR with version {}",
-                    stackDockerImage.getImageName(), request.getVersion());
-            return false;
-        } else {
-            LOGGER.info("Stack image {} does not exist in ECR with version {}",
-                    stackDockerImage.getImageName(), request.getVersion());
-            return true;
-        }
+        //String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        //if (ecrClient.versionExistsInRepository(imagePath, request.getVersion())) {
+        //    LOGGER.info("Stack image {} already exists in ECR with version {}",
+        //            stackDockerImage.getImageName(), request.getVersion());
+        //    return false;
+        //} else {
+        //    LOGGER.info("Stack image {} does not exist in ECR with version {}",
+        //            stackDockerImage.getImageName(), request.getVersion());
+        return true;
+        //}
     }
 
     public static final class Builder {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private EcrRepositoryCreator.Client ecrClient;
 
         private Builder() {
         }
@@ -144,11 +133,6 @@ public class UploadDockerImagesToRepository {
 
         public Builder copyFile(CopyFile copyFile) {
             this.copyFile = copyFile;
-            return this;
-        }
-
-        public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
-            this.ecrClient = ecrClient;
             return this;
         }
 
