@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record.serialiser;
+package sleeper.core.row.serialiser;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Record;
 import sleeper.core.row.ResultsBatch;
-import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
