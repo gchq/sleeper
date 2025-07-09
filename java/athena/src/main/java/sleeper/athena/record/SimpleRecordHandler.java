@@ -92,7 +92,7 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
      * @throws Exception       if something goes wrong with the read
      */
     @Override
-    protected CloseableIterator<Row> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {
+    protected CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {
         String fileName = recordsRequest.getSplit().getProperty(RELEVANT_FILES_FIELD);
 
         FilterTranslator filterTranslator = new FilterTranslator(schema);

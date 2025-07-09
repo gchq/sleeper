@@ -107,26 +107,26 @@ class IngesterIntoPartitions {
      * method returns, all of the records will have been read from the iterator and the iterator may be discarded by the
      * caller.
      *
-     * @param  orderedRecordIterator the {@link Row} objects to write, passed in sort order
-     * @param  partitionTree         the {@link PartitionTree} to used to determine which partition to place each record
-     *                               in
-     * @return                       a {@link CompletableFuture} which completes to return a list of
-     *                               {@link FileReference} objects, one for each partition file that has been created
-     * @throws IOException           if there was a failure writing the file
+     * @param  orderedRowIterator the {@link Row} objects to write, passed in sort order
+     * @param  partitionTree      the {@link PartitionTree} to used to determine which partition to place each record
+     *                            in
+     * @return                    a {@link CompletableFuture} which completes to return a list of
+     *                            {@link FileReference} objects, one for each partition file that has been created
+     * @throws IOException        if there was a failure writing the file
      */
     public CompletableFuture<List<FileReference>> initiateIngest(
-            CloseableIterator<Row> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+            CloseableIterator<Row> orderedRowIterator, PartitionTree partitionTree) throws IOException {
         if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_FILE_PER_LEAF) {
-            return ingestOneFilePerLeafPartition(orderedRecordIterator, partitionTree);
+            return ingestOneFilePerLeafPartition(orderedRowIterator, partitionTree);
         } else if (ingestFileWritingStrategy == IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF) {
-            return ingestOneFileWithReferencesInLeafPartitions(orderedRecordIterator, partitionTree);
+            return ingestOneFileWithReferencesInLeafPartitions(orderedRowIterator, partitionTree);
         } else {
             throw new IllegalArgumentException("Unknown ingest file writing strategy: " + ingestFileWritingStrategy);
         }
     }
 
     public CompletableFuture<List<FileReference>> ingestOneFilePerLeafPartition(
-            CloseableIterator<Row> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+            CloseableIterator<Row> orderedRowIterator, PartitionTree partitionTree) throws IOException {
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
         Map<String, PartitionFileWriter> partitionIdToFileWriterMap = new HashMap<>();
@@ -138,7 +138,7 @@ class IngesterIntoPartitions {
         List<CompletableFuture<FileReference>> completableFutures = new ArrayList<>();
 
         // Log and return if the iterator is empty
-        if (!orderedRecordIterator.hasNext()) {
+        if (!orderedRowIterator.hasNext()) {
             LOGGER.info("There are no records");
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
@@ -148,14 +148,14 @@ class IngesterIntoPartitions {
         // first dimension range are created at once, and then they may be closed as soon as the records no
         // longer sit inside that first dimension range.
         try {
-            while (orderedRecordIterator.hasNext()) {
-                Row record = orderedRecordIterator.next();
-                Key key = Key.create(record.getValues(rowKeyNames));
+            while (orderedRowIterator.hasNext()) {
+                Row row = orderedRowIterator.next();
+                Key key = Key.create(row.getValues(rowKeyNames));
                 // Ensure that the current partition is the correct one for the new record
                 if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {
                     // Close all of the current partition file writers if the first dimension has changed.
                     if (currentFirstDimensionRange != null &&
-                            !currentFirstDimensionRange.doesRangeContainObject(record.get(firstDimensionRowKey))) {
+                            !currentFirstDimensionRange.doesRangeContainObject(row.get(firstDimensionRowKey))) {
                         completableFutures.addAll(closeMultiplePartitionFileWriters(partitionIdToFileWriterMap.values()));
                         partitionIdToFileWriterMap.clear();
                     }
@@ -168,7 +168,7 @@ class IngesterIntoPartitions {
                     currentPartitionFileWriter = partitionIdToFileWriterMap.get(currentPartition.getId());
                 }
                 // Write records to the current partition file writer
-                currentPartitionFileWriter.append(record);
+                currentPartitionFileWriter.append(row);
             }
             completableFutures.addAll(closeMultiplePartitionFileWriters(partitionIdToFileWriterMap.values()));
         } catch (Exception e) {
@@ -192,9 +192,9 @@ class IngesterIntoPartitions {
         PartitionFileWriter rootFileWriter = partitionFileWriterFactoryFn.apply(partitionTree.getRootPartition());
         try {
             while (orderedRecordIterator.hasNext()) {
-                Row record = orderedRecordIterator.next();
-                rootFileWriter.append(record);
-                Key key = Key.create(record.getValues(rowKeyNames));
+                Row row = orderedRecordIterator.next();
+                rootFileWriter.append(row);
+                Key key = Key.create(row.getValues(rowKeyNames));
                 if (currentPartition == null || !currentPartition.isRowKeyInPartition(sleeperSchema, key)) {
                     currentPartition = partitionTree.getLeafPartition(sleeperSchema, key);
                 }

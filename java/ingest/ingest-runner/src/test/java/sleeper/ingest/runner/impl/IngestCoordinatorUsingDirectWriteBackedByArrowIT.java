@@ -47,11 +47,11 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -60,14 +60,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, properties -> {
+        ingestRecords(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 4 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 128 * 1024 * 1024L);
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -76,7 +76,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile.parquet"));
 
         assertThat(actualActiveData.getSetOfAllRecords())
-                .isEqualTo(new HashSet<>(recordListAndSchema.rowList));
+                .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
@@ -85,19 +85,19 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
-                .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
+                .usingComparator(SketchesDecilesComparator.longsMaxDiff(rowListAndSchema.sleeperSchema, 50))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -106,14 +106,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, properties -> {
+        ingestRecords(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 4 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 16 * 1024 * 1024L);
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -123,7 +123,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile1.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile2.parquet"));
         assertThat(actualActiveData.getSetOfAllRecords())
-                .isEqualTo(new HashSet<>(recordListAndSchema.rowList));
+                .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
                         file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
@@ -136,19 +136,19 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                                 data.getRecordsInFile(file),
                                 "key0", LongStream.range(0, 10_000))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
-                .usingComparator(SketchesDecilesComparator.longsMaxDiff(recordListAndSchema.sleeperSchema, 50))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.rowList));
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
+                .usingComparator(SketchesDecilesComparator.longsMaxDiff(rowListAndSchema.sleeperSchema, 50))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(rowListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -157,7 +157,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When/Then
-        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, properties -> {
+        assertThatThrownBy(() -> ingestRecords(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 32 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 32 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 64 * 1024 * 1024L);
@@ -165,12 +165,12 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema recordListAndSchema, IngestCoordinatorTestParameters parameters,
+            RecordGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
         try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrow().setInstanceProperties(config).buildCoordinator()) {
-            for (Row record : recordListAndSchema.rowList) {
-                ingestCoordinator.write(record);
+            for (Row row : rowListAndSchema.rowList) {
+                ingestCoordinator.write(row);
             }
         }
     }

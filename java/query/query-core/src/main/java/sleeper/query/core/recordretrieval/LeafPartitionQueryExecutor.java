@@ -20,9 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
-
 import sleeper.core.iterator.SortedRowIterator;
-import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
@@ -132,16 +130,5 @@ public class LeafPartitionQueryExecutor {
         } else {
             return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
         }
-        SortedRowIterator sortedRowIterator;
-        try {
-            sortedRowIterator = objectFactory.getObject(iteratorClassName, SortedRowIterator.class);
-        } catch (ObjectFactoryException e) {
-            throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + iteratorClassName, e);
-        }
-        LOGGER.debug("Created iterator of class {}", iteratorClassName);
-        sortedRowIterator.init(iteratorConfig, schema);
-        LOGGER.debug("Initialised iterator with config " + iteratorConfig);
-
-        return sortedRowIterator;
     }
 }

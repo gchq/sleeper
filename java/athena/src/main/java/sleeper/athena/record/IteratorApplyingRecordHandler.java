@@ -38,6 +38,7 @@ import software.amazon.awssdk.utils.BinaryUtils;
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -123,8 +124,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     }
 
     @Override
-    protected CloseableIterator<Row> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema,
-            TableProperties tableProperties) throws RecordRetrievalException, ObjectFactoryException {
+    protected CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema,
+            TableProperties tableProperties) throws RecordRetrievalException, IteratorCreationException {
         Split split = recordsRequest.getSplit();
         Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -254,7 +255,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * @throws IteratorCreationException if the iterator can't be instantiated
      */
 
-    private CloseableIterator<Row> applyCompactionIterators(CloseableIterator<Row> mergingIterator, Schema schema, TableProperties tableProperties) throws ObjectFactoryException {
+    private CloseableIterator<Row> applyCompactionIterators(CloseableIterator<Row> mergingIterator, Schema schema, TableProperties tableProperties) throws IteratorCreationException {
         String iteratorClass = tableProperties.get(ITERATOR_CLASS_NAME);
         if (iteratorClass == null) {
             return mergingIterator;

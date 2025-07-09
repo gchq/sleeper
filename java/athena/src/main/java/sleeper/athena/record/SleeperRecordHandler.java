@@ -97,7 +97,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         TableProperties tableProperties = tablePropertiesProvider.getByName(recordsRequest.getTableName().getTableName());
 
         Schema schema = createSchemaForDataRead(tableProperties.getSchema(), recordsRequest);
-        CloseableIterator<Row> recordIterator = createRecordIterator(recordsRequest, schema, tableProperties);
+        CloseableIterator<Row> recordIterator = createRowIterator(recordsRequest, schema, tableProperties);
 
         // Null indicates there is no data to read
         if (recordIterator == null) {
@@ -139,7 +139,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * @implNote                 do not use the schema in the table properties as it could differ from the schema
      *                           provided
      */
-    protected abstract CloseableIterator<Row> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
+    protected abstract CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
 
     /**
      * Configures the writer so that it can write records from Sleeper to Athena.
