@@ -105,7 +105,7 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             src.getRows().stream()
                     .map(rec -> rowSerialiser.serialize(rec, Row.class, context))
                     .forEach(serialisedRows::add);
-            jsonObject.add("records", serialisedRows);
+            jsonObject.add("rows", serialisedRows);
             return jsonObject;
         }
     }
