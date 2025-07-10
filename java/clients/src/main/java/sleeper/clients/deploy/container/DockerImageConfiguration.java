@@ -101,8 +101,10 @@ public class DockerImageConfiguration {
 
     public List<StackDockerImage> getAllImagesToUpload() {
         return Stream.concat(
-                dockerDeployments.stream().map(StackDockerImage::fromDockerDeployment),
-                lambdaHandlers.stream().map(LambdaHandler::getJar).distinct()
+                dockerDeployments.stream()
+                        .map(StackDockerImage::fromDockerDeployment),
+                lambdaHandlers.stream()
+                        .map(LambdaHandler::getJar).distinct()
                         .map(StackDockerImage::lambdaImage))
                 .collect(toUnmodifiableList());
     }

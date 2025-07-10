@@ -35,27 +35,27 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     void shouldBuildAndPushECSImages() throws Exception {
 
         // Given
-        DockerImageConfiguration dockerImageConfiguration = ecsImageConfig();
+        DockerImageConfiguration dockerImageConfiguration = containerImageConfig();
 
         // When
         List<CommandPipeline> commandsThatRan = pipelinesRunOn(
                 runCommand -> uploader().upload(runCommand, dockerImageConfiguration));
 
         // Then
-        String expectedTag = "www.somedocker.com/ingest:1.0.0";
-        String expectedTag2 = "www.somedocker.com/bulk-import-runner:1.0.0";
-        String expectedTag3 = "www.somedocker.com/compaction:1.0.0";
-        String expectedTag4 = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
+        String expectedIngestTag = "www.somedocker.com/ingest:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/bulk-import-runner:1.0.0";
+        String expectedCompactionTag = "www.somedocker.com/compaction:1.0.0";
+        String expectedEmrTag = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 removeOldBuildxBuilderInstanceCommand(),
                 createNewBuildxBuilderInstanceCommand(),
-                buildImageCommand(expectedTag, "./docker/ingest"),
-                pushImageCommand(expectedTag),
-                buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
-                pushImageCommand(expectedTag2),
-                buildAndPushImageWithBuildxCommand(expectedTag3, "./docker/compaction"),
-                buildImageCommand(expectedTag4, "./docker/bulk-import-runner-emr-serverless"),
-                pushImageCommand(expectedTag4));
+                buildImageCommand(expectedIngestTag, "./docker/ingest"),
+                pushImageCommand(expectedIngestTag),
+                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
+                pushImageCommand(expectedBulkImportTag),
+                buildAndPushImageWithBuildxCommand(expectedCompactionTag, "./docker/compaction"),
+                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
+                pushImageCommand(expectedEmrTag));
     }
 
     protected UploadDockerImagesToRepository uploader() {

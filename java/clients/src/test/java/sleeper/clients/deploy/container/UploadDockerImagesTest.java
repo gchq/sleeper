@@ -407,7 +407,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
 
             // When / Then
             assertThatThrownBy(() -> uploader().upload(returningExitCode(123),
-                    UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig())))
+                    UploadDockerImagesRequest.forNewDeployment(properties, containerImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -444,7 +444,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             // When / Then
             assertThatThrownBy(() -> uploader().upload(
                     returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                    UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig())))
+                    UploadDockerImagesRequest.forNewDeployment(properties, containerImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -463,7 +463,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
                     "./docker/ingest");
             assertThatThrownBy(() -> uploader().upload(
                     returningExitCodeForCommand(42, buildImageCommand),
-                    UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig())))
+                    UploadDockerImagesRequest.forNewDeployment(properties, containerImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                         assertThat(e.getExitCode()).isEqualTo(42);
