@@ -127,7 +127,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
-                            "Query took 1 second to return 1 row\n" +
+                            "Query took 1 second to return 1 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -158,7 +158,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
-                            "Query took 1 second to return 1 row\n" +
+                            "Query took 1 second to return 1 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -197,7 +197,7 @@ public class QueryWebSocketCommandLineClientTest {
                             asJson(expectedRow1) + "\n" +
                             asJson(expectedRow2) + "\n" +
                             asJson(expectedRow3) + "\n" +
-                            "Query took 1 second to return 3 rows\n" +
+                            "Query took 1 second to return 3 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
@@ -227,7 +227,7 @@ public class QueryWebSocketCommandLineClientTest {
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
-                            "Query took 1 second to return 1 row\n" +
+                            "Query took 1 second to return 1 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
