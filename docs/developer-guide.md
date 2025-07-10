@@ -253,7 +253,7 @@ In the `/scripts/dev` folder are some scripts that can assist you while working 
 This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
 modules relate to one another.
 
-#### `generatePropertiesTemplates.sh`
+#### `generateDocumentation.sh`
 
 This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
 changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
