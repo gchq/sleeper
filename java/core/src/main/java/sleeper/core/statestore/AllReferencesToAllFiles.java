@@ -18,14 +18,12 @@ package sleeper.core.statestore;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * This class contains a report of files in the state store at a point in time, to be used in a reporting client.
@@ -58,16 +56,6 @@ public class AllReferencesToAllFiles {
     }
 
     /**
-     * Builds a list of all file references in the report.
-     *
-     * @return the list
-     */
-    public List<FileReference> listFileReferences() {
-        return streamFileReferences()
-                .collect(toUnmodifiableList());
-    }
-
-    /**
      * Builds a map from filename to the number of referenced records.
      *
      * @return the map
@@ -77,15 +65,6 @@ public class AllReferencesToAllFiles {
                 .collect(toMap(
                         AllReferencesToAFile::getFilename,
                         file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum()));
-    }
-
-    /**
-     * Builds an estimate of the number of records in the table by adding up all records in each file reference.
-     *
-     * @return the number of records
-     */
-    public long estimateRecordsInTable() {
-        return streamFileReferences().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
     /**
@@ -103,7 +82,7 @@ public class AllReferencesToAllFiles {
      *
      * @return the references
      */
-    private Stream<FileReference> streamFileReferences() {
+    public Stream<FileReference> streamFileReferences() {
         return getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream());
     }

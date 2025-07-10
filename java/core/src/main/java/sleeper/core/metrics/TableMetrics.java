@@ -74,7 +74,7 @@ public class TableMetrics {
         LOGGER.info("Querying state store for table {} for files", table);
         AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(0);
         Collection<AllReferencesToAFile> referencedFiles = files.getFilesWithReferences();
-        List<FileReference> fileReferences = files.listFileReferences();
+        List<FileReference> fileReferences = files.streamFileReferences().toList();
         LOGGER.info("Found {} files for table {}", referencedFiles.size(), table);
         LOGGER.info("Found {} file references for table {}", fileReferences.size(), table);
         long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
