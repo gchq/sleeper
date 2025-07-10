@@ -35,7 +35,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * This was an investigation after a failed system test where compactions ran out of memory unexpectedly.
+ * This was an investigation after a failed system test where compactions ran out of memory unexpectedly. In order to
+ * run this from VS Code, we had to run the following commands first to build the Rust code and include it in the jar:
+ *
+ * <pre>
+ * cd rust
+ * cargo build --release --target=x86_64-unknown-linux-gnu
+ * cd ../java
+ * mvn clean install -am -pl compaction/compaction-rust -Pquick -DskipRust
+ * </pre>
  */
 public class InvestigateDataFusionCompactionOOM {
     public static final Logger LOGGER = LoggerFactory.getLogger(InvestigateDataFusionCompactionOOM.class);
