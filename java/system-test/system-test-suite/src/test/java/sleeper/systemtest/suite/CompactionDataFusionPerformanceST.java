@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.CompactionMethod;
-import sleeper.core.record.testutils.SortedRecordsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -74,10 +73,11 @@ public class CompactionDataFusionPerformanceST {
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(sumFileReferenceRecordCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);
-        assertThat(files.getFilesWithReferences()).hasSize(10)
-                .first() // Only check one file because it's time consuming to read all records
-                .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
+        assertThat(files.getFilesWithReferences()).hasSize(10);
+        // This can be uncommented when the following issue is fixed: https://github.com/gchq/sleeper/issues/5186
+        // .first() // Only check one file because it's time consuming to read all records
+        // .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+        //         .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
                         && stats.isAverageRunRecordsPerSecondInRange(800_000, 2_800_000),
