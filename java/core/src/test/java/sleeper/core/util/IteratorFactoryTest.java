@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.model.CompactionMethod;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -47,18 +47,18 @@ public class IteratorFactoryTest {
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        List<Record> records = List.of(
-                new Record(Map.of("key", "test", "value", 10L)),
-                new Record(Map.of("key", "test2", "value", 9999999999999999L)));
-        CloseableIterator<Record> iterator = new WrappedIterator<>(records.iterator());
+        List<Row> rows = List.of(
+                new Row(Map.of("key", "test", "value", 10L)),
+                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
 
         // When
-        SortedRecordIterator ageOffIterator = iteratorFactory.getIterator(AgeOffIterator.class.getName(), "value,1000", schema);
-        List<Record> filtered = new ArrayList<>();
+        SortedRowIterator ageOffIterator = iteratorFactory.getIterator(AgeOffIterator.class.getName(), "value,1000", schema);
+        List<Row> filtered = new ArrayList<>();
         ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 
         // Then
-        assertThat(filtered).containsExactly(new Record(Map.of("key", "test2", "value", 9999999999999999L)));
+        assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 
     @Test
@@ -71,17 +71,17 @@ public class IteratorFactoryTest {
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        List<Record> records = List.of(
-                new Record(Map.of("key", "test", "value", 10L)),
-                new Record(Map.of("key", "test2", "value", 9999999999999999L)));
-        CloseableIterator<Record> iterator = new WrappedIterator<>(records.iterator());
+        List<Row> rows = List.of(
+                new Row(Map.of("key", "test", "value", 10L)),
+                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
 
         // When
-        SortedRecordIterator ageOffIterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";ageoff=value,1000,", schema);
-        List<Record> filtered = new ArrayList<>();
+        SortedRowIterator ageOffIterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";ageoff=value,1000,", schema);
+        List<Row> filtered = new ArrayList<>();
         ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 
         // Then
-        assertThat(filtered).containsExactly(new Record(Map.of("key", "test2", "value", 9999999999999999L)));
+        assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 }

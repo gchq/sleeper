@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.core.sync.RequestBody;
 
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -51,20 +51,20 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 class S3UserJarsLoaderIT extends LocalStackTestBase {
 
     private static final String SOURCE_CODE = "" +
-            "import sleeper.core.record.Record;\n" +
+            "import sleeper.core.row.Row;\n" +
             "import sleeper.core.schema.Schema;\n" +
             "import sleeper.core.iterator.CloseableIterator;\n" +
-            "import sleeper.core.iterator.SortedRecordIterator;\n" +
+            "import sleeper.core.iterator.SortedRowIterator;\n" +
             "import java.util.List;\n" +
             "\n" +
-            "public class MyIterator implements SortedRecordIterator {\n" +
+            "public class MyIterator implements SortedRowIterator {\n" +
             "    public MyIterator() {}\n" +
             "\n" +
             "    @Override\n" +
             "    public void init(String configString, Schema schema) {}\n" +
             "\n" +
             "    @Override\n" +
-            "    public CloseableIterator<Record> apply(CloseableIterator<Record> it) {return it;}\n" +
+            "    public CloseableIterator<Row> apply(CloseableIterator<Row> it) {return it;}\n" +
             "\n" +
             "    @Override\n" +
             "    public String toString() {return \"MyIterator\";}\n" +
@@ -90,7 +90,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
         instanceProperties.set(USER_JARS, "iterator.jar");
 
         // When
-        SortedRecordIterator sri = objectFactory().getObject("MyIterator", SortedRecordIterator.class);
+        SortedRowIterator sri = objectFactory().getObject("MyIterator", SortedRowIterator.class);
 
         // Then
         assertThat(sri).hasToString("MyIterator");
@@ -101,10 +101,10 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
         // Given
         writeJarToBucket("iterator.jar", JAR_BYTES);
         instanceProperties.set(USER_JARS, "iterator.jar");
-        objectFactory().getObject("MyIterator", SortedRecordIterator.class);
+        objectFactory().getObject("MyIterator", SortedRowIterator.class);
 
         // When
-        SortedRecordIterator sri = objectFactory().getObject("MyIterator", SortedRecordIterator.class);
+        SortedRowIterator sri = objectFactory().getObject("MyIterator", SortedRowIterator.class);
 
         // Then
         assertThat(sri).hasToString("MyIterator");

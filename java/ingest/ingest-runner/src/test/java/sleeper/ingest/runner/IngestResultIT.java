@@ -24,7 +24,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.ingest.core.IngestResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
 
 class IngestResultIT extends IngestRecordsTestBase {
     @Test
@@ -33,7 +33,7 @@ class IngestResultIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore();
 
         // When
-        IngestResult result = ingestRecords(stateStore, getRecords());
+        IngestResult result = ingestRecords(stateStore, getRows());
 
         // Then
         assertThat(result.getRecordsWritten())
@@ -46,7 +46,7 @@ class IngestResultIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore();
 
         // When
-        IngestResult result = ingestRecords(stateStore, getRecords());
+        IngestResult result = ingestRecords(stateStore, getRows());
 
         // Then
         assertThat(result.getFileReferenceList())

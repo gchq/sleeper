@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record.serialiser;
+package sleeper.core.row.serialiser;
 
-import sleeper.core.record.ResultsBatch;
+import sleeper.core.row.ResultsBatch;
 
 /**
  * Serialises and deserialises batches of results for a query.

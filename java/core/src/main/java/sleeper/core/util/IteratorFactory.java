@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.AggregationFilteringIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.schema.Schema;
 
@@ -39,7 +39,7 @@ public class IteratorFactory {
     /**
      * Creates an initialises an iterator.
      *
-     * The named iterator class is created and its {@link SortedRecordIterator#init(String, Schema)} method is called.
+     * The named iterator class is created and its {@link SortedRowIterator#init(String, Schema)} method is called.
      * If the special keyword for aggregation is specified as the class name
      * {@link CompactionMethod#AGGREGATION_ITERATOR_NAME},
      * then an aggregation iterator is created and initialised.
@@ -52,15 +52,15 @@ public class IteratorFactory {
      *                                   found
      * @see                              AggregationFilteringIterator
      */
-    public SortedRecordIterator getIterator(String iteratorClassName, String iteratorConfig, Schema schema) throws IteratorCreationException {
+    public SortedRowIterator getIterator(String iteratorClassName, String iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
-            SortedRecordIterator iterator;
+            SortedRowIterator iterator;
 
             // If aggregation keyword is used, create specific iterator
             if (iteratorClassName.equalsIgnoreCase(CompactionMethod.AGGREGATION_ITERATOR_NAME)) {
                 iterator = new AggregationFilteringIterator();
             } else {
-                iterator = inner.getObject(iteratorClassName, SortedRecordIterator.class);
+                iterator = inner.getObject(iteratorClassName, SortedRowIterator.class);
             }
             LOGGER.debug("Created iterator of class {}", iteratorClassName);
             iterator.init(iteratorConfig, schema);

@@ -16,7 +16,7 @@
 package sleeper.bulkimport.runner.rdd;
 
 import sleeper.core.key.Key;
-import sleeper.core.record.KeyComparator;
+import sleeper.core.row.KeyComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.PrimitiveType;
