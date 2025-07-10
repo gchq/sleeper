@@ -34,10 +34,10 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
-        FunctionRegistry, config::SessionConfig, context::SessionContext,
+        FunctionRegistry, SessionState, config::SessionConfig, context::SessionContext,
         options::ParquetReadOptions,
     },
-    logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
+    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{accept, collect},
     prelude::*,
@@ -130,14 +130,9 @@ pub async fn compact(
     frame = frame.select(col_names_expr)?;
     // Sort again, to ensure correct coalescing of batches after parallel projection
     frame = frame.sort(sort_order)?;
+    // Rename sketch column
     let sketch_col_name = frame.schema().field(0).name().to_owned();
     frame = frame.with_column_renamed(sketch_col_name, &input_data.row_key_cols[0])?;
-
-    // Show explanation of plan
-    let explained = frame.clone().explain(false, false)?.collect().await?;
-
-    let output = pretty_format_batches(&explained)?;
-    info!("DataFusion plan:\n {output}");
 
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
@@ -363,6 +358,9 @@ async fn collect_stats(
     )?
     .build()?;
 
+    // Explain plan
+    explain_plan(session_state.clone(), logical_plan.clone()).await?;
+
     // Optimise plan and generate physical plan
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
@@ -370,6 +368,22 @@ async fn collect_stats(
     accept(physical_plan.as_ref(), &mut stats)?;
     stats.log_metrics();
     Ok(stats)
+}
+
+/// Write explanation of query plan to log output.
+///
+/// # Errors
+/// If explanation fails.
+async fn explain_plan(
+    session_state: SessionState,
+    logical_plan: LogicalPlan,
+) -> Result<(), DataFusionError> {
+    let explained = DataFrame::new(session_state, logical_plan)
+        .explain(false, false)?
+        .collect()
+        .await?;
+    info!("DataFusion plan:\n {}", pretty_format_batches(&explained)?);
+    Ok(())
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
