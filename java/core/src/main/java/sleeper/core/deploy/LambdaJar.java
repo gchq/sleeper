@@ -19,6 +19,9 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -27,6 +30,7 @@ import java.util.stream.Stream;
  */
 public class LambdaJar {
 
+    private static final List<LambdaJar> ALL = new ArrayList<>();
     // The Athena plugin includes Hadoop, which makes the jar too big to deploy directly.
     // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
     public static final LambdaJar ATHENA = withFormatAndImageDeployWithDocker("athena-%s.jar", "athena-lambda");
@@ -51,9 +55,11 @@ public class LambdaJar {
     private final String filename;
     private final String imageName;
     private final boolean alwaysDockerDeploy;
+    private final String filenameFormat;
 
-    private LambdaJar(String filename, String imageName, boolean alwaysDockerDeploy) {
-        this.filename = Objects.requireNonNull(filename, "filename must not be null");
+    private LambdaJar(String filenameFormat, String version, String imageName, boolean alwaysDockerDeploy) {
+        this.filenameFormat = Objects.requireNonNull(filenameFormat, "filename must not be null");
+        this.filename = String.format(filenameFormat, version);
         this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
         this.alwaysDockerDeploy = Objects.requireNonNull(alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
     }
@@ -66,7 +72,9 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImage(String format, String imageName) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, false);
+        LambdaJar jar = new LambdaJar(format, SleeperVersion.getVersion(), imageName, false);
+        ALL.add(jar);
+        return jar;
     }
 
     /**
@@ -79,7 +87,9 @@ public class LambdaJar {
      * @return           the jar definition
      */
     public static LambdaJar withFormatAndImageDeployWithDocker(String format, String imageName) {
-        return new LambdaJar(String.format(format, SleeperVersion.getVersion()), imageName, true);
+        LambdaJar jar = new LambdaJar(format, SleeperVersion.getVersion(), imageName, true);
+        ALL.add(jar);
+        return jar;
     }
 
     public String getFilename() {
@@ -92,6 +102,10 @@ public class LambdaJar {
 
     public boolean isAlwaysDockerDeploy() {
         return alwaysDockerDeploy;
+    }
+
+    public String getFilenameFormat() {
+        return filenameFormat;
     }
 
     /**
@@ -124,5 +138,9 @@ public class LambdaJar {
     @Override
     public String toString() {
         return "LambdaJar{filename=" + filename + ", imageName=" + imageName + "}";
+    }
+
+    public static List<LambdaJar> getAll() {
+        return Collections.unmodifiableList(ALL);
     }
 }

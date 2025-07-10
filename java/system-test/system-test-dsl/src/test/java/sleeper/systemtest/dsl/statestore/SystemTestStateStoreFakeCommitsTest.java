@@ -110,7 +110,7 @@ public class SystemTestStateStoreFakeCommitsTest {
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(files.listFileReferences()).hasSize(2);
+        assertThat(files.streamFileReferences()).hasSize(2);
         assertThat(files.getFilesWithNoReferences()).hasSize(3);
     }
 

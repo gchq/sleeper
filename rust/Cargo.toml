@@ -18,7 +18,7 @@ resolver = "2"
 [workspace.package]
 version = "0.32.0-SNAPSHOT"
 edition = "2024"
-rust-version = "1.86"
+rust-version = "1.88"
 publish = false
 license = "Apache-2.0"
 repository = "https://github.com/gchq/sleeper"
@@ -34,7 +34,7 @@ aws-types = { version = "1.3.5" }                   # for Region
 bytes = { version = "1.10.1" }                      # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.20.0" }             # Access cargo metadata programmtically
 chrono = { version = "0.4.41" }                     # Log helper
-clap = { version = "4.5.40" }                       # Cmd line args processing
+clap = { version = "4.5.41" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.160" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.160" }
