@@ -118,8 +118,6 @@ pub async fn compact(
                 sketch_func
                     // Sketch function needs to be called with each row key column
                     .call(row_key_exprs.clone())
-                    // Alias name to original schema column name
-                    .alias(col_name)
             } else {
                 col(col_name)
             }
@@ -132,6 +130,8 @@ pub async fn compact(
     frame = frame.select(col_names_expr)?;
     // Sort again, to ensure correct coalescing of batches after parallel projection
     frame = frame.sort(sort_order)?;
+    let sketch_col_name = frame.schema().field(0).name().to_owned();
+    frame = frame.with_column_renamed(sketch_col_name, &input_data.row_key_cols[0])?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
