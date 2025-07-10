@@ -20,11 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.command.CommandPipeline;
-import sleeper.core.deploy.DockerDeployment;
-import sleeper.core.deploy.LambdaHandler;
-import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,38 +33,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public abstract class UploadDockerImagesTestBase {
-    private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
-            DockerDeployment.builder()
-                    .deploymentName("ingest")
-                    .optionalStack(OptionalStack.IngestStack)
-                    .build(),
-            DockerDeployment.builder()
-                    .deploymentName("bulk-import-runner")
-                    .optionalStack(OptionalStack.EksBulkImportStack)
-                    .build(),
-            DockerDeployment.builder()
-                    .deploymentName("compaction")
-                    .optionalStack(OptionalStack.CompactionStack)
-                    .multiplatform(true)
-                    .build(),
-            DockerDeployment.builder()
-                    .deploymentName("bulk-import-runner-emr-serverless")
-                    .optionalStack(OptionalStack.EmrServerlessBulkImportStack)
-                    .createEmrServerlessPolicy(true)
-                    .build());
-    private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("statestore.jar", "statestore-lambda"))
-                    .handler("StateStoreCommitterLambda").core().build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("ingest.jar", "ingest-task-creator-lambda"))
-                    .handler("IngestTaskCreatorLambda")
-                    .optionalStack(OptionalStack.IngestStack).build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("bulk-import-starter.jar", "bulk-import-starter-lambda"))
-                    .handler("BulkImportStarterLambda")
-                    .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImageDeployWithDocker("athena.jar", "athena-lambda"))
-                    .handler("AthenaLambda")
-                    .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
+public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
     protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final InstanceProperties properties = createTestInstanceProperties();
 
@@ -93,47 +58,12 @@ public abstract class UploadDockerImagesTestBase {
                 UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
     }
 
-    protected DockerImageConfiguration ecsImageConfig() {
-        return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
-    }
-
-    protected DockerImageConfiguration lambdaImageConfig() {
-        return new DockerImageConfiguration(List.of(), LAMBDA_HANDLERS);
-    }
-
     protected abstract UploadDockerImages uploader();
 
     protected CommandPipeline loginDockerCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
                         "123.dkr.ecr.test-region.amazonaws.com"));
-    }
-
-    protected CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
-    }
-
-    protected CommandPipeline buildImageCommandWithArgs(String... args) {
-        List<String> fullArgs = new ArrayList<>(List.of("docker", "build"));
-        fullArgs.addAll(List.of(args));
-        return pipeline(command(fullArgs.toArray(String[]::new)));
-    }
-
-    protected CommandPipeline pushImageCommand(String tag) {
-        return pipeline(command("docker", "push", tag));
-    }
-
-    protected CommandPipeline removeOldBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "rm", "sleeper"));
-    }
-
-    protected CommandPipeline createNewBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
-    }
-
-    protected CommandPipeline buildAndPushImageWithBuildxCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                "-t", tag, "--push", dockerDirectory));
     }
 
     protected List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {

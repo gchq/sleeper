@@ -70,8 +70,8 @@ public class UploadDockerImagesRequest {
         }
     }
 
-    public static UploadDockerImagesRequest forDockerRepository(InstanceProperties properties, DockerImageConfiguration configuration) {
-        return builder().images(configuration.getImagesToUpload(properties)).build();
+    public static UploadDockerImagesRequest forDockerRepository(DockerImageConfiguration configuration) {
+        return builder().images(configuration.getAllImagesToUpload()).build();
     }
 
     public Builder toBuilder() {

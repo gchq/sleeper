@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.core.SleeperVersion;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -30,8 +31,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.clients.util.command.Command.command;
-import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class UploadDockerImagesToRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
@@ -39,24 +38,26 @@ public class UploadDockerImagesToRepository {
     private final Path jarsDirectory;
     private final CopyFile copyFile;
     private final String repositoryHost;
+    private final String version;
 
     private UploadDockerImagesToRepository(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         repositoryHost = requireNonNull(builder.repositoryHost, "repositoryHost must not be null");
+        version = requireNonNull(builder.version, "version must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void upload(UploadDockerImagesRequest request) throws IOException, InterruptedException {
-        upload(CommandUtils::runCommandInheritIO, request);
+    public void upload() throws IOException, InterruptedException {
+        upload(CommandUtils::runCommandInheritIO, DockerImageConfiguration.getDefault());
     }
 
-    public void upload(CommandPipelineRunner runCommand, UploadDockerImagesRequest request) throws IOException, InterruptedException {
-        List<StackDockerImage> stacksToUpload = request.getImages();
+    public void upload(CommandPipelineRunner runCommand, DockerImageConfiguration dockerImageConfiguration) throws IOException, InterruptedException {
+        List<StackDockerImage> stacksToUpload = dockerImageConfiguration.getAllImagesToUpload();
         LOGGER.info("Images expected: {}", stacksToUpload);
         List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
                 .collect(Collectors.toUnmodifiableList());
@@ -64,13 +65,11 @@ public class UploadDockerImagesToRepository {
         if (stacksToBuild.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
-        } else {
-            LOGGER.info("Building and uploading images: {}", stacksToBuild);
-            runCommand.runOrThrow(pipeline(
-                    command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
         if (stacksToBuild.stream().anyMatch(StackDockerImage::isMultiplatform)) {
+            LOGGER.info("Building and uploading images: {}", stacksToBuild);
+
             runCommand.run("docker", "buildx", "rm", "sleeper");
             runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
         }
@@ -78,7 +77,7 @@ public class UploadDockerImagesToRepository {
         for (StackDockerImage stackImage : stacksToBuild) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
             String imageName = stackImage.getImageName();
-            String tag = repositoryHost + "/" + imageName + ":" + request.getVersion();
+            String tag = repositoryHost + "/" + imageName + ":" + version;
 
             stackImage.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
@@ -104,6 +103,7 @@ public class UploadDockerImagesToRepository {
         private Path jarsDirectory;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private String repositoryHost;
+        private String version = SleeperVersion.getVersion();
 
         private Builder() {
         }
@@ -125,6 +125,11 @@ public class UploadDockerImagesToRepository {
 
         public Builder repositoryHost(String repositoryHost) {
             this.repositoryHost = repositoryHost;
+            return this;
+        }
+
+        public Builder version(String version) {
+            this.version = version;
             return this;
         }
 
