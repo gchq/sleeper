@@ -15,8 +15,10 @@
  */
 package sleeper.clients.deploy.container;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
 
 import java.nio.file.Path;
@@ -25,14 +27,17 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
+import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 
+@DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
 
     protected final Map<Path, String> files = new HashMap<>();
 
     @Test
-    void shouldBuildAndPushECSImages() throws Exception {
+    void shouldBuildAndPushContainerImages() throws Exception {
 
         // Given
         DockerImageConfiguration dockerImageConfiguration = containerImageConfig();
@@ -56,6 +61,47 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 buildAndPushImageWithBuildxCommand(expectedCompactionTag, "./docker/compaction"),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
                 pushImageCommand(expectedEmrTag));
+    }
+
+    @Test
+    void shouldBuildAndPushLambdas() throws Exception {
+
+        // Given
+        DockerImageConfiguration dockerImageConfiguration = lambdaImageConfig();
+
+        // When
+        List<CommandPipeline> commandsThatRan = pipelinesRunOn(
+                runCommand -> uploader().upload(runCommand, dockerImageConfiguration));
+
+        // Then
+        String expectedStatestoreTag = "www.somedocker.com/statestore-lambda:1.0.0";
+        String expectedIngestTaskTag = "www.somedocker.com/ingest-task-creator-lambda:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/bulk-import-starter-lambda:1.0.0";
+        String expectedAthenaTag = "www.somedocker.com/athena-lambda:1.0.0";
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommandWithArgs("-t", expectedStatestoreTag, "./docker/lambda"),
+                pushImageCommand(expectedStatestoreTag),
+                buildImageCommandWithArgs("-t", expectedIngestTaskTag, "./docker/lambda"),
+                pushImageCommand(expectedIngestTaskTag),
+                buildImageCommandWithArgs("-t", expectedBulkImportTag, "./docker/lambda"),
+                pushImageCommand(expectedBulkImportTag),
+                buildImageCommandWithArgs("-t", expectedAthenaTag, "./docker/lambda"),
+                pushImageCommand(expectedAthenaTag));
+    }
+
+    @Test
+    void shouldFailWhenCreateBuildxBuilderFails() {
+        // Given
+        DockerImageConfiguration dockerImageConfiguration = containerImageConfig();
+
+        // When / Then
+        assertThatThrownBy(() -> uploader().upload(
+                returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
+                dockerImageConfiguration))
+                .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                    assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
+                    assertThat(e.getExitCode()).isEqualTo(123);
+                });
     }
 
     protected UploadDockerImagesToRepository uploader() {
