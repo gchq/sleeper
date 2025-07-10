@@ -221,11 +221,4 @@ impl ScalarUDFImpl for SketchUDF {
 
         Ok(args.args[0].clone())
     }
-
-    fn preserves_lex_ordering(
-        &self,
-        _inputs: &[datafusion::logical_expr::sort_properties::ExprProperties],
-    ) -> Result<bool> {
-        Ok(true)
-    }
 }
