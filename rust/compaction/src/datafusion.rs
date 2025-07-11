@@ -27,9 +27,12 @@ use crate::{
     s3::ObjectStoreFactory,
 };
 use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
-use arrow::util::pretty::pretty_format_batches;
+use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
 use datafusion::{
-    common::DFSchema,
+    common::{
+        DFSchema,
+        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    },
     config::{ExecutionOptions, TableParquetOptions},
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
@@ -39,7 +42,11 @@ use datafusion::{
     },
     logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
-    physical_plan::{accept, collect},
+    physical_expr::{LexOrdering, PhysicalSortExpr},
+    physical_plan::{
+        accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
+        expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
+    },
     prelude::*,
 };
 use log::{error, info, warn};
@@ -118,6 +125,7 @@ pub async fn compact(
                 sketch_func
                     // Sketch function needs to be called with each row key column
                     .call(row_key_exprs.clone())
+                    .alias(col_name)
             } else {
                 col(col_name)
             }
@@ -128,18 +136,28 @@ pub async fn compact(
     frame = frame.sort(sort_order.clone())?;
     frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
     frame = frame.select(col_names_expr)?;
-    // Sort again, to ensure correct coalescing of batches after parallel projection
-    frame = frame.sort(sort_order)?;
-    // Rename sketch column
-    let sketch_col_name = frame.schema().field(0).name().to_owned();
-    frame = frame.with_column_renamed(sketch_col_name, &input_data.row_key_cols[0])?;
 
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
     set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
 
+    // Create column list of row keys and sort key cols
+    let sorting_columns = input_data
+        .row_key_cols
+        .iter()
+        .chain(input_data.sort_key_cols.iter())
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
+    let stats = collect_stats(
+        frame.clone(),
+        input_paths,
+        output_path,
+        &sorting_columns,
+        pqo,
+    )
+    .await?;
     output_sketch(store_factory, output_path, &sketch_func, &stats)?;
 
     Ok(CompactionResult::from(&stats))
@@ -344,10 +362,28 @@ async fn collect_stats(
     frame: DataFrame,
     input_paths: &[Url],
     output_path: &Url,
+    sorting_columns: &[&str],
     pqo: datafusion::config::TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
+    let plan_schema = frame.schema().as_arrow();
+    // Convert list of columns into physical sorting expressions
+    let ordering = LexOrdering::new(
+        sorting_columns
+            .iter()
+            .map(|col_name| {
+                PhysicalSortExpr::new(
+                    Arc::new(
+                        Column::new_with_schema(col_name, plan_schema)
+                            .expect("Can't obtain schema index"),
+                    ),
+                    SortOptions::new(false, false),
+                )
+            })
+            .collect(),
+    );
+
     let (session_state, logical_plan) = frame.into_parts();
     let logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
@@ -363,9 +399,34 @@ async fn collect_stats(
 
     // Optimise plan and generate physical plan
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
-    let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
+
+    // Modify upper most CoalescePartitionsExec into a SortPreservingExec to avoid
+    // sorting bug where partitions are re-merged out of order
+    let new_plan = physical_plan
+        // Recurse down plan looking for specific node
+        .transform_down(|plan_node| {
+            Ok(
+                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
+                {
+                    // Swap it out for a SortPreservingMergeExec
+                    let replacement =
+                        SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
+                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
+                } else {
+                    Transformed::no(plan_node)
+                },
+            )
+        })?
+        .data;
+
+    info!(
+        "New physical plan\n{}",
+        displayable(&*new_plan).indent(true)
+    );
+
+    let _ = collect(new_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::new(input_paths);
-    accept(physical_plan.as_ref(), &mut stats)?;
+    accept(new_plan.as_ref(), &mut stats)?;
     stats.log_metrics();
     Ok(stats)
 }
