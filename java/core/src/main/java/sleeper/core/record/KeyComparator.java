@@ -48,15 +48,12 @@ public class KeyComparator implements Comparator<Key> {
 
     @Override
     public int compare(Key key1, Key key2) {
-        int count = 0;
-        for (PrimitiveType type : rowKeyTypes) {
-            Comparable value1 = type.toComparable(key1.get(count));
-            Comparable value2 = type.toComparable(key2.get(count));
-            int diff = PrimitiveType.COMPARATOR.compare(value1, value2);
+        for (int i = 0; i < rowKeyTypes.size(); i++) {
+            PrimitiveType type = rowKeyTypes.get(i);
+            int diff = type.compare(key1.get(i), key2.get(i));
             if (0 != diff) {
                 return diff;
             }
-            count++;
         }
         return 0;
     }

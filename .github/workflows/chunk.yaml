@@ -27,7 +27,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         if: ${{ ! inputs.skipRust }}
         with:
-         toolchain: 1.86
+         toolchain: 1.88
       - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ ! inputs.skipRust }}
       - name: Install cargo cross

@@ -15,6 +15,7 @@
  */
 package sleeper.trino;
 
+import com.google.inject.Inject;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -26,8 +27,6 @@ import io.trino.spi.connector.DynamicFilter;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-
-import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 

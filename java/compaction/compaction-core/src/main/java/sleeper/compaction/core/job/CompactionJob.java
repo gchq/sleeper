@@ -61,20 +61,15 @@ public class CompactionJob {
         return new Builder();
     }
 
-    public String getTableId() {
-        return tableId;
-    }
-
-    public String getId() {
-        return jobId;
-    }
-
-    public String getPartitionId() {
-        return partitionId;
-    }
-
-    public List<String> getInputFiles() {
-        return inputFiles;
+    public Builder toBuilder() {
+        return builder()
+                .tableId(tableId)
+                .jobId(jobId)
+                .inputFiles(inputFiles)
+                .outputFile(outputFile)
+                .partitionId(partitionId)
+                .iteratorClassName(iteratorClassName)
+                .iteratorConfig(iteratorConfig);
     }
 
     public CheckFileAssignmentsRequest createInputFileAssignmentsCheck() {
@@ -134,6 +129,22 @@ public class CompactionJob {
                 .count() != files.size()) {
             throw new IllegalArgumentException("Duplicate entry present in file list");
         }
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getId() {
+        return jobId;
+    }
+
+    public String getPartitionId() {
+        return partitionId;
+    }
+
+    public List<String> getInputFiles() {
+        return inputFiles;
     }
 
     public String getOutputFile() {

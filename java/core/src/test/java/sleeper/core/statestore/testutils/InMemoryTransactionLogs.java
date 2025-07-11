@@ -37,30 +37,30 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJ
  */
 public class InMemoryTransactionLogs {
 
-    private final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
-    private final InMemoryTransactionLogSnapshots filesSnapshots = new InMemoryTransactionLogSnapshots();
-    private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
-    private final InMemoryTransactionLogSnapshots partitionsSnapshots = new InMemoryTransactionLogSnapshots();
+    private final InMemoryTransactionLogStore filesLogStore;
+    private final InMemoryTransactionLogSnapshots filesSnapshots;
+    private final InMemoryTransactionLogStore partitionsLogStore;
+    private final InMemoryTransactionLogSnapshots partitionsSnapshots;
     private final InMemoryTransactionBodyStore transactionBodyStore;
     private final List<Duration> retryWaits;
     private final ThreadSleep retryWaiter;
 
     public InMemoryTransactionLogs() {
-        this(new InMemoryTransactionBodyStore());
+        this(builder());
     }
 
-    public InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore) {
-        this(transactionBodyStore, new ArrayList<>());
+    private InMemoryTransactionLogs(Builder builder) {
+        filesLogStore = builder.filesLogStore;
+        filesSnapshots = builder.filesSnapshots;
+        partitionsLogStore = builder.partitionsLogStore;
+        partitionsSnapshots = builder.partitionsSnapshots;
+        transactionBodyStore = builder.transactionBodyStore;
+        retryWaits = builder.retryWaits;
+        retryWaiter = builder.retryWaiter;
     }
 
-    private InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
-        this(transactionBodyStore, retryWaits, ThreadSleepTestHelper.recordWaits(retryWaits));
-    }
-
-    private InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits, ThreadSleep retryWaiter) {
-        this.transactionBodyStore = transactionBodyStore;
-        this.retryWaits = retryWaits;
-        this.retryWaiter = retryWaiter;
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -71,7 +71,7 @@ public class InMemoryTransactionLogs {
      * @return                      an instance of this class
      */
     public static InMemoryTransactionLogs recordRetryWaits(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
-        return new InMemoryTransactionLogs(transactionBodyStore, retryWaits);
+        return builder().transactionBodyStore(transactionBodyStore).retryWaits(retryWaits).build();
     }
 
     /**
@@ -81,7 +81,7 @@ public class InMemoryTransactionLogs {
      * @return            an instance of this class
      */
     public static InMemoryTransactionLogs recordRetryWaits(List<Duration> retryWaits) {
-        return new InMemoryTransactionLogs(new InMemoryTransactionBodyStore(), retryWaits);
+        return builder().retryWaits(retryWaits).build();
     }
 
     /**
@@ -149,5 +149,105 @@ public class InMemoryTransactionLogs {
 
     public List<Duration> getRetryWaits() {
         return retryWaits;
+    }
+
+    /**
+     * A builder to create in memory transaction logs.
+     */
+    public static class Builder {
+
+        private InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
+        private InMemoryTransactionLogSnapshots filesSnapshots = new InMemoryTransactionLogSnapshots();
+        private InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
+        private InMemoryTransactionLogSnapshots partitionsSnapshots = new InMemoryTransactionLogSnapshots();
+        private InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
+        private List<Duration> retryWaits = new ArrayList<>();
+        private ThreadSleep retryWaiter = ThreadSleepTestHelper.recordWaits(retryWaits);
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the store of the log of transactions against files.
+         *
+         * @param  filesLogStore the store
+         * @return               this builder
+         */
+        public Builder filesLogStore(InMemoryTransactionLogStore filesLogStore) {
+            this.filesLogStore = filesLogStore;
+            return this;
+        }
+
+        /**
+         * Sets the store of snapshots of the state of files.
+         *
+         * @param  filesSnapshots the store
+         * @return                this builder
+         */
+        public Builder filesSnapshots(InMemoryTransactionLogSnapshots filesSnapshots) {
+            this.filesSnapshots = filesSnapshots;
+            return this;
+        }
+
+        /**
+         * Sets the store of the log of transactions against partitions.
+         *
+         * @param  partitionsLogStore the store
+         * @return                    this builder
+         */
+        public Builder partitionsLogStore(InMemoryTransactionLogStore partitionsLogStore) {
+            this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        /**
+         * Sets the store of snapshots of the state of partitions.
+         *
+         * @param  partitionsSnapshots the store
+         * @return                     this builder
+         */
+        public Builder partitionsSnapshots(InMemoryTransactionLogSnapshots partitionsSnapshots) {
+            this.partitionsSnapshots = partitionsSnapshots;
+            return this;
+        }
+
+        /**
+         * Sets the store of large transactions that are not held directly in a log entry.
+         *
+         * @param  transactionBodyStore the store
+         * @return                      this builder
+         */
+        public Builder transactionBodyStore(InMemoryTransactionBodyStore transactionBodyStore) {
+            this.transactionBodyStore = transactionBodyStore;
+            return this;
+        }
+
+        /**
+         * Sets the list of wait durations to be written to when the state store waits during a retry. This will be used
+         * for testing purposes instead of actually waiting.
+         *
+         * @param  retryWaits the list to record wait durations
+         * @return            this builder
+         */
+        public Builder retryWaits(List<Duration> retryWaits) {
+            this.retryWaits = retryWaits;
+            return retryWaiter(ThreadSleepTestHelper.recordWaits(retryWaits));
+        }
+
+        /**
+         * Sets the behaviour to use when the state store waits during a retry. This will be used for testing purposes
+         * instead of actually waiting.
+         *
+         * @param  retryWaiter the behaviour
+         * @return             this builder
+         */
+        public Builder retryWaiter(ThreadSleep retryWaiter) {
+            this.retryWaiter = retryWaiter;
+            return this;
+        }
+
+        public InMemoryTransactionLogs build() {
+            return new InMemoryTransactionLogs(this);
+        }
     }
 }

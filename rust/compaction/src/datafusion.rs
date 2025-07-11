@@ -524,13 +524,12 @@ fn create_session_cfg<T>(
 /// This is a list of the row key columns followed by the sort key columns.
 ///
 fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
-    let sort_order = input_data
+    input_data
         .row_key_cols
         .iter()
         .chain(input_data.sort_key_cols.iter())
         .map(|s| col(s).sort(true, false))
-        .collect::<Vec<_>>();
-    sort_order
+        .collect::<Vec<_>>()
 }
 
 /// Takes the urls in `input_paths` list and `output_path`

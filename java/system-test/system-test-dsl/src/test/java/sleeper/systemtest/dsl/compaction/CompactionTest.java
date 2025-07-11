@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -35,6 +37,7 @@ import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_REFERE
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -90,7 +93,12 @@ public class CompactionTest {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
-        Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        Approvals.verify(printFiles(sleeper.partitioning().tree(), files));
+        assertThat(files.getFilesWithReferences())
+                .allSatisfy(file -> assertThat(
+                        SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
     }
 
 }

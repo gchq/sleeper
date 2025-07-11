@@ -34,9 +34,11 @@ public record S3Path(String requestedPath, String bucket, String prefix) {
         if (!path.contains("/")) {
             return new S3Path(path, path, "");
         } else {
+            String bucketPath = path.contains("//") ? path.substring(path.indexOf("//") + 2) : path;
+
             return new S3Path(path,
-                    path.substring(0, path.indexOf("/")),
-                    path.substring(path.indexOf("/") + 1));
+                    bucketPath.substring(0, bucketPath.indexOf("/")),
+                    bucketPath.substring(bucketPath.indexOf("/") + 1));
         }
     }
 }

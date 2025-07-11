@@ -20,11 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 
 import java.io.IOException;
 
@@ -83,16 +82,9 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
             String sleeperIteratorConfig,
             CloseableIterator<Record> sourceIterator) throws IteratorCreationException {
         if (null != sleeperIteratorClassName) {
-            SortedRecordIterator iterator;
-            try {
-                iterator = objectFactory.getObject(sleeperIteratorClassName, SortedRecordIterator.class);
-            } catch (ObjectFactoryException e) {
-                throw new IteratorCreationException("ObjectFactoryException creating iterator of class " + sleeperIteratorClassName, e);
-            }
-            LOGGER.debug("Created iterator of class {}", sleeperIteratorClassName);
-            iterator.init(sleeperIteratorConfig, sleeperSchema);
-            LOGGER.debug("Initialised iterator with config {}", sleeperIteratorConfig);
-            return iterator.apply(sourceIterator);
+            return new IteratorFactory(objectFactory)
+                    .getIterator(sleeperIteratorClassName, sleeperIteratorConfig, sleeperSchema)
+                    .apply(sourceIterator);
         }
         return sourceIterator;
     }

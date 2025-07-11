@@ -18,7 +18,6 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
 import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ConnectorPartitionHandle;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.DynamicFilter;
@@ -41,7 +40,6 @@ import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.StreamSupport;
 
-import static io.trino.spi.connector.NotPartitionedPartitionHandle.NOT_PARTITIONED;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -168,17 +166,12 @@ public class SleeperSplitSource implements ConnectorSplitSource {
     /**
      * Retrieve the next batch of splits.
      *
-     * @param  partitionHandle tables must not be partitioned to use this method
-     * @param  maxBatchSize    the maximum number of splits to include in the batch
-     * @return                 the batch of {@link SleeperSplit} objects, expressed as a batch of splits which will be
-     *                         returned at some point in the future
+     * @param  maxBatchSize the maximum number of splits to include in the batch
+     * @return              the batch of {@link SleeperSplit} objects, expressed as a batch of splits which will be
+     *                      returned at some point in the future
      */
     @Override
-    public CompletableFuture<ConnectorSplitBatch> getNextBatch(ConnectorPartitionHandle partitionHandle, int maxBatchSize) {
-        // I  do not know what this means but it appears in FixedSplitSource and so I have copied it here
-        if (!partitionHandle.equals(NOT_PARTITIONED)) {
-            throw new IllegalArgumentException("partitionHandle must be NOT_PARTITIONED");
-        }
+    public CompletableFuture<ConnectorSplitBatch> getNextBatch(int maxBatchSize) {
         // Wait for a future where the dynamic filter has completely narrowed
         return futureWhenDynamicFilterHasNarrowedCompletely(this.dynamicFilter).thenApply(dummy -> {
             // Ensure that the sleeper split iterator has been initialised

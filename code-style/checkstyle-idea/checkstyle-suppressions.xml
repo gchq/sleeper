@@ -34,7 +34,6 @@
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
     <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="illegalImport"/>
     <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocMethod"/>
@@ -59,7 +58,6 @@
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="illegalImport"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocMethod"/>

@@ -38,6 +38,7 @@ import software.amazon.awssdk.utils.BinaryUtils;
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -48,6 +49,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.recordretrieval.RecordRetrievalException;
@@ -123,7 +125,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     @Override
     protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema,
-            TableProperties tableProperties) throws RecordRetrievalException, ObjectFactoryException {
+            TableProperties tableProperties) throws RecordRetrievalException, IteratorCreationException {
         Split split = recordsRequest.getSplit();
         Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -175,19 +177,19 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * Creates an iterator which will read all the Parquet files relevant to the leaf partition, pushing down any
      * predicates derived from the query. It also applies any Table specific iterators that may have been configured.
      *
-     * @param  relevantFiles            list of relevant partitions (the first should be the leaf partition)
-     * @param  minRowKeys               the min row keys for this leaf partition
-     * @param  maxRowKeys               the max row keys for this leaf partition
-     * @param  schema                   the schema to use for reading the data
-     * @param  tableProperties          the table properties for this table
-     * @param  valueSets                a summary of the predicates associated with this query
-     * @return                          a single iterator of records
-     * @throws ObjectFactoryException   if something goes wrong creating the iterators
-     * @throws RecordRetrievalException if something goes wrong retrieving records
+     * @param  relevantFiles             list of relevant partitions (the first should be the leaf partition)
+     * @param  minRowKeys                the min row keys for this leaf partition
+     * @param  maxRowKeys                the max row keys for this leaf partition
+     * @param  schema                    the schema to use for reading the data
+     * @param  tableProperties           the table properties for this table
+     * @param  valueSets                 a summary of the predicates associated with this query
+     * @return                           a single iterator of records
+     * @throws IteratorCreationException if something goes wrong creating the iterators
+     * @throws RecordRetrievalException  if something goes wrong retrieving records
      */
     private CloseableIterator<Record> createIterator(
             Set<String> relevantFiles, List<Object> minRowKeys, List<Object> maxRowKeys,
-            Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws ObjectFactoryException, RecordRetrievalException {
+            Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws IteratorCreationException, RecordRetrievalException {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);
@@ -246,22 +248,19 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     /**
      * Applies an iterator configured for this table. This iterator will run before it passes to Athena.
      *
-     * @param  mergingIterator        an iterator encompassing all the Parquet iterators
-     * @param  schema                 the schema to use for reading the data
-     * @param  tableProperties        the table properties for the table being queried
-     * @return                        a combined iterator
-     * @throws ObjectFactoryException if the iterator can't be instantiated
+     * @param  mergingIterator           an iterator encompassing all the Parquet iterators
+     * @param  schema                    the schema to use for reading the data
+     * @param  tableProperties           the table properties for the table being queried
+     * @return                           a combined iterator
+     * @throws IteratorCreationException if the iterator can't be instantiated
      */
-    private CloseableIterator<Record> applyCompactionIterators(CloseableIterator<Record> mergingIterator, Schema schema, TableProperties tableProperties) throws ObjectFactoryException {
+    private CloseableIterator<Record> applyCompactionIterators(CloseableIterator<Record> mergingIterator, Schema schema, TableProperties tableProperties) throws IteratorCreationException {
         String iteratorClass = tableProperties.get(ITERATOR_CLASS_NAME);
         if (iteratorClass == null) {
             return mergingIterator;
         }
         String iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        SortedRecordIterator sortedRecordIterator = objectFactory.getObject(iteratorClass, SortedRecordIterator.class);
-        sortedRecordIterator.init(iteratorConfig, schema);
-        LOGGER.debug("Initialised iterator with config " + iteratorConfig);
+        SortedRecordIterator sortedRecordIterator = new IteratorFactory(objectFactory).getIterator(iteratorClass, iteratorConfig, schema);
         return sortedRecordIterator.apply(mergingIterator);
-
     }
 }

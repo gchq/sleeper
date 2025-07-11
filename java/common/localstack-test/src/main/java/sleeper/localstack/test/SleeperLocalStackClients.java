@@ -15,8 +15,6 @@
  */
 package sleeper.localstack.test;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
@@ -28,7 +26,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getHadoopConfiguration;
 
@@ -41,7 +38,6 @@ public class SleeperLocalStackClients {
     }
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
-    public static final AmazonS3 S3_CLIENT_V1 = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
     public static final S3Client S3_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
     public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3AsyncClient.crtBuilder());
     public static final S3TransferManager S3_TRANSFER_MANAGER = S3TransferManager.builder().s3Client(S3_ASYNC_CLIENT).build();
