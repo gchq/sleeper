@@ -60,7 +60,7 @@ public class DockerImagesTestBase {
                     .handler("AthenaLambda")
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
 
-    protected DockerImageConfiguration containerImageConfig() {
+    protected DockerImageConfiguration dockerDeploymentImageConfig() {
         return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
     }
 

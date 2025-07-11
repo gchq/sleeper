@@ -70,10 +70,6 @@ public class UploadDockerImagesRequest {
         }
     }
 
-    public static UploadDockerImagesRequest forDockerRepository(DockerImageConfiguration configuration) {
-        return builder().images(configuration.getAllImagesToUpload()).build();
-    }
-
     public Builder toBuilder() {
         return builder().ecrPrefix(ecrPrefix).account(account).region(region).version(version).images(images);
     }

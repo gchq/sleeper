@@ -46,7 +46,7 @@ public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
     }
 
     protected RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, containerImageConfig()));
+        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, dockerDeploymentImageConfig()));
     }
 
     protected RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {

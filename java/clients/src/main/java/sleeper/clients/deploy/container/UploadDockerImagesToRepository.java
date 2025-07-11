@@ -37,14 +37,14 @@ public class UploadDockerImagesToRepository {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final CopyFile copyFile;
-    private final String repositoryHost;
+    private final String repositoryPrefix;
     private final String version;
 
     private UploadDockerImagesToRepository(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        repositoryHost = requireNonNull(builder.repositoryHost, "repositoryHost must not be null");
+        repositoryPrefix = requireNonNull(builder.repositoryPrefix, "repositoryPrefix must not be null");
         version = requireNonNull(builder.version, "version must not be null");
     }
 
@@ -77,7 +77,7 @@ public class UploadDockerImagesToRepository {
         for (StackDockerImage stackImage : stacksToBuild) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
             String imageName = stackImage.getImageName();
-            String tag = repositoryHost + "/" + imageName + ":" + version;
+            String tag = repositoryPrefix + "/" + imageName + ":" + version;
 
             stackImage.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
@@ -102,7 +102,7 @@ public class UploadDockerImagesToRepository {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private String repositoryHost;
+        private String repositoryPrefix;
         private String version = SleeperVersion.getVersion();
 
         private Builder() {
@@ -123,8 +123,8 @@ public class UploadDockerImagesToRepository {
             return this;
         }
 
-        public Builder repositoryHost(String repositoryHost) {
-            this.repositoryHost = repositoryHost;
+        public Builder repositoryPrefix(String repositoryPrefix) {
+            this.repositoryPrefix = repositoryPrefix;
             return this;
         }
 

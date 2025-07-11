@@ -40,7 +40,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     void shouldBuildAndPushContainerImages() throws Exception {
 
         // Given
-        DockerImageConfiguration dockerImageConfiguration = containerImageConfig();
+        DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
 
         // When
         List<CommandPipeline> commandsThatRan = pipelinesRunOn(
@@ -67,6 +67,11 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     void shouldBuildAndPushLambdas() throws Exception {
 
         // Given
+        files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
+        files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
+        files.put(Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content");
+        files.put(Path.of("./jars/athena.jar"), "athena-jar-content");
+
         DockerImageConfiguration dockerImageConfiguration = lambdaImageConfig();
 
         // When
@@ -87,12 +92,20 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedBulkImportTag),
                 buildImageCommandWithArgs("-t", expectedAthenaTag, "./docker/lambda"),
                 pushImageCommand(expectedAthenaTag));
+
+        assertThat(files).isEqualTo(Map.of(
+                Path.of("./jars/statestore.jar"), "statestore-jar-content",
+                Path.of("./jars/ingest.jar"), "ingest-jar-content",
+                Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
+                Path.of("./jars/athena.jar"), "athena-jar-content",
+                Path.of("./docker/lambda/lambda.jar"), "athena-jar-content"));
+
     }
 
     @Test
     void shouldFailWhenCreateBuildxBuilderFails() {
         // Given
-        DockerImageConfiguration dockerImageConfiguration = containerImageConfig();
+        DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
 
         // When / Then
         assertThatThrownBy(() -> uploader().upload(
@@ -107,7 +120,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     protected UploadDockerImagesToRepository uploader() {
         return UploadDockerImagesToRepository.builder()
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                .repositoryHost("www.somedocker.com")
+                .repositoryPrefix("www.somedocker.com")
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .version("1.0.0")
                 .build();
