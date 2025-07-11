@@ -276,10 +276,18 @@ def _get_cmd_input() -> CmdInputs:
     """
     table_name = input("Table name? (Press Enter for default 'testing') ") or "testing"
     key = input("Key? (Press Enter for default 'key') ") or "key"
-    min_value = input("Min value? ")
-    max_value = input("Max value? ")
-    min_inclusive = _get_boolean_input("Min inclusive? (Press Enter for default True) ", default=True)
-    max_inclusive = _get_boolean_input("Max inclusive?  (Press Enter for default True) ", default=True)
+    exact = _get_boolean_input("Is the an exact query? (Please Enter for default True)", default=True)
+    if exact:
+        value = input("Value? ")
+        min_value = value
+        max_value = value
+        min_inclusive = True
+        max_inclusive = True
+    else:
+        min_value = input("Min value? ")
+        max_value = input("Max value? ")
+        min_inclusive = _get_boolean_input("Min inclusive? (Press Enter for default True) ", default=True)
+        max_inclusive = _get_boolean_input("Max inclusive?  (Press Enter for default True) ", default=True)
     strings_base64_encoded = _get_boolean_input("Base64 encoded? (Press Enter for default False) ", default=False)
     save_results_to_file = _get_boolean_input("Save results to a file? (Press Enter for default True) ", default=True)
 
@@ -425,13 +433,13 @@ if __name__ == "__main__":
         level=logging.INFO,  # Set the log level for the ROOT logger
         format="%(asctime)s - %(filename)s - %(funcName)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.FileHandler("sleeper.log"),  # Log to a file named 'app.log'
-            logging.StreamHandler(),  # Also output to console
+            logging.FileHandler("sleeper.log"),
+            logging.StreamHandler(),
         ],
     )
 
     logger = logging.getLogger("web_socket_query")
-    logger.setLevel(logging.INFO)  # set the log level for the module
+    logger.setLevel(logging.DEBUG)  # set the log level for the module
     cmd_input = _get_cmd_input()
 
     use_envrion_auth = True
