@@ -99,6 +99,16 @@ public class DockerImageConfiguration {
                 .collect(toUnmodifiableList());
     }
 
+    public List<StackDockerImage> getAllImagesToUpload() {
+        return Stream.concat(
+                dockerDeployments.stream()
+                        .map(StackDockerImage::fromDockerDeployment),
+                lambdaHandlers.stream()
+                        .map(LambdaHandler::getJar).distinct()
+                        .map(StackDockerImage::lambdaImage))
+                .collect(toUnmodifiableList());
+    }
+
     private Stream<StackDockerImage> dockerDeploymentImages(Collection<OptionalStack> stacks) {
         return dockerDeployments.stream()
                 .filter(deployment -> stacks.contains(deployment.getOptionalStack()))

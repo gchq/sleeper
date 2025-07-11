@@ -58,6 +58,8 @@ sleeper.retain.infra.after.destroy=true
 sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
 
 # The deployment type for AWS Lambda. Not case sensitive.
+# There are two types of Lambda deployments, jar and container.
+# If the size of the jar file is too large, it will always be deployed as a container.
 # Valid values: [jar, container]
 sleeper.lambda.deploy.type=jar
 

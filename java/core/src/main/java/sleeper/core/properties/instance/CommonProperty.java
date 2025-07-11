@@ -81,6 +81,8 @@ public interface CommonProperty {
             .ignoreEmptyValue(false).build();
     UserDefinedInstanceProperty LAMBDA_DEPLOY_TYPE = Index.propertyBuilder("sleeper.lambda.deploy.type")
             .description("The deployment type for AWS Lambda. Not case sensitive.\n" +
+                    "There are two types of Lambda deployments, jar and container.\n" +
+                    "If the size of the jar file is too large, it will always be deployed as a container.\n" +
                     "Valid values: " + SleeperPropertyValueUtils.describeEnumValuesInLowerCase(LambdaDeployType.class))
             .defaultValue(LambdaDeployType.JAR.toString().toLowerCase(Locale.ROOT))
             .validationPredicate(LambdaDeployType::isValid)
