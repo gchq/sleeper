@@ -80,7 +80,7 @@ public class CompactionDataFusionPerformanceST {
         //         .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRecordsPerSecondInRange(800_000, 2_800_000),
+                        && stats.isAverageRunRecordsPerSecondInRange(3_000_000, 4_000_000),
                         "meets expected performance");
     }
 }
