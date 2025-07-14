@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "key": "key123",
+      "timestamp": 1851842880,
+      "value": "value123"
+    },
+    {
+      "key": "key456",
+      "timestamp": 1851842880,
+      "value": "value456"
+    }
+  ]
+}
