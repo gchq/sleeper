@@ -1,5 +1,19 @@
 #! /usr/bin/env python3
 
+#  Copyright 2022-2025 Crown Copyright
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import asyncio
 import datetime
 import hashlib
@@ -8,154 +22,13 @@ import json
 import logging
 import os
 import time
-import uuid
-from enum import Enum
 
 import boto3
 import websockets
+from cmd_inputs import get_cmd_input
 from dotenv import load_dotenv
-
-
-class MessageType(Enum):
-    """
-    Enum representing the different types of messages that can be received over the WebSocket connection.
-
-    Attributes:
-        COMPLETED (str): Indicates that the query has completed.
-        ERROR (str): Indicates that an error has occurred.
-        SUBQUERIES (str): Contains subquery identifiers related to the main query.
-        RECORDS (str): Contains the records returned from the query.
-    """
-
-    COMPLETED = "completed"
-    ERROR = "error"
-    SUBQUERIES = "subqueries"
-    RECORDS = "records"
-
-
-class Query:
-    """
-    Represents a Sleeper query with specific parameters, capable of serializing itself into JSON for WebSocket communication.
-
-    Attributes:
-        query_id (str): Unique identifier for the query instance.
-        table_name (str): Name of the database table to query.
-        key (str): The key or column to filter on.
-        min_value (str): The minimum value for the query region.
-        max_value (str): The maximum value for the query region.
-        min_inclusive (bool): Whether the minimum bound is inclusive.
-        max_inclusive (bool): Whether the maximum bound is inclusive.
-        strings_base64_encoded (bool): Whether string values are base64 encoded.
-    """
-
-    def __init__(
-        self,
-        table_name: str,
-        key: str,
-        min_value: str,
-        max_value: str,
-        min_inclusive: bool,
-        max_inclusive: bool,
-        strings_base64_encoded: bool,
-    ):
-        """
-        Initializes a new Query object with specified parameters.
-
-        Args:
-            table_name (str): The name of the database table to query.
-            key (str): The key or column to filter on.
-            min_value (str): The minimum value for the query region.
-            max_value (str): The maximum value for the query region.
-            min_inclusive (bool): Whether the minimum bound is inclusive.
-            max_inclusive (bool): Whether the maximum bound is inclusive.
-            strings_base64_encoded (bool): Whether strings are encoded in base64.
-        """
-        self.query_id = str(uuid.uuid4())
-        self.table_name = table_name
-        self.key = key
-        self.min_value = min_value
-        self.max_value = max_value
-        self.min_inclusive = min_inclusive
-        self.max_inclusive = max_inclusive
-        self.strings_base64_encoded = strings_base64_encoded
-
-    def to_json(self):
-        """
-        Converts the Query object into a JSON-formatted string suitable for sending over WebSocket.
-
-        Returns:
-            str: JSON representation of the query object.
-        """
-        regions = [
-            {
-                "key": {
-                    "min": self.min_value,
-                    "minInclusive": self.min_inclusive,
-                    "max": self.max_value,
-                    "maxInclusive": self.max_inclusive,
-                },
-                "stringsBase64Encoded": self.strings_base64_encoded,
-            }
-        ]
-        obj = {
-            "queryId": self.query_id,
-            "type": "Query",
-            "tableName": self.table_name,
-            "regions": regions,
-            "resultsPublisherConfig": {},
-        }
-        return json.dumps(obj)
-
-
-class CmdInputs:
-    """
-    A data class to hold command-line input parameters for the query execution.
-
-    Attributes:
-        table_name (str): Name of the database table to query.
-        key (str): The key or column to filter on.
-        min_value (str): Minimum value for the query range.
-        max_value (str): Maximum value for the query range.
-        min_inclusive (bool): Whether the minimum value is inclusive.
-        max_inclusive (bool): Whether the maximum value is inclusive.
-        strings_base64_encoded (bool): Whether string results are base64 encoded.
-        save_results_to_file (bool): Whether to save query results to a file.
-    """
-
-    def __init__(
-        self,
-        table_name: str,
-        key: str,
-        min_value: str,
-        max_value: str,
-        min_inclusive: bool,
-        max_inclusive: bool,
-        strings_base64_encoded: bool,
-        save_results_to_file: bool,
-    ):
-        """
-        Initialize Command Inputs with provided parameters.
-
-        Args:
-            table_name (str): Name of the database table to query.
-            key (str): The key or column to filter on.
-            min_value (str): Minimum value for the query range.
-            max_value (str): Maximum value for the query range.
-            min_inclusive (bool): Whether the minimum value is inclusive.
-            max_inclusive (bool): Whether the maximum value is inclusive.
-            strings_base64_encoded (bool): Whether string results are base64 encoded.
-            save_results_to_file (bool): Whether to save the query results to a file.
-        """
-        self.query = Query(
-            table_name=table_name,
-            key=key,
-            min_value=min_value,
-            max_value=max_value,
-            min_inclusive=min_inclusive,
-            max_inclusive=max_inclusive,
-            strings_base64_encoded=strings_base64_encoded,
-        )
-        self.save_results_to_file = save_results_to_file
+from message_type import MessageType
+from query import Query
 
 
 def _construct_websocket_endpoint(host: str, stage: str) -> str:
@@ -267,42 +140,6 @@ def _get_websocket_auth_header_from_envrion() -> tuple[str, str]:
     return endpoint, headers
 
 
-def _get_cmd_input() -> CmdInputs:
-    """
-    Prompt the user for query parameters and return a CmdInputs instance.
-
-    Returns:
-        CmdInputs: An instance containing the user-specified query configurations.
-    """
-    table_name = input("Table name? (Press Enter for default 'testing') ") or "testing"
-    key = input("Key? (Press Enter for default 'key') ") or "key"
-    exact = _get_boolean_input("Is the an exact query? (Please Enter for default True)", default=True)
-    if exact:
-        value = input("Value? ")
-        min_value = value
-        max_value = value
-        min_inclusive = True
-        max_inclusive = True
-    else:
-        min_value = input("Min value? ")
-        max_value = input("Max value? ")
-        min_inclusive = _get_boolean_input("Min inclusive? (Press Enter for default True) ", default=True)
-        max_inclusive = _get_boolean_input("Max inclusive?  (Press Enter for default True) ", default=True)
-    strings_base64_encoded = _get_boolean_input("Base64 encoded? (Press Enter for default False) ", default=False)
-    save_results_to_file = _get_boolean_input("Save results to a file? (Press Enter for default True) ", default=True)
-
-    return CmdInputs(
-        table_name=table_name,
-        key=key,
-        min_value=min_value,
-        max_value=max_value,
-        min_inclusive=min_inclusive,
-        max_inclusive=max_inclusive,
-        strings_base64_encoded=strings_base64_encoded,
-        save_results_to_file=save_results_to_file,
-    )
-
-
 async def process_query(query: Query, use_envrion_auth: bool) -> dict:
     """
     Asynchronously processes a query over a WebSocket connection.
@@ -379,31 +216,6 @@ async def process_query(query: Query, use_envrion_auth: bool) -> dict:
         return results_accumulator
 
 
-def _get_boolean_input(prompt: str, default: bool = True) -> bool:
-    """
-    Prompt the user for a boolean input with a default value.
-
-    Args:
-        prompt (str): The message displayed to the user.
-        default (bool, optional): The default value if user presses Enter. Defaults to True.
-
-    Returns:
-        bool: The user's input interpreted as a boolean.
-    """
-    user_input = input(prompt).strip().lower()
-
-    if not user_input:
-        return default
-
-    if user_input in ("true", "yes", "1"):
-        return True
-    elif user_input in ("false", "no", "0"):
-        return False
-    else:
-        logger.warning("Invalid input, defaulting to", default)
-        return default
-
-
 def save_results_to_file(results: str):
     """
     Save the query results to a JSON file.
@@ -440,7 +252,7 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("web_socket_query")
     logger.setLevel(logging.DEBUG)  # set the log level for the module
-    cmd_input = _get_cmd_input()
+    cmd_input = get_cmd_input()
 
     use_envrion_auth = True
     results = asyncio.run(process_query(query=cmd_input.query, use_envrion_auth=use_envrion_auth))
