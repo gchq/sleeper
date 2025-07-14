@@ -17,8 +17,9 @@
 import asyncio
 import json
 import logging
+import uuid
 
-from cmd_inputs import get_cmd_input
+from cmd_inputs import _get_boolean_input, get_cmd_input
 from process_query import process_query
 
 
@@ -33,8 +34,9 @@ def _save_results_to_file(results: str):
         IOError: If there's an error writing to the file.
     """
     try:
-        with open("results.json", "w") as file:
-            logger.info("Saving results to results.json")
+        path = f"{uuid.uuid4().hex[:8]}-results.json"
+        with open(path, "w") as file:
+            logger.info(f"Saving results to {path}")
             json.dump(results, file)
     except IOError as e:
         logger.error(f"Failed to save results: {e}")
@@ -58,10 +60,14 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("web_socket_query")
     logger.setLevel(logging.DEBUG)  # set the log level for the module
-    cmd_input = get_cmd_input()
+    use_envrion_auth = True  # To be moved to config when another auth method id added
 
-    use_envrion_auth = True
-    results = asyncio.run(process_query(query=cmd_input.query, use_envrion_auth=use_envrion_auth))
+    while True:
+        cmd_input = get_cmd_input()
+        results = asyncio.run(process_query(query=cmd_input.query, use_envrion_auth=use_envrion_auth))
 
-    if cmd_input.save_results_to_file:
-        _save_results_to_file(results)
+        if cmd_input.save_results_to_file:
+            _save_results_to_file(results)
+
+        if not _get_boolean_input("Process another query? (Press Enter for default False) ", default=False):
+            break

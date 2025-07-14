@@ -104,7 +104,7 @@ def get_cmd_input() -> CmdInputs:
     """
     table_name = input("Table name? (Press Enter for default 'testing') ") or "testing"
     key = input("Key? (Press Enter for default 'key') ") or "key"
-    exact = _get_boolean_input("Is the an exact query? (Please Enter for default True)", default=True)
+    exact = _get_boolean_input("Is the an exact query? (Please Enter for default True) ", default=True)
     if exact:
         value = input("Value? ")
         min_value = value
