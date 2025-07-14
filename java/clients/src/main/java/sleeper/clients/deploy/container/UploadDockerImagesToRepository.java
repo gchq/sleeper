@@ -52,6 +52,19 @@ public class UploadDockerImagesToRepository {
         return new Builder();
     }
 
+    public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            System.out.println("Usage: <Repository prefix path> <Sleeper version>");
+            System.exit(1);
+            return;
+        }
+
+        UploadDockerImagesToRepository.builder()
+                .repositoryPrefix(args[0])
+                .version(args[1])
+                .build().upload();
+    }
+
     public void upload() throws IOException, InterruptedException {
         upload(CommandUtils::runCommandInheritIO, DockerImageConfiguration.getDefault());
     }
