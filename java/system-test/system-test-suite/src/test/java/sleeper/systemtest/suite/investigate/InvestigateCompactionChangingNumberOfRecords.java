@@ -30,7 +30,7 @@ import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -144,10 +144,10 @@ public class InvestigateCompactionChangingNumberOfRecords {
     private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
         var path = new org.apache.hadoop.fs.Path(filename);
         long count = 0;
-        try (ParquetReader<Record> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
+        try (ParquetReader<Row> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
                 .withConf(hadoopConf)
                 .build()) {
-            for (Record record = reader.read(); record != null; record = reader.read()) {
+            for (Row record = reader.read(); record != null; record = reader.read()) {
                 count++;
             }
         }

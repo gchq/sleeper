@@ -28,7 +28,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.row.Row;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;

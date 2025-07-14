@@ -20,7 +20,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -73,8 +73,8 @@ public class CompactionPerformanceST {
         assertThat(files.streamFileReferences()).hasSize(10);
         assertThat(files.getFilesWithReferences()).hasSize(10)
                 .first() // Only check one file because it's time consuming to read all records
-                .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
+                .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRecordCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
                         && stats.isAverageRunRecordsPerSecondInRange(180_000, 400_000),
