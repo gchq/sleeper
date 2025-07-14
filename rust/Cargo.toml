@@ -18,7 +18,7 @@ resolver = "2"
 [workspace.package]
 version = "0.32.0-SNAPSHOT"
 edition = "2024"
-rust-version = "1.86"
+rust-version = "1.88"
 publish = false
 license = "Apache-2.0"
 repository = "https://github.com/gchq/sleeper"

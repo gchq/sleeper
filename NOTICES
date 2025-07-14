@@ -69,7 +69,7 @@ XZ (org.tukaani:xz:1.*)
 
 - BSD Zero Clause License
 
-OkHttp (com.squareup.okhttp3:*:4.*)
+OkHttp (com.squareup.okhttp3:*:5.*)
 
 - Apache License, Version 2.0
 

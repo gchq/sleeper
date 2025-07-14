@@ -29,6 +29,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
 
@@ -65,6 +66,6 @@ public class CreateManyCompactionsTest {
         assertThat(files.getFilesWithReferences().size()).isEqualTo(1024);
         assertThat(files.getFilesWithNoReferences().size()).isEqualTo(2);
         assertThat(files.countFileReferences()).isEqualTo(1024);
-        assertThat(files.estimateRecordsInTable()).isEqualTo(20480);
+        assertThat(sumFileReferenceRecordCounts(files)).isEqualTo(20480);
     }
 }

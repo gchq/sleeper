@@ -23,6 +23,8 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -40,6 +42,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -102,8 +105,13 @@ public class CompactionST {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
-        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        assertThat(printFiles(sleeper.partitioning().tree(), files))
                 .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
+        assertThat(files.getFilesWithReferences())
+                .allSatisfy(file -> assertThat(
+                        SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
     }
 
     @Test
@@ -144,7 +152,12 @@ public class CompactionST {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
-        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        assertThat(printFiles(sleeper.partitioning().tree(), files))
                 .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
+        assertThat(files.getFilesWithReferences())
+                .allSatisfy(file -> assertThat(
+                        SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
     }
 }

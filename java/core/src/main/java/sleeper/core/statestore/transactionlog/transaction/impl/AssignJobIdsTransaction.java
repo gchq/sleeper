@@ -115,4 +115,8 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
         return "AssignJobIdsTransaction{requests=" + requests + "}";
     }
 
+    public List<AssignJobIdRequest> getRequests() {
+        return requests;
+    }
+
 }
