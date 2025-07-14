@@ -54,14 +54,17 @@ public class UploadDockerImagesToRepository {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
-            System.out.println("Usage: <Repository prefix path> <Sleeper version>");
+            System.out.println("Usage: <scripts-dir> <repository-prefix-path>");
             System.exit(1);
             return;
         }
 
+        Path scriptsDirectory = Path.of(args[0]);
+
         UploadDockerImagesToRepository.builder()
-                .repositoryPrefix(args[0])
-                .version(args[1])
+                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .jarsDirectory(scriptsDirectory.resolve("jars"))
+                .repositoryPrefix(args[1])
                 .build().upload();
     }
 
