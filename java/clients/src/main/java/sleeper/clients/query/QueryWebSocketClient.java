@@ -274,8 +274,8 @@ public class QueryWebSocketClient {
                 handleError(message, queryId);
             } else if ("subqueries".equals(messageType)) {
                 handleSubqueries(message, queryId);
-            } else if ("records".equals(messageType)) {
-                handleRecords(message, queryId);
+            } else if ("rows".equals(messageType)) {
+                handleRows(message, queryId);
             } else if ("completed".equals(messageType)) {
                 handleCompleted(message, queryId);
             } else {
@@ -335,8 +335,8 @@ public class QueryWebSocketClient {
             });
         }
 
-        private void handleRecords(JsonObject message, String queryId) {
-            JsonArray recordBatch = message.getAsJsonArray("records");
+        private void handleRows(JsonObject message, String queryId) {
+            JsonArray recordBatch = message.getAsJsonArray("rows");
             List<String> recordList = recordBatch.asList().stream()
                     .map(jsonElement -> jsonElement.getAsJsonObject())
                     .map(JsonObject::toString)
@@ -349,7 +349,7 @@ public class QueryWebSocketClient {
         }
 
         private void handleCompleted(JsonObject message, String queryId) {
-            long recordCountFromApi = message.get("recordCount").getAsLong();
+            long recordCountFromApi = message.get("rowCount").getAsLong();
             boolean recordsReturnedToClient = false;
             for (JsonElement location : message.getAsJsonArray("locations")) {
                 if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {

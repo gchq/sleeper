@@ -35,7 +35,7 @@ import java.util.stream.Stream;
  */
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<TransactionLogEntry> transactionEntries = new ArrayList<>();
+    private List<TransactionLogEntry> transactionEntries;
     private Consumer<TransactionLogEntry> onReadTransactionLogEntry = entry -> {
     };
     private Runnable startOfAdd = () -> {
@@ -43,6 +43,14 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     private Runnable startOfRead = () -> {
     };
     private boolean runningTrigger = false;
+
+    public InMemoryTransactionLogStore() {
+        this.transactionEntries = new ArrayList<>();
+    }
+
+    public InMemoryTransactionLogStore(List<TransactionLogEntry> transactionEntries) {
+        this.transactionEntries = new ArrayList<>(transactionEntries);
+    }
 
     @Override
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {

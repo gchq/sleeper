@@ -51,12 +51,15 @@ jobs:
           PROJECT_ROOT=$(cd .. && pwd)
           mvn install -Pquick -q -e -pl clients -am -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
           mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl clients \
-            -Dexec.mainClass=sleeper.clients.deploy.properties.GeneratePropertiesTemplates \
+            -Dexec.mainClass=sleeper.clients.deploy.documentation.GeneratePropertiesTemplates \
+            -Dexec.args="$PROJECT_ROOT"
+          mvn exec:java -q -e -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -pl clients \
+            -Dexec.mainClass=sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation \
             -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
           if [ ${#CHANGED_FILES} -gt 0 ]; then
             echo "Found files changed by properties template generation."
-            echo "Please run scripts/dev/generatePropertiesTemplates.sh and commit."
-            echo "$CHANGED_FILES"
+            echo "Please run scripts/dev/generateDocumentation.sh and commit."
+            git status --verbose --verbose
             exit 1
           fi

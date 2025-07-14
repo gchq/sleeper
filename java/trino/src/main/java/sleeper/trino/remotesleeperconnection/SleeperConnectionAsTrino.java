@@ -18,6 +18,7 @@ package sleeper.trino.remotesleeperconnection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.SchemaTableName;
@@ -32,7 +33,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactoryException;
@@ -45,8 +46,6 @@ import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.utils.SleeperTypeConversionUtils;
-
-import javax.inject.Inject;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -247,7 +246,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
 
         // Stream the results, as Record objects, and then convert them into a List<Object>
         try {
-            Stream<Record> resultRecordStream = this.sleeperRawAwsConnection.createResultRecordStream(
+            Stream<Row> resultRecordStream = this.sleeperRawAwsConnection.createResultRecordStream(
                     sleeperTransactionHandle.getTransactionStartInstant(),
                     leafPartitionQuery);
 

@@ -15,17 +15,17 @@
  */
 package sleeper.trino;
 
+import com.google.inject.Inject;
 import io.trino.spi.connector.ConnectorInsertTableHandle;
 import io.trino.spi.connector.ConnectorOutputTableHandle;
 import io.trino.spi.connector.ConnectorPageSink;
+import io.trino.spi.connector.ConnectorPageSinkId;
 import io.trino.spi.connector.ConnectorPageSinkProvider;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 
 import sleeper.trino.handle.SleeperInsertTableHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-
-import javax.inject.Inject;
 
 /**
  * Provides page sinks to support INSERT operations. Note that CREATE TABLE...AS operations are not supported.
@@ -39,12 +39,12 @@ public class SleeperPageSinkProvider implements ConnectorPageSinkProvider {
     }
 
     @Override
-    public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorOutputTableHandle outputTableHandle) {
+    public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorOutputTableHandle outputTableHandle, ConnectorPageSinkId pageSinkId) {
         throw new UnsupportedOperationException("Writing directly to new tables is not supported.");
     }
 
     @Override
-    public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle insertTableHandle) {
+    public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle insertTableHandle, ConnectorPageSinkId pageSinkId) {
         SleeperInsertTableHandle sleeperInsertTableHandle = (SleeperInsertTableHandle) insertTableHandle;
         return new SleeperPageSink(
                 sleeperConnectionAsTrino,

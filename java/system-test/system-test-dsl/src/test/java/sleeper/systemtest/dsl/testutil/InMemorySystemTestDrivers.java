@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.sketches.testutils.InMemorySketchesStore;
@@ -28,6 +28,7 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -73,8 +74,8 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemoryRecordStore sourceFiles = new InMemoryRecordStore();
-    private final InMemoryRecordStore data = new InMemoryRecordStore();
+    private final InMemoryRowStore sourceFiles = new InMemoryRowStore();
+    private final InMemoryRowStore data = new InMemoryRowStore();
     private final InMemorySketchesStore sketches = new InMemorySketchesStore();
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(transactionLogs);
@@ -228,6 +229,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
+    public DataFilesDriver dataFiles(SystemTestContext context) {
+        return (schema, filename) -> data.openFile(filename);
+    }
+
+    @Override
     public PollWithRetriesDriver pollWithRetries() {
         return PollWithRetriesDriver.noWaits();
     }
@@ -246,7 +252,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
         return reports;
     }
 
-    public InMemoryRecordStore data() {
+    public InMemoryRowStore data() {
         return data;
     }
 

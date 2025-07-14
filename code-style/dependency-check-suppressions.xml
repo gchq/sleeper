@@ -138,24 +138,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        Joda Time is used by most of the AWS SDK v1 dependencies, by the Trino Plugin Toolkit, and by the AWS Lambda
-        API. There is currently no version of the library without this vulnerability, and the vulnerability itself is
-        disputed.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
-        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.57 at time of
-        writing.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
         directly.
         ]]></notes>
@@ -192,13 +174,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This library is only used during build time tests, with WireMock, JsonUnit and Trino testing.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         RoaringBitmap is a dependency of spark-core. At time of writing the latest version is still vulnerable.
         Dependabot should update it automatically when a fixed version is available.
         file name: RoaringBitmap-1.3.0.jar
@@ -215,17 +190,13 @@
         automatically.
         file name: aws-json-protocol-2.31.59.jar
         file name: json-utils-2.31.59.jar
-
-        json-unit-core is used as part of WireMock which is on an older version because it's used by Trino. After
-        Trino and WireMock are upgraded we should not have any usages of this old version remaining.
-        file name: json-unit-core-2.36.0.jar
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This dependency includes a new vunerability with latest version.
+        This is a false positive which is only used for testing, given that it is a dependency of WireMock.
         Dependabot should update it automatically when a fixed version is available.
         file name: xmlunit-core-2.10.3.jar
         ]]></notes>
