@@ -417,10 +417,7 @@ async fn collect_stats(
         })?
         .data;
 
-    info!(
-        "New physical plan\n{}",
-        displayable(&*new_plan).indent(true)
-    );
+    info!("Physical plan\n{}", displayable(&*new_plan).indent(true));
 
     let _ = collect(new_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::new(input_paths);
@@ -591,6 +588,7 @@ fn create_session_cfg<T>(
         .execution
         .parquet
         .statistics_truncate_length = Some(input_data.stats_truncate_length);
+    sf.options_mut().explain.logical_plan_only = true;
     sf
 }
 
