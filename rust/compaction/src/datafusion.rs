@@ -373,15 +373,12 @@ async fn collect_stats(
         sorting_columns
             .iter()
             .map(|col_name| {
-                PhysicalSortExpr::new(
-                    Arc::new(
-                        Column::new_with_schema(col_name, plan_schema)
-                            .expect("Can't obtain schema index"),
-                    ),
+                Ok(PhysicalSortExpr::new(
+                    Arc::new(Column::new_with_schema(col_name, plan_schema)?),
                     SortOptions::new(false, false),
-                )
+                ))
             })
-            .collect(),
+            .collect::<Result<Vec<_>, DataFusionError>>()?,
     );
 
     let (session_state, logical_plan) = frame.into_parts();
@@ -411,6 +408,7 @@ async fn collect_stats(
                     // Swap it out for a SortPreservingMergeExec
                     let replacement =
                         SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
+                    // Stop searching down the query plan after making one replacement
                     Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
                 } else {
                     Transformed::no(plan_node)
