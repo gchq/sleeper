@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.IteratorFactory;
@@ -58,13 +58,13 @@ public class LeafPartitionQueryExecutor {
         this.retriever = retriever;
     }
 
-    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
-        LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
+        LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
-        SortedRecordIterator compactionIterator;
-        SortedRecordIterator queryIterator;
+        SortedRowIterator compactionIterator;
+        SortedRowIterator queryIterator;
 
         try {
             compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig);
@@ -76,7 +76,7 @@ public class LeafPartitionQueryExecutor {
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
         try {
-            CloseableIterator<Record> iterator = retriever.getRecords(leafPartitionQuery, dataReadSchema);
+            CloseableIterator<Row> iterator = retriever.getRows(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
             if (null != compactionIterator) {
                 iterator = compactionIterator.apply(iterator);
@@ -88,11 +88,11 @@ public class LeafPartitionQueryExecutor {
 
             return iterator;
         } catch (RecordRetrievalException e) {
-            throw new QueryException("QueryException retrieving records for LeafPartitionQuery", e);
+            throw new QueryException("QueryException retrieving rows for LeafPartitionQuery", e);
         }
     }
 
-    private Schema createSchemaForDataRead(LeafPartitionQuery query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
+    private Schema createSchemaForDataRead(LeafPartitionQuery query, Schema schema, SortedRowIterator compactionIterator, SortedRowIterator queryIterator) {
         List<String> requestedValueFields = query.getRequestedValueFields();
         if (requestedValueFields == null) {
             return schema;
@@ -120,7 +120,7 @@ public class LeafPartitionQueryExecutor {
                 .build();
     }
 
-    private SortedRecordIterator createIterator(
+    private SortedRowIterator createIterator(
             Schema schema,
             ObjectFactory objectFactory,
             String iteratorClassName,

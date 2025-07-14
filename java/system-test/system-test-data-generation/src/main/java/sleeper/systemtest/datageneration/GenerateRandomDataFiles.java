@@ -47,7 +47,7 @@ public class GenerateRandomDataFiles {
                 .recordsPerIngest(numberOfRecords)
                 .build();
         WriteRandomDataFiles.writeFilesToDirectory(outputDirectory, new InstanceProperties(),
-                tableProperties, WriteRandomData.createRecordIterator(job, tableProperties));
+                tableProperties, WriteRandomData.createRowIterator(job, tableProperties));
     }
 
     public static void main(String[] args) throws IOException {

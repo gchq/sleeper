@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record;
+package sleeper.core.row;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -25,27 +25,27 @@ import java.util.List;
 /**
  * Compares records by row keys then sort keys.
  */
-public class RecordComparator implements Comparator<Record> {
+public class RowComparator implements Comparator<Row> {
     private final Schema schema;
 
-    public RecordComparator(Schema schema) {
+    public RowComparator(Schema schema) {
         this.schema = schema;
     }
 
     @Override
-    public int compare(Record record1, Record record2) {
-        int rowKeyDiff = compare(schema.getRowKeyFields(), record1, record2);
+    public int compare(Row row1, Row row2) {
+        int rowKeyDiff = compare(schema.getRowKeyFields(), row1, row2);
         if (rowKeyDiff != 0) {
             return rowKeyDiff;
         }
-        return compare(schema.getSortKeyFields(), record1, record2);
+        return compare(schema.getSortKeyFields(), row1, row2);
     }
 
-    private static int compare(List<Field> fields, Record record1, Record record2) {
+    private static int compare(List<Field> fields, Row row1, Row row2) {
         for (Field field : fields) {
             PrimitiveType type = (PrimitiveType) field.getType();
-            Object value1 = record1.get(field.getName());
-            Object value2 = record2.get(field.getName());
+            Object value1 = row1.get(field.getName());
+            Object value2 = row2.get(field.getName());
             int diff = type.compare(value1, value2);
             if (diff != 0) {
                 return diff;

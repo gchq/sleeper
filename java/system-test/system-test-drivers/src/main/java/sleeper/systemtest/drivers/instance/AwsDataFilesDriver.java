@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.RecordReadSupport;
@@ -42,7 +42,7 @@ public class AwsDataFilesDriver implements DataFilesDriver {
     }
 
     @Override
-    public CloseableIterator<Record> getRecords(Schema schema, String filename) {
+    public CloseableIterator<Row> getRows(Schema schema, String filename) {
         try {
             LOGGER.info("Reading records from file {}", filename);
             return new ParquetReaderIterator(
