@@ -27,7 +27,7 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -107,8 +107,8 @@ public class QueryClientIT {
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Returned Records:")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Returned Rows:")
+                    .containsSubsequence("Query took", "seconds to return 0 rows");
         }
 
         @Test
@@ -119,7 +119,7 @@ public class QueryClientIT {
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            Record record = new Record();
+            Row record = new Row();
             record.put("key", 123L);
             record.put("value", "abc");
             ingestData(tableProperties, List.of(record).iterator());
@@ -133,9 +133,9 @@ public class QueryClientIT {
                     .startsWith("Querying table test-table")
                     .contains(PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
-                            "Returned Records:\n" +
-                            "Record{key=123, value=abc}")
-                    .containsSubsequence("Query took", "seconds to return 1 records");
+                            "Returned Rows:\n" +
+                            "Row{key=123, value=abc}")
+                    .containsSubsequence("Query took", "seconds to return 1 row");
         }
     }
 
@@ -147,8 +147,8 @@ public class QueryClientIT {
             // Given
             Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Record> records = LongStream.rangeClosed(0, 10)
-                    .mapToObj(num -> new Record(Map.of("key", num)))
+            List<Row> records = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
             ingestData(tableProperties, records.iterator());
 
@@ -167,11 +167,11 @@ public class QueryClientIT {
                             PROMPT_MAX_INCLUSIVE +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
-                            "Returned Records:\n" +
-                            "Record{key=4}\n" +
-                            "Record{key=5}\n" +
-                            "Record{key=6}")
-                    .containsSubsequence("Query took", "seconds to return 3 records");
+                            "Returned Rows:\n" +
+                            "Row{key=4}\n" +
+                            "Row{key=5}\n" +
+                            "Row{key=6}")
+                    .containsSubsequence("Query took", "seconds to return 3 rows");
         }
 
         @Test
@@ -179,8 +179,8 @@ public class QueryClientIT {
             // Given
             Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Record> records = LongStream.rangeClosed(0, 3)
-                    .mapToObj(num -> new Record(Map.of("key", num)))
+            List<Row> records = LongStream.rangeClosed(0, 3)
+                    .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
             ingestData(tableProperties, records.iterator());
 
@@ -199,12 +199,12 @@ public class QueryClientIT {
                             PROMPT_MAX_INCLUSIVE +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
-                            "Returned Records:\n" +
-                            "Record{key=0}\n" +
-                            "Record{key=1}\n" +
-                            "Record{key=2}\n" +
-                            "Record{key=3}")
-                    .containsSubsequence("Query took", "seconds to return 4 records");
+                            "Returned Rows:\n" +
+                            "Row{key=0}\n" +
+                            "Row{key=1}\n" +
+                            "Row{key=2}\n" +
+                            "Row{key=3}")
+                    .containsSubsequence("Query took", "seconds to return 4 rows");
         }
 
         @Test
@@ -215,8 +215,8 @@ public class QueryClientIT {
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Record> records = LongStream.rangeClosed(0, 10)
-                    .mapToObj(num -> new Record(Map.of(
+            List<Row> records = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Row(Map.of(
                             "key1", num,
                             "key2", num + 100L,
                             "value", "test-" + num)))
@@ -243,10 +243,10 @@ public class QueryClientIT {
                             "Enter a value for row key field key2 of type = LongType{}? (y/n) \n" +
                             "Enter a minimum key for row key field key2 of type = LongType{} - hit return for no minimum: \n" +
                             "Enter a maximum key for row key field key2 of type = LongType{} - hit return for no maximum: \n" +
-                            "Returned Records:\n" +
-                            "Record{key1=3, key2=103, value=test-3}\n" +
-                            "Record{key1=4, key2=104, value=test-4}")
-                    .containsSubsequence("Query took", "seconds to return 2 records");
+                            "Returned Rows:\n" +
+                            "Row{key1=3, key2=103, value=test-3}\n" +
+                            "Row{key1=4, key2=104, value=test-4}")
+                    .containsSubsequence("Query took", "seconds to return 2 rows");
         }
 
         @Test
@@ -273,8 +273,8 @@ public class QueryClientIT {
                             "Failed to convert provided key \"abc\" to type LongType{}\n" +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
-                            "Returned Records:\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Returned Rows:\n")
+                    .containsSubsequence("Query took", "seconds to return 0 rows");
         }
 
         @Test
@@ -303,8 +303,8 @@ public class QueryClientIT {
                             PROMPT_MAX_INCLUSIVE +
                             PROMPT_MIN_ROW_KEY_LONG_TYPE +
                             PROMPT_MAX_ROW_KEY_LONG_TYPE +
-                            "Returned Records:\n")
-                    .containsSubsequence("Query took", "seconds to return 0 records");
+                            "Returned Rows:\n")
+                    .containsSubsequence("Query took", "seconds to return 0 rows");
         }
     }
 
@@ -336,11 +336,11 @@ public class QueryClientIT {
                 .run();
     }
 
-    private void ingestData(TableProperties tableProperties, Iterator<Record> recordIterator) throws Exception {
+    private void ingestData(TableProperties tableProperties, Iterator<Row> recordIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
                 InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
                 instanceProperties);
-        factory.ingestFromRecordIterator(tableProperties, recordIterator);
+        factory.ingestFromRowIterator(tableProperties, recordIterator);
     }
 }

@@ -267,7 +267,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
             parquetReaderIterator.next();
         }
 
-        long numberOfRecords = parquetReaderIterator.getNumberOfRecordsRead();
+        long numberOfRecords = parquetReaderIterator.getNumberOfRowsRead();
 
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(numberOfRecords);
