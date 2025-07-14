@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.testutils.SortedRecordsCheck;
+import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -97,8 +97,8 @@ public class CompactionTest {
         Approvals.verify(printFiles(sleeper.partitioning().tree(), files));
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
-                        SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
+                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRecordCounts(file))));
     }
 
 }

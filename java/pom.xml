@@ -141,7 +141,7 @@
         <!-- To find the version below, we logged out the code location for the class in the Spark driver, then -->
         <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class. -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.38.5</aws-crt.version>
+        <aws-crt.version>0.38.6</aws-crt.version>
         <aws-lambda-java-events.version>3.16.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>2.1.1</aws-lambda-powertools.version>
@@ -170,7 +170,7 @@
         <!-- Trino and its dependencies declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
         <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
-        <opentelemetry.version>1.51.0</opentelemetry.version>
+        <opentelemetry.version>1.52.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.3</zookeeper.version>

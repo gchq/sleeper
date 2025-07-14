@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record.serialiser;
+package sleeper.core.row.serialiser;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,8 +26,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.record.Record;
-import sleeper.core.record.ResultsBatch;
+import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.Type;
@@ -88,11 +88,11 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             JsonObject jsonObject = json.getAsJsonObject();
             String queryId = jsonObject.get("queryId").getAsString();
             Schema schema = context.deserialize(jsonObject.get("schema"), Schema.class);
-            RecordJSONSerDe.RecordGsonSerialiser recordDeserialiser = new RecordJSONSerDe.RecordGsonSerialiser(schema);
-            List<Record> records = new ArrayList<>();
-            jsonObject.getAsJsonArray("records").iterator()
-                    .forEachRemaining(j -> records.add(recordDeserialiser.deserialize(j, Record.class, context)));
-            return new ResultsBatch(queryId, schema, records);
+            RowJsonSerDe.RowGsonSerialiser rowDeserialiser = new RowJsonSerDe.RowGsonSerialiser(schema);
+            List<Row> rows = new ArrayList<>();
+            jsonObject.getAsJsonArray("rows").iterator()
+                    .forEachRemaining(j -> rows.add(rowDeserialiser.deserialize(j, Row.class, context)));
+            return new ResultsBatch(queryId, schema, rows);
         }
 
         @Override
@@ -100,12 +100,12 @@ public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("queryId", src.getQueryId());
             jsonObject.add("schema", context.serialize(src.getSchema(), Schema.class));
-            JsonArray serialisedRecords = new JsonArray();
-            RecordJSONSerDe.RecordGsonSerialiser recordSerialiser = new RecordJSONSerDe.RecordGsonSerialiser(src.getSchema());
-            src.getRecords().stream()
-                    .map(rec -> recordSerialiser.serialize(rec, Record.class, context))
-                    .forEach(serialisedRecords::add);
-            jsonObject.add("records", serialisedRecords);
+            JsonArray serialisedRows = new JsonArray();
+            RowJsonSerDe.RowGsonSerialiser rowSerialiser = new RowJsonSerDe.RowGsonSerialiser(src.getSchema());
+            src.getRows().stream()
+                    .map(rec -> rowSerialiser.serialize(rec, Row.class, context))
+                    .forEach(serialisedRows::add);
+            jsonObject.add("rows", serialisedRows);
             return jsonObject;
         }
     }
