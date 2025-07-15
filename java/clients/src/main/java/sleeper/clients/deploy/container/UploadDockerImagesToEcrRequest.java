@@ -99,10 +99,12 @@ public class UploadDockerImagesToEcrRequest {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof UploadDockerImagesToEcrRequest))
+        }
+        if (!(obj instanceof UploadDockerImagesToEcrRequest)) {
             return false;
+        }
         UploadDockerImagesToEcrRequest other = (UploadDockerImagesToEcrRequest) obj;
         return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(account, other.account) && Objects.equals(region, other.region) && Objects.equals(images, other.images);
     }
