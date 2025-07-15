@@ -73,7 +73,7 @@ public class UploadDockerImagesToRepository {
 
     public void upload(CommandPipelineRunner runCommand, DockerImageConfiguration dockerImageConfiguration) throws IOException, InterruptedException {
         List<StackDockerImage> imagesToUpload = dockerImageConfiguration.getAllImagesToUpload();
-        LOGGER.info("Images expected: {}", imagesToUpload);
+        LOGGER.info("Images to upload: {}", imagesToUpload);
 
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
