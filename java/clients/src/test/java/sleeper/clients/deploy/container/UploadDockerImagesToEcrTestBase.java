@@ -46,25 +46,25 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
     }
 
     protected void uploadForNewDeployment(DockerImageConfiguration imageConfig) throws Exception {
-        uploader().upload(commandRunner, UploadDockerImagesRequest.forNewDeployment(properties, imageConfig));
+        uploader().upload(commandRunner, UploadDockerImagesToEcrRequest.forNewDeployment(properties, imageConfig));
     }
 
     protected void uploadForUpdate(InstanceProperties before, InstanceProperties after, DockerImageConfiguration imageConfig) throws Exception {
-        UploadDockerImagesRequest request = UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), imageConfig).orElseThrow();
+        UploadDockerImagesToEcrRequest request = UploadDockerImagesToEcrRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), imageConfig).orElseThrow();
         uploader().upload(commandRunner, request);
     }
 
     protected RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, dockerDeploymentImageConfig()));
+        return runCommand -> uploader().upload(runCommand, UploadDockerImagesToEcrRequest.forNewDeployment(properties, dockerDeploymentImageConfig()));
     }
 
     protected RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, lambdaImageConfig()));
+        return runCommand -> uploader().upload(runCommand, UploadDockerImagesToEcrRequest.forNewDeployment(properties, lambdaImageConfig()));
     }
 
     protected RunCommandTestHelper.PipelineInvoker uploadLambdasForUpdate(InstanceProperties before, InstanceProperties after) {
         return runCommand -> uploader().upload(runCommand,
-                UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
+                UploadDockerImagesToEcrRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
     }
 
     protected abstract UploadDockerImagesToEcr uploader();

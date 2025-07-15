@@ -21,8 +21,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
-import sleeper.clients.deploy.container.UploadDockerImagesRequest;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -97,7 +97,7 @@ public class AdminClientPropertiesStore {
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
-                Optional<UploadDockerImagesRequest> dockerUploadOpt = UploadDockerImagesRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
+                Optional<UploadDockerImagesToEcrRequest> dockerUploadOpt = UploadDockerImagesToEcrRequest.forUpdateIfNeeded(properties, diff, dockerImageConfiguration);
                 if (dockerUploadOpt.isPresent()) {
                     uploadDockerImages.upload(dockerUploadOpt.get());
                 }
