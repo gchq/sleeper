@@ -23,6 +23,10 @@ import java.io.IOException;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
+/**
+ * Handles authentication with AWS ECR and creation of ECR repositories while uploading Docker images. Used in
+ * {@link UploadDockerImagesToEcr}.
+ */
 public class UploadDockerImagesToEcrCallbacks implements UploadDockerImagesCallbacks {
     private final CommandPipelineRunner runCommand;
     private final EcrRepositoryCreator.Client ecrClient;
