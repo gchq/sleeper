@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcrTemp;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -48,7 +48,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
     protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
-    protected final UploadDockerImagesToEcr uploadDockerImages = mock(UploadDockerImagesToEcr.class);
+    protected final UploadDockerImagesToEcrTemp uploadDockerImages = mock(UploadDockerImagesToEcrTemp.class);
     protected TablePropertiesStore tablePropertiesStore;
     protected TableIndex tableIndex;
 

@@ -472,8 +472,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     }
 
     @Override
-    protected UploadDockerImagesToEcr uploader() {
-        return UploadDockerImagesToEcr.builder()
+    protected UploadDockerImagesToEcrTemp uploader() {
+        return UploadDockerImagesToEcrTemp.builder()
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .ecrClient(ecrClient)
                 .copyFile((source, target) -> files.put(target, files.get(source)))

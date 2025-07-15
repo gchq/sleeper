@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcrTemp;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -114,7 +114,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
         }
-        UploadDockerImagesToEcr.builder()
+        UploadDockerImagesToEcrTemp.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
                 .jarsDirectory(parameters.getJarsDirectory())
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))

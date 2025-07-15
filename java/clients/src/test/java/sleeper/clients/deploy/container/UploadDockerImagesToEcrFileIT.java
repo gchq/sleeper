@@ -83,8 +83,8 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
     }
 
     @Override
-    protected UploadDockerImagesToEcr uploader() {
-        return UploadDockerImagesToEcr.builder()
+    protected UploadDockerImagesToEcrTemp uploader() {
+        return UploadDockerImagesToEcrTemp.builder()
                 .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
                 .ecrClient(ecrClient)
                 .build();

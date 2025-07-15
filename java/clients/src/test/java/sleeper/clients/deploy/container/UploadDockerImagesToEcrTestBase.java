@@ -67,7 +67,7 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
                 UploadDockerImagesToEcrRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
     }
 
-    protected abstract UploadDockerImagesToEcr uploader();
+    protected abstract UploadDockerImagesToEcrTemp uploader();
 
     protected CommandPipeline loginDockerCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),

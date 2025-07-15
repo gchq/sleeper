@@ -13,59 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.clients.deploy.container;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.container.UploadDockerImages.CopyFile;
-import sleeper.clients.util.command.CommandPipelineRunner;
-import sleeper.clients.util.command.CommandUtils;
+import sleeper.clients.deploy.container.EcrRepositoryCreator.Client;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
-
 public class UploadDockerImagesToEcr {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
-    private final Path baseDockerDirectory;
-    private final Path jarsDirectory;
-    private final CopyFile copyFile;
+    public static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
+
+    private final UploadDockerImages uploader;
     private final EcrRepositoryCreator.Client ecrClient;
 
-    private UploadDockerImagesToEcr(Builder builder) {
-        baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
-        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
-        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, Client ecrClient) {
+        this.uploader = uploader;
+        this.ecrClient = ecrClient;
     }
 
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
-        upload(CommandUtils::runCommandInheritIO, request);
-    }
-
-    public void upload(CommandPipelineRunner runCommand, UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
-        UploadDockerImages uploader = UploadDockerImages.builder()
-                .commandRunner(runCommand)
-                .copyFile(copyFile)
-                .baseDockerDirectory(baseDockerDirectory)
-                .jarsDirectory(jarsDirectory)
-                .version(request.getVersion())
-                .build();
-        upload(uploader, request);
-    }
-
-    public void upload(UploadDockerImages uploader, UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
         List<StackDockerImage> requestedImages = request.getImages();
         LOGGER.info("Images expected: {}", requestedImages);
         List<StackDockerImage> imagesToUpload = requestedImages.stream()
@@ -80,48 +50,15 @@ public class UploadDockerImagesToEcr {
     private boolean imageDoesNotExistInRepositoryWithVersion(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
         String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (ecrClient.versionExistsInRepository(imagePath, request.getVersion())) {
+        if (ecrClient.versionExistsInRepository(imagePath, uploader.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",
-                    stackDockerImage.getImageName(), request.getVersion());
+                    stackDockerImage.getImageName(), uploader.getVersion());
             return false;
         } else {
             LOGGER.info("Stack image {} does not exist in ECR with version {}",
-                    stackDockerImage.getImageName(), request.getVersion());
+                    stackDockerImage.getImageName(), uploader.getVersion());
             return true;
         }
     }
 
-    public static final class Builder {
-        private Path baseDockerDirectory;
-        private Path jarsDirectory;
-        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private EcrRepositoryCreator.Client ecrClient;
-
-        private Builder() {
-        }
-
-        public Builder baseDockerDirectory(Path baseDockerDirectory) {
-            this.baseDockerDirectory = baseDockerDirectory;
-            return this;
-        }
-
-        public Builder jarsDirectory(Path jarsDirectory) {
-            this.jarsDirectory = jarsDirectory;
-            return this;
-        }
-
-        public Builder copyFile(CopyFile copyFile) {
-            this.copyFile = copyFile;
-            return this;
-        }
-
-        public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
-            this.ecrClient = ecrClient;
-            return this;
-        }
-
-        public UploadDockerImagesToEcr build() {
-            return new UploadDockerImagesToEcr(this);
-        }
-    }
 }
