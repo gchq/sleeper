@@ -114,7 +114,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {
-        uploader().upload(UploadDockerImagesRequest.allImagesToRepository("www.somedocker.com", imageConfig));
+        uploader().uploadAllImages("www.somedocker.com", imageConfig);
     }
 
     protected UploadDockerImagesToRepository uploader() {

@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -63,20 +64,26 @@ public class UploadDockerImagesToRepository {
         UploadDockerImagesToRepository.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .jarsDirectory(scriptsDirectory.resolve("jars"))
-                .build().upload(UploadDockerImagesRequest.allImagesToRepository(repositoryPrefix));
+                .build().uploadAllImages(repositoryPrefix, DockerImageConfiguration.getDefault());
     }
 
-    public void upload(UploadDockerImagesRequest request) throws IOException, InterruptedException {
-        LOGGER.info("Images to upload: {}", request.getImagesToUpload());
+    public void uploadAllImages(String repositoryPrefix, DockerImageConfiguration imageConfig) throws IOException, InterruptedException {
+        upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), UploadDockerImagesListener.NONE);
+    }
 
-        if (request.getImagesToUpload().isEmpty()) {
+    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesListener listener) throws IOException, InterruptedException {
+        if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
+        } else {
+            LOGGER.info("Building and uploading images: {}", imagesToUpload);
+            listener.beforeAll();
         }
 
-        for (StackDockerImage image : request.getImagesToUpload()) {
+        for (StackDockerImage image : imagesToUpload) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
-            String tag = request.getRepositoryPrefix() + "/" + image.getImageName() + ":" + version;
+            String tag = repositoryPrefix + "/" + image.getImageName() + ":" + version;
+            listener.beforeEach(image);
 
             image.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
@@ -92,6 +99,7 @@ public class UploadDockerImagesToRepository {
                     commandRunner.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {
+                listener.onFail(image, e);
                 throw e;
             }
         }

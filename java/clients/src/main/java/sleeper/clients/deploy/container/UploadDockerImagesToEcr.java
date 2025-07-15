@@ -19,11 +19,11 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.container.UploadDockerImagesToRepository.CopyFile;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.clients.util.command.Command.command;
-import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class UploadDockerImagesToEcr {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
@@ -57,52 +55,21 @@ public class UploadDockerImagesToEcr {
     }
 
     public void upload(CommandPipelineRunner runCommand, UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
-        List<StackDockerImage> stacksToUpload = request.getImages();
-        LOGGER.info("Images expected: {}", stacksToUpload);
-        List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
-                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, request))
+        List<StackDockerImage> requestedImages = request.getImages();
+        LOGGER.info("Images expected: {}", requestedImages);
+        List<StackDockerImage> imagesToUpload = requestedImages.stream()
+                .filter(image -> imageDoesNotExistInRepositoryWithVersion(image, request))
                 .collect(Collectors.toUnmodifiableList());
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
-
-        if (stacksToBuild.isEmpty()) {
-            LOGGER.info("No images need to be built and uploaded, skipping");
-            return;
-        } else {
-            LOGGER.info("Building and uploading images: {}", stacksToBuild);
-            runCommand.runOrThrow(pipeline(
-                    command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
-                    command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
-        }
-
-        for (StackDockerImage stackImage : stacksToBuild) {
-            Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
-            String repositoryName = request.getEcrPrefix() + "/" + stackImage.getImageName();
-            if (!ecrClient.repositoryExists(repositoryName)) {
-                ecrClient.createRepository(repositoryName);
-            }
-            String tag = repositoryHost + "/" + repositoryName + ":" + request.getVersion();
-
-            stackImage.getLambdaJar().ifPresent(jar -> {
-                copyFile.copyWrappingExceptions(
-                        jarsDirectory.resolve(jar.getFilename()),
-                        dockerfileDirectory.resolve("lambda.jar"));
-            });
-
-            try {
-                if (stackImage.isCreateEmrServerlessPolicy()) {
-                    ecrClient.createEmrServerlessAccessPolicy(repositoryName);
-                }
-                if (stackImage.isMultiplatform()) {
-                    runCommand.runOrThrow("docker", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
-                } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
-                    runCommand.runOrThrow("docker", "push", tag);
-                }
-            } catch (Exception e) {
-                ecrClient.deleteRepository(repositoryName);
-                throw e;
-            }
-        }
+        String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
+        UploadDockerImagesToEcrListener listener = new UploadDockerImagesToEcrListener(runCommand, ecrClient, request);
+        UploadDockerImagesToRepository.builder()
+                .commandRunner(runCommand)
+                .copyFile(copyFile)
+                .baseDockerDirectory(baseDockerDirectory)
+                .jarsDirectory(jarsDirectory)
+                .version(request.getVersion())
+                .build().upload(repositoryPrefix, imagesToUpload, listener);
     }
 
     private boolean imageDoesNotExistInRepositoryWithVersion(
@@ -150,19 +117,6 @@ public class UploadDockerImagesToEcr {
 
         public UploadDockerImagesToEcr build() {
             return new UploadDockerImagesToEcr(this);
-        }
-    }
-
-    public interface CopyFile {
-
-        void copy(Path source, Path target) throws IOException;
-
-        default void copyWrappingExceptions(Path source, Path target) {
-            try {
-                copy(source, target);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
     }
 }
