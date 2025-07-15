@@ -15,40 +15,12 @@
  */
 package sleeper.clients.deploy.container;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.clients.util.command.CommandPipelineRunner;
-import sleeper.clients.util.command.CommandUtils;
-import sleeper.core.SleeperVersion;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-
-import static java.util.Objects.requireNonNull;
 
 public class UploadDockerImagesToRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
-    private final CommandPipelineRunner commandRunner;
-    private final CopyFile copyFile;
-    private final Path baseDockerDirectory;
-    private final Path jarsDirectory;
-    private final String version;
 
-    private UploadDockerImagesToRepository(Builder builder) {
-        commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
-        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
-        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
-        version = requireNonNull(builder.version, "version must not be null");
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    private UploadDockerImagesToRepository() {
     }
 
     public static void main(String[] args) throws Exception {
@@ -61,100 +33,11 @@ public class UploadDockerImagesToRepository {
         Path scriptsDirectory = Path.of(args[0]);
         String repositoryPrefix = args[1];
 
-        UploadDockerImagesToRepository.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                .jarsDirectory(scriptsDirectory.resolve("jars"))
-                .build().uploadAllImages(repositoryPrefix, DockerImageConfiguration.getDefault());
+        uploadAllImages(DockerImageConfiguration.getDefault(), UploadDockerImages.fromScriptsDirectory(scriptsDirectory), repositoryPrefix);
     }
 
-    public void uploadAllImages(String repositoryPrefix, DockerImageConfiguration imageConfig) throws IOException, InterruptedException {
-        upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), UploadDockerImagesListener.NONE);
+    public static void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader, String repositoryPrefix) throws IOException, InterruptedException {
+        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), UploadDockerImagesCallbacks.NONE);
     }
 
-    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesListener listener) throws IOException, InterruptedException {
-        if (imagesToUpload.isEmpty()) {
-            LOGGER.info("No images need to be built and uploaded, skipping");
-            return;
-        } else {
-            LOGGER.info("Building and uploading images: {}", imagesToUpload);
-            listener.beforeAll();
-        }
-
-        for (StackDockerImage image : imagesToUpload) {
-            Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
-            String tag = repositoryPrefix + "/" + image.getImageName() + ":" + version;
-            listener.beforeEach(image);
-
-            image.getLambdaJar().ifPresent(jar -> {
-                copyFile.copyWrappingExceptions(
-                        jarsDirectory.resolve(jar.getFilename()),
-                        dockerfileDirectory.resolve("lambda.jar"));
-            });
-
-            try {
-                if (image.isMultiplatform()) {
-                    commandRunner.runOrThrow("docker", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
-                } else {
-                    commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
-                    commandRunner.runOrThrow("docker", "push", tag);
-                }
-            } catch (Exception e) {
-                listener.onFail(image, e);
-                throw e;
-            }
-        }
-    }
-
-    public static final class Builder {
-        private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
-        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private Path baseDockerDirectory;
-        private Path jarsDirectory;
-        private String version = SleeperVersion.getVersion();
-
-        private Builder() {
-        }
-
-        public Builder commandRunner(CommandPipelineRunner commandRunner) {
-            this.commandRunner = commandRunner;
-            return this;
-        }
-
-        public Builder copyFile(CopyFile copyFile) {
-            this.copyFile = copyFile;
-            return this;
-        }
-
-        public Builder baseDockerDirectory(Path baseDockerDirectory) {
-            this.baseDockerDirectory = baseDockerDirectory;
-            return this;
-        }
-
-        public Builder jarsDirectory(Path jarsDirectory) {
-            this.jarsDirectory = jarsDirectory;
-            return this;
-        }
-
-        public Builder version(String version) {
-            this.version = version;
-            return this;
-        }
-
-        public UploadDockerImagesToRepository build() {
-            return new UploadDockerImagesToRepository(this);
-        }
-    }
-
-    public interface CopyFile {
-
-        void copy(Path source, Path target) throws IOException;
-
-        default void copyWrappingExceptions(Path source, Path target) {
-            try {
-                copy(source, target);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
 }

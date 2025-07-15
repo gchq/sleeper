@@ -19,7 +19,7 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.container.UploadDockerImagesToRepository.CopyFile;
+import sleeper.clients.deploy.container.UploadDockerImages.CopyFile;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 
@@ -62,14 +62,14 @@ public class UploadDockerImagesToEcr {
                 .collect(Collectors.toUnmodifiableList());
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
         String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
-        UploadDockerImagesToEcrListener listener = new UploadDockerImagesToEcrListener(runCommand, ecrClient, request);
-        UploadDockerImagesToRepository.builder()
+        UploadDockerImagesToEcrCallbacks callbacks = new UploadDockerImagesToEcrCallbacks(runCommand, ecrClient, request);
+        UploadDockerImages.builder()
                 .commandRunner(runCommand)
                 .copyFile(copyFile)
                 .baseDockerDirectory(baseDockerDirectory)
                 .jarsDirectory(jarsDirectory)
                 .version(request.getVersion())
-                .build().upload(repositoryPrefix, imagesToUpload, listener);
+                .build().upload(repositoryPrefix, imagesToUpload, callbacks);
     }
 
     private boolean imageDoesNotExistInRepositoryWithVersion(

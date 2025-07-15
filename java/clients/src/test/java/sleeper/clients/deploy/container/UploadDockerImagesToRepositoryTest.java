@@ -114,11 +114,11 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {
-        uploader().uploadAllImages("www.somedocker.com", imageConfig);
+        UploadDockerImagesToRepository.uploadAllImages(imageConfig, uploader(), "www.somedocker.com");
     }
 
-    protected UploadDockerImagesToRepository uploader() {
-        return UploadDockerImagesToRepository.builder()
+    protected UploadDockerImages uploader() {
+        return UploadDockerImages.builder()
                 .commandRunner(commandRunner)
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))

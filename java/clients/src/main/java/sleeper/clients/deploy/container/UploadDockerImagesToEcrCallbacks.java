@@ -23,13 +23,13 @@ import java.io.IOException;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
-public class UploadDockerImagesToEcrListener implements UploadDockerImagesListener {
+public class UploadDockerImagesToEcrCallbacks implements UploadDockerImagesCallbacks {
     private final CommandPipelineRunner runCommand;
     private final EcrRepositoryCreator.Client ecrClient;
     private final UploadDockerImagesToEcrRequest request;
     private final String repositoryHost;
 
-    public UploadDockerImagesToEcrListener(CommandPipelineRunner runCommand, Client ecrClient, UploadDockerImagesToEcrRequest request) {
+    public UploadDockerImagesToEcrCallbacks(CommandPipelineRunner runCommand, Client ecrClient, UploadDockerImagesToEcrRequest request) {
         this.runCommand = runCommand;
         this.ecrClient = ecrClient;
         this.request = request;

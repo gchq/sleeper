@@ -17,9 +17,9 @@ package sleeper.clients.deploy.container;
 
 import java.io.IOException;
 
-public interface UploadDockerImagesListener {
+public interface UploadDockerImagesCallbacks {
 
-    UploadDockerImagesListener NONE = new UploadDockerImagesListener() {
+    UploadDockerImagesCallbacks NONE = new UploadDockerImagesCallbacks() {
     };
 
     default void beforeAll() throws IOException, InterruptedException {
