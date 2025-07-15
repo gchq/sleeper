@@ -472,11 +472,14 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     }
 
     @Override
-    protected UploadDockerImagesToEcrTemp uploader() {
-        return UploadDockerImagesToEcrTemp.builder()
-                .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                .ecrClient(ecrClient)
-                .copyFile((source, target) -> files.put(target, files.get(source)))
-                .build();
+    protected UploadDockerImagesToEcr uploader() {
+        return new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .commandRunner(commandRunner)
+                        .copyFile((source, target) -> files.put(target, files.get(source)))
+                        .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                        .version("1.0.0")
+                        .build(),
+                ecrClient);
     }
 }

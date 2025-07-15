@@ -32,7 +32,7 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 
 public class UploadDockerImages {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcrTemp.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
     private final Path baseDockerDirectory;

@@ -23,8 +23,9 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrTemp;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
@@ -112,10 +113,12 @@ public class DeployExistingInstance {
                 .deleteOldJars(false)
                 .build().sync();
 
-        UploadDockerImagesToEcrTemp.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
-                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(runCommand, UploadDockerImagesToEcrRequest.forExistingInstance(properties));
+        UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
+                        .build(),
+                EcrRepositoryCreator.withEcrClient(ecr));
+        dockerImageUploader.upload(UploadDockerImagesToEcrRequest.forExistingInstance(properties));
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");

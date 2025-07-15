@@ -31,7 +31,8 @@ import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrTemp;
+import sleeper.clients.deploy.container.UploadDockerImages;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -81,7 +82,6 @@ public class AdminClient {
         String instanceId = args[1];
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
-        Path baseDockerDir = scriptsDir.resolve("docker");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
         InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                 .propertiesFile(generatedDir.resolve("instance.properties"))
@@ -96,9 +96,9 @@ public class AdminClient {
                 SqsClient sqsClient = AwsV2ClientHelper.buildAwsV2Client(SqsClient.builder());
                 EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
-            UploadDockerImagesToEcrTemp uploadDockerImages = UploadDockerImagesToEcrTemp.builder()
-                    .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
-                    .baseDockerDirectory(baseDockerDir).jarsDirectory(jarsDir).build();
+            UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
+                    UploadDockerImages.fromScriptsDirectory(scriptsDir),
+                    EcrRepositoryCreator.withEcrClient(ecrClient));
             errorCode = start(instanceId, s3Client, dynamoClient,
                     cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
@@ -110,7 +110,7 @@ public class AdminClient {
 
     public static int start(String instanceId,
             S3Client s3Client, DynamoDbClient dynamoClient,
-            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImagesToEcrTemp uploadDockerImages,
+            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImagesToEcr uploadDockerImages,
             ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {

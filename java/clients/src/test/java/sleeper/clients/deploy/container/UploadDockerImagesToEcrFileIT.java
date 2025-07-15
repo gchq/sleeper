@@ -83,11 +83,14 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
     }
 
     @Override
-    protected UploadDockerImagesToEcrTemp uploader() {
-        return UploadDockerImagesToEcrTemp.builder()
-                .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
-                .ecrClient(ecrClient)
-                .build();
+    protected UploadDockerImagesToEcr uploader() {
+        return new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .commandRunner(commandRunner)
+                        .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
+                        .version("1.0.0")
+                        .build(),
+                ecrClient);
     }
 
     private static Map<Path, String> fileToContentUnder(Path directory) throws Exception {
