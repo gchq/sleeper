@@ -58,10 +58,6 @@ public class UploadDockerImages {
                 .build();
     }
 
-    public void uploadAllImages(String repositoryPrefix, DockerImageConfiguration imageConfig) throws IOException, InterruptedException {
-        upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), UploadDockerImagesCallbacks.NONE);
-    }
-
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesCallbacks callbacks) throws IOException, InterruptedException {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
@@ -94,6 +90,10 @@ public class UploadDockerImages {
                 throw e;
             }
         }
+    }
+
+    public CommandPipelineRunner getCommandRunner() {
+        return commandRunner;
     }
 
     public static final class Builder {

@@ -55,6 +55,17 @@ public class UploadDockerImagesToEcr {
     }
 
     public void upload(CommandPipelineRunner runCommand, UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
+        UploadDockerImages uploader = UploadDockerImages.builder()
+                .commandRunner(runCommand)
+                .copyFile(copyFile)
+                .baseDockerDirectory(baseDockerDirectory)
+                .jarsDirectory(jarsDirectory)
+                .version(request.getVersion())
+                .build();
+        upload(uploader, request);
+    }
+
+    public void upload(UploadDockerImages uploader, UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
         List<StackDockerImage> requestedImages = request.getImages();
         LOGGER.info("Images expected: {}", requestedImages);
         List<StackDockerImage> imagesToUpload = requestedImages.stream()
@@ -62,14 +73,8 @@ public class UploadDockerImagesToEcr {
                 .collect(Collectors.toUnmodifiableList());
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
         String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
-        UploadDockerImagesToEcrCallbacks callbacks = new UploadDockerImagesToEcrCallbacks(runCommand, ecrClient, request);
-        UploadDockerImages.builder()
-                .commandRunner(runCommand)
-                .copyFile(copyFile)
-                .baseDockerDirectory(baseDockerDirectory)
-                .jarsDirectory(jarsDirectory)
-                .version(request.getVersion())
-                .build().upload(repositoryPrefix, imagesToUpload, callbacks);
+        UploadDockerImagesToEcrCallbacks callbacks = new UploadDockerImagesToEcrCallbacks(uploader.getCommandRunner(), ecrClient, request);
+        uploader.upload(repositoryPrefix, imagesToUpload, callbacks);
     }
 
     private boolean imageDoesNotExistInRepositoryWithVersion(
