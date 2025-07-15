@@ -67,6 +67,11 @@ public class UploadDockerImages {
             callbacks.beforeAll();
         }
 
+        if (imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
+            commandRunner.run("docker", "buildx", "rm", "sleeper");
+            commandRunner.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
+        }
+
         for (StackDockerImage image : imagesToUpload) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
             String tag = repositoryPrefix + "/" + image.getImageName() + ":" + version;
@@ -80,7 +85,7 @@ public class UploadDockerImages {
 
             try {
                 if (image.isMultiplatform()) {
-                    commandRunner.runOrThrow("docker", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
+                    commandRunner.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
                     commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
                     commandRunner.runOrThrow("docker", "push", tag);

@@ -48,6 +48,8 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedCompactionTag = "www.somedocker.com/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
+                removeOldBuildxBuilderInstanceCommand(),
+                createNewBuildxBuilderInstanceCommand(),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
@@ -110,7 +112,10 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                     assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                     assertThat(e.getExitCode()).isEqualTo(42);
                 });
-        assertThat(commandsThatRan).containsExactly(buildImageCommand);
+        assertThat(commandsThatRan).containsExactly(
+                removeOldBuildxBuilderInstanceCommand(),
+                createNewBuildxBuilderInstanceCommand(),
+                buildImageCommand);
     }
 
     protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {

@@ -332,6 +332,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
+                    removeOldBuildxBuilderInstanceCommand(),
+                    createNewBuildxBuilderInstanceCommand(),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
@@ -351,6 +353,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
+                    removeOldBuildxBuilderInstanceCommand(),
+                    createNewBuildxBuilderInstanceCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
                     buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction"));
@@ -407,6 +411,45 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         assertThat(e.getExitCode()).isEqualTo(123);
                     });
             assertThat(commandsThatRan).containsExactly(loginDockerCommand());
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldNotFailWhenRemoveBuildxBuilderFailsForCompactionImage() throws Exception {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+            setReturnExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand());
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    removeOldBuildxBuilderInstanceCommand(),
+                    createNewBuildxBuilderInstanceCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/compaction");
+        }
+
+        @Test
+        void shouldFailWhenCreateBuildxBuilderFails() {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+            setReturnExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand());
+
+            // When / Then
+            assertThatThrownBy(() -> uploadForDeployment(dockerDeploymentImageConfig()))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    removeOldBuildxBuilderInstanceCommand(),
+                    createNewBuildxBuilderInstanceCommand());
             assertThat(ecrClient.getRepositories()).isEmpty();
         }
 

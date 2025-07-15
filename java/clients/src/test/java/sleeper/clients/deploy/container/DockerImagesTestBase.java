@@ -97,8 +97,16 @@ public class DockerImagesTestBase {
         return pipeline(command("docker", "push", tag));
     }
 
+    protected CommandPipeline removeOldBuildxBuilderInstanceCommand() {
+        return pipeline(command("docker", "buildx", "rm", "sleeper"));
+    }
+
+    protected CommandPipeline createNewBuildxBuilderInstanceCommand() {
+        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
+    }
+
     protected CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "--platform", "linux/amd64,linux/arm64",
+        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }
 
