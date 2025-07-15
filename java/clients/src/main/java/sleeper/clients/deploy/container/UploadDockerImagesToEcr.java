@@ -34,14 +34,14 @@ import static java.util.Objects.requireNonNull;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
-public class UploadDockerImages {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
+public class UploadDockerImagesToEcr {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final CopyFile copyFile;
     private final EcrRepositoryCreator.Client ecrClient;
 
-    private UploadDockerImages(Builder builder) {
+    private UploadDockerImagesToEcr(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
@@ -148,8 +148,8 @@ public class UploadDockerImages {
             return this;
         }
 
-        public UploadDockerImages build() {
-            return new UploadDockerImages(this);
+        public UploadDockerImagesToEcr build() {
+            return new UploadDockerImagesToEcr(this);
         }
     }
 

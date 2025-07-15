@@ -21,8 +21,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
-import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesRequest;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -54,12 +54,12 @@ public class AdminClientPropertiesStore {
     private final DynamoDbClient dynamoClient;
     private final InvokeCdkForInstance cdk;
     private final DockerImageConfiguration dockerImageConfiguration;
-    private final UploadDockerImages uploadDockerImages;
+    private final UploadDockerImagesToEcr uploadDockerImages;
     private final Path generatedDirectory;
 
     public AdminClientPropertiesStore(
             S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
-            Path generatedDirectory, UploadDockerImages uploadDockerImages) {
+            Path generatedDirectory, UploadDockerImagesToEcr uploadDockerImages) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         this.dockerImageConfiguration = DockerImageConfiguration.getDefault();

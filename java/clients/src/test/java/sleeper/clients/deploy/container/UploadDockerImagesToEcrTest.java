@@ -37,7 +37,7 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
-public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
+public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase {
 
     protected final Map<Path, String> files = new HashMap<>();
 
@@ -472,8 +472,8 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
     }
 
     @Override
-    protected UploadDockerImages uploader() {
-        return UploadDockerImages.builder()
+    protected UploadDockerImagesToEcr uploader() {
+        return UploadDockerImagesToEcr.builder()
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .ecrClient(ecrClient)
                 .copyFile((source, target) -> files.put(target, files.get(source)))

@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
-public class UploadDockerImagesFileIT extends UploadDockerImagesTestBase {
+public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBase {
 
     @TempDir
     public Path dir;
@@ -83,8 +83,8 @@ public class UploadDockerImagesFileIT extends UploadDockerImagesTestBase {
     }
 
     @Override
-    protected UploadDockerImages uploader() {
-        return UploadDockerImages.builder()
+    protected UploadDockerImagesToEcr uploader() {
+        return UploadDockerImagesToEcr.builder()
                 .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
                 .ecrClient(ecrClient)
                 .build();

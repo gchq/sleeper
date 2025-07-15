@@ -33,7 +33,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
+public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBase {
     protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final InstanceProperties properties = createTestInstanceProperties();
 
@@ -67,7 +67,7 @@ public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
                 UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
     }
 
-    protected abstract UploadDockerImages uploader();
+    protected abstract UploadDockerImagesToEcr uploader();
 
     protected CommandPipeline loginDockerCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
