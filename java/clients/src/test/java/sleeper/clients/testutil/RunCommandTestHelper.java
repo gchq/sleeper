@@ -45,23 +45,23 @@ public class RunCommandTestHelper {
         return pipelines;
     }
 
-    public static CommandPipelineRunner returningExitCode(int exitCode) {
+    public static CommandPipelineRunner returnExitCode(int exitCode) {
         return pipeline -> new CommandPipelineResult(exitCode);
     }
 
-    public static CommandPipelineRunner returningExitCodeForCommand(int exitCode, CommandPipeline command) {
+    public static CommandPipelineRunner returnExitCodeForCommand(int exitCode, CommandPipeline command) {
         return foundCommand -> new CommandPipelineResult(foundCommand.equals(command) ? exitCode : 0);
     }
 
-    public static CommandPipelineRunner recordingCommandsRun(List<CommandPipeline> commandsRun, CommandPipelineRunner runner) {
+    public static CommandPipelineRunner recordCommandsRun(List<CommandPipeline> commandsRun, CommandPipelineRunner runner) {
         return pipeline -> {
             commandsRun.add(pipeline);
             return runner.run(pipeline);
         };
     }
 
-    public static CommandPipelineRunner recordingCommandsRun(List<CommandPipeline> commandsRun) {
-        return recordingCommandsRun(commandsRun, returningExitCode(0));
+    public static CommandPipelineRunner recordCommandsRun(List<CommandPipeline> commandsRun) {
+        return recordCommandsRun(commandsRun, returnExitCode(0));
     }
 
     public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {

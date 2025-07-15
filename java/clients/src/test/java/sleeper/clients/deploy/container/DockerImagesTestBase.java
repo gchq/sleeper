@@ -25,9 +25,9 @@ import sleeper.core.properties.model.OptionalStack;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.clients.testutil.RunCommandTestHelper.recordingCommandsRun;
-import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCode;
-import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
+import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
@@ -65,14 +65,14 @@ public class DockerImagesTestBase {
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
 
     protected final List<CommandPipeline> commandsThatRan = new ArrayList<>();
-    protected CommandPipelineRunner commandRunner = recordingCommandsRun(commandsThatRan);
+    protected CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
 
     protected void setReturnExitCodeForAllCommands(int exitCode) {
-        commandRunner = recordingCommandsRun(commandsThatRan, returningExitCode(exitCode));
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCode(exitCode));
     }
 
     protected void setReturnExitCodeForCommand(int exitCode, CommandPipeline command) {
-        commandRunner = recordingCommandsRun(commandsThatRan, returningExitCodeForCommand(exitCode, command));
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommand(exitCode, command));
     }
 
     protected DockerImageConfiguration dockerDeploymentImageConfig() {
