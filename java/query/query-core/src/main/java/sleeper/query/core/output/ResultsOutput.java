@@ -24,5 +24,13 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
  */
 public interface ResultsOutput {
 
+    /**
+     * Publish the results from a query or leaf peartition query.
+     *
+     * @param  query   the query definition
+     * @param  results the query results to publish
+     * @return         A ResultsOutputInfo that contains a count of the records in the result
+     *                 and the location of where the results are stored.
+     */
     ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results);
 }

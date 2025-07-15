@@ -17,6 +17,9 @@ package sleeper.query.core.output;
 
 import java.util.Objects;
 
+/**
+ * Provides information about the locaation of query results and the type of location.
+ */
 public class ResultsOutputLocation {
     private final String type;
     private final String location;
