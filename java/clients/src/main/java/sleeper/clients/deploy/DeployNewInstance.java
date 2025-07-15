@@ -144,7 +144,7 @@ public class DeployNewInstance {
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecrClient));
         dockerImageUploader.upload(
-                UploadDockerImagesToEcrRequest.forNewDeployment(instanceProperties, sleeperVersion)
+                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
                         .withExtraImages(extraDockerImages));
 
         Files.createDirectories(generatedDirectory);

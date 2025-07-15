@@ -44,8 +44,8 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
         properties.set(VERSION, "1.0.0");
     }
 
-    protected void uploadForNewDeployment(DockerImageConfiguration imageConfig) throws Exception {
-        uploader().upload(UploadDockerImagesToEcrRequest.forNewDeployment(properties, imageConfig));
+    protected void uploadForDeployment(DockerImageConfiguration imageConfig) throws Exception {
+        uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, imageConfig));
     }
 
     protected void uploadForUpdate(InstanceProperties before, InstanceProperties after, DockerImageConfiguration imageConfig) throws Exception {

@@ -60,7 +60,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
         Files.writeString(jarsDir.resolve("ingest.jar"), "ingest-jar-content");
 
         // When
-        uploadForNewDeployment(lambdaImageConfig());
+        uploadForDeployment(lambdaImageConfig());
 
         // Then
         String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";

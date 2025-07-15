@@ -34,14 +34,12 @@ public class UploadDockerImagesToEcrRequest {
     private final String ecrPrefix;
     private final String account;
     private final String region;
-    private final String version;
     private final List<StackDockerImage> images;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
-        version = requireNonNull(builder.version, "version must not be null");
         images = requireNonNull(builder.images, "images must not be null");
     }
 
@@ -49,16 +47,12 @@ public class UploadDockerImagesToEcrRequest {
         return new Builder();
     }
 
-    public static UploadDockerImagesToEcrRequest forNewDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
+    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
         return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
     }
 
-    public static UploadDockerImagesToEcrRequest forNewDeployment(InstanceProperties properties, String version) {
-        return builder().properties(properties).version(version).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
-    }
-
-    public static UploadDockerImagesToEcrRequest forExistingInstance(InstanceProperties properties) {
-        return builder().properties(properties).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
+    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties) {
+        return forDeployment(properties, DockerImageConfiguration.getDefault());
     }
 
     public static Optional<UploadDockerImagesToEcrRequest> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
@@ -71,7 +65,7 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public Builder toBuilder() {
-        return builder().ecrPrefix(ecrPrefix).account(account).region(region).version(version).images(images);
+        return builder().ecrPrefix(ecrPrefix).account(account).region(region).images(images);
     }
 
     public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
@@ -93,10 +87,6 @@ public class UploadDockerImagesToEcrRequest {
         return region;
     }
 
-    public String getVersion() {
-        return version;
-    }
-
     public List<StackDockerImage> getImages() {
         return images;
     }
@@ -113,13 +103,12 @@ public class UploadDockerImagesToEcrRequest {
         return Objects.equals(ecrPrefix, that.ecrPrefix)
                 && Objects.equals(account, that.account)
                 && Objects.equals(region, that.region)
-                && Objects.equals(version, that.version)
                 && Objects.equals(images, that.images);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ecrPrefix, account, region, version, images);
+        return Objects.hash(ecrPrefix, account, region, images);
     }
 
     @Override
@@ -128,7 +117,6 @@ public class UploadDockerImagesToEcrRequest {
                 "ecrPrefix='" + ecrPrefix + '\'' +
                 ", account='" + account + '\'' +
                 ", region='" + region + '\'' +
-                ", version='" + version + '\'' +
                 ", images=" + images +
                 '}';
     }
@@ -137,7 +125,6 @@ public class UploadDockerImagesToEcrRequest {
         private String ecrPrefix;
         private String account;
         private String region;
-        private String version;
         private List<StackDockerImage> images;
 
         private Builder() {
@@ -166,7 +153,6 @@ public class UploadDockerImagesToEcrRequest {
         }
 
         public Builder version(String version) {
-            this.version = version;
             return this;
         }
 

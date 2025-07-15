@@ -33,6 +33,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -51,7 +52,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -70,7 +71,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -93,7 +94,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/custom-ecr-prefix/ingest:1.0.0";
@@ -118,7 +119,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
 
             // When
-            uploadForNewDeployment(lambdaImageConfig());
+            uploadForDeployment(lambdaImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
@@ -143,7 +144,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             files.put(Path.of("./jars/ingest.jar"), "ingest-jar-content");
 
             // When
-            uploadForNewDeployment(lambdaImageConfig());
+            uploadForDeployment(lambdaImageConfig());
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
@@ -250,7 +251,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.JAR);
 
             // When
-            uploadForNewDeployment(lambdaImageConfig());
+            uploadForDeployment(lambdaImageConfig());
 
             // Then
             assertThat(commandsThatRan).isEmpty();
@@ -265,7 +266,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             files.put(Path.of("./jars/athena.jar"), "athena-jar-content");
 
             // When
-            uploadForNewDeployment(lambdaImageConfig());
+            uploadForDeployment(lambdaImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/athena-lambda:1.0.0";
@@ -291,7 +292,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.QueryStack);
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             assertThat(commandsThatRan).isEmpty();
@@ -304,7 +305,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.IngestStack));
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             assertThat(commandsThatRan)
@@ -325,7 +326,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
@@ -343,7 +344,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.CompactionStack));
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -369,7 +370,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EmrServerlessBulkImportStack));
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -400,7 +401,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             DockerImageConfiguration imageConfig = dockerDeploymentImageConfig();
 
             // When / Then
-            assertThatThrownBy(() -> uploadForNewDeployment(imageConfig))
+            assertThatThrownBy(() -> uploadForDeployment(imageConfig))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
@@ -420,7 +421,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             DockerImageConfiguration imageConfig = dockerDeploymentImageConfig();
 
             // When / Then
-            assertThatThrownBy(() -> uploadForNewDeployment(imageConfig))
+            assertThatThrownBy(() -> uploadForDeployment(imageConfig))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                         assertThat(e.getExitCode()).isEqualTo(42);
@@ -441,7 +442,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -449,7 +450,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     loginDockerCommand(),
                     buildImageCommand(expectedTag, "./docker/ingest"),
                     pushImageCommand(expectedTag));
-
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
         }
@@ -462,10 +462,33 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
 
             // When
-            uploadForNewDeployment(dockerDeploymentImageConfig());
+            uploadForDeployment(dockerDeploymentImageConfig());
 
             // Then
             assertThat(commandsThatRan).isEmpty();
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
+        }
+
+        @Test
+        void shouldBuildAndPushImageForExistingInstanceWithExistingImage() throws Exception {
+            // Given
+            properties.set(VERSION, "0.9.0");
+            properties.setEnumList(OPTIONAL_STACKS, List.of());
+            InstanceProperties before = InstanceProperties.copyOf(properties);
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+            ecrClient.createRepository("test-instance/ingest");
+            ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
+
+            // When
+            uploadForUpdate(before, properties, dockerDeploymentImageConfig());
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommand(expectedTag, "./docker/ingest"),
+                    pushImageCommand(expectedTag));
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
         }

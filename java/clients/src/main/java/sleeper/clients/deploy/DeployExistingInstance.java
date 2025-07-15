@@ -119,7 +119,7 @@ public class DeployExistingInstance {
                         .commandRunner(runCommand)
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecr));
-        dockerImageUploader.upload(UploadDockerImagesToEcrRequest.forExistingInstance(properties));
+        dockerImageUploader.upload(UploadDockerImagesToEcrRequest.forDeployment(properties));
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
