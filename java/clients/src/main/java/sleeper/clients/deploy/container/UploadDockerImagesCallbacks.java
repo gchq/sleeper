@@ -17,6 +17,10 @@ package sleeper.clients.deploy.container;
 
 import java.io.IOException;
 
+/**
+ * Callbacks to be invoked while building and uploading Docker images. This may be used to authenticate with Docker,
+ * and/or to create the repositories being uploaded to, e.g. in AWS ECR.
+ */
 public interface UploadDockerImagesCallbacks {
 
     UploadDockerImagesCallbacks NONE = new UploadDockerImagesCallbacks() {
