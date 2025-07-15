@@ -35,12 +35,14 @@ public class UploadDockerImagesToEcrRequest {
     private final String account;
     private final String region;
     private final List<StackDockerImage> images;
+    private final String repositoryHost;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
         images = requireNonNull(builder.images, "images must not be null");
+        repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
     }
 
     public static Builder builder() {
@@ -91,34 +93,29 @@ public class UploadDockerImagesToEcrRequest {
         return images;
     }
 
+    public String getRepositoryHost() {
+        return repositoryHost;
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof UploadDockerImagesToEcrRequest))
             return false;
-        }
-        UploadDockerImagesToEcrRequest that = (UploadDockerImagesToEcrRequest) o;
-        return Objects.equals(ecrPrefix, that.ecrPrefix)
-                && Objects.equals(account, that.account)
-                && Objects.equals(region, that.region)
-                && Objects.equals(images, that.images);
+        UploadDockerImagesToEcrRequest other = (UploadDockerImagesToEcrRequest) obj;
+        return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(account, other.account) && Objects.equals(region, other.region) && Objects.equals(images, other.images)
+                && Objects.equals(repositoryHost, other.repositoryHost);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ecrPrefix, account, region, images);
+        return Objects.hash(ecrPrefix, account, region, images, repositoryHost);
     }
 
     @Override
     public String toString() {
-        return "StacksForDockerUpload{" +
-                "ecrPrefix='" + ecrPrefix + '\'' +
-                ", account='" + account + '\'' +
-                ", region='" + region + '\'' +
-                ", images=" + images +
-                '}';
+        return "UploadDockerImagesToEcrRequest{ecrPrefix=" + ecrPrefix + ", account=" + account + ", region=" + region + ", images=" + images + ", repositoryHost=" + repositoryHost + "}";
     }
 
     public static final class Builder {

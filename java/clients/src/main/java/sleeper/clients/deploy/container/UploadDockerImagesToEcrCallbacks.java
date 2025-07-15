@@ -27,20 +27,18 @@ public class UploadDockerImagesToEcrCallbacks implements UploadDockerImagesCallb
     private final CommandPipelineRunner runCommand;
     private final EcrRepositoryCreator.Client ecrClient;
     private final UploadDockerImagesToEcrRequest request;
-    private final String repositoryHost;
 
     public UploadDockerImagesToEcrCallbacks(CommandPipelineRunner runCommand, Client ecrClient, UploadDockerImagesToEcrRequest request) {
         this.runCommand = runCommand;
         this.ecrClient = ecrClient;
         this.request = request;
-        this.repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
     }
 
     @Override
     public void beforeAll() throws IOException, InterruptedException {
         runCommand.runOrThrow(pipeline(
                 command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
-                command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
+                command("docker", "login", "--username", "AWS", "--password-stdin", request.getRepositoryHost())));
     }
 
     @Override

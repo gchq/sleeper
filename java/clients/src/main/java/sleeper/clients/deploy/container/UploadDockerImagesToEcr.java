@@ -41,8 +41,7 @@ public class UploadDockerImagesToEcr {
         List<StackDockerImage> imagesToUpload = requestedImages.stream()
                 .filter(image -> imageDoesNotExistInRepositoryWithVersion(image, request))
                 .collect(Collectors.toUnmodifiableList());
-        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", request.getAccount(), request.getRegion());
-        String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
+        String repositoryPrefix = request.getRepositoryHost() + "/" + request.getEcrPrefix();
         UploadDockerImagesToEcrCallbacks callbacks = new UploadDockerImagesToEcrCallbacks(uploader.getCommandRunner(), ecrClient, request);
         uploader.upload(repositoryPrefix, imagesToUpload, callbacks);
     }
