@@ -27,7 +27,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,20 +63,20 @@ public class UploadDockerImagesToRepository {
         UploadDockerImagesToRepository.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .jarsDirectory(scriptsDirectory.resolve("jars"))
-                .build().upload(repositoryPrefix, DockerImageConfiguration.getDefault().getAllImagesToUpload());
+                .build().upload(UploadDockerImagesRequest.allImagesToRepository(repositoryPrefix));
     }
 
-    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
-        LOGGER.info("Images to upload: {}", imagesToUpload);
+    public void upload(UploadDockerImagesRequest request) throws IOException, InterruptedException {
+        LOGGER.info("Images to upload: {}", request.getImagesToUpload());
 
-        if (imagesToUpload.isEmpty()) {
+        if (request.getImagesToUpload().isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
         }
 
-        for (StackDockerImage image : imagesToUpload) {
+        for (StackDockerImage image : request.getImagesToUpload()) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
-            String tag = repositoryPrefix + "/" + image.getImageName() + ":" + version;
+            String tag = request.getRepositoryPrefix() + "/" + image.getImageName() + ":" + version;
 
             image.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
