@@ -52,7 +52,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
                 pushImageCommand(expectedBulkImportTag),
-                buildAndPushImageWithBuildxCommand(expectedCompactionTag, "./docker/compaction"),
+                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
                 pushImageCommand(expectedEmrTag));
     }

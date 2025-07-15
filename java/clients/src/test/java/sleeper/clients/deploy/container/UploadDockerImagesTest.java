@@ -331,7 +331,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/compaction"));
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/compaction");
@@ -352,7 +352,7 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
                     loginDockerCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
-                    buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/compaction"));
+                    buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/compaction", "test-instance/ingest");

@@ -93,7 +93,7 @@ public class UploadDockerImagesToRepository {
 
             try {
                 if (image.isMultiplatform()) {
-                    runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
+                    runCommand.runOrThrow("docker", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
                     runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
                     runCommand.runOrThrow("docker", "push", tag);
