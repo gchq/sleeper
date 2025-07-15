@@ -20,19 +20,13 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
-import sleeper.clients.util.command.CommandPipelineRunner;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
-import static sleeper.clients.testutil.RunCommandTestHelper.recordingCommandsRun;
-import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 
 @DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
@@ -46,8 +40,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
 
         // When
-        List<CommandPipeline> commandsThatRan = pipelinesRunOn(
-                runCommand -> uploader().upload(runCommand, dockerImageConfiguration));
+        uploadAllImages(dockerImageConfiguration);
 
         // Then
         String expectedIngestTag = "www.somedocker.com/ingest:1.0.0";
@@ -76,8 +69,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         DockerImageConfiguration dockerImageConfiguration = lambdaImageConfig();
 
         // When
-        List<CommandPipeline> commandsThatRan = pipelinesRunOn(
-                runCommand -> uploader().upload(runCommand, dockerImageConfiguration));
+        uploadAllImages(dockerImageConfiguration);
 
         // Then
         String expectedStatestoreTag = "www.somedocker.com/statestore-lambda:1.0.0";
@@ -107,20 +99,22 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     void shouldFailWhenDockerBuildFails() {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
-        List<CommandPipeline> commandsRun = new ArrayList<>();
         CommandPipeline buildImageCommand = buildImageCommand(
                 "www.somedocker.com/ingest:1.0.0",
                 "./docker/ingest");
-        CommandPipelineRunner runner = recordingCommandsRun(commandsRun,
-                returningExitCodeForCommand(42, buildImageCommand));
+        setReturnExitCodeForCommand(42, buildImageCommand);
 
         // When / Then
-        assertThatThrownBy(() -> uploader().upload(runner, dockerImageConfiguration))
+        assertThatThrownBy(() -> uploadAllImages(dockerImageConfiguration))
                 .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                     assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                     assertThat(e.getExitCode()).isEqualTo(42);
                 });
-        assertThat(commandsRun).containsExactly(buildImageCommand);
+        assertThat(commandsThatRan).containsExactly(buildImageCommand);
+    }
+
+    protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {
+        uploader().upload(commandRunner, imageConfig);
     }
 
     protected UploadDockerImagesToRepository uploader() {

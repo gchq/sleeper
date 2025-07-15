@@ -60,6 +60,10 @@ public class RunCommandTestHelper {
         };
     }
 
+    public static CommandPipelineRunner recordingCommandsRun(List<CommandPipeline> commandsRun) {
+        return recordingCommandsRun(commandsRun, returningExitCode(0));
+    }
+
     public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
         return pipelinesRunOn(invoker::run).stream()
                 .map(RunCommandTestHelper::singleCommandInPipeline)

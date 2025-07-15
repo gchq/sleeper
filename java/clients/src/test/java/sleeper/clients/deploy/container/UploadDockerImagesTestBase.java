@@ -45,6 +45,15 @@ public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
         properties.set(VERSION, "1.0.0");
     }
 
+    protected void uploadForNewDeployment(DockerImageConfiguration imageConfig) throws Exception {
+        uploader().upload(commandRunner, UploadDockerImagesRequest.forNewDeployment(properties, imageConfig));
+    }
+
+    protected void uploadForUpdate(InstanceProperties before, InstanceProperties after, DockerImageConfiguration imageConfig) throws Exception {
+        UploadDockerImagesRequest request = UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), imageConfig).orElseThrow();
+        uploader().upload(commandRunner, request);
+    }
+
     protected RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
         return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, dockerDeploymentImageConfig()));
     }

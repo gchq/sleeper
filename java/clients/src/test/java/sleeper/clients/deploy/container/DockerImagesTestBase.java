@@ -16,6 +16,7 @@
 package sleeper.clients.deploy.container;
 
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
@@ -24,6 +25,9 @@ import sleeper.core.properties.model.OptionalStack;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.clients.testutil.RunCommandTestHelper.recordingCommandsRun;
+import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCode;
+import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
@@ -59,6 +63,17 @@ public class DockerImagesTestBase {
             LambdaHandler.builder().jar(LambdaJar.withFormatAndImageDeployWithDocker("athena.jar", "athena-lambda"))
                     .handler("AthenaLambda")
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
+
+    protected final List<CommandPipeline> commandsThatRan = new ArrayList<>();
+    protected CommandPipelineRunner commandRunner = recordingCommandsRun(commandsThatRan);
+
+    protected void setReturnExitCodeForAllCommands(int exitCode) {
+        commandRunner = recordingCommandsRun(commandsThatRan, returningExitCode(exitCode));
+    }
+
+    protected void setReturnExitCodeForCommand(int exitCode, CommandPipeline command) {
+        commandRunner = recordingCommandsRun(commandsThatRan, returningExitCodeForCommand(exitCode, command));
+    }
 
     protected DockerImageConfiguration dockerDeploymentImageConfig() {
         return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
