@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -73,36 +72,27 @@ public class UploadDockerImagesToRepository {
     }
 
     public void upload(CommandPipelineRunner runCommand, DockerImageConfiguration dockerImageConfiguration) throws IOException, InterruptedException {
-        List<StackDockerImage> stacksToUpload = dockerImageConfiguration.getAllImagesToUpload();
-        LOGGER.info("Images expected: {}", stacksToUpload);
-        List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
-                .collect(Collectors.toUnmodifiableList());
+        List<StackDockerImage> imagesToUpload = dockerImageConfiguration.getAllImagesToUpload();
+        LOGGER.info("Images expected: {}", imagesToUpload);
 
-        if (stacksToBuild.isEmpty()) {
+        if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
         }
 
-        if (stacksToBuild.stream().anyMatch(StackDockerImage::isMultiplatform)) {
-            LOGGER.info("Building and uploading images: {}", stacksToBuild);
-
-            runCommand.run("docker", "buildx", "rm", "sleeper");
-            runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
-        }
-
-        for (StackDockerImage stackImage : stacksToBuild) {
-            Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
-            String imageName = stackImage.getImageName();
+        for (StackDockerImage image : imagesToUpload) {
+            Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
+            String imageName = image.getImageName();
             String tag = repositoryPrefix + "/" + imageName + ":" + version;
 
-            stackImage.getLambdaJar().ifPresent(jar -> {
+            image.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
                         jarsDirectory.resolve(jar.getFilename()),
                         dockerfileDirectory.resolve("lambda.jar"));
             });
 
             try {
-                if (stackImage.isMultiplatform()) {
+                if (image.isMultiplatform()) {
                     runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
                     runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());

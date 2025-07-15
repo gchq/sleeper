@@ -20,8 +20,10 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineRunner;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
+import static sleeper.clients.testutil.RunCommandTestHelper.recordingCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 
 @DisplayName("Upload Docker images")
@@ -52,8 +55,6 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedCompactionTag = "www.somedocker.com/compaction:1.0.0";
         String expectedEmrTag = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                removeOldBuildxBuilderInstanceCommand(),
-                createNewBuildxBuilderInstanceCommand(),
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
@@ -103,18 +104,23 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     @Test
-    void shouldFailWhenCreateBuildxBuilderFails() {
+    void shouldFailWhenDockerBuildFails() {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
+        List<CommandPipeline> commandsRun = new ArrayList<>();
+        CommandPipeline buildImageCommand = buildImageCommand(
+                "www.somedocker.com/ingest:1.0.0",
+                "./docker/ingest");
+        CommandPipelineRunner runner = recordingCommandsRun(commandsRun,
+                returningExitCodeForCommand(42, buildImageCommand));
 
         // When / Then
-        assertThatThrownBy(() -> uploader().upload(
-                returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                dockerImageConfiguration))
+        assertThatThrownBy(() -> uploader().upload(runner, dockerImageConfiguration))
                 .isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                    assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
-                    assertThat(e.getExitCode()).isEqualTo(123);
+                    assertThat(e.getCommand()).isEqualTo(buildImageCommand);
+                    assertThat(e.getExitCode()).isEqualTo(42);
                 });
+        assertThat(commandsRun).containsExactly(buildImageCommand);
     }
 
     protected UploadDockerImagesToRepository uploader() {

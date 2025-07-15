@@ -53,6 +53,13 @@ public class RunCommandTestHelper {
         return foundCommand -> new CommandPipelineResult(foundCommand.equals(command) ? exitCode : 0);
     }
 
+    public static CommandPipelineRunner recordingCommandsRun(List<CommandPipeline> commandsRun, CommandPipelineRunner runner) {
+        return pipeline -> {
+            commandsRun.add(pipeline);
+            return runner.run(pipeline);
+        };
+    }
+
     public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
         return pipelinesRunOn(invoker::run).stream()
                 .map(RunCommandTestHelper::singleCommandInPipeline)

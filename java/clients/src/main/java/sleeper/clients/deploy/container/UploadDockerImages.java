@@ -74,11 +74,6 @@ public class UploadDockerImages {
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
-        if (stacksToBuild.stream().anyMatch(StackDockerImage::isMultiplatform)) {
-            runCommand.run("docker", "buildx", "rm", "sleeper");
-            runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
-        }
-
         for (StackDockerImage stackImage : stacksToBuild) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
             String repositoryName = request.getEcrPrefix() + "/" + stackImage.getImageName();

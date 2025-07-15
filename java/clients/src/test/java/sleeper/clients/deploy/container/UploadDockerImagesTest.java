@@ -335,8 +335,6 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand(),
                     buildAndPushImageWithBuildxCommand(expectedTag, "./docker/compaction"));
 
             assertThat(ecrClient.getRepositories())
@@ -356,8 +354,6 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
             String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     loginDockerCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand(),
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
                     buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/compaction"));
@@ -410,43 +406,6 @@ public class UploadDockerImagesTest extends UploadDockerImagesTestBase {
                     UploadDockerImagesRequest.forNewDeployment(properties, dockerDeploymentImageConfig())))
                     .isInstanceOfSatisfying(CommandFailedException.class, e -> {
                         assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
-                        assertThat(e.getExitCode()).isEqualTo(123);
-                    });
-            assertThat(ecrClient.getRepositories()).isEmpty();
-        }
-
-        @Test
-        void shouldNotFailWhenRemoveBuildxBuilderFailsForCompactionImage() throws Exception {
-            // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
-
-            // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadEcs(properties),
-                    returningExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand()));
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    loginDockerCommand(),
-                    removeOldBuildxBuilderInstanceCommand(),
-                    createNewBuildxBuilderInstanceCommand(),
-                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/compaction"));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/compaction");
-        }
-
-        @Test
-        void shouldFailWhenCreateBuildxBuilderFails() {
-            // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
-
-            // When / Then
-            assertThatThrownBy(() -> uploader().upload(
-                    returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                    UploadDockerImagesRequest.forNewDeployment(properties, dockerDeploymentImageConfig())))
-                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                        assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                         assertThat(e.getExitCode()).isEqualTo(123);
                     });
             assertThat(ecrClient.getRepositories()).isEmpty();
