@@ -104,18 +104,17 @@ public class UploadDockerImagesToEcrRequest {
         if (!(obj instanceof UploadDockerImagesToEcrRequest))
             return false;
         UploadDockerImagesToEcrRequest other = (UploadDockerImagesToEcrRequest) obj;
-        return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(account, other.account) && Objects.equals(region, other.region) && Objects.equals(images, other.images)
-                && Objects.equals(repositoryHost, other.repositoryHost);
+        return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(account, other.account) && Objects.equals(region, other.region) && Objects.equals(images, other.images);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ecrPrefix, account, region, images, repositoryHost);
+        return Objects.hash(ecrPrefix, account, region, images);
     }
 
     @Override
     public String toString() {
-        return "UploadDockerImagesToEcrRequest{ecrPrefix=" + ecrPrefix + ", account=" + account + ", region=" + region + ", images=" + images + ", repositoryHost=" + repositoryHost + "}";
+        return "UploadDockerImagesToEcrRequest{ecrPrefix=" + ecrPrefix + ", account=" + account + ", region=" + region + ", images=" + images + "}";
     }
 
     public static final class Builder {
