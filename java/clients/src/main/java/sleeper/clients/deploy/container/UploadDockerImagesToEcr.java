@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Uploads Docker images to individual AWS ECR repositories.
+ * Uploads Docker images to individual AWS ECR repositories. Authenticates with AWS ECR, creates ECR repositories, and
+ * compares the images to be uploaded with those already present.
  */
 public class UploadDockerImagesToEcr {
     public static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
