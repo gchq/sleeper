@@ -33,17 +33,17 @@ import static java.util.Objects.requireNonNull;
 
 public class UploadDockerImagesToRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
+    private final CommandPipelineRunner commandRunner;
+    private final CopyFile copyFile;
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
-    private final CopyFile copyFile;
-    private final String repositoryPrefix;
     private final String version;
 
     private UploadDockerImagesToRepository(Builder builder) {
+        commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
+        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
-        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        repositoryPrefix = requireNonNull(builder.repositoryPrefix, "repositoryPrefix must not be null");
         version = requireNonNull(builder.version, "version must not be null");
     }
 
@@ -59,20 +59,15 @@ public class UploadDockerImagesToRepository {
         }
 
         Path scriptsDirectory = Path.of(args[0]);
+        String repositoryPrefix = args[1];
 
         UploadDockerImagesToRepository.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .jarsDirectory(scriptsDirectory.resolve("jars"))
-                .repositoryPrefix(args[1])
-                .build().upload();
+                .build().upload(repositoryPrefix, DockerImageConfiguration.getDefault().getAllImagesToUpload());
     }
 
-    public void upload() throws IOException, InterruptedException {
-        upload(CommandUtils::runCommandInheritIO, DockerImageConfiguration.getDefault());
-    }
-
-    public void upload(CommandPipelineRunner runCommand, DockerImageConfiguration dockerImageConfiguration) throws IOException, InterruptedException {
-        List<StackDockerImage> imagesToUpload = dockerImageConfiguration.getAllImagesToUpload();
+    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
         LOGGER.info("Images to upload: {}", imagesToUpload);
 
         if (imagesToUpload.isEmpty()) {
@@ -82,8 +77,7 @@ public class UploadDockerImagesToRepository {
 
         for (StackDockerImage image : imagesToUpload) {
             Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
-            String imageName = image.getImageName();
-            String tag = repositoryPrefix + "/" + imageName + ":" + version;
+            String tag = repositoryPrefix + "/" + image.getImageName() + ":" + version;
 
             image.getLambdaJar().ifPresent(jar -> {
                 copyFile.copyWrappingExceptions(
@@ -93,10 +87,10 @@ public class UploadDockerImagesToRepository {
 
             try {
                 if (image.isMultiplatform()) {
-                    runCommand.runOrThrow("docker", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
+                    commandRunner.runOrThrow("docker", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
                 } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
-                    runCommand.runOrThrow("docker", "push", tag);
+                    commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
+                    commandRunner.runOrThrow("docker", "push", tag);
                 }
             } catch (Exception e) {
                 throw e;
@@ -105,13 +99,23 @@ public class UploadDockerImagesToRepository {
     }
 
     public static final class Builder {
+        private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
+        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private Path baseDockerDirectory;
         private Path jarsDirectory;
-        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private String repositoryPrefix;
         private String version = SleeperVersion.getVersion();
 
         private Builder() {
+        }
+
+        public Builder commandRunner(CommandPipelineRunner commandRunner) {
+            this.commandRunner = commandRunner;
+            return this;
+        }
+
+        public Builder copyFile(CopyFile copyFile) {
+            this.copyFile = copyFile;
+            return this;
         }
 
         public Builder baseDockerDirectory(Path baseDockerDirectory) {
@@ -121,16 +125,6 @@ public class UploadDockerImagesToRepository {
 
         public Builder jarsDirectory(Path jarsDirectory) {
             this.jarsDirectory = jarsDirectory;
-            return this;
-        }
-
-        public Builder copyFile(CopyFile copyFile) {
-            this.copyFile = copyFile;
-            return this;
-        }
-
-        public Builder repositoryPrefix(String repositoryPrefix) {
-            this.repositoryPrefix = repositoryPrefix;
             return this;
         }
 
