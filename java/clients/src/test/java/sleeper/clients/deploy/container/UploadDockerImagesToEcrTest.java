@@ -474,7 +474,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         void shouldBuildAndPushImageForExistingInstanceWithExistingImage() throws Exception {
             // Given
             properties.set(VERSION, "0.9.0");
-            properties.setEnumList(OPTIONAL_STACKS, List.of());
+            properties.setList(OPTIONAL_STACKS, List.of());
             InstanceProperties before = InstanceProperties.copyOf(properties);
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
             ecrClient.createRepository("test-instance/ingest");
