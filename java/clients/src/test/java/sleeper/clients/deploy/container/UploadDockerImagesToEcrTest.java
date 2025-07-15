@@ -362,6 +362,25 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/compaction", "test-instance/ingest");
         }
+
+        @Test
+        void shouldDisableBuildxBuilderCreation() throws Exception {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+
+            // When
+            uploaderWithNoBuildxBuilderCreate()
+                    .upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerDeploymentImageConfig()));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/compaction");
+        }
     }
 
     @Nested
@@ -539,13 +558,24 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
     @Override
     protected UploadDockerImagesToEcr uploader() {
-        return new UploadDockerImagesToEcr(
-                UploadDockerImages.builder()
-                        .commandRunner(commandRunner)
-                        .copyFile((source, target) -> files.put(target, files.get(source)))
-                        .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                        .version("1.0.0")
-                        .build(),
-                ecrClient);
+        return uploaderWith(uploaderBuilder().build());
+    }
+
+    protected UploadDockerImagesToEcr uploaderWithNoBuildxBuilderCreate() {
+        return uploaderWith(uploaderBuilder()
+                .createMultiplatformBuilder(false)
+                .build());
+    }
+
+    protected UploadDockerImagesToEcr uploaderWith(UploadDockerImages uploader) {
+        return new UploadDockerImagesToEcr(uploader, ecrClient);
+    }
+
+    private UploadDockerImages.Builder uploaderBuilder() {
+        return UploadDockerImages.builder()
+                .commandRunner(commandRunner)
+                .copyFile((source, target) -> files.put(target, files.get(source)))
+                .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                .version("1.0.0");
     }
 }
