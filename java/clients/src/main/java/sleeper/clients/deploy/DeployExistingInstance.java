@@ -116,6 +116,7 @@ public class DeployExistingInstance {
         UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
+                        .commandRunner(runCommand)
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecr));
         dockerImageUploader.upload(UploadDockerImagesToEcrRequest.forExistingInstance(properties));

@@ -140,6 +140,7 @@ public class DeployNewInstance {
         UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
+                        .commandRunner(runCommand)
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecrClient));
         dockerImageUploader.upload(
