@@ -21,25 +21,79 @@ import sleeper.query.core.output.ResultsOutputInfo;
 
 import java.util.List;
 
+/**
+ * Interface for reporting on the status of a query.
+ */
 public interface QueryStatusReportListener {
     String DESTINATION = "destination";
 
+    /**
+     * Check if the query has been queued.
+     *
+     * @param query the Sleeper query
+     */
     void queryQueued(Query query);
 
+    /**
+     * Check if the query is still in progress.
+     *
+     * @param query the Sleeper query
+     */
     void queryInProgress(Query query);
 
+    /**
+     * Check if the leaf partition query is still in progress.
+     *
+     * @param leafQuery the Sleeper leaf partition query
+     */
     void queryInProgress(LeafPartitionQuery leafQuery);
 
+    /**
+     * Check if any sub queries have been created.
+     *
+     * @param query      the Sleeper query
+     * @param subQueries the sub queries
+     */
     void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
+    /**
+     * Check if the query has completed.
+     *
+     * @param query      the Sleeper query
+     * @param outputInfo the query results output information
+     */
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
+    /**
+     * Check if the leaf partition query has completed.
+     *
+     * @param leafQuery  the Sleeper leaf partition query
+     * @param outputInfo the query results output information
+     */
     void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo);
 
+    /**
+     * Check if the query has failed.
+     *
+     * @param query the Sleeper query
+     * @param e     the exception raised
+     */
     void queryFailed(Query query, Exception e);
 
+    /**
+     * Check if the query has failed from the query Id.
+     *
+     * @param queryId the query Id
+     * @param e       the exception raised
+     */
     void queryFailed(String queryId, Exception e);
 
+    /**
+     * Check if the leaf partition query has failed.
+     *
+     * @param leafQuery the Sleeper leaf partition query
+     * @param e         the exception raised
+     */
     void queryFailed(LeafPartitionQuery leafQuery, Exception e);
 
 }
