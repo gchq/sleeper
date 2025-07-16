@@ -91,10 +91,22 @@ public class QueryExecutor {
         init(Instant.now());
     }
 
+    /**
+     * Initialises the given partitions and apply the given partitions to active file mapping.
+     *
+     * @param partitions             the partitions to initialise
+     * @param partitionToFileMapping the partition to file mapping information
+     */
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
         init(partitions, partitionToFileMapping, Instant.now());
     }
 
+    /**
+     * Initialise partitions if the next initialise time has passed.
+     *
+     * @param  now                 the time now
+     * @throws StateStoreException if the state store can't be accessed
+     */
     public void initIfNeeded(Instant now) throws StateStoreException {
         if (nextInitialiseTime.isAfter(now)) {
             LOGGER.debug("Not refreshing state for table {}", tableProperties.getStatus());
@@ -103,6 +115,12 @@ public class QueryExecutor {
         init(now);
     }
 
+    /**
+     * Initialise partitions and partition to file mapping now.
+     *
+     * @param  now                 the time now
+     * @throws StateStoreException if the state store can't be accessed
+     */
     public void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
@@ -110,6 +128,14 @@ public class QueryExecutor {
         init(partitions, partitionToFileMapping, now);
     }
 
+    /**
+     * Initialises the given partitions, apply the given partitions to active file mapping, and
+     * set the next initialise time to now offset by the cache timeout value.
+     *
+     * @param partitions             the partitions to initialise
+     * @param partitionToFileMapping the partition to file mapping information
+     * @param now                    the time now
+     */
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
         leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
@@ -142,6 +168,14 @@ public class QueryExecutor {
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
+    /**
+     * Executes the query. This method creates a supplier for the query and concatenates
+     * the result into a single iterator.
+     *
+     * @param  query          the query
+     * @return                an iterator containnig the relevant rows
+     * @throws QueryException if an error occurs during query execution
+     */
     public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {
         return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }

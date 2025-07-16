@@ -58,6 +58,13 @@ public class LeafPartitionQueryExecutor {
         this.retriever = retriever;
     }
 
+    /**
+     * Get the rows from a leaf partition query.
+     *
+     * @param  leafPartitionQuery the Sleeper leaf partition query
+     * @return                    the rows extracted by the query
+     * @throws QueryException     if an exception ccured retrieving the rows from the query
+     */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
