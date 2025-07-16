@@ -105,6 +105,12 @@ public class LeafPartitionQuery {
         return files;
     }
 
+    /**
+     * With requested fields.
+     *
+     * @param  requestedValueFields A list of requested fields
+     * @return                      leafPartitionQuery
+     */
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
     }
@@ -159,6 +165,9 @@ public class LeafPartitionQuery {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String tableId;
         private String queryId;
@@ -172,46 +181,100 @@ public class LeafPartitionQuery {
         private Builder() {
         }
 
+        /**
+         * Provide the parent query.
+         *
+         * @param  parentQuery the parent query
+         * @return             the builder
+         */
         public Builder parentQuery(Query parentQuery) {
             return queryId(parentQuery.getQueryId())
                     .processingConfig(parentQuery.getProcessingConfig());
         }
 
+        /**
+         * Provide the table Id.
+         *
+         * @param  tableId the table Id
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Provide the query Id.
+         *
+         * @param  queryId the query Id
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provide the sub query Id.
+         *
+         * @param  subQueryId the sub query Id
+         * @return            the builder
+         */
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
             return this;
         }
 
+        /**
+         * Provide the table regions.
+         *
+         * @param  regions the table regions
+         * @return         the builder
+         */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
             return this;
         }
 
+        /**
+         * Provide the processing config.
+         *
+         * @param  processingConfig the processing config
+         * @return                  the builder
+         */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {
             this.processingConfig = processingConfig;
             return this;
         }
 
+        /**
+         * Provide the leaf partition Id.
+         *
+         * @param  leafPartitionId the leaft partition Id
+         * @return                 the builder
+         */
         public Builder leafPartitionId(String leafPartitionId) {
             this.leafPartitionId = leafPartitionId;
             return this;
         }
 
+        /**
+         * Provide the partition region.
+         *
+         * @param  partitionRegion the partition region
+         * @return                 the builder
+         */
         public Builder partitionRegion(Region partitionRegion) {
             this.partitionRegion = partitionRegion;
             return this;
         }
 
+        /**
+         * Provide the files.
+         *
+         * @param  files the files
+         * @return       the builder
+         */
         public Builder files(List<String> files) {
             this.files = files;
             return this;

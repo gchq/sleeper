@@ -50,14 +50,33 @@ public class QuerySerDe {
         this(new FixedSchemaLoader(schema));
     }
 
+    /**
+     * Convert a Sleeper query to Json.
+     *
+     * @param  query the sleeper query
+     * @return       a Json string
+     */
     public String toJson(Query query) {
         return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
+    /**
+     * Convert a Sleeper leaf partition query to Json.
+     *
+     * @param  leafQuery the sleeper leaf partition query
+     * @return           a Json string
+     */
     public String toJson(LeafPartitionQuery leafQuery) {
         return gson.toJson(QueryJson.from(leafQuery, schemaLoader));
     }
 
+    /**
+     * Convert a Sleeper query to Json.
+     *
+     * @param  query       the sleeper query
+     * @param  prettyPrint set to true if the Json should be formatted
+     * @return             a formatted Json string
+     */
     public String toJson(Query query, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(QueryJson.from(query, schemaLoader));
@@ -65,6 +84,13 @@ public class QuerySerDe {
         return toJson(query);
     }
 
+    /**
+     * Convert a Sleeper leaf partition query to Json.
+     *
+     * @param  leafQuery   the sleeper leaf partition query
+     * @param  prettyPrint set to true if the Json should be formatted
+     * @return             a formatted Json string
+     */
     public String toJson(LeafPartitionQuery leafQuery, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(QueryJson.from(leafQuery, schemaLoader));
@@ -72,22 +98,52 @@ public class QuerySerDe {
         return toJson(leafQuery);
     }
 
+    /**
+     * Convert a json string into a Sleeper query.
+     *
+     * @param  json the json to convert
+     * @return      a Sleeper query
+     */
     public Query fromJson(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toParentQuery(schemaLoader);
     }
 
+    /**
+     * Convert a json string into a Sleeper query or leaf partition query.
+     *
+     * @param  json the json to convert
+     * @return      a Sleeper query or leaft partition query
+     */
     public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toQueryOrLeafQuery(schemaLoader);
     }
 
+    /**
+     * Interface to define a schema loader.
+     */
     public interface SchemaLoader {
+        /**
+         * Return a schema from a given table name.
+         *
+         * @param  tableName the Sleeper table name
+         * @return           a Sleeper table schema
+         */
         Optional<Schema> getSchemaByTableName(String tableName);
 
+        /**
+         * Return a schema from a given table Id.
+         *
+         * @param  tableId the sleeper table Id
+         * @return         a Sleeper table schema
+         */
         Optional<Schema> getSchemaByTableId(String tableId);
     }
 
+    /**
+     * Provide a mechanism to retrieve Sleeper table schemas from a table provider.
+     */
     private static class SchemaLoaderFromTableProvider implements SchemaLoader {
 
         private final TablePropertiesProvider provider;
@@ -116,6 +172,9 @@ public class QuerySerDe {
         }
     }
 
+    /**
+     * Provide a mechanism to retrieve a Sleeper table schema.
+     */
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;
 
