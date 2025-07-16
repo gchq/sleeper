@@ -36,6 +36,19 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        Arrow is used in the state store and standard ingest, and is also a dependency of Spark. Because it's a
+        dependency of Spark, the version we're able to use is restricted by support in AWS EMR.
+
+        This affects the Arrow R package, which we don't use internally. It doesn't seem to affect the Arrow
+        implementations that we use.
+
+        This was found against Arrow 12.0.1.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.arrow/arrow-.*@.*$</packageUrl>
+        <cve>CVE-2024-52338</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
@@ -202,18 +215,5 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit-core@.*$</packageUrl>
         <cve>CVE-2024-9410</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Arrow memory core is used as park of spark-sql-api. Vunerability is fixed in later builds of arrow-memory-core
-        however we are unable to update due to need to keep in line with spark-sql-api version that is used within the
-        EMR build.
-        Vunerability affects the Arrow R package dealing with executing of untrusted sources, given this is not a liekly
-        behaviour, impact is potentially low.
-
-        file name: arrow-memory-core-12.0.1.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.arrow/arrow-memory-core@.*$</packageUrl>
-        <cve>CVE-2024-52338</cve>
     </suppress>
 </suppressions>
