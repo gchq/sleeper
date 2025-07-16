@@ -18,14 +18,48 @@ package sleeper.query.core.tracker;
 
 import java.util.List;
 
+/**
+ * Interface for tracking the status of a query.
+ */
 public interface QueryTrackerStore {
+    /**
+     * Get the status of a query by query Id.
+     *
+     * @param  queryId               the query Id
+     * @return                       the tracked query
+     * @throws QueryTrackerException if something goes wrong checking the status of the query
+     */
     TrackedQuery getStatus(String queryId) throws QueryTrackerException;
 
+    /**
+     * Get the status of a specific query and sub query.
+     *
+     * @param  queryId               the query Id
+     * @param  subQueryId            the sub query Id
+     * @return                       the tracked query
+     * @throws QueryTrackerException if something goes wrong checking the status of the query and sub query
+     */
     TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException;
 
+    /**
+     * Get all queries.
+     *
+     * @return a list of all tracked queries
+     */
     List<TrackedQuery> getAllQueries();
 
+    /**
+     * Get any queries that are in a specific state.
+     *
+     * @param  state the query state
+     * @return       a list of tracked queries in the supplied state
+     */
     List<TrackedQuery> getQueriesWithState(QueryState state);
 
+    /**
+     * Get any a failed querues.
+     *
+     * @return a list of tracked queries that have failed.
+     */
     List<TrackedQuery> getFailedQueries();
 }

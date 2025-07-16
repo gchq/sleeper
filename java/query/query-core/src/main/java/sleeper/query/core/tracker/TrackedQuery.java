@@ -108,6 +108,9 @@ public class TrackedQuery {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String queryId;
         private String subQueryId = "-";
@@ -120,44 +123,98 @@ public class TrackedQuery {
         private Builder() {
         }
 
+        /**
+         * Provide the query Id.
+         *
+         * @param  queryId the query Id
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provide the sub query Id.
+         *
+         * @param  subQueryId the sub query Id
+         * @return            the builder
+         */
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
             return this;
         }
 
+        /**
+         * Provide the last update time in milliseconds.
+         *
+         * @param  lastUpdateTime the last update time
+         * @return                the builder
+         */
         public Builder lastUpdateTime(Instant lastUpdateTime) {
             return lastUpdateTime(lastUpdateTime.toEpochMilli());
         }
 
+        /**
+         * Provide the last update time.
+         *
+         * @param  lastUpdateTime the last update time
+         * @return                the builder
+         */
         public Builder lastUpdateTime(Long lastUpdateTime) {
             this.lastUpdateTime = lastUpdateTime;
             return this;
         }
 
+        /**
+         * Provide the expiry date in milliseconds.
+         *
+         * @param  expiryDate the expiry date
+         * @return            the builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             return expiryDate(expiryDate.toEpochMilli());
         }
 
+        /**
+         * Provide the expiry date.
+         *
+         * @param  expiryDate the expiry date
+         * @return            the builder
+         */
         public Builder expiryDate(Long expiryDate) {
             this.expiryDate = expiryDate;
             return this;
         }
 
+        /**
+         * Provide the last known query state.
+         *
+         * @param  lastKnownState the last known state
+         * @return                the builder
+         */
         public Builder lastKnownState(QueryState lastKnownState) {
             this.lastKnownState = lastKnownState;
             return this;
         }
 
+        /**
+         * Provide the record count.
+         *
+         * @param  recordCount the record count
+         * @return             the builder
+         */
         public Builder recordCount(Long recordCount) {
             this.recordCount = recordCount;
             return this;
         }
 
+        /**
+         * Provide the error message.
+         *
+         * @param  errorMessage the error message
+         * @return              the builder
+         */
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
             return this;

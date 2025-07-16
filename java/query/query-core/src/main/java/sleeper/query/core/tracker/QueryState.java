@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 
+/** States the query can be in. */
 public enum QueryState {
     COMPLETED,
     FAILED,
@@ -30,6 +31,13 @@ public enum QueryState {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryState.class);
 
+    /**
+     * Return the state of the parent query if it has finished.
+     *
+     * @param  queryId  the query Id
+     * @param  children the child queries
+     * @return          the state of the query
+     */
     public static Optional<QueryState> getParentStateIfFinished(String queryId, List<TrackedQuery> children) {
         boolean allCompleted = true;
         boolean allSucceeded = true;
