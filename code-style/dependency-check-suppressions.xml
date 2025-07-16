@@ -120,7 +120,7 @@
         Spark SQL integrates with Apache Hive, but we don't use it.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hive/hive\-storage\-api@.*$</packageUrl>
-        <cve>CVE-2021-34538</cve>
+        <vulnerabilityName regex="true">CVE-2021-34538|CVE-2024-23953|CVE-2024-23945|CVE-2024-29869</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
