@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A request for records with row keys that fall within one of a list of regions.
+ * A Sleeper query definition that defines the sleeper table, the region of the table to query and a unique query Id.
  */
 public class Query {
     private final String tableName;
@@ -85,18 +85,36 @@ public class Query {
         return processingConfig.getStatusReportDestinations();
     }
 
+    /**
+     * Build a query setting the QueryProcessingConfig to use value fields.
+     *
+     * @param  requestedValueFields value fields to apply to the QueryProcessingConfig
+     * @return                      a sleeper query
+     */
     public Query withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
                 .processingConfig(processingConfig.withRequestedValueFields(requestedValueFields))
                 .build();
     }
 
+    /**
+     * Build a query setting the QueryProcessingConfig to use publisher configs.
+     *
+     * @param  resultsPublisherConfig publisher configs to apply to the QueryProcessingConfig
+     * @return                        a sleeper query
+     */
     public Query withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
                 .processingConfig(processingConfig.withResultsPublisherConfig(resultsPublisherConfig))
                 .build();
     }
 
+    /**
+     * Build a query setting the QueryProcessingConfig to use a status report destination.
+     *
+     * @param  statusReportDestination status report destination to apply to the QueryProcessingConfig.
+     * @return                         a sleeper query
+     */
     public Query withStatusReportDestination(Map<String, String> statusReportDestination) {
         return toBuilder()
                 .processingConfig(processingConfig.withStatusReportDestination(statusReportDestination))
@@ -139,6 +157,9 @@ public class Query {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String tableName;
         private String queryId;
@@ -148,21 +169,45 @@ public class Query {
         private Builder() {
         }
 
+        /**
+         * Provide the table name.
+         *
+         * @param  tableName the name of the Sleeper table
+         * @return           the builder
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
+        /**
+         * Provide the query ID.
+         *
+         * @param  queryId the id of the query
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provide the regions.
+         *
+         * @param  regions the sleeper row region
+         * @return         the builder
+         */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
             return this;
         }
 
+        /**
+         * Provide the processingConfig.
+         *
+         * @param  processingConfig how records should be processed during a query
+         * @return                  the builder
+         */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {
             this.processingConfig = processingConfig;
             return this;

@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * A Json definition of a Sleeper query.
+ */
 class QueryJson {
     private final String tableName;
     private final String tableId;
@@ -193,6 +196,9 @@ class QueryJson {
                 .collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * Builder for this class.
+     */
     private static final class Builder {
         private String tableName;
         private String tableId;
