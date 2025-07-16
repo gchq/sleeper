@@ -111,10 +111,9 @@ Wiremock (org.wiremock:wiremock:3.*)
 
 - Apache License, Version 2.0
 
-handlebars (com.github.jknack.*:handlebars.*:3.*)
+handlebars (com.github.jknack.*:handlebars.*:4.*)
 
 - Apache License, Version 2.0
-
 
 GSON (com.google.code.gson:gson:2.*)
 
