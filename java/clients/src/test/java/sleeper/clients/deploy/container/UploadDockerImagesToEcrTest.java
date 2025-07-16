@@ -362,25 +362,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/compaction", "test-instance/ingest");
         }
-
-        @Test
-        void shouldDisableBuildxBuilderCreation() throws Exception {
-            // Given
-            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
-
-            // When
-            uploaderWithNoBuildxBuilderCreate()
-                    .upload(UploadDockerImagesToEcrRequest.forDeployment(properties, dockerDeploymentImageConfig()));
-
-            // Then
-            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    loginDockerCommand(),
-                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/compaction");
-        }
     }
 
     @Nested

@@ -18,22 +18,30 @@ package sleeper.clients.deploy.container;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
+
 public class UploadDockerImagesToRepository {
 
     private UploadDockerImagesToRepository() {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
-            System.out.println("Usage: <scripts-dir> <repository-prefix-path>");
+        if (args.length < 2 || args.length > 3) {
+            System.out.println("Usage: <scripts-dir> <repository-prefix-path> <optional-create-buildx-builder-true-or-false>");
             System.exit(1);
             return;
         }
 
         Path scriptsDirectory = Path.of(args[0]);
         String repositoryPrefix = args[1];
+        boolean createMultiplatformBuilder = optionalArgument(args, 2).map(Boolean::parseBoolean).orElse(true);
 
-        uploadAllImages(DockerImageConfiguration.getDefault(), UploadDockerImages.fromScriptsDirectory(scriptsDirectory), repositoryPrefix);
+        UploadDockerImages uploader = UploadDockerImages.builder()
+                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .jarsDirectory(scriptsDirectory.resolve("jars"))
+                .createMultiplatformBuilder(createMultiplatformBuilder)
+                .build();
+        uploadAllImages(DockerImageConfiguration.getDefault(), uploader, repositoryPrefix);
     }
 
     public static void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader, String repositoryPrefix) throws IOException, InterruptedException {
