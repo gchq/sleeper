@@ -61,9 +61,9 @@ public class PublishJarsToRepo {
 
     private void deployJars(String filename, String imageName, CommandPipelineRunner runCommand) {
         try {
-            runCommand.run("mvn", "deploy:deploy-file", "-e",
+            runCommand.run("mvn", "deploy:deploy-file", "-q",
                     "-Durl=" + repoUrl,
-                    "-DrepositoryId=repo.id", //Requires matching auth details in local m2 settings.xml <servers>
+                    "-DrepositoryId=repo.id", //Requires matching server with auth details in local m2 settings.xml <servers>
                     "-Dfile=../scripts/jars/" + String.format(filename, version),
                     "-DgroupId=sleeper",
                     "-DartifactId=" + imageName,

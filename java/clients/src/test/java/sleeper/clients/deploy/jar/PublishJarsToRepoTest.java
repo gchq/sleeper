@@ -34,7 +34,7 @@ public class PublishJarsToRepoTest {
     public void testRunsCommands() throws Exception {
         List<CommandPipeline> commandsThatRan = pipelinesRunOn(
                 runCommand -> {
-                    PublishJarsToRepo.builder().repoUrl("file/someRepo").version(SleeperVersion.getVersion()).build().upload(runCommand);
+                    PublishJarsToRepo.builder().repoUrl("file:/someRepo").version(SleeperVersion.getVersion()).build().upload(runCommand);
                 });
 
         assertThat(commandsThatRan).contains(pipeline(command("java", "--version")));
