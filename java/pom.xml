@@ -219,6 +219,7 @@
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>3.13.1</wiremock.version>
+        <handlebar.version>4.3.0</handlebar.version>
         <assertj.version>3.27.3</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>24.22.0</approvaltests.version>
@@ -1460,6 +1461,11 @@
                 <groupId>net.javacrumbs.json-unit</groupId>
                 <artifactId>json-unit-assertj</artifactId>
                 <version>${jsonunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${handlebar.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
