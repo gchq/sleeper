@@ -33,6 +33,9 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Creates an in memory version of a partition record retriever.
+ */
 public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever, LeafPartitionRecordRetrieverProvider {
 
     private final InMemoryRowStore recordStore;
