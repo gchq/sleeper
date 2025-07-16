@@ -219,7 +219,7 @@
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>3.13.1</wiremock.version>
-        <handlebar.version>4.4.0</handlebar.version>
+        <handlebars.version>4.4.0</handlebars.version>
         <assertj.version>3.27.3</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>24.22.0</approvaltests.version>
@@ -1115,6 +1115,11 @@
                 <artifactId>json-smart</artifactId>
                 <version>${json-smart.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${handlebars.version}</version>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -1461,11 +1466,6 @@
                 <groupId>net.javacrumbs.json-unit</groupId>
                 <artifactId>json-unit-assertj</artifactId>
                 <version>${jsonunit.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.jknack</groupId>
-                <artifactId>handlebars</artifactId>
-                <version>${handlebar.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
