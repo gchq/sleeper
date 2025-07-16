@@ -111,7 +111,7 @@ Wiremock (org.wiremock:wiremock:3.*)
 
 - Apache License, Version 2.0
 
-handlebars (com.github.jknack.*:handlebars.*:4.*)
+handlebars (com.github.jknack:handlebars:4.*)
 
 - Apache License, Version 2.0
 
