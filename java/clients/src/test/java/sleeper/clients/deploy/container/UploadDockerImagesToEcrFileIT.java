@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
 
@@ -34,11 +33,10 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
-public class UploadDockerImagesFileIT extends UploadDockerImagesTestBase {
+public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBase {
 
     @TempDir
     public Path dir;
@@ -62,7 +60,7 @@ public class UploadDockerImagesFileIT extends UploadDockerImagesTestBase {
         Files.writeString(jarsDir.resolve("ingest.jar"), "ingest-jar-content");
 
         // When
-        List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploadLambdas(properties));
+        uploadForDeployment(lambdaImageConfig());
 
         // Then
         String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
@@ -85,11 +83,14 @@ public class UploadDockerImagesFileIT extends UploadDockerImagesTestBase {
     }
 
     @Override
-    protected UploadDockerImages uploader() {
-        return UploadDockerImages.builder()
-                .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
-                .ecrClient(ecrClient)
-                .build();
+    protected UploadDockerImagesToEcr uploader() {
+        return new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .commandRunner(commandRunner)
+                        .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
+                        .version("1.0.0")
+                        .build(),
+                ecrClient);
     }
 
     private static Map<Path, String> fileToContentUnder(Path directory) throws Exception {

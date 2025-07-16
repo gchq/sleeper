@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.deploy.container.StackDockerImage;
-import sleeper.clients.deploy.container.UploadDockerImagesRequest;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -392,8 +392,8 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         updateInstanceProperty(store(), instanceId, property, value);
     }
 
-    private UploadDockerImagesRequest withImages(StackDockerImage... images) {
-        return UploadDockerImagesRequest.builder()
+    private UploadDockerImagesToEcrRequest withImages(StackDockerImage... images) {
+        return UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(instanceProperties.get(ID))
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
