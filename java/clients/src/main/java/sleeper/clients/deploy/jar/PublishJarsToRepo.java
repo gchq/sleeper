@@ -17,26 +17,83 @@ package sleeper.clients.deploy.jar;
 
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.core.deploy.ClientJar;
+import sleeper.core.deploy.LambdaJar;
+
+import java.io.IOException;
+
+import static java.util.Objects.requireNonNull;
 
 public class PublishJarsToRepo {
+    private final String repoUrl;
+    private final String version;
 
-    private PublishJarsToRepo() {
+    private PublishJarsToRepo(Builder builder) {
+        this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
+        this.version = requireNonNull(builder.version, "Version to publish must not be null");
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static void main(String[] args) throws Exception {
-        //Check arg 1 is apropriate url
-        /*
-         * TEMP Removed until regex decided
-         * if (!args[1].matches("SOME URL REGEX")) {
-         * System.out.println("Error: [" + args[1] + "] did not match the expected url pattern");
-         * return;
-         * }
-         */
+        builder()
+                .repoUrl(args[1])
+                .version(args[2])
+                .build()
+                .upload();
+    }
 
-        CommandPipelineRunner runner = CommandUtils::runCommandInheritIO;
-        runner.run("java", "--version");
-        //For each LambdaJar/ClientJar
-        //Upload to repo
+    public void upload() {
+        upload(CommandUtils::runCommandInheritIO);
+    }
+
+    public void upload(CommandPipelineRunner runCommand) {
+        for (ClientJar clientJar : ClientJar.getAll()) {
+            deployJars(clientJar.getFilename(), clientJar.getImageName(), runCommand);
+        }
+
+        for (LambdaJar lambdaJar : LambdaJar.getAll()) {
+            deployJars(lambdaJar.getFilenameFormat(), lambdaJar.getImageName(), runCommand);
+        }
+    }
+
+    private void deployJars(String filename, String imageName, CommandPipelineRunner runCommand) {
+        try {
+            runCommand.run("mvn", "deploy:deploy-file", "-e",
+                    "-Durl=" + repoUrl,
+                    "-DrepositoryId=repo.id", //Requires matching auth details in local m2 settings.xml <servers>
+                    "-Dfile=../scripts/jars/" + String.format(filename, version),
+                    "-DgroupId=sleeper",
+                    "-DartifactId=" + imageName,
+                    "-Dversion=" + version,
+                    "-DgeneratePom=false");
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static final class Builder {
+        private String repoUrl;
+        private String version;
+
+        private Builder() {
+        }
+
+        public Builder repoUrl(String repoUrl) {
+            this.repoUrl = repoUrl;
+            return this;
+        }
+
+        public Builder version(String version) {
+            this.version = version;
+            return this;
+        }
+
+        public PublishJarsToRepo build() {
+            return new PublishJarsToRepo(this);
+        }
     }
 
 }

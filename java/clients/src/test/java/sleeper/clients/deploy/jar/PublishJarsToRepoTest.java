@@ -18,10 +18,12 @@ package sleeper.clients.deploy.jar;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.core.SleeperVersion;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -30,18 +32,25 @@ public class PublishJarsToRepoTest {
 
     @Test
     public void testRunsCommands() throws Exception {
-
         List<CommandPipeline> commandsThatRan = pipelinesRunOn(
                 runCommand -> {
-                    try {
-                        PublishJarsToRepo.main(new String[]{"Blah"});
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+                    PublishJarsToRepo.builder().repoUrl("file/someRepo").version(SleeperVersion.getVersion()).build().upload(runCommand);
                 });
 
         assertThat(commandsThatRan).contains(pipeline(command("java", "--version")));
     }
 
+    @Test
+    public void testRepoMustNotBeNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().version(SleeperVersion.getVersion()).build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Repository URL must not be null");
+    }
+
+    @Test
+    public void testVersionMustNotBeNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl("file:/someRepo").build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Version to publish must not be null");
+    }
 }

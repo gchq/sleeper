@@ -16,8 +16,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $1 <repository url>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  echo "Usage: $1 <repository url> <version>"
   exit 1
 fi
 
@@ -27,8 +27,8 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
 mvn install -Pquick -q -pl clients -am
-echo "Publishing Jars to repo $1"
+echo "Publishing Jars to repo $1 with version $2"
 mvn exec:java -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.jar.PublishJarsToRepo" \
-  -Dexec.args="$PROJECT_ROOT $1"
+  -Dexec.args="$PROJECT_ROOT $1 $2"
 popd
