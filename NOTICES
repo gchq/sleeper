@@ -111,6 +111,10 @@ Wiremock (org.wiremock:wiremock:3.*)
 
 - Apache License, Version 2.0
 
+Handlebars (com.github.jknack:handlebars:4.*)
+
+- Apache License, Version 2.0
+
 GSON (com.google.code.gson:gson:2.*)
 
 - Apache License, Version 2.0
@@ -139,7 +143,7 @@ Apache Commons Net (commons-net:commons-net:3.*)
 
 - Apache License, Version 2.0
 
-Apache Commons Lang (org.apache.commons:commons-lang3:3.*, commons-lang:commons-lang:2.*)
+Apache Commons Lang (org.apache.commons:commons-lang3:3.*)
 
 - Apache License, Version 2.0
 

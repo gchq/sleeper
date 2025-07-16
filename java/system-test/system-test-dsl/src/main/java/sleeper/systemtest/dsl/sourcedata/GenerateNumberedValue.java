@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.sourcedata;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.ByteArrayType;

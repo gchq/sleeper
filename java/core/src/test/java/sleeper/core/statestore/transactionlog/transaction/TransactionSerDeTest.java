@@ -15,7 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transaction;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
