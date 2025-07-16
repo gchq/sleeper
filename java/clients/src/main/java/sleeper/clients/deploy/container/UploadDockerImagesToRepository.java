@@ -15,41 +15,12 @@
  */
 package sleeper.clients.deploy.container;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.clients.util.command.CommandPipelineRunner;
-import sleeper.clients.util.command.CommandUtils;
-import sleeper.core.SleeperVersion;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNull;
 
 public class UploadDockerImagesToRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
-    private final Path baseDockerDirectory;
-    private final Path jarsDirectory;
-    private final CopyFile copyFile;
-    private final String repositoryPrefix;
-    private final String version;
 
-    private UploadDockerImagesToRepository(Builder builder) {
-        baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
-        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
-        copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        repositoryPrefix = requireNonNull(builder.repositoryPrefix, "repositoryPrefix must not be null");
-        version = requireNonNull(builder.version, "version must not be null");
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    private UploadDockerImagesToRepository() {
     }
 
     public static void main(String[] args) throws Exception {
@@ -60,110 +31,13 @@ public class UploadDockerImagesToRepository {
         }
 
         Path scriptsDirectory = Path.of(args[0]);
+        String repositoryPrefix = args[1];
 
-        UploadDockerImagesToRepository.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                .jarsDirectory(scriptsDirectory.resolve("jars"))
-                .repositoryPrefix(args[1])
-                .build().upload();
+        uploadAllImages(DockerImageConfiguration.getDefault(), UploadDockerImages.fromScriptsDirectory(scriptsDirectory), repositoryPrefix);
     }
 
-    public void upload() throws IOException, InterruptedException {
-        upload(CommandUtils::runCommandInheritIO, DockerImageConfiguration.getDefault());
+    public static void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader, String repositoryPrefix) throws IOException, InterruptedException {
+        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), UploadDockerImagesCallbacks.NONE);
     }
 
-    public void upload(CommandPipelineRunner runCommand, DockerImageConfiguration dockerImageConfiguration) throws IOException, InterruptedException {
-        List<StackDockerImage> stacksToUpload = dockerImageConfiguration.getAllImagesToUpload();
-        LOGGER.info("Images expected: {}", stacksToUpload);
-        List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
-                .collect(Collectors.toUnmodifiableList());
-
-        if (stacksToBuild.isEmpty()) {
-            LOGGER.info("No images need to be built and uploaded, skipping");
-            return;
-        }
-
-        if (stacksToBuild.stream().anyMatch(StackDockerImage::isMultiplatform)) {
-            LOGGER.info("Building and uploading images: {}", stacksToBuild);
-
-            runCommand.run("docker", "buildx", "rm", "sleeper");
-            runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
-        }
-
-        for (StackDockerImage stackImage : stacksToBuild) {
-            Path dockerfileDirectory = baseDockerDirectory.resolve(stackImage.getDirectoryName());
-            String imageName = stackImage.getImageName();
-            String tag = repositoryPrefix + "/" + imageName + ":" + version;
-
-            stackImage.getLambdaJar().ifPresent(jar -> {
-                copyFile.copyWrappingExceptions(
-                        jarsDirectory.resolve(jar.getFilename()),
-                        dockerfileDirectory.resolve("lambda.jar"));
-            });
-
-            try {
-                if (stackImage.isMultiplatform()) {
-                    runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
-                } else {
-                    runCommand.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
-                    runCommand.runOrThrow("docker", "push", tag);
-                }
-            } catch (Exception e) {
-                throw e;
-            }
-        }
-    }
-
-    public static final class Builder {
-        private Path baseDockerDirectory;
-        private Path jarsDirectory;
-        private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private String repositoryPrefix;
-        private String version = SleeperVersion.getVersion();
-
-        private Builder() {
-        }
-
-        public Builder baseDockerDirectory(Path baseDockerDirectory) {
-            this.baseDockerDirectory = baseDockerDirectory;
-            return this;
-        }
-
-        public Builder jarsDirectory(Path jarsDirectory) {
-            this.jarsDirectory = jarsDirectory;
-            return this;
-        }
-
-        public Builder copyFile(CopyFile copyFile) {
-            this.copyFile = copyFile;
-            return this;
-        }
-
-        public Builder repositoryPrefix(String repositoryPrefix) {
-            this.repositoryPrefix = repositoryPrefix;
-            return this;
-        }
-
-        public Builder version(String version) {
-            this.version = version;
-            return this;
-        }
-
-        public UploadDockerImagesToRepository build() {
-            return new UploadDockerImagesToRepository(this);
-        }
-    }
-
-    public interface CopyFile {
-
-        void copy(Path source, Path target) throws IOException;
-
-        default void copyWrappingExceptions(Path source, Path target) {
-            try {
-                copy(source, target);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
 }

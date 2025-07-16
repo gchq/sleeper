@@ -23,13 +23,10 @@ import sleeper.clients.util.command.CommandPipeline;
 
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
-import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 
 @DisplayName("Upload Docker images")
 public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
@@ -43,8 +40,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
 
         // When
-        List<CommandPipeline> commandsThatRan = pipelinesRunOn(
-                runCommand -> uploader().upload(runCommand, dockerImageConfiguration));
+        uploadAllImages(dockerImageConfiguration);
 
         // Then
         String expectedIngestTag = "www.somedocker.com/ingest:1.0.0";
@@ -58,7 +54,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 pushImageCommand(expectedIngestTag),
                 buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
                 pushImageCommand(expectedBulkImportTag),
-                buildAndPushImageWithBuildxCommand(expectedCompactionTag, "./docker/compaction"),
+                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
                 buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
                 pushImageCommand(expectedEmrTag));
     }
@@ -75,8 +71,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         DockerImageConfiguration dockerImageConfiguration = lambdaImageConfig();
 
         // When
-        List<CommandPipeline> commandsThatRan = pipelinesRunOn(
-                runCommand -> uploader().upload(runCommand, dockerImageConfiguration));
+        uploadAllImages(dockerImageConfiguration);
 
         // Then
         String expectedStatestoreTag = "www.somedocker.com/statestore-lambda:1.0.0";
@@ -103,25 +98,35 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     @Test
-    void shouldFailWhenCreateBuildxBuilderFails() {
+    void shouldFailWhenDockerBuildFails() {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
+        CommandPipeline buildImageCommand = buildImageCommand(
+                "www.somedocker.com/ingest:1.0.0",
+                "./docker/ingest");
+        setReturnExitCodeForCommand(42, buildImageCommand);
 
         // When / Then
-        assertThatThrownBy(() -> uploader().upload(
-                returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
-                dockerImageConfiguration))
+        assertThatThrownBy(() -> uploadAllImages(dockerImageConfiguration))
                 .isInstanceOfSatisfying(CommandFailedException.class, e -> {
-                    assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
-                    assertThat(e.getExitCode()).isEqualTo(123);
+                    assertThat(e.getCommand()).isEqualTo(buildImageCommand);
+                    assertThat(e.getExitCode()).isEqualTo(42);
                 });
+        assertThat(commandsThatRan).containsExactly(
+                removeOldBuildxBuilderInstanceCommand(),
+                createNewBuildxBuilderInstanceCommand(),
+                buildImageCommand);
     }
 
-    protected UploadDockerImagesToRepository uploader() {
-        return UploadDockerImagesToRepository.builder()
-                .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                .repositoryPrefix("www.somedocker.com")
+    protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {
+        UploadDockerImagesToRepository.uploadAllImages(imageConfig, uploader(), "www.somedocker.com");
+    }
+
+    protected UploadDockerImages uploader() {
+        return UploadDockerImages.builder()
+                .commandRunner(commandRunner)
                 .copyFile((source, target) -> files.put(target, files.get(source)))
+                .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .version("1.0.0")
                 .build();
     }

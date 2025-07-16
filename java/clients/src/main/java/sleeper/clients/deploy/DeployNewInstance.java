@@ -27,7 +27,8 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImagesRequest;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.table.AddTable;
@@ -136,12 +137,15 @@ public class DeployNewInstance {
         SyncJars.builder().s3(s3Client)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
-        UploadDockerImages.builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
-                .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
-                .build().upload(runCommand,
-                        UploadDockerImagesRequest.forNewDeployment(instanceProperties, sleeperVersion)
-                                .withExtraImages(extraDockerImages));
+        UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
+                        .commandRunner(runCommand)
+                        .build(),
+                EcrRepositoryCreator.withEcrClient(ecrClient));
+        dockerImageUploader.upload(
+                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
+                        .withExtraImages(extraDockerImages));
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);

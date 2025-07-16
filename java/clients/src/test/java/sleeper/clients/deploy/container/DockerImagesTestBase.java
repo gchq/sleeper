@@ -16,6 +16,7 @@
 package sleeper.clients.deploy.container;
 
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
@@ -24,6 +25,9 @@ import sleeper.core.properties.model.OptionalStack;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
@@ -60,6 +64,17 @@ public class DockerImagesTestBase {
                     .handler("AthenaLambda")
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
 
+    protected final List<CommandPipeline> commandsThatRan = new ArrayList<>();
+    protected CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+
+    protected void setReturnExitCodeForAllCommands(int exitCode) {
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCode(exitCode));
+    }
+
+    protected void setReturnExitCodeForCommand(int exitCode, CommandPipeline command) {
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommand(exitCode, command));
+    }
+
     protected DockerImageConfiguration dockerDeploymentImageConfig() {
         return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
     }
@@ -90,7 +105,7 @@ public class DockerImagesTestBase {
         return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
     }
 
-    protected CommandPipeline buildAndPushImageWithBuildxCommand(String tag, String dockerDirectory) {
+    protected CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }

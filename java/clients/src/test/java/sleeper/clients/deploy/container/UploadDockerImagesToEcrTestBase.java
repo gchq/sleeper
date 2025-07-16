@@ -18,7 +18,6 @@ package sleeper.clients.deploy.container;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -33,7 +32,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
+public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBase {
     protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
     protected final InstanceProperties properties = createTestInstanceProperties();
 
@@ -45,20 +44,15 @@ public abstract class UploadDockerImagesTestBase extends DockerImagesTestBase {
         properties.set(VERSION, "1.0.0");
     }
 
-    protected RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, dockerDeploymentImageConfig()));
+    protected void uploadForDeployment(DockerImageConfiguration imageConfig) throws Exception {
+        uploader().upload(UploadDockerImagesToEcrRequest.forDeployment(properties, imageConfig));
     }
 
-    protected RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, lambdaImageConfig()));
+    protected void uploadForUpdate(InstanceProperties before, InstanceProperties after, DockerImageConfiguration imageConfig) throws Exception {
+        uploader().upload(UploadDockerImagesToEcrRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), imageConfig).orElseThrow());
     }
 
-    protected RunCommandTestHelper.PipelineInvoker uploadLambdasForUpdate(InstanceProperties before, InstanceProperties after) {
-        return runCommand -> uploader().upload(runCommand,
-                UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
-    }
-
-    protected abstract UploadDockerImages uploader();
+    protected abstract UploadDockerImagesToEcr uploader();
 
     protected CommandPipeline loginDockerCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
