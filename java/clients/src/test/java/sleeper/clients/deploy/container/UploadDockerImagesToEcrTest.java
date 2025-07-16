@@ -539,24 +539,13 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
     @Override
     protected UploadDockerImagesToEcr uploader() {
-        return uploaderWith(uploaderBuilder().build());
-    }
-
-    protected UploadDockerImagesToEcr uploaderWithNoBuildxBuilderCreate() {
-        return uploaderWith(uploaderBuilder()
-                .createMultiplatformBuilder(false)
-                .build());
-    }
-
-    protected UploadDockerImagesToEcr uploaderWith(UploadDockerImages uploader) {
-        return new UploadDockerImagesToEcr(uploader, ecrClient);
-    }
-
-    private UploadDockerImages.Builder uploaderBuilder() {
-        return UploadDockerImages.builder()
-                .commandRunner(commandRunner)
-                .copyFile((source, target) -> files.put(target, files.get(source)))
-                .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                .version("1.0.0");
+        return new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .commandRunner(commandRunner)
+                        .copyFile((source, target) -> files.put(target, files.get(source)))
+                        .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
+                        .version("1.0.0")
+                        .build(),
+                ecrClient);
     }
 }
