@@ -198,7 +198,7 @@
         <jersey.version>2.45</jersey.version>
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.2.Final</netty.version>
+        <netty.version>4.2.3.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
         <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
