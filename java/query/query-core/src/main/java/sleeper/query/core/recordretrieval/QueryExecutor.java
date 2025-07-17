@@ -173,7 +173,7 @@ public class QueryExecutor {
      * the result into a single iterator.
      *
      * @param  query          the query
-     * @return                an iterator containnig the relevant rows
+     * @return                an iterator containig the relevant rows
      * @throws QueryException if an error occurs during query execution
      */
     public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {

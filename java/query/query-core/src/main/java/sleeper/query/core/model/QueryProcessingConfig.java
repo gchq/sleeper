@@ -78,10 +78,10 @@ public class QueryProcessingConfig {
     }
 
     /**
-     * Builds a query processing config setting the requested value fields.
+     * Creates a copy of this configuration that will include the values of the given fields in the query result.
      *
      * @param  requestedValueFields value fields to add to builder
-     * @return                      a built query processing config
+     * @return                      the copy
      */
     public QueryProcessingConfig withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
@@ -90,10 +90,10 @@ public class QueryProcessingConfig {
     }
 
     /**
-     * Builds a query processing config setting the result publisher config.
+     * Creates a copy of this configuration that includes the given configuration for publishing results.
      *
      * @param  resultsPublisherConfig results publisher config to add to builder
-     * @return                        a built query processing config
+     * @return                        the copy
      */
     public QueryProcessingConfig withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
@@ -102,10 +102,10 @@ public class QueryProcessingConfig {
     }
 
     /**
-     * Builds a query processing config setting the status report destination.
+     * Creates a copy of this configuration that includes the given configuration for publishing status reports.
      *
      * @param  statusReportDestination status report destination to add to builder
-     * @return                         a built query processing config
+     * @return                         the copy
      */
     public QueryProcessingConfig withStatusReportDestination(Map<String, String> statusReportDestination) {
         return toBuilder()
@@ -192,7 +192,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the results publicher config.
+         * Provide the results publisher config.
          *
          * @param  resultsPublisherConfig the publisher config
          * @return                        the builder
@@ -214,7 +214,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the requested value fields.
+         * Provide the fields that are requested to be included in the query results.
          *
          * @param  requestedValueFields the value fields
          * @return                      the builder

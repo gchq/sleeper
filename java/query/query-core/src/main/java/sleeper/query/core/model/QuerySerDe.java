@@ -51,31 +51,31 @@ public class QuerySerDe {
     }
 
     /**
-     * Convert a Sleeper query to Json.
+     * Convert a Sleeper query to JSON.
      *
-     * @param  query the sleeper query
-     * @return       a Json string
+     * @param  query the Sleeper query
+     * @return       a JSON string
      */
     public String toJson(Query query) {
         return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
     /**
-     * Convert a Sleeper leaf partition query to Json.
+     * Convert a Sleeper leaf partition query to JSON.
      *
-     * @param  leafQuery the sleeper leaf partition query
-     * @return           a Json string
+     * @param  leafQuery the Sleeper leaf partition query
+     * @return           a JSON string
      */
     public String toJson(LeafPartitionQuery leafQuery) {
         return gson.toJson(QueryJson.from(leafQuery, schemaLoader));
     }
 
     /**
-     * Convert a Sleeper query to Json.
+     * Convert a Sleeper query to JSON.
      *
-     * @param  query       the sleeper query
-     * @param  prettyPrint set to true if the Json should be formatted
-     * @return             a formatted Json string
+     * @param  query       the Sleeper query
+     * @param  prettyPrint set to true if the JSON should be formatted
+     * @return             a formatted JSON string
      */
     public String toJson(Query query, boolean prettyPrint) {
         if (prettyPrint) {
@@ -85,11 +85,11 @@ public class QuerySerDe {
     }
 
     /**
-     * Convert a Sleeper leaf partition query to Json.
+     * Convert a Sleeper leaf partition query to JSON.
      *
-     * @param  leafQuery   the sleeper leaf partition query
-     * @param  prettyPrint set to true if the Json should be formatted
-     * @return             a formatted Json string
+     * @param  leafQuery   the Sleeper leaf partition query
+     * @param  prettyPrint set to true if the JSON should be formatted
+     * @return             a formatted JSON string
      */
     public String toJson(LeafPartitionQuery leafQuery, boolean prettyPrint) {
         if (prettyPrint) {
@@ -101,7 +101,7 @@ public class QuerySerDe {
     /**
      * Convert a json string into a Sleeper query.
      *
-     * @param  json the json to convert
+     * @param  json the JSON to convert
      * @return      a Sleeper query
      */
     public Query fromJson(String json) {
@@ -110,10 +110,10 @@ public class QuerySerDe {
     }
 
     /**
-     * Convert a json string into a Sleeper query or leaf partition query.
+     * Convert a JSON string into a Sleeper query or leaf partition query.
      *
-     * @param  json the json to convert
-     * @return      a Sleeper query or leaft partition query
+     * @param  json the JSON to convert
+     * @return      a Sleeper query or leaf partition query
      */
     public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
@@ -121,7 +121,7 @@ public class QuerySerDe {
     }
 
     /**
-     * Interface to define a schema loader.
+     * Schema loader.
      */
     public interface SchemaLoader {
         /**
@@ -142,7 +142,7 @@ public class QuerySerDe {
     }
 
     /**
-     * Provide a mechanism to retrieve Sleeper table schemas from a table provider.
+     * Retrieves Sleeper table schemas from a table provider.
      */
     private static class SchemaLoaderFromTableProvider implements SchemaLoader {
 
@@ -173,7 +173,7 @@ public class QuerySerDe {
     }
 
     /**
-     * Provide a mechanism to retrieve a Sleeper table schema.
+     * Retrieves the Sleeper table schema.
      */
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;

@@ -63,7 +63,7 @@ public class LeafPartitionQueryExecutor {
      *
      * @param  leafPartitionQuery the Sleeper leaf partition query
      * @return                    the rows extracted by the query
-     * @throws QueryException     if an exception ccured retrieving the rows from the query
+     * @throws QueryException     if an exception occured retrieving the rows from the query
      */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);

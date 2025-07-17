@@ -27,7 +27,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * A Json definition of a Sleeper query.
+ * A JSON definition of a Sleeper query.
+ * This is used when serializing/deserializing query and sub-query objects
  */
 class QueryJson {
     private final String tableName;
