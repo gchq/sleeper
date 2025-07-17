@@ -61,11 +61,19 @@ public class QueryWebSocketMessage {
 
     public static QueryWebSocketMessage queryError(String queryId, String error, long rowCount, List<ResultsOutputLocation> locations) {
         return builder()
-                .message(QueryWebSocketMessageType.completed)
+                .message(QueryWebSocketMessageType.error)
                 .queryId(queryId)
                 .error(error)
                 .rowCount(rowCount)
                 .locations(locations)
+                .build();
+    }
+
+    public static QueryWebSocketMessage queryError(String queryId, String error) {
+        return builder()
+                .message(QueryWebSocketMessageType.error)
+                .queryId(queryId)
+                .error(error)
                 .build();
     }
 
@@ -97,8 +105,6 @@ public class QueryWebSocketMessage {
                 break;
             case error:
                 Objects.requireNonNull(error, "error must not be null");
-                Objects.requireNonNull(rowCount, "rowCount must not be null");
-                Objects.requireNonNull(locations, "locations must not be null");
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognised message type: " + message);

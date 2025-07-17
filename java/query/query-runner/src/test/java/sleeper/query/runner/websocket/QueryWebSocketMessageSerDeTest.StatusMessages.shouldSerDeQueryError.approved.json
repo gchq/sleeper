@@ -1,5 +1,5 @@
 {
-  "message": "completed",
+  "message": "error",
   "queryId": "test-query",
   "rowCount": 123,
   "locations": [

@@ -88,6 +88,21 @@ public class QueryWebSocketMessageSerDeTest {
             assertThat(found).isEqualTo(message);
             Approvals.verify(json, new Options().forFile().withExtension(".json"));
         }
+
+        @Test
+        void shouldSerDeQueryErrorNoOutput() {
+            // Given
+            QueryWebSocketMessage message = QueryWebSocketMessage.queryError(
+                    "test-query", "Something went wrong");
+
+            // When
+            String json = serDe.toJsonPrettyPrint(message);
+            QueryWebSocketMessage found = serDe.fromJson(json);
+
+            // Then
+            assertThat(found).isEqualTo(message);
+            Approvals.verify(json, new Options().forFile().withExtension(".json"));
+        }
     }
 
     @Nested
@@ -494,54 +509,6 @@ public class QueryWebSocketMessageSerDeTest {
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("error must not be null");
         }
-
-        @Test
-        void shouldFailValidationWhenRowCountIsMissingForFailedQuery() {
-            // Given
-            String json = """
-                    {
-                        "message": "error",
-                        "queryId": "test-query",
-                        "error": "Something went wrong",
-                        "locations": [
-                            {
-                            "type": "s3",
-                            "location": "s3a://test-bucket/test-file.parquet"
-                            }
-                        ]
-                    }
-                    """;
-
-            // When / Then
-            assertThatThrownBy(() -> serDe.fromJson(json))
-                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
-                            e -> assertThat(e.getJson()).isEqualTo(json))
-                    .cause()
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("rowCount must not be null");
-        }
-
-        @Test
-        void shouldFailValidationWhenLocationsAreMissingForFailedQuery() {
-            // Given
-            String json = """
-                    {
-                        "message": "error",
-                        "queryId": "test-query",
-                        "error": "Something went wrong",
-                        "rowCount": 123
-                    }
-                    """;
-
-            // When / Then
-            assertThatThrownBy(() -> serDe.fromJson(json))
-                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
-                            e -> assertThat(e.getJson()).isEqualTo(json))
-                    .cause()
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("locations must not be null");
-        }
-
     }
 
     private List<String> toJson(QueryWebSocketMessageSerDe serDe, String queryId, List<Row> rows) throws Exception {
