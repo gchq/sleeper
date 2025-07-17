@@ -17,6 +17,7 @@ package sleeper.clients.deploy.jar;
 
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.ClientJar;
 import sleeper.core.deploy.LambdaJar;
 
@@ -27,16 +28,21 @@ import static java.util.Objects.requireNonNull;
 public class PublishJarsToRepo {
     private final String repoUrl;
     private final String version;
+    private final CommandPipelineRunner commandRunner;
 
     private PublishJarsToRepo(Builder builder) {
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
+        this.commandRunner = requireNonNull(builder.commandRunner, "Command Runner must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
+    //TODO
+    //Add ArtifactId to LambdaJar and ClientJar
+    //Add Test containing 1 hard coded LJ and CJ mvn deploy
     public static void main(String[] args) throws Exception {
         builder()
                 .repoUrl(args[1])
@@ -46,22 +52,19 @@ public class PublishJarsToRepo {
     }
 
     public void upload() {
-        upload(CommandUtils::runCommandInheritIO);
-    }
-
-    public void upload(CommandPipelineRunner runCommand) {
         for (ClientJar clientJar : ClientJar.getAll()) {
-            deployJars(clientJar.getFilename(), clientJar.getImageName(), runCommand);
+            deployJars(clientJar.getFilename(), clientJar.getImageName());
         }
 
         for (LambdaJar lambdaJar : LambdaJar.getAll()) {
-            deployJars(lambdaJar.getFilenameFormat(), lambdaJar.getImageName(), runCommand);
+            deployJars(lambdaJar.getFilenameFormat(), lambdaJar.getImageName());
         }
     }
 
-    private void deployJars(String filename, String imageName, CommandPipelineRunner runCommand) {
+    //Requires matching server with auth details in local m2 settings.xml <servers>
+    private void deployJars(String filename, String imageName) {
         try {
-            runCommand.run("mvn", "deploy:deploy-file", "-q",
+            commandRunner.run("mvn", "deploy:deploy-file", "-q",
                     "-Durl=" + repoUrl,
                     "-DrepositoryId=repo.id", //Requires matching server with auth details in local m2 settings.xml <servers>
                     "-Dfile=../scripts/jars/" + String.format(filename, version),
@@ -76,7 +79,8 @@ public class PublishJarsToRepo {
 
     public static final class Builder {
         private String repoUrl;
-        private String version;
+        private String version = SleeperVersion.getVersion();
+        CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
 
         private Builder() {
         }
@@ -88,6 +92,11 @@ public class PublishJarsToRepo {
 
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder commandRunner(CommandPipelineRunner commandRunner) {
+            this.commandRunner = commandRunner;
             return this;
         }
 
