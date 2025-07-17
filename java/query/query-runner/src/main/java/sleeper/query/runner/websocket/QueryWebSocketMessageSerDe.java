@@ -98,7 +98,6 @@ public class QueryWebSocketMessageSerDe {
                     int rowJsonLength = rowJson.length() + 1; // +1 for comma that seperates rows
                     if (rowJsonLength >= remainingMessageLength) {
                         batchReady = true;
-                        remainingMessageLength = recordPayloadSize - baseMessageLength;
                     } else {
                         remainingMessageLength -= rowJsonLength;
                     }
@@ -108,6 +107,7 @@ public class QueryWebSocketMessageSerDe {
                     operation.accept(toJson(QueryWebSocketMessage.rowsBatch(queryId, batch)));
                     count += batch.size();
                     batch.clear();
+                    remainingMessageLength = recordPayloadSize - baseMessageLength;
                 }
             }
 

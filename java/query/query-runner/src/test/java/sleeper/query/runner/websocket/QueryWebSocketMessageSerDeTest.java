@@ -311,6 +311,33 @@ public class QueryWebSocketMessageSerDeTest {
                     QueryWebSocketMessage.rowsBatch("test-query", List.of(
                             new Row(Map.of("key", 50L)))));
         }
+
+        @Test
+        void shouldResetRemainingSizeBetweenBatchesWhenSizeIsMetByNumberOfRecords() throws Exception {
+            // Given
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 10L)),
+                    new Row(Map.of("key", 20L)),
+                    new Row(Map.of("key", 30L)),
+                    new Row(Map.of("key", 40L)),
+                    new Row(Map.of("key", 50L)));
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(2, 70, schema);
+
+            // When
+            List<String> json = toJson(serDe, "test-query", rows);
+            List<QueryWebSocketMessage> found = json.stream().map(serDe::fromJson).toList();
+
+            // Then
+            assertThat(found).containsExactly(
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(
+                            new Row(Map.of("key", 10L)),
+                            new Row(Map.of("key", 20L)))),
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(
+                            new Row(Map.of("key", 30L)),
+                            new Row(Map.of("key", 40L)))),
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(
+                            new Row(Map.of("key", 50L)))));
+        }
     }
 
     private List<String> toJson(QueryWebSocketMessageSerDe serDe, String queryId, List<Row> rows) throws Exception {
