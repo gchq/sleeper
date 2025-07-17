@@ -15,6 +15,7 @@
  */
 package sleeper.query.runner.websocket;
 
+import sleeper.core.row.Row;
 import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class QueryWebSocketMessage {
     private final QueryWebSocketMessageType message;
     private final String queryId;
     private final List<String> queryIds;
+    private final List<Row> rows;
     private final Long rowCount;
     private final List<ResultsOutputLocation> locations;
     private final String error;
@@ -33,6 +35,7 @@ public class QueryWebSocketMessage {
         message = builder.message;
         queryId = builder.queryId;
         queryIds = builder.queryIds;
+        rows = builder.rows;
         rowCount = builder.rowCount;
         locations = builder.locations;
         error = builder.error;
@@ -62,6 +65,14 @@ public class QueryWebSocketMessage {
                 .error(error)
                 .rowCount(rowCount)
                 .locations(locations)
+                .build();
+    }
+
+    public static QueryWebSocketMessage rowsBatch(String queryId, List<Row> rows) {
+        return builder()
+                .message(QueryWebSocketMessageType.rows)
+                .queryId(queryId)
+                .rows(rows)
                 .build();
     }
 
@@ -95,13 +106,13 @@ public class QueryWebSocketMessage {
 
     @Override
     public String toString() {
-        return "QueryWebSocketMessage{message=" + message + ", queryId=" + queryId + ", queryIds=" + queryIds + ", rowCount=" + rowCount + ", locations=" + locations + ", error="
+        return "QueryWebSocketMessage{message=" + message + ", queryId=" + queryId + ", queryIds=" + queryIds + ", rows=" + rows + ", rowCount=" + rowCount + ", locations=" + locations + ", error="
                 + error + "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(message, queryId, queryIds, rowCount, locations, error);
+        return Objects.hash(message, queryId, queryIds, rows, rowCount, locations, error);
     }
 
     @Override
@@ -113,14 +124,15 @@ public class QueryWebSocketMessage {
             return false;
         }
         QueryWebSocketMessage other = (QueryWebSocketMessage) obj;
-        return message == other.message && Objects.equals(queryId, other.queryId) && Objects.equals(queryIds, other.queryIds) && rowCount == other.rowCount
-                && Objects.equals(locations, other.locations) && Objects.equals(error, other.error);
+        return message == other.message && Objects.equals(queryId, other.queryId) && Objects.equals(queryIds, other.queryIds) && Objects.equals(rows, other.rows)
+                && Objects.equals(rowCount, other.rowCount) && Objects.equals(locations, other.locations) && Objects.equals(error, other.error);
     }
 
     public static class Builder {
         private QueryWebSocketMessageType message;
         private String queryId;
         private List<String> queryIds;
+        private List<Row> rows;
         private Long rowCount;
         private List<ResultsOutputLocation> locations;
         private String error;
@@ -140,6 +152,11 @@ public class QueryWebSocketMessage {
 
         public Builder queryIds(List<String> queryIds) {
             this.queryIds = queryIds;
+            return this;
+        }
+
+        public Builder rows(List<Row> rows) {
+            this.rows = rows;
             return this;
         }
 

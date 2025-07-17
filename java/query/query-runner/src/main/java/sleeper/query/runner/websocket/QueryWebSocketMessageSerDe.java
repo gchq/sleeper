@@ -19,6 +19,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.row.Row;
+import sleeper.core.row.serialiser.RowJsonSerDe.RowGsonSerialiser;
+import sleeper.core.schema.Schema;
 
 import java.util.Iterator;
 import java.util.stream.Stream;
@@ -26,15 +28,26 @@ import java.util.stream.Stream;
 public class QueryWebSocketMessageSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
+    private final Schema schema;
+    private final long recordBatchSize;
+    private final long recordPayloadSize;
 
-    public QueryWebSocketMessageSerDe() {
-        GsonBuilder builder = new GsonBuilder();
+    private QueryWebSocketMessageSerDe(Schema schema, long recordBatchSize, long recordPayloadSize) {
+        GsonBuilder builder = new GsonBuilder()
+                .registerTypeAdapter(Row.class, new RowGsonSerialiser(schema));
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
+        this.schema = schema;
+        this.recordBatchSize = recordBatchSize;
+        this.recordPayloadSize = recordPayloadSize;
     }
 
     public static QueryWebSocketMessageSerDe forStatusMessages() {
-        return new QueryWebSocketMessageSerDe();
+        return new QueryWebSocketMessageSerDe(null, 0, 0);
+    }
+
+    public static QueryWebSocketMessageSerDe forBatchSizeAndPayloadSize(long batchSize, long payloadSize, Schema schema) {
+        return new QueryWebSocketMessageSerDe(schema, batchSize, payloadSize);
     }
 
     public String toJson(QueryWebSocketMessage message) {
@@ -45,7 +58,7 @@ public class QueryWebSocketMessageSerDe {
         return gsonPrettyPrinting.toJson(message);
     }
 
-    public Stream<String> streamRowMessages(String queryId, Iterator<Row> rows) {
+    public Stream<String> streamRowBatchesJson(String queryId, Iterator<Row> rows) {
         return Stream.empty();
     }
 

@@ -17,15 +17,21 @@ package sleeper.query.runner.websocket;
 
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.row.Row;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryWebSocketMessageSerDeTest {
 
@@ -78,6 +84,71 @@ public class QueryWebSocketMessageSerDeTest {
             // Then
             assertThat(found).isEqualTo(message);
             Approvals.verify(json, new Options().forFile().withExtension(".json"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Row batch messages")
+    class Rows {
+
+        @Test
+        @Disabled("TODO")
+        void shouldSerDeRows() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 123L)),
+                    new Row(Map.of("key", 12345L)));
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(3, 100, schema);
+
+            // When
+            List<String> json = serDe.streamRowBatchesJson("test-query", rows.iterator()).toList();
+            List<QueryWebSocketMessage> found = json.stream().map(serDe::fromJson).toList();
+
+            // Then
+            assertThat(found).containsExactly(
+                    QueryWebSocketMessage.rowsBatch("test-query", rows));
+            Approvals.verify(json);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldSerDeTwoBatchesByBatchSize() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 123L)),
+                    new Row(Map.of("key", 12345L)));
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(1, 100, schema);
+
+            // When
+            List<String> json = serDe.streamRowBatchesJson("test-query", rows.iterator()).toList();
+            List<QueryWebSocketMessage> found = json.stream().map(serDe::fromJson).toList();
+
+            // Then
+            assertThat(found).containsExactly(
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(new Row(Map.of("key", 123L)))),
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(new Row(Map.of("key", 12345L)))));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldSerDeTwoBatchesByPayloadSize() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 123L)),
+                    new Row(Map.of("key", 12345L)));
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(3, 10, schema);
+
+            // When
+            List<String> json = serDe.streamRowBatchesJson("test-query", rows.iterator()).toList();
+            List<QueryWebSocketMessage> found = json.stream().map(serDe::fromJson).toList();
+
+            // Then
+            assertThat(found).containsExactly(
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(new Row(Map.of("key", 123L)))),
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(new Row(Map.of("key", 12345L)))));
         }
     }
 
