@@ -246,11 +246,11 @@ public class QueryWebSocketMessageSerDeTest {
         Schema schema = createSchemaWithKey("key", new LongType());
 
         private QueryWebSocketMessageSerDe serDeForPayloadSize(int payloadSize) {
-            return QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(null, 60, schema);
+            return QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(null, payloadSize, schema);
         }
 
         @Test
-        void shouldSerDeTwoBatchesByPayloadSize() throws Exception {
+        void shouldSerDeTwoBatches() throws Exception {
             // Given
             List<Row> rows = List.of(
                     new Row(Map.of("key", 123L)),
@@ -285,6 +285,32 @@ public class QueryWebSocketMessageSerDeTest {
                     QueryWebSocketMessage.rowsBatch("test-query", List.of(new Row(Map.of("key", 12345L)))));
         }
 
+        @Test
+        void shouldResetRemainingSizeBetweenBatches() throws Exception {
+            // Given
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 10L)),
+                    new Row(Map.of("key", 20L)),
+                    new Row(Map.of("key", 30L)),
+                    new Row(Map.of("key", 40L)),
+                    new Row(Map.of("key", 50L)));
+            QueryWebSocketMessageSerDe serDe = serDeForPayloadSize(70);
+
+            // When
+            List<String> json = toJson(serDe, "test-query", rows);
+            List<QueryWebSocketMessage> found = json.stream().map(serDe::fromJson).toList();
+
+            // Then
+            assertThat(found).containsExactly(
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(
+                            new Row(Map.of("key", 10L)),
+                            new Row(Map.of("key", 20L)))),
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(
+                            new Row(Map.of("key", 30L)),
+                            new Row(Map.of("key", 40L)))),
+                    QueryWebSocketMessage.rowsBatch("test-query", List.of(
+                            new Row(Map.of("key", 50L)))));
+        }
     }
 
     private List<String> toJson(QueryWebSocketMessageSerDe serDe, String queryId, List<Row> rows) throws Exception {
