@@ -104,7 +104,7 @@ public class QueryWebSocketMessageSerDe {
                 }
 
                 if (batchReady) {
-                    operation.accept(toJson(QueryWebSocketMessage.rowsBatch(queryId, batch)));
+                    publishBatch(queryId, batch, operation);
                     count += batch.size();
                     batch.clear();
                     remainingMessageLength = rowsPayloadSize - baseMessageLength;
@@ -112,7 +112,7 @@ public class QueryWebSocketMessageSerDe {
             }
 
             if (!batch.isEmpty()) {
-                operation.accept(toJson(QueryWebSocketMessage.rowsBatch(queryId, batch)));
+                publishBatch(queryId, batch, operation);
                 count += batch.size();
                 batch.clear();
             }
@@ -120,6 +120,11 @@ public class QueryWebSocketMessageSerDe {
             throw new QueryWebSocketRowsException(e, count);
         }
         return count;
+    }
+
+    private void publishBatch(String queryId, List<Row> rows, Consumer<String> operation) {
+        LOGGER.info("Publishing batch of {} rows to WebSocket connection", rows.size());
+        operation.accept(toJson(QueryWebSocketMessage.rowsBatch(queryId, rows)));
     }
 
     public QueryWebSocketMessage fromJson(String json) {
