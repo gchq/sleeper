@@ -15,17 +15,17 @@
  */
 package sleeper.query.runner.websocket;
 
-public class QueryRowBatchException extends Exception {
+public class QueryWebSocketException extends Exception {
 
-    private final long recordsRead;
+    private final long recordsSent;
 
-    public QueryRowBatchException(Exception cause, long recordsRead) {
+    public QueryWebSocketException(Exception cause, long recordsSent) {
         super(cause);
-        this.recordsRead = recordsRead;
+        this.recordsSent = recordsSent;
     }
 
-    public long getRecordsRead() {
-        return recordsRead;
+    public long getRecordsSent() {
+        return recordsSent;
     }
 
 }

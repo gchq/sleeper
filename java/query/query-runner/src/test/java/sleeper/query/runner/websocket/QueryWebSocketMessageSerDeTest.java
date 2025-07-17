@@ -29,8 +29,11 @@ import sleeper.query.core.output.ResultsOutputLocation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryWebSocketMessageSerDeTest {
@@ -188,6 +191,50 @@ public class QueryWebSocketMessageSerDeTest {
                             new Row(Map.of("key", 20L)))),
                     QueryWebSocketMessage.rowsBatch("test-query", List.of(
                             new Row(Map.of("key", 30L)))));
+        }
+
+        @Test
+        void shouldCountRowsSent() throws Exception {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 10L)),
+                    new Row(Map.of("key", 20L)),
+                    new Row(Map.of("key", 30L)),
+                    new Row(Map.of("key", 40L)),
+                    new Row(Map.of("key", 50L)));
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(3, 1000, schema);
+
+            // When
+            long count = serDe.forEachRowBatchJson("test-query", rows.iterator(), json -> {
+            });
+
+            // Then
+            assertThat(count).isEqualTo(5L);
+        }
+
+        @Test
+        void shouldCountRowsSentWhenSendingFails() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", 10L)),
+                    new Row(Map.of("key", 20L)),
+                    new Row(Map.of("key", 30L)));
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(1, 1000, schema);
+            RuntimeException failure = new RuntimeException("Unexpected failure");
+            AtomicInteger numBatches = new AtomicInteger(0);
+            Consumer<String> handler = json -> {
+                if (numBatches.incrementAndGet() == 3) {
+                    throw failure;
+                }
+            };
+
+            // When
+            assertThatThrownBy(() -> serDe.forEachRowBatchJson("test-query", rows.iterator(), handler))
+                    .isInstanceOfSatisfying(QueryWebSocketException.class,
+                            e -> assertThat(e.getRecordsSent()).isEqualTo(2L))
+                    .hasCause(failure);
         }
 
         private List<String> toJson(QueryWebSocketMessageSerDe serDe, String queryId, List<Row> rows) throws Exception {
