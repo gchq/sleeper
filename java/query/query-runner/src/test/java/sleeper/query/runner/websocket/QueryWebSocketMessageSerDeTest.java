@@ -142,7 +142,7 @@ public class QueryWebSocketMessageSerDeTest {
 
             // When
             assertThatThrownBy(() -> serDe.forEachRowBatchJson("test-query", rows.iterator(), handler))
-                    .isInstanceOfSatisfying(QueryWebSocketException.class,
+                    .isInstanceOfSatisfying(QueryWebSocketRowsException.class,
                             e -> assertThat(e.getRecordsSent()).isEqualTo(0L))
                     .hasCause(failure);
         }
@@ -234,7 +234,7 @@ public class QueryWebSocketMessageSerDeTest {
 
             // When
             assertThatThrownBy(() -> serDe.forEachRowBatchJson("test-query", rows.iterator(), handler))
-                    .isInstanceOfSatisfying(QueryWebSocketException.class,
+                    .isInstanceOfSatisfying(QueryWebSocketRowsException.class,
                             e -> assertThat(e.getRecordsSent()).isEqualTo(2L))
                     .hasCause(failure);
         }

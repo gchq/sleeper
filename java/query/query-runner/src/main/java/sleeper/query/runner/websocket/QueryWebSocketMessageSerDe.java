@@ -78,7 +78,7 @@ public class QueryWebSocketMessageSerDe {
         return gsonPrettyPrinting.toJson(message);
     }
 
-    public long forEachRowBatchJson(String queryId, Iterator<Row> results, Consumer<String> operation) throws QueryWebSocketException {
+    public long forEachRowBatchJson(String queryId, Iterator<Row> results, Consumer<String> operation) throws QueryWebSocketRowsException {
         int baseMessageLength = toJson(QueryWebSocketMessage.rowsBatch(queryId, List.of())).length();
 
         List<Row> batch = new ArrayList<>();
@@ -117,7 +117,7 @@ public class QueryWebSocketMessageSerDe {
                 batch.clear();
             }
         } catch (Exception e) {
-            throw new QueryWebSocketException(e, count);
+            throw new QueryWebSocketRowsException(e, count);
         }
         return count;
     }
