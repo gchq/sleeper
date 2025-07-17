@@ -106,10 +106,10 @@ public class LeafPartitionQuery {
     }
 
     /**
-     * With requested fields.
+     * Creates a copy of this query that will include the values of the given fields in the result.
      *
-     * @param  requestedValueFields A list of requested fields
-     * @return                      leafPartitionQuery
+     * @param  requestedValueFields a list of requested fields
+     * @return                      the copy of the original query
      */
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
@@ -193,9 +193,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the table Id.
+         * Provide the table ID.
          *
-         * @param  tableId the table Id
+         * @param  tableId the table ID
          * @return         the builder
          */
         public Builder tableId(String tableId) {
@@ -204,9 +204,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the query Id.
+         * Provide the query ID.
          *
-         * @param  queryId the query Id
+         * @param  queryId the query ID
          * @return         the builder
          */
         public Builder queryId(String queryId) {
@@ -215,9 +215,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the sub query Id.
+         * Provide the sub query ID.
          *
-         * @param  subQueryId the sub query Id
+         * @param  subQueryId the sub query ID
          * @return            the builder
          */
         public Builder subQueryId(String subQueryId) {
@@ -226,9 +226,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the table regions.
+         * Provide the row key range regions.
          *
-         * @param  regions the table regions
+         * @param  regions the row key range regions
          * @return         the builder
          */
         public Builder regions(List<Region> regions) {
@@ -248,9 +248,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the leaf partition Id.
+         * Provide the leaf partition ID.
          *
-         * @param  leafPartitionId the leaft partition Id
+         * @param  leafPartitionId the leaf partition ID
          * @return                 the builder
          */
         public Builder leafPartitionId(String leafPartitionId) {
