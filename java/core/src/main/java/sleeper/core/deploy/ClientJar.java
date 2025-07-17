@@ -15,12 +15,9 @@
  */
 package sleeper.core.deploy;
 
-import sleeper.core.SleeperVersion;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Definitions of jar files used to deploy client functions.
@@ -29,45 +26,72 @@ public class ClientJar {
 
     private static final List<ClientJar> ALL = new ArrayList<>();
 
-    public static final ClientJar BULK_IMPORT_RUNNER = withFormatAndImage("bulk-import-runner-%s.jar", "bulk-import-runner");
-    public static final ClientJar CDK = withFormatAndImage("cdk-%s.jar", "cdk");
-    public static final ClientJar CLIENTS_UTILITY = withFormatAndImage("clients-%s-utility.jar", "clients-utility");
+    public static final ClientJar BULK_IMPORT_RUNNER = new Builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").build();
+    public static final ClientJar CDK = new Builder().filenameFormat("cdk-%s.jar").artifactId("cdk").build();
+    public static final ClientJar CLIENTS_UTILITY = new Builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").build();
 
-    private final String filename;
-    private final String imageName;
+    private final String filenameFormat;
+    private final String artifactId;
 
-    private ClientJar(String filename, String version, String imageName) {
-        this.filename = Objects.requireNonNull(filename, "filename must not be null");
-        this.imageName = Objects.requireNonNull(imageName, "imageName must not be null");
+    public ClientJar(Builder builder) {
+        this.filenameFormat = builder.filenameFormat;
+        this.artifactId = builder.artifactId;
     }
 
-    /**
-     * Creates a jar definition with a filename computed by adding the Sleeper version to the given format string.
-     *
-     * @param  format    the format string
-     * @param  imageName the name of the Docker image built from this jar
-     * @return           the jar definition
-     */
-    public static ClientJar withFormatAndImage(String format, String imageName) {
-        ClientJar jar = new ClientJar(format, SleeperVersion.getVersion(), imageName);
-        ALL.add(jar);
-        return jar;
+    public String getFilenameFormat() {
+        return filenameFormat;
     }
 
-    public String getFilename() {
-        return filename;
-    }
-
-    public String getImageName() {
-        return imageName;
+    public String getArtifactId() {
+        return artifactId;
     }
 
     @Override
     public String toString() {
-        return "ClientJar{filename=" + filename + ", imageName=" + imageName + "}";
+        return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactId + "}";
     }
 
     public static List<ClientJar> getAll() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    /**
+     * Builder for the ClientJar class.
+     */
+    public static class Builder {
+        String filenameFormat;
+        String artifactId;
+
+        public Builder() {
+
+        }
+
+        /**
+         * The filenameFormat with space for version.
+         *
+         * @param  filenameFormat String for filename with space for version to be added
+         * @return                Builder
+         */
+        public Builder filenameFormat(String filenameFormat) {
+            this.filenameFormat = filenameFormat;
+            return this;
+        }
+
+        /**
+         * The artifactId for the Jar.
+         *
+         * @param  artifactId String artifactId
+         * @return            Builder.
+         */
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
+        public ClientJar build() {
+            ClientJar clientJar = new ClientJar(this);
+            ALL.add(clientJar);
+            return clientJar;
+        }
     }
 }

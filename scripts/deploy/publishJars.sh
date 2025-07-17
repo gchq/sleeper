@@ -20,6 +20,7 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
   echo "Usage: $1 <repository url>"
   exit 1
 fi
+echo "Ensure you've ran the syncJars.sh script before running this or it will fail to find the jars."
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")

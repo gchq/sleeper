@@ -42,13 +42,17 @@ public class RemoveECRRepositoriesTest {
                     .optionalStack(OptionalStack.CompactionStack)
                     .multiplatform(true)
                     .build());
-    private static final LambdaJar STATESTORE_JAR = LambdaJar.withFormatAndImage("statestore.jar", "statestore-lambda");
+    private static final LambdaJar STATESTORE_JAR = new LambdaJar.Builder()
+            .filenameFormat("statestore.jar")
+            .imageName("statestore-lambda").build();
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
             LambdaHandler.builder().jar(STATESTORE_JAR)
                     .handler("StateStoreCommitterLambda").core().build(),
             LambdaHandler.builder().jar(STATESTORE_JAR)
                     .handler("SnapshotCreationLambda").core().build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("ingest.jar", "ingest-task-creator-lambda"))
+            LambdaHandler.builder().jar(new LambdaJar.Builder()
+                    .filenameFormat("ingest.jar")
+                    .imageName("ingest-task-creator-lambda").build())
                     .handler("IngestTaskCreatorLambda")
                     .optionalStack(OptionalStack.IngestStack).build());
 
