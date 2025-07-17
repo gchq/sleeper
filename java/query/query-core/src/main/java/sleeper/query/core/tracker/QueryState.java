@@ -34,7 +34,7 @@ public enum QueryState {
     /**
      * Return the state of the parent query if it has finished.
      *
-     * @param  queryId  the query Id
+     * @param  queryId  the query ID
      * @param  children the child queries
      * @return          the state of the query
      */

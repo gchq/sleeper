@@ -124,9 +124,9 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the query Id.
+         * Provide the query ID.
          *
-         * @param  queryId the query Id
+         * @param  queryId the query ID
          * @return         the builder
          */
         public Builder queryId(String queryId) {
@@ -135,9 +135,9 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the sub query Id.
+         * Provide the sub query ID.
          *
-         * @param  subQueryId the sub query Id
+         * @param  subQueryId the sub query ID
          * @return            the builder
          */
         public Builder subQueryId(String subQueryId) {

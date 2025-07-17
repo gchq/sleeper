@@ -24,10 +24,7 @@ import sleeper.query.core.tracker.QueryStatusReportListener;
 import java.util.Objects;
 
 /**
- * A query or a leaf partition qeury.
- * The query contains information about
- * which tables the query is run over and whether the query report has beem
- * completed successfully or not.
+ * Deserializes a query or sub-query from JSON.
  */
 public class QueryOrLeafPartitionQuery {
 
@@ -49,7 +46,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Generate a parent query.
+     * Return a Sleeper query.
      *
      * @return a Sleeper query
      */
@@ -58,7 +55,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Generate a leaf query.
+     * Return a sub query.
      *
      * @return a leaf partition query
      */
@@ -67,9 +64,9 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Test if the query status report has completed.
+     * If the query has completed this method is called to publish the completed status.
      *
-     * @param listener   listener to check the status of a query
+     * @param listener   listener to publish status of the query to
      * @param outputInfo information about the query results
      */
     public void reportCompleted(QueryStatusReportListener listener, ResultsOutputInfo outputInfo) {
@@ -81,9 +78,9 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Test if the query status report has failed.
+     * If the query has failed this method is called to publish the failed status.
      *
-     * @param listener listener to check the status of a query
+     * @param listener listener to publish the status of the query to
      * @param e        exception raised during query processing
      */
     public void reportFailed(QueryStatusReportListener listener, Exception e) {
@@ -95,9 +92,9 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Return the Id of the query.
+     * Return the Id of the query. A sub query will return the ID of the parent query.
      *
-     * @return the query Id
+     * @return the query ID
      */
     public String getQueryId() {
         if (leafQuery != null) {
@@ -110,7 +107,7 @@ public class QueryOrLeafPartitionQuery {
     /**
      * Return the table properties.
      *
-     * @param  provider cache of sleeper table properties
+     * @param  provider cache of Sleeper table properties
      * @return          the table properties
      */
     public TableProperties getTableProperties(TablePropertiesProvider provider) {

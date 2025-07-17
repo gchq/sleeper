@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A Sleeper query definition that defines the sleeper table, the region of the table to query and a unique query Id.
+ * A request for records with row keys that fall within one of a list of regions.
  */
 public class Query {
     private final String tableName;
@@ -86,10 +86,10 @@ public class Query {
     }
 
     /**
-     * Build a query setting the QueryProcessingConfig to use value fields.
+     * Creates a copy of this query that will include the values of the given fields in the result.
      *
      * @param  requestedValueFields value fields to apply to the QueryProcessingConfig
-     * @return                      a sleeper query
+     * @return                      the copy
      */
     public Query withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
@@ -98,10 +98,10 @@ public class Query {
     }
 
     /**
-     * Build a query setting the QueryProcessingConfig to use publisher configs.
+     * Creates a copy of this query that includes the given configuration for publishing results.
      *
      * @param  resultsPublisherConfig publisher configs to apply to the QueryProcessingConfig
-     * @return                        a sleeper query
+     * @return                        the copy
      */
     public Query withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
@@ -110,10 +110,10 @@ public class Query {
     }
 
     /**
-     * Build a query setting the QueryProcessingConfig to use a status report destination.
+     * Creates a copy of this query that includes the given configuration for publishing status reports.
      *
-     * @param  statusReportDestination status report destination to apply to the QueryProcessingConfig.
-     * @return                         a sleeper query
+     * @param  statusReportDestination status report destination to apply to the QueryProcessingConfig
+     * @return                         the copy
      */
     public Query withStatusReportDestination(Map<String, String> statusReportDestination) {
         return toBuilder()
@@ -183,7 +183,7 @@ public class Query {
         /**
          * Provide the query ID.
          *
-         * @param  queryId the id of the query
+         * @param  queryId the ID of the query
          * @return         the builder
          */
         public Builder queryId(String queryId) {
@@ -203,7 +203,7 @@ public class Query {
         }
 
         /**
-         * Provide the processingConfig.
+         * Provides how records should be processed during a query.
          *
          * @param  processingConfig how records should be processed during a query
          * @return                  the builder
