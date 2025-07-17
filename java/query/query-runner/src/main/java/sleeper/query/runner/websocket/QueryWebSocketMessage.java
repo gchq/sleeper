@@ -20,7 +20,7 @@ import sleeper.query.core.output.ResultsOutputLocation;
 import java.util.List;
 import java.util.Objects;
 
-public class QueryWebSocketStatusMessage {
+public class QueryWebSocketMessage {
 
     private final QueryWebSocketMessageType message;
     private final String queryId;
@@ -29,7 +29,7 @@ public class QueryWebSocketStatusMessage {
     private final List<ResultsOutputLocation> locations;
     private final String error;
 
-    private QueryWebSocketStatusMessage(Builder builder) {
+    private QueryWebSocketMessage(Builder builder) {
         message = builder.message;
         queryId = builder.queryId;
         queryIds = builder.queryIds;
@@ -38,7 +38,7 @@ public class QueryWebSocketStatusMessage {
         error = builder.error;
     }
 
-    public static QueryWebSocketStatusMessage queryWasSplitToSubqueries(String queryId, List<String> subQueryIds) {
+    public static QueryWebSocketMessage queryWasSplitToSubqueries(String queryId, List<String> subQueryIds) {
         return builder()
                 .message(QueryWebSocketMessageType.subqueries)
                 .queryId(queryId)
@@ -46,7 +46,7 @@ public class QueryWebSocketStatusMessage {
                 .build();
     }
 
-    public static QueryWebSocketStatusMessage queryCompleted(String queryId, long rowCount, List<ResultsOutputLocation> locations) {
+    public static QueryWebSocketMessage queryCompleted(String queryId, long rowCount, List<ResultsOutputLocation> locations) {
         return builder()
                 .message(QueryWebSocketMessageType.completed)
                 .queryId(queryId)
@@ -55,7 +55,7 @@ public class QueryWebSocketStatusMessage {
                 .build();
     }
 
-    public static QueryWebSocketStatusMessage queryError(String queryId, String error, long rowCount, List<ResultsOutputLocation> locations) {
+    public static QueryWebSocketMessage queryError(String queryId, String error, long rowCount, List<ResultsOutputLocation> locations) {
         return builder()
                 .message(QueryWebSocketMessageType.completed)
                 .queryId(queryId)
@@ -109,10 +109,10 @@ public class QueryWebSocketStatusMessage {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof QueryWebSocketStatusMessage)) {
+        if (!(obj instanceof QueryWebSocketMessage)) {
             return false;
         }
-        QueryWebSocketStatusMessage other = (QueryWebSocketStatusMessage) obj;
+        QueryWebSocketMessage other = (QueryWebSocketMessage) obj;
         return message == other.message && Objects.equals(queryId, other.queryId) && Objects.equals(queryIds, other.queryIds) && rowCount == other.rowCount
                 && Objects.equals(locations, other.locations) && Objects.equals(error, other.error);
     }
@@ -158,8 +158,8 @@ public class QueryWebSocketStatusMessage {
             return this;
         }
 
-        public QueryWebSocketStatusMessage build() {
-            return new QueryWebSocketStatusMessage(this);
+        public QueryWebSocketMessage build() {
+            return new QueryWebSocketMessage(this);
         }
     }
 

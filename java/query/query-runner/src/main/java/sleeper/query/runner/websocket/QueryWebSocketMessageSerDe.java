@@ -23,21 +23,25 @@ import sleeper.core.row.Row;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
-public class QueryWebSocketStatusMessageSerDe {
+public class QueryWebSocketMessageSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
-    public QueryWebSocketStatusMessageSerDe() {
+    public QueryWebSocketMessageSerDe() {
         GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(QueryWebSocketStatusMessage message) {
+    public static QueryWebSocketMessageSerDe forStatusMessages() {
+        return new QueryWebSocketMessageSerDe();
+    }
+
+    public String toJson(QueryWebSocketMessage message) {
         return gson.toJson(message);
     }
 
-    public String toJsonPrettyPrint(QueryWebSocketStatusMessage message) {
+    public String toJsonPrettyPrint(QueryWebSocketMessage message) {
         return gsonPrettyPrinting.toJson(message);
     }
 
@@ -45,8 +49,8 @@ public class QueryWebSocketStatusMessageSerDe {
         return Stream.empty();
     }
 
-    public QueryWebSocketStatusMessage fromJson(String json) {
-        return gson.fromJson(json, QueryWebSocketStatusMessage.class);
+    public QueryWebSocketMessage fromJson(String json) {
+        return gson.fromJson(json, QueryWebSocketMessage.class);
     }
 
 }
