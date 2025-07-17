@@ -15,29 +15,23 @@
  */
 package sleeper.clients.deploy.container;
 
-import org.junit.jupiter.api.BeforeEach;
-
-import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public abstract class UploadDockerImagesTestBase {
+public class DockerImagesTestBase {
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
             DockerDeployment.builder()
                     .deploymentName("ingest")
@@ -69,44 +63,24 @@ public abstract class UploadDockerImagesTestBase {
             LambdaHandler.builder().jar(LambdaJar.withFormatAndImageDeployWithDocker("athena.jar", "athena-lambda"))
                     .handler("AthenaLambda")
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
-    protected final InMemoryEcrRepositories ecrClient = new InMemoryEcrRepositories();
-    protected final InstanceProperties properties = createTestInstanceProperties();
 
-    @BeforeEach
-    void setUpBase() {
-        properties.set(ID, "test-instance");
-        properties.set(ACCOUNT, "123");
-        properties.set(REGION, "test-region");
-        properties.set(VERSION, "1.0.0");
+    protected final List<CommandPipeline> commandsThatRan = new ArrayList<>();
+    protected CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+
+    protected void setReturnExitCodeForAllCommands(int exitCode) {
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCode(exitCode));
     }
 
-    protected RunCommandTestHelper.PipelineInvoker uploadEcs(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, ecsImageConfig()));
+    protected void setReturnExitCodeForCommand(int exitCode, CommandPipeline command) {
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommand(exitCode, command));
     }
 
-    protected RunCommandTestHelper.PipelineInvoker uploadLambdas(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, UploadDockerImagesRequest.forNewDeployment(properties, lambdaImageConfig()));
-    }
-
-    protected RunCommandTestHelper.PipelineInvoker uploadLambdasForUpdate(InstanceProperties before, InstanceProperties after) {
-        return runCommand -> uploader().upload(runCommand,
-                UploadDockerImagesRequest.forUpdateIfNeeded(after, new PropertiesDiff(before, after), lambdaImageConfig()).orElseThrow());
-    }
-
-    protected DockerImageConfiguration ecsImageConfig() {
+    protected DockerImageConfiguration dockerDeploymentImageConfig() {
         return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {
         return new DockerImageConfiguration(List.of(), LAMBDA_HANDLERS);
-    }
-
-    protected abstract UploadDockerImages uploader();
-
-    protected CommandPipeline loginDockerCommand() {
-        return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
-                command("docker", "login", "--username", "AWS", "--password-stdin",
-                        "123.dkr.ecr.test-region.amazonaws.com"));
     }
 
     protected CommandPipeline buildImageCommand(String tag, String dockerDirectory) {
@@ -131,19 +105,9 @@ public abstract class UploadDockerImagesTestBase {
         return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
     }
 
-    protected CommandPipeline buildAndPushImageWithBuildxCommand(String tag, String dockerDirectory) {
+    protected CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }
 
-    protected List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
-        List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(loginDockerCommand());
-        for (String image : images) {
-            String tag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/" + image + ":1.0.0";
-            commands.add(buildImageCommand(tag, "./docker/" + image));
-            commands.add(pushImageCommand(tag));
-        }
-        return commands;
-    }
 }

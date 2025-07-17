@@ -25,7 +25,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImagesRequest;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
+import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -114,17 +115,19 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
         }
-        UploadDockerImages.builder()
-                .baseDockerDirectory(parameters.getDockerDirectory())
-                .jarsDirectory(parameters.getJarsDirectory())
-                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(CommandUtils::runCommandLogOutput,
-                        UploadDockerImagesRequest.builder()
-                                .ecrPrefix(parameters.getSystemTestShortId())
-                                .account(parameters.getAccount())
-                                .region(parameters.getRegion())
-                                .version(SleeperVersion.getVersion())
-                                .images(List.of(SYSTEM_TEST_IMAGE))
-                                .build());
+        UploadDockerImagesToEcr dockerUploader = new UploadDockerImagesToEcr(
+                UploadDockerImages.builder()
+                        .baseDockerDirectory(parameters.getDockerDirectory())
+                        .jarsDirectory(parameters.getJarsDirectory())
+                        .commandRunner(CommandUtils::runCommandLogOutput)
+                        .build(),
+                EcrRepositoryCreator.withEcrClient(ecr));
+        dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
+                .ecrPrefix(parameters.getSystemTestShortId())
+                .account(parameters.getAccount())
+                .region(parameters.getRegion())
+                .version(SleeperVersion.getVersion())
+                .images(List.of(SYSTEM_TEST_IMAGE))
+                .build());
     }
 }

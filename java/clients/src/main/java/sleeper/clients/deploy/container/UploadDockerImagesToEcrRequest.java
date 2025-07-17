@@ -30,38 +30,34 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
-public class UploadDockerImagesRequest {
+public class UploadDockerImagesToEcrRequest {
     private final String ecrPrefix;
     private final String account;
     private final String region;
-    private final String version;
     private final List<StackDockerImage> images;
+    private final String repositoryHost;
 
-    private UploadDockerImagesRequest(Builder builder) {
+    private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
-        version = requireNonNull(builder.version, "version must not be null");
         images = requireNonNull(builder.images, "images must not be null");
+        repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static UploadDockerImagesRequest forNewDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
+    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties, DockerImageConfiguration configuration) {
         return builder().properties(properties).images(configuration.getImagesToUpload(properties)).build();
     }
 
-    public static UploadDockerImagesRequest forNewDeployment(InstanceProperties properties, String version) {
-        return builder().properties(properties).version(version).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
+    public static UploadDockerImagesToEcrRequest forDeployment(InstanceProperties properties) {
+        return forDeployment(properties, DockerImageConfiguration.getDefault());
     }
 
-    public static UploadDockerImagesRequest forExistingInstance(InstanceProperties properties) {
-        return builder().properties(properties).images(DockerImageConfiguration.getDefault().getImagesToUpload(properties)).build();
-    }
-
-    public static Optional<UploadDockerImagesRequest> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
+    public static Optional<UploadDockerImagesToEcrRequest> forUpdateIfNeeded(InstanceProperties properties, PropertiesDiff diff, DockerImageConfiguration configuration) {
         List<StackDockerImage> images = configuration.getImagesToUploadOnUpdate(properties, diff);
         if (images.isEmpty()) {
             return Optional.empty();
@@ -71,10 +67,10 @@ public class UploadDockerImagesRequest {
     }
 
     public Builder toBuilder() {
-        return builder().ecrPrefix(ecrPrefix).account(account).region(region).version(version).images(images);
+        return builder().ecrPrefix(ecrPrefix).account(account).region(region).images(images);
     }
 
-    public UploadDockerImagesRequest withExtraImages(List<StackDockerImage> extraImages) {
+    public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
         List<StackDockerImage> newImages = new ArrayList<>(images.size() + extraImages.size());
         newImages.addAll(images);
         newImages.addAll(extraImages);
@@ -93,51 +89,40 @@ public class UploadDockerImagesRequest {
         return region;
     }
 
-    public String getVersion() {
-        return version;
-    }
-
     public List<StackDockerImage> getImages() {
         return images;
     }
 
+    public String getRepositoryHost() {
+        return repositoryHost;
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof UploadDockerImagesToEcrRequest)) {
             return false;
         }
-        UploadDockerImagesRequest that = (UploadDockerImagesRequest) o;
-        return Objects.equals(ecrPrefix, that.ecrPrefix)
-                && Objects.equals(account, that.account)
-                && Objects.equals(region, that.region)
-                && Objects.equals(version, that.version)
-                && Objects.equals(images, that.images);
+        UploadDockerImagesToEcrRequest other = (UploadDockerImagesToEcrRequest) obj;
+        return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(account, other.account) && Objects.equals(region, other.region) && Objects.equals(images, other.images);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ecrPrefix, account, region, version, images);
+        return Objects.hash(ecrPrefix, account, region, images);
     }
 
     @Override
     public String toString() {
-        return "StacksForDockerUpload{" +
-                "ecrPrefix='" + ecrPrefix + '\'' +
-                ", account='" + account + '\'' +
-                ", region='" + region + '\'' +
-                ", version='" + version + '\'' +
-                ", images=" + images +
-                '}';
+        return "UploadDockerImagesToEcrRequest{ecrPrefix=" + ecrPrefix + ", account=" + account + ", region=" + region + ", images=" + images + "}";
     }
 
     public static final class Builder {
         private String ecrPrefix;
         private String account;
         private String region;
-        private String version;
         private List<StackDockerImage> images;
 
         private Builder() {
@@ -166,7 +151,6 @@ public class UploadDockerImagesRequest {
         }
 
         public Builder version(String version) {
-            this.version = version;
             return this;
         }
 
@@ -175,8 +159,8 @@ public class UploadDockerImagesRequest {
             return this;
         }
 
-        public UploadDockerImagesRequest build() {
-            return new UploadDockerImagesRequest(this);
+        public UploadDockerImagesToEcrRequest build() {
+            return new UploadDockerImagesToEcrRequest(this);
         }
     }
 }
