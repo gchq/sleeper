@@ -15,6 +15,8 @@
  */
 package sleeper.query.runner.websocket;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class QueryWebSocketRowsException extends Exception {
 
     private final long recordsSent;
@@ -26,6 +28,12 @@ public class QueryWebSocketRowsException extends Exception {
 
     public long getRecordsSent() {
         return recordsSent;
+    }
+
+    @Override
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
+    public Exception getCause() {
+        return (Exception) super.getCause();
     }
 
 }
