@@ -44,7 +44,8 @@ public class RemoveECRRepositoriesTest {
                     .build());
     private static final LambdaJar STATESTORE_JAR = new LambdaJar.Builder()
             .filenameFormat("statestore.jar")
-            .imageName("statestore-lambda").build();
+            .imageName("statestore-lambda")
+            .artifactId("statestore-lambda").build();
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
             LambdaHandler.builder().jar(STATESTORE_JAR)
                     .handler("StateStoreCommitterLambda").core().build(),
@@ -52,7 +53,8 @@ public class RemoveECRRepositoriesTest {
                     .handler("SnapshotCreationLambda").core().build(),
             LambdaHandler.builder().jar(new LambdaJar.Builder()
                     .filenameFormat("ingest.jar")
-                    .imageName("ingest-task-creator-lambda").build())
+                    .imageName("ingest-task-creator-lambda")
+                    .artifactId("ingest-task-creator-lambda").build())
                     .handler("IngestTaskCreatorLambda")
                     .optionalStack(OptionalStack.IngestStack).build());
 

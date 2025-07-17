@@ -43,7 +43,8 @@ public class BuiltJarsIT extends LocalStackTestBase {
 
         assertThat(builtJars.getLatestVersionId(new LambdaJar.Builder()
                 .filenameFormat("test.jar")
-                .imageName("test-lambda").build()))
+                .imageName("test-lambda")
+                .artifactId("test-lambda").build()))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
     }

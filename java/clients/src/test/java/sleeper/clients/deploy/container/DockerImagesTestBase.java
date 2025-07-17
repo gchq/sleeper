@@ -54,21 +54,25 @@ public class DockerImagesTestBase {
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
             LambdaHandler.builder().jar(new LambdaJar.Builder()
                     .filenameFormat("statestore.jar")
-                    .imageName("statestore-lambda").build())
+                    .imageName("statestore-lambda")
+                    .artifactId("statestore-lambda").build())
                     .handler("StateStoreCommitterLambda").core().build(),
             LambdaHandler.builder().jar(new LambdaJar.Builder()
                     .filenameFormat("ingest.jar")
-                    .imageName("ingest-task-creator-lambda").build())
+                    .imageName("ingest-task-creator-lambda")
+                    .artifactId("ingest-task-creator-lambda").build())
                     .handler("IngestTaskCreatorLambda")
                     .optionalStack(OptionalStack.IngestStack).build(),
             LambdaHandler.builder().jar(new LambdaJar.Builder()
                     .filenameFormat("bulk-import-starter.jar")
-                    .imageName("bulk-import-starter-lambda").build())
+                    .imageName("bulk-import-starter-lambda")
+                    .artifactId("bulk-import-starter-lambda").build())
                     .handler("BulkImportStarterLambda")
                     .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build(),
             LambdaHandler.builder().jar(new LambdaJar.Builder()
                     .filenameFormat("athena.jar")
                     .imageName("athena-lambda")
+                    .artifactId("athena-lambda")
                     .alwaysDockerDeploy(true).build())
                     .handler("AthenaLambda")
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
