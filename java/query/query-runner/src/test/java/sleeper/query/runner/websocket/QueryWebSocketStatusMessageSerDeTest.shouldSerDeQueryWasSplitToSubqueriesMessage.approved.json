@@ -1,0 +1,8 @@
+{
+  "message": "subqueries",
+  "queryId": "test-query",
+  "queryIds": [
+    "subquery-1",
+    "subquery-2"
+  ]
+}
