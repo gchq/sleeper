@@ -116,14 +116,18 @@ public class QueryWebSocketMessageSerDe {
                 count += batch.size();
                 batch.clear();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new QueryWebSocketRowsException(e, count);
         }
         return count;
     }
 
     public QueryWebSocketMessage fromJson(String json) {
-        return gson.fromJson(json, QueryWebSocketMessage.class);
+        try {
+            return gson.fromJson(json, QueryWebSocketMessage.class).validate();
+        } catch (RuntimeException e) {
+            throw new QueryWebSocketMessageException(json, e);
+        }
     }
 
 }

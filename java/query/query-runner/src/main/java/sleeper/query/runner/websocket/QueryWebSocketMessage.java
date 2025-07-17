@@ -39,6 +39,7 @@ public class QueryWebSocketMessage {
         rowCount = builder.rowCount;
         locations = builder.locations;
         error = builder.error;
+        validate();
     }
 
     public static QueryWebSocketMessage queryWasSplitToSubqueries(String queryId, List<String> subQueryIds) {
@@ -78,6 +79,31 @@ public class QueryWebSocketMessage {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public final QueryWebSocketMessage validate() {
+        Objects.requireNonNull(message, "message must not be null");
+        Objects.requireNonNull(queryId, "queryId must not be null");
+        switch (message) {
+            case subqueries:
+                Objects.requireNonNull(queryIds, "queryIds must not be null");
+                break;
+            case rows:
+                Objects.requireNonNull(rows, "rows must not be null");
+                break;
+            case completed:
+                Objects.requireNonNull(rowCount, "rowCount must not be null");
+                Objects.requireNonNull(locations, "locations must not be null");
+                break;
+            case error:
+                Objects.requireNonNull(error, "error must not be null");
+                Objects.requireNonNull(rowCount, "rowCount must not be null");
+                Objects.requireNonNull(locations, "locations must not be null");
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognised message type: " + message);
+        }
+        return this;
     }
 
     public QueryWebSocketMessageType getMessage() {

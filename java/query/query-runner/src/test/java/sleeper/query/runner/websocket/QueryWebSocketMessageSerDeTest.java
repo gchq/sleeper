@@ -340,6 +340,210 @@ public class QueryWebSocketMessageSerDeTest {
         }
     }
 
+    @Nested
+    @DisplayName("Validate deserialised message")
+    class Validation {
+        Schema schema = createSchemaWithKey("key", new LongType());
+        QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(null, 1000, schema);
+
+        @Test
+        void shouldFailValidationWhenMessageTypeIsMissing() {
+            // Given
+            String json = """
+                    {
+                        "queryId": "test-query"
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("message must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenQueryIdIsMissing() {
+            // Given
+            String json = """
+                    {
+                        "message": "subqueries",
+                        "queryIds": [
+                            "subquery-1",
+                            "subquery-2"
+                        ]
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("queryId must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenSubqueryIdsAreMissing() {
+            // Given
+            String json = """
+                    {
+                        "message": "subqueries",
+                        "queryId": "test-query"
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("queryIds must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenRowsAreMissing() {
+            // Given
+            String json = """
+                    {
+                        "message": "rows",
+                        "queryId": "test-query"
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("rows must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenRowCountIsMissingForCompletedQuery() {
+            // Given
+            String json = """
+                    {
+                        "message": "completed",
+                        "queryId": "test-query",
+                        "locations": [
+                            {
+                            "type": "s3",
+                            "location": "s3a://test-bucket/test-file.parquet"
+                            }
+                        ]
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("rowCount must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenLocationsAreMissingForCompletedQuery() {
+            // Given
+            String json = """
+                    {
+                        "message": "completed",
+                        "queryId": "test-query",
+                        "rowCount": 123
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("locations must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenErrorIsMissing() {
+            // Given
+            String json = """
+                    {
+                        "message": "error",
+                        "queryId": "test-query",
+                        "rowCount": 123,
+                        "locations": [
+                            {
+                            "type": "s3",
+                            "location": "s3a://test-bucket/test-file.parquet"
+                            }
+                        ]
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("error must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenRowCountIsMissingForFailedQuery() {
+            // Given
+            String json = """
+                    {
+                        "message": "error",
+                        "queryId": "test-query",
+                        "error": "Something went wrong",
+                        "locations": [
+                            {
+                            "type": "s3",
+                            "location": "s3a://test-bucket/test-file.parquet"
+                            }
+                        ]
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("rowCount must not be null");
+        }
+
+        @Test
+        void shouldFailValidationWhenLocationsAreMissingForFailedQuery() {
+            // Given
+            String json = """
+                    {
+                        "message": "error",
+                        "queryId": "test-query",
+                        "error": "Something went wrong",
+                        "rowCount": 123
+                    }
+                    """;
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.fromJson(json))
+                    .isInstanceOfSatisfying(QueryWebSocketMessageException.class,
+                            e -> assertThat(e.getJson()).isEqualTo(json))
+                    .cause()
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("locations must not be null");
+        }
+
+    }
+
     private List<String> toJson(QueryWebSocketMessageSerDe serDe, String queryId, List<Row> rows) throws Exception {
         List<String> json = new ArrayList<>();
         serDe.forEachRowBatchJson("test-query", rows.iterator(), json::add);
