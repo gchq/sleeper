@@ -146,7 +146,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the last update time in milliseconds.
+         * Provide the last update time.
          *
          * @param  lastUpdateTime the last update time
          * @return                the builder
@@ -158,7 +158,7 @@ public class TrackedQuery {
         /**
          * Provide the last update time.
          *
-         * @param  lastUpdateTime the last update time
+         * @param  lastUpdateTime the last update time in milliseconds since the epoch
          * @return                the builder
          */
         public Builder lastUpdateTime(Long lastUpdateTime) {
@@ -167,7 +167,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the expiry date in milliseconds.
+         * Provide the expiry date.
          *
          * @param  expiryDate the expiry date
          * @return            the builder
@@ -179,7 +179,7 @@ public class TrackedQuery {
         /**
          * Provide the expiry date.
          *
-         * @param  expiryDate the expiry date
+         * @param  expiryDate the expiry date in milliseconds since the epoch
          * @return            the builder
          */
         public Builder expiryDate(Long expiryDate) {
@@ -199,9 +199,9 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the record count.
+         * Provide the number of records returned by the query.
          *
-         * @param  recordCount the record count
+         * @param  recordCount the number of records returned
          * @return             the builder
          */
         public Builder recordCount(Long recordCount) {
