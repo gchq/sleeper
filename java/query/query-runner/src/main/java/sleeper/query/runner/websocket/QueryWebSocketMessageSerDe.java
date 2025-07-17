@@ -34,21 +34,21 @@ import java.util.function.Consumer;
 
 public class QueryWebSocketMessageSerDe {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketMessageSerDe.class);
-    public static final int DEFAULT_RECORD_PAYLOAD_SIZE = 128 * 1024;
+    public static final int DEFAULT_ROWS_PAYLOAD_SIZE = 128 * 1024;
 
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
     private final RowJsonSerDe rowSerDe;
-    private final Integer recordBatchSize;
-    private final int recordPayloadSize;
+    private final Integer rowBatchSize;
+    private final int rowsPayloadSize;
 
-    private QueryWebSocketMessageSerDe(Schema schema, Integer recordBatchSize, int recordPayloadSize) {
+    private QueryWebSocketMessageSerDe(Schema schema, Integer rowBatchSize, int rowsPayloadSize) {
         GsonBuilder builder = new GsonBuilder()
                 .registerTypeAdapter(Row.class, new RowGsonSerialiser(schema));
         this.gson = builder.create();
         this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
-        this.recordBatchSize = recordBatchSize;
-        this.recordPayloadSize = recordPayloadSize;
+        this.rowBatchSize = rowBatchSize;
+        this.rowsPayloadSize = rowsPayloadSize;
         if (schema != null) {
             rowSerDe = new RowJsonSerDe(schema);
         } else {
@@ -63,7 +63,7 @@ public class QueryWebSocketMessageSerDe {
     public static QueryWebSocketMessageSerDe fromConfig(Schema schema, Map<String, String> config) {
         String batchSizeStr = config.get(WebSocketOutput.MAX_BATCH_SIZE);
         Integer batchSize = batchSizeStr != null && !batchSizeStr.isEmpty() ? Integer.parseInt(batchSizeStr) : null;
-        return forBatchSizeAndPayloadSize(batchSize, DEFAULT_RECORD_PAYLOAD_SIZE, schema);
+        return forBatchSizeAndPayloadSize(batchSize, DEFAULT_ROWS_PAYLOAD_SIZE, schema);
     }
 
     public static QueryWebSocketMessageSerDe forBatchSizeAndPayloadSize(Integer batchSize, int payloadSize, Schema schema) {
@@ -83,7 +83,7 @@ public class QueryWebSocketMessageSerDe {
 
         List<Row> batch = new ArrayList<>();
         long count = 0;
-        int remainingMessageLength = recordPayloadSize - baseMessageLength;
+        int remainingMessageLength = rowsPayloadSize - baseMessageLength;
 
         try {
             while (results.hasNext()) {
@@ -91,7 +91,7 @@ public class QueryWebSocketMessageSerDe {
                 batch.add(row);
 
                 boolean batchReady = false;
-                if (recordBatchSize != null && recordBatchSize > 0 && batch.size() >= recordBatchSize) {
+                if (rowBatchSize != null && rowBatchSize > 0 && batch.size() >= rowBatchSize) {
                     batchReady = true;
                 } else {
                     String rowJson = rowSerDe.toJson(row);
@@ -107,7 +107,7 @@ public class QueryWebSocketMessageSerDe {
                     operation.accept(toJson(QueryWebSocketMessage.rowsBatch(queryId, batch)));
                     count += batch.size();
                     batch.clear();
-                    remainingMessageLength = recordPayloadSize - baseMessageLength;
+                    remainingMessageLength = rowsPayloadSize - baseMessageLength;
                 }
             }
 
