@@ -15,12 +15,12 @@
  */
 package sleeper.compaction.rust;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -55,12 +55,40 @@ public class RustCompactionRunner implements CompactionRunner {
 
     private final AwsConfig awsConfig;
 
+    private static Compaction nativeCompaction = null;
+
     public RustCompactionRunner() {
         this(null);
     }
 
     public RustCompactionRunner(AwsConfig awsConfig) {
         this.awsConfig = awsConfig;
+    }
+
+    /**
+     * The compaction output data that the native code will populate.
+     */
+    @SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
+    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    public static class FFICompactionResult extends Struct {
+        public final Struct.size_t rows_read = new Struct.size_t();
+        public final Struct.size_t rows_written = new Struct.size_t();
+
+        public FFICompactionResult(jnr.ffi.Runtime runtime) {
+            super(runtime);
+        }
+    }
+
+    /**
+     * The interface for the native library we are calling.
+     */
+    public interface Compaction extends ForeignFunctions {
+        FFICompactionResult allocate_result();
+
+        void free_result(@In FFICompactionResult res);
+
+        @SuppressWarnings(value = "checkstyle:parametername")
+        int ffi_merge_sorted_files(@In FFICompactionParams input, @Out FFICompactionResult result);
     }
 
     @Override
@@ -178,6 +206,105 @@ public class RustCompactionRunner implements CompactionRunner {
             }
         }).boxed()
                 .toArray(Integer[]::new);
+    }
+
+    /**
+     * The compaction input data that will be populated from the Java side. If you updated
+     * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
+     * in rust/compaction/src/lib.rs. The order and types of the fields must match exactly.
+     */
+    @SuppressWarnings(value = {"checkstyle:membername"})
+    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    public static class FFICompactionParams extends Struct {
+        /** Optional AWS configuration. */
+        public final Struct.Boolean override_aws_config = new Struct.Boolean();
+        public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
+        public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
+        public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
+        public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
+        public final Struct.Boolean aws_allow_http = new Struct.Boolean();
+        /** Array of input files to compact. */
+        public final Array<java.lang.String> input_files = new Array<>(this);
+        /** Output file name. */
+        public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
+        /** Names of Sleeper row key columns from schema. */
+        public final Array<java.lang.String> row_key_cols = new Array<>(this);
+        /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
+        public final Array<java.lang.Integer> row_key_schema = new Array<>(this);
+        /** Names of Sleeper sort key columns from schema. */
+        public final Array<java.lang.String> sort_key_cols = new Array<>(this);
+        /** Maximum size of output Parquet row group in rows. */
+        public final Struct.size_t max_row_group_size = new Struct.size_t();
+        /** Maximum size of output Parquet page size in bytes. */
+        public final Struct.size_t max_page_size = new Struct.size_t();
+        /** Output Parquet compression codec. */
+        public final Struct.UTF8StringRef compression = new Struct.UTF8StringRef();
+        /** Output Parquet writer version. Must be 1.0 or 2.0 */
+        public final Struct.UTF8StringRef writer_version = new Struct.UTF8StringRef();
+        /** Column min/max values truncation length in output Parquet. */
+        public final Struct.size_t column_truncate_length = new Struct.size_t();
+        /** Max sizeof statistics block in output Parquet. */
+        public final Struct.size_t stats_truncate_length = new Struct.size_t();
+        /** Should row key columns use dictionary encoding in output Parquet. */
+        public final Struct.Boolean dict_enc_row_keys = new Struct.Boolean();
+        /** Should sort key columns use dictionary encoding in output Parquet. */
+        public final Struct.Boolean dict_enc_sort_keys = new Struct.Boolean();
+        /** Should value columns use dictionary encoding in output Parquet. */
+        public final Struct.Boolean dict_enc_values = new Struct.Boolean();
+        /** Compaction partition region minimums. MUST BE SAME LENGTH AS row_key_cols. */
+        public final Array<Object> region_mins = new Array<>(this);
+        /** Compaction partition region maximums. MUST BE SAME LENGTH AS row_key_cols. */
+        public final Array<Object> region_maxs = new Array<>(this);
+        /** Compaction partition region minimums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
+        public final Array<java.lang.Boolean> region_mins_inclusive = new Array<>(this);
+        /** Compaction partition region maximums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
+        public final Array<java.lang.Boolean> region_maxs_inclusive = new Array<>(this);
+        /** Compaction iterator configuration. This is optional. */
+        public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
+
+        public FFICompactionParams(jnr.ffi.Runtime runtime) {
+            super(runtime);
+        }
+
+        /**
+         * Validate state of struct.
+         *
+         * @throws IllegalStateException when a invariant fails
+         */
+        public void validate() {
+            input_files.validate();
+            row_key_cols.validate();
+            row_key_schema.validate();
+            sort_key_cols.validate();
+            region_mins.validate();
+            region_maxs.validate();
+            region_mins_inclusive.validate();
+            region_maxs_inclusive.validate();
+
+            // Check strings non null
+            Objects.requireNonNull(output_file.get(), "Output file is null");
+            Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
+            Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
+            Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
+
+            // Check lengths
+            long rowKeys = row_key_cols.len.get();
+            if (rowKeys != row_key_schema.len.get()) {
+                throw new IllegalStateException("row key schema array has length " + row_key_schema.len.get() + " but there are " + rowKeys + " row key columns");
+            }
+            if (rowKeys != region_mins.len.get()) {
+                throw new IllegalStateException("region mins has length " + region_mins.len.get() + " but there are " + rowKeys + " row key columns");
+            }
+            if (rowKeys != region_maxs.len.get()) {
+                throw new IllegalStateException("region maxs has length " + region_maxs.len.get() + " but there are " + rowKeys + " row key columns");
+            }
+            if (rowKeys != region_mins_inclusive.len.get()) {
+                throw new IllegalStateException("region mins inclusives has length " + region_mins_inclusive.len.get() + " but there are " + rowKeys + " row key columns");
+            }
+            if (rowKeys != region_maxs_inclusive.len.get()) {
+                throw new IllegalStateException("region maxs inclusives has length " + region_maxs_inclusive.len.get() + " but there are " + rowKeys + " row key columns");
+            }
+        }
     }
 
     /**

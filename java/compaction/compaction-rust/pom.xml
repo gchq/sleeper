@@ -37,16 +37,9 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <!-- Native code loading and linking -->
-            <groupId>com.github.jnr</groupId>
-            <artifactId>jnr-ffi</artifactId>
-            <version>${jnr.ffi.version}</version>
-        </dependency>
-        <dependency>
-            <!-- JAR extraction -->
-            <groupId>org.scijava</groupId>
-            <artifactId>native-lib-loader</artifactId>
-            <version>${scijava.native.version}</version>
+            <groupId>sleeper</groupId>
+            <artifactId>ffi</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
         <dependency>
@@ -82,98 +75,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <build>
-       <plugins>
-            <!-- Resources plugin to copy all built native libs into JAR file -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>${resources.plugin.version}</version>
-                <goals>
-                    <goal>copy-resources</goal>
-                </goals>
-                <configuration>
-                    <outputDirectory>${project.build.outputDirectory}/natives/</outputDirectory>
-                    <resources>
-                        <resource>
-                            <directory>${maven.multiModuleProjectDirectory}/../rust/target/</directory>
-                            <includes>
-                                <include>*/release/*.dylib</include>
-                                <include>*/release/*.dll</include>
-                                <include>*/release/*.so</include>
-                                <include>*/debug/*.dylib</include>
-                                <include>*/debug/*.dll</include>
-                                <include>*/debug/*.so</include>
-                            </includes>
-                            <filtering>false</filtering>
-                        </resource>
-                    </resources>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-    <profiles>
-        <profile>
-        <activation>
-            <property>
-                <name>skipRust</name>
-                <value>!true</value>
-            </property>
-        </activation>
-            <id>rust</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>${exec.plugin.version}</version>
-                        <executions>
-                            <!-- You need one execution per cross target you are building. Make sure you add
-                            the appropriate resources plugin execution below! -->
-                            <execution>
-                                <id>Invoke Rust Cargo build (Linux x86_64)</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
-                                    <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
-                                    <useMavenLogger>true</useMavenLogger>
-                                    <arguments>
-                                        <argument>build</argument>
-                                        <argument>--release</argument>
-                                        <argument>--target</argument>
-                                        <argument>x86_64-unknown-linux-gnu</argument>
-                                    </arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>Invoke Rust Cargo build (Linux Aarch64)</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
-                                    <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
-                                    <useMavenLogger>true</useMavenLogger>
-                                    <arguments>
-                                        <argument>build</argument>
-                                        <argument>--release</argument>
-                                        <argument>--target</argument>
-                                        <argument>aarch64-unknown-linux-gnu</argument>
-                                    </arguments>
-                                    <environmentVariables>
-                                        <RUSTFLAGS>-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1</RUSTFLAGS>
-                                    </environmentVariables>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
