@@ -17,28 +17,44 @@ package sleeper.clients.deploy.jar;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.SleeperVersion;
+import sleeper.clients.util.command.CommandPipeline;
+import sleeper.clients.util.command.CommandPipelineRunner;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 
 public class PublishJarsToRepoTest {
 
     @Test
     public void testRunsCommands() throws Exception {
-        /*
-         * List<CommandPipeline> commandsThatRan = pipelinesRunOn(
-         * runCommand -> {
-         * PublishJarsToRepo.builder().repoUrl("file:/someRepo").version(SleeperVersion.getVersion().commandRunner(
-         * runCommand).build().upload();
-         * });
-         */
+        //Given
+        final List<CommandPipeline> commandsThatRan = new ArrayList<>();
+        final CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+        final PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder().repoUrl("someUrl").version("0.31.0").commandRunner(commandRunner).build();
 
-        //assertThat(commandsThatRan).contains(pipeline(command("java", "--version")));
+        //When
+        publishJarsToRepo.upload();
+        List<String> commandsString = commandsThatRan.stream().map(CommandPipeline::toString).toList();
+
+        //Then
+        assertThat(commandsString)
+                //This one's from ClientJar
+                .contains("[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
+                        "-Dfile=../scripts/jars/bulk-import-runner-0.31.0.jar, -DgroupId=sleeper, " +
+                        "-DartifactId=bulk-import-runner, -Dversion=0.31.0, -DgeneratePom=false]")
+                //This one's from LambdaJar
+                .contains("[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
+                        "-Dfile=../scripts/jars/athena-0.31.0.jar, -DgroupId=sleeper, " +
+                        "-DartifactId=athena, -Dversion=0.31.0, -DgeneratePom=false]");
     }
 
     @Test
     public void testRepoMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().version(SleeperVersion.getVersion()).build())
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Repository URL must not be null");
     }

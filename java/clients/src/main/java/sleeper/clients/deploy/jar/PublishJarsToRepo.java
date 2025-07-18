@@ -41,13 +41,10 @@ public class PublishJarsToRepo {
     }
 
     //TODO
-    //Add ArtifactId to LambdaJar and ClientJar
-    //Add Test containing 1 hard coded LJ and CJ mvn deploy
     //Call Java not through mvn in script
     public static void main(String[] args) throws Exception {
         builder()
                 .repoUrl(args[1])
-                .version(args[2])
                 .build()
                 .upload();
     }
@@ -58,7 +55,7 @@ public class PublishJarsToRepo {
         }
 
         for (LambdaJar lambdaJar : LambdaJar.getAll()) {
-            deployJars(lambdaJar.getFilenameFormat(), lambdaJar.getImageName());
+            deployJars(lambdaJar.getFilenameFormat(), lambdaJar.getArtifactId());
         }
     }
 
