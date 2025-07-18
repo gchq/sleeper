@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.output;
+package sleeper.query.runner.websocket;
 
 import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -26,6 +26,8 @@ import software.amazon.awssdk.services.apigatewaymanagementapi.model.ForbiddenEx
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.GoneException;
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.LimitExceededException;
 import software.amazon.awssdk.services.apigatewaymanagementapi.model.PayloadTooLargeException;
+
+import sleeper.query.runner.output.WebSocketOutput;
 
 import java.io.IOException;
 import java.net.URI;

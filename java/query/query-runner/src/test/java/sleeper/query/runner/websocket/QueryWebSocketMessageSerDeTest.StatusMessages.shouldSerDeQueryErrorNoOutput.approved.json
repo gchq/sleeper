@@ -1,0 +1,5 @@
+{
+  "message": "error",
+  "queryId": "test-query",
+  "error": "Something went wrong"
+}

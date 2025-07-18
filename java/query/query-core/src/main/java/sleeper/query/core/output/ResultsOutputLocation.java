@@ -15,6 +15,8 @@
  */
 package sleeper.query.core.output;
 
+import java.util.Objects;
+
 public class ResultsOutputLocation {
     private final String type;
     private final String location;
@@ -39,4 +41,22 @@ public class ResultsOutputLocation {
                 + ", location=" + location
                 + '}';
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, location);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ResultsOutputLocation)) {
+            return false;
+        }
+        ResultsOutputLocation other = (ResultsOutputLocation) obj;
+        return Objects.equals(type, other.type) && Objects.equals(location, other.location);
+    }
+
 }
