@@ -49,7 +49,9 @@ public class QueryProcessingConfig {
     }
 
     /**
-     * Create a default QueryProcessingConfig object.
+     * Creates a QueryProcessingConfig object.
+     * This configuration is set to perform no processing and publish no reports and is used to
+     * set a base object that can then be customised through the builder.
      *
      * @return a query processing config object
      */
