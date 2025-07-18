@@ -48,6 +48,13 @@ public class QueryProcessingConfig {
         return new Builder();
     }
 
+    /**
+     * Creates a QueryProcessingConfig object.
+     * This configuration is set to perform no processing and publish no reports and is used to
+     * set a base object that can then be customised through the builder.
+     *
+     * @return a query processing config object
+     */
     public static QueryProcessingConfig none() {
         return NONE;
     }
@@ -72,18 +79,36 @@ public class QueryProcessingConfig {
         return requestedValueFields;
     }
 
+    /**
+     * Creates a copy of this configuration that will include the values of the given fields in the query result.
+     *
+     * @param  requestedValueFields value fields to add to builder
+     * @return                      the copy
+     */
     public QueryProcessingConfig withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
                 .requestedValueFields(requestedValueFields)
                 .build();
     }
 
+    /**
+     * Creates a copy of this configuration that includes the given configuration for publishing results.
+     *
+     * @param  resultsPublisherConfig results publisher config to add to builder
+     * @return                        the copy
+     */
     public QueryProcessingConfig withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
                 .resultsPublisherConfig(resultsPublisherConfig)
                 .build();
     }
 
+    /**
+     * Creates a copy of this configuration that includes the given configuration for publishing status reports.
+     *
+     * @param  statusReportDestination status report destination to add to builder
+     * @return                         the copy
+     */
     public QueryProcessingConfig withStatusReportDestination(Map<String, String> statusReportDestination) {
         return toBuilder()
                 .statusReportDestinations(
@@ -133,6 +158,9 @@ public class QueryProcessingConfig {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String queryTimeIteratorClassName;
         private String queryTimeIteratorConfig;
@@ -143,26 +171,56 @@ public class QueryProcessingConfig {
         private Builder() {
         }
 
+        /**
+         * Provide the query time iterator class name.
+         *
+         * @param  queryTimeIteratorClassName the name of the class
+         * @return                            the builder
+         */
         public Builder queryTimeIteratorClassName(String queryTimeIteratorClassName) {
             this.queryTimeIteratorClassName = queryTimeIteratorClassName;
             return this;
         }
 
+        /**
+         * Provide the query time iterator config.
+         *
+         * @param  queryTimeIteratorConfig the iterator config
+         * @return                         the builder
+         */
         public Builder queryTimeIteratorConfig(String queryTimeIteratorConfig) {
             this.queryTimeIteratorConfig = queryTimeIteratorConfig;
             return this;
         }
 
+        /**
+         * Provide the results publisher config.
+         *
+         * @param  resultsPublisherConfig the publisher config
+         * @return                        the builder
+         */
         public Builder resultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
             this.resultsPublisherConfig = resultsPublisherConfig;
             return this;
         }
 
+        /**
+         * Provide the status report destinations.
+         *
+         * @param  statusReportDestinations the report destinations
+         * @return                          the builder
+         */
         public Builder statusReportDestinations(List<Map<String, String>> statusReportDestinations) {
             this.statusReportDestinations = statusReportDestinations;
             return this;
         }
 
+        /**
+         * Provide the fields that are requested to be included in the query results.
+         *
+         * @param  requestedValueFields the value fields
+         * @return                      the builder
+         */
         public Builder requestedValueFields(List<String> requestedValueFields) {
             this.requestedValueFields = requestedValueFields;
             return this;

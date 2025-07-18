@@ -15,6 +15,9 @@
  */
 package sleeper.query.core.output;
 
+/**
+ * Define constant values that are used to store the output of query results.
+ */
 public class ResultsOutputConstants {
 
     private ResultsOutputConstants() {

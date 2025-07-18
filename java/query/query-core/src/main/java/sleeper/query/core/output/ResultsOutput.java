@@ -20,9 +20,16 @@ import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 
 /**
- * An interface that classes for sending the results of queries somewhere must implement.
+ * Results output.
  */
 public interface ResultsOutput {
 
+    /**
+     * Publish the results from a query or leaf partition query.
+     *
+     * @param  query   the query definition
+     * @param  results the query results to publish
+     * @return         the results
+     */
     ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results);
 }

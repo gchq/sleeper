@@ -23,6 +23,9 @@ import sleeper.query.core.tracker.QueryStatusReportListener;
 
 import java.util.Objects;
 
+/**
+ * Deserializes a query or sub-query from JSON.
+ */
 public class QueryOrLeafPartitionQuery {
 
     private final Query query;
@@ -42,14 +45,30 @@ public class QueryOrLeafPartitionQuery {
         return leafQuery != null;
     }
 
+    /**
+     * Return a Sleeper query.
+     *
+     * @return a Sleeper query
+     */
     public Query asParentQuery() {
         return Objects.requireNonNull(query, "query is a leaf query");
     }
 
+    /**
+     * Return a sub query.
+     *
+     * @return a leaf partition query
+     */
     public LeafPartitionQuery asLeafQuery() {
         return Objects.requireNonNull(leafQuery, "query is not a leaf query");
     }
 
+    /**
+     * If the query has completed this method is called to publish the completed status.
+     *
+     * @param listener   listener to publish status of the query to
+     * @param outputInfo information about the query results
+     */
     public void reportCompleted(QueryStatusReportListener listener, ResultsOutputInfo outputInfo) {
         if (leafQuery != null) {
             listener.queryCompleted(leafQuery, outputInfo);
@@ -58,6 +77,12 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * If the query has failed this method is called to publish the failed status.
+     *
+     * @param listener listener to publish the status of the query to
+     * @param e        exception raised during query processing
+     */
     public void reportFailed(QueryStatusReportListener listener, Exception e) {
         if (leafQuery != null) {
             listener.queryFailed(leafQuery, e);
@@ -66,6 +91,11 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Return the Id of the query. A sub query will return the ID of the parent query.
+     *
+     * @return the query ID
+     */
     public String getQueryId() {
         if (leafQuery != null) {
             return leafQuery.getQueryId();
@@ -74,6 +104,12 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Return the table properties.
+     *
+     * @param  provider cache of Sleeper table properties
+     * @return          the table properties
+     */
     public TableProperties getTableProperties(TablePropertiesProvider provider) {
         if (leafQuery != null) {
             return provider.getById(leafQuery.getTableId());
@@ -82,6 +118,11 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Return the query processing config.
+     *
+     * @return the query processing config
+     */
     public QueryProcessingConfig getProcessingConfig() {
         if (leafQuery != null) {
             return leafQuery.getProcessingConfig();

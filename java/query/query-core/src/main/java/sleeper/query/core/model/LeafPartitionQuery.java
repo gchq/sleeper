@@ -105,6 +105,12 @@ public class LeafPartitionQuery {
         return files;
     }
 
+    /**
+     * Creates a copy of this query that will include the values of the given fields in the result.
+     *
+     * @param  requestedValueFields a list of requested fields
+     * @return                      the copy of the original query
+     */
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
     }
@@ -159,6 +165,9 @@ public class LeafPartitionQuery {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String tableId;
         private String queryId;
@@ -172,46 +181,106 @@ public class LeafPartitionQuery {
         private Builder() {
         }
 
+        /**
+         * Provide the parent query.
+         *
+         * @param  parentQuery the parent query
+         * @return             the builder
+         */
         public Builder parentQuery(Query parentQuery) {
             return queryId(parentQuery.getQueryId())
                     .processingConfig(parentQuery.getProcessingConfig());
         }
 
+        /**
+         * Provide the table ID.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Provide the query ID.
+         *
+         * @param  queryId the query ID
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provide the sub query ID.
+         *
+         * @param  subQueryId the sub query ID
+         * @return            the builder
+         */
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
             return this;
         }
 
+        /**
+         * Provide the row key range regions.
+         *
+         * @param  regions the row key range regions
+         * @return         the builder
+         */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
             return this;
         }
 
+        /**
+         * Provide the processing config.
+         *
+         * @param  processingConfig the processing config
+         * @return                  the builder
+         */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {
             this.processingConfig = processingConfig;
             return this;
         }
 
+        /**
+         * Provide the leaf partition ID.
+         *
+         * @param  leafPartitionId the leaf partition ID
+         * @return                 the builder
+         */
         public Builder leafPartitionId(String leafPartitionId) {
             this.leafPartitionId = leafPartitionId;
             return this;
         }
 
+        /**
+         * Provides the partition region.
+         *
+         * A partition region defines a specific range of data that this query will cover.
+         * For each key field, the region specifies a range of values. Only data whose key
+         * field values fall within these specified ranges will be considered part of this
+         * partition.
+         *
+         * @param  partitionRegion the partition region
+         * @return                 the builder
+         */
         public Builder partitionRegion(Region partitionRegion) {
             this.partitionRegion = partitionRegion;
             return this;
         }
 
+        /**
+         * Provides the files that are in the partition.
+         * These files will be read to return the results for the sub query
+         *
+         * @param  files the files
+         * @return       the builder
+         */
         public Builder files(List<String> files) {
             this.files = files;
             return this;
