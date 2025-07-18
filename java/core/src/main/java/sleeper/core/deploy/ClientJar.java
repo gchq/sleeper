@@ -1,0 +1,97 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.core.deploy;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Definitions of jar files used to deploy client functions.
+ */
+public class ClientJar {
+
+    private static final List<ClientJar> ALL = new ArrayList<>();
+
+    public static final ClientJar BULK_IMPORT_RUNNER = new Builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").build();
+    public static final ClientJar CDK = new Builder().filenameFormat("cdk-%s.jar").artifactId("cdk").build();
+    public static final ClientJar CLIENTS_UTILITY = new Builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").build();
+
+    private final String filenameFormat;
+    private final String artifactId;
+
+    public ClientJar(Builder builder) {
+        this.filenameFormat = builder.filenameFormat;
+        this.artifactId = builder.artifactId;
+    }
+
+    public String getFilenameFormat() {
+        return filenameFormat;
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactId + "}";
+    }
+
+    public static List<ClientJar> getAll() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    /**
+     * Builder for the ClientJar class.
+     */
+    public static class Builder {
+        String filenameFormat;
+        String artifactId;
+
+        public Builder() {
+
+        }
+
+        /**
+         * The filenameFormat with space for version.
+         *
+         * @param  filenameFormat String for filename with space for version to be added
+         * @return                Builder
+         */
+        public Builder filenameFormat(String filenameFormat) {
+            this.filenameFormat = filenameFormat;
+            return this;
+        }
+
+        /**
+         * The artifactId for the Jar.
+         *
+         * @param  artifactId String artifactId
+         * @return            Builder.
+         */
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
+        public ClientJar build() {
+            ClientJar clientJar = new ClientJar(this);
+            ALL.add(clientJar);
+            return clientJar;
+        }
+    }
+}
