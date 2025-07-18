@@ -597,7 +597,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(equalToJson("""
                     {
                         "message": "completed",
-                        "recordCount": 28
+                        "rowCount": 28
                     }
                     """, true, true)));
         } finally {
@@ -655,10 +655,10 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                             .and(matchingJsonPath("$.queryIds"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("3")))));
+                            .and(matchingJsonPath("$.rowCount", equalTo("3")))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("25")))));
+                            .and(matchingJsonPath("$.rowCount", equalTo("25")))));
         } finally {
             wireMockServer.stop();
         }
