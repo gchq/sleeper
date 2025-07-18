@@ -192,9 +192,10 @@ public class Query {
         }
 
         /**
-         * Provide the regions.
+         * Provides the regions that data will be retrieved from.
+         * A region contains ranges of key fields that query will use to return data.
          *
-         * @param  regions the sleeper row region
+         * @param  regions the ranges of key fields
          * @return         the builder
          */
         public Builder regions(List<Region> regions) {

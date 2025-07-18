@@ -19,7 +19,7 @@ package sleeper.query.core.tracker;
 import java.util.List;
 
 /**
- * Query tracker store
+ * Query tracker store.
  */
 public interface QueryTrackerStore {
     /**

@@ -259,7 +259,12 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the partition region.
+         * Provides the partition region.
+         *
+         * A partition region defines a specific range of data that this query will cover.
+         * For each key field, the region specifies a range of values. Only data whose key
+         * field values fall within these specified ranges will be considered part of this
+         * partition.
          *
          * @param  partitionRegion the partition region
          * @return                 the builder
@@ -270,7 +275,8 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the files.
+         * Provides the files that are in the partition.
+         * These files will be read to return the results for the sub query
          *
          * @param  files the files
          * @return       the builder
