@@ -28,6 +28,7 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
+import sleeper.query.runner.websocket.ApiGatewayWebSocketOutput;
 
 import java.io.IOException;
 import java.util.ArrayList;

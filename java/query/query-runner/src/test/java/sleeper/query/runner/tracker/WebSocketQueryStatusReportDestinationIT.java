@@ -34,7 +34,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
-import sleeper.query.runner.output.ApiGatewayWebSocketOutput;
+import sleeper.query.runner.websocket.ApiGatewayWebSocketOutput;
 
 import java.io.IOException;
 import java.util.List;
