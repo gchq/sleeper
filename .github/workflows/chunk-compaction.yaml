@@ -24,7 +24,7 @@ on:
       - 'java/bulk-export/bulk-export-planner/**'
       - 'java/bulk-export/bulk-export-task-creator/**'
       - 'java/bulk-export/bulk-export-task-execution/**'
-      - 'java/compaction/compaction-rust/**'
+      - 'java/compaction/compaction-datafusion/**'
       - 'java/common/common-task/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
