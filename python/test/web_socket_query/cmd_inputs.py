@@ -70,7 +70,7 @@ class CmdInputs:
         self.save_results_to_file = save_results_to_file
 
 
-def _get_boolean_input(prompt: str, default: bool = True) -> bool:
+def get_boolean_input(prompt: str, default: bool = True) -> bool:
     """
     Prompt the user for a boolean input with a default value.
 
@@ -104,7 +104,7 @@ def get_cmd_input() -> CmdInputs:
     """
     table_name = input("Table name? (Press Enter for default 'testing') ") or "testing"
     key = input("Key? (Press Enter for default 'key') ") or "key"
-    exact = _get_boolean_input("Is the an exact query? (Please Enter for default True) ", default=True)
+    exact = get_boolean_input("Is the an exact query? (Please Enter for default True) ", default=True)
     if exact:
         value = input("Value? ")
         min_value = value
@@ -114,10 +114,10 @@ def get_cmd_input() -> CmdInputs:
     else:
         min_value = input("Min value? ")
         max_value = input("Max value? ")
-        min_inclusive = _get_boolean_input("Min inclusive? (Press Enter for default True) ", default=True)
-        max_inclusive = _get_boolean_input("Max inclusive?  (Press Enter for default True) ", default=True)
-    strings_base64_encoded = _get_boolean_input("Base64 encoded? (Press Enter for default False) ", default=False)
-    save_results_to_file = _get_boolean_input("Save results to a file? (Press Enter for default True) ", default=True)
+        min_inclusive = get_boolean_input("Min inclusive? (Press Enter for default True) ", default=True)
+        max_inclusive = get_boolean_input("Max inclusive?  (Press Enter for default True) ", default=True)
+    strings_base64_encoded = get_boolean_input("Base64 encoded? (Press Enter for default False) ", default=False)
+    save_results_to_file = get_boolean_input("Save results to a file? (Press Enter for default True) ", default=True)
 
     return CmdInputs(
         table_name=table_name,

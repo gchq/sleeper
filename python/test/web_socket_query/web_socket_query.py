@@ -19,7 +19,7 @@ import json
 import logging
 import uuid
 
-from cmd_inputs import _get_boolean_input, get_cmd_input
+from cmd_inputs import get_boolean_input, get_cmd_input
 from process_query import process_query
 
 
@@ -69,5 +69,5 @@ if __name__ == "__main__":
         if cmd_input.save_results_to_file:
             _save_results_to_file(results)
 
-        if not _get_boolean_input("Process another query? (Press Enter for default False) ", default=False):
+        if not get_boolean_input("Process another query? (Press Enter for default False) ", default=False):
             break

@@ -20,7 +20,7 @@ This script is a proof of concept demonstrating how to execute queries over a We
 
 **Setup:**
 - Dependencies: `pip install -r requirements.txt`
-- Populate your AWS credentials and API details in environment variables or `.env` file:
+- Populate your AWS credentials and API details in environment variables or create an `.env` file from the file `.env.template`:
   - `AWS_ACCESS_KEY_ID`
   - `AWS_SECRET_ACCESS_KEY`
   - `AWS_SESSION_TOKEN`
