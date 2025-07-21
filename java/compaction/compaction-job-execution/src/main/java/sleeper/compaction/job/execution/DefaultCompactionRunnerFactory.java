@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
-import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
@@ -54,7 +53,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
 
         // Has an experimental DataFusion only iterator been specified? If so, make sure
         // we are using the DataFusion compactor
-        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof RustCompactionRunner)) {
+        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof DataFusionCompactionRunner)) {
             throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
                     + job.getId() + " table ID " + job.getTableId());
         }
@@ -66,7 +65,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private CompactionRunner createRunnerForMethod(CompactionMethod method) {
         switch (method) {
             case DATAFUSION:
-                return new RustCompactionRunner();
+                return new DataFusionCompactionRunner();
             case JAVA:
             default:
                 return createJavaRunner();
