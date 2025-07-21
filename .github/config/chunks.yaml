@@ -55,7 +55,7 @@ chunks:
     name: Rust
     workflow: chunk-rust.yaml
     modules:
-      - compaction/compaction-datafusion
+      - ffi
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml
