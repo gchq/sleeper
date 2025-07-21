@@ -131,8 +131,7 @@ public class ECSBulkExportTaskRunner {
         if (messageHandleOpt.isPresent()) {
             SqsMessageHandle messageHandle = messageHandleOpt.get();
             try {
-                BulkExportLeafPartitionQuery exportTask;
-                exportTask = messageHandle.getJob();
+                BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
 
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
