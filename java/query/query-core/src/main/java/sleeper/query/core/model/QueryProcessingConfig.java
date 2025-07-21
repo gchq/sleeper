@@ -50,8 +50,9 @@ public class QueryProcessingConfig {
 
     /**
      * Creates a QueryProcessingConfig object.
-     * This configuration is set to perform no processing and publish no reports and is used to
-     * set a base object that can then be customised through the builder.
+     * This instance serves as a base object that can then be customised through the builder, offering
+     * a default state for queries that do not require specific processing parameters or status reports.
+     *
      *
      * @return a query processing config object
      */
@@ -172,7 +173,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the query time iterator class name.
+         * Provides the query time iterator class name.
          *
          * @param  queryTimeIteratorClassName the name of the class
          * @return                            the builder
@@ -183,7 +184,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the query time iterator config.
+         * Provides the query time iterator config.
          *
          * @param  queryTimeIteratorConfig the iterator config
          * @return                         the builder
@@ -194,7 +195,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the results publisher config.
+         * Provides the results publisher config.
          *
          * @param  resultsPublisherConfig the publisher config
          * @return                        the builder
@@ -205,7 +206,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the status report destinations.
+         * Provides the status report destinations.
          *
          * @param  statusReportDestinations the report destinations
          * @return                          the builder
@@ -216,7 +217,7 @@ public class QueryProcessingConfig {
         }
 
         /**
-         * Provide the fields that are requested to be included in the query results.
+         * Provides the fields that are requested to be included in the query results.
          *
          * @param  requestedValueFields the value fields
          * @return                      the builder

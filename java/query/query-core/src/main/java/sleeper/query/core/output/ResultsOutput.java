@@ -25,7 +25,7 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 public interface ResultsOutput {
 
     /**
-     * Publish the results from a query or leaf partition query.
+     * Publishes the results obtained from a given query or a specific leaf partition query.
      *
      * @param  query   the query definition
      * @param  results the query results to publish

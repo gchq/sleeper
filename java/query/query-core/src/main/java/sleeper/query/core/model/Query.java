@@ -170,7 +170,7 @@ public class Query {
         }
 
         /**
-         * Provide the table name.
+         * Provides the table name.
          *
          * @param  tableName the name of the Sleeper table
          * @return           the builder
@@ -181,7 +181,7 @@ public class Query {
         }
 
         /**
-         * Provide the query ID.
+         * Provides the query ID.
          *
          * @param  queryId the ID of the query
          * @return         the builder

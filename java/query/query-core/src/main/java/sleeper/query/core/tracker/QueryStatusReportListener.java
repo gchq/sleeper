@@ -22,34 +22,34 @@ import sleeper.query.core.output.ResultsOutputInfo;
 import java.util.List;
 
 /**
- * Interface for reporting on the status of a query.
+ * Query status report listener.
  */
 public interface QueryStatusReportListener {
     String DESTINATION = "destination";
 
     /**
-     * Check if the query has been queued.
+     * Notifies when a query has been queued.
      *
      * @param query the Sleeper query
      */
     void queryQueued(Query query);
 
     /**
-     * Check if the query is still in progress.
+     * Notifies when a query is in progress.
      *
      * @param query the Sleeper query
      */
     void queryInProgress(Query query);
 
     /**
-     * Check if the leaf partition query is still in progress.
+     * Notifies if a sub query is in progress.
      *
      * @param leafQuery the Sleeper leaf partition query
      */
     void queryInProgress(LeafPartitionQuery leafQuery);
 
     /**
-     * Check if any sub queries have been created.
+     * Notifies if a sub query has been created.
      *
      * @param query      the Sleeper query
      * @param subQueries the sub queries
@@ -57,7 +57,7 @@ public interface QueryStatusReportListener {
     void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
     /**
-     * Check if the query has completed.
+     * Notifies when a query completes.
      *
      * @param query      the Sleeper query
      * @param outputInfo the query results output information
@@ -65,7 +65,7 @@ public interface QueryStatusReportListener {
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
     /**
-     * Check if the leaf partition query has completed.
+     * Notifies when a sub query completes.
      *
      * @param leafQuery  the Sleeper leaf partition query
      * @param outputInfo the query results output information
@@ -73,7 +73,7 @@ public interface QueryStatusReportListener {
     void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo);
 
     /**
-     * Check if the query has failed.
+     * Notifies when a query fails.
      *
      * @param query the Sleeper query
      * @param e     the exception raised
@@ -81,7 +81,7 @@ public interface QueryStatusReportListener {
     void queryFailed(Query query, Exception e);
 
     /**
-     * Check if the query has failed from the query Id.
+     * Notifies when a specific query fails.
      *
      * @param queryId the query Id
      * @param e       the exception raised
@@ -89,7 +89,7 @@ public interface QueryStatusReportListener {
     void queryFailed(String queryId, Exception e);
 
     /**
-     * Check if the leaf partition query has failed.
+     * Notifies when a sub query fails.
      *
      * @param leafQuery the Sleeper leaf partition query
      * @param e         the exception raised

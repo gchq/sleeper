@@ -46,7 +46,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Return a Sleeper query.
+     * Retrieves the top-level Sleeper query held by this instance.
      *
      * @return a Sleeper query
      */
@@ -55,7 +55,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Return a sub query.
+     * Retrieves the leaf partition sub-query held by this instance.
      *
      * @return a leaf partition query
      */
@@ -64,7 +64,8 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * If the query has completed this method is called to publish the completed status.
+     * Reports the completion status of the encapsulated query (either parent or leaf)
+     * to the provided listener.
      *
      * @param listener   listener to publish status of the query to
      * @param outputInfo information about the query results
@@ -78,7 +79,8 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * If the query has failed this method is called to publish the failed status.
+     * Reports the failed status of the encapsulated query (either parent or leaf)
+     * to the provided listener.
      *
      * @param listener listener to publish the status of the query to
      * @param e        exception raised during query processing
@@ -92,7 +94,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Return the Id of the query. A sub query will return the ID of the parent query.
+     * Returns the ID of the query. A sub query will return the ID of the parent query.
      *
      * @return the query ID
      */
@@ -105,7 +107,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Return the table properties.
+     * Returns the table properties.
      *
      * @param  provider cache of Sleeper table properties
      * @return          the table properties
@@ -119,7 +121,7 @@ public class QueryOrLeafPartitionQuery {
     }
 
     /**
-     * Return the query processing config.
+     * Returns the query processing config.
      *
      * @return the query processing config
      */

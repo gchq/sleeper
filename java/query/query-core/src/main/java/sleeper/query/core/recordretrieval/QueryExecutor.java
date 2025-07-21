@@ -78,8 +78,8 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises the partitions and the mapping from partitions to active files.
-     * This method should be called periodically so that this class is aware of
+     * Initialises a query executor with partitions and the mapping from partitions to active files.
+     * Should be called periodically so that this class is aware of
      * new data arriving in the table. How often this method should be called is
      * a balance between having an up-to-date view of the data and the cost of
      * frequently extracting all the information about the files and the partitions
@@ -92,7 +92,8 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises the given partitions and apply the given partitions to active file mapping.
+     * Initialises a quer yexecutor with the partitions and partition to file mapping,
+     * rather than loading them from the state store.
      *
      * @param partitions             the partitions to initialise
      * @param partitionToFileMapping the partition to file mapping information
@@ -102,7 +103,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialise partitions if the next initialise time has passed.
+     * Initialises a query executor once the next initialise time has passed.
      *
      * @param  now                 the time now
      * @throws StateStoreException if the state store can't be accessed
@@ -116,7 +117,8 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialise partitions and partition to file mapping now.
+     * Initialises a query executor with the partitions and partition to file mapping and set the next initialise time
+     * to now.
      *
      * @param  now                 the time now
      * @throws StateStoreException if the state store can't be accessed
@@ -129,8 +131,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises the given partitions, apply the given partitions to active file mapping, and
-     * set the next initialise time to now offset by the cache timeout value.
+     * Initialises a query executor with the partitions, partition to file map and the next initialise time.
      *
      * @param partitions             the partitions to initialise
      * @param partitionToFileMapping the partition to file mapping information
@@ -169,11 +170,11 @@ public class QueryExecutor {
     }
 
     /**
-     * Executes the query. This method creates a supplier for the query and concatenates
-     * the result into a single iterator.
+     * Executes the query and returns records. The records are not returned in any
+     * particular order.
      *
      * @param  query          the query
-     * @return                an iterator containig the relevant rows
+     * @return                an iterator containing the relevant rows
      * @throws QueryException if an error occurs during query execution
      */
     public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {

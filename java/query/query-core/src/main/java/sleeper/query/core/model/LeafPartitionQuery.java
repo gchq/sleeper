@@ -108,7 +108,7 @@ public class LeafPartitionQuery {
     /**
      * Creates a copy of this query that will include the values of the given fields in the result.
      *
-     * @param  requestedValueFields a list of requested fields
+     * @param  requestedValueFields a <code>List</code> of requested fields
      * @return                      the copy of the original query
      */
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
@@ -182,9 +182,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the parent query.
+         * Provides the parent query from which this leaf partition query is derived.
          *
-         * @param  parentQuery the parent query
+         * @param  parentQuery the parent {@link Query}
          * @return             the builder
          */
         public Builder parentQuery(Query parentQuery) {
@@ -193,9 +193,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the table ID.
+         * Provides the table ID for the query.
          *
-         * @param  tableId the table ID
+         * @param  tableId the <code>String</code> table ID
          * @return         the builder
          */
         public Builder tableId(String tableId) {
@@ -204,9 +204,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the query ID.
+         * Provides the query ID.
          *
-         * @param  queryId the query ID
+         * @param  queryId the <code>String</code> query ID
          * @return         the builder
          */
         public Builder queryId(String queryId) {
@@ -215,9 +215,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the sub query ID.
+         * Provides the sub-query ID.
          *
-         * @param  subQueryId the sub query ID
+         * @param  subQueryId the <code>String</code> sub-query ID
          * @return            the builder
          */
         public Builder subQueryId(String subQueryId) {
@@ -226,9 +226,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the row key range regions.
+         * Provides the row key range regions for the query.
          *
-         * @param  regions the row key range regions
+         * @param  regions <code>List</code> of {@link Region}
          * @return         the builder
          */
         public Builder regions(List<Region> regions) {
@@ -237,9 +237,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the processing config.
+         * Provides the processing config for the query.
          *
-         * @param  processingConfig the processing config
+         * @param  processingConfig the {@link QueryProcessingConfig}
          * @return                  the builder
          */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {
@@ -248,9 +248,9 @@ public class LeafPartitionQuery {
         }
 
         /**
-         * Provide the leaf partition ID.
+         * Provides the leaf partition ID.
          *
-         * @param  leafPartitionId the leaf partition ID
+         * @param  leafPartitionId the <code>String</code> leaf partition ID
          * @return                 the builder
          */
         public Builder leafPartitionId(String leafPartitionId) {
@@ -278,7 +278,7 @@ public class LeafPartitionQuery {
          * Provides the files that are in the partition.
          * These files will be read to return the results for the sub query
          *
-         * @param  files the files
+         * @param  files the <code>List</code> of files
          * @return       the builder
          */
         public Builder files(List<String> files) {
