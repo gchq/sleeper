@@ -20,7 +20,7 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
   echo "Usage: $1 <repository url>"
   exit 1
 fi
-echo "Ensure you've ran the syncJars.sh script before running this or it will fail to find the jars."
+echo "Ensure you've ran the scripts/build/build.sh script before running this or it will fail to find the jars."
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 JARS_DIR="${SCRIPTS_DIR}/jars"
