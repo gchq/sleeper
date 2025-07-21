@@ -39,6 +39,7 @@ on:
       - 'java/common/localstack-test/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
+      - 'java/ffi/**'
 
 jobs:
   chunk-workflow:
