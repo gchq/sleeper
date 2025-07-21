@@ -24,6 +24,8 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
  */
 public interface ResultsOutput {
 
+    String DESTINATION = "destination";
+
     /**
      * Publishes the results obtained from a given query or a specific leaf partition query.
      *

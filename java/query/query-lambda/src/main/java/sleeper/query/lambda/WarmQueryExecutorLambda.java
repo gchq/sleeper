@@ -40,7 +40,7 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.ArrayList;
@@ -121,7 +121,7 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                             .tableName(tableProperties.get(TABLE_NAME))
                             .regions(List.of(region))
                             .processingConfig(QueryProcessingConfig.builder()
-                                    .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
+                                    .resultsPublisherConfig(Collections.singletonMap(ResultsOutput.DESTINATION, NO_RESULTS_OUTPUT))
                                     .statusReportDestinations(Collections.emptyList())
                                     .build())
                             .build();

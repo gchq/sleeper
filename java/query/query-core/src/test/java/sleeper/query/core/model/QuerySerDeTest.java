@@ -32,7 +32,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -381,7 +381,7 @@ public class QuerySerDeTest {
         Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
         Map<String, String> publisherConfig = new HashMap<>();
-        publisherConfig.put(ResultsOutputConstants.DESTINATION, "s3");
+        publisherConfig.put(ResultsOutput.DESTINATION, "s3");
         publisherConfig.put("other-config", "test-value");
         Query query = Query.builder()
                 .tableName(tableName)
