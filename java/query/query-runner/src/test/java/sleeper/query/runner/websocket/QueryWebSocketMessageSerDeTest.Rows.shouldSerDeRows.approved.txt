@@ -1,0 +1,1 @@
+[{"message":"rows","queryId":"test-query","rows":[{"key":123},{"key":12345}]}]
