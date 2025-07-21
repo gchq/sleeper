@@ -40,7 +40,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Executes a sub-query.
+ * Executes a sub-query for a leaf partition, retrieving and processing rows.
+ * This class orchestrates the retrieval of records from a leaf partition
+ * and applies compaction-time and query-time iterators.
+ *
  */
 public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
@@ -59,7 +62,10 @@ public class LeafPartitionQueryExecutor {
     }
 
     /**
-     * Get the rows from a leaf partition query.
+     * Retrieves the rows from a given LeafPartitionQuery.
+     * This method initialises and applies both compaction-time and query-time iterators
+     * to the retrieved records before returning them.
+     *
      *
      * @param  leafPartitionQuery the Sleeper leaf partition query
      * @return                    the rows extracted by the query

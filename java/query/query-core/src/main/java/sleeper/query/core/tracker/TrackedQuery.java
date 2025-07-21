@@ -19,7 +19,13 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A TrackedQuery contains information about a query including its id and current status.
+ * A TrackedQuery contains information about a query including its ID and current status.
+ * <p>
+ * This class encapsulates key details required for tracking the lifecycle and outcome of a query.
+ * It provides immutable storage for query-related metadata, such as its unique identifier,
+ * sub-query details, timestamps for updates and expiry, its last known state,
+ * record count, and any associated error messages.
+ *
  */
 public class TrackedQuery {
     private final String queryId;
@@ -124,7 +130,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the query ID.
+         * Provides the query ID.
          *
          * @param  queryId the query ID
          * @return         the builder
@@ -135,7 +141,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the sub query ID.
+         * Provides the sub query ID.
          *
          * @param  subQueryId the sub query ID
          * @return            the builder
@@ -146,7 +152,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the last update time.
+         * Provides the last update time.
          *
          * @param  lastUpdateTime the last update time
          * @return                the builder
@@ -156,7 +162,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the last update time.
+         * Provides the last update time.
          *
          * @param  lastUpdateTime the last update time in milliseconds since the epoch
          * @return                the builder
@@ -167,7 +173,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the expiry date.
+         * Provides the expiry date.
          *
          * @param  expiryDate the expiry date
          * @return            the builder
@@ -177,7 +183,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the expiry date.
+         * Provides the expiry date.
          *
          * @param  expiryDate the expiry date in milliseconds since the epoch
          * @return            the builder
@@ -188,7 +194,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the last known query state.
+         * Provides the last known query state.
          *
          * @param  lastKnownState the last known state
          * @return                the builder
@@ -199,7 +205,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the number of records returned by the query.
+         * Provides the number of records returned by the query.
          *
          * @param  recordCount the number of records returned
          * @return             the builder
@@ -210,7 +216,7 @@ public class TrackedQuery {
         }
 
         /**
-         * Provide the error message.
+         * Provides the error message.
          *
          * @param  errorMessage the error message
          * @return              the builder

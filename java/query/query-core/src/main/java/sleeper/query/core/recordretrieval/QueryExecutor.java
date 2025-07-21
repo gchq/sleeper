@@ -92,7 +92,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises a quer yexecutor with the partitions and partition to file mapping,
+     * Initialises a query executor with the partitions and partition to file mapping,
      * rather than loading them from the state store.
      *
      * @param partitions             the partitions to initialise

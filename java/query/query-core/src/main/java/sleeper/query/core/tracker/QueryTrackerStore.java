@@ -23,7 +23,7 @@ import java.util.List;
  */
 public interface QueryTrackerStore {
     /**
-     * Get the status of a query by query ID.
+     * Retrieves the status of a query by query ID.
      *
      * @param  queryId               the query ID
      * @return                       the tracked query
@@ -32,7 +32,7 @@ public interface QueryTrackerStore {
     TrackedQuery getStatus(String queryId) throws QueryTrackerException;
 
     /**
-     * Get the status of a specific sub query.
+     * Retrieves the status of a specific sub query.
      *
      * @param  queryId               the query ID
      * @param  subQueryId            the sub query ID
@@ -42,14 +42,14 @@ public interface QueryTrackerStore {
     TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException;
 
     /**
-     * Get all queries.
+     * Retrieves all queries.
      *
      * @return a list of all tracked queries
      */
     List<TrackedQuery> getAllQueries();
 
     /**
-     * Get any queries that are in a specific state.
+     * Retrieves any queries that are in a specific state.
      *
      * @param  state the query state
      * @return       a list of tracked queries in the supplied state
@@ -57,7 +57,7 @@ public interface QueryTrackerStore {
     List<TrackedQuery> getQueriesWithState(QueryState state);
 
     /**
-     * Get failed queries.
+     * Retrieves failed queries.
      *
      * @return a list of tracked queries that have failed.
      */

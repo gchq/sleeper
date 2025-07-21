@@ -32,7 +32,7 @@ public enum QueryState {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryState.class);
 
     /**
-     * Return the state of the parent query if it has finished.
+     * Returns the state of the parent query if it has finished.
      *
      * @param  queryId  the query ID
      * @param  children the child queries
