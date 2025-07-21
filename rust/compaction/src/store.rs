@@ -22,7 +22,7 @@ use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta, ObjectStore,
-    PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
+    PutMultipartOptions, PutOptions, PutPayload, PutResult, Result, UploadPart, path::Path,
 };
 use std::{pin::Pin, sync::Mutex};
 
@@ -217,7 +217,7 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
     async fn put_multipart_opts(
         &self,
         location: &Path,
-        opts: PutMultipartOpts,
+        opts: PutMultipartOptions,
     ) -> Result<Box<dyn MultipartUpload>> {
         info!(
             "{} PUT MULTIPART request to {}/{}",

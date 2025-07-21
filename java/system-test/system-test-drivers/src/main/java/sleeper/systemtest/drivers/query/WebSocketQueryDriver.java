@@ -19,8 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.query.QueryWebSocketClient;
-import sleeper.core.record.Record;
-import sleeper.core.record.serialiser.RecordJSONSerDe;
+import sleeper.core.row.Row;
+import sleeper.core.row.serialiser.RowJsonSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -48,13 +48,13 @@ public class WebSocketQueryDriver implements QueryDriver {
     }
 
     @Override
-    public List<Record> run(Query query) {
+    public List<Row> run(Query query) {
         LOGGER.info("Submitting query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
-        RecordJSONSerDe recordSerDe = new RecordJSONSerDe(schema);
+        RowJsonSerDe rowSerDe = new RowJsonSerDe(schema);
         try {
             return queryWebSocketClient.submitQuery(query).join().stream()
-                    .map(recordSerDe::fromJson)
+                    .map(rowSerDe::fromJson)
                     .collect(Collectors.toList());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -34,7 +34,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
-import sleeper.query.runner.output.ApiGatewayWebSocketOutput;
+import sleeper.query.runner.websocket.ApiGatewayWebSocketOutput;
 
 import java.io.IOException;
 import java.util.List;
@@ -151,9 +151,9 @@ class WebSocketQueryStatusReportDestinationIT {
         // Then
         verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
                 {
-                  "queryId" : "q1",
                   "message" : "completed",
-                  "recordCount" : 1,
+                  "rowCount" : 1,
+                  "queryId" : "q1",
                   "locations" : [
                     {
                       "type" : "s3",
@@ -198,9 +198,9 @@ class WebSocketQueryStatusReportDestinationIT {
         // Then
         verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
                 {
-                  "queryId" : "s1",
                   "message" : "completed",
-                  "recordCount" : 1,
+                  "queryId" : "s1",
+                  "rowCount" : 1,
                   "locations" : [
                     {
                       "type" : "s3",
@@ -235,10 +235,9 @@ class WebSocketQueryStatusReportDestinationIT {
         // Then
         verify(1, postRequestedFor(config.getUrl()).withRequestBody(equalToJson("""
                 {
-                  "queryId" : "q2",
                   "message" : "error",
-                  "error" : "IOException: error writing record #2",
-                  "recordCount" : 1,
+                  "queryId" : "q2",
+                  "rowCount" : 1,
                   "locations" : [
                     {
                       "type" : "data",
@@ -248,7 +247,7 @@ class WebSocketQueryStatusReportDestinationIT {
                       "type" : "sketches",
                       "location" : "s3://bucket/sketches.parquet"
                     }
-                  ]
+                  ], "error" : "IOException: error writing record #2"
                 }
                 """)));
     }
