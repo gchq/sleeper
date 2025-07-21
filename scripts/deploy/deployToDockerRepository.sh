@@ -16,19 +16,12 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <instance-id> <number-of-tasks>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Usage: $0 <repository-prefix-path> <optional-create-buildx-builder-true-or-false>"
   exit 1
 fi
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-TEMPLATE_DIR=${SCRIPTS_DIR}/templates
-JAR_DIR=${SCRIPTS_DIR}/jars
-
-VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
-
-echo "-------------------------------------------------------"
-echo "Running compaction tasks"
-echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.common.task.RunCompactionTasks "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.container.UploadDockerImagesToRepository "${SCRIPTS_DIR}" "$@"

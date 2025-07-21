@@ -64,7 +64,7 @@ public class IngestPerformanceST {
                         "contain 440 million records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                        && stats.isAverageRunRecordsPerSecondInRange(130_000, 200_000),
+                        && stats.isAverageRunRecordsPerSecondInRange(150_000, 250_000),
                         "meets expected performance");
     }
 }

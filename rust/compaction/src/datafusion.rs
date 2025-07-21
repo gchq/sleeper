@@ -27,19 +27,26 @@ use crate::{
     s3::ObjectStoreFactory,
 };
 use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
-use arrow::util::pretty::pretty_format_batches;
+use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
 use datafusion::{
-    common::DFSchema,
+    common::{
+        DFSchema,
+        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    },
     config::{ExecutionOptions, TableParquetOptions},
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
-        FunctionRegistry, config::SessionConfig, context::SessionContext,
+        FunctionRegistry, SessionState, config::SessionConfig, context::SessionContext,
         options::ParquetReadOptions,
     },
-    logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
+    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
-    physical_plan::{accept, collect},
+    physical_expr::{LexOrdering, PhysicalSortExpr},
+    physical_plan::{
+        accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
+        expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
+    },
     prelude::*,
 };
 use log::{error, info, warn};
@@ -118,7 +125,6 @@ pub async fn compact(
                 sketch_func
                     // Sketch function needs to be called with each row key column
                     .call(row_key_exprs.clone())
-                    // Alias name to original schema column name
                     .alias(col_name)
             } else {
                 col(col_name)
@@ -131,18 +137,27 @@ pub async fn compact(
     frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
     frame = frame.select(col_names_expr)?;
 
-    // Show explanation of plan
-    let explained = frame.clone().explain(false, false)?.collect().await?;
-
-    let output = pretty_format_batches(&explained)?;
-    info!("DataFusion plan:\n {output}");
-
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
     set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
 
+    // Create column list of row keys and sort key cols
+    let sorting_columns = input_data
+        .row_key_cols
+        .iter()
+        .chain(input_data.sort_key_cols.iter())
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
+    let stats = collect_stats(
+        frame.clone(),
+        input_paths,
+        output_path,
+        &sorting_columns,
+        pqo,
+    )
+    .await?;
     output_sketch(store_factory, output_path, &sketch_func, &stats)?;
 
     Ok(CompactionResult::from(&stats))
@@ -347,10 +362,25 @@ async fn collect_stats(
     frame: DataFrame,
     input_paths: &[Url],
     output_path: &Url,
+    sorting_columns: &[&str],
     pqo: datafusion::config::TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
+    let plan_schema = frame.schema().as_arrow();
+    // Convert list of columns into physical sorting expressions
+    let ordering = LexOrdering::new(
+        sorting_columns
+            .iter()
+            .map(|col_name| {
+                Ok(PhysicalSortExpr::new(
+                    Arc::new(Column::new_with_schema(col_name, plan_schema)?),
+                    SortOptions::new(false, false),
+                ))
+            })
+            .collect::<Result<Vec<_>, DataFusionError>>()?,
+    );
+
     let (session_state, logical_plan) = frame.into_parts();
     let logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
@@ -361,13 +391,55 @@ async fn collect_stats(
     )?
     .build()?;
 
+    // Explain plan
+    explain_plan(session_state.clone(), logical_plan.clone()).await?;
+
     // Optimise plan and generate physical plan
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
-    let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
+
+    // Modify upper most CoalescePartitionsExec into a SortPreservingExec to avoid
+    // sorting bug where partitions are re-merged out of order
+    let new_plan = physical_plan
+        // Recurse down plan looking for specific node
+        .transform_down(|plan_node| {
+            Ok(
+                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
+                {
+                    // Swap it out for a SortPreservingMergeExec
+                    let replacement =
+                        SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
+                    // Stop searching down the query plan after making one replacement
+                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
+                } else {
+                    Transformed::no(plan_node)
+                },
+            )
+        })?
+        .data;
+
+    info!("Physical plan\n{}", displayable(&*new_plan).indent(true));
+
+    let _ = collect(new_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::new(input_paths);
-    accept(physical_plan.as_ref(), &mut stats)?;
+    accept(new_plan.as_ref(), &mut stats)?;
     stats.log_metrics();
     Ok(stats)
+}
+
+/// Write explanation of query plan to log output.
+///
+/// # Errors
+/// If explanation fails.
+async fn explain_plan(
+    session_state: SessionState,
+    logical_plan: LogicalPlan,
+) -> Result<(), DataFusionError> {
+    let explained = DataFrame::new(session_state, logical_plan)
+        .explain(false, false)?
+        .collect()
+        .await?;
+    info!("DataFusion plan:\n {}", pretty_format_batches(&explained)?);
+    Ok(())
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
@@ -516,6 +588,7 @@ fn create_session_cfg<T>(
         .execution
         .parquet
         .statistics_truncate_length = Some(input_data.stats_truncate_length);
+    sf.options_mut().explain.logical_plan_only = true;
     sf
 }
 
