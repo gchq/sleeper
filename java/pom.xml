@@ -33,7 +33,7 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
-        <module>rust-ffi</module>
+        <module>ffi</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>

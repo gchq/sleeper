@@ -15,12 +15,7 @@
  */
 package sleeper.foreign;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.LibraryLoader;
-import jnr.ffi.NativeType;
-import jnr.ffi.Struct;
-import jnr.ffi.annotations.In;
-import jnr.ffi.annotations.Out;
 import org.scijava.nativelib.JniExtractor;
 import org.scijava.nativelib.NativeLoader;
 import org.slf4j.Logger;
@@ -28,9 +23,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Provides low-level bridge functionality for calling foreign code.
+ *
+ * @see FFIBridge#createForeignInterface(Class)
+ */
 public class FFIBridge {
     /**
      * Native library extraction object. This can extract native libraries from the classpath and
@@ -44,9 +44,9 @@ public class FFIBridge {
         // Rust debug builds will place libraries in different locations
         "natives/x86_64-unknown-linux-gnu/debug", "natives/aarch64-unknown-linux-gnu/debug"};
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RustBridge.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FFIBridge.class);
 
-    private static final Map<Class<? extends ForeignFunctions>,Object> libraryCache=new HashMap<>();
+    private static final Map<Class<? extends ForeignFunctions>, Object> LIBRARY_CACHE = new HashMap<>();
 
     /**
      * Attempt to load the native foreign function library.
@@ -57,21 +57,23 @@ public class FFIBridge {
      * the wrong CPU architecture, loading will fail and the next path will be tried. This way, we
      * maintain a single JAR file that can work across multiple CPU architectures.
      *
-     * @param clazz the interface describing the foreign function calls
+     * @param  clazz       the interface describing the foreign function calls
+     * @param  <T>         interface type containing Java functions stubs
      * @return             the native call interface
      * @throws IOException if an error occurs during loading or linking the native library
      */
-    public static synchronized <T extends ForeignFunctions> T getForeignFunctions(Class<T> clazz) throws IOException {
+    public static synchronized <T extends ForeignFunctions> T createForeignInterface(Class<T> clazz) throws IOException {
         try {
             // Look in cache for this interface class
-            T lib = libraryCache.get(clazz);
+            @SuppressWarnings("unchecked")
+            T lib = (T) LIBRARY_CACHE.get(clazz);
             // If it's not there, link it and insert it
-            if (null==lib) {
-               lib = extractAndLink(clazz, "compaction");
-                libraryCache.put(clazz,lib);
+            if (null == lib) {
+                lib = extractAndLink(clazz, "compaction");
+                LIBRARY_CACHE.put(clazz, lib);
             }
 
-         return lib;
+            return lib;
         } catch (UnsatisfiedLinkError err) {
             throw (IOException) new IOException("Could not initialise foreign library bridge", err);
         }
@@ -121,6 +123,6 @@ public class FFIBridge {
         throw new UnsatisfiedLinkError("Couldn't locate or load " + libName);
     }
 
-    private RustBridge() {
+    private FFIBridge() {
     }
 }

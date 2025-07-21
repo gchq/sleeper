@@ -15,229 +15,253 @@
  */
 package sleeper.foreign;
 
- /**
-     * Array class that can be inside a Struct. Creates a dynamic array that can be passed to C.
-     * Strong references are maintained for allocated memory so GC will dispose of memory when
-     * this object is collected.
-     *
-     * @param <T> object type of array
+import jnr.ffi.NativeType;
+import jnr.ffi.Struct;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+
+/**
+ * Array class that can be inside an FFI struct. Creates a dynamic array that can be
+ * passed to C.
+ * Strong references are maintained for allocated memory so GC will dispose of
+ * memory when
+ * this object is collected.
+ *
+ * @param <T> object type of array
+ */
+public class FFIArray<T> {
+    /** Length of array. */
+    private final Struct.size_t len;
+    /** Pointer to base of dynamically allocated array. */
+    private final Struct.Pointer arrayBase;
+    /**
+     * Reference to dynamically allocated array to prevent GC until Array instance
+     * is collected.
      */
-    public static class FFIArray<T> {
-        // Length of array
-        public final Struct.size_t len;
-        // Pointer to base of dynamically allocated array
-        public final Struct.Pointer arrayBase;
-        // Reference to dynamically allocated array to prevent GC until Array instance is collected
-        public jnr.ffi.Pointer basePtr;
-        // Reference to dynamically allocated items to prevent GC until Array instance is collected
-        public jnr.ffi.Pointer[] items;
+    private jnr.ffi.Pointer basePtr;
+    /**
+     * Reference to dynamically allocated items to prevent GC until Array instance
+     * is collected.
+     */
+    private jnr.ffi.Pointer[] items;
 
-        public FFIArray(Struct enclosing) {
-            this.len = enclosing.new size_t();
-            this.arrayBase = enclosing.new Pointer();
-        }
+    public FFIArray(Struct enclosing) {
+        this.len = enclosing.new size_t();
+        this.arrayBase = enclosing.new Pointer();
+    }
 
-        /**
-         * Create a dynamic array of items in this array.
-         *
-         * A base pointer is allocated pointers set to other
-         * dynamically allocated memory containing items from array.
-         *
-         * @param arr          array data
-         * @param nullsAllowed if null pointers are allowed in the data array
-         */
-        public void populate(final T[] arr, boolean nullsAllowed) {
-            final jnr.ffi.Runtime r = len.struct().getRuntime();
-            // Calculate size needed for array of pointers
-            int ptrSize = r.findType(NativeType.ADDRESS).size();
-            // Null out zero length arrays
-            if (arr.length > 0) {
-                int size = arr.length * ptrSize;
-                // Allocate some memory for pointers
-                this.basePtr = r.getMemoryManager().allocateDirect(size);
-                this.arrayBase.set(basePtr);
+    /**
+     * Create a dynamic array of items in this array.
+     *
+     * A base pointer is allocated pointers set to other
+     * dynamically allocated memory containing items from array.
+     *
+     * @param arr          array data
+     * @param nullsAllowed if null pointers are allowed in the data array
+     */
+    public void populate(final T[] arr, boolean nullsAllowed) {
+        final jnr.ffi.Runtime r = len.struct().getRuntime();
+        // Calculate size needed for array of pointers
+        int ptrSize = r.findType(NativeType.ADDRESS).size();
+        // Null out zero length arrays
+        if (arr.length > 0) {
+            int size = arr.length * ptrSize;
+            // Allocate some memory for pointers
+            this.basePtr = r.getMemoryManager().allocateDirect(size);
+            this.arrayBase.set(basePtr);
 
-                this.items = new jnr.ffi.Pointer[arr.length];
+            this.items = new jnr.ffi.Pointer[arr.length];
 
-                for (int i = 0; i < arr.length; i++) {
-                    if (!nullsAllowed && arr[i] == null) {
-                        throw new NullPointerException("Index " + i + " of array is null when nulls aren't allowed here");
-                    }
-                    setValue(arr[i], i, r);
+            for (int i = 0; i < arr.length; i++) {
+                if (!nullsAllowed && arr[i] == null) {
+                    throw new NullPointerException("Index " + i + " of array is null when nulls aren't allowed here");
                 }
-
-                // Bulk set the pointers in the base array
-                this.basePtr.put(0, this.items, 0, this.items.length);
-            } else {
-                this.basePtr = null;
-                this.items = null;
+                setValue(arr[i], i, r);
             }
 
-            // Set length of array in struct
-            this.len.set(arr.length);
+            // Bulk set the pointers in the base array
+            this.basePtr.put(0, this.items, 0, this.items.length);
+        } else {
+            this.basePtr = null;
+            this.items = null;
         }
 
-        /**
-         * Fetches the contents of this array back into a Java array.
-         *
-         * The items in this arrayn are read back from the direct heap storage
-         * where they will have been allocated by {@link Array#populate(Object[], boolean)}.
-         *
-         * @param  <E>                   the generic type of elements in the array
-         * @param  clazz                 the class type of generic parameter T
-         * @param  nullsAllowed          if nulls are allowed in this array
-         * @return                       Java array of object from this array
-         * @throws IllegalStateException if this array is not valid before calling this method
-         * @throws IllegalStateException if a {@code null} is found in a non-nullable array
-         * @throws NullPointerException  if parts of this object are {@null} when they shouldn't be, see
-         *                               {@link Array#validate()}
-         */
-        public <E> T[] readBack(Class<E> clazz, boolean nullsAllowed) {
-            validate();
-            final jnr.ffi.Runtime r = len.struct().getRuntime();
-            int len = items.length;
+        // Set length of array in struct
+        this.len.set(arr.length);
+    }
 
-            @SuppressWarnings("unchecked")
-            T[] values = (T[]) java.lang.reflect.Array.newInstance(clazz, len);
+    /**
+     * Fetches the contents of this array back into a Java array.
+     *
+     * The items in this arrayn are read back from the direct heap storage
+     * where they will have been allocated by
+     * {@link FFIArray#populate(Object[], boolean)}.
+     *
+     * @param  <E>                   the generic type of elements in the array
+     * @param  clazz                 the class type of generic parameter T
+     * @param  nullsAllowed          if nulls are allowed in this array
+     * @return                       Java array of object from this array
+     * @throws IllegalStateException if this array is not valid before calling this
+     *                               method
+     * @throws IllegalStateException if a {@code null} is found in a non-nullable
+     *                               array
+     * @throws NullPointerException  if parts of this object are {@null} when they
+     *                               shouldn't be, see
+     *                               {@link FFIArray#validate()}
+     */
+    public <E> T[] readBack(Class<E> clazz, boolean nullsAllowed) {
+        validate();
+        final jnr.ffi.Runtime r = len.struct().getRuntime();
+        int len = items.length;
 
-            for (int i = 0; i < len; i++) {
-                values[i] = getValue(i, clazz, nullsAllowed, r);
-            }
-            return values;
-        }
-
-        /**
-         * Check class invariants.
-         *
-         * @throws IllegalStateException if a violation is found
-         */
-        public void validate() {
-            if (len.get() == 0) {
-                if (basePtr != null || items != null) {
-                    throw new IllegalStateException("array length is 0 but pointers not null");
-                }
-            } else {
-                if (len.get() != items.length) {
-                    throw new IllegalStateException("length of " + len.get() + " doesn't match items length of " + items.length);
-                }
-                Objects.requireNonNull(this.basePtr, "base pointer is null");
-                Objects.requireNonNull(this.items, "items array is null");
-                if (this.arrayBase.get().address() != this.basePtr.address()) {
-                    throw new IllegalStateException("array base pointer and stored base pointer differ!");
-                }
-            }
-        }
-
-        /**
-         * Sets a given value in the array to a specific value. The data
-         * is byte encoded.
-         *
-         * Intended for internal use only.
-         *
-         * @param  item                      the item to encode
-         * @param  idx                       array position to use
-         * @param  r                         struct runtime
-         * @throws ClassCastException        if item is of wrong class
-         * @throws IndexOutOfBoundsException if idx is invalid
-         */
-        protected void setValue(T item, int idx, jnr.ffi.Runtime r) {
-            if (item == null) {
-                this.items[idx] = jnr.ffi.Pointer.wrap(r, 0);
-            } else if (item instanceof Integer) {
-                int e = (int) item;
-                this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SINT).size());
-                this.items[idx].putInt(0, e);
-            } else if (item instanceof Long) {
-                long e = (long) item;
-                this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SLONGLONG).size());
-                this.items[idx].putLong(0, e);
-            } else if (item instanceof java.lang.String) {
-                // Strings are encoded as 4 byte length then value
-                java.lang.String e = (java.lang.String) item;
-                byte[] utf8string = e.getBytes(StandardCharsets.UTF_8);
-                // Add four for length
-                int stringSize = utf8string.length + 4;
-                // Allocate memory for string and write length then the string
-                this.items[idx] = r.getMemoryManager().allocateDirect(stringSize);
-                this.items[idx].putInt(0, utf8string.length);
-                this.items[idx].put(4, utf8string, 0, utf8string.length);
-            } else if (item instanceof byte[]) {
-                // Byte arrays are encoded as 4 byte length then value
-                byte[] e = (byte[]) item;
-                int byteSize = e.length + 4;
-                this.items[idx] = r.getMemoryManager().allocateDirect(byteSize);
-                this.items[idx].putInt(0, e.length);
-                this.items[idx].put(4, e, 0, e.length);
-            } else if (item instanceof Boolean) {
-                boolean e = (boolean) item;
-                this.items[idx] = r.getMemoryManager().allocateDirect(1);
-                this.items[idx].putByte(0, e ? (byte) 1 : (byte) 0);
-            } else {
-                throw new ClassCastException("Can't cast " + item.getClass() + " to a valid Sleeper row key type");
-            }
-        }
-
-        /**
-         * Reads a value from array.
-         *
-         * The value of the array element is read from previously allocated memory. The array MUST have been
-         * previously populated with {@link Array#populate(Object[], boolean)}. The type of the array item
-         * to read is given in the {@code clazz} argument. This should match the generic type given.
-         *
-         * If nulls are not allowed in this array, but a null pointer is found, then an exception is thrown.
-         *
-         * @param  <E>                       the generic type of elements in the array
-         * @param  idx                       the index to read
-         * @param  clazz                     the class type of generic parameter E
-         * @param  nullsAllowed              if nulls may be present in this array
-         * @param  r                         the runtime this array was allocated with
-         * @return                           the array element, or {@code null} if nulls are allowed and the pointer at
-         *                                   {@code idx} is 0.
-         * @throws IndexOutOfBoundsException if {@code idx} is out of range
-         * @throws IllegalStateException     if a pointer to 0 is found in a non-nullable array
-         */
         @SuppressWarnings("unchecked")
-        protected <E> T getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
-            if (idx < 0 || idx >= items.length) {
-                throw new IndexOutOfBoundsException(String.format("idx %d length %d", idx, len.intValue()));
+        T[] values = (T[]) java.lang.reflect.Array.newInstance(clazz, len);
+
+        for (int i = 0; i < len; i++) {
+            values[i] = getValue(i, clazz, nullsAllowed, r);
+        }
+        return values;
+    }
+
+    /**
+     * Check class invariants.
+     *
+     * @throws IllegalStateException if a violation is found
+     */
+    public void validate() {
+        if (len.get() == 0) {
+            if (basePtr != null || items != null) {
+                throw new IllegalStateException("array length is 0 but pointers not null");
             }
-            // Null handling
-            if (this.items[idx].address() == 0) {
-                if (nullsAllowed) {
-                    return (T) null;
-                } else {
-                    throw new IllegalStateException(String.format("Null found in non-nullable array at idx %d", idx));
-                }
+        } else {
+            if (len.get() != items.length) {
+                throw new IllegalStateException(
+                        "length of " + len.get() + " doesn't match items length of " + items.length);
             }
-            if (clazz.equals(Integer.TYPE) || clazz.equals(Integer.class)) {
-                return (T) Integer.valueOf(this.items[idx].getInt(0));
-            } else if (clazz.equals(Long.TYPE) || clazz.equals(Long.class)) {
-                return (T) Long.valueOf(this.items[idx].getLong(0));
-            } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
-                return (T) Boolean.valueOf(this.items[idx].getByte(0) == 1);
-            } else if (clazz.equals(String.class)) {
-                // Read string length
-                int length = this.items[idx].getInt(0);
-                if (length < 0) {
-                    throw new IllegalStateException(String.format("Read string length of %d at index %d", length, idx));
-                }
-                // Decode the bytes as UTF-8
-                byte[] utf8String = new byte[length];
-                this.items[idx].get(4, utf8String, 0, length);
-                return (T) new String(utf8String, StandardCharsets.UTF_8);
-            } else if (clazz.equals(byte.class.arrayType())) {
-                // Read the length of the byte array
-                int length = this.items[idx].getInt(0);
-                if (length < 0) {
-                    throw new IllegalStateException(String.format("Read byte[] length of %d at index %d", length, idx));
-                }
-                // Grab the actual bytes into the new array
-                byte[] bytes = new byte[length];
-                this.items[idx].get(4, bytes, 0, length);
-                return (T) bytes;
+            Objects.requireNonNull(this.basePtr, "base pointer is null");
+            Objects.requireNonNull(this.items, "items array is null");
+            if (this.arrayBase.get().address() != this.basePtr.address()) {
+                throw new IllegalStateException("array base pointer and stored base pointer differ!");
+            }
+        }
+    }
+
+    /**
+     * Sets a given value in the array to a specific value. The data
+     * is byte encoded.
+     *
+     * Intended for internal use only.
+     *
+     * @param  item                      the item to encode
+     * @param  idx                       array position to use
+     * @param  r                         struct runtime
+     * @throws ClassCastException        if item is of wrong class
+     * @throws IndexOutOfBoundsException if idx is invalid
+     */
+    protected void setValue(T item, int idx, jnr.ffi.Runtime r) {
+        if (item == null) {
+            this.items[idx] = jnr.ffi.Pointer.wrap(r, 0);
+        } else if (item instanceof Integer) {
+            int e = (int) item;
+            this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SINT).size());
+            this.items[idx].putInt(0, e);
+        } else if (item instanceof Long) {
+            long e = (long) item;
+            this.items[idx] = r.getMemoryManager().allocateDirect(r.findType(NativeType.SLONGLONG).size());
+            this.items[idx].putLong(0, e);
+        } else if (item instanceof java.lang.String) {
+            // Strings are encoded as 4 byte length then value
+            java.lang.String e = (java.lang.String) item;
+            byte[] utf8string = e.getBytes(StandardCharsets.UTF_8);
+            // Add four for length
+            int stringSize = utf8string.length + 4;
+            // Allocate memory for string and write length then the string
+            this.items[idx] = r.getMemoryManager().allocateDirect(stringSize);
+            this.items[idx].putInt(0, utf8string.length);
+            this.items[idx].put(4, utf8string, 0, utf8string.length);
+        } else if (item instanceof byte[]) {
+            // Byte arrays are encoded as 4 byte length then value
+            byte[] e = (byte[]) item;
+            int byteSize = e.length + 4;
+            this.items[idx] = r.getMemoryManager().allocateDirect(byteSize);
+            this.items[idx].putInt(0, e.length);
+            this.items[idx].put(4, e, 0, e.length);
+        } else if (item instanceof Boolean) {
+            boolean e = (boolean) item;
+            this.items[idx] = r.getMemoryManager().allocateDirect(1);
+            this.items[idx].putByte(0, e ? (byte) 1 : (byte) 0);
+        } else {
+            throw new ClassCastException("Can't cast " + item.getClass() + " to a valid Sleeper row key type");
+        }
+    }
+
+    /**
+     * Reads a value from array.
+     *
+     * The value of the array element is read from previously allocated memory. The
+     * array MUST have been
+     * previously populated with {@link FFIArray#populate(Object[], boolean)}. The type
+     * of the array item
+     * to read is given in the {@code clazz} argument. This should match the generic
+     * type given.
+     *
+     * If nulls are not allowed in this array, but a null pointer is found, then an
+     * exception is thrown.
+     *
+     * @param  <E>                       the generic type of elements in the array
+     * @param  idx                       the index to read
+     * @param  clazz                     the class type of generic parameter E
+     * @param  nullsAllowed              if nulls may be present in this array
+     * @param  r                         the runtime this array was allocated with
+     * @return                           the array element, or {@code null} if nulls are allowed and the
+     *                                   pointer at
+     *                                   {@code idx} is 0.
+     * @throws IndexOutOfBoundsException if {@code idx} is out of range
+     * @throws IllegalStateException     if a pointer to 0 is found in a
+     *                                   non-nullable array
+     */
+    @SuppressWarnings("unchecked")
+    protected <E> T getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
+        if (idx < 0 || idx >= items.length) {
+            throw new IndexOutOfBoundsException(String.format("idx %d length %d", idx, len.intValue()));
+        }
+        // Null handling
+        if (this.items[idx].address() == 0) {
+            if (nullsAllowed) {
+                return (T) null;
             } else {
-                throw new ClassCastException("Can't cast " + clazz + " to a valid Sleeper row key type");
+                throw new IllegalStateException(String.format("Null found in non-nullable array at idx %d", idx));
             }
+        }
+        if (clazz.equals(Integer.TYPE) || clazz.equals(Integer.class)) {
+            return (T) Integer.valueOf(this.items[idx].getInt(0));
+        } else if (clazz.equals(Long.TYPE) || clazz.equals(Long.class)) {
+            return (T) Long.valueOf(this.items[idx].getLong(0));
+        } else if (clazz.equals(Boolean.TYPE) || clazz.equals(Boolean.class)) {
+            return (T) Boolean.valueOf(this.items[idx].getByte(0) == 1);
+        } else if (clazz.equals(String.class)) {
+            // Read string length
+            int length = this.items[idx].getInt(0);
+            if (length < 0) {
+                throw new IllegalStateException(String.format("Read string length of %d at index %d", length, idx));
+            }
+            // Decode the bytes as UTF-8
+            byte[] utf8String = new byte[length];
+            this.items[idx].get(4, utf8String, 0, length);
+            return (T) new String(utf8String, StandardCharsets.UTF_8);
+        } else if (clazz.equals(byte.class.arrayType())) {
+            // Read the length of the byte array
+            int length = this.items[idx].getInt(0);
+            if (length < 0) {
+                throw new IllegalStateException(String.format("Read byte[] length of %d at index %d", length, idx));
+            }
+            // Grab the actual bytes into the new array
+            byte[] bytes = new byte[length];
+            this.items[idx].get(4, bytes, 0, length);
+            return (T) bytes;
+        } else {
+            throw new ClassCastException("Can't cast " + clazz + " to a valid Sleeper row key type");
         }
     }
 }

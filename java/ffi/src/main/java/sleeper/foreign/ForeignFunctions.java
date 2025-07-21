@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.foreign
+package sleeper.foreign;
 
  /**
   * Marker interface for foreign function call libraries.
