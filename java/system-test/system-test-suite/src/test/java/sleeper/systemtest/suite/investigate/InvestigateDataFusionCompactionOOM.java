@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.df.DataFusionCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 

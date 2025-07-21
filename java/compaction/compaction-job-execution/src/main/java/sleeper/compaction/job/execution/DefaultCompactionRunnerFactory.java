@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
+import sleeper.compaction.df.DataFusionCompactionRunner;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
