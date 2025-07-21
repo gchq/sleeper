@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.rust.DataFusionFunctions.FFICompactionParams;
-import sleeper.compaction.rust.DataFusionFunctions.FFICompactionResult;
+import sleeper.compaction.rust.DataFusionFunctions.CompactionResult;
+import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionParams;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -89,7 +89,7 @@ public class RustCompactionRunner implements CompactionRunner {
         DataFusionFunctions nativeLib = loadForeignLibrary();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
+        DataFusionCompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
         RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
 
@@ -114,10 +114,10 @@ public class RustCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+    private static DataFusionCompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
             Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFICompactionParams params = new FFICompactionParams(runtime);
+        DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.region);
@@ -209,9 +209,9 @@ public class RustCompactionRunner implements CompactionRunner {
      * @throws IOException      if the Rust library doesn't complete successfully
      */
     public static RecordsProcessed invokeRustFFI(CompactionJob job, DataFusionFunctions nativeLib,
-            FFICompactionParams compactionParams) throws IOException {
+            DataFusionCompactionParams compactionParams) throws IOException {
         // Create object to hold the result (in native memory)
-        FFICompactionResult compactionData = nativeLib.allocate_result();
+        CompactionResult compactionData = nativeLib.allocate_result();
         try {
             // Perform compaction
             int result = nativeLib.ffi_merge_sorted_files(compactionParams, compactionData);

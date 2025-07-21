@@ -34,11 +34,11 @@ public interface DataFusionFunctions extends ForeignFunctions {
      */
     @SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    class FFICompactionResult extends Struct {
+    class DataFusionCompactionResult extends Struct {
         public final Struct.size_t rows_read = new Struct.size_t();
         public final Struct.size_t rows_written = new Struct.size_t();
 
-        public FFICompactionResult(jnr.ffi.Runtime runtime) {
+        public DataFusionCompactionResult(jnr.ffi.Runtime runtime) {
             super(runtime);
         }
     }
@@ -50,7 +50,7 @@ public interface DataFusionFunctions extends ForeignFunctions {
      */
     @SuppressWarnings(value = {"checkstyle:membername"})
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    class FFICompactionParams extends Struct {
+    class DataFusionCompactionParams extends Struct {
         /** Optional AWS configuration. */
         public final Struct.Boolean override_aws_config = new Struct.Boolean();
         public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
@@ -97,7 +97,7 @@ public interface DataFusionFunctions extends ForeignFunctions {
         /** Compaction iterator configuration. This is optional. */
         public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
-        public FFICompactionParams(jnr.ffi.Runtime runtime) {
+        public DataFusionCompactionParams(jnr.ffi.Runtime runtime) {
             super(runtime);
         }
 
@@ -142,10 +142,10 @@ public interface DataFusionFunctions extends ForeignFunctions {
         }
     }
 
-    FFICompactionResult allocate_result();
+    DataFusionCompactionResult allocate_result();
 
-    void free_result(@In FFICompactionResult res);
+    void free_result(@In DataFusionCompactionResult res);
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int ffi_merge_sorted_files(@In FFICompactionParams input, @Out FFICompactionResult result);
+    int ffi_merge_sorted_files(@In DataFusionCompactionParams input, @Out DataFusionCompactionResult result);
 }
