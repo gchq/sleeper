@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineRunner;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class PublishJarsToRepoTest {
         //Given
         final List<CommandPipeline> commandsThatRan = new ArrayList<>();
         final CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
-        final PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder().repoUrl("someUrl").version("0.31.0").commandRunner(commandRunner).build();
+        final PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder().filePath(Path.of("/some/directory/")).repoUrl("someUrl").version("0.31.0").commandRunner(commandRunner).build();
 
         //When
         publishJarsToRepo.upload();
@@ -44,31 +45,38 @@ public class PublishJarsToRepoTest {
         assertThat(commandsString)
                 //This one's from ClientJar
                 .contains("[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                        "-Dfile=../scripts/jars/bulk-import-runner-0.31.0.jar, -DgroupId=sleeper, " +
+                        "-Dfile=/some/directory/bulk-import-runner-0.31.0.jar, -DgroupId=sleeper, " +
                         "-DartifactId=bulk-import-runner, -Dversion=0.31.0, -DgeneratePom=false]")
                 //This one's from LambdaJar
                 .contains("[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                        "-Dfile=../scripts/jars/athena-0.31.0.jar, -DgroupId=sleeper, " +
+                        "-Dfile=/some/directory/athena-0.31.0.jar, -DgroupId=sleeper, " +
                         "-DartifactId=athena, -Dversion=0.31.0, -DgeneratePom=false]");
     }
 
     @Test
+    public void testFilePathMustNotBeNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl("file:/someRepo").build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("File path must not be null");
+    }
+
+    @Test
     public void testRepoMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().build())
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().filePath(Path.of("any")).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Repository URL must not be null");
     }
 
     @Test
     public void testVersionMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl("file:/someRepo").version(null).build())
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().filePath(Path.of("any")).repoUrl("file:/someRepo").version(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Version to publish must not be null");
     }
 
     @Test
     public void testCommandRunnerMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl("file:/someRepo").commandRunner(null).build())
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().filePath(Path.of("any")).repoUrl("file:/someRepo").commandRunner(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Command Runner must not be null");
     }

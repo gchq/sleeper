@@ -22,14 +22,8 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
 fi
 echo "Ensure you've ran the syncJars.sh script before running this or it will fail to find the jars."
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+JARS_DIR="${SCRIPTS_DIR}/jars"
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-pushd "${PROJECT_ROOT}/java"
-echo "Compiling..."
-mvn install -Pquick -q -pl clients -am
-echo "Publishing Jars to repo $1"
-mvn exec:java -q -pl clients \
-  -Dexec.mainClass="sleeper.clients.deploy.jar.PublishJarsToRepo" \
-  -Dexec.args="$PROJECT_ROOT $1"
-popd
+java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.jar.PublishJarsToRepo "${JARS_DIR}" "$@"

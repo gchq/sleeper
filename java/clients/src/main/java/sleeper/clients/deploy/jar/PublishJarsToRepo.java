@@ -22,15 +22,18 @@ import sleeper.core.deploy.ClientJar;
 import sleeper.core.deploy.LambdaJar;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static java.util.Objects.requireNonNull;
 
 public class PublishJarsToRepo {
+    private final Path filePath;
     private final String repoUrl;
     private final String version;
     private final CommandPipelineRunner commandRunner;
 
     private PublishJarsToRepo(Builder builder) {
+        this.filePath = requireNonNull(builder.filePath, "File path must not be null");
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
         this.commandRunner = requireNonNull(builder.commandRunner, "Command Runner must not be null");
@@ -40,13 +43,13 @@ public class PublishJarsToRepo {
         return new Builder();
     }
 
-    //TODO
-    //Call Java not through mvn in script
     public static void main(String[] args) throws Exception {
         builder()
+                .filePath(Path.of(args[0] + "/"))
                 .repoUrl(args[1])
                 .build()
                 .upload();
+
     }
 
     public void upload() {
@@ -65,7 +68,7 @@ public class PublishJarsToRepo {
             commandRunner.run("mvn", "deploy:deploy-file", "-q",
                     "-Durl=" + repoUrl,
                     "-DrepositoryId=repo.id", //Requires matching server with auth details in local m2 settings.xml <servers>
-                    "-Dfile=../scripts/jars/" + String.format(filename, version),
+                    "-Dfile=" + filePath.resolve(String.format(filename, version)),
                     "-DgroupId=sleeper",
                     "-DartifactId=" + imageName,
                     "-Dversion=" + version,
@@ -76,11 +79,17 @@ public class PublishJarsToRepo {
     }
 
     public static final class Builder {
+        private Path filePath;
         private String repoUrl;
         private String version = SleeperVersion.getVersion();
         CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
 
         private Builder() {
+        }
+
+        public Builder filePath(Path filePath) {
+            this.filePath = filePath;
+            return this;
         }
 
         public Builder repoUrl(String repoUrl) {

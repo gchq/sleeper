@@ -117,7 +117,7 @@ to an S3 bucket, and some Docker images need to be uploaded to an ECR repository
 Details of images to be uploaded can be found [here](/docs/deployment/images-to-upload.md).
 
 There is a script [here](/scripts/deploy/publishJars.sh) to publish the jars to a repository.
-It takes in two arguments, the repository url and the version to publish.
+It takes in one argument, the repository url to publish to.
 This script can be tested locally by using a repository url similar to file:/path/to/output that will publish these files locally.
 
 #### Upload the Docker images to ECR
