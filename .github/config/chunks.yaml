@@ -43,6 +43,7 @@ chunks:
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
       - compaction/compaction-core
+      - compaction/compaction-datafusion
       - partitions/splitter
       - partitions/splitter-lambda
       - garbage-collector
