@@ -17,10 +17,10 @@
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
-use compaction::{ColRange, CompactionInput, merge_sorted_files};
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
+use sleeper_df::{ColRange, CompactionInput, PartitionBound, merge_sorted_files};
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
 
@@ -127,9 +127,9 @@ async fn main() -> color_eyre::Result<()> {
         map.insert(
             key.into(),
             ColRange {
-                lower: compaction::PartitionBound::String(bounds.0),
+                lower: PartitionBound::String(bounds.0),
                 lower_inclusive: true,
-                upper: compaction::PartitionBound::String(bounds.1),
+                upper: PartitionBound::String(bounds.1),
                 upper_inclusive: false,
             },
         );

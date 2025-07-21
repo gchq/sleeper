@@ -1202,40 +1202,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "compaction"
-version = "0.32.0-SNAPSHOT"
-dependencies = [
- "arrow",
- "async-trait",
- "aws-config",
- "aws-credential-types",
- "aws-types",
- "bytes",
- "chrono",
- "color-eyre",
- "cxx",
- "datafusion",
- "env_logger",
- "futures",
- "libc",
- "log",
- "mockall",
- "nohash",
- "num-format",
- "num-traits",
- "object_store",
- "regex",
- "rust_sketch",
- "tempfile",
- "test-log",
- "testing_logger",
- "thiserror 2.0.12",
- "tokio",
- "tokio-test",
- "url",
-]
-
-[[package]]
 name = "compactor"
 version = "0.32.0-SNAPSHOT"
 dependencies = [
@@ -1243,13 +1209,13 @@ dependencies = [
  "chrono",
  "clap",
  "color-eyre",
- "compaction",
  "env_logger",
  "human-panic",
  "log",
  "num-format",
  "owo-colors",
  "predicates",
+ "sleeper_df",
  "thiserror 2.0.12",
  "tokio",
  "url",
@@ -4275,6 +4241,40 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "sleeper_df"
+version = "0.32.0-SNAPSHOT"
+dependencies = [
+ "arrow",
+ "async-trait",
+ "aws-config",
+ "aws-credential-types",
+ "aws-types",
+ "bytes",
+ "chrono",
+ "color-eyre",
+ "cxx",
+ "datafusion",
+ "env_logger",
+ "futures",
+ "libc",
+ "log",
+ "mockall",
+ "nohash",
+ "num-format",
+ "num-traits",
+ "object_store",
+ "regex",
+ "rust_sketch",
+ "tempfile",
+ "test-log",
+ "testing_logger",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-test",
+ "url",
 ]
 
 [[package]]

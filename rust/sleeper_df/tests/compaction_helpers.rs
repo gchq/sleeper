@@ -5,8 +5,6 @@ use arrow::{
     datatypes::{DataType, Field, Schema},
 };
 use color_eyre::eyre::{Error, OptionExt, eyre};
-use compaction::{ColRange, PartitionBound};
-use compaction::{DataSketchVariant, deserialise_sketches};
 use datafusion::parquet::{
     arrow::{
         ArrowWriter,
@@ -15,6 +13,8 @@ use datafusion::parquet::{
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
+use sleeper_df::{ColRange, PartitionBound};
+use sleeper_df::{DataSketchVariant, deserialise_sketches};
 use tempfile::TempDir;
 use url::Url;
 

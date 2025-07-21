@@ -28,7 +28,7 @@ publish = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
-compaction = { path = "../compaction" }
+sleeper_df = { path = "../sleeper_df" }
 env_logger = { workspace = true }
 human-panic = { workspace = true }
 log = { workspace = true, features = ["release_max_level_debug"] }
