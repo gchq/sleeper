@@ -31,4 +31,4 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "-------------------------------------------------------"
 echo "Running compaction tasks"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.task.common.RunCompactionTasks "$@"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.common.task.RunCompactionTasks "$@"
