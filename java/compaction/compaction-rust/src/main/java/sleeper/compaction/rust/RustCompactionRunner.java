@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.rust.DataFusionFunctions.CompactionResult;
 import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionResult;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -211,7 +211,7 @@ public class RustCompactionRunner implements CompactionRunner {
     public static RecordsProcessed invokeRustFFI(CompactionJob job, DataFusionFunctions nativeLib,
             DataFusionCompactionParams compactionParams) throws IOException {
         // Create object to hold the result (in native memory)
-        CompactionResult compactionData = nativeLib.allocate_result();
+        DataFusionCompactionResult compactionData = nativeLib.allocate_result();
         try {
             // Perform compaction
             int result = nativeLib.ffi_merge_sorted_files(compactionParams, compactionData);
