@@ -106,8 +106,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
-        BulkExportLeafPartitionQuery query1 = createQueryWithIdsAndFiles("e-1", "se-1", file);
-        BulkExportLeafPartitionQuery query2 = createQueryWithIdsAndFiles("e-2", "se-2", file);
+        BulkExportLeafPartitionQuery query1 = createQueryWithIdsAndFiles("e-1", "se-1", file).build();
+        BulkExportLeafPartitionQuery query2 = createQueryWithIdsAndFiles("e-2", "se-2", file).build();
         send(query1);
         send(query2);
 
@@ -157,7 +157,8 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
-        BulkExportLeafPartitionQuery query = createQueryWithIdsFilesAndBrokenPartition("e-id", "se-id", file);
+        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-id", "se-id", file)
+                .leafPartitionId("00000").build();
 
         send(query);
 
@@ -206,7 +207,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         assertThat(getMessagesFromDlq()).isEmpty();
     }
 
-    private BulkExportLeafPartitionQuery createQueryWithIdsAndFiles(
+    private BulkExportLeafPartitionQuery.Builder createQueryWithIdsAndFiles(
             String exportId, String subExportId, FileReference... files) {
         String partitionId = files[0].getPartitionId();
         return BulkExportLeafPartitionQuery.builder()
@@ -216,22 +217,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .regions(List.of())
                 .leafPartitionId(partitionId)
                 .partitionRegion(partitions.getPartition(partitionId).getRegion())
-                .files(Stream.of(files).map(FileReference::getFilename).toList())
-                .build();
-    }
-
-    private BulkExportLeafPartitionQuery createQueryWithIdsFilesAndBrokenPartition(
-            String exportId, String subExportId, FileReference... files) {
-        return BulkExportLeafPartitionQuery.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .exportId(exportId)
-                .subExportId(subExportId)
-                .regions(List.of())
-                .leafPartitionId("NO-ID")
-                .partitionRegion(partitions.getPartition(files[0]
-                        .getPartitionId()).getRegion())
-                .files(Stream.of(files).map(FileReference::getFilename).toList())
-                .build();
+                .files(Stream.of(files).map(FileReference::getFilename).toList());
     }
 
     private void runTask() throws Exception {
