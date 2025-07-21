@@ -20,7 +20,7 @@ use color_eyre::eyre::bail;
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use sleeper_df::{ColRange, CompactionInput, PartitionBound, merge_sorted_files};
+use sleeper_df::{ColRange, CompactionInput, PartitionBound, run_compaction};
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
 
@@ -153,7 +153,7 @@ async fn main() -> color_eyre::Result<()> {
         iterator_config: args.iterator_config,
     };
 
-    let result = merge_sorted_files(&details).await;
+    let result = run_compaction(&details).await;
     match result {
         Ok(r) => {
             info!(

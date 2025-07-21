@@ -5,7 +5,7 @@ use std::{collections::HashMap, sync::Arc};
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use compaction_helpers::*;
-use sleeper_df::{CompactionInput, merge_sorted_files};
+use sleeper_df::{CompactionInput, run_compaction};
 use tempfile::tempdir;
 use test_log::test;
 
@@ -29,7 +29,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     };
 
     // When
-    let result = merge_sorted_files(&input).await?;
+    let result = run_compaction(&input).await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
@@ -58,7 +58,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     };
 
     // When
-    let result = merge_sorted_files(&input).await?;
+    let result = run_compaction(&input).await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
@@ -87,7 +87,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     };
 
     // When
-    let result = merge_sorted_files(&input).await?;
+    let result = run_compaction(&input).await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
@@ -125,7 +125,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     };
 
     // When
-    let result = merge_sorted_files(&input).await?;
+    let result = run_compaction(&input).await?;
 
     // Then
     assert_eq!(
@@ -163,7 +163,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     };
 
     // When
-    let result = merge_sorted_files(&input).await?;
+    let result = run_compaction(&input).await?;
 
     // Then
     assert_eq!(

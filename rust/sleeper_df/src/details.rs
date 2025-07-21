@@ -126,7 +126,7 @@ pub struct CompactionResult {
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_df::{merge_sorted_files, CompactionInput, PartitionBound, ColRange};
+/// # use crate::sleeper_df::{run_compaction, CompactionInput, PartitionBound, ColRange};
 /// let mut compaction_input = CompactionInput::default();
 /// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
 /// compaction_input.output_file = Url::parse("file:///path/to/output").unwrap();
@@ -140,14 +140,14 @@ pub struct CompactionResult {
 /// });
 ///
 /// # tokio_test::block_on(async {
-/// let result = merge_sorted_files(&compaction_input).await;
+/// let result = run_compaction(&compaction_input).await;
 /// # })
 /// ```
 ///
 /// # Errors
 /// There must be at least one input file.
 ///
-pub async fn merge_sorted_files(input_data: &CompactionInput<'_>) -> Result<CompactionResult> {
+pub async fn run_compaction(input_data: &CompactionInput<'_>) -> Result<CompactionResult> {
     // Read the schema from the first file
     if input_data.input_files.is_empty() {
         Err(eyre!("No input paths supplied"))

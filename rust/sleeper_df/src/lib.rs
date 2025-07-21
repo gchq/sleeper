@@ -31,7 +31,7 @@ use chrono::Local;
 use color_eyre::eyre::eyre;
 use details::AwsConfig;
 use libc::{EFAULT, EINVAL, EIO, c_void, size_t};
-use log::{LevelFilter, error, info, warn};
+use log::{LevelFilter, error, warn};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::io::Write;
@@ -44,8 +44,7 @@ use std::{
 use url::Url;
 
 pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
-pub use details::merge_sorted_files;
-pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound};
+pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound, run_compaction};
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -267,25 +266,6 @@ pub struct FFICompactionResult {
     rows_written: size_t,
 }
 
-/// Creates and returns a pointer to a [`FFICompactionResult`].
-///
-/// This allocates space for the object and initialises it with zeroes
-/// and null pointers.
-///
-/// The result of this function can be safely passed to [`ffi_merge_sorted_files()`] and
-/// must be de-allocated by calling [`free_result()`].
-///
-#[unsafe(no_mangle)]
-pub extern "C" fn allocate_result() -> *const FFICompactionResult {
-    maybe_cfg_log();
-    let p = Box::into_raw(Box::new(FFICompactionResult {
-        rows_read: 0,
-        rows_written: 0,
-    }));
-    info!("Compaction result allocated at address {p:p}");
-    p
-}
-
 /// Provides the C FFI interface to calling the [`merge_sorted_files`] function.
 ///
 /// This function takes an `FFICompactionParams` struct which contains all the  This function validates the pointers are valid strings (or
@@ -317,7 +297,7 @@ pub extern "C" fn allocate_result() -> *const FFICompactionResult {
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
-pub extern "C" fn ffi_merge_sorted_files(
+pub extern "C" fn merge_sorted_files(
     input_data: *mut FFICompactionParams,
     output_data: *mut FFICompactionResult,
 ) -> c_int {
@@ -351,7 +331,7 @@ pub extern "C" fn ffi_merge_sorted_files(
     };
 
     // Run compaction
-    let result = rt.block_on(merge_sorted_files(&details));
+    let result = rt.block_on(details::run_compaction(&details));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
@@ -508,18 +488,4 @@ fn unpack_variant_array<'a>(
             }
         })
         .collect()
-}
-
-/// Free the compaction result previously allocated by [`allocate_result()`].
-///
-/// This function must only be called on pointers to objects allocated by Rust.
-///
-#[allow(clippy::missing_panics_doc, clippy::not_unsafe_ptr_arg_deref)]
-#[unsafe(no_mangle)]
-pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
-    maybe_cfg_log();
-    if !ob.is_null() {
-        info!("Compaction result at address {ob:p} destructed");
-        let _ = unsafe { Box::from_raw(ob) };
-    }
 }

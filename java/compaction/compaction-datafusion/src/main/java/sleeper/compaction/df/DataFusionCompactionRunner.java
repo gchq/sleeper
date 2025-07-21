@@ -89,9 +89,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         DataFusionFunctions nativeLib = loadForeignLibrary();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
 
-        DataFusionCompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
+        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
-        RecordsProcessed result = invokeDataFusionFFI(job, nativeLib, params);
+        RecordsProcessed result = invokeDataFusion(job, nativeLib, params, runtime);
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -114,7 +114,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+    private static DataFusionCompactionParams createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
@@ -205,34 +205,30 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  job              the compaction job
      * @param  nativeLib        the native library implement the FFI bridge
      * @param  compactionParams the compaction input parameters
+     * @param  runtime          the JNR FFI runtime object
      * @return                  records read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RecordsProcessed invokeDataFusionFFI(CompactionJob job, DataFusionFunctions nativeLib,
-            DataFusionCompactionParams compactionParams) throws IOException {
+    public static RecordsProcessed invokeDataFusion(CompactionJob job, DataFusionFunctions nativeLib,
+            DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
-        DataFusionCompactionResult compactionData = nativeLib.allocate_result();
-        try {
-            // Perform compaction
-            int result = nativeLib.ffi_merge_sorted_files(compactionParams, compactionData);
+        DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
+        // Perform compaction
+        int result = nativeLib.merge_sorted_files(compactionParams, compactionData);
 
-            // Check result
-            if (result != 0) {
-                LOGGER.error("DataFusion compaction failed, return code: {}", result);
-                throw new IOException("DataFusion compaction failed with return code " + result);
-            }
-
-            long totalNumberOfRecordsRead = compactionData.rows_read.get();
-            long recordsWritten = compactionData.rows_written.get();
-
-            LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
-                    job.getId(), totalNumberOfRecordsRead, recordsWritten);
-
-            return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
-        } finally {
-            // Ensure de-allocation
-            nativeLib.free_result(compactionData);
+        // Check result
+        if (result != 0) {
+            LOGGER.error("DataFusion compaction failed, return code: {}", result);
+            throw new IOException("DataFusion compaction failed with return code " + result);
         }
+
+        long totalNumberOfRecordsRead = compactionData.rows_read.get();
+        long recordsWritten = compactionData.rows_written.get();
+
+        LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
+                job.getId(), totalNumberOfRecordsRead, recordsWritten);
+
+        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
     @Override
