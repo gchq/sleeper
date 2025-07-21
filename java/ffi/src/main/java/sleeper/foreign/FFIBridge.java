@@ -23,8 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Provides low-level bridge functionality for calling foreign code.
@@ -46,8 +44,6 @@ public class FFIBridge {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FFIBridge.class);
 
-    private static final Map<Class<? extends ForeignFunctions>, Object> LIBRARY_CACHE = new HashMap<>();
-
     /**
      * Attempt to load the native foreign function library.
      *
@@ -57,6 +53,9 @@ public class FFIBridge {
      * the wrong CPU architecture, loading will fail and the next path will be tried. This way, we
      * maintain a single JAR file that can work across multiple CPU architectures.
      *
+     * Each call to this library will extract and link a new copy of the foreign library so clients
+     * are encouraged to cache results of successful calls to this function.
+     *
      * @param  clazz       the interface describing the foreign function calls
      * @param  <T>         interface type containing Java functions stubs
      * @return             the native call interface
@@ -64,16 +63,7 @@ public class FFIBridge {
      */
     public static synchronized <T extends ForeignFunctions> T createForeignInterface(Class<T> clazz) throws IOException {
         try {
-            // Look in cache for this interface class
-            @SuppressWarnings("unchecked")
-            T lib = (T) LIBRARY_CACHE.get(clazz);
-            // If it's not there, link it and insert it
-            if (null == lib) {
-                lib = extractAndLink(clazz, "compaction");
-                LIBRARY_CACHE.put(clazz, lib);
-            }
-
-            return lib;
+            return extractAndLink(clazz, "compaction");
         } catch (UnsatisfiedLinkError err) {
             throw (IOException) new IOException("Could not initialise foreign library bridge", err);
         }

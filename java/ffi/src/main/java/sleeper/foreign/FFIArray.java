@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
- * Array class that can be inside an FFI struct. Creates a dynamic array that can be
+ * Array class that must be used inside a JNR-FFI Struct. Creates a dynamic array that can be
  * passed to C.
  * Strong references are maintained for allocated memory so GC will dispose of
  * memory when
@@ -33,6 +33,7 @@ import java.util.Objects;
 public class FFIArray<T> {
     /** Length of array. */
     private final Struct.size_t len;
+
     /** Pointer to base of dynamically allocated array. */
     private final Struct.Pointer arrayBase;
     /**
@@ -49,6 +50,15 @@ public class FFIArray<T> {
     public FFIArray(Struct enclosing) {
         this.len = enclosing.new size_t();
         this.arrayBase = enclosing.new Pointer();
+    }
+
+    /**
+     * Array length.
+     *
+     * @return length of array
+     */
+    public long length() {
+        return len.get();
     }
 
     /**
