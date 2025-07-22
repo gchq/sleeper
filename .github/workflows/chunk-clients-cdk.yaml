@@ -49,7 +49,7 @@ on:
       - 'java/core/**'
       - 'java/common/localstack-test/**'
       - 'java/bulk-export/bulk-export-core/**'
-      - 'java/ffi/**'
+      - 'java/foreign-bridge/**'
 
 jobs:
   chunk-workflow:

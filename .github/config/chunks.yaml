@@ -50,7 +50,7 @@ chunks:
       - bulk-export/bulk-export-planner
       - bulk-export/bulk-export-task-creator
       - bulk-export/bulk-export-task-execution
-      - ffi
+      - foreign-bridge
   rust:
     name: Rust
     workflow: chunk-rust.yaml
