@@ -9,7 +9,14 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'rust/**'
       - 'java/pom.xml'
-      - 'java/ffi/**'
+      - 'java/compaction/pom.xml'
+      - 'java/compaction/compaction-rust/**'
+      - 'java/compaction/compaction-core/**'
+      - 'java/sketches/**'
+      - 'java/parquet/**'
+      - 'java/core/**'
+      - 'java/common/localstack-test/**'
+      - 'java/foreign-bridge/**'
 
 jobs:
   chunk-workflow:

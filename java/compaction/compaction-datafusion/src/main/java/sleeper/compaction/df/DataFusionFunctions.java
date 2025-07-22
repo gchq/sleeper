@@ -20,8 +20,8 @@ import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
-import sleeper.foreign.FFIArray;
-import sleeper.foreign.ForeignFunctions;
+import sleeper.foreign.bridge.FFIArray;
+import sleeper.foreign.bridge.ForeignFunctions;
 
 import java.util.Objects;
 

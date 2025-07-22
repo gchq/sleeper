@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.foreign;
+package sleeper.foreign.bridge;
 
  /**
-  * Marker interface for foreign function call libraries.
+  * Base interface for Sleeper foreign code functionality.
   */
 public interface ForeignFunctions {
 }
