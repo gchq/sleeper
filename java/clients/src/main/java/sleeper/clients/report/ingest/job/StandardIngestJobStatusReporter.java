@@ -40,6 +40,7 @@ import java.util.Map;
 
 import static sleeper.clients.report.job.StandardJobRunReporter.printUpdateType;
 import static sleeper.clients.report.job.StandardJobRunReporter.updatePrinters;
+import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
@@ -81,8 +82,13 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
                     .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
                             runReporter.getFinishedFields())
                     .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
+                    .showField(query == JobQuery.Type.UNFINISHED, StandardJobRunReporter.FAILURE_REASONS)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
+        }
+        if (query == JobQuery.Type.UNFINISHED) {
+            out.println();
+            out.println("For more information concerning the failure reasons, please consult the more detailed report.");
         }
     }
 
@@ -212,6 +218,9 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             row.value(stateField, run.getStatusType());
             row.value(addedFilesCount, run.getFilesWrittenAndAdded().getFilesAddedToStateStore());
             runReporter.writeRunFields(run, row);
+            if (run.getStatusType().equals(FAILED)) {
+                row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasons());
+            }
         }));
     }
 
