@@ -42,7 +42,7 @@ public class RemoveECRRepositoriesTest {
                     .optionalStack(OptionalStack.CompactionStack)
                     .multiplatform(true)
                     .build());
-    private static final LambdaJar STATESTORE_JAR = new LambdaJar.Builder()
+    private static final LambdaJar STATESTORE_JAR = LambdaJar.builder()
             .filenameFormat("statestore.jar")
             .imageName("statestore-lambda")
             .artifactId("statestore-lambda").build();
@@ -51,10 +51,11 @@ public class RemoveECRRepositoriesTest {
                     .handler("StateStoreCommitterLambda").core().build(),
             LambdaHandler.builder().jar(STATESTORE_JAR)
                     .handler("SnapshotCreationLambda").core().build(),
-            LambdaHandler.builder().jar(new LambdaJar.Builder()
-                    .filenameFormat("ingest.jar")
-                    .imageName("ingest-task-creator-lambda")
-                    .artifactId("ingest-task-creator-lambda").build())
+            LambdaHandler.builder()
+                    .jar(LambdaJar.builder()
+                            .filenameFormat("ingest.jar")
+                            .imageName("ingest-task-creator-lambda")
+                            .artifactId("ingest-task-creator-lambda").build())
                     .handler("IngestTaskCreatorLambda")
                     .optionalStack(OptionalStack.IngestStack).build());
 

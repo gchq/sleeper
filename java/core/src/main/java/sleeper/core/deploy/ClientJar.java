@@ -26,9 +26,9 @@ public class ClientJar {
 
     private static final List<ClientJar> ALL = new ArrayList<>();
 
-    public static final ClientJar BULK_IMPORT_RUNNER = new Builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").build();
-    public static final ClientJar CDK = new Builder().filenameFormat("cdk-%s.jar").artifactId("cdk").build();
-    public static final ClientJar CLIENTS_UTILITY = new Builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").build();
+    public static final ClientJar BULK_IMPORT_RUNNER = builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").build();
+    public static final ClientJar CDK = builder().filenameFormat("cdk-%s.jar").artifactId("cdk").build();
+    public static final ClientJar CLIENTS_UTILITY = builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").build();
 
     private final String filenameFormat;
     private final String artifactId;
@@ -36,6 +36,10 @@ public class ClientJar {
     public ClientJar(Builder builder) {
         this.filenameFormat = builder.filenameFormat;
         this.artifactId = builder.artifactId;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public String getFilenameFormat() {
@@ -59,10 +63,10 @@ public class ClientJar {
      * Builder for the ClientJar class.
      */
     public static class Builder {
-        String filenameFormat;
-        String artifactId;
+        private String filenameFormat;
+        private String artifactId;
 
-        public Builder() {
+        private Builder() {
 
         }
 
