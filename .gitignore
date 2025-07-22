@@ -30,3 +30,4 @@ scripts/test/deployAll/system-test-instance.properties
 scripts/test/maven/system-test-instance.properties
 input.json
 .approval_tests_temp/
+*.env
