@@ -30,8 +30,7 @@ import java.util.function.Supplier;
  * Serialises a query to and from JSON.
  * <p>
  * This class provides methods to convert Sleeper query objects, including
- * {@link sleeper.query.core.model.Query} and
- * {@link sleeper.query.core.model.LeafPartitionQuery}, into JSON
+ * query and leaf partition query, into JSON
  * strings and to reconstruct these objects from JSON. It handles both
  * compact and pretty-printed JSON formats.
  * <p>
@@ -150,7 +149,8 @@ public class QuerySerDe {
     }
 
     /**
-     * Schema loader.
+     * Schema loader. This is required to serialise/deserise regions within
+     * RegionSerDe.
      */
     public interface SchemaLoader {
         /**
@@ -209,7 +209,6 @@ public class QuerySerDe {
      * predefined schema, regardless of the table name or ID requested.
      * This is useful for scenarios where a dynamic schema lookup is not
      * required or desirable.
-     *
      */
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;

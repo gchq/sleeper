@@ -50,9 +50,7 @@ public class QueryProcessingConfig {
 
     /**
      * Creates a QueryProcessingConfig object.
-     * This instance serves as a base object that can then be customised through the builder, offering
-     * a default state for queries that do not require specific processing parameters or status reports.
-     *
+     * Offers a default state for queries that do not require specific processing parameters or status reports.
      *
      * @return a query processing config object
      */
@@ -83,7 +81,7 @@ public class QueryProcessingConfig {
     /**
      * Creates a copy of this configuration that will include the values of the given fields in the query result.
      *
-     * @param  requestedValueFields value fields to add to builder
+     * @param  requestedValueFields value fields to set in the builder
      * @return                      the copy
      */
     public QueryProcessingConfig withRequestedValueFields(List<String> requestedValueFields) {
@@ -95,7 +93,7 @@ public class QueryProcessingConfig {
     /**
      * Creates a copy of this configuration that includes the given configuration for publishing results.
      *
-     * @param  resultsPublisherConfig results publisher config to add to builder
+     * @param  resultsPublisherConfig results publisher config to set in the builder
      * @return                        the copy
      */
     public QueryProcessingConfig withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
@@ -107,7 +105,7 @@ public class QueryProcessingConfig {
     /**
      * Creates a copy of this configuration that includes the given configuration for publishing status reports.
      *
-     * @param  statusReportDestination status report destination to add to builder
+     * @param  statusReportDestination status report destination to set in the builder
      * @return                         the copy
      */
     public QueryProcessingConfig withStatusReportDestination(Map<String, String> statusReportDestination) {

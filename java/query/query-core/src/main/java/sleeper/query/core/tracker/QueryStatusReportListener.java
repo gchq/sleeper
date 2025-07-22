@@ -22,7 +22,9 @@ import sleeper.query.core.output.ResultsOutputInfo;
 import java.util.List;
 
 /**
- * Query status report listener.
+ * This function tracks changes to the status of a query.
+ * It is implemented by something that should be notified when the status changes for example
+ * that includes the query tracker, and the web socket for a query that was made through a web socket.
  */
 public interface QueryStatusReportListener {
     String DESTINATION = "destination";
@@ -83,7 +85,7 @@ public interface QueryStatusReportListener {
     /**
      * Notifies when a specific query fails.
      *
-     * @param queryId the query Id
+     * @param queryId the query ID
      * @param e       the exception raised
      */
     void queryFailed(String queryId, Exception e);

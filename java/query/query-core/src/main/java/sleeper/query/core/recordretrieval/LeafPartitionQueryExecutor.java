@@ -66,10 +66,9 @@ public class LeafPartitionQueryExecutor {
      * This method initialises and applies both compaction-time and query-time iterators
      * to the retrieved records before returning them.
      *
-     *
      * @param  leafPartitionQuery the Sleeper leaf partition query
      * @return                    the rows extracted by the query
-     * @throws QueryException     if an exception occured retrieving the rows from the query
+     * @throws QueryException     if an exception occurred retrieving the rows from the query
      */
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);

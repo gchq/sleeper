@@ -103,7 +103,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises a query executor once the next initialise time has passed.
+     * Initialises a query executor if the next initialise time has passed.
      *
      * @param  now                 the time now
      * @throws StateStoreException if the state store can't be accessed
@@ -117,8 +117,8 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises a query executor with the partitions and partition to file mapping and set the next initialise time
-     * to now.
+     * Initialises a query executor with given time.
+     * The partitions and partition to file mapping are loaded from the state store.
      *
      * @param  now                 the time now
      * @throws StateStoreException if the state store can't be accessed
@@ -170,10 +170,11 @@ public class QueryExecutor {
     }
 
     /**
-     * Executes the query and returns records. The records are not returned in any
+     * Executes the sub query and returns records. The records are not returned in any
      * particular order.
+     * This is used internally by Sleeper.
      *
-     * @param  query          the query
+     * @param  query          the sub query
      * @return                an iterator containing the relevant rows
      * @throws QueryException if an error occurs during query execution
      */

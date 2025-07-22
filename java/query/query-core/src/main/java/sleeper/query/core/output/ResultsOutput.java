@@ -20,7 +20,7 @@ import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 
 /**
- * Results output.
+ * Results output. Implemented by classes that need to send results of queries somewhere.
  */
 public interface ResultsOutput {
 

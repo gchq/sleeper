@@ -24,7 +24,8 @@ import sleeper.query.core.tracker.QueryStatusReportListener;
 import java.util.Objects;
 
 /**
- * Deserializes a query or sub-query from JSON.
+ * Wraps a query or sub query. Provides a way to determine which type of query it is
+ * and retrieve it.
  */
 public class QueryOrLeafPartitionQuery {
 

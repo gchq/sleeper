@@ -19,10 +19,10 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A TrackedQuery contains information about a query including its ID and current status.
+ * Contains information about a query including its ID and current status.
  * <p>
  * This class encapsulates key details required for tracking the lifecycle and outcome of a query.
- * It provides immutable storage for query-related metadata, such as its unique identifier,
+ * It provides storage for query-related metadata, such as its unique identifier,
  * sub-query details, timestamps for updates and expiry, its last known state,
  * record count, and any associated error messages.
  *
