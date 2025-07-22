@@ -26,6 +26,11 @@ import java.util.List;
 public interface JobRunReport {
 
     /**
+     * Maximum length of the failure reasons within the reports to provide excessive column lengths.
+     */
+    int FAILURE_REASONS_MAX_LENGTH = 30;
+
+    /**
      * Retrieves the ID of the task that ran the job.
      *
      * @return the task ID
