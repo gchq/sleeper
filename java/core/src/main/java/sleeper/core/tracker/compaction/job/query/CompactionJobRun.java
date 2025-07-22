@@ -83,7 +83,7 @@ public class CompactionJobRun implements JobRunReport {
         StringBuffer outStr = new StringBuffer();
         endedStatus.getFailureReasons()
                 .forEach(str -> outStr.append(str).append(". "));
-        if (outStr.length() > FAILURE_REASONS_MAX_LENGTH) {
+        if (outStr.length() >= FAILURE_REASONS_MAX_LENGTH) {
             return outStr.toString().substring(0, FAILURE_REASONS_MAX_LENGTH) + "...";
         } else {
             return outStr.toString();
