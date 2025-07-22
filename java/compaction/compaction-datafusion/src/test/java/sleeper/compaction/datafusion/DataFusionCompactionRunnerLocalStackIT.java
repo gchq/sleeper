@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.df;
+package sleeper.compaction.datafusion;
 
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -25,7 +25,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.df.DataFusionCompactionRunner.AwsConfig;
+import sleeper.compaction.datafusion.DataFusionCompactionRunner.AwsConfig;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
