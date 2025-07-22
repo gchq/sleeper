@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.df;
+package sleeper.compaction.datafusion;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.df.DataFusionFunctions.DataFusionCompactionParams;
-import sleeper.compaction.df.DataFusionFunctions.DataFusionCompactionResult;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -34,7 +34,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.foreign.FFIBridge;
+import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -57,7 +57,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     private final AwsConfig awsConfig;
 
-    private static DataFusionFunctions nativeCompaction = null;
+    private static final DataFusionFunctions NATIVE_COMPACTION;
+
+    static {
+        // Obtain native library. This throws an exception if native library can't be
+        // loaded and linked
+        try {
+            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionFunctions.class);
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     public DataFusionCompactionRunner() {
         this(null);
@@ -67,31 +77,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         this.awsConfig = awsConfig;
     }
 
-    /**
-     * Call to load and link foreign compaction library.
-     *
-     * The result is cached, to avoid reloading library.
-     *
-     * @return             the loaded foreign library interface
-     * @throws IOException if an error occurs linking the foreign library
-     */
-    private static synchronized DataFusionFunctions loadForeignLibrary() throws IOException {
-        if (nativeCompaction == null) {
-            nativeCompaction = FFIBridge.createForeignInterface(DataFusionFunctions.class);
-        }
-        return nativeCompaction;
-    }
-
     @Override
     public RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
-        // Obtain native library. This throws an exception if native library can't be
-        // loaded and linked
-        DataFusionFunctions nativeLib = loadForeignLibrary();
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
         DataFusionCompactionParams params = createCompactionParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
-        RecordsProcessed result = invokeDataFusion(job, nativeLib, params, runtime);
+        RecordsProcessed result = invokeDataFusion(job, params, runtime);
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -203,18 +195,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * bridge.
      *
      * @param  job              the compaction job
-     * @param  nativeLib        the native library implement the FFI bridge
      * @param  compactionParams the compaction input parameters
      * @param  runtime          the JNR FFI runtime object
      * @return                  records read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RecordsProcessed invokeDataFusion(CompactionJob job, DataFusionFunctions nativeLib,
+    public static RecordsProcessed invokeDataFusion(CompactionJob job,
             DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
-        int result = nativeLib.merge_sorted_files(compactionParams, compactionData);
+        int result = NATIVE_COMPACTION.merge_sorted_files(compactionParams, compactionData);
 
         // Check result
         if (result != 0) {

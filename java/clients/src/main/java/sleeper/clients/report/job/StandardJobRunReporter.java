@@ -47,6 +47,7 @@ public class StandardJobRunReporter {
     public static final TableFieldDefinition RECORDS_WRITTEN = TableFieldDefinition.numeric("RECORDS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
+    public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE REASONS");
 
     private final PrintStream out;
 
@@ -58,7 +59,7 @@ public class StandardJobRunReporter {
         this(out);
         tableBuilder.addFields(
                 TASK_ID, START_TIME, FINISH_TIME, DURATION,
-                RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
+                RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
     }
 
     public StandardJobRunReporter(PrintStream out) {
@@ -161,6 +162,10 @@ public class StandardJobRunReporter {
         return Arrays.asList(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
+    public List<TableFieldDefinition> getUnfinishedFields() {
+        return Arrays.asList(FAILURE_REASONS);
+    }
+
     private static String getDurationString(JobRunSummary summary) {
         return formatDurationString(summary.getDuration());
     }
@@ -208,7 +213,7 @@ public class StandardJobRunReporter {
         }
 
         public Builder addResultsFields() {
-            tableBuilder.addFields(DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
+            tableBuilder.addFields(DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
             return this;
         }
 

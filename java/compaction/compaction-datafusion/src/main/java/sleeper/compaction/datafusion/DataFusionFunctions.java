@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.df;
+package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
-import sleeper.foreign.FFIArray;
-import sleeper.foreign.ForeignFunctions;
+import sleeper.foreign.bridge.FFIArray;
+import sleeper.foreign.bridge.ForeignFunctions;
 
 import java.util.Objects;
 

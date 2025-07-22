@@ -33,7 +33,7 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
-        <module>ffi</module>
+        <module>foreign-bridge</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
@@ -76,8 +76,7 @@
         <arrow.version>12.0.1</arrow.version>
         <!--
         Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as
-        it is
-        provided in EMR.
+        it is provided in EMR.
         -->
         <datasketches.version>3.3.0</datasketches.version>
         <!--
@@ -137,8 +136,8 @@
         <aws-java-sdk-v2.version>2.32.4</aws-java-sdk-v2.version>
         <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
         <!-- At the time of writing it's not compatible with the latest version. -->
-        <!-- We're getting different versions mixed together in the classpath and seeing the
-        following error when -->
+        <!-- We're getting different versions mixed together in the classpath and seeing the -->
+        <!-- following error when -->
         <!-- BulkImportJobDriver.start tries to create an SqsClient: -->
         <!-- java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE -->
         <!-- at
@@ -146,10 +145,9 @@
         <!-- The old version of the library is coming from this file in the EMR Serverless Docker
         image: -->
         <!-- /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar -->
-        <!-- To find the version below, we logged out the code location for the class in the Spark
-        driver, then -->
-        <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the
-        VersionInfo class. -->
+        <!-- To find the version below, we logged out the code location for the class in the Spark -->
+        <!-- driver, then copied that file out of the Docker image, unzipped the jar, and decompiled
+        the VersionInfo class. -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.38.7</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
@@ -276,9 +274,8 @@
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
         java.util.AbstractList is accessed by Apache Spark KryoSerializer, used in the bulk import job
-        runner
-        java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the bulk
-        import job runner
+        runner java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the
+        bulk import job runner
 
         See also https://arrow.apache.org/docs/java/install.html
         "When using Java 17 or later, some JDK internals must be exposed by adding - -
@@ -1731,11 +1728,10 @@
                                 <transformers>
                                     <!--
                                     This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
-                                    is provided by different libraries.
-                                    Otherwise depending on the order Maven processes the jars, sometimes it takes the
-                                    version of this file from hadoop-aws, which only declares
-                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
-                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    is provided by different libraries. Otherwise depending on the order Maven processes
+                                    the jars, sometimes it takes the version of this file from hadoop-aws, which only declares
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem. This prevents Hadoop from loading
+                                    the local file system, and we see errors like this:
                                     org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
                                     This is only strictly needed for modules that use Hadoop, but in practice this is
                                     most fat jars.

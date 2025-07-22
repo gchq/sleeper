@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.foreign;
+package sleeper.foreign.bridge;
 
 import jnr.ffi.LibraryLoader;
 import org.scijava.nativelib.JniExtractor;
@@ -83,7 +83,7 @@ public class FFIBridge {
      *
      * @param  <T>                  the type of the interface to the native code
      * @param  clazz                the class of the interface to the native code
-     * @param  libName              the library name to extract without platform prefixes.
+     * @param  libName              the library name to extract without platform prefixes
      * @return                      the absolute extracted path, or null if the library couldn't be found
      * @throws IOException          if an error occured during file extraction
      * @throws UnsatisfiedLinkError if the library could not be found or loaded
@@ -104,7 +104,7 @@ public class FFIBridge {
                             .load(extractedLib.getAbsolutePath());
                 } catch (UnsatisfiedLinkError e) {
                     // wrong library, try the next path
-                    LOGGER.error("Unable to load native library from " + path, e);
+                    LOGGER.warn("Unable to load native library from {}", path, e);
                 }
             }
         }
