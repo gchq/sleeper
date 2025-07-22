@@ -10,7 +10,6 @@ on:
       - 'rust/**'
       - 'java/pom.xml'
       - 'java/compaction/pom.xml'
-      - 'java/compaction/compaction-rust/**'
       - 'java/compaction/compaction-core/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
