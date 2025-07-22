@@ -43,7 +43,6 @@ chunks:
       - compaction/compaction-job-creation-lambda
       - compaction/compaction-tracker
       - compaction/compaction-core
-      - compaction/compaction-datafusion
       - partitions/splitter
       - partitions/splitter-lambda
       - garbage-collector
@@ -55,7 +54,7 @@ chunks:
     name: Rust
     workflow: chunk-rust.yaml
     modules:
-      - compaction/compaction-rust
+      - compaction/compaction-datafusion
       - foreign-bridge
   ingest:
     name: Ingest
