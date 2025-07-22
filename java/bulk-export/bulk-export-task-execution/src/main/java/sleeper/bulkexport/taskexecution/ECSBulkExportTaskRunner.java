@@ -114,20 +114,25 @@ public class ECSBulkExportTaskRunner {
      * @throws IOException               if there is an error interacting with S3
      * @throws IteratorCreationException if there is an error creating iterators
      * @throws ObjectFactoryException    if there is an error creating objects
+     *
      */
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
+            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
+            Configuration hadoopConf) throws RuntimeException, IOException, ObjectFactoryException, IteratorCreationException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
                 instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+        Optional<SqsMessageHandle> messageHandleOpt;
 
-        Optional<SqsMessageHandle> messageHandleOpt = exportQueueHandler.receiveMessage();
+        messageHandleOpt = exportQueueHandler.receiveMessage();
+
         if (messageHandleOpt.isPresent()) {
             SqsMessageHandle messageHandle = messageHandleOpt.get();
             try {
                 BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
+
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
 
