@@ -25,11 +25,6 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>compaction-rust</artifactId>
     <dependencies>
-        <dependency>
-            <groupId>com.github.jnr</groupId>
-            <artifactId>jnr-ffi</artifactId>
-            <version>${jnr.ffi.version}</version>
-        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -43,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ffi</artifactId>
+            <artifactId>foreign-bridge</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->

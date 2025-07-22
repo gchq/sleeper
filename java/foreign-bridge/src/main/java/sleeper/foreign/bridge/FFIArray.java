@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.foreign;
+package sleeper.foreign.bridge;
 
 import jnr.ffi.NativeType;
 import jnr.ffi.Struct;
@@ -23,27 +23,25 @@ import java.util.Objects;
 
 /**
  * Array class that must be used inside a JNR-FFI Struct. Creates a dynamic array that can be
- * passed to C.
- * Strong references are maintained for allocated memory so GC will dispose of
- * memory when
- * this object is collected.
+ * passed to C. Strong references are maintained for allocated memory so GC will dispose of
+ * memory when this object is collected.
  *
  * @param <T> object type of array
  */
 public class FFIArray<T> {
-    /** Length of array. */
+    /** Length of array. Will be transferred across FFI boundary. */
     private final Struct.size_t len;
 
-    /** Pointer to base of dynamically allocated array. */
+    /** Pointer to base of dynamically allocated array. This pointer value will be transferred across FFI boundary.*/
     private final Struct.Pointer arrayBase;
     /**
      * Reference to dynamically allocated array to prevent GC until Array instance
-     * is collected.
+     * is collected. This pointer value will NOT be transferred across FFI boundary.
      */
     private jnr.ffi.Pointer basePtr;
     /**
      * Reference to dynamically allocated items to prevent GC until Array instance
-     * is collected.
+     * is collected. These pointers will NOT be transferred across FFI boundary.
      */
     private jnr.ffi.Pointer[] items;
 
@@ -62,10 +60,13 @@ public class FFIArray<T> {
     }
 
     /**
-     * Create a dynamic array of items in this array.
+     * Populates this FFI compatible array with the values from the given Java array.
      *
-     * A base pointer is allocated pointers set to other
-     * dynamically allocated memory containing items from array.
+     * Memory is directly allocated (off JVM heap) for an array of pointers
+     * of length {@code arr.length}. This memory is used to store pointers
+     * to each element of the FFI array. The element count and address
+     * of this pointer array are stored in this object so that they can be
+     * read by native code.
      *
      * @param arr          array data
      * @param nullsAllowed if null pointers are allowed in the data array
@@ -74,7 +75,6 @@ public class FFIArray<T> {
         final jnr.ffi.Runtime r = len.struct().getRuntime();
         // Calculate size needed for array of pointers
         int ptrSize = r.findType(NativeType.ADDRESS).size();
-        // Null out zero length arrays
         if (arr.length > 0) {
             int size = arr.length * ptrSize;
             // Allocate some memory for pointers
@@ -93,6 +93,7 @@ public class FFIArray<T> {
             // Bulk set the pointers in the base array
             this.basePtr.put(0, this.items, 0, this.items.length);
         } else {
+            // Null out zero length arrays
             this.basePtr = null;
             this.items = null;
         }
@@ -104,7 +105,7 @@ public class FFIArray<T> {
     /**
      * Fetches the contents of this array back into a Java array.
      *
-     * The items in this arrayn are read back from the direct heap storage
+     * The items in this array are read back from the direct heap storage
      * where they will have been allocated by
      * {@link FFIArray#populate(Object[], boolean)}.
      *
@@ -112,13 +113,10 @@ public class FFIArray<T> {
      * @param  clazz                 the class type of generic parameter T
      * @param  nullsAllowed          if nulls are allowed in this array
      * @return                       Java array of object from this array
-     * @throws IllegalStateException if this array is not valid before calling this
-     *                               method
-     * @throws IllegalStateException if a {@code null} is found in a non-nullable
-     *                               array
-     * @throws NullPointerException  if parts of this object are {@null} when they
-     *                               shouldn't be, see
-     *                               {@link FFIArray#validate()}
+     * @throws IllegalStateException if this array is not valid before calling this method
+     * @throws IllegalStateException if a {@code null} is found in a non-nullable array
+     * @throws NullPointerException  if parts of this object are {@code null} when they
+     *                               shouldn't be, see {@link FFIArray#validate()}
      */
     public <E> T[] readBack(Class<E> clazz, boolean nullsAllowed) {
         validate();
@@ -160,6 +158,8 @@ public class FFIArray<T> {
     /**
      * Sets a given value in the array to a specific value. The data
      * is byte encoded.
+     *
+     * Memory is dynamically allocated off JVM heap for the value.
      *
      * Intended for internal use only.
      *
@@ -210,14 +210,11 @@ public class FFIArray<T> {
      * Reads a value from array.
      *
      * The value of the array element is read from previously allocated memory. The
-     * array MUST have been
-     * previously populated with {@link FFIArray#populate(Object[], boolean)}. The type
-     * of the array item
-     * to read is given in the {@code clazz} argument. This should match the generic
-     * type given.
+     * array MUST have been previously populated with {@link FFIArray#populate(Object[], boolean)}.
+     * The type of the array item to read is given in the {@code clazz} argument. This should match the
+     * generic type given.
      *
-     * If nulls are not allowed in this array, but a null pointer is found, then an
-     * exception is thrown.
+     * If nulls are not allowed in this array, but a null pointer is found, then an exception is thrown.
      *
      * @param  <E>                       the generic type of elements in the array
      * @param  idx                       the index to read
@@ -225,11 +222,9 @@ public class FFIArray<T> {
      * @param  nullsAllowed              if nulls may be present in this array
      * @param  r                         the runtime this array was allocated with
      * @return                           the array element, or {@code null} if nulls are allowed and the
-     *                                   pointer at
-     *                                   {@code idx} is 0.
+     *                                   pointer at {@code idx} is 0
      * @throws IndexOutOfBoundsException if {@code idx} is out of range
-     * @throws IllegalStateException     if a pointer to 0 is found in a
-     *                                   non-nullable array
+     * @throws IllegalStateException     if a pointer to 0 is found in a non-nullable array
      */
     @SuppressWarnings("unchecked")
     protected <E> T getValue(int idx, Class<E> clazz, boolean nullsAllowed, jnr.ffi.Runtime r) {
