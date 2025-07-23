@@ -142,10 +142,6 @@ public interface DataFusionFunctions extends ForeignFunctions {
         }
     }
 
-    DataFusionCompactionResult allocate_result();
-
-    void free_result(@In DataFusionCompactionResult res);
-
     @SuppressWarnings(value = "checkstyle:parametername")
-    int ffi_merge_sorted_files(@In DataFusionCompactionParams input, @Out DataFusionCompactionResult result);
+    int merge_sorted_files(@In DataFusionCompactionParams input, @Out DataFusionCompactionResult result);
 }
