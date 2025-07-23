@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
@@ -408,9 +407,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
     }
 
     protected void runQueryClient(String queryId) throws Exception {
-        new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                        new FixedTablePropertiesProvider(tableProperties), client.provider(), 0),
+        new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, tablePropertiesProvider,
+                in.consoleIn(), out.consoleOut(),
+                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, client.provider(), 0),
                 () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                 .run();
     }

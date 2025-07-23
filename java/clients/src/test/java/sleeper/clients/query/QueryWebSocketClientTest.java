@@ -24,7 +24,6 @@ import sleeper.clients.query.exception.MessageMissingFieldException;
 import sleeper.clients.query.exception.UnknownMessageTypeException;
 import sleeper.clients.query.exception.WebSocketClosedException;
 import sleeper.clients.query.exception.WebSocketErrorException;
-import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
@@ -336,8 +335,8 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
     }
 
     protected CompletableFuture<List<String>> runQueryFuture(Query query) throws Exception {
-        QueryWebSocketClient realClient = new QueryWebSocketClient(instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties), client.provider(), 0);
+        QueryWebSocketClient realClient = new QueryWebSocketClient(
+                instanceProperties, tablePropertiesProvider, client.provider(), 0);
         return realClient.submitQuery(query);
     }
 }

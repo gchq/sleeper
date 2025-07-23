@@ -20,6 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
@@ -48,6 +51,8 @@ public abstract class QueryWebSocketClientTestBase {
     protected final Field rowKey = schema.getField("key").orElseThrow();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     protected final TableIndex tableIndex = new InMemoryTableIndex();
+    protected final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance(tableIndex);
+    protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
     protected final QuerySerDe querySerDe = new QuerySerDe(schema);
     protected final FakeWebSocketClient client = new FakeWebSocketClient();
     protected final QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
@@ -57,7 +62,7 @@ public abstract class QueryWebSocketClientTestBase {
     void setUp() {
         instanceProperties.set(QUERY_WEBSOCKET_API_URL, "test-endpoint");
         tableProperties.set(TABLE_NAME, "test-table");
-        tableIndex.create(tableProperties.getStatus());
+        tablePropertiesStore.createTable(tableProperties);
     }
 
     protected String createdSubQueries(String queryId, String... subQueryIds) {
