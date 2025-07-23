@@ -100,7 +100,7 @@ public abstract class QueryWebSocketClientTestBase {
     }
 
     protected String asJson(Row row) {
-        return rowSerDe.toJson(row);
+        return rowSerDe.toJson(row, true);
     }
 
     protected Query exactQuery(String queryId, long value) {

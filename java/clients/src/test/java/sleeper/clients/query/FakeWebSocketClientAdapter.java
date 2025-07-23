@@ -16,6 +16,7 @@
 package sleeper.clients.query;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
 import java.util.ArrayList;
@@ -55,8 +56,8 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
     }
 
     @Override
-    public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
-        CompletableFuture<List<String>> future = new CompletableFuture<>();
+    public CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException {
+        CompletableFuture<List<Row>> future = new CompletableFuture<>();
         messageHandler.setFuture(future);
         messageHandler.setCloser(this::close);
         connectBlocking();
@@ -76,7 +77,7 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
     }
 
     @Override
-    public List<String> getResults(String queryId) {
+    public List<Row> getResults(String queryId) {
         return messageHandler.getResults(queryId);
     }
 

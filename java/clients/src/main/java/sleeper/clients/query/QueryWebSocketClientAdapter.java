@@ -29,6 +29,7 @@ import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
 import java.net.URI;
@@ -70,8 +71,9 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
         return (instanceProperties, tableProperties) -> create(instanceProperties, tableProperties, credentialsProvider);
     }
 
-    public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {
-        CompletableFuture<List<String>> future = new CompletableFuture<>();
+    @Override
+    public CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException {
+        CompletableFuture<List<Row>> future = new CompletableFuture<>();
         messageHandler.setFuture(future);
         this.query = query;
         initialiseConnection();
@@ -133,7 +135,7 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
     }
 
     @Override
-    public List<String> getResults(String queryId) {
+    public List<Row> getResults(String queryId) {
         return messageHandler.getResults(queryId);
     }
 }

@@ -128,6 +128,10 @@ public class QueryWebSocketMessage {
         return queryIds;
     }
 
+    public List<Row> getRows() {
+        return rows;
+    }
+
     public long getRowCount() {
         return rowCount;
     }

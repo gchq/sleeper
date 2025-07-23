@@ -15,17 +15,9 @@
  */
 package sleeper.clients.query;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
-
-import sleeper.clients.query.exception.MessageMalformedException;
-import sleeper.clients.query.exception.MessageMissingFieldException;
-import sleeper.clients.query.exception.UnknownMessageTypeException;
 import sleeper.clients.query.exception.WebSocketClosedException;
 import sleeper.clients.query.exception.WebSocketErrorException;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
@@ -38,25 +30,23 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class QueryWebSocketMessageHandler {
-    private final Gson serde = new GsonBuilder().create();
     private final Set<String> outstandingQueries = new HashSet<>();
     private final Map<String, List<String>> parentQueryIdToSubQueryIds = new HashMap<>();
-    private final Map<String, List<String>> subQueryIdToRows = new TreeMap<>();
+    private final Map<String, List<Row>> queryIdToRows = new TreeMap<>();
     private final QueryWebSocketMessageSerDe serDe;
     private final QuerySerDe querySerDe;
     private ClientCloser clientCloser;
     private boolean queryComplete = false;
     private boolean queryFailed = false;
     private long totalRecordsReturned = 0L;
-    private CompletableFuture<List<String>> future;
+    private CompletableFuture<List<Row>> future;
     private String currentQueryId;
 
     public QueryWebSocketMessageHandler(Schema schema) {
@@ -68,7 +58,7 @@ public class QueryWebSocketMessageHandler {
         this.clientCloser = clientCloser;
     }
 
-    public void setFuture(CompletableFuture<List<String>> future) {
+    public void setFuture(CompletableFuture<List<Row>> future) {
         this.future = future;
     }
 
@@ -83,34 +73,26 @@ public class QueryWebSocketMessageHandler {
     }
 
     public void onMessage(String json) {
-        QueryWebSocketMessage messageNew;
+        QueryWebSocketMessage message;
         try {
-            messageNew = serDe.fromJson(json);
+            message = serDe.fromJson(json);
         } catch (RuntimeException e) {
             future.completeExceptionally(e);
             close();
             return;
         }
-        Optional<JsonObject> messageOpt = deserialiseMessage(json);
-        if (!messageOpt.isPresent()) {
-            close();
-            return;
-        }
-        JsonObject message = messageOpt.get();
-        String messageType = message.get("message").getAsString();
-        String queryId = message.get("queryId").getAsString();
 
-        if (messageNew.getMessage() == QueryWebSocketMessageType.error) {
-            handleError(messageNew);
-        } else if (messageNew.getMessage() == QueryWebSocketMessageType.subqueries) {
-            handleSubqueries(messageNew);
-        } else if (messageNew.getMessage() == QueryWebSocketMessageType.rows) {
-            handleRows(message, queryId);
-        } else if (messageNew.getMessage() == QueryWebSocketMessageType.completed) {
-            handleCompleted(messageNew);
+        if (message.getMessage() == QueryWebSocketMessageType.error) {
+            handleError(message);
+        } else if (message.getMessage() == QueryWebSocketMessageType.subqueries) {
+            handleSubqueries(message);
+        } else if (message.getMessage() == QueryWebSocketMessageType.rows) {
+            handleRows(message);
+        } else if (message.getMessage() == QueryWebSocketMessageType.completed) {
+            handleCompleted(message);
         } else {
             queryFailed = true;
-            future.completeExceptionally(new UnknownMessageTypeException(messageType));
+            future.completeExceptionally(new WebSocketErrorException("Unrecognised message type: " + message.getMessage()));
             close();
         }
 
@@ -118,27 +100,6 @@ public class QueryWebSocketMessageHandler {
             queryComplete = true;
             future.complete(getResults(currentQueryId));
             close();
-        }
-    }
-
-    private Optional<JsonObject> deserialiseMessage(String json) {
-        try {
-            JsonObject message = serde.fromJson(json, JsonObject.class);
-            if (!message.has("queryId")) {
-                queryFailed = true;
-                future.completeExceptionally(new MessageMissingFieldException("queryId", json));
-                return Optional.empty();
-            }
-            if (!message.has("message")) {
-                queryFailed = true;
-                future.completeExceptionally(new MessageMissingFieldException("message", json));
-                return Optional.empty();
-            }
-            return Optional.of(message);
-        } catch (JsonSyntaxException e) {
-            queryFailed = true;
-            future.completeExceptionally(new MessageMalformedException(json));
-            return Optional.empty();
         }
     }
 
@@ -162,21 +123,16 @@ public class QueryWebSocketMessageHandler {
         });
     }
 
-    private void handleRows(JsonObject message, String queryId) {
-        JsonArray recordBatch = message.getAsJsonArray("rows");
-        List<String> recordList = recordBatch.asList().stream()
-                .map(jsonElement -> jsonElement.getAsJsonObject())
-                .map(JsonObject::toString)
-                .collect(Collectors.toList());
-        if (!subQueryIdToRows.containsKey(queryId)) {
-            subQueryIdToRows.put(queryId, recordList);
+    private void handleRows(QueryWebSocketMessage message) {
+        if (!queryIdToRows.containsKey(message.getQueryId())) {
+            queryIdToRows.put(message.getQueryId(), message.getRows());
         } else {
-            subQueryIdToRows.get(queryId).addAll(recordList);
+            queryIdToRows.get(message.getQueryId()).addAll(message.getRows());
         }
     }
 
     private void handleCompleted(QueryWebSocketMessage message) {
-        long returnedRowCount = subQueryIdToRows.getOrDefault(message.getQueryId(), List.of()).size();
+        long returnedRowCount = queryIdToRows.getOrDefault(message.getQueryId(), List.of()).size();
         if (message.isRowsReturnedToClient() && message.getRowCount() > 0) {
             if (returnedRowCount != message.getRowCount()) {
                 QueryWebSocketClient.LOGGER.error("API said it had returned {} rows for query {}, but only received {}",
@@ -209,9 +165,11 @@ public class QueryWebSocketMessageHandler {
         return totalRecordsReturned;
     }
 
-    public List<String> getResults(String queryId) {
-        return parentQueryIdToSubQueryIds.getOrDefault(queryId, List.of()).stream()
-                .flatMap(id -> subQueryIdToRows.getOrDefault(id, List.of()).stream())
+    public List<Row> getResults(String queryId) {
+        return Stream.concat(
+                Stream.of(queryId),
+                parentQueryIdToSubQueryIds.getOrDefault(queryId, List.of()).stream())
+                .flatMap(id -> queryIdToRows.getOrDefault(id, List.of()).stream())
                 .toList();
     }
 

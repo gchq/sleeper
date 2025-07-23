@@ -29,6 +29,8 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.row.Row;
+import sleeper.core.row.serialiser.RowJsonSerDe;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
@@ -68,9 +70,10 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
         long recordsReturned = 0L;
         try {
             out.println("Submitting query with ID: " + query.getQueryId());
-            List<String> results = queryWebSocketClient.submitQuery(query).join();
+            List<Row> results = queryWebSocketClient.submitQuery(query).join();
+            RowJsonSerDe serDe = new RowJsonSerDe(tableProperties.getSchema());
             out.println("Query results:");
-            results.forEach(out::println);
+            results.stream().map(row -> serDe.toJson(row, true)).forEach(out::println);
             recordsReturned = results.size();
         } catch (CompletionException e) {
             out.println("Query failed: " + e.getCause().getMessage());

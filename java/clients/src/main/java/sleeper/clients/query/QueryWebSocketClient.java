@@ -22,6 +22,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.row.Row;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
 
@@ -57,7 +58,7 @@ public class QueryWebSocketClient {
         }
     }
 
-    public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
+    public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
         Adapter adapter = clientProvider.createClient(instanceProperties, tableProperties);
         try {
@@ -79,13 +80,13 @@ public class QueryWebSocketClient {
     public interface Adapter {
         void close();
 
-        CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
+        CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException;
 
         boolean hasQueryFinished();
 
         long getTotalRecordsReturned();
 
-        List<String> getResults(String queryId);
+        List<Row> getResults(String queryId);
     }
 
     public interface AdapterProvider {

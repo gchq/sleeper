@@ -51,13 +51,13 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
             // When / Then
             assertThat(runQueryFuture(query))
-                    .isCompletedWithValue(List.of(asJson(expectedRow)));
+                    .isCompletedWithValue(List.of(expectedRow));
             assertThat(adapter.isConnected()).isFalse();
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRow));
+                    .containsExactly(expectedRow);
         }
 
         @Test
@@ -72,15 +72,15 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
             // When / Then
             assertThat(runQueryFuture(query))
-                    .isCompletedWithValue(List.of(asJson(expectedRow)));
+                    .isCompletedWithValue(List.of(expectedRow));
             assertThat(adapter.isConnected()).isFalse();
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRow));
+                    .containsExactly(expectedRow);
             assertThat(adapter.getResults("test-subquery"))
-                    .containsExactly(asJson(expectedRow));
+                    .containsExactly(expectedRow);
         }
 
         @Test
@@ -101,19 +101,19 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
             // When / Then
             assertThat(runQueryFuture(query))
-                    .isCompletedWithValue(List.of(asJson(expectedRow1), asJson(expectedRow2), asJson(expectedRow3)));
+                    .isCompletedWithValue(List.of(expectedRow1, expectedRow2, expectedRow3));
             assertThat(adapter.isConnected()).isFalse();
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRow1), asJson(expectedRow2), asJson(expectedRow3));
+                    .containsExactly(expectedRow1, expectedRow2, expectedRow3);
             assertThat(adapter.getResults("subquery-1"))
-                    .containsExactly(asJson(expectedRow1));
+                    .containsExactly(expectedRow1);
             assertThat(adapter.getResults("subquery-2"))
-                    .containsExactly(asJson(expectedRow2));
+                    .containsExactly(expectedRow2);
             assertThat(adapter.getResults("subquery-3"))
-                    .containsExactly(asJson(expectedRow3));
+                    .containsExactly(expectedRow3);
         }
 
         @Test
@@ -127,13 +127,13 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
             // When / Then
             assertThat(runQueryFuture(query))
-                    .isCompletedWithValue(List.of(asJson(expectedRow)));
+                    .isCompletedWithValue(List.of(expectedRow));
             assertThat(adapter.isConnected()).isFalse();
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
             assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(asJson(expectedRow));
+                    .containsExactly(expectedRow);
         }
     }
 
@@ -332,7 +332,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         }
     }
 
-    protected CompletableFuture<List<String>> runQueryFuture(Query query) throws Exception {
+    protected CompletableFuture<List<Row>> runQueryFuture(Query query) throws Exception {
         QueryWebSocketClient realClient = new QueryWebSocketClient(
                 instanceProperties, tablePropertiesProvider, adapter.provider(), 0);
         return realClient.submitQuery(query);
