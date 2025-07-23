@@ -31,11 +31,11 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputLocation;
+import sleeper.query.runner.websocket.QueryWebSocketMessage;
 import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -56,35 +56,29 @@ public abstract class QueryWebSocketClientTestBase {
 
     @BeforeEach
     void setUp() {
-        instanceProperties.set(QUERY_WEBSOCKET_API_URL, "websocket-endpoint");
+        instanceProperties.set(QUERY_WEBSOCKET_API_URL, "test-endpoint");
         tableProperties.set(TABLE_NAME, "test-table");
         tableIndex.create(tableProperties.getStatus());
     }
 
-    public static String createdSubQueries(String queryId, String... subQueryIds) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"subqueries\"," +
-                "\"queryIds\":[" + Stream.of(subQueryIds).map(id -> "\"" + id + "\"").collect(Collectors.joining(",")) + "]" +
-                "}";
+    protected String createdSubQueries(String queryId, String... subQueryIds) {
+        return serDe.toJson(QueryWebSocketMessage.queryWasSplitToSubqueries(queryId, List.of(subQueryIds)));
     }
 
-    public static String errorMessage(String queryId, String message) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"error\"," +
-                "\"error\":\"" + message + "\"" +
-                "}";
+    protected String errorMessage(String queryId, String message) {
+        return serDe.toJson(QueryWebSocketMessage.queryError(queryId, message));
     }
 
-    public static String unknownMessage(String queryId) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\"," +
-                "\"message\":\"unknown\"" +
-                "}";
+    protected String unknownMessage(String queryId) {
+        return String.format("""
+                {
+                    "queryId": "%s",
+                    "message": "unknown"
+                }
+                """, queryId);
     }
 
-    public static String queryResult(String queryId, Row... rows) {
+    protected String queryResult(String queryId, Row... rows) {
         return "{" +
                 "\"queryId\":\"" + queryId + "\", " +
                 "\"message\":\"rows\"," +
@@ -92,28 +86,24 @@ public abstract class QueryWebSocketClientTestBase {
                 "}";
     }
 
-    public static String completedQuery(String queryId, long rowCount) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"completed\"," +
-                "\"rowCount\":\"" + rowCount + "\"," +
-                "\"locations\":[{\"type\":\"websocket-endpoint\"}]" +
-                "}";
+    protected String completedQuery(String queryId, long rowCount) {
+        return serDe.toJson(QueryWebSocketMessage.queryCompleted(queryId, rowCount,
+                List.of(new ResultsOutputLocation("websocket-endpoint", "test-endpoint"))));
     }
 
-    public static WebSocketResponse message(String message) {
+    protected WebSocketResponse message(String message) {
         return client -> client.onMessage(message);
     }
 
-    public static WebSocketResponse close(String reason) {
+    protected WebSocketResponse close(String reason) {
         return client -> client.onClose(reason);
     }
 
-    public static WebSocketResponse error(Exception error) {
+    protected WebSocketResponse error(Exception error) {
         return client -> client.onError(error);
     }
 
-    public static String asJson(Row row) {
+    protected String asJson(Row row) {
         return GSON.toJson(row);
     }
 
