@@ -27,11 +27,11 @@ public class FakeWebSocketConnection implements QueryWebSocketClient.Connection 
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
-    public QueryWebSocketClient.Adapter provider() {
+    public QueryWebSocketClient.Adapter adapter() {
         return this::connect;
     }
 
-    public FakeWebSocketConnection connect(InstanceProperties instanceProperties, QueryWebSocketListener listener) throws InterruptedException {
+    private FakeWebSocketConnection connect(InstanceProperties instanceProperties, QueryWebSocketListener listener) throws InterruptedException {
         connected = true;
         this.listener = listener;
         listener.onOpen(this);

@@ -409,7 +409,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
     protected void runQueryClient(String queryId) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, tablePropertiesProvider,
                 in.consoleIn(), out.consoleOut(),
-                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, connection.provider(), 0),
+                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, connection.adapter(), 0),
                 () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                 .run();
     }
