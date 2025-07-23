@@ -15,7 +15,6 @@
  */
 package sleeper.clients.query;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,18 +24,9 @@ import sleeper.clients.query.exception.MessageMissingFieldException;
 import sleeper.clients.query.exception.UnknownMessageTypeException;
 import sleeper.clients.query.exception.WebSocketClosedException;
 import sleeper.clients.query.exception.WebSocketErrorException;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIndex;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QuerySerDe;
 
 import java.time.Duration;
 import java.util.List;
@@ -46,38 +36,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
-    private final InstanceProperties instanceProperties = createInstance();
-    private final Schema schema = createSchemaWithKey("key");
-    private final Field rowKey = schema.getField("key").orElseThrow();
-    private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final QuerySerDe querySerDe = new QuerySerDe(schema);
-    private final FakeWebSocketClient client = new FakeWebSocketClient();
-    private TableProperties tableProperties;
-
-    private static InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(QUERY_WEBSOCKET_API_URL, "websocket-endpoint");
-        return instanceProperties;
-    }
-
-    private TableProperties createTable(String tableName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableIndex.create(tableProperties.getStatus());
-        return tableProperties;
-    }
-
-    @BeforeEach
-    void setup() {
-        tableProperties = createTable("test-table");
-    }
 
     @Nested
     @DisplayName("Run queries")
@@ -373,26 +333,6 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
-    }
-
-    private Query exactQuery(String queryId, long value) {
-        return Query.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
-                .queryId(queryId)
-                .regions(List.of(new Region(rangeFactory().createExactRange(rowKey, value))))
-                .build();
-    }
-
-    private Query rangeQuery(String queryId, long min, long max) {
-        return Query.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
-                .queryId(queryId)
-                .regions(List.of(new Region(rangeFactory().createRange(rowKey, min, max))))
-                .build();
-    }
-
-    private RangeFactory rangeFactory() {
-        return new RangeFactory(tableProperties.getSchema());
     }
 
     protected CompletableFuture<List<String>> runQueryFuture(Query query) throws Exception {

@@ -15,25 +15,15 @@
  */
 package sleeper.clients.query;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableIndex;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QuerySerDe;
 
 import java.time.Instant;
 import java.util.List;
@@ -51,44 +41,14 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTestBase {
     private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
             PROMPT_MIN_ROW_KEY_LONG_TYPE + PROMPT_MAX_ROW_KEY_LONG_TYPE;
     private static final Instant START_TIME = Instant.parse("2024-04-03T14:00:00Z");
     private static final Instant FINISH_TIME = Instant.parse("2024-04-03T14:00:01Z");
-    private final InstanceProperties instanceProperties = createInstance();
-    private final Schema schema = createSchemaWithKey("key");
-    private final Field rowKey = schema.getField("key").orElseThrow();
-    private final TableIndex tableIndex = new InMemoryTableIndex();
     private final ToStringConsoleOutput out = new ToStringConsoleOutput();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
-    private final QuerySerDe querySerDe = new QuerySerDe(schema);
-    private final FakeWebSocketClient client = new FakeWebSocketClient();
-    private TableProperties tableProperties;
-
-    private static InstanceProperties createInstance() {
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(QUERY_WEBSOCKET_API_URL, "websocket-endpoint");
-        return instanceProperties;
-    }
-
-    private TableProperties createTable(String tableName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableIndex.create(tableProperties.getStatus());
-        return tableProperties;
-    }
-
-    @BeforeEach
-    void setup() {
-        tableProperties = createTable("test-table");
-    }
 
     @Nested
     @DisplayName("Run queries")
@@ -445,26 +405,6 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             assertThat(client.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
-    }
-
-    private Query exactQuery(String queryId, long value) {
-        return Query.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
-                .queryId(queryId)
-                .regions(List.of(new Region(rangeFactory().createExactRange(rowKey, value))))
-                .build();
-    }
-
-    private Query rangeQuery(String queryId, long min, long max) {
-        return Query.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
-                .queryId(queryId)
-                .regions(List.of(new Region(rangeFactory().createRange(rowKey, min, max))))
-                .build();
-    }
-
-    private RangeFactory rangeFactory() {
-        return new RangeFactory(tableProperties.getSchema());
     }
 
     protected void runQueryClient(String queryId) throws Exception {
