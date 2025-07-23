@@ -26,14 +26,19 @@ import java.nio.file.Path;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * This class is used to publish built jars to a maven repository.
+ * It is called from the publishJarsToRepo.sh script in the scripts/deploy folder.
+ * Version defaults to the current SleeperVersion but can be overwritten.
+ */
 public class PublishJarsToRepo {
-    private final Path filePath;
+    private final Path pathOfJarsDirectory;
     private final String repoUrl;
     private final String version;
     private final CommandPipelineRunner commandRunner;
 
     private PublishJarsToRepo(Builder builder) {
-        this.filePath = requireNonNull(builder.filePath, "File path must not be null");
+        this.pathOfJarsDirectory = requireNonNull(builder.pathOfJarsDirectory, "File path must not be null");
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
         this.commandRunner = requireNonNull(builder.commandRunner, "Command Runner must not be null");
@@ -43,15 +48,22 @@ public class PublishJarsToRepo {
         return new Builder();
     }
 
+    /**
+     * This method sets the path to the jar folder and the repository url then calls the upload method.
+     *
+     * @param args Should contain the path to the jars folder first and the repisotry url to publish the jars to second.
+     */
     public static void main(String[] args) throws Exception {
         builder()
-                .filePath(Path.of(args[0] + "/"))
+                .pathOfJarsDirectory(Path.of(args[0] + "/"))
                 .repoUrl(args[1])
                 .build()
                 .upload();
-
     }
 
+    /**
+     * This method loops through the client jars and lambda jars, publishing each one to the supplied maven repository.
+     */
     public void upload() {
         for (ClientJar clientJar : ClientJar.getAll()) {
             deployJars(clientJar.getFilenameFormat(), clientJar.getArtifactId());
@@ -68,7 +80,7 @@ public class PublishJarsToRepo {
             commandRunner.run("mvn", "deploy:deploy-file", "-q",
                     "-Durl=" + repoUrl,
                     "-DrepositoryId=repo.id", //Requires matching server with auth details in local m2 settings.xml <servers>
-                    "-Dfile=" + filePath.resolve(String.format(filename, version)),
+                    "-Dfile=" + pathOfJarsDirectory.resolve(String.format(filename, version)),
                     "-DgroupId=sleeper",
                     "-DartifactId=" + imageName,
                     "-Dversion=" + version,
@@ -78,30 +90,59 @@ public class PublishJarsToRepo {
         }
     }
 
+    /**
+     * Builder for publish jars to repo object.
+     */
     public static final class Builder {
-        private Path filePath;
+        private Path pathOfJarsDirectory;
         private String repoUrl;
         private String version = SleeperVersion.getVersion();
-        CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
+        private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
 
         private Builder() {
         }
 
-        public Builder filePath(Path filePath) {
-            this.filePath = filePath;
+        /**
+         * Sets the path to the jars directory.
+         *
+         * @param  pathOfJarsDirectory the path to the jars folder
+         * @return                     the builder for method chaining
+         */
+        public Builder pathOfJarsDirectory(Path pathOfJarsDirectory) {
+            this.pathOfJarsDirectory = pathOfJarsDirectory;
             return this;
         }
 
+        /**
+         * Sets the maven reposiotry url to publish to.
+         *
+         * @param  repoUrl the url of the maven repository to publish to
+         * @return         the builder for method chaining
+         */
         public Builder repoUrl(String repoUrl) {
             this.repoUrl = repoUrl;
             return this;
         }
 
+        /**
+         * Sets the sleeper version to be used to find the correct jars in the jars folder.
+         * Defaults to the current sleeper version if not overwritten.
+         *
+         * @param  version the sleeper version of the jars to publish
+         * @return         the builder for method chaining
+         */
         public Builder version(String version) {
             this.version = version;
             return this;
         }
 
+        /**
+         * Sets the command runner for running the maven commands.
+         * Defaults to a generic one unless overwritten.
+         *
+         * @param  commandRunner the command runner for running maven commands
+         * @return               the builder for method chaining
+         */
         public Builder commandRunner(CommandPipelineRunner commandRunner) {
             this.commandRunner = commandRunner;
             return this;

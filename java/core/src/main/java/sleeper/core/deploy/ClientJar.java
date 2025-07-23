@@ -71,10 +71,11 @@ public class ClientJar {
         }
 
         /**
-         * The filename format with space for version.
+         * Sets the filename format with space for version.
+         * String.format is used to add the version to the filename.
          *
-         * @param  filenameFormat String for filename with space for version to be added
-         * @return                Builder
+         * @param  filenameFormat the filename format with space for version to be added
+         * @return                the builder for method chaining
          */
         public Builder filenameFormat(String filenameFormat) {
             this.filenameFormat = filenameFormat;
@@ -82,10 +83,10 @@ public class ClientJar {
         }
 
         /**
-         * The artifact ID for the jar.
+         * Sets the artifact ID for the jar.
          *
-         * @param  artifactId String artifactId
-         * @return            Builder.
+         * @param  artifactId the ID of the artefact
+         * @return            the builder for method chaining
          */
         public Builder artifactId(String artifactId) {
             this.artifactId = artifactId;
@@ -99,7 +100,7 @@ public class ClientJar {
         /**
          * Builds the client jar object and adds it to the ALL List.
          *
-         * @return ClientJar
+         * @return client jar built using current variables
          */
         public ClientJar add() {
             ClientJar clientJar = build();

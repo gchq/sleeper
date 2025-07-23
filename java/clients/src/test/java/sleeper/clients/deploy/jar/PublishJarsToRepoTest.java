@@ -33,9 +33,9 @@ public class PublishJarsToRepoTest {
     @Test
     public void testRunsCommands() throws Exception {
         //Given
-        final List<CommandPipeline> commandsThatRan = new ArrayList<>();
-        final CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
-        final PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder().filePath(Path.of("/some/directory/")).repoUrl("someUrl").version("0.31.0").commandRunner(commandRunner).build();
+        List<CommandPipeline> commandsThatRan = new ArrayList<>();
+        CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+        PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder().pathOfJarsDirectory(Path.of("/some/directory/")).repoUrl("someUrl").version("0.31.0").commandRunner(commandRunner).build();
 
         //When
         publishJarsToRepo.upload();
@@ -54,29 +54,29 @@ public class PublishJarsToRepoTest {
     }
 
     @Test
-    public void testFilePathMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl("file:/someRepo").build())
+    public void shouldThrowNullPointerWhenPathOfJarsDirectoryIsNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(null).repoUrl("file:/someRepo").build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("File path must not be null");
     }
 
     @Test
-    public void testRepoMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().filePath(Path.of("any")).build())
+    public void shouldThrowNullPointerWhenRepositoryUrlIsNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl(null).pathOfJarsDirectory(Path.of("any")).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Repository URL must not be null");
     }
 
     @Test
-    public void testVersionMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().filePath(Path.of("any")).repoUrl("file:/someRepo").version(null).build())
+    public void shouldThrowNullPointerWhenVerisonIsNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(Path.of("any")).repoUrl("file:/someRepo").version(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Version to publish must not be null");
     }
 
     @Test
-    public void testCommandRunnerMustNotBeNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().filePath(Path.of("any")).repoUrl("file:/someRepo").commandRunner(null).build())
+    public void shouldThrowNullPointerWhenCommandRunnerISNull() {
+        assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(Path.of("any")).repoUrl("file:/someRepo").commandRunner(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Command Runner must not be null");
     }

@@ -174,7 +174,8 @@ public class LambdaJar {
         }
 
         /**
-         * The filename format with space for the version.
+         * Sets the filename format string.
+         * String.format is used to add the version to the filename.
          *
          * @param  filenameFormat String format for filename with space for version
          * @return                Builder
@@ -185,10 +186,10 @@ public class LambdaJar {
         }
 
         /**
-         * The image name.
+         * Sets the image name.
          *
-         * @param  imageName String the imageName
-         * @return           Builder
+         * @param  imageName the name of the image
+         * @return           the builder for method chaining
          */
         public Builder imageName(String imageName) {
             this.imageName = imageName;
@@ -198,8 +199,8 @@ public class LambdaJar {
         /**
          * The artifactId for the jar.
          *
-         * @param  artifactId String artifactId
-         * @return            Builder
+         * @param  artifactId the ID of the Artefact
+         * @return            the builder for method chaining
          */
         public Builder artifactId(String artifactId) {
             this.artifactId = artifactId;
@@ -207,10 +208,10 @@ public class LambdaJar {
         }
 
         /**
-         * A flag to should if the jar is always deployed through docker.
+         * Sets the flag for if the jar is always deployed through docker.
          *
-         * @param  alwaysDockerDeploy boolean for should always deploy through docker
-         * @return                    Builder
+         * @param  alwaysDockerDeploy flag for if jar is always deployed through docker
+         * @return                    builder
          */
         public Builder alwaysDockerDeploy(boolean alwaysDockerDeploy) {
             this.alwaysDockerDeploy = alwaysDockerDeploy;
