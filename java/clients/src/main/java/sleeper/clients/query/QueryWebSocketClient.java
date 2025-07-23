@@ -41,9 +41,11 @@ import sleeper.clients.query.exception.WebSocketErrorException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
 import java.net.URI;
 import java.time.Instant;
@@ -58,7 +60,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,18 +77,7 @@ public class QueryWebSocketClient {
 
     public QueryWebSocketClient(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
-        this(instanceProperties, tablePropertiesProvider, credentialsProvider, DEFAULT_TIMEOUT_MS);
-    }
-
-    public QueryWebSocketClient(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider, long timeoutMs) {
-        this(instanceProperties, tablePropertiesProvider,
-                clientSupplier(instanceProperties, tablePropertiesProvider, credentialsProvider), timeoutMs);
-    }
-
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            Supplier<Client> clientSupplier, long timeoutMs) {
-        this(instanceProperties, tablePropertiesProvider, (instance, table) -> clientSupplier.get(), timeoutMs);
+        this(instanceProperties, tablePropertiesProvider, clientProvider(credentialsProvider), DEFAULT_TIMEOUT_MS);
     }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
@@ -132,13 +122,11 @@ public class QueryWebSocketClient {
         List<String> getResults(String queryId);
     }
 
-    private static Supplier<Client> clientSupplier(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
-        String region = instanceProperties.get(REGION);
-        URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
-        QuerySerDe serDe = new QuerySerDe(tablePropertiesProvider);
-        return () -> {
-            WebSocketMessageHandler messageHandler = new WebSocketMessageHandler(serDe);
+    private static ClientProvider clientProvider(AwsCredentialsProvider credentialsProvider) {
+        return (instanceProperties, tableProperties) -> {
+            String region = instanceProperties.get(REGION);
+            URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
+            WebSocketMessageHandler messageHandler = new WebSocketMessageHandler(tableProperties.getSchema());
             LOGGER.info("Obtaining AWS IAM credentials...");
             AwsCredentials credentials = credentialsProvider.resolveCredentials();
             return new WebSocketQueryClient(region, serverUri, credentials, messageHandler);
@@ -242,6 +230,7 @@ public class QueryWebSocketClient {
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
         private final Map<String, List<String>> records = new TreeMap<>();
+        private final QueryWebSocketMessageSerDe serDe;
         private final QuerySerDe querySerDe;
         private ClientCloser clientCloser;
         private boolean queryComplete = false;
@@ -250,8 +239,9 @@ public class QueryWebSocketClient {
         private CompletableFuture<List<String>> future;
         private String currentQueryId;
 
-        public WebSocketMessageHandler(QuerySerDe querySerDe) {
-            this.querySerDe = querySerDe;
+        public WebSocketMessageHandler(Schema schema) {
+            this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
+            this.querySerDe = new QuerySerDe(schema);
         }
 
         public void setCloser(ClientCloser clientCloser) {

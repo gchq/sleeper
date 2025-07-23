@@ -70,6 +70,10 @@ public class QueryWebSocketMessageSerDe {
         return new QueryWebSocketMessageSerDe(schema, batchSize, payloadSize);
     }
 
+    public static QueryWebSocketMessageSerDe withNoBatchSize(Schema schema) {
+        return forBatchSizeAndPayloadSize(null, DEFAULT_ROWS_PAYLOAD_SIZE, schema);
+    }
+
     public String toJson(QueryWebSocketMessage message) {
         return gson.toJson(message);
     }
