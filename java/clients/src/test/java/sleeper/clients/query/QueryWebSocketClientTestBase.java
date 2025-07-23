@@ -25,6 +25,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
+import sleeper.core.row.serialiser.RowJsonSerDe;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
@@ -53,6 +54,7 @@ public abstract class QueryWebSocketClientTestBase {
     protected final QuerySerDe querySerDe = new QuerySerDe(schema);
     protected final FakeWebSocketClient client = new FakeWebSocketClient();
     protected final QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
+    protected final RowJsonSerDe rowSerDe = new RowJsonSerDe(schema);
 
     @BeforeEach
     void setUp() {
@@ -79,11 +81,7 @@ public abstract class QueryWebSocketClientTestBase {
     }
 
     protected String queryResult(String queryId, Row... rows) {
-        return "{" +
-                "\"queryId\":\"" + queryId + "\", " +
-                "\"message\":\"rows\"," +
-                "\"rows\":" + GSON.toJson(List.of(rows)) +
-                "}";
+        return serDe.toJson(QueryWebSocketMessage.rowsBatch(queryId, List.of(rows)));
     }
 
     protected String completedQuery(String queryId, long rowCount) {
@@ -104,7 +102,7 @@ public abstract class QueryWebSocketClientTestBase {
     }
 
     protected String asJson(Row row) {
-        return GSON.toJson(row);
+        return rowSerDe.toJson(row);
     }
 
     protected Query exactQuery(String queryId, long value) {
