@@ -63,9 +63,9 @@ public class FFIBridge {
      */
     public static synchronized <T extends ForeignFunctions> T createForeignInterface(Class<T> clazz) throws IOException {
         try {
-            return extractAndLink(clazz, "compaction");
+            return extractAndLink(clazz, "sleeper_df");
         } catch (UnsatisfiedLinkError err) {
-            throw (IOException) new IOException("Could not initialise foreign library bridge", err);
+            throw (IOException) new IOException("Could not load and link foreign library", err);
         }
     }
 

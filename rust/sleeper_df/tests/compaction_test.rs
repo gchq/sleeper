@@ -4,8 +4,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
-use compaction::{CompactionInput, merge_sorted_files};
 use compaction_helpers::*;
+use sleeper_df::{CompactionInput, merge_sorted_files};
 use tempfile::tempdir;
 use test_log::test;
 

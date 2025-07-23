@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [package]
-name = "compaction"
-description = "This is the compaction library that implements all the core data compaction and sketches writing functionality that will be needed in Sleeper."
-keywords = ["sleeper", "compaction"]
+name = "sleeper_df"
+description = "This is the native library for Sleeper that implements all the core data compaction and sketches generation functionality."
+keywords = ["sleeper"]
 categories = ["science"]
 version = { workspace = true }
 edition = { workspace = true }

@@ -126,7 +126,7 @@ pub struct CompactionResult {
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::compaction::{merge_sorted_files, CompactionInput, PartitionBound, ColRange};
+/// # use crate::sleeper_df::{merge_sorted_files, CompactionInput, PartitionBound, ColRange};
 /// let mut compaction_input = CompactionInput::default();
 /// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
 /// compaction_input.output_file = Url::parse("file:///path/to/output").unwrap();
