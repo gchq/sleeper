@@ -26,9 +26,11 @@ RUN apt-get update && apt-get install -y \
     jq \
     uuid-runtime \
     sudo \
-    clang \
-    gcc g++ cmake make \
-    pkg-config libssl-dev \
+    # Rust build time dependencies including cross-compilation
+    gcc g++ \
+    g++-aarch64-linux-gnu \
+    libc6-dev-arm64-cross \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
@@ -48,9 +50,19 @@ USER rust
 ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
-RUN $CARGO_HOME/bin/rustup component add rust-std-x86_64-unknown-linux-gnu rust-std-aarch64-unknown-linux-gnu rust-src
-RUN $CARGO_HOME/bin/cargo install cross
-RUN $CARGO_HOME/bin/cargo install cargo-audit --features=fix
+
+# Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
+ENV PATH=$CARGO_HOME/bin:$PATH
+
+# Set up cross-platform builds and other tools
+RUN rustup target add x86_64-unknown-linux-gnu
+RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
+RUN rustup target add aarch64-unknown-linux-gnu
+RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
+RUN rustup component add rust-src
+RUN cargo install cargo-audit --features=fix
+
+# Adjust permissions for Rust install
 USER root
 RUN chmod -R a+rw $RUSTUP_HOME
 RUN chmod -R a+rw $CARGO_HOME
@@ -62,12 +74,6 @@ RUN adduser --disabled-password --gecos "" sleeper \
     && usermod -aG sudo,docker,rust sleeper \
     && passwd -d sleeper
 USER sleeper
-
-# Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
-ENV PATH=$CARGO_HOME/bin:$PATH
-
-# Set variable telling cross-rs Rust cross compiler that it is already inside a container
-ENV CROSS_CONTAINER_IN_CONTAINER=true
 
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
