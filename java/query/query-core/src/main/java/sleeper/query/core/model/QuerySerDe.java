@@ -28,6 +28,16 @@ import java.util.function.Supplier;
 
 /**
  * Serialises a query to and from JSON.
+ * <p>
+ * This class provides methods to convert Sleeper query objects, including
+ * query and leaf partition query, into JSON
+ * strings and to reconstruct these objects from JSON. It handles both
+ * compact and pretty-printed JSON formats.
+ * <p>
+ * The serialisation process relies on a {@link SchemaLoader} to retrieve
+ * necessary schema information for the queries, ensuring proper handling
+ * of data structures.
+ *
  */
 public class QuerySerDe {
     private final Gson gson;
@@ -50,14 +60,41 @@ public class QuerySerDe {
         this(new FixedSchemaLoader(schema));
     }
 
+    /**
+     * Converts a Sleeper Query object to a compact JSON string.
+     * This method uses the internal {@code Gson} instance configured for
+     * compact output.
+     *
+     * @param  query the Sleeper query
+     * @return       a JSON string
+     */
     public String toJson(Query query) {
         return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
+    /**
+     * Converts a Sleeper LeafPartitionQuery object to a compact JSON
+     * string.
+     * This method uses the internal {@code Gson} instance configured for
+     * compact output.
+     *
+     * @param  leafQuery the Sleeper leaf partition query
+     * @return           a JSON string
+     */
     public String toJson(LeafPartitionQuery leafQuery) {
         return gson.toJson(QueryJson.from(leafQuery, schemaLoader));
     }
 
+    /**
+     * Converts a Sleeper Query object to a JSON string, with optional
+     * pretty-printing.
+     * If {@code prettyPrint} is {@code true}, the JSON output will be
+     * formatted for readability. Otherwise, it will be a compact string.
+     *
+     * @param  query       the Sleeper query
+     * @param  prettyPrint set to true if the JSON should be formatted
+     * @return             a formatted JSON string
+     */
     public String toJson(Query query, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(QueryJson.from(query, schemaLoader));
@@ -65,6 +102,16 @@ public class QuerySerDe {
         return toJson(query);
     }
 
+    /**
+     * Converts a Sleeper LeafPartitionQuery object to a JSON string,
+     * with optional pretty-printing.
+     * If {@code prettyPrint} is {@code true}, the JSON output will be
+     * formatted for readability. Otherwise, it will be a compact string.
+     *
+     * @param  leafQuery   the Sleeper leaf partition query
+     * @param  prettyPrint set to true if the JSON should be formatted
+     * @return             a formatted JSON string
+     */
     public String toJson(LeafPartitionQuery leafQuery, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(QueryJson.from(leafQuery, schemaLoader));
@@ -72,22 +119,63 @@ public class QuerySerDe {
         return toJson(leafQuery);
     }
 
+    /**
+     * Converts a JSON string into a Sleeper Query object.
+     * This method deserialises the JSON string into an intermediate
+     * {@code QueryJson} object before converting it to the final
+     * {@link Query} representation using the provided schema loader.
+     *
+     * @param  json the JSON to convert
+     * @return      a Sleeper query
+     */
     public Query fromJson(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toParentQuery(schemaLoader);
     }
 
+    /**
+     * Converts a JSON string into either a Sleeper Query or a
+     * LeafPartitionQuery object.
+     * This method is flexible, attempting to deserialise the JSON into
+     * whichever type is appropriate based on the content of the JSON and
+     * then converting it using the schema loader.
+     *
+     * @param  json the JSON to convert
+     * @return      a Sleeper query or leaf partition query
+     */
     public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toQueryOrLeafQuery(schemaLoader);
     }
 
+    /**
+     * Schema loader. This is required to serialise/deserialise regions within
+     * RegionSerDe.
+     */
     public interface SchemaLoader {
+        /**
+         * Retrieves the schema for a Sleeper table by its name.
+         *
+         * @param  tableName the Sleeper table name
+         * @return           a Sleeper table schema
+         */
         Optional<Schema> getSchemaByTableName(String tableName);
 
+        /**
+         * Retrieves the schema for a Sleeper table by its ID.
+         *
+         * @param  tableId the sleeper table Id
+         * @return         a Sleeper table schema
+         */
         Optional<Schema> getSchemaByTableId(String tableId);
     }
 
+    /**
+     * An implementation of SchemaLoader that retrieves Sleeper table
+     * schemas using a TablePropertiesProvider.
+     * This class handles cases where a table may not be found by returning
+     * an empty {@link java.util.Optional Optional}.
+     */
     private static class SchemaLoaderFromTableProvider implements SchemaLoader {
 
         private final TablePropertiesProvider provider;
@@ -116,6 +204,12 @@ public class QuerySerDe {
         }
     }
 
+    /**
+     * An implementation of SchemaLoader that always returns a fixed,
+     * predefined schema, regardless of the table name or ID requested.
+     * This is useful for scenarios where a dynamic schema lookup is not
+     * required or desirable.
+     */
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;
 
