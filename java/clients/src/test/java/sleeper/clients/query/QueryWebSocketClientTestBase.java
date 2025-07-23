@@ -17,7 +17,7 @@ package sleeper.clients.query;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
+import sleeper.clients.query.FakeWebSocketClientAdapter.WebSocketResponse;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -54,7 +54,7 @@ public abstract class QueryWebSocketClientTestBase {
     protected final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance(tableIndex);
     protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
     protected final QuerySerDe querySerDe = new QuerySerDe(schema);
-    protected final FakeWebSocketClient client = new FakeWebSocketClient();
+    protected final FakeWebSocketClientAdapter adapter = new FakeWebSocketClientAdapter();
     protected final QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
     protected final RowJsonSerDe rowSerDe = new RowJsonSerDe(schema);
 

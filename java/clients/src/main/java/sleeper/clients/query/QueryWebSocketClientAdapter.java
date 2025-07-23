@@ -17,34 +17,57 @@ package sleeper.clients.query;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
 import software.amazon.awssdk.http.auth.spi.internal.signer.DefaultSignRequest;
 import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
-import sleeper.clients.query.QueryWebSocketClient.Client;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.model.Query;
 
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-class QueryWebSocketClientAdapter extends WebSocketClient implements Client {
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.instance.CommonProperty.REGION;
+
+class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSocketClient.Adapter {
+    public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClientAdapter.class);
+
     private final String region;
     private final URI serverUri;
     private final AwsCredentials credentials;
     private final QueryWebSocketMessageHandler messageHandler;
     private Query query;
 
-    QueryWebSocketClientAdapter(String region, URI serverUri, AwsCredentials credentials, QueryWebSocketMessageHandler messageHandler) {
+    private QueryWebSocketClientAdapter(String region, URI serverUri, AwsCredentials credentials, QueryWebSocketMessageHandler messageHandler) {
         super(serverUri);
         this.region = region;
         this.serverUri = serverUri;
         this.credentials = credentials;
         this.messageHandler = messageHandler;
         messageHandler.setCloser(this::closeBlocking);
+    }
+
+    public static QueryWebSocketClientAdapter create(
+            InstanceProperties instanceProperties, TableProperties tableProperties, AwsCredentialsProvider credentialsProvider) {
+        String region = instanceProperties.get(REGION);
+        URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
+        QueryWebSocketMessageHandler messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
+        LOGGER.info("Obtaining AWS IAM credentials...");
+        AwsCredentials credentials = credentialsProvider.resolveCredentials();
+        return new QueryWebSocketClientAdapter(region, serverUri, credentials, messageHandler);
+    }
+
+    public static QueryWebSocketClient.AdapterProvider provider(AwsCredentialsProvider credentialsProvider) {
+        return (instanceProperties, tableProperties) -> create(instanceProperties, tableProperties, credentialsProvider);
     }
 
     public CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException {

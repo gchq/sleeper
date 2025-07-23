@@ -15,7 +15,6 @@
  */
 package sleeper.clients.query;
 
-import sleeper.clients.query.QueryWebSocketClient.Client;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.model.Query;
 
@@ -23,14 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class FakeWebSocketClient implements Client {
+public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter {
     private boolean connected = false;
     private boolean closed = false;
     private QueryWebSocketMessageHandler messageHandler;
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
-    public QueryWebSocketClient.ClientProvider provider() {
+    public QueryWebSocketClient.AdapterProvider provider() {
         return (instanceProperties, tableProperties) -> withTable(tableProperties);
     }
 
@@ -50,7 +49,7 @@ public class FakeWebSocketClient implements Client {
         this.responses = List.of(responses);
     }
 
-    private FakeWebSocketClient withTable(TableProperties tableProperties) {
+    private FakeWebSocketClientAdapter withTable(TableProperties tableProperties) {
         messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
         return this;
     }
@@ -112,6 +111,6 @@ public class FakeWebSocketClient implements Client {
     }
 
     public interface WebSocketResponse {
-        void sendTo(FakeWebSocketClient client);
+        void sendTo(FakeWebSocketClientAdapter client);
     }
 }

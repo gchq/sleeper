@@ -17,7 +17,6 @@ package sleeper.clients.query;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -26,14 +25,12 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
@@ -41,16 +38,16 @@ public class QueryWebSocketClient {
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final ClientProvider clientProvider;
+    private final AdapterProvider clientProvider;
     private final long timeoutMs;
 
     public QueryWebSocketClient(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
-        this(instanceProperties, tablePropertiesProvider, clientProvider(credentialsProvider), DEFAULT_TIMEOUT_MS);
+        this(instanceProperties, tablePropertiesProvider, QueryWebSocketClientAdapter.provider(credentialsProvider), DEFAULT_TIMEOUT_MS);
     }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            ClientProvider clientProvider, long timeoutMs) {
+            AdapterProvider clientProvider, long timeoutMs) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.clientProvider = clientProvider;
@@ -62,24 +59,24 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        Client client = clientProvider.createClient(instanceProperties, tableProperties);
+        Adapter adapter = clientProvider.createClient(instanceProperties, tableProperties);
         try {
             Instant startTime = Instant.now();
-            return client.startQueryFuture(query)
+            return adapter.startQueryFuture(query)
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((records, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-                        long recordsReturned = client.getTotalRecordsReturned();
+                        long recordsReturned = adapter.getTotalRecordsReturned();
                         LOGGER.info("Query took {} to return {} records", duration, recordsReturned);
-                        client.close();
+                        adapter.close();
                     });
         } catch (RuntimeException | InterruptedException e) {
-            client.close();
+            adapter.close();
             throw e;
         }
     }
 
-    public interface Client {
+    public interface Adapter {
         void close();
 
         CompletableFuture<List<String>> startQueryFuture(Query query) throws InterruptedException;
@@ -91,19 +88,8 @@ public class QueryWebSocketClient {
         List<String> getResults(String queryId);
     }
 
-    private static ClientProvider clientProvider(AwsCredentialsProvider credentialsProvider) {
-        return (instanceProperties, tableProperties) -> {
-            String region = instanceProperties.get(REGION);
-            URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
-            QueryWebSocketMessageHandler messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
-            LOGGER.info("Obtaining AWS IAM credentials...");
-            AwsCredentials credentials = credentialsProvider.resolveCredentials();
-            return new QueryWebSocketClientAdapter(region, serverUri, credentials, messageHandler);
-        };
-    }
-
-    public interface ClientProvider {
-        Client createClient(InstanceProperties instanceProperties, TableProperties tableProperties);
+    public interface AdapterProvider {
+        Adapter createClient(InstanceProperties instanceProperties, TableProperties tableProperties);
     }
 
     public interface ClientCloser {

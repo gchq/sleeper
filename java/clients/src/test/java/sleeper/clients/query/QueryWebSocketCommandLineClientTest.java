@@ -58,7 +58,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message(queryResult("test-query-id", expectedRow)),
                     message(completedQuery("test-query-id", 1L)));
 
@@ -77,9 +77,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             asJson(expectedRow) + "\n" +
                             "Query took 1 second to return 1 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -88,7 +88,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message(createdSubQueries("test-query-id", "test-subquery")),
                     message(queryResult("test-subquery", expectedRow)),
                     message(completedQuery("test-subquery", 1L)));
@@ -108,9 +108,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             asJson(expectedRow) + "\n" +
                             "Query took 1 second to return 1 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -121,7 +121,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             Row expectedRow1 = new Row(Map.of("key", 123L));
             Row expectedRow2 = new Row(Map.of("key", 456L));
             Row expectedRow3 = new Row(Map.of("key", 789L));
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
                     message(queryResult("subquery-1", expectedRow1)),
                     message(completedQuery("subquery-1", 1L)),
@@ -147,9 +147,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             asJson(expectedRow3) + "\n" +
                             "Query took 1 second to return 3 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -158,7 +158,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message(queryResult("test-query-id", expectedRow)),
                     message(completedQuery("test-query-id", 2L)));
 
@@ -177,9 +177,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             asJson(expectedRow) + "\n" +
                             "Query took 1 second to return 1 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
     }
@@ -192,7 +192,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleErrorIfExceptionEncounteredThatDoesNotCloseConnection() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     error(new Exception("Exception that will not terminate connection")));
 
             // When
@@ -209,9 +209,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Error while running queries\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -219,7 +219,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleErrorIfExceptionEncounteredThatClosesConnection() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     error(new Exception("Exception that will terminate connection")),
                     close("Exception caused connection to terminate"));
 
@@ -237,9 +237,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Error while running queries\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -247,7 +247,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleErrorIfMessageWithErrorIsReceived() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message(errorMessage("test-query-id", "Failure message")));
 
             // When
@@ -264,9 +264,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Error while running queries: Failure message\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -274,7 +274,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleMessageWithUnrecognisedType() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message(unknownMessage("test-query-id")));
 
             // When
@@ -291,9 +291,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Found invalid message: {\"queryId\": \"test-query-id\",\"message\": \"unknown\"}\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -301,7 +301,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleMalformedJson() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message("{"));
 
             // When
@@ -318,9 +318,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Found invalid message: {\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -328,7 +328,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleMissingQueryIdInMessageFromApi() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message("{\"message\":\"error\"}"));
 
             // When
@@ -345,9 +345,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Found invalid message: {\"message\":\"error\"}\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -355,7 +355,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleMissingMessageTypeInMessageFromApi() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     message("{\"queryId\":\"test-query-id\"}"));
 
             // When
@@ -372,9 +372,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: Found invalid message: {\"queryId\":\"test-query-id\"}\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
 
@@ -382,7 +382,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         void shouldHandleConnectionClosingUnexpectedly() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
-            client.setFakeResponses(
+            adapter.setFakeResponses(
                     close("Network error"));
 
             // When
@@ -399,9 +399,9 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
-            assertThat(client.isConnected()).isFalse();
-            assertThat(client.isClosed()).isTrue();
-            assertThat(client.getSentMessages())
+            assertThat(adapter.isConnected()).isFalse();
+            assertThat(adapter.isClosed()).isTrue();
+            assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(expectedQuery));
         }
     }
@@ -409,7 +409,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
     protected void runQueryClient(String queryId) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, tablePropertiesProvider,
                 in.consoleIn(), out.consoleOut(),
-                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, client.provider(), 0),
+                new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, adapter.provider(), 0),
                 () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                 .run();
     }
