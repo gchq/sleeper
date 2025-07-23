@@ -91,8 +91,4 @@ public class QueryWebSocketClient {
     public interface AdapterProvider {
         Adapter createClient(InstanceProperties instanceProperties, TableProperties tableProperties);
     }
-
-    public interface ClientCloser {
-        void close() throws InterruptedException;
-    }
 }

@@ -21,7 +21,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
-import sleeper.clients.query.QueryWebSocketClient.ClientCloser;
 import sleeper.clients.query.exception.MessageMalformedException;
 import sleeper.clients.query.exception.MessageMissingFieldException;
 import sleeper.clients.query.exception.UnknownMessageTypeException;
@@ -224,5 +223,9 @@ public class QueryWebSocketMessageHandler {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    public interface ClientCloser {
+        void close() throws InterruptedException;
     }
 }
