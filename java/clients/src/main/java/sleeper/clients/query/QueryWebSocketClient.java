@@ -65,10 +65,9 @@ public class QueryWebSocketClient {
             Instant startTime = Instant.now();
             return adapter.startQueryFuture(query)
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .whenComplete((records, exception) -> {
+                    .whenComplete((rows, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-                        long recordsReturned = adapter.getTotalRecordsReturned();
-                        LOGGER.info("Query took {} to return {} records", duration, recordsReturned);
+                        LOGGER.info("Query took {} to return {} rows", duration, rows.size());
                         adapter.close();
                     });
         } catch (RuntimeException | InterruptedException e) {
@@ -81,12 +80,6 @@ public class QueryWebSocketClient {
         void close();
 
         CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException;
-
-        boolean hasQueryFinished();
-
-        long getTotalRecordsReturned();
-
-        List<Row> getResults(String queryId);
     }
 
     public interface AdapterProvider {

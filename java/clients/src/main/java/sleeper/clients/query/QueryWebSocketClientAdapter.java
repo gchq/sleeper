@@ -106,14 +106,6 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
         });
     }
 
-    public boolean hasQueryFinished() {
-        return messageHandler.hasQueryFinished();
-    }
-
-    public long getTotalRecordsReturned() {
-        return messageHandler.getTotalRecordsReturned();
-    }
-
     @Override
     public void onOpen(ServerHandshake handshake) {
         messageHandler.onOpen(query, this::send);
@@ -132,10 +124,5 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
     @Override
     public void onError(Exception error) {
         messageHandler.onError(error);
-    }
-
-    @Override
-    public List<Row> getResults(String queryId) {
-        return messageHandler.getResults(queryId);
     }
 }

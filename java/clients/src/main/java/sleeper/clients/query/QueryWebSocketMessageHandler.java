@@ -165,7 +165,7 @@ public class QueryWebSocketMessageHandler {
         return totalRecordsReturned;
     }
 
-    public List<Row> getResults(String queryId) {
+    private List<Row> getResults(String queryId) {
         return Stream.concat(
                 Stream.of(queryId),
                 parentQueryIdToSubQueryIds.getOrDefault(queryId, List.of()).stream())

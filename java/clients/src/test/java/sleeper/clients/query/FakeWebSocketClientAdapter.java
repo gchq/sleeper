@@ -66,21 +66,6 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
         return future;
     }
 
-    @Override
-    public boolean hasQueryFinished() {
-        return messageHandler.hasQueryFinished();
-    }
-
-    @Override
-    public long getTotalRecordsReturned() {
-        return messageHandler.getTotalRecordsReturned();
-    }
-
-    @Override
-    public List<Row> getResults(String queryId) {
-        return messageHandler.getResults(queryId);
-    }
-
     public void send(String message) {
         sentMessages.add(message);
     }

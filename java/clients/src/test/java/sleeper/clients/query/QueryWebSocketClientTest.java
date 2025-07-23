@@ -56,8 +56,6 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
-            assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(expectedRow);
         }
 
         @Test
@@ -77,10 +75,6 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
-            assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(expectedRow);
-            assertThat(adapter.getResults("test-subquery"))
-                    .containsExactly(expectedRow);
         }
 
         @Test
@@ -106,14 +100,6 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
-            assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(expectedRow1, expectedRow2, expectedRow3);
-            assertThat(adapter.getResults("subquery-1"))
-                    .containsExactly(expectedRow1);
-            assertThat(adapter.getResults("subquery-2"))
-                    .containsExactly(expectedRow2);
-            assertThat(adapter.getResults("subquery-3"))
-                    .containsExactly(expectedRow3);
         }
 
         @Test
@@ -132,8 +118,6 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             assertThat(adapter.isClosed()).isTrue();
             assertThat(adapter.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
-            assertThat(adapter.getResults("test-query-id"))
-                    .containsExactly(expectedRow);
         }
     }
 
