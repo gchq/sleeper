@@ -17,6 +17,10 @@ package sleeper.query.core.output;
 
 import java.util.List;
 
+/**
+ * Provides information about the results from running a query. Contains details of the number of records in the result
+ * and the location of where results are stored.
+ */
 public class ResultsOutputInfo {
     private final long recordCount;
     private final List<ResultsOutputLocation> locations;
