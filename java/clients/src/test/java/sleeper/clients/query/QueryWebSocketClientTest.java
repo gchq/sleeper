@@ -45,16 +45,16 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // Given
             Query query = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message(queryResult("test-query-id", expectedRow)),
                     message(completedQuery("test-query-id", 1L)));
 
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedWithValue(List.of(expectedRow));
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -63,7 +63,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // Given
             Query query = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message(createdSubQueries("test-query-id", "test-subquery")),
                     message(queryResult("test-subquery", expectedRow)),
                     message(completedQuery("test-subquery", 1L)));
@@ -71,9 +71,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedWithValue(List.of(expectedRow));
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -84,7 +84,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             Row expectedRow1 = new Row(Map.of("key", 123L));
             Row expectedRow2 = new Row(Map.of("key", 456L));
             Row expectedRow3 = new Row(Map.of("key", 789L));
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
                     message(queryResult("subquery-1", expectedRow1)),
                     message(completedQuery("subquery-1", 1L)),
@@ -96,9 +96,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedWithValue(List.of(expectedRow1, expectedRow2, expectedRow3));
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -107,16 +107,16 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
             // Given
             Query query = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message(queryResult("test-query-id", expectedRow)),
                     message(completedQuery("test-query-id", 2L)));
 
             // When / Then
             assertThat(runQueryFuture(query))
                     .isCompletedWithValue(List.of(expectedRow));
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
     }
@@ -129,7 +129,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleErrorIfExceptionEncounteredThatDoesNotCloseConnection() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     error(new Exception("Exception that will not terminate connection")));
 
             // When / Then
@@ -138,9 +138,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -148,7 +148,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleErrorIfExceptionEncounteredWhenQueryCompletesAfter() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     error(new Exception("Exception that will not terminate connection")),
                     message(completedQuery("test-query-id", 0L)));
 
@@ -158,9 +158,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -168,7 +168,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleErrorIfExceptionEncounteredThatClosesConnection() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     error(new Exception("Exception that will terminate connection")),
                     close("Exception caused connection to terminate"));
 
@@ -178,9 +178,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -188,7 +188,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleErrorIfMessageWithErrorIsReceived() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message(errorMessage("test-query-id", "Query failed")));
 
             // When / Then
@@ -197,9 +197,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketErrorException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -207,7 +207,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleMessageWithUnrecognisedType() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message(unknownMessage("test-query-id")));
 
             // When / Then
@@ -216,9 +216,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -226,7 +226,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleMalformedJson() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message("{"));
 
             // When / Then
@@ -235,9 +235,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -245,7 +245,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleMissingQueryIdInMessageFromApi() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message("{\"message\":\"error\"}"));
 
             // When / Then
@@ -254,9 +254,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -264,7 +264,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleMissingMessageTypeInMessageFromApi() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     message("{\"queryId\":\"test-query-id\"}"));
 
             // When / Then
@@ -273,9 +273,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(QueryWebSocketMessageException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -283,7 +283,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldHandleConnectionClosingUnexpectedly() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses(
+            connection.setFakeResponses(
                     close("Network error"));
 
             // When / Then
@@ -292,9 +292,9 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(WebSocketClosedException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
 
@@ -302,23 +302,23 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         void shouldTimeOutWithNoReponse() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123L);
-            adapter.setFakeResponses();
+            connection.setFakeResponses();
 
             // When / Then
             assertThat(runQueryFuture(query))
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
                     .withCauseInstanceOf(TimeoutException.class);
-            assertThat(adapter.isConnected()).isFalse();
-            assertThat(adapter.isClosed()).isTrue();
-            assertThat(adapter.getSentMessages())
+            assertThat(connection.isConnected()).isFalse();
+            assertThat(connection.isClosed()).isTrue();
+            assertThat(connection.getSentMessages())
                     .containsExactly(querySerDe.toJson(query));
         }
     }
 
     protected CompletableFuture<List<Row>> runQueryFuture(Query query) throws Exception {
         QueryWebSocketClient realClient = new QueryWebSocketClient(
-                instanceProperties, tablePropertiesProvider, adapter.provider(), 0);
+                instanceProperties, tablePropertiesProvider, connection.provider(), 0);
         return realClient.submitQuery(query);
     }
 }

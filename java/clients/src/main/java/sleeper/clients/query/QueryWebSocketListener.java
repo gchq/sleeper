@@ -15,6 +15,10 @@
  */
 package sleeper.clients.query;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.clients.query.QueryWebSocketClient.Connection;
 import sleeper.clients.query.exception.WebSocketClosedException;
 import sleeper.clients.query.exception.WebSocketErrorException;
 import sleeper.core.row.Row;
@@ -26,50 +30,39 @@ import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 import sleeper.query.runner.websocket.QueryWebSocketMessageType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class QueryWebSocketMessageHandler {
-    private final Set<String> outstandingQueries = new HashSet<>();
-    private final Map<String, List<String>> parentQueryIdToSubQueryIds = new HashMap<>();
+public class QueryWebSocketListener {
+    public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketListener.class);
+
+    private final Set<String> outstandingQueryIds = new HashSet<>();
+    private final List<String> subQueryIds = new ArrayList<>();
     private final Map<String, List<Row>> queryIdToRows = new TreeMap<>();
     private final QueryWebSocketMessageSerDe serDe;
     private final QuerySerDe querySerDe;
-    private ClientCloser clientCloser;
-    private boolean queryComplete = false;
-    private boolean queryFailed = false;
-    private long totalRecordsReturned = 0L;
-    private CompletableFuture<List<Row>> future;
-    private String currentQueryId;
+    private final Query query;
+    private final CompletableFuture<List<Row>> future = new CompletableFuture<>();
+    private Connection connection;
 
-    public QueryWebSocketMessageHandler(Schema schema) {
+    public QueryWebSocketListener(Schema schema, Query query) {
         this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
         this.querySerDe = new QuerySerDe(schema);
+        this.query = query;
     }
 
-    public void setCloser(ClientCloser clientCloser) {
-        this.clientCloser = clientCloser;
-    }
-
-    public void setFuture(CompletableFuture<List<Row>> future) {
-        this.future = future;
-    }
-
-    public void onOpen(Query query, Consumer<String> messageSender) {
-        QueryWebSocketClient.LOGGER.info("Connected to WebSocket API");
+    public void onOpen(Connection connection) {
+        this.connection = connection;
+        LOGGER.info("Connected to WebSocket API");
         String queryJson = querySerDe.toJson(query);
-        QueryWebSocketClient.LOGGER.info("Submitting Query: {}", queryJson);
-        messageSender.accept(queryJson);
-        outstandingQueries.add(query.getQueryId());
-        parentQueryIdToSubQueryIds.put(query.getQueryId(), new ArrayList<>());
-        currentQueryId = query.getQueryId();
+        LOGGER.info("Submitting Query: {}", queryJson);
+        connection.send(queryJson);
+        outstandingQueryIds.add(query.getQueryId());
     }
 
     public void onMessage(String json) {
@@ -91,36 +84,44 @@ public class QueryWebSocketMessageHandler {
         } else if (message.getMessage() == QueryWebSocketMessageType.completed) {
             handleCompleted(message);
         } else {
-            queryFailed = true;
             future.completeExceptionally(new WebSocketErrorException("Unrecognised message type: " + message.getMessage()));
             close();
         }
 
-        if (outstandingQueries.isEmpty()) {
-            queryComplete = true;
-            future.complete(getResults(currentQueryId));
+        if (outstandingQueryIds.isEmpty()) {
+            future.complete(getResults());
             close();
         }
     }
 
+    public void onClose(String reason) {
+        LOGGER.info("Disconnected from WebSocket API: {}", reason);
+        future.completeExceptionally(new WebSocketClosedException(reason));
+    }
+
+    public void onError(Exception error) {
+        future.completeExceptionally(new WebSocketErrorException(error));
+        close();
+    }
+
+    public CompletableFuture<List<Row>> getQueryFuture() {
+        return future;
+    }
+
     private void handleError(QueryWebSocketMessage message) {
-        outstandingQueries.remove(message.getQueryId());
-        queryFailed = true;
+        outstandingQueryIds.remove(message.getQueryId());
         future.completeExceptionally(new WebSocketErrorException(message.getError()));
         close();
     }
 
     private void handleSubqueries(QueryWebSocketMessage message) {
-        QueryWebSocketClient.LOGGER.info("Query {} split into the following subQueries:", message.getQueryIds());
+        LOGGER.info("Query {} split into the following subQueries:", message.getQueryIds());
         for (String subQueryId : message.getQueryIds()) {
-            QueryWebSocketClient.LOGGER.info("  " + subQueryId);
-            outstandingQueries.add(subQueryId);
+            LOGGER.info("  " + subQueryId);
+            outstandingQueryIds.add(subQueryId);
         }
-        outstandingQueries.remove(message.getQueryId());
-        parentQueryIdToSubQueryIds.compute(message.getQueryId(), (query, subQueries) -> {
-            subQueries.addAll(message.getQueryIds());
-            return subQueries;
-        });
+        outstandingQueryIds.remove(message.getQueryId());
+        subQueryIds.addAll(message.getQueryIds());
     }
 
     private void handleRows(QueryWebSocketMessage message) {
@@ -135,55 +136,28 @@ public class QueryWebSocketMessageHandler {
         long returnedRowCount = queryIdToRows.getOrDefault(message.getQueryId(), List.of()).size();
         if (message.isRowsReturnedToClient() && message.getRowCount() > 0) {
             if (returnedRowCount != message.getRowCount()) {
-                QueryWebSocketClient.LOGGER.error("API said it had returned {} rows for query {}, but only received {}",
+                LOGGER.error("API said it had returned {} rows for query {}, but only received {}",
                         message.getRowCount(), message.getQueryId(), returnedRowCount);
             }
         }
-        outstandingQueries.remove(message.getQueryId());
-        QueryWebSocketClient.LOGGER.info("{} rows returned by query {}. Remaining pending queries: {}",
-                message.getRowCount(), message.getQueryId(), outstandingQueries.size());
-        totalRecordsReturned += returnedRowCount;
+        outstandingQueryIds.remove(message.getQueryId());
+        LOGGER.info("{} rows returned by query {}. Remaining pending queries: {}",
+                message.getRowCount(), message.getQueryId(), outstandingQueryIds.size());
     }
 
-    public void onClose(String reason) {
-        QueryWebSocketClient.LOGGER.info("Disconnected from WebSocket API: {}", reason);
-        queryComplete = true;
-        future.completeExceptionally(new WebSocketClosedException(reason));
-    }
-
-    public void onError(Exception error) {
-        queryFailed = true;
-        future.completeExceptionally(new WebSocketErrorException(error));
-        close();
-    }
-
-    public boolean hasQueryFinished() {
-        return queryComplete || queryFailed;
-    }
-
-    public long getTotalRecordsReturned() {
-        return totalRecordsReturned;
-    }
-
-    private List<Row> getResults(String queryId) {
-        return Stream.concat(
-                Stream.of(queryId),
-                parentQueryIdToSubQueryIds.getOrDefault(queryId, List.of()).stream())
+    private List<Row> getResults() {
+        return Stream.concat(Stream.of(query.getQueryId()), subQueryIds.stream())
                 .flatMap(id -> queryIdToRows.getOrDefault(id, List.of()).stream())
                 .toList();
     }
 
     private void close() {
-        QueryWebSocketClient.LOGGER.info("Query finished, closing client");
+        LOGGER.info("Query finished, closing connection");
         try {
-            clientCloser.close();
+            connection.closeBlocking();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
-    }
-
-    public interface ClientCloser {
-        void close() throws InterruptedException;
     }
 }

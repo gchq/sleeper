@@ -15,30 +15,28 @@
  */
 package sleeper.clients.query;
 
-import sleeper.core.row.Row;
-import sleeper.query.core.model.Query;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
-public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter {
+public class FakeWebSocketConnection implements QueryWebSocketClient.Connection {
     private boolean connected = false;
     private boolean closed = false;
-    private QueryWebSocketMessageHandler messageHandler;
+    private QueryWebSocketListener messageHandler;
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
-    public QueryWebSocketClient.AdapterProvider provider() {
-        return (instanceProperties, messageHandler) -> {
-            this.messageHandler = messageHandler;
-            return this;
-        };
+    public QueryWebSocketClient.Adapter provider() {
+        return this::connect;
     }
 
-    public boolean connectBlocking() throws InterruptedException {
+    public FakeWebSocketConnection connect(InstanceProperties instanceProperties, QueryWebSocketListener messageHandler) throws InterruptedException {
         connected = true;
-        return connected;
+        this.messageHandler = messageHandler;
+        messageHandler.onOpen(this);
+        responses.forEach(response -> response.sendTo(this));
+        return this;
     }
 
     @Override
@@ -48,21 +46,16 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
         }
     }
 
+    @Override
+    public void closeBlocking() throws InterruptedException {
+        close();
+    }
+
     public void setFakeResponses(WebSocketResponse... responses) {
         this.responses = List.of(responses);
     }
 
     @Override
-    public CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException {
-        CompletableFuture<List<Row>> future = new CompletableFuture<>();
-        messageHandler.setFuture(future);
-        messageHandler.setCloser(this::close);
-        connectBlocking();
-        messageHandler.onOpen(query, sentMessages::add);
-        responses.forEach(response -> response.sendTo(this));
-        return future;
-    }
-
     public void send(String message) {
         sentMessages.add(message);
     }
@@ -94,6 +87,6 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
     }
 
     public interface WebSocketResponse {
-        void sendTo(FakeWebSocketClientAdapter client);
+        void sendTo(FakeWebSocketConnection client);
     }
 }

@@ -28,64 +28,51 @@ import software.amazon.awssdk.http.auth.spi.internal.signer.DefaultSignRequest;
 import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.row.Row;
-import sleeper.query.core.model.Query;
 
 import java.net.URI;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
-class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSocketClient.Adapter {
-    public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClientAdapter.class);
+class QueryWebSocketConnection extends WebSocketClient implements QueryWebSocketClient.Connection {
+    public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketConnection.class);
 
     private final String region;
     private final URI serverUri;
     private final AwsCredentials credentials;
-    private final QueryWebSocketMessageHandler messageHandler;
-    private Query query;
+    private final QueryWebSocketListener messageHandler;
 
-    private QueryWebSocketClientAdapter(String region, URI serverUri, AwsCredentials credentials, QueryWebSocketMessageHandler messageHandler) {
+    private QueryWebSocketConnection(String region, URI serverUri, AwsCredentials credentials, QueryWebSocketListener messageHandler) {
         super(serverUri);
         this.region = region;
         this.serverUri = serverUri;
         this.credentials = credentials;
         this.messageHandler = messageHandler;
-        messageHandler.setCloser(this::closeBlocking);
     }
 
-    public static QueryWebSocketClientAdapter create(
-            InstanceProperties instanceProperties, QueryWebSocketMessageHandler messageHandler, AwsCredentialsProvider credentialsProvider) {
+    public static QueryWebSocketConnection connect(
+            InstanceProperties instanceProperties, QueryWebSocketListener messageHandler, AwsCredentialsProvider credentialsProvider) throws InterruptedException {
         String region = instanceProperties.get(REGION);
         URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
         LOGGER.info("Obtaining AWS IAM credentials...");
         AwsCredentials credentials = credentialsProvider.resolveCredentials();
-        return new QueryWebSocketClientAdapter(region, serverUri, credentials, messageHandler);
+        QueryWebSocketConnection connection = new QueryWebSocketConnection(region, serverUri, credentials, messageHandler);
+        connection.initialiseConnection();
+        return connection;
     }
 
-    public static QueryWebSocketClient.AdapterProvider provider(AwsCredentialsProvider credentialsProvider) {
-        return (instanceProperties, messageHandler) -> create(instanceProperties, messageHandler, credentialsProvider);
-    }
-
-    @Override
-    public CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException {
-        CompletableFuture<List<Row>> future = new CompletableFuture<>();
-        messageHandler.setFuture(future);
-        this.query = query;
-        initialiseConnection();
-        return future;
+    public static QueryWebSocketClient.Adapter createAdapter(AwsCredentialsProvider credentialsProvider) {
+        return (instanceProperties, messageHandler) -> connect(instanceProperties, messageHandler, credentialsProvider);
     }
 
     private void initialiseConnection() throws InterruptedException {
         setAwsIamAuthHeaders();
-        QueryWebSocketClient.LOGGER.info("Connecting to WebSocket API at {}", serverUri);
+        LOGGER.info("Connecting to WebSocket API at {}", serverUri);
         connectBlocking();
     }
 
     private void setAwsIamAuthHeaders() {
-        QueryWebSocketClient.LOGGER.debug("Creating auth signature with server URI: {}", serverUri);
+        LOGGER.debug("Creating auth signature with server URI: {}", serverUri);
         AwsV4HttpSigner signer = AwsV4HttpSigner.create();
         SignedRequest signed = signer.sign(DefaultSignRequest.builder(credentials)
                 .putProperty(AwsV4HttpSigner.SERVICE_SIGNING_NAME, "execute-api")
@@ -96,7 +83,7 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
                         .method(SdkHttpMethod.GET)
                         .build())
                 .build());
-        QueryWebSocketClient.LOGGER.debug("Setting auth headers...");
+        LOGGER.debug("Setting auth headers...");
         signed.request().forEachHeader((header, values) -> {
             for (String value : values) {
                 addHeader(header, value);
@@ -106,7 +93,7 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
 
     @Override
     public void onOpen(ServerHandshake handshake) {
-        messageHandler.onOpen(query, this::send);
+        messageHandler.onOpen(this);
     }
 
     @Override

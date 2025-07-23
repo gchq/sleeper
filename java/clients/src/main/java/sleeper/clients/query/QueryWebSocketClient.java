@@ -39,19 +39,19 @@ public class QueryWebSocketClient {
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final AdapterProvider clientProvider;
+    private final Adapter adapter;
     private final long timeoutMs;
 
     public QueryWebSocketClient(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AwsCredentialsProvider credentialsProvider) {
-        this(instanceProperties, tablePropertiesProvider, QueryWebSocketClientAdapter.provider(credentialsProvider), DEFAULT_TIMEOUT_MS);
+        this(instanceProperties, tablePropertiesProvider, QueryWebSocketConnection.createAdapter(credentialsProvider), DEFAULT_TIMEOUT_MS);
     }
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            AdapterProvider clientProvider, long timeoutMs) {
+            Adapter adapter, long timeoutMs) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.clientProvider = clientProvider;
+        this.adapter = adapter;
         this.timeoutMs = timeoutMs;
         if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
@@ -60,31 +60,33 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        QueryWebSocketMessageHandler messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
-        Adapter adapter = clientProvider.createClient(instanceProperties, messageHandler);
+        QueryWebSocketListener listener = new QueryWebSocketListener(tableProperties.getSchema(), query);
+        Connection connection = adapter.connect(instanceProperties, listener);
         try {
             Instant startTime = Instant.now();
-            return adapter.startQueryFuture(query)
+            return listener.getQueryFuture()
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((rows, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-                        LOGGER.info("Query took {} to return {} rows", duration, rows.size());
-                        adapter.close();
+                        LOGGER.info("Query took {} to return {} rows", duration, rows == null ? 0 : rows.size());
+                        connection.close();
                     });
-        } catch (RuntimeException | InterruptedException e) {
-            adapter.close();
+        } catch (RuntimeException e) {
+            connection.close();
             throw e;
         }
     }
 
-    public interface Adapter {
+    public interface Connection {
 
-        CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException;
+        void send(String message);
 
         void close();
+
+        void closeBlocking() throws InterruptedException;
     }
 
-    public interface AdapterProvider {
-        Adapter createClient(InstanceProperties instanceProperties, QueryWebSocketMessageHandler messageHandler);
+    public interface Adapter {
+        Connection connect(InstanceProperties instanceProperties, QueryWebSocketListener messageHandler) throws InterruptedException;
     }
 }
