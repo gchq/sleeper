@@ -78,8 +78,10 @@
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]query[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]query[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]runner[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]runner[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocMethod"/>

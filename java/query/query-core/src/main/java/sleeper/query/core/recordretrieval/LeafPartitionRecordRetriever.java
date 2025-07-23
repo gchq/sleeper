@@ -27,7 +27,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 public interface LeafPartitionRecordRetriever {
 
     /**
-     * Retrieve all records in the regions and files specified by a sub query.
+     * Retrieves all records in the regions and files specified by a sub query.
      *
      * @param  leafPartitionQuery       the sub query
      * @param  dataReadSchema           a schema containing all key fields for the table, and all value fields required

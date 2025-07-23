@@ -15,6 +15,9 @@
  */
 package sleeper.query.core.recordretrieval;
 
+/**
+ * Custom exception for exceptions encountered during record retrieval.
+ */
 public class RecordRetrievalException extends Exception {
 
     public RecordRetrievalException(String msg, Throwable cause) {

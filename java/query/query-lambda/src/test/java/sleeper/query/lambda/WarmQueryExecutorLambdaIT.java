@@ -38,7 +38,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -122,7 +122,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
                 .tableName(tableName)
                 .regions(List.of(region))
                 .processingConfig(QueryProcessingConfig.builder()
-                        .resultsPublisherConfig(Map.of(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
+                        .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, NO_RESULTS_OUTPUT))
                         .statusReportDestinations(Collections.emptyList())
                         .build())
                 .build();
