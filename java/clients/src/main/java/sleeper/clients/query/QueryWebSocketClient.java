@@ -62,7 +62,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
@@ -229,8 +228,8 @@ public class QueryWebSocketClient {
     public static class WebSocketMessageHandler {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
-        private final Map<String, List<String>> subqueryIdByParentQueryId = new HashMap<>();
-        private final Map<String, List<String>> records = new TreeMap<>();
+        private final Map<String, List<String>> parentQueryIdToSubQueryIds = new HashMap<>();
+        private final Map<String, List<String>> subQueryIdToRows = new TreeMap<>();
         private final QueryWebSocketMessageSerDe serDe;
         private final QuerySerDe querySerDe;
         private ClientCloser clientCloser;
@@ -259,7 +258,7 @@ public class QueryWebSocketClient {
             LOGGER.info("Submitting Query: {}", queryJson);
             messageSender.accept(queryJson);
             outstandingQueries.add(query.getQueryId());
-            subqueryIdByParentQueryId.put(query.getQueryId(), new ArrayList<>());
+            parentQueryIdToSubQueryIds.put(query.getQueryId(), new ArrayList<>());
             currentQueryId = query.getQueryId();
         }
 
@@ -337,7 +336,7 @@ public class QueryWebSocketClient {
                 outstandingQueries.add(subQueryId);
             }
             outstandingQueries.remove(message.getQueryId());
-            subqueryIdByParentQueryId.compute(message.getQueryId(), (query, subQueries) -> {
+            parentQueryIdToSubQueryIds.compute(message.getQueryId(), (query, subQueries) -> {
                 subQueries.addAll(message.getQueryIds());
                 return subQueries;
             });
@@ -349,15 +348,15 @@ public class QueryWebSocketClient {
                     .map(jsonElement -> jsonElement.getAsJsonObject())
                     .map(JsonObject::toString)
                     .collect(Collectors.toList());
-            if (!records.containsKey(queryId)) {
-                records.put(queryId, recordList);
+            if (!subQueryIdToRows.containsKey(queryId)) {
+                subQueryIdToRows.put(queryId, recordList);
             } else {
-                records.get(queryId).addAll(recordList);
+                subQueryIdToRows.get(queryId).addAll(recordList);
             }
         }
 
         private void handleCompleted(QueryWebSocketMessage message) {
-            long returnedRowCount = records.getOrDefault(message.getQueryId(), List.of()).size();
+            long returnedRowCount = subQueryIdToRows.getOrDefault(message.getQueryId(), List.of()).size();
             if (message.isRowsReturnedToClient() && message.getRowCount() > 0) {
                 if (returnedRowCount != message.getRowCount()) {
                     LOGGER.error("API said it had returned {} rows for query {}, but only received {}",
@@ -391,11 +390,9 @@ public class QueryWebSocketClient {
         }
 
         public List<String> getResults(String queryId) {
-            return Stream.concat(
-                    Stream.of(queryId),
-                    subqueryIdByParentQueryId.getOrDefault(queryId, List.of()).stream())
-                    .flatMap(id -> records.getOrDefault(id, List.of()).stream())
-                    .collect(Collectors.toList());
+            return parentQueryIdToSubQueryIds.getOrDefault(queryId, List.of()).stream()
+                    .flatMap(id -> subQueryIdToRows.getOrDefault(id, List.of()).stream())
+                    .toList();
         }
 
         private void close() {
