@@ -51,22 +51,13 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.close;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.completedQuery;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.createdSubQueries;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.error;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.errorMessage;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.message;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.queryResult;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class QueryWebSocketCommandLineClientTest {
+public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTestBase {
     private static final String PROMPT_RANGE_QUERY = PROMPT_MIN_INCLUSIVE + PROMPT_MAX_INCLUSIVE +
             PROMPT_MIN_ROW_KEY_LONG_TYPE + PROMPT_MAX_ROW_KEY_LONG_TYPE;
     private static final Instant START_TIME = Instant.parse("2024-04-03T14:00:00Z");

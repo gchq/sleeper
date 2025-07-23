@@ -25,11 +25,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class QueryWebSocketClientTestHelper {
+public abstract class QueryWebSocketClientTestBase {
     private static final Gson GSON = new GsonBuilder().create();
-
-    private QueryWebSocketClientTestHelper() {
-    }
 
     public static String createdSubQueries(String queryId, String... subQueryIds) {
         return "{" +

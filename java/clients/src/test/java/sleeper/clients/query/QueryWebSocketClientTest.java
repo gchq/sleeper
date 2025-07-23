@@ -46,22 +46,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.asJson;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.close;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.completedQuery;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.createdSubQueries;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.error;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.errorMessage;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.message;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.queryResult;
-import static sleeper.clients.query.QueryWebSocketClientTestHelper.unknownMessage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class QueryWebSocketClientTest {
+public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = createSchemaWithKey("key");
     private final Field rowKey = schema.getField("key").orElseThrow();
