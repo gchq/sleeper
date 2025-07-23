@@ -43,7 +43,7 @@ main() {
     # you can also use additional features here
     cd sccache
     cargo build --release --target "${triple}" \
-        --features=all,"openssl/vendored"
+        --features=all
     cp "target/${triple}/release/sccache" "/usr/bin/sccache"
 
     # clean up our install
