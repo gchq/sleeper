@@ -27,7 +27,7 @@ public class FakeWebSocketConnection implements QueryWebSocketClient.Connection 
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
-    public QueryWebSocketClient.Adapter adapter() {
+    public QueryWebSocketClient.Adapter createAdapter() {
         return this::connect;
     }
 

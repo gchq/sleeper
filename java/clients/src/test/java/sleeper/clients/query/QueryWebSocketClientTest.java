@@ -318,7 +318,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
 
     protected CompletableFuture<List<Row>> runQueryFuture(Query query) throws Exception {
         QueryWebSocketClient realClient = new QueryWebSocketClient(
-                instanceProperties, tablePropertiesProvider, connection.adapter(), 0);
+                instanceProperties, tablePropertiesProvider, connection.createAdapter(), 0);
         return realClient.submitQuery(query);
     }
 }
