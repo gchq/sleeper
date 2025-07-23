@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.rust;
+package sleeper.compaction.datafusion;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionParams;
-import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionResult;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -49,11 +49,11 @@ import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
-public class RustCompactionRunner implements CompactionRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RustCompactionRunner.class);
+public class DataFusionCompactionRunner implements CompactionRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
 
     /** Maximum number of rows in a Parquet row group. */
-    public static final long RUST_MAX_ROW_GROUP_ROWS = 1_000_000;
+    public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     private final AwsConfig awsConfig;
 
@@ -69,11 +69,11 @@ public class RustCompactionRunner implements CompactionRunner {
         }
     }
 
-    public RustCompactionRunner() {
+    public DataFusionCompactionRunner() {
         this(null);
     }
 
-    public RustCompactionRunner(AwsConfig awsConfig) {
+    public DataFusionCompactionRunner(AwsConfig awsConfig) {
         this.awsConfig = awsConfig;
     }
 
@@ -83,7 +83,7 @@ public class RustCompactionRunner implements CompactionRunner {
 
         DataFusionCompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
-        RecordsProcessed result = invokeRustFFI(job, params);
+        RecordsProcessed result = invokeDataFusionFFI(job, params);
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -91,7 +91,7 @@ public class RustCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Creates the input struct that contains all the information needed by the Rust
+     * Creates the input struct that contains all the information needed by the Rust code
      * side of the compaction.
      *
      * This includes all Parquet writer settings as well as compaction data such as
@@ -125,7 +125,7 @@ public class RustCompactionRunner implements CompactionRunner {
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
         params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]), false);
-        params.max_row_group_size.set(RUST_MAX_ROW_GROUP_ROWS);
+        params.max_row_group_size.set(DATAFUSION_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
         params.compression.set(tableProperties.get(COMPRESSION_CODEC));
         params.writer_version.set(tableProperties.get(PARQUET_WRITER_VERSION));
@@ -191,16 +191,15 @@ public class RustCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Take the compaction parameters and invoke the Rust compactor using the FFI
+     * Take the compaction parameters and invoke the DataFusion compactor using the FFI
      * bridge.
      *
      * @param  job              the compaction job
      * @param  compactionParams the compaction input parameters
      * @return                  records read/written
-     * @throws IOException      if the Rust library doesn't complete successfully
+     * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RecordsProcessed invokeRustFFI(CompactionJob job,
-            DataFusionCompactionParams compactionParams) throws IOException {
+    public static RecordsProcessed invokeDataFusionFFI(CompactionJob job, DataFusionCompactionParams compactionParams) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = NATIVE_COMPACTION.allocate_result();
         try {
@@ -209,8 +208,8 @@ public class RustCompactionRunner implements CompactionRunner {
 
             // Check result
             if (result != 0) {
-                LOGGER.error("Rust compaction failed, return code: {}", result);
-                throw new IOException("Rust compaction failed with return code " + result);
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
             }
 
             long totalNumberOfRecordsRead = compactionData.rows_read.get();

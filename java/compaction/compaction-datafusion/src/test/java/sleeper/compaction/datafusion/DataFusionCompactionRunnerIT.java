@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.rust;
+package sleeper.compaction.datafusion;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -71,7 +71,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class RustCompactionRunnerIT {
+public class DataFusionCompactionRunnerIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
@@ -332,7 +332,7 @@ public class RustCompactionRunnerIT {
     }
 
     private RecordsProcessed compact(CompactionJob job) throws Exception {
-        CompactionRunner runner = new RustCompactionRunner();
+        CompactionRunner runner = new DataFusionCompactionRunner();
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
 

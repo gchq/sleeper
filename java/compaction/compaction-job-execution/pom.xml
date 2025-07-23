@@ -44,7 +44,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-rust</artifactId>
+            <artifactId>compaction-datafusion</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

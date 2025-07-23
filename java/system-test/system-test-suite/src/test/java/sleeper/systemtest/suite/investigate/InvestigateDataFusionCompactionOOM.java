@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.rust.RustCompactionRunner;
+import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 
@@ -42,7 +42,7 @@ import java.util.UUID;
  * cd rust
  * cargo build --release --target=x86_64-unknown-linux-gnu
  * cd ../java
- * mvn clean install -am -pl compaction/compaction-rust -Pquick -DskipRust
+ * mvn clean install -am -pl compaction/compaction-datafusion -Pquick -DskipRust
  * </pre>
  */
 public class InvestigateDataFusionCompactionOOM {
@@ -74,7 +74,7 @@ public class InvestigateDataFusionCompactionOOM {
         Path tempDir = Files.createTempDirectory("sleeper-test");
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
-        CompactionRunner runner = new RustCompactionRunner();
+        CompactionRunner runner = new DataFusionCompactionRunner();
         runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()));
     }
 
