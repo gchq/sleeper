@@ -60,7 +60,8 @@ public class QueryWebSocketClient {
 
     public CompletableFuture<List<Row>> submitQuery(Query query) throws InterruptedException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
-        Adapter adapter = clientProvider.createClient(instanceProperties, tableProperties);
+        QueryWebSocketMessageHandler messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
+        Adapter adapter = clientProvider.createClient(instanceProperties, messageHandler);
         try {
             Instant startTime = Instant.now();
             return adapter.startQueryFuture(query)
@@ -77,12 +78,13 @@ public class QueryWebSocketClient {
     }
 
     public interface Adapter {
-        void close();
 
         CompletableFuture<List<Row>> startQueryFuture(Query query) throws InterruptedException;
+
+        void close();
     }
 
     public interface AdapterProvider {
-        Adapter createClient(InstanceProperties instanceProperties, TableProperties tableProperties);
+        Adapter createClient(InstanceProperties instanceProperties, QueryWebSocketMessageHandler messageHandler);
     }
 }

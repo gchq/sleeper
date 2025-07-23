@@ -28,7 +28,6 @@ import software.amazon.awssdk.http.auth.spi.internal.signer.DefaultSignRequest;
 import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
@@ -58,17 +57,16 @@ class QueryWebSocketClientAdapter extends WebSocketClient implements QueryWebSoc
     }
 
     public static QueryWebSocketClientAdapter create(
-            InstanceProperties instanceProperties, TableProperties tableProperties, AwsCredentialsProvider credentialsProvider) {
+            InstanceProperties instanceProperties, QueryWebSocketMessageHandler messageHandler, AwsCredentialsProvider credentialsProvider) {
         String region = instanceProperties.get(REGION);
         URI serverUri = URI.create(instanceProperties.get(QUERY_WEBSOCKET_API_URL));
-        QueryWebSocketMessageHandler messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
         LOGGER.info("Obtaining AWS IAM credentials...");
         AwsCredentials credentials = credentialsProvider.resolveCredentials();
         return new QueryWebSocketClientAdapter(region, serverUri, credentials, messageHandler);
     }
 
     public static QueryWebSocketClient.AdapterProvider provider(AwsCredentialsProvider credentialsProvider) {
-        return (instanceProperties, tableProperties) -> create(instanceProperties, tableProperties, credentialsProvider);
+        return (instanceProperties, messageHandler) -> create(instanceProperties, messageHandler, credentialsProvider);
     }
 
     @Override

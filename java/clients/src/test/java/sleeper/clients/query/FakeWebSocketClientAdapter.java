@@ -15,7 +15,6 @@
  */
 package sleeper.clients.query;
 
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
@@ -31,7 +30,10 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
     private List<WebSocketResponse> responses;
 
     public QueryWebSocketClient.AdapterProvider provider() {
-        return (instanceProperties, tableProperties) -> withTable(tableProperties);
+        return (instanceProperties, messageHandler) -> {
+            this.messageHandler = messageHandler;
+            return this;
+        };
     }
 
     public boolean connectBlocking() throws InterruptedException {
@@ -48,11 +50,6 @@ public class FakeWebSocketClientAdapter implements QueryWebSocketClient.Adapter 
 
     public void setFakeResponses(WebSocketResponse... responses) {
         this.responses = List.of(responses);
-    }
-
-    private FakeWebSocketClientAdapter withTable(TableProperties tableProperties) {
-        messageHandler = new QueryWebSocketMessageHandler(tableProperties.getSchema());
-        return this;
     }
 
     @Override
