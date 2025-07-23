@@ -23,7 +23,7 @@ fi
 echo "Ensure you've ran the scripts/build/build.sh script before running this or it will fail to find the jars."
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-JARS_DIR="${SCRIPTS_DIR}/jars"
+JARS_DIR="${SCRIPTS_DIR}/jars/"
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.jar.PublishJarsToRepo "${JARS_DIR}" "$@"

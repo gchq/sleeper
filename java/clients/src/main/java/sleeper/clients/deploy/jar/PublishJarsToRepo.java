@@ -55,7 +55,7 @@ public class PublishJarsToRepo {
      */
     public static void main(String[] args) throws Exception {
         builder()
-                .pathOfJarsDirectory(Path.of(args[0] + "/"))
+                .pathOfJarsDirectory(Path.of(args[0]))
                 .repoUrl(args[1])
                 .build()
                 .upload();
