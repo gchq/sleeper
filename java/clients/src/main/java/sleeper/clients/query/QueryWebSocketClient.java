@@ -68,7 +68,11 @@ public class QueryWebSocketClient {
                     .orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((rows, exception) -> {
                         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-                        LOGGER.info("Query took {} to return {} rows", duration, rows == null ? 0 : rows.size());
+                        if (rows != null) {
+                            LOGGER.info("Query took {} to return {} rows", duration, rows.size());
+                        } else {
+                            LOGGER.error("Query failed in {}", duration, exception);
+                        }
                         connection.close();
                     });
         } catch (RuntimeException e) {
