@@ -15,8 +15,6 @@
  */
 package sleeper.clients.query;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
@@ -45,7 +43,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public abstract class QueryWebSocketClientTestBase {
-    private static final Gson GSON = new GsonBuilder().create();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final Schema schema = createSchemaWithKey("key");
     protected final Field rowKey = schema.getField("key").orElseThrow();
