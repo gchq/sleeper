@@ -20,7 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.rust.RustBridge.FFICompactionParams;
+import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.rust.DataFusionFunctions.DataFusionCompactionResult;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
@@ -33,6 +34,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -55,6 +57,18 @@ public class RustCompactionRunner implements CompactionRunner {
 
     private final AwsConfig awsConfig;
 
+    private static final DataFusionFunctions NATIVE_COMPACTION;
+
+    static {
+        // Obtain native library. This throws an exception if native library can't be
+        // loaded and linked
+        try {
+            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionFunctions.class);
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
     public RustCompactionRunner() {
         this(null);
     }
@@ -65,15 +79,11 @@ public class RustCompactionRunner implements CompactionRunner {
 
     @Override
     public RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        // Obtain native library. This throws an exception if native library can't be
-        // loaded and linked
-        RustBridge.Compaction nativeLib = RustBridge.getRustCompactor();
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(nativeLib);
+        DataFusionCompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
-        FFICompactionParams params = createFFIParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
-
-        RecordsProcessed result = invokeRustFFI(job, nativeLib, params);
+        RecordsProcessed result = invokeRustFFI(job, params);
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -96,10 +106,10 @@ public class RustCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static FFICompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
+    private static DataFusionCompactionParams createFFIParams(CompactionJob job, TableProperties tableProperties,
             Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFICompactionParams params = new FFICompactionParams(runtime);
+        DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.region);
@@ -185,18 +195,17 @@ public class RustCompactionRunner implements CompactionRunner {
      * bridge.
      *
      * @param  job              the compaction job
-     * @param  nativeLib        the native library implement the FFI bridge
      * @param  compactionParams the compaction input parameters
      * @return                  records read/written
      * @throws IOException      if the Rust library doesn't complete successfully
      */
-    public static RecordsProcessed invokeRustFFI(CompactionJob job, RustBridge.Compaction nativeLib,
-            FFICompactionParams compactionParams) throws IOException {
+    public static RecordsProcessed invokeRustFFI(CompactionJob job,
+            DataFusionCompactionParams compactionParams) throws IOException {
         // Create object to hold the result (in native memory)
-        RustBridge.FFICompactionResult compactionData = nativeLib.allocate_result();
+        DataFusionCompactionResult compactionData = NATIVE_COMPACTION.allocate_result();
         try {
             // Perform compaction
-            int result = nativeLib.ffi_merge_sorted_files(compactionParams, compactionData);
+            int result = NATIVE_COMPACTION.ffi_merge_sorted_files(compactionParams, compactionData);
 
             // Check result
             if (result != 0) {
@@ -213,7 +222,7 @@ public class RustCompactionRunner implements CompactionRunner {
             return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
         } finally {
             // Ensure de-allocation
-            nativeLib.free_result(compactionData);
+            NATIVE_COMPACTION.free_result(compactionData);
         }
     }
 

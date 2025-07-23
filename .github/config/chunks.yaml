@@ -55,6 +55,7 @@ chunks:
     workflow: chunk-rust.yaml
     modules:
       - compaction/compaction-rust
+      - foreign-bridge
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml
