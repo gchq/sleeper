@@ -174,7 +174,7 @@ public class LambdaJar {
         }
 
         /**
-         * The filenameFormat with space for the version.
+         * The filename format with space for the version.
          *
          * @param  filenameFormat String format for filename with space for version
          * @return                Builder
@@ -185,7 +185,7 @@ public class LambdaJar {
         }
 
         /**
-         * The imageName.
+         * The image name.
          *
          * @param  imageName String the imageName
          * @return           Builder
@@ -196,7 +196,7 @@ public class LambdaJar {
         }
 
         /**
-         * The artifactId for the Jar.
+         * The artifactId for the jar.
          *
          * @param  artifactId String artifactId
          * @return            Builder
@@ -222,7 +222,7 @@ public class LambdaJar {
         }
 
         /**
-         * Builds the LamdaJar object and adds it to the ALL List.
+         * Builds the lambda jar object and adds it to the ALL List.
          *
          * @return LambdaJar
          */

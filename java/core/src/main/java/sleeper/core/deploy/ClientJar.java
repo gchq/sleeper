@@ -26,9 +26,9 @@ public class ClientJar {
 
     private static final List<ClientJar> ALL = new ArrayList<>();
 
-    public static final ClientJar BULK_IMPORT_RUNNER = builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").build();
-    public static final ClientJar CDK = builder().filenameFormat("cdk-%s.jar").artifactId("cdk").build();
-    public static final ClientJar CLIENTS_UTILITY = builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").build();
+    public static final ClientJar BULK_IMPORT_RUNNER = builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").add();
+    public static final ClientJar CDK = builder().filenameFormat("cdk-%s.jar").artifactId("cdk").add();
+    public static final ClientJar CLIENTS_UTILITY = builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").add();
 
     private final String filenameFormat;
     private final String artifactId;
@@ -60,7 +60,7 @@ public class ClientJar {
     }
 
     /**
-     * Builder for the ClientJar class.
+     * Builder for the client jar class.
      */
     public static class Builder {
         private String filenameFormat;
@@ -71,7 +71,7 @@ public class ClientJar {
         }
 
         /**
-         * The filenameFormat with space for version.
+         * The filename format with space for version.
          *
          * @param  filenameFormat String for filename with space for version to be added
          * @return                Builder
@@ -82,7 +82,7 @@ public class ClientJar {
         }
 
         /**
-         * The artifactId for the Jar.
+         * The artifact ID for the jar.
          *
          * @param  artifactId String artifactId
          * @return            Builder.
@@ -93,7 +93,16 @@ public class ClientJar {
         }
 
         public ClientJar build() {
-            ClientJar clientJar = new ClientJar(this);
+            return new ClientJar(this);
+        }
+
+        /**
+         * Builds the client jar object and adds it to the ALL List.
+         *
+         * @return ClientJar
+         */
+        public ClientJar add() {
+            ClientJar clientJar = build();
             ALL.add(clientJar);
             return clientJar;
         }
