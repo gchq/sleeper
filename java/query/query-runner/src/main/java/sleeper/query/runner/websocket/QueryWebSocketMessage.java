@@ -112,6 +112,10 @@ public class QueryWebSocketMessage {
         return this;
     }
 
+    public boolean isRowsReturnedToClient() {
+        return locations.stream().anyMatch(location -> "websocket-endpoint".equals(location.getType()));
+    }
+
     public QueryWebSocketMessageType getMessage() {
         return message;
     }
@@ -122,6 +126,10 @@ public class QueryWebSocketMessage {
 
     public List<String> getQueryIds() {
         return queryIds;
+    }
+
+    public List<Row> getRows() {
+        return rows;
     }
 
     public long getRowCount() {
