@@ -25,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.TrackedQuery;
@@ -113,7 +113,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 // results to be published to S3.
                 System.out.println("Results will be published to S3 bucket " + getInstanceProperties().get(QUERY_RESULTS_BUCKET));
             } else if ("q".equals(type)) {
-                resultsPublisherConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
+                resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
                 System.out.println("Results will be published to SQS queue " + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
             } else {
                 continue;

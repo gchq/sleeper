@@ -37,7 +37,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.output.WebSocketOutput;
 
@@ -123,9 +123,9 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 query = query.withStatusReportDestination(statusReportDestination);
 
                 // Default to sending results back to client via WebSocket connection
-                if (query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
-                        query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketOutput.DESTINATION_NAME)) {
-                    query.getResultsPublisherConfig().put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+                if (query.getResultsPublisherConfig().get(ResultsOutput.DESTINATION) == null ||
+                        query.getResultsPublisherConfig().get(ResultsOutput.DESTINATION).equals(WebSocketOutput.DESTINATION_NAME)) {
+                    query.getResultsPublisherConfig().put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
                     query.getResultsPublisherConfig().put(WebSocketOutput.ENDPOINT, endpoint);
                     query.getResultsPublisherConfig().put(WebSocketOutput.CONNECTION_ID, event.getRequestContext().getConnectionId());
                 }

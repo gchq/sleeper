@@ -36,7 +36,6 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
-import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.output.NoResultsOutput;
@@ -131,7 +130,7 @@ public class SqsLeafPartitionQueryProcessor {
         if (null == resultsPublisherConfig || resultsPublisherConfig.isEmpty()) {
             return new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
         }
-        String destination = resultsPublisherConfig.get(ResultsOutputConstants.DESTINATION);
+        String destination = resultsPublisherConfig.get(ResultsOutput.DESTINATION);
         if (SQSResultsOutput.SQS.equals(destination)) {
             return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
         } else if (S3ResultsOutput.S3.equals(destination)) {

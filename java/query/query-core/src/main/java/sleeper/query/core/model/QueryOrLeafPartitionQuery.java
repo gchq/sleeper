@@ -23,6 +23,10 @@ import sleeper.query.core.tracker.QueryStatusReportListener;
 
 import java.util.Objects;
 
+/**
+ * Wraps a query or sub query. Provides a way to determine which type of query it is
+ * and retrieve it.
+ */
 public class QueryOrLeafPartitionQuery {
 
     private final Query query;
@@ -42,14 +46,31 @@ public class QueryOrLeafPartitionQuery {
         return leafQuery != null;
     }
 
+    /**
+     * Retrieves the top-level Sleeper query held by this instance.
+     *
+     * @return a Sleeper query
+     */
     public Query asParentQuery() {
         return Objects.requireNonNull(query, "query is a leaf query");
     }
 
+    /**
+     * Retrieves the leaf partition sub-query held by this instance.
+     *
+     * @return a leaf partition query
+     */
     public LeafPartitionQuery asLeafQuery() {
         return Objects.requireNonNull(leafQuery, "query is not a leaf query");
     }
 
+    /**
+     * Reports the completion status of the encapsulated query (either parent or leaf)
+     * to the provided listener.
+     *
+     * @param listener   listener to publish status of the query to
+     * @param outputInfo information about the query results
+     */
     public void reportCompleted(QueryStatusReportListener listener, ResultsOutputInfo outputInfo) {
         if (leafQuery != null) {
             listener.queryCompleted(leafQuery, outputInfo);
@@ -58,6 +79,13 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Reports the failed status of the encapsulated query (either parent or leaf)
+     * to the provided listener.
+     *
+     * @param listener listener to publish the status of the query to
+     * @param e        exception raised during query processing
+     */
     public void reportFailed(QueryStatusReportListener listener, Exception e) {
         if (leafQuery != null) {
             listener.queryFailed(leafQuery, e);
@@ -66,6 +94,11 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Returns the ID of the query. A sub query will return the ID of the parent query.
+     *
+     * @return the query ID
+     */
     public String getQueryId() {
         if (leafQuery != null) {
             return leafQuery.getQueryId();
@@ -74,6 +107,12 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Returns the table properties.
+     *
+     * @param  provider cache of Sleeper table properties
+     * @return          the table properties
+     */
     public TableProperties getTableProperties(TablePropertiesProvider provider) {
         if (leafQuery != null) {
             return provider.getById(leafQuery.getTableId());
@@ -82,6 +121,11 @@ public class QueryOrLeafPartitionQuery {
         }
     }
 
+    /**
+     * Returns the query processing config.
+     *
+     * @return the query processing config
+     */
     public QueryProcessingConfig getProcessingConfig() {
         if (leafQuery != null) {
             return leafQuery.getProcessingConfig();

@@ -15,6 +15,9 @@
  */
 package sleeper.query.core.tracker;
 
+/**
+ * Custom exception for exceptions thrown by a query tracker.
+ */
 public class QueryTrackerException extends Exception {
 
     public QueryTrackerException(String message) {
