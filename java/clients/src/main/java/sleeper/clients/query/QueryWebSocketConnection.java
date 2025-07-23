@@ -40,14 +40,14 @@ class QueryWebSocketConnection extends WebSocketClient implements QueryWebSocket
     private final String region;
     private final URI serverUri;
     private final AwsCredentials credentials;
-    private final QueryWebSocketListener messageHandler;
+    private final QueryWebSocketListener listener;
 
-    private QueryWebSocketConnection(String region, URI serverUri, AwsCredentials credentials, QueryWebSocketListener messageHandler) {
+    private QueryWebSocketConnection(String region, URI serverUri, AwsCredentials credentials, QueryWebSocketListener listener) {
         super(serverUri);
         this.region = region;
         this.serverUri = serverUri;
         this.credentials = credentials;
-        this.messageHandler = messageHandler;
+        this.listener = listener;
     }
 
     public static QueryWebSocketConnection connect(
@@ -93,21 +93,21 @@ class QueryWebSocketConnection extends WebSocketClient implements QueryWebSocket
 
     @Override
     public void onOpen(ServerHandshake handshake) {
-        messageHandler.onOpen(this);
+        listener.onOpen(this);
     }
 
     @Override
     public void onMessage(String json) {
-        messageHandler.onMessage(json);
+        listener.onMessage(json);
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        messageHandler.onClose(reason);
+        listener.onClose(reason);
     }
 
     @Override
     public void onError(Exception error) {
-        messageHandler.onError(error);
+        listener.onError(error);
     }
 }

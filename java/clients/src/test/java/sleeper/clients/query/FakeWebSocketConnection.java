@@ -23,7 +23,7 @@ import java.util.List;
 public class FakeWebSocketConnection implements QueryWebSocketClient.Connection {
     private boolean connected = false;
     private boolean closed = false;
-    private QueryWebSocketListener messageHandler;
+    private QueryWebSocketListener listener;
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
@@ -31,10 +31,10 @@ public class FakeWebSocketConnection implements QueryWebSocketClient.Connection 
         return this::connect;
     }
 
-    public FakeWebSocketConnection connect(InstanceProperties instanceProperties, QueryWebSocketListener messageHandler) throws InterruptedException {
+    public FakeWebSocketConnection connect(InstanceProperties instanceProperties, QueryWebSocketListener listener) throws InterruptedException {
         connected = true;
-        this.messageHandler = messageHandler;
-        messageHandler.onOpen(this);
+        this.listener = listener;
+        listener.onOpen(this);
         responses.forEach(response -> response.sendTo(this));
         return this;
     }
@@ -73,17 +73,17 @@ public class FakeWebSocketConnection implements QueryWebSocketClient.Connection 
     }
 
     public void onMessage(String message) {
-        messageHandler.onMessage(message);
+        listener.onMessage(message);
     }
 
     public void onClose(String reason) {
-        messageHandler.onClose(reason);
+        listener.onClose(reason);
         connected = false;
         closed = true;
     }
 
     public void onError(Exception error) {
-        messageHandler.onError(error);
+        listener.onError(error);
     }
 
     public interface WebSocketResponse {
