@@ -15,6 +15,9 @@
  */
 package sleeper.query.core.model;
 
+/**
+ * Custom exception for exceptions thrown during a query.
+ */
 public class QueryException extends Exception {
 
     public QueryException(Throwable cause) {

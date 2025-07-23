@@ -61,7 +61,7 @@ import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
@@ -381,7 +381,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, S3ResultsOutput.S3);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
@@ -419,7 +419,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
         resultsPublishConfig.put(SQSResultsOutput.BATCH_SIZE, "1");
         Query query = Query.builder()
@@ -463,7 +463,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
         resultsPublishConfig.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
         resultsPublishConfig.put(WebSocketOutput.REGION, "eu-west-1");
         resultsPublishConfig.put(WebSocketOutput.CONNECTION_ID, connectionId);
@@ -516,7 +516,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
         resultsPublishConfig.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
         resultsPublishConfig.put(WebSocketOutput.REGION, "eu-west-1");
         resultsPublishConfig.put(WebSocketOutput.CONNECTION_ID, connectionId);
