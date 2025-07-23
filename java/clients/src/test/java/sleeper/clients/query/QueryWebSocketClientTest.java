@@ -19,13 +19,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.query.exception.MessageMalformedException;
-import sleeper.clients.query.exception.MessageMissingFieldException;
-import sleeper.clients.query.exception.UnknownMessageTypeException;
 import sleeper.clients.query.exception.WebSocketClosedException;
 import sleeper.clients.query.exception.WebSocketErrorException;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
+import sleeper.query.runner.websocket.QueryWebSocketMessageException;
 
 import java.time.Duration;
 import java.util.List;
@@ -233,7 +231,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
-                    .withCauseInstanceOf(UnknownMessageTypeException.class);
+                    .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -252,7 +250,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
-                    .withCauseInstanceOf(MessageMalformedException.class);
+                    .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -271,7 +269,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
-                    .withCauseInstanceOf(MessageMissingFieldException.class);
+                    .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())
@@ -290,7 +288,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
                     .isCompletedExceptionally()
                     .failsWithin(Duration.ofMillis(10))
                     .withThrowableOfType(ExecutionException.class)
-                    .withCauseInstanceOf(MessageMissingFieldException.class);
+                    .withCauseInstanceOf(QueryWebSocketMessageException.class);
             assertThat(client.isConnected()).isFalse();
             assertThat(client.isClosed()).isTrue();
             assertThat(client.getSentMessages())

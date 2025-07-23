@@ -75,11 +75,7 @@ public abstract class QueryWebSocketClientTestBase {
 
     protected String unknownMessage(String queryId) {
         return String.format("""
-                {
-                    "queryId": "%s",
-                    "message": "unknown"
-                }
-                """, queryId);
+                {"queryId": "%s","message": "unknown"}""", queryId);
     }
 
     protected String queryResult(String queryId, Row... rows) {

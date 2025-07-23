@@ -45,7 +45,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.runner.websocket.QueryWebSocketMessage;
 import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
+import sleeper.query.runner.websocket.QueryWebSocketMessageType;
 
 import java.net.URI;
 import java.time.Instant;
@@ -263,6 +265,14 @@ public class QueryWebSocketClient {
         }
 
         public void onMessage(String json) {
+            QueryWebSocketMessage messageNew;
+            try {
+                messageNew = serDe.fromJson(json);
+            } catch (RuntimeException e) {
+                future.completeExceptionally(e);
+                close();
+                return;
+            }
             Optional<JsonObject> messageOpt = deserialiseMessage(json);
             if (!messageOpt.isPresent()) {
                 close();
@@ -272,13 +282,13 @@ public class QueryWebSocketClient {
             String messageType = message.get("message").getAsString();
             String queryId = message.get("queryId").getAsString();
 
-            if ("error".equals(messageType)) {
+            if (messageNew.getMessage() == QueryWebSocketMessageType.error) {
                 handleError(message, queryId);
-            } else if ("subqueries".equals(messageType)) {
+            } else if (messageNew.getMessage() == QueryWebSocketMessageType.subqueries) {
                 handleSubqueries(message, queryId);
-            } else if ("rows".equals(messageType)) {
+            } else if (messageNew.getMessage() == QueryWebSocketMessageType.rows) {
                 handleRows(message, queryId);
-            } else if ("completed".equals(messageType)) {
+            } else if (messageNew.getMessage() == QueryWebSocketMessageType.completed) {
                 handleCompleted(message, queryId);
             } else {
                 queryFailed = true;

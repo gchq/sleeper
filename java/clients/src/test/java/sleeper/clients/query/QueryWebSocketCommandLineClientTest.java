@@ -288,7 +288,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Unknown message type received: unknown\n" +
+                            "Query failed: Found invalid message: {\"queryId\": \"test-query-id\",\"message\": \"unknown\"}\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
@@ -315,7 +315,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Received malformed message JSON: {\n" +
+                            "Query failed: Found invalid message: {\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
@@ -342,7 +342,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Message missing required field queryId: {\"message\":\"error\"}\n" +
+                            "Query failed: Found invalid message: {\"message\":\"error\"}\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
@@ -369,7 +369,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_QUERY_TYPE +
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
-                            "Query failed: Message missing required field message: {\"queryId\":\"test-query-id\"}\n" +
+                            "Query failed: Found invalid message: {\"queryId\":\"test-query-id\"}\n" +
                             "Query took 1 second to return 0 records\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(client.isConnected()).isFalse();
