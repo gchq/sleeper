@@ -19,7 +19,7 @@ package sleeper.query.core.tracker;
 import java.util.List;
 
 /**
- * This function retrieves the status of queries.
+ * Retrieves the status of queries.
  */
 public interface QueryTrackerStore {
     /**

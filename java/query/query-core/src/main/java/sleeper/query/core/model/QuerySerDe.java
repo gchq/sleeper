@@ -149,7 +149,7 @@ public class QuerySerDe {
     }
 
     /**
-     * Schema loader. This is required to serialise/deserise regions within
+     * Schema loader. This is required to serialise/deserialise regions within
      * RegionSerDe.
      */
     public interface SchemaLoader {

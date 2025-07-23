@@ -22,7 +22,7 @@ import sleeper.query.core.output.ResultsOutputInfo;
 import java.util.List;
 
 /**
- * This function tracks changes to the status of a query.
+ * Tracks changes to the status of a query.
  * It is implemented by something that should be notified when the status changes for example
  * that includes the query tracker, and the web socket for a query that was made through a web socket.
  */
