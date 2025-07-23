@@ -18,7 +18,6 @@ package sleeper.clients.query;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.java_websocket.client.WebSocketClient;
@@ -283,13 +282,13 @@ public class QueryWebSocketClient {
             String queryId = message.get("queryId").getAsString();
 
             if (messageNew.getMessage() == QueryWebSocketMessageType.error) {
-                handleError(message, queryId);
+                handleError(messageNew);
             } else if (messageNew.getMessage() == QueryWebSocketMessageType.subqueries) {
-                handleSubqueries(message, queryId);
+                handleSubqueries(messageNew);
             } else if (messageNew.getMessage() == QueryWebSocketMessageType.rows) {
                 handleRows(message, queryId);
             } else if (messageNew.getMessage() == QueryWebSocketMessageType.completed) {
-                handleCompleted(message, queryId);
+                handleCompleted(messageNew);
             } else {
                 queryFailed = true;
                 future.completeExceptionally(new UnknownMessageTypeException(messageType));
@@ -324,25 +323,22 @@ public class QueryWebSocketClient {
             }
         }
 
-        private void handleError(JsonObject message, String queryId) {
-            String error = message.get("error").getAsString();
-            outstandingQueries.remove(queryId);
+        private void handleError(QueryWebSocketMessage message) {
+            outstandingQueries.remove(message.getQueryId());
             queryFailed = true;
-            future.completeExceptionally(new WebSocketErrorException(error));
+            future.completeExceptionally(new WebSocketErrorException(message.getError()));
             close();
         }
 
-        private void handleSubqueries(JsonObject message, String queryId) {
-            JsonArray subQueryIdList = message.getAsJsonArray("queryIds");
-            LOGGER.info("Query {} split into the following subQueries:", queryId);
-            List<String> subQueryIds = subQueryIdList.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
-            for (String subQueryId : subQueryIds) {
+        private void handleSubqueries(QueryWebSocketMessage message) {
+            LOGGER.info("Query {} split into the following subQueries:", message.getQueryIds());
+            for (String subQueryId : message.getQueryIds()) {
                 LOGGER.info("  " + subQueryId);
                 outstandingQueries.add(subQueryId);
             }
-            outstandingQueries.remove(queryId);
-            subqueryIdByParentQueryId.compute(queryId, (query, subQueries) -> {
-                subQueries.addAll(subQueryIds);
+            outstandingQueries.remove(message.getQueryId());
+            subqueryIdByParentQueryId.compute(message.getQueryId(), (query, subQueries) -> {
+                subQueries.addAll(message.getQueryIds());
                 return subQueries;
             });
         }
@@ -360,25 +356,18 @@ public class QueryWebSocketClient {
             }
         }
 
-        private void handleCompleted(JsonObject message, String queryId) {
-            long recordCountFromApi = message.get("rowCount").getAsLong();
-            boolean recordsReturnedToClient = false;
-            for (JsonElement location : message.getAsJsonArray("locations")) {
-                if (location.getAsJsonObject().get("type").getAsString().equals("websocket-endpoint")) {
-                    recordsReturnedToClient = true;
+        private void handleCompleted(QueryWebSocketMessage message) {
+            long returnedRowCount = records.getOrDefault(message.getQueryId(), List.of()).size();
+            if (message.isRowsReturnedToClient() && message.getRowCount() > 0) {
+                if (returnedRowCount != message.getRowCount()) {
+                    LOGGER.error("API said it had returned {} rows for query {}, but only received {}",
+                            message.getRowCount(), message.getQueryId(), returnedRowCount);
                 }
             }
-            long returnedRecordCount = records.getOrDefault(queryId, List.of()).size();
-            if (recordsReturnedToClient && recordCountFromApi > 0) {
-                if (returnedRecordCount != recordCountFromApi) {
-                    LOGGER.error("API said it had returned {} records for query {}, but only received {}",
-                            recordCountFromApi, queryId, returnedRecordCount);
-                }
-            }
-            outstandingQueries.remove(queryId);
-            LOGGER.info("{} records returned by query {}. Remaining pending queries: {}",
-                    recordCountFromApi, queryId, outstandingQueries.size());
-            totalRecordsReturned += returnedRecordCount;
+            outstandingQueries.remove(message.getQueryId());
+            LOGGER.info("{} rows returned by query {}. Remaining pending queries: {}",
+                    message.getRowCount(), message.getQueryId(), outstandingQueries.size());
+            totalRecordsReturned += returnedRowCount;
         }
 
         public void onClose(String reason) {
