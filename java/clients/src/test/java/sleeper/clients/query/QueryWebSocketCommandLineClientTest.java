@@ -20,8 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.query.FakeWebSocketClient.WebSocketResponse;
-import sleeper.clients.query.QueryWebSocketClient.Client;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -80,8 +78,8 @@ public class QueryWebSocketCommandLineClientTest {
     private final ToStringConsoleOutput out = new ToStringConsoleOutput();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     private final QuerySerDe querySerDe = new QuerySerDe(schema);
+    private final FakeWebSocketClient client = new FakeWebSocketClient();
     private TableProperties tableProperties;
-    private FakeWebSocketClient client;
 
     private static InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -110,13 +108,13 @@ public class QueryWebSocketCommandLineClientTest {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
+            client.setFakeResponses(
+                    message(queryResult("test-query-id", expectedRow)),
+                    message(completedQuery("test-query-id", 1L)));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message(queryResult("test-query-id", expectedRow)),
-                            message(completedQuery("test-query-id", 1L))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -140,14 +138,14 @@ public class QueryWebSocketCommandLineClientTest {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
+            client.setFakeResponses(
+                    message(createdSubQueries("test-query-id", "test-subquery")),
+                    message(queryResult("test-subquery", expectedRow)),
+                    message(completedQuery("test-subquery", 1L)));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message(createdSubQueries("test-query-id", "test-subquery")),
-                            message(queryResult("test-subquery", expectedRow)),
-                            message(completedQuery("test-subquery", 1L))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -173,18 +171,18 @@ public class QueryWebSocketCommandLineClientTest {
             Row expectedRow1 = new Row(Map.of("key", 123L));
             Row expectedRow2 = new Row(Map.of("key", 456L));
             Row expectedRow3 = new Row(Map.of("key", 789L));
+            client.setFakeResponses(
+                    message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
+                    message(queryResult("subquery-1", expectedRow1)),
+                    message(completedQuery("subquery-1", 1L)),
+                    message(queryResult("subquery-2", expectedRow2)),
+                    message(completedQuery("subquery-2", 1L)),
+                    message(queryResult("subquery-3", expectedRow3)),
+                    message(completedQuery("subquery-3", 1L)));
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION, YES_OPTION, NO_OPTION, "0", "1000", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message(createdSubQueries("test-query-id", "subquery-1", "subquery-2", "subquery-3")),
-                            message(queryResult("subquery-1", expectedRow1)),
-                            message(completedQuery("subquery-1", 1L)),
-                            message(queryResult("subquery-2", expectedRow2)),
-                            message(completedQuery("subquery-2", 1L)),
-                            message(queryResult("subquery-3", expectedRow3)),
-                            message(completedQuery("subquery-3", 1L))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -210,13 +208,13 @@ public class QueryWebSocketCommandLineClientTest {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
+            client.setFakeResponses(
+                    message(queryResult("test-query-id", expectedRow)),
+                    message(completedQuery("test-query-id", 2L)));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message(queryResult("test-query-id", expectedRow)),
-                            message(completedQuery("test-query-id", 2L))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -244,12 +242,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleErrorIfExceptionEncounteredThatDoesNotCloseConnection() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    error(new Exception("Exception that will not terminate connection")));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            error(new Exception("Exception that will not terminate connection"))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -271,13 +269,13 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleErrorIfExceptionEncounteredThatClosesConnection() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    error(new Exception("Exception that will terminate connection")),
+                    close("Exception caused connection to terminate"));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            error(new Exception("Exception that will terminate connection")),
-                            close("Exception caused connection to terminate")));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -299,12 +297,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleErrorIfMessageWithErrorIsReceived() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    message(errorMessage("test-query-id", "Failure message")));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message(errorMessage("test-query-id", "Failure message"))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -326,12 +324,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleMessageWithUnrecognisedType() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    message(unknownMessage("test-query-id")));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message(unknownMessage("test-query-id"))));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -353,12 +351,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleMalformedJson() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    message("{"));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message("{")));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -380,12 +378,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleMissingQueryIdInMessageFromApi() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    message("{\"message\":\"error\"}"));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message("{\"message\":\"error\"}")));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -407,12 +405,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleMissingMessageTypeInMessageFromApi() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    message("{\"queryId\":\"test-query-id\"}"));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            message("{\"queryId\":\"test-query-id\"}")));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -434,12 +432,12 @@ public class QueryWebSocketCommandLineClientTest {
         void shouldHandleConnectionClosingUnexpectedly() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123L);
+            client.setFakeResponses(
+                    close("Network error"));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient("test-query-id",
-                    withResponses(
-                            close("Network error")));
+            runQueryClient("test-query-id");
 
             // Then
             assertThat(out.toString())
@@ -478,17 +476,11 @@ public class QueryWebSocketCommandLineClientTest {
         return new RangeFactory(tableProperties.getSchema());
     }
 
-    protected void runQueryClient(String queryId, Client webSocketClient) throws Exception {
+    protected void runQueryClient(String queryId) throws Exception {
         new QueryWebSocketCommandLineClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
                 in.consoleIn(), out.consoleOut(), new QueryWebSocketClient(instanceProperties,
-                        new FixedTablePropertiesProvider(tableProperties), () -> webSocketClient, 0),
+                        new FixedTablePropertiesProvider(tableProperties), client.provider(), 0),
                 () -> queryId, List.of(START_TIME, FINISH_TIME).iterator()::next)
                 .run();
-    }
-
-    private FakeWebSocketClient withResponses(WebSocketResponse... responses) {
-        client = new FakeWebSocketClient(new FixedTablePropertiesProvider(tableProperties));
-        client.withResponses(responses);
-        return client;
     }
 }

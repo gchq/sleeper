@@ -17,7 +17,7 @@ package sleeper.clients.query;
 
 import sleeper.clients.query.QueryWebSocketClient.Client;
 import sleeper.clients.query.QueryWebSocketClient.WebSocketMessageHandler;
-import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
 
@@ -32,8 +32,8 @@ public class FakeWebSocketClient implements Client {
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
-    public FakeWebSocketClient(TablePropertiesProvider tablePropertiesProvider) {
-        this.messageHandler = new WebSocketMessageHandler(new QuerySerDe(tablePropertiesProvider));
+    public QueryWebSocketClient.ClientProvider provider() {
+        return (instanceProperties, tableProperties) -> withTable(tableProperties);
     }
 
     public boolean connectBlocking() throws InterruptedException {
@@ -48,8 +48,12 @@ public class FakeWebSocketClient implements Client {
         }
     }
 
-    public FakeWebSocketClient withResponses(WebSocketResponse... responses) {
+    public void setFakeResponses(WebSocketResponse... responses) {
         this.responses = List.of(responses);
+    }
+
+    private FakeWebSocketClient withTable(TableProperties tableProperties) {
+        messageHandler = new WebSocketMessageHandler(new QuerySerDe(tableProperties.getSchema()));
         return this;
     }
 

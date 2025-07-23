@@ -38,8 +38,8 @@ import sleeper.clients.query.exception.MessageMissingFieldException;
 import sleeper.clients.query.exception.UnknownMessageTypeException;
 import sleeper.clients.query.exception.WebSocketClosedException;
 import sleeper.clients.query.exception.WebSocketErrorException;
-import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
@@ -69,8 +69,9 @@ public class QueryWebSocketClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketClient.class);
     public static final long DEFAULT_TIMEOUT_MS = 120000L;
 
-    private final String apiUrl;
-    private final Supplier<Client> clientSupplier;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final ClientProvider clientProvider;
     private final long timeoutMs;
 
     public QueryWebSocketClient(
@@ -86,16 +87,23 @@ public class QueryWebSocketClient {
 
     QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             Supplier<Client> clientSupplier, long timeoutMs) {
-        this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
-        if (this.apiUrl == null) {
-            throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
-        }
-        this.clientSupplier = clientSupplier;
+        this(instanceProperties, tablePropertiesProvider, (instance, table) -> clientSupplier.get(), timeoutMs);
+    }
+
+    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            ClientProvider clientProvider, long timeoutMs) {
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.clientProvider = clientProvider;
         this.timeoutMs = timeoutMs;
+        if (!instanceProperties.isSet(QUERY_WEBSOCKET_API_URL)) {
+            throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance.");
+        }
     }
 
     public CompletableFuture<List<String>> submitQuery(Query query) throws InterruptedException {
-        Client client = clientSupplier.get();
+        TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
+        Client client = clientProvider.createClient(instanceProperties, tableProperties);
         try {
             Instant startTime = Instant.now();
             return client.startQueryFuture(query)
@@ -135,6 +143,10 @@ public class QueryWebSocketClient {
             AwsCredentials credentials = credentialsProvider.resolveCredentials();
             return new WebSocketQueryClient(region, serverUri, credentials, messageHandler);
         };
+    }
+
+    public interface ClientProvider {
+        Client createClient(InstanceProperties instanceProperties, TableProperties tableProperties);
     }
 
     private static class WebSocketQueryClient extends WebSocketClient implements Client {
