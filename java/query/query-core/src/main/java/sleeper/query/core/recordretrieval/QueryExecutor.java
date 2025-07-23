@@ -78,8 +78,8 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises the partitions and the mapping from partitions to active files.
-     * This method should be called periodically so that this class is aware of
+     * Initialises a query executor with partitions and the mapping from partitions to active files.
+     * Should be called periodically so that this class is aware of
      * new data arriving in the table. How often this method should be called is
      * a balance between having an up-to-date view of the data and the cost of
      * frequently extracting all the information about the files and the partitions
@@ -91,10 +91,23 @@ public class QueryExecutor {
         init(Instant.now());
     }
 
+    /**
+     * Initialises a query executor with the partitions and partition to file mapping,
+     * rather than loading them from the state store.
+     *
+     * @param partitions             the partitions to initialise
+     * @param partitionToFileMapping the partition to file mapping information
+     */
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
         init(partitions, partitionToFileMapping, Instant.now());
     }
 
+    /**
+     * Initialises a query executor if the next initialise time has passed.
+     *
+     * @param  now                 the time now
+     * @throws StateStoreException if the state store can't be accessed
+     */
     public void initIfNeeded(Instant now) throws StateStoreException {
         if (nextInitialiseTime.isAfter(now)) {
             LOGGER.debug("Not refreshing state for table {}", tableProperties.getStatus());
@@ -103,6 +116,13 @@ public class QueryExecutor {
         init(now);
     }
 
+    /**
+     * Initialises a query executor with given time.
+     * The partitions and partition to file mapping are loaded from the state store.
+     *
+     * @param  now                 the time now
+     * @throws StateStoreException if the state store can't be accessed
+     */
     public void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
@@ -110,6 +130,13 @@ public class QueryExecutor {
         init(partitions, partitionToFileMapping, now);
     }
 
+    /**
+     * Initialises a query executor with the partitions, partition to file map and the next initialise time.
+     *
+     * @param partitions             the partitions to initialise
+     * @param partitionToFileMapping the partition to file mapping information
+     * @param now                    the time now
+     */
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
         leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
@@ -142,6 +169,15 @@ public class QueryExecutor {
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
+    /**
+     * Executes the sub query and returns records. The records are not returned in any
+     * particular order.
+     * This is used internally by Sleeper.
+     *
+     * @param  query          the sub query
+     * @return                an iterator containing the relevant rows
+     * @throws QueryException if an error occurs during query execution
+     */
     public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {
         return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }

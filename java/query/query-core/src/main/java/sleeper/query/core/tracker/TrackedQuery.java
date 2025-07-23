@@ -19,7 +19,13 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A TrackedQuery contains information about a query including its id and current status.
+ * Contains information about a query including its ID and current status.
+ * <p>
+ * This class encapsulates key details required for tracking the lifecycle and outcome of a query.
+ * It provides storage for query-related metadata, such as its unique identifier,
+ * sub-query details, timestamps for updates and expiry, its last known state,
+ * record count, and any associated error messages.
+ *
  */
 public class TrackedQuery {
     private final String queryId;
@@ -108,6 +114,9 @@ public class TrackedQuery {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String queryId;
         private String subQueryId = "-";
@@ -120,44 +129,98 @@ public class TrackedQuery {
         private Builder() {
         }
 
+        /**
+         * Provides the query ID.
+         *
+         * @param  queryId the query ID
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provides the sub query ID.
+         *
+         * @param  subQueryId the sub query ID
+         * @return            the builder
+         */
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
             return this;
         }
 
+        /**
+         * Provides the last update time.
+         *
+         * @param  lastUpdateTime the last update time
+         * @return                the builder
+         */
         public Builder lastUpdateTime(Instant lastUpdateTime) {
             return lastUpdateTime(lastUpdateTime.toEpochMilli());
         }
 
+        /**
+         * Provides the last update time.
+         *
+         * @param  lastUpdateTime the last update time in milliseconds since the epoch
+         * @return                the builder
+         */
         public Builder lastUpdateTime(Long lastUpdateTime) {
             this.lastUpdateTime = lastUpdateTime;
             return this;
         }
 
+        /**
+         * Provides the expiry date.
+         *
+         * @param  expiryDate the expiry date
+         * @return            the builder
+         */
         public Builder expiryDate(Instant expiryDate) {
             return expiryDate(expiryDate.toEpochMilli());
         }
 
+        /**
+         * Provides the expiry date.
+         *
+         * @param  expiryDate the expiry date in milliseconds since the epoch
+         * @return            the builder
+         */
         public Builder expiryDate(Long expiryDate) {
             this.expiryDate = expiryDate;
             return this;
         }
 
+        /**
+         * Provides the last known query state.
+         *
+         * @param  lastKnownState the last known state
+         * @return                the builder
+         */
         public Builder lastKnownState(QueryState lastKnownState) {
             this.lastKnownState = lastKnownState;
             return this;
         }
 
+        /**
+         * Provides the number of records returned by the query.
+         *
+         * @param  recordCount the number of records returned
+         * @return             the builder
+         */
         public Builder recordCount(Long recordCount) {
             this.recordCount = recordCount;
             return this;
         }
 
+        /**
+         * Provides the error message.
+         *
+         * @param  errorMessage the error message
+         * @return              the builder
+         */
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
             return this;

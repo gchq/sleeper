@@ -105,6 +105,12 @@ public class LeafPartitionQuery {
         return files;
     }
 
+    /**
+     * Creates a copy of this query that will include the values of the given fields in the result.
+     *
+     * @param  requestedValueFields a list of requested fields
+     * @return                      the copy of the original query
+     */
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
     }
@@ -159,6 +165,9 @@ public class LeafPartitionQuery {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String tableId;
         private String queryId;
@@ -172,46 +181,106 @@ public class LeafPartitionQuery {
         private Builder() {
         }
 
+        /**
+         * Provides the parent query from which this leaf partition query is derived.
+         *
+         * @param  parentQuery the parent query
+         * @return             the builder
+         */
         public Builder parentQuery(Query parentQuery) {
             return queryId(parentQuery.getQueryId())
                     .processingConfig(parentQuery.getProcessingConfig());
         }
 
+        /**
+         * Provides the table ID for the query.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Provides the query ID.
+         *
+         * @param  queryId the query ID
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provides the sub-query ID.
+         *
+         * @param  subQueryId the sub-query ID
+         * @return            the builder
+         */
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
             return this;
         }
 
+        /**
+         * Provides the row key range regions for the query.
+         *
+         * @param  regions the regions
+         * @return         the builder
+         */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
             return this;
         }
 
+        /**
+         * Provides the processing config for the query.
+         *
+         * @param  processingConfig the query processing config
+         * @return                  the builder
+         */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {
             this.processingConfig = processingConfig;
             return this;
         }
 
+        /**
+         * Provides the leaf partition ID.
+         *
+         * @param  leafPartitionId the leaf partition ID
+         * @return                 the builder
+         */
         public Builder leafPartitionId(String leafPartitionId) {
             this.leafPartitionId = leafPartitionId;
             return this;
         }
 
+        /**
+         * Provides the partition region.
+         *
+         * A partition region defines a specific range of data that the partition covers.
+         * For each key field, the region specifies a range of values. Only data whose key
+         * field values fall within these specified ranges will be considered part of this
+         * partition.
+         *
+         * @param  partitionRegion the partition region
+         * @return                 the builder
+         */
         public Builder partitionRegion(Region partitionRegion) {
             this.partitionRegion = partitionRegion;
             return this;
         }
 
+        /**
+         * Provides the files that are in the partition.
+         * These files will be read to return the results for the sub query.
+         *
+         * @param  files the files
+         * @return       the builder
+         */
         public Builder files(List<String> files) {
             this.files = files;
             return this;
