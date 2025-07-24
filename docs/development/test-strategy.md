@@ -107,8 +107,8 @@ For example, when writing code to send a message to SQS, we would write an inter
 can then implement that as a method reference to the `add` method on a `LinkedList`, and use that to test the logic.
 
 That lets us minimise the tests that need to run against SQS, which we can do separately against LocalStack. We do the
-same thing for S3 and DynamoDB, but with more complex in-memory fakes that implement an interface with a class rather
-than a method reference.
+same thing for S3 and DynamoDB, but the in-memory fakes implement an interface with a class rather than a method
+reference.
 
 Below are some simplified examples based on real Sleeper code. In these examples, we send requests to commit a
 transaction to update a Sleeper table. A compaction removes some files from a Sleeper table and replaces them with its
