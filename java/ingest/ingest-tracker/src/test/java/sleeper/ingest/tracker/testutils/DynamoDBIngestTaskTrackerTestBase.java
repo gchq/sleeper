@@ -43,7 +43,7 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
             .withIgnoredFields("expiryDate")
             // For some reason, default Double comparator compares NaNs as object references instead of their double values
             .withComparatorForFields(Comparator.naturalOrder(),
-                    "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
+                    "finishedStatus.rowsReadPerSecond", "finishedStatus.rowsWrittenPerSecond")
             .build();
     private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
     protected final IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
