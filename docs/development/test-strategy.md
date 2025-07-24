@@ -110,7 +110,10 @@ That lets us minimise the tests that need to run against SQS, which we can do se
 same thing for S3 and DynamoDB, but with more complex in-memory fakes that implement an interface with a class rather
 than a method reference.
 
-Here are some simplified examples based on real Sleeper code:
+Below are some simplified examples based on real Sleeper code. In these examples, we send requests to commit a
+transaction to update a Sleeper table. A compaction removes some files from a Sleeper table and replaces them with its
+output file. We combine the results of multiple compactions into one transaction, and send the transaction to an
+SQS queue to be committed to the state store.
 
 ```java
 public class CompactionCommitBatcherTest {
