@@ -63,7 +63,7 @@ public class CompactionJobFinishedEvent {
         return summary.getFinishTime();
     }
 
-    public RowsProcessed getRecordsProcessed() {
+    public RowsProcessed getRowsProcessed() {
         return summary.getRowsProcessed();
     }
 

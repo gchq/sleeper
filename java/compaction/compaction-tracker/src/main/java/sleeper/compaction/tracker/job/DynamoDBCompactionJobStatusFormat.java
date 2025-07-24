@@ -66,8 +66,8 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
     private static final String COMMIT_TIME = "CommitTime";
-    private static final String RECORDS_READ = "RecordsRead";
-    private static final String RECORDS_WRITTEN = "RecordsWritten";
+    private static final String ROWS_READ = "RowsRead";
+    private static final String ROWS_WRITTEN = "RowsWritten";
     private static final String FAILURE_REASONS = "FailureReasons";
     private static final String JOB_RUN_ID = "JobRunId";
     private static final String TASK_ID = "TaskId";
@@ -109,14 +109,14 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        RowsProcessed recordsProcessed = event.getRecordsProcessed();
+        RowsProcessed rowsProcessed = event.getRowsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, recordsProcessed.getRowsRead())
-                .number(RECORDS_WRITTEN, recordsProcessed.getRowsWritten())
+                .number(ROWS_READ, rowsProcessed.getRowsRead())
+                .number(ROWS_WRITTEN, rowsProcessed.getRowsWritten())
                 .build();
     }
 
@@ -190,8 +190,8 @@ class DynamoDBCompactionJobStatusFormat {
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
                         .rowsProcessed(new RowsProcessed(
-                                getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)))
+                                getLongAttribute(item, ROWS_READ, 0),
+                                getLongAttribute(item, ROWS_WRITTEN, 0)))
                         .build();
             case UPDATE_TYPE_COMMITTED:
                 return CompactionJobCommittedStatus.commitAndUpdateTime(
