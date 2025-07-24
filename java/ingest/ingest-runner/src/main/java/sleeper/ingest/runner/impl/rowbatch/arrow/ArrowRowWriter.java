@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 
@@ -21,14 +21,14 @@ import sleeper.core.schema.Field;
 
 import java.util.List;
 
-public interface ArrowRecordWriter<T> {
+public interface ArrowRowWriter<T> {
 
     /**
-     * An interface which supports writing Arrow records. The interface allows the source data to come in different
-     * formats, including those where each insert generates multiple Arrow records.
+     * An interface which supports writing Arrow rows. The interface allows the source data to come in different
+     * formats, including those where each insert generates multiple Arrow rows.
      *
      * @param  allFields        A List of all of the fields to store
-     * @param  vectorSchemaRoot The Arrow in-memory store to store the records in
+     * @param  vectorSchemaRoot The Arrow in-memory store to store the rows in
      * @param  data             The data to write
      * @param  insertAtRowNo    The location in the VectorSchemaRoot to use to insert the data
      * @return                  The index to use when this method is next called

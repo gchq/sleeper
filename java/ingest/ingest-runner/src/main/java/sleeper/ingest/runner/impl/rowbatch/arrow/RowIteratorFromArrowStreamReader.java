@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
@@ -31,13 +31,13 @@ import java.util.NoSuchElementException;
  * The rows are read from the file in small batches, which correspond to the small batches that were used when the file
  * was orginally written.
  */
-class RecordIteratorFromArrowStreamReader implements CloseableIterator<Row> {
+class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
     private final ArrowStreamReader arrowStreamReader;
     private int currentRecordNoInBatch;
     private long totalNoOfRecordsRead = 0L;
     private boolean nextBatchLoaded;
 
-    RecordIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader) throws IOException {
+    RowIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader) throws IOException {
         this.arrowStreamReader = arrowStreamReader;
         this.loadNextBatch();
     }
@@ -72,7 +72,7 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Row> {
             // Retrieve the current small batch from within the ArrowStreamReader, read the value from
             // row currentRecordNoInBatch and use these values to construct a Record object.
             VectorSchemaRoot smallBatchVectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
-            Row row = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(smallBatchVectorSchemaRoot, currentRecordNoInBatch);
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(smallBatchVectorSchemaRoot, currentRecordNoInBatch);
             currentRecordNoInBatch++;
             totalNoOfRecordsRead++;
             // Load a new batch when this one has been read fully

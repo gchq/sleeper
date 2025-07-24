@@ -41,7 +41,7 @@ import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
@@ -215,12 +215,12 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                 File stagingArea = createTempDirectory(tempDir, null).toFile();
                 File directory = createTempDirectory(tempDir, null).toFile();
                 try (IngestCoordinator<Row> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
-                        ArrayListRecordBatchFactory.builder()
+                        ArrayListRowBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .localWorkingDirectory(stagingArea.getAbsolutePath())
-                                .maxNoOfRecordsInMemory(1_000_000)
-                                .maxNoOfRecordsInLocalStore(1000L)
-                                .buildAcceptingRecords(),
+                                .maxNoOfRowsInMemory(1_000_000)
+                                .maxNoOfRowsInLocalStore(1000L)
+                                .buildAcceptingRows(),
                         DirectPartitionFileWriterFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .filePaths(TableFilePaths.fromPrefix("file://" + directory.getAbsolutePath()))

@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch;
+package sleeper.ingest.runner.impl.rowbatch.arraylist;
 
-@FunctionalInterface
-public interface RecordBatchFactory<INCOMINGDATATYPE> extends AutoCloseable {
+import sleeper.core.row.Row;
 
-    RecordBatch<INCOMINGDATATYPE> createRecordBatch();
-
-    @Override
-    default void close() {
-    }
+public interface ArrayListRowMapper<T> {
+    Row map(T data);
 }

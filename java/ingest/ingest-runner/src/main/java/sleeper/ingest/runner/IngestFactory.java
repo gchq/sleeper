@@ -32,9 +32,9 @@ import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -103,19 +103,19 @@ public class IngestFactory {
         return ingestCoordinatorBuilder(tableProperties).build();
     }
 
-    private RecordBatchFactory<Row> standardRecordBatchFactory(
+    private RowBatchFactory<Row> standardRecordBatchFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         if ("arraylist".equals(recordBatchType)) {
-            return ArrayListRecordBatchFactory.builderWith(instanceProperties)
+            return ArrayListRowBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
-                    .buildAcceptingRecords();
+                    .buildAcceptingRows();
         } else if ("arrow".equals(recordBatchType)) {
-            return ArrowRecordBatchFactory.builderWith(instanceProperties)
+            return ArrowRowBatchFactory.builderWith(instanceProperties)
                     .schema(parquetConfiguration.getTableProperties().getSchema())
                     .localWorkingDirectory(localDir)
-                    .buildAcceptingRecords();
+                    .buildAcceptingRows();
         } else {
             throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }

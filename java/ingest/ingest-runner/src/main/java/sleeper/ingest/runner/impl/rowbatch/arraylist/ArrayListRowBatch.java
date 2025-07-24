@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arraylist;
+package sleeper.ingest.runner.impl.rowbatch.arraylist;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -30,7 +30,7 @@ import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 
@@ -44,67 +44,67 @@ import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Stores a batch of records in an array in memory. This class implements a {@link RecordBatch} backed by an ArrayList,
- * and spilled to local disk as Parquet files when the ArrayList contains a set number of records. Each time the records
+ * Stores a batch of rows in an array in memory. This class implements a {@link RowBatch} backed by an ArrayList,
+ * and spilled to local disk as Parquet files when the ArrayList contains a set number of rows. Each time the rows
  * are spilled to disk, they are sorted.
  * <p>
  * When the batch is read, all of the sorted files and the sorted in-memory batch are merged together into a single
- * iterator of sorted records.
+ * iterator of sorted rows.
  * <p>
- * The batch is considered to be full when the local disk contains more than a specified number of records.
+ * The batch is considered to be full when the local disk contains more than a specified number of rows.
  * <p>
- * This class needs a mapper extending the {@link ArrayListRecordMapper} interface. Data is always retrieved from
- * this batch as @link Record} objects and the mapper is responsible for any type conversion.
+ * This class needs a mapper extending the {@link ArrayListRowMapper} interface. Data is always retrieved from
+ * this batch as {@link Row} objects and the mapper is responsible for any type conversion.
  *
  * @param <INCOMINGDATATYPE> The type of data that can be added to this batch.
  */
-public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
+public class ArrayListRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYPE> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRowBatch.class);
     private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
     private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
-    private final ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper;
+    private final ArrayListRowMapper<INCOMINGDATATYPE> rowMapper;
     private final String localWorkingDirectory;
-    private final int maxNoOfRecordsInMemory;
-    private final long maxNoOfRecordsInLocalStore;
+    private final int maxNoOfRowsInMemory;
+    private final long maxNoOfRowsInLocalStore;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
     private final List<Row> inMemoryBatch;
     private final List<String> localFileNames;
-    private long noOfRecordsInLocalStore;
-    private CloseableIterator<Row> internalOrderedRecordIterator;
+    private long noOfRowsInLocalStore;
+    private CloseableIterator<Row> internalOrderedRowIterator;
     private boolean isWriteable;
     private int batchNo;
 
     /**
-     * Create an instance. Should be called by an {@link ArrayListRecordBatchFactory}.
+     * Create an instance. Should be called by an {@link ArrayListRowBatchFactory}.
      *
-     * @param parquetConfiguration       Hadoop, schema and Parquet configuration for writing files.
-     *                                   The Hadoop configuration is used during read and write of the Parquet files.
-     *                                   Note that the library code uses caching and so unusual errors can occur if
-     *                                   different configurations are used in different calls.
-     * @param recordMapper               a mapper to convert from the incoming data type to Sleeper records
-     * @param localWorkingDirectory      a local directory to use to store temporary files
-     * @param maxNoOfRecordsInMemory     the maximum number of records to store in the internal ArrayList
-     * @param maxNoOfRecordsInLocalStore the maximum number of records to store on the local disk
+     * @param parquetConfiguration    Hadoop, schema and Parquet configuration for writing files.
+     *                                The Hadoop configuration is used during read and write of the Parquet files.
+     *                                Note that the library code uses caching and so unusual errors can occur if
+     *                                different configurations are used in different calls.
+     * @param rowMapper               a mapper to convert from the incoming data type to Sleeper rows
+     * @param localWorkingDirectory   a local directory to use to store temporary files
+     * @param maxNoOfRowsInMemory     the maximum number of rows to store in the internal ArrayList
+     * @param maxNoOfRowsInLocalStore the maximum number of rows to store on the local disk
      */
-    public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
-            ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
+    public ArrayListRowBatch(ParquetConfiguration parquetConfiguration,
+            ArrayListRowMapper<INCOMINGDATATYPE> rowMapper,
             String localWorkingDirectory,
-            int maxNoOfRecordsInMemory,
-            long maxNoOfRecordsInLocalStore) {
+            int maxNoOfRowsInMemory,
+            long maxNoOfRowsInLocalStore) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
-        this.recordMapper = recordMapper;
+        this.rowMapper = rowMapper;
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
-        this.maxNoOfRecordsInMemory = maxNoOfRecordsInMemory;
-        this.maxNoOfRecordsInLocalStore = maxNoOfRecordsInLocalStore;
+        this.maxNoOfRowsInMemory = maxNoOfRowsInMemory;
+        this.maxNoOfRowsInLocalStore = maxNoOfRowsInLocalStore;
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.uniqueIdentifier = UUID.randomUUID();
-        this.internalOrderedRecordIterator = null;
+        this.internalOrderedRowIterator = null;
         this.isWriteable = true;
-        this.inMemoryBatch = new ArrayList<>(maxNoOfRecordsInMemory);
-        this.noOfRecordsInLocalStore = 0L;
+        this.inMemoryBatch = new ArrayList<>(maxNoOfRowsInMemory);
+        this.noOfRowsInLocalStore = 0L;
         this.batchNo = 0;
         this.localFileNames = new ArrayList<>();
     }
@@ -115,11 +115,11 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @param  row         the row to add to the batch
      * @throws IOException if there was a failure writing the local file
      */
-    protected void addRecordToBatch(Row row) throws IOException {
+    protected void addRowToBatch(Row row) throws IOException {
         if (!isWriteable) {
             throw new AssertionError("Attempt to write to a batch where an iterator has already been created");
         }
-        if (inMemoryBatch.size() >= maxNoOfRecordsInMemory) {
+        if (inMemoryBatch.size() >= maxNoOfRowsInMemory) {
             flushToLocalDiskAndClear();
         }
         inMemoryBatch.add(row);
@@ -163,7 +163,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                     FORMATTER.format(inMemoryBatch.size() / (double) writeDuration.getSeconds()),
                     outputFileName);
             localFileNames.add(outputFileName);
-            noOfRecordsInLocalStore += inMemoryBatch.size();
+            noOfRowsInLocalStore += inMemoryBatch.size();
         }
         batchNo++;
         inMemoryBatch.clear();
@@ -171,7 +171,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
 
     @Override
     public void append(INCOMINGDATATYPE data) throws IOException {
-        addRecordToBatch(recordMapper.map(data));
+        addRowToBatch(rowMapper.map(data));
     }
 
     /**
@@ -182,8 +182,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      */
     @Override
     public boolean isFull() {
-        return inMemoryBatch.size() >= maxNoOfRecordsInMemory &&
-                (noOfRecordsInLocalStore + inMemoryBatch.size()) >= maxNoOfRecordsInLocalStore;
+        return inMemoryBatch.size() >= maxNoOfRowsInMemory &&
+                (noOfRowsInLocalStore + inMemoryBatch.size()) >= maxNoOfRowsInLocalStore;
     }
 
     /**
@@ -195,7 +195,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      */
     @Override
     public CloseableIterator<Row> createOrderedRowIterator() throws IOException {
-        if (!isWriteable || internalOrderedRecordIterator != null) {
+        if (!isWriteable || internalOrderedRowIterator != null) {
             throw new AssertionError("Attempt to create an iterator where an iterator has already been created");
         }
         isWriteable = false;
@@ -206,8 +206,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
         try {
             for (String localFileName : localFileNames) {
                 ParquetReader<Row> readerForBatch = createParquetReader(localFileName);
-                ParquetReaderIterator recordIterator = new ParquetReaderIterator(readerForBatch);
-                inputIterators.add(recordIterator);
+                ParquetReaderIterator rowIterator = new ParquetReaderIterator(readerForBatch);
+                inputIterators.add(rowIterator);
                 LOGGER.info("Created reader for file {}", localFileName);
             }
         } catch (Exception e1) {
@@ -223,8 +223,8 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
             throw e1;
         }
         // Merge into one sorted iterator
-        internalOrderedRecordIterator = new MergingIterator(sleeperSchema, inputIterators);
-        return internalOrderedRecordIterator;
+        internalOrderedRowIterator = new MergingIterator(sleeperSchema, inputIterators);
+        return internalOrderedRowIterator;
     }
 
     /**
@@ -234,7 +234,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     public void close() {
         deleteAllLocalFiles();
         try {
-            internalOrderedRecordIterator.close();
+            internalOrderedRowIterator.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

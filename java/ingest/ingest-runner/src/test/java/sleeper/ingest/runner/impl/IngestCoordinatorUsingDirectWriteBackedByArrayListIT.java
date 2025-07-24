@@ -33,7 +33,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.S3SketchesStore;
@@ -166,12 +166,12 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 rowListAndSchema.sleeperSchema, hadoopConf);
         try (IngestCoordinator<Row> ingestCoordinator = standardIngestCoordinatorBuilder(
                 stateStore, rowListAndSchema.sleeperSchema,
-                ArrayListRecordBatchFactory.builder()
+                ArrayListRowBatchFactory.builder()
                         .parquetConfiguration(parquetConfiguration)
                         .localWorkingDirectory(ingestLocalWorkingDirectory)
-                        .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
-                        .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
-                        .buildAcceptingRecords(),
+                        .maxNoOfRowsInMemory(maxNoOfRecordsInMemory)
+                        .maxNoOfRowsInLocalStore(maxNoOfRecordsInLocalStore)
+                        .buildAcceptingRows(),
                 DirectPartitionFileWriterFactory.builder()
                         .parquetConfiguration(parquetConfiguration)
                         .filePaths(TableFilePaths.fromPrefix("s3a://" + dataBucketName))

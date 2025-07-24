@@ -24,12 +24,12 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryRecordBatch implements RecordBatch<Row> {
+public class InMemoryRecordBatch implements RowBatch<Row> {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryRecordBatch.class);
 
     private final Schema schema;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -27,19 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ArrowToRecordConversionUtils {
-    private ArrowToRecordConversionUtils() {
+public class ArrowToRowConversionUtils {
+    private ArrowToRowConversionUtils() {
         throw new AssertionError();
     }
 
     /**
-     * Construct a Sleeper record from a single Arrow row.
+     * Construct a Sleeper row from a single Arrow row.
      *
      * @param  vectorSchemaRoot the container for all of the vectors which hold the values to use
      * @param  rowNo            the index to read from each vector
-     * @return                  a new Record object holding those values
+     * @return                  a new row object holding those values
      */
-    public static Row convertVectorSchemaRootToRecord(VectorSchemaRoot vectorSchemaRoot, int rowNo) {
+    public static Row convertVectorSchemaRootToRow(VectorSchemaRoot vectorSchemaRoot, int rowNo) {
         int noOfFields = vectorSchemaRoot.getSchema().getFields().size();
         Row row = new Row();
         for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {
@@ -54,15 +54,15 @@ public class ArrowToRecordConversionUtils {
                 boolean isActuallyMap = fieldVector.getChildrenFromFields().size() == 1 &&
                         fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
                         fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
-                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRecordBatch.MAP_KEY_FIELD_NAME) &&
-                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRecordBatch.MAP_VALUE_FIELD_NAME);
+                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRowBatch.MAP_KEY_FIELD_NAME) &&
+                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRowBatch.MAP_VALUE_FIELD_NAME);
                 if (isActuallyMap) {
                     // Convert the list of structs into a map
                     value = ((List<?>) value).stream()
                             .map(obj -> (Map<?, ?>) obj)
                             .map(map -> new AbstractMap.SimpleEntry<>(
-                                    map.get(ArrowRecordBatch.MAP_KEY_FIELD_NAME),
-                                    map.get(ArrowRecordBatch.MAP_VALUE_FIELD_NAME)))
+                                    map.get(ArrowRowBatch.MAP_KEY_FIELD_NAME),
+                                    map.get(ArrowRowBatch.MAP_VALUE_FIELD_NAME)))
                             .collect(Collectors.toMap(
                                     entry -> (entry.getKey() instanceof Text) ? entry.getKey().toString() : entry.getKey(),
                                     entry -> (entry.getValue() instanceof Text) ? entry.getValue().toString() : entry.getValue()));

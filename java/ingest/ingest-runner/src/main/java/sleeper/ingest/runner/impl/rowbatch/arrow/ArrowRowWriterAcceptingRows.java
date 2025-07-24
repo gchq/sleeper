@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
@@ -42,21 +42,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatch.MAP_KEY_FIELD_NAME;
-import static sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatch.MAP_VALUE_FIELD_NAME;
+import static sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatch.MAP_KEY_FIELD_NAME;
+import static sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatch.MAP_VALUE_FIELD_NAME;
 
 /**
- * Accepts data for an Arrow record batch as Sleeper records. Used by {@link ArrowRecordBatch}.
+ * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatch}.
  */
-public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Row> {
+public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
 
     /**
-     * Add a single Record to a VectorSchemaRoot at a specified row. Note that the field order in the supplied Sleeper
-     * Schema must match the field order in the Arrow Schema within the {@link VectorSchemaRoot} argument.
+     * Add a single row to a VectorSchemaRoot at a specified row number. Note that the field order in the supplied
+     * Sleeper Schema must match the field order in the Arrow Schema within the {@link VectorSchemaRoot} argument.
      *
-     * @param  allFields            The result of {@link Schema#getAllFields()} of the record that is being written.
+     * @param  allFields            The result of {@link Schema#getAllFields()} of the row that is being written.
      *                              This is used instead of the raw {@link Schema} as the {@link Schema#getAllFields()}
-     *                              is a bit too expensive to call on every record.
+     *                              is a bit too expensive to call on every row.
      * @param  vectorSchemaRoot     the Arrow store to write into
      * @param  row                  the {@link Row} to write
      * @param  insertAtRowNo        the row number to write to
@@ -69,13 +69,13 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Row>
             VectorSchemaRoot vectorSchemaRoot,
             Row row,
             int insertAtRowNo) throws OutOfMemoryException {
-        writeRecord(allFields, vectorSchemaRoot, row, insertAtRowNo);
+        writeRow(allFields, vectorSchemaRoot, row, insertAtRowNo);
         int finalRowCount = insertAtRowNo + 1;
         vectorSchemaRoot.setRowCount(finalRowCount);
         return finalRowCount;
     }
 
-    public static void writeRecord(
+    public static void writeRow(
             List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Row row, int insertAtRowNo) {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the mutate

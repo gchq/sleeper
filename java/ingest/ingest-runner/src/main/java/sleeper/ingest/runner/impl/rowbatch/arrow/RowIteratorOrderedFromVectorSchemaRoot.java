@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.IntVector;
@@ -26,24 +26,24 @@ import sleeper.core.schema.Schema;
 import java.util.NoSuchElementException;
 
 /**
- * An iterator of Sleeper records generated from Apache Arrow vectors. These records are generated from an Apache Arrow
+ * An iterator of Sleeper rows generated from Apache Arrow vectors. These rows are generated from an Apache Arrow
  * {@link VectorSchemaRoot}. The rows are sorted before they are returned, according to the row keys and sort keys
  * specified in the supplied Sleeper {@link Schema}.
  */
-class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Row> {
+class RowIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Row> {
     private final VectorSchemaRoot vectorSchemaRoot;
     private final IntVector sortOrder;
-    private int currentRecordNo = 0;
+    private int currentRowNo = 0;
 
     /**
-     * Construct a SortedRecordIteratorFromVectorSchemaRoot.
+     * Construct an iterator.
      *
      * @param temporaryBufferAllocator the {@link BufferAllocator} to use as a working buffer
      * @param vectorSchemaRoot         the Arrow data to sort and iterate through
      * @param sleeperSchema            the Sleeper {@link Schema} corresponding to the columns of the
      *                                 {@link VectorSchemaRoot}
      */
-    RecordIteratorOrderedFromVectorSchemaRoot(
+    RowIteratorOrderedFromVectorSchemaRoot(
             BufferAllocator temporaryBufferAllocator,
             VectorSchemaRoot vectorSchemaRoot,
             Schema sleeperSchema) {
@@ -53,7 +53,7 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Row
 
     @Override
     public boolean hasNext() {
-        return currentRecordNo < vectorSchemaRoot.getRowCount();
+        return currentRowNo < vectorSchemaRoot.getRowCount();
     }
 
     @Override
@@ -61,10 +61,9 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Row
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        // Read the value from row sortOrder(currentRecordNo) and use that row to construct a Record object.
-        int rowNoToRead = sortOrder.get(currentRecordNo);
-        Row row = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(vectorSchemaRoot, rowNoToRead);
-        currentRecordNo++;
+        int rowNoToRead = sortOrder.get(currentRowNo);
+        Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(vectorSchemaRoot, rowNoToRead);
+        currentRowNo++;
         return row;
     }
 
@@ -74,9 +73,5 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Row
     @Override
     public void close() {
         sortOrder.close();
-    }
-
-    public long getNumberOfRecordsRead() {
-        return currentRecordNo;
     }
 }

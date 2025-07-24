@@ -25,8 +25,8 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriter;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriterAcceptingRows;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestFilesAndRecords;
@@ -213,13 +213,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         }
     }
 
-    static class ArrowRecordWriterAcceptingRecordList implements ArrowRecordWriter<RowList> {
+    static class ArrowRecordWriterAcceptingRecordList implements ArrowRowWriter<RowList> {
 
         @Override
         public int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RowList rowList, int startInsertAtRowNo) {
             int i = 0;
             for (Row row : rowList.getRows()) {
-                ArrowRecordWriterAcceptingRecords.writeRecord(
+                ArrowRowWriterAcceptingRows.writeRow(
                         allFields, vectorSchemaRoot, row, startInsertAtRowNo + i);
                 i++;
             }

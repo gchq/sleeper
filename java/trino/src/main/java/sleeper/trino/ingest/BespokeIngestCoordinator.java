@@ -28,8 +28,8 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
 
@@ -54,7 +54,7 @@ public class BespokeIngestCoordinator {
         long maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
         long maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();
 
-        RecordBatchFactory<Page> recordBatchFactory = ArrowRecordBatchFactory.builder()
+        RowBatchFactory<Page> recordBatchFactory = ArrowRowBatchFactory.builder()
                 .bufferAllocator(arrowBufferAllocator)
                 .schema(tableProperties.getSchema())
                 .localWorkingDirectory(localWorkingDirectory)
@@ -62,8 +62,8 @@ public class BespokeIngestCoordinator {
                 .minBatchBufferAllocatorBytes(SleeperRawAwsConnection.BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN)
                 .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
                 .maxNoOfBytesToWriteLocally(maxBytesToWriteLocally)
-                .maxNoOfRecordsToWriteToArrowFileAtOnce(SleeperRawAwsConnection.MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE)
-                .recordWriter(new ArrowRecordWriterAcceptingPages())
+                .maxNoOfRowsToWriteToArrowFileAtOnce(SleeperRawAwsConnection.MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE)
+                .rowWriter(new ArrowRecordWriterAcceptingPages())
                 .build();
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.builder()
                 .tableProperties(tableProperties)

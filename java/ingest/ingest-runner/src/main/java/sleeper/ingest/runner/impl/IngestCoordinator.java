@@ -35,8 +35,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatch;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -59,10 +59,10 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
  * <ul>
  * <li>
  * Data is provided to this class through the {@link #write(Object)} method. These data may be supplied as any data
- * type are stored in a {@link RecordBatch} for that data type.
+ * type are stored in a {@link RowBatch} for that data type.
  * </li>
  * <li>
- * When the {@link RecordBatch} is full, the data is retrieved from the {@link RecordBatch} as {@link Row} objects,
+ * When the {@link RowBatch} is full, the data is retrieved from the {@link RowBatch} as {@link Row} objects,
  * in sorted order.
  * </li>
  * <li>
@@ -76,7 +76,7 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
  * partition files.
  * </li>
  * <li>
- * The {@link RecordBatch} is cleared, its resources freed, and a new one is created to accept more data.
+ * The {@link RowBatch} is cleared, its resources freed, and a new one is created to accept more data.
  * </li>
  * <li>
  * So long as this {@link IngestCoordinator} remains open, more data can be supplied and more partition files will
@@ -89,7 +89,7 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
  * </li>
  * </ul>
  * <p>
- * The {@link RecordBatch} and the {@link sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter} to use are
+ * The {@link RowBatch} and the {@link sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter} to use are
  * specified using factory functions that create
  * objects which satisfy the relevant interfaces.
  *
@@ -106,12 +106,12 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final String sleeperIteratorClassName;
     private final String sleeperIteratorConfig;
     private final int ingestPartitionRefreshFrequencyInSeconds;
-    private final RecordBatchFactory<INCOMINGDATATYPE> recordBatchFactory;
+    private final RowBatchFactory<INCOMINGDATATYPE> recordBatchFactory;
     private final PartitionFileWriterFactory partitionFileWriterFactory;
     private final IngesterIntoPartitions ingesterIntoPartitions;
     private final List<CompletableFuture<List<FileReference>>> ingestFutures;
     private final Instant ingestCoordinatorCreationTime;
-    protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
+    protected RowBatch<INCOMINGDATATYPE> currentRecordBatch;
     private Instant lastPartitionsUpdateTime;
     private long recordsRead;
     private PartitionTree partitionTree;
@@ -137,7 +137,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema,
                 partitionFileWriterFactory::createPartitionFileWriter, builder.ingestFileWritingStrategy);
-        this.currentRecordBatch = this.recordBatchFactory.createRecordBatch();
+        this.currentRecordBatch = this.recordBatchFactory.createRowBatch();
         this.isClosed = false;
     }
 
@@ -153,7 +153,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
     /**
      * Commits data to the Sleeper table and state store if the current record batch is full. If the current
-     * {@link RecordBatch} reports it is full, retrieve the records from the batch in sorted order, apply a Sleeper
+     * {@link RowBatch} reports it is full, retrieve the records from the batch in sorted order, apply a Sleeper
      * iterator if required, split the sorted data into partitions and ingest the partitions into the back-end store.
      *
      * @param  isClosing                 Indicates that the {@link IngestCoordinator} is closing, so force the ingest,
@@ -194,7 +194,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             }
             // The record batch has now been consumed and so close it.
             currentRecordBatch.close();
-            currentRecordBatch = isClosing ? null : recordBatchFactory.createRecordBatch();
+            currentRecordBatch = isClosing ? null : recordBatchFactory.createRowBatch();
         }
     }
 
@@ -359,7 +359,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private String iteratorClassName;
         private String iteratorConfig;
         private int ingestPartitionRefreshFrequencyInSeconds;
-        private RecordBatchFactory<T> recordBatchFactory;
+        private RowBatchFactory<T> recordBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
         private IngestFileWritingStrategy ingestFileWritingStrategy = IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 
@@ -450,8 +450,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param  recordBatchFactory the factory
          * @return                    the builder for call chaining
          */
-        public <R> Builder<R> recordBatchFactory(RecordBatchFactory<R> recordBatchFactory) {
-            this.recordBatchFactory = (RecordBatchFactory<T>) recordBatchFactory;
+        public <R> Builder<R> recordBatchFactory(RowBatchFactory<R> recordBatchFactory) {
+            this.recordBatchFactory = (RowBatchFactory<T>) recordBatchFactory;
             return (Builder<R>) this;
         }
 

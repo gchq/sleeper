@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch;
+package sleeper.ingest.runner.impl.rowbatch;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
@@ -27,7 +27,7 @@ import java.io.IOException;
  *
  * @param <INCOMINGDATATYPE> The type of data that this record batch accepts
  */
-public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
+public interface RowBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**
      * Append data to the batch.
      *
@@ -45,7 +45,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
 
     /**
      * Generate an iterator which returns the rows in sort-order. It is the responsibility of the
-     * caller to close the iterator. This method may only be called once per {@link RecordBatch}.
+     * caller to close the iterator. This method may only be called once per {@link RowBatch}.
      *
      * @return             the iterator
      * @throws IOException if there was a failure writing the file

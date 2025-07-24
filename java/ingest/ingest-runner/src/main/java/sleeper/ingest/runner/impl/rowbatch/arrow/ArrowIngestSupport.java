@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.recordbatch.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.algorithm.sort.CompositeVectorComparator;
 import org.apache.arrow.algorithm.sort.DefaultVectorComparators;
