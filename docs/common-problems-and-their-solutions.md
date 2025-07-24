@@ -8,7 +8,7 @@ These instructions will assume you start in the project root directory and Sleep
 
 Presently the implementation is based on Arrow. Previously it used an array list, and will work differently if that is
 used. See details including how to configure this in the documentation
-on [record batch types](design/ingest-record-batch-types.md). To change the configuration, use the
+on [row batch types](design/ingest-row-batch-types.md). To change the configuration, use the
 administration client described in the [deployment guide](deployment-guide.md#sleeper-administration-client).
 
 
