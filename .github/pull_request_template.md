@@ -15,4 +15,5 @@ Make sure you have checked _all_ steps below.
 
 - [ ] In case of new functionality, my PR adds documentation that describes how to use it, or I have linked to a
   separate issue for that below.
+- [ ] If I have added new Java code, I have added Javadoc that explains it following [our conventions and style](../docs/development/conventions.md#javadoc).
 - [ ] If I have added or removed any dependencies from the project, I have updated the [NOTICES](/NOTICES) file.
