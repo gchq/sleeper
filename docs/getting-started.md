@@ -96,7 +96,7 @@ understand what the system is doing.
 If you'd prefer to match how you would deploy to production, see the [deployment guide](deployment-guide.md).
 
 The Git repository includes a manual system test deployment script that builds and deploys Sleeper, and starts random
-data generation in a separate "system test" ECS cluster. By default this generates 40 million records per ECS task. This
+data generation in a separate "system test" ECS cluster. By default this generates 40 million rows per ECS task. This
 script takes a globally unique Sleeper instance ID, and IDs of the VPC and subnets you want to deploy the instance to.
 
 The instance ID must be 20 characters or less, and should consist of lower case letters, numbers, and hyphens. We use
@@ -136,7 +136,7 @@ generate data. The data will appear in Sleeper in large batches as the tasks fin
 
 ### Interacting with Sleeper
 
-Run the following command to see how many records are currently in the system:
+Run the following command to see how many rows are currently in the system:
 
 ```bash
 ./scripts/utility/filesStatusReport.sh ${ID} system-test
@@ -151,7 +151,7 @@ which are random strings of length 10. To run a query, use:
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
-specific key. The above script can be used to run a range query (i.e. a query for all records where the key is in a
+specific key. The above script can be used to run a range query (i.e. a query for all rows where the key is in a
 certain range) - press 'r' and then enter a minimum and a maximum value for the query. Don't choose too large a range or
 you'll end up with a very large amount of data sent to the console (e.g a min of 'aaaaaaaaaa' and a max of
 'aaaaazzzzz'). Note that the first query is slower than the others due to the overhead of initialising some libraries.
@@ -160,7 +160,7 @@ is run. It is also possible to execute queries using lambda and have the results
 lambda-based approach allows for a much greater degree of parallelism in the queries. Use `lambdaQuery.sh` instead of
 `query.sh` to experiment with this.
 
-Be careful that if you specify SQS as the output, and query for a range containing a large number of records, then a
+Be careful that if you specify SQS as the output, and query for a range containing a large number of rows, then a
 large number of results could be posted to SQS, and this could result in significant charges.
 
 Over time you will see the number of active files (as reported by the `filesStatusReport.sh` script) decrease. This is

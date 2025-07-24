@@ -1,7 +1,7 @@
 Retrieving data
 ================
 
-There are several ways to retrieve data from a Sleeper table. Remember that Sleeper is optimised for returning records
+There are several ways to retrieve data from a Sleeper table. Remember that Sleeper is optimised for returning rows
 where the row key takes a particular value or range of values. If there are several row key fields, then the query
 should either specify all of the row key fields, or the first one or more fields, e.g. if there are three row key
 fields, key1, key2 and key3, then a query should specify either ranges for key1, key2 and key3, or ranges for key1 and
@@ -24,10 +24,10 @@ INSTANCE_ID=myInstanceId
 ```
 
 This will give you the option of running either an "exact" query which allows you to type in either the exact key that
-you wish to find records for, or a "range" query which allows you to specify the range of keys you wish to find records
+you wish to find rows for, or a "range" query which allows you to specify the range of keys you wish to find rows
 for. The results are printed to standard out.
 
-Note that as this approach to running queries retrieves the relevant records from S3 to this Java process. Therefore if
+Note that as this approach to running queries retrieves the relevant rows from S3 to this Java process. Therefore if
 you specify a large range, the query may take a long time to run and may transfer a large amount of data from S3 to your
 machine.
 
@@ -102,13 +102,13 @@ To execute a range query, use the following query:
 }
 ```
 
-This will return all records in the table "myTable" where key1 is in the range 'goodbye' to 'hello'. If there are
-records in the table where key1 is 'goodbye' then these will be included in the results; records where key1 is 'hello'
+This will return all rows in the table "myTable" where key1 is in the range 'goodbye' to 'hello'. If there are
+rows in the table where key1 is 'goodbye' then these will be included in the results; rows where key1 is 'hello'
 will not be included. This is clearly quite verbose, but it is not intended that users will construct queries directly
 in JSON. This query should be sent to the SQS queue with a URL given by the `sleeper.query.queue.url` property in the
 instance properties file. The results will appear in the S3 query results bucket, as described above.
 
-If you want to find all records where the key is a certain value, construct your query in the following form:
+If you want to find all rows where the key is a certain value, construct your query in the following form:
 
 ```JSON
 {
@@ -138,7 +138,7 @@ If you want to find all records where the key is a certain value, construct your
 }
 ```
 
-This is a query for all records in table "my-table" where key1 takes the value "goodbye" or the value "hello" (this
+This is a query for all rows in table "my-table" where key1 takes the value "goodbye" or the value "hello" (this
 assumes that the first row key field in the schema has a name of "key1" and is a string).
 
 It is possible to configure the lambda-based query executor to send the results of the query to different places. For

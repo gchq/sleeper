@@ -46,7 +46,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.table.TableProperty.INGEST_ROW_BATCH_TYPE;
 
 public class IngestFactory {
 
@@ -105,7 +105,7 @@ public class IngestFactory {
 
     private RowBatchFactory<Row> standardRecordBatchFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
-        String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
+        String recordBatchType = tableProperties.get(INGEST_ROW_BATCH_TYPE).toLowerCase(Locale.ROOT);
         if ("arraylist".equals(recordBatchType)) {
             return ArrayListRowBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)

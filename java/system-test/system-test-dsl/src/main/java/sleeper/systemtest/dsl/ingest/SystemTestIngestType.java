@@ -21,7 +21,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.util.Map;
 
 import static sleeper.core.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.table.TableProperty.INGEST_ROW_BATCH_TYPE;
 
 public class SystemTestIngestType {
 
@@ -35,7 +35,7 @@ public class SystemTestIngestType {
 
     public void applyTo(SystemTestInstanceContext instance) {
         instance.updateTableProperties(Map.of(
-                INGEST_RECORD_BATCH_TYPE, recordBatchType,
+                INGEST_ROW_BATCH_TYPE, recordBatchType,
                 INGEST_PARTITION_FILE_WRITER_TYPE, fileWriterType));
     }
 

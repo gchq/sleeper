@@ -2,7 +2,7 @@ Python API
 ==========
 
 The Python API allows users to query Sleeper from Python, and to trigger uploads of data in Parquet files. There is
-also the ability to upload records directly from the Python API, but this is only intended to be used for very small
+also the ability to upload rows directly from the Python API, but this is only intended to be used for very small
 volumes of data.
 
 ## Requirements
@@ -36,19 +36,19 @@ from sleeper.client import SleeperClient
 my_sleeper = SleeperClient('my_sleeper_instance')
 ```
 
-### write_single_batch(table_name: str, records_to_write: list)
+### write_single_batch(table_name: str, rows_to_write: list)
 
-Write a batch of records into Sleeper. As noted above, this is not intended to be used for large volumes of
+Write a batch of rows into Sleeper. As noted above, this is not intended to be used for large volumes of
 data.
 
 * `table_name`: This is the name of the table to ingest data to.
-* `records_to_write`: This should be a list of dictionaries to write to Sleeper. Each dictionary should contain a single record.
+* `rows_to_write`: This should be a list of dictionaries to write to Sleeper. Each dictionary should contain a single row.
 
 #### Example:
 
 ```python
-records = [{'key': 'my_key', 'value': 'my_value'}, {'key': 'my_key2', 'value': 'my_value2'}]
-my_sleeper.write_single_batch('my_table', records)
+rows = [{'key': 'my_key', 'value': 'my_value'}, {'key': 'my_key2', 'value': 'my_value2'}]
+my_sleeper.write_single_batch('my_table', rows)
 ```
 
 ### ingest_parquet_files_from_s3(table_name: str, files: list):
@@ -104,13 +104,13 @@ my_sleeper.bulk_import_parquet_files_from_s3('my_table', files, 'my_bulk_import_
 
 ### exact_key_query(table_name:str, keys: list)
 
-Allows for the querying for records matching a specific key from Sleeper.
+Allows for the querying for rows matching a specific key from Sleeper.
 
 * `table_name`: This is the name of the table to query
 * `queried_key`: This should be the key or keys to query Sleeper for in the form of a list of dicts
 * `key_schema_name`: This should be the name given to keys as it appears in their Sleeper instance schema
 
-This function returns a list of the records that contain the queried key. Each element of this list is another list
+This function returns a list of the rows that contain the queried key. Each element of this list is another list
 containing two tuples, one containing the schema name of the key followed by they key (the one that was queried) and
 the other tuple contains the associated value.
 
@@ -128,12 +128,12 @@ And this would return something along the lines of
 [[('key', 'akey'), ('value', 'my_value')]]
 ```
 
-In this example, there was one record found with the key `akey` which has the value of `my_value`. If there
-were more records with this key then the returned list would be longer.
+In this example, there was one row found with the key `akey` which has the value of `my_value`. If there
+were more rows with this key then the returned list would be longer.
 
 ### range_key_query(table_name: str, regions: list)
 
-Queries for all records where the key is in a given range, for example between 'a' and 'c'.
+Queries for all rows where the key is in a given range, for example between 'a' and 'c'.
 
 * `table_name`: This is the name of the table to query
 * `regions`: A list of regions where each region is a dict with a key of the name of the row key field and
@@ -158,7 +158,7 @@ And this would return something similar to
 
 ### create_batch_writer(table_name)
 
-Creates a writer for writing batches of records to Sleeper.
+Creates a writer for writing batches of rows to Sleeper.
 
 * `table_name`: This is the name of the table to ingest data to.
 
@@ -168,14 +168,14 @@ as follows:
 ```python
 with my_sleeper.create_batch_writer('my_table_name') as writer:
     ...
-    records = [ .... ]
+    rows = [ .... ]
     ...
-    writer.write(records)
+    writer.write(rows)
     ...
-    # Write some more records
-    more_records = ...
+    # Write some more rows
+    more_rows = ...
 
-    writer.write(more_records)
+    writer.write(more_rows)
 ```
 
 See the code examples for a working example.
