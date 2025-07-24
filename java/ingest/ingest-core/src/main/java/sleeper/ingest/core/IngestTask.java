@@ -112,7 +112,7 @@ public class IngestTask {
                         .taskId(taskId).jobRunId(jobRunId).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
                 Instant jobFinishTime = timeSupplier.get();
-                LOGGER.info("{} records were written", result.getRowsWritten());
+                LOGGER.info("{} rows were written", result.getRowsWritten());
                 JobRunSummary summary = new JobRunSummary(result.asRowsProcessed(), jobStartTime, jobFinishTime);
                 jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
@@ -164,7 +164,7 @@ public class IngestTask {
          * Called when a job completes successfully. This will delete the message from the queue, and may run further
          * reporting on the job.
          *
-         * @param summary the records processed summary for the finished job
+         * @param summary the rows processed summary for the finished job
          */
         void completed(JobRunSummary summary);
 
