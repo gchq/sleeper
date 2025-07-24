@@ -19,11 +19,15 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.common.task.CompactionTaskType;
 import sleeper.common.task.QueueMessageCount;
+import sleeper.common.task.RunCompactionTasks;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -38,16 +42,18 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsTriggeredBulkExportTaskRunnerLambda.class);
 
     private final QueueMessageCount.Client queueMessageCount;
-    private final RunLeafPartitionBulkExportTasks runLeafPartitionBulkExportTasks;
+    private final RunCompactionTasks runTasks;
 
     public SqsTriggeredBulkExportTaskRunnerLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         SqsClient sqsClient = SqsClient.create();
         S3Client s3Client = S3Client.create();
         EcsClient ecsClient = EcsClient.create();
+        AutoScalingClient asClient = AutoScalingClient.create();
+        Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        runLeafPartitionBulkExportTasks = new RunLeafPartitionBulkExportTasks(instanceProperties, ecsClient);
-        queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
+        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.BULK_EXPORT);
+        this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 
     /**
@@ -58,7 +64,7 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
      * @param context the lambda context
      */
     public void handleRequest(SQSEvent input, Context context) {
-        runLeafPartitionBulkExportTasks.run(queueMessageCount);
+        runTasks.runBulkExport(queueMessageCount);
     }
 
     private static String validateParameter(String parameterName) {

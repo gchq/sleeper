@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.common.task.CompactionTaskType;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.common.task.RunCompactionTasks;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -45,12 +46,12 @@ public class RunCompactionTasksLambda {
         AutoScalingClient asClient = AutoScalingClient.create();
         Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client);
+        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.COMPACTION);
         this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
-        runTasks.run(queueMessageCount);
+        runTasks.runCompaction(queueMessageCount);
     }
 
     private static String validateParameter(String parameterName) {
