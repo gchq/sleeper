@@ -118,7 +118,7 @@ public class DynamoDBIngestTaskStatusFormat {
                         .build());
                 break;
             default:
-                LOGGER.warn("Found row with unrecognised update type: {}", item);
+                LOGGER.warn("Found record with unrecognised update type: {}", item);
         }
     }
 }
