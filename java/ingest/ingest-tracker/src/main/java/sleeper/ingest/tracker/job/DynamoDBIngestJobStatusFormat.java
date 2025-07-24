@@ -229,7 +229,7 @@ class DynamoDBIngestJobStatusFormat {
                 return IngestJobFinishedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .recordsProcessed(new RowsProcessed(
+                        .rowsProcessed(new RowsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)))
                         .committedBySeparateFileUpdates(getBooleanAttribute(item, JOB_COMMITTED_WHEN_FILES_ADDED))

@@ -350,7 +350,7 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(JobRunSummary summary, int numFilesWrittenByJob) {
-        return ingestFinishedStatus(summary.getFinishTime(), numFilesWrittenByJob, summary.getRecordsProcessed());
+        return ingestFinishedStatus(summary.getFinishTime(), numFilesWrittenByJob, summary.getRowsProcessed());
     }
 
     /**
@@ -366,7 +366,7 @@ public class IngestJobStatusTestData {
         return IngestJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
                 .finishTime(finishTime)
-                .recordsProcessed(recordsProcessed)
+                .rowsProcessed(recordsProcessed)
                 .numFilesWrittenByJob(numFilesWrittenByJob)
                 .committedBySeparateFileUpdates(false)
                 .build();
@@ -390,7 +390,7 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(JobRunSummary summary, int numFilesWrittenByJob) {
-        return ingestFinishedStatusUncommitted(summary.getFinishTime(), numFilesWrittenByJob, summary.getRecordsProcessed());
+        return ingestFinishedStatusUncommitted(summary.getFinishTime(), numFilesWrittenByJob, summary.getRowsProcessed());
     }
 
     /**
@@ -405,7 +405,7 @@ public class IngestJobStatusTestData {
         return IngestJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
                 .finishTime(finishTime)
-                .recordsProcessed(recordsProcessed)
+                .rowsProcessed(recordsProcessed)
                 .numFilesWrittenByJob(numFilesWrittenByJob)
                 .committedBySeparateFileUpdates(true)
                 .build();

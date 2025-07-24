@@ -235,7 +235,7 @@ public class IngestJobStatusInPeriodTest {
         return IngestJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishedTime))
                 .finishTime(finishedTime)
-                .recordsProcessed(new RowsProcessed(100, 100))
+                .rowsProcessed(new RowsProcessed(100, 100))
                 .numFilesWrittenByJob(2)
                 .build();
     }

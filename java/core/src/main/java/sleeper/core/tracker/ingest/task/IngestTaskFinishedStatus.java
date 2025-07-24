@@ -32,19 +32,19 @@ public class IngestTaskFinishedStatus {
     private final Instant finishTime;
     private final int totalJobRuns;
     private final Duration timeSpentOnJobs;
-    private final long totalRecordsRead;
-    private final long totalRecordsWritten;
-    private final double recordsReadPerSecond;
-    private final double recordsWrittenPerSecond;
+    private final long totalRowsRead;
+    private final long totalRowsWritten;
+    private final double rowsReadPerSecond;
+    private final double rowsWrittenPerSecond;
 
     private IngestTaskFinishedStatus(Builder builder) {
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
         totalJobRuns = builder.totalJobRuns;
         timeSpentOnJobs = Objects.requireNonNull(builder.timeSpentOnJobs, "timeSpentOnJobs must not be null");
-        totalRecordsRead = builder.totalRecordsRead;
-        totalRecordsWritten = builder.totalRecordsWritten;
-        recordsReadPerSecond = builder.recordsReadPerSecond;
-        recordsWrittenPerSecond = builder.recordsWrittenPerSecond;
+        totalRowsRead = builder.totalRowsRead;
+        totalRowsWritten = builder.totalRowsWritten;
+        rowsReadPerSecond = builder.rowsReadPerSecond;
+        rowsWrittenPerSecond = builder.rowsWrittenPerSecond;
     }
 
     public static Builder builder() {
@@ -63,31 +63,31 @@ public class IngestTaskFinishedStatus {
         return timeSpentOnJobs;
     }
 
-    public long getTotalRecordsRead() {
-        return totalRecordsRead;
+    public long getTotalRowsRead() {
+        return totalRowsRead;
     }
 
-    public long getTotalRecordsWritten() {
-        return totalRecordsWritten;
+    public long getTotalRowsWritten() {
+        return totalRowsWritten;
     }
 
-    public double getRecordsReadPerSecond() {
-        return recordsReadPerSecond;
+    public double getRowsReadPerSecond() {
+        return rowsReadPerSecond;
     }
 
-    public double getRecordsWrittenPerSecond() {
-        return recordsWrittenPerSecond;
+    public double getRowsWrittenPerSecond() {
+        return rowsWrittenPerSecond;
     }
 
     /**
-     * Creates a records processed summary using a start time.
+     * Creates a rows processed summary using a start time.
      *
      * @param  startTime the start time
-     * @return           a {@link RecordProcessedSummary}
+     * @return           a {@link JobRunSummary}
      */
     public JobRunSummary asSummary(Instant startTime) {
         return new JobRunSummary(
-                new RowsProcessed(totalRecordsRead, totalRecordsWritten),
+                new RowsProcessed(totalRowsRead, totalRowsWritten),
                 startTime, finishTime, timeSpentOnJobs);
     }
 
@@ -101,10 +101,10 @@ public class IngestTaskFinishedStatus {
         }
         IngestTaskFinishedStatus that = (IngestTaskFinishedStatus) o;
         return timeSpentOnJobs.equals(that.timeSpentOnJobs)
-                && Double.compare(that.totalRecordsRead, totalRecordsRead) == 0
-                && Double.compare(that.totalRecordsWritten, totalRecordsWritten) == 0
-                && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
-                && Double.compare(that.recordsWrittenPerSecond, recordsWrittenPerSecond) == 0
+                && Double.compare(that.totalRowsRead, totalRowsRead) == 0
+                && Double.compare(that.totalRowsWritten, totalRowsWritten) == 0
+                && Double.compare(that.rowsReadPerSecond, rowsReadPerSecond) == 0
+                && Double.compare(that.rowsWrittenPerSecond, rowsWrittenPerSecond) == 0
                 && Objects.equals(finishTime, that.finishTime)
                 && Objects.equals(totalJobRuns, that.totalJobRuns);
     }
@@ -112,7 +112,7 @@ public class IngestTaskFinishedStatus {
     @Override
     public int hashCode() {
         return Objects.hash(finishTime, totalJobRuns, timeSpentOnJobs,
-                totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
+                totalRowsRead, totalRowsWritten, rowsReadPerSecond, rowsWrittenPerSecond);
     }
 
     @Override
@@ -121,10 +121,10 @@ public class IngestTaskFinishedStatus {
                 "finishTime=" + finishTime +
                 ", totalJobs=" + totalJobRuns +
                 ", timeSpentOnJobs=" + timeSpentOnJobs +
-                ", totalRecordsRead=" + totalRecordsRead +
-                ", totalRecordsWritten=" + totalRecordsWritten +
-                ", recordsReadPerSecond=" + recordsReadPerSecond +
-                ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
+                ", totalRowsRead=" + totalRowsRead +
+                ", totalRowsWritten=" + totalRowsWritten +
+                ", rowsReadPerSecond=" + rowsReadPerSecond +
+                ", rowsWrittenPerSecond=" + rowsWrittenPerSecond +
                 '}';
     }
 
@@ -135,10 +135,10 @@ public class IngestTaskFinishedStatus {
         private Instant finishTime;
         private int totalJobRuns;
         private Duration timeSpentOnJobs;
-        private long totalRecordsRead;
-        private long totalRecordsWritten;
-        private double recordsReadPerSecond;
-        private double recordsWrittenPerSecond;
+        private long totalRowsRead;
+        private long totalRowsWritten;
+        private double rowsReadPerSecond;
+        private double rowsWrittenPerSecond;
         private final AverageRecordRate.Builder rateBuilder = AverageRecordRate.builder();
 
         private Builder() {
@@ -178,51 +178,51 @@ public class IngestTaskFinishedStatus {
         }
 
         /**
-         * Sets the total records read.
+         * Sets the total rows read.
          *
-         * @param  totalRecordsRead the total records read
+         * @param  totalRowsRead the total rows read
+         * @return               the builder
+         */
+        public Builder totalRowsRead(long totalRowsRead) {
+            this.totalRowsRead = totalRowsRead;
+            return this;
+        }
+
+        /**
+         * Sets the total rows written.
+         *
+         * @param  totalRowsWritten the total rows written
          * @return                  the builder
          */
-        public Builder totalRecordsRead(long totalRecordsRead) {
-            this.totalRecordsRead = totalRecordsRead;
+        public Builder totalRowsWritten(long totalRowsWritten) {
+            this.totalRowsWritten = totalRowsWritten;
             return this;
         }
 
         /**
-         * Sets the total records written.
+         * Sets the rows read per second.
          *
-         * @param  totalRecordsWritten the total records written
-         * @return                     the builder
+         * @param  rowsReadPerSecond the rows read per second
+         * @return                   the builder
          */
-        public Builder totalRecordsWritten(long totalRecordsWritten) {
-            this.totalRecordsWritten = totalRecordsWritten;
+        public Builder rowsReadPerSecond(double rowsReadPerSecond) {
+            this.rowsReadPerSecond = rowsReadPerSecond;
             return this;
         }
 
         /**
-         * Sets the records read per second.
+         * Sets the rows written per second.
          *
-         * @param  recordsReadPerSecond the records read per second
+         * @param  rowsWrittenPerSecond the rows written per second
          * @return                      the builder
          */
-        public Builder recordsReadPerSecond(double recordsReadPerSecond) {
-            this.recordsReadPerSecond = recordsReadPerSecond;
+        public Builder rowsWrittenPerSecond(double rowsWrittenPerSecond) {
+            this.rowsWrittenPerSecond = rowsWrittenPerSecond;
             return this;
         }
 
         /**
-         * Sets the records written per second.
-         *
-         * @param  recordsWrittenPerSecond the records written per second
-         * @return                         the builder
-         */
-        public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
-            this.recordsWrittenPerSecond = recordsWrittenPerSecond;
-            return this;
-        }
-
-        /**
-         * Adds a job summary to calculate the average record rates.
+         * Adds a job summary to calculate the average row rates.
          *
          * @param  jobSummary the job summary
          * @return            the builder
@@ -233,7 +233,7 @@ public class IngestTaskFinishedStatus {
         }
 
         /**
-         * Adds job summaries to calculate the average record rates.
+         * Adds job summaries to calculate the average row rates.
          *
          * @param  jobSummaries the job summaries
          * @return              the builder
@@ -246,11 +246,11 @@ public class IngestTaskFinishedStatus {
         Builder finish(Instant finishTime) {
             AverageRecordRate rate = rateBuilder.build();
             totalJobRuns = rate.getRunCount();
-            totalRecordsRead = rate.getRecordsRead();
-            totalRecordsWritten = rate.getRecordsWritten();
+            totalRowsRead = rate.getRecordsRead();
+            totalRowsWritten = rate.getRecordsWritten();
             timeSpentOnJobs = rate.getTotalDuration();
-            recordsReadPerSecond = rate.getRecordsReadPerSecond();
-            recordsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
+            rowsReadPerSecond = rate.getRecordsReadPerSecond();
+            rowsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
             this.finishTime = finishTime;
             return this;
         }

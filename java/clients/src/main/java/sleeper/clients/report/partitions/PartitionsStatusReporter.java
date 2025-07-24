@@ -59,7 +59,7 @@ public class PartitionsStatusReporter {
         out.println("--------------------------");
         out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
         out.println("There are " + status.getNumLeafPartitionsThatWillBeSplit() + " leaf partitions that will be split");
-        out.println("Split threshold is " + status.getSplitThreshold() + " records");
+        out.println("Split threshold is " + status.getSplitThreshold() + " rows");
         TABLE_FACTORY.tableBuilder()
                 .itemsAndWriter(status.getPartitions(), PartitionsStatusReporter::writeRow)
                 .build().write(out);

@@ -145,8 +145,8 @@ public class StandardJobRunReporter {
         out.printf("Finish update time: %s%n", update.getUpdateTime());
         out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?
         if (update.isSuccessful()) {
-            out.printf("Records read: %s%n", getRecordsRead(summary));
-            out.printf("Records written: %s%n", getRecordsWritten(summary));
+            out.printf("Rows read: %s%n", getRecordsRead(summary));
+            out.printf("Rows written: %s%n", getRecordsWritten(summary));
             if (!summary.getDuration().isZero()) {
                 out.printf("Read rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
                 out.printf("Write rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
@@ -171,19 +171,19 @@ public class StandardJobRunReporter {
     }
 
     private static String getRecordsRead(JobRunSummary summary) {
-        return countWithCommas(summary.getRecordsRead());
+        return countWithCommas(summary.getRowsRead());
     }
 
     private static String getRecordsWritten(JobRunSummary summary) {
-        return countWithCommas(summary.getRecordsWritten());
+        return countWithCommas(summary.getRowsWritten());
     }
 
     private static String getRecordsReadPerSecond(JobRunSummary summary) {
-        return formatDecimal2dp(summary.getRecordsReadPerSecond());
+        return formatDecimal2dp(summary.getRowsReadPerSecond());
     }
 
     private static String getRecordsWrittenPerSecond(JobRunSummary summary) {
-        return formatDecimal2dp(summary.getRecordsWrittenPerSecond());
+        return formatDecimal2dp(summary.getRowsWrittenPerSecond());
     }
 
     public static String formatDurationString(Duration duration) {

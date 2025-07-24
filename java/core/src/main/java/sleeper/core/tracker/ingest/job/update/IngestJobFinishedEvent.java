@@ -72,7 +72,7 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
     }
 
     public RowsProcessed getRecordsProcessed() {
-        return summary.getRecordsProcessed();
+        return summary.getRowsProcessed();
     }
 
     public int getNumFilesWrittenByJob() {

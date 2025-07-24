@@ -653,7 +653,7 @@ public class StateStoreCommitterTest {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
         update(stateStore(job.getTableId())).assignJobIds(assignIdRequests);
-        return job.replaceFileReferencesRequestBuilder(summary.getRecordsWritten())
+        return job.replaceFileReferencesRequestBuilder(summary.getRowsWritten())
                 .taskId("test-task").jobRunId("test-job-run").build();
     }
 

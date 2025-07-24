@@ -152,19 +152,19 @@ public class AverageRecordRate {
          */
         public Builder summary(JobRunSummary summary) {
             runCount++;
-            recordsRead += summary.getRecordsRead();
-            recordsWritten += summary.getRecordsWritten();
+            recordsRead += summary.getRowsRead();
+            recordsWritten += summary.getRowsWritten();
             totalRunDuration = totalRunDuration.plus(summary.getTimeInProcess());
             if (!summary.getTimeInProcess().isZero()) { // Can't calculate average rate accurately if duration is zero
-                if (summary.getRecordsReadPerSecond() > 0) {
+                if (summary.getRowsReadPerSecond() > 0) {
                     runsWithRecordsRead++;
                     totalReadingDuration = totalReadingDuration.plus(summary.getTimeInProcess());
-                    totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
+                    totalRecordsReadPerSecond += summary.getRowsReadPerSecond();
                 }
-                if (summary.getRecordsWrittenPerSecond() > 0) {
+                if (summary.getRowsWrittenPerSecond() > 0) {
                     runsWithRecordsWritten++;
                     totalWritingDuration = totalWritingDuration.plus(summary.getTimeInProcess());
-                    totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
+                    totalRecordsWrittenPerSecond += summary.getRowsWrittenPerSecond();
                 }
             }
             return this;

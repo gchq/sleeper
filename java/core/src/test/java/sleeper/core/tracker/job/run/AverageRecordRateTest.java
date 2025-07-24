@@ -223,7 +223,7 @@ public class AverageRecordRateTest {
         return AverageRecordRate.of(Stream.of(summaries)
                 .map(summary -> jobRunOnTask(DEFAULT_TASK_ID,
                         CompactionJobStatusTestData.compactionStartedStatus(summary.getStartTime()),
-                        CompactionJobStatusTestData.compactionFinishedStatus(summary.getFinishTime(), summary.getRecordsProcessed())))
+                        CompactionJobStatusTestData.compactionFinishedStatus(summary.getFinishTime(), summary.getRowsProcessed())))
                 .map(CompactionJobRun::new));
     }
 

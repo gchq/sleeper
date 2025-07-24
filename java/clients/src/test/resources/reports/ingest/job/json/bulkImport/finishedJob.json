@@ -24,9 +24,9 @@
             {
               "updateTime": "2022-09-28T13:44:12.123Z",
               "finishTime": "2022-09-28T13:44:12.001Z",
-              "recordsProcessed": {
-                "recordsRead": 3000,
-                "recordsWritten": 1500
+              "rowsProcessed": {
+                "rowsRead": 3000,
+                "rowsWritten": 1500
               },
               "numFilesWrittenByJob": 1,
               "committedBySeparateFileUpdates": true,

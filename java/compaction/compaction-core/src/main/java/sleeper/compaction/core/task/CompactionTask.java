@@ -237,9 +237,9 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
-                summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+                summary.getRowsRead(), String.format("%.1f", summary.getRowsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
-                summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+                summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
     }
 
     @FunctionalInterface

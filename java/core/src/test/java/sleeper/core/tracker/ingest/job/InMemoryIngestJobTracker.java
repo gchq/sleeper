@@ -97,7 +97,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                         .statusUpdate(IngestJobFinishedStatus.builder()
                                 .updateTime(defaultUpdateTime(event.getFinishTime()))
                                 .finishTime(event.getFinishTime())
-                                .recordsProcessed(event.getRecordsProcessed())
+                                .rowsProcessed(event.getRecordsProcessed())
                                 .numFilesWrittenByJob(event.getNumFilesWrittenByJob())
                                 .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
                                 .build())

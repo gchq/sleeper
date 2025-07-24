@@ -64,7 +64,7 @@ public class CompactionJobFinishedEvent {
     }
 
     public RowsProcessed getRecordsProcessed() {
-        return summary.getRecordsProcessed();
+        return summary.getRowsProcessed();
     }
 
     @Override

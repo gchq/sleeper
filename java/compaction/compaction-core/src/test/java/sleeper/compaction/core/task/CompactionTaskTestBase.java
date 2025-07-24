@@ -357,7 +357,7 @@ public class CompactionTaskTestBase {
                 .newReference(FileReference.builder()
                         .filename(job.getOutputFile())
                         .partitionId(job.getPartitionId())
-                        .numberOfRecords(summary.getRecordsWritten())
+                        .numberOfRecords(summary.getRowsWritten())
                         .countApproximate(false)
                         .onlyContainsDataForThisPartition(true)
                         .build())

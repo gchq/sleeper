@@ -61,8 +61,8 @@ public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, Job
     }
 
     @Override
-    public RowsProcessed getRecordsProcessed() {
-        return summary.getRecordsProcessed();
+    public RowsProcessed getRowsProcessed() {
+        return summary.getRowsProcessed();
     }
 
     @Override

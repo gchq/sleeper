@@ -529,7 +529,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return new StateStoreCommitRequestSerDe(tablePropertiesProvider)
                 .toJson(StateStoreCommitRequest.create(tableId,
                         new ReplaceFileReferencesTransaction(List.of(
-                                job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRowsWritten())
+                                job.replaceFileReferencesRequestBuilder(summary.getRowsProcessed().getRowsWritten())
                                         .taskId(taskId)
                                         .jobRunId(jobRunId)
                                         .build()))));
@@ -538,7 +538,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     private String batchedCommitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
         return new CompactionCommitMessageSerDe()
                 .toJson(new CompactionCommitMessage(tableId,
-                        job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRowsWritten())
+                        job.replaceFileReferencesRequestBuilder(summary.getRowsProcessed().getRowsWritten())
                                 .taskId(taskId)
                                 .jobRunId(jobRunId)
                                 .build()));

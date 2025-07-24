@@ -165,7 +165,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
                     .namespace(metricsNamespace)
                     .metricData(MetricDatum.builder()
                             .metricName("StandardIngestRowsWritten")
-                            .value((double) summary.getRecordsWritten())
+                            .value((double) summary.getRowsWritten())
                             .unit(StandardUnit.COUNT)
                             .dimensions(
                                     Dimension.builder().name("instanceId").value(instanceId).build(),

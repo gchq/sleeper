@@ -51,7 +51,7 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RowsProcessed getRecordsProcessed() {
+    public RowsProcessed getRowsProcessed() {
         return RowsProcessed.NONE;
     }
 

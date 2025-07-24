@@ -31,110 +31,110 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class StandardFileStatusReporterRecordCountTest extends FilesStatusReportTestBase {
+public class StandardFileStatusReporterRowCountTest extends FilesStatusReportTestBase {
 
     @Test
     public void shouldReportExactCountWhenLowerThan1K() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123);
+        setupOneFileWithRowCount(123);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 123" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 123" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportKCountWhenLowerThan1M() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123456);
+        setupOneFileWithRowCount(123456);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 123K (123,456)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 123K (123,456)" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportMCountWhenLowerThan1G() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_456_789);
+        setupOneFileWithRowCount(123_456_789);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 123M (123,456,789)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 123M (123,456,789)" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportGCountWhenHigherThan1G() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_123_456_789L);
+        setupOneFileWithRowCount(123_123_456_789L);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 123G (123,123,456,789)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 123G (123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportTCountWhenHigherThan1T() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_456_123_456_789L);
+        setupOneFileWithRowCount(123_456_123_456_789L);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 123T (123,456,123,456,789)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 123T (123,456,123,456,789)" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportTCountWhenHigherThan1000T() throws Exception {
         // Given
-        setupOneFileWithRecordCount(1_234_123_123_456_789L);
+        setupOneFileWithRowCount(1_234_123_123_456_789L);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpKCount() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_500);
+        setupOneFileWithRowCount(123_500);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 124K (123,500)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 124K (123,500)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpMCount() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_500_000);
+        setupOneFileWithRowCount(123_500_000);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 124M (123,500,000)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 124M (123,500,000)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpGCount() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_500_000_000L);
+        setupOneFileWithRowCount(123_500_000_000L);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 124G (123,500,000,000)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 124G (123,500,000,000)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpTCount() throws Exception {
         // Given
-        setupOneFileWithRecordCount(123_500_000_000_000L);
+        setupOneFileWithRowCount(123_500_000_000_000L);
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions: 124T (123,500,000,000,000)" + System.lineSeparator());
+                .contains("Number of rows referenced in partitions: 124T (123,500,000,000,000)" + System.lineSeparator());
     }
 
     @Test
-    public void shouldAddSuffixIfRecordCountIncludesApproximates() throws Exception {
+    public void shouldAddSuffixIfRowCountIncludesApproximates() throws Exception {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         PartitionTree partitions = new PartitionsBuilder(createSchemaWithKey("key1", new StringType()))
@@ -150,16 +150,16 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .contains("Number of records referenced in partitions (approx): 1K (1,000)" + System.lineSeparator()
-                        + "Number of records in non-leaf partitions (approx): 500" + System.lineSeparator()
-                        + "Number of records in leaf partitions (approx): 500" + System.lineSeparator()
-                        + "Percentage of records in leaf partitions (approx): 50.0");
+                .contains("Number of rows referenced in partitions (approx): 1K (1,000)" + System.lineSeparator()
+                        + "Number of rows in non-leaf partitions (approx): 500" + System.lineSeparator()
+                        + "Number of rows in leaf partitions (approx): 500" + System.lineSeparator()
+                        + "Percentage of rows in leaf partitions (approx): 50.0");
     }
 
-    private void setupOneFileWithRecordCount(long recordCount) throws Exception {
+    private void setupOneFileWithRowCount(long rowCount) throws Exception {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         update(stateStore).initialise(partitions.getAllPartitions());
-        update(stateStore).addFile(FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(recordCount));
+        update(stateStore).addFile(FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(rowCount));
     }
 }

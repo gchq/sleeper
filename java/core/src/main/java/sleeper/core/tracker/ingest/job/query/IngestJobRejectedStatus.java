@@ -75,7 +75,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, JobRun
     }
 
     @Override
-    public RowsProcessed getRecordsProcessed() {
+    public RowsProcessed getRowsProcessed() {
         return RowsProcessed.NONE;
     }
 

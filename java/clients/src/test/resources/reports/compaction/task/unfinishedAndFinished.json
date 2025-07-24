@@ -6,10 +6,10 @@
       "finishTime": "2022-10-06T12:20:30.001Z",
       "totalJobRuns": 1,
       "timeSpentOnJobs": 30.0,
-      "totalRecordsRead": 200,
-      "totalRecordsWritten": 100,
-      "recordsReadPerSecond": 6.666666666666667,
-      "recordsWrittenPerSecond": 3.3333333333333335
+      "totalRowsRead": 200,
+      "totalRowsWritten": 100,
+      "rowsReadPerSecond": 6.666666666666667,
+      "rowsWrittenPerSecond": 3.3333333333333335
     }
   },
   {

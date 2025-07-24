@@ -90,28 +90,28 @@ public class TableFilesStatus {
         return files.getFilesWithNoReferences();
     }
 
-    public long getTotalRecords() {
-        return statistics.getTotalRecords();
+    public long getTotalRows() {
+        return statistics.getTotalRows();
     }
 
-    public long getTotalRecordsInLeafPartitions() {
-        return statistics.getTotalRecordsInLeafPartitions();
+    public long getTotalRowsInLeafPartitions() {
+        return statistics.getTotalRowsInLeafPartitions();
     }
 
-    public long getTotalRecordsApprox() {
-        return statistics.getTotalRecordsApprox();
+    public long getTotalRowsApprox() {
+        return statistics.getTotalRowsApprox();
     }
 
-    public long getTotalRecordsInLeafPartitionsApprox() {
-        return statistics.getTotalRecordsInLeafPartitionsApprox();
+    public long getTotalRowsInLeafPartitionsApprox() {
+        return statistics.getTotalRowsInLeafPartitionsApprox();
     }
 
-    public long getTotalRecordsInNonLeafPartitions() {
-        return statistics.getTotalRecordsInNonLeafPartitions();
+    public long getTotalRowsInNonLeafPartitions() {
+        return statistics.getTotalRowsInNonLeafPartitions();
     }
 
-    public long getTotalRecordsInNonLeafPartitionsApprox() {
-        return statistics.getTotalRecordsInNonLeafPartitionsApprox();
+    public long getTotalRowsInNonLeafPartitionsApprox() {
+        return statistics.getTotalRowsInNonLeafPartitionsApprox();
     }
 
     public static final class Builder {

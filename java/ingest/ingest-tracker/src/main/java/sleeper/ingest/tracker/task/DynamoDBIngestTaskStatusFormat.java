@@ -76,10 +76,10 @@ public class DynamoDBIngestTaskStatusFormat {
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(MILLIS_SPENT_ON_JOBS, taskStatus.getFinishedStatus().getTimeSpentOnJobs().toMillis())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
-                .number(RECORDS_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
-                .number(RECORDS_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
-                .number(READ_RATE, taskStatus.getFinishedStatus().getRecordsReadPerSecond())
-                .number(WRITE_RATE, taskStatus.getFinishedStatus().getRecordsWrittenPerSecond())
+                .number(RECORDS_READ, taskStatus.getFinishedStatus().getTotalRowsRead())
+                .number(RECORDS_WRITTEN, taskStatus.getFinishedStatus().getTotalRowsWritten())
+                .number(READ_RATE, taskStatus.getFinishedStatus().getRowsReadPerSecond())
+                .number(WRITE_RATE, taskStatus.getFinishedStatus().getRowsWrittenPerSecond())
                 .build();
     }
 
@@ -111,10 +111,10 @@ public class DynamoDBIngestTaskStatusFormat {
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
                         .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
-                        .totalRecordsRead(getLongAttribute(item, RECORDS_READ, 0))
-                        .totalRecordsWritten(getLongAttribute(item, RECORDS_WRITTEN, 0))
-                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
-                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
+                        .totalRowsRead(getLongAttribute(item, RECORDS_READ, 0))
+                        .totalRowsWritten(getLongAttribute(item, RECORDS_WRITTEN, 0))
+                        .rowsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
+                        .rowsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
                         .build());
                 break;
             default:

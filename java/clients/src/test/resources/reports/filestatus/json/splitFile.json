@@ -3,21 +3,21 @@
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
   "statistics": {
-    "records": {
+    "rows": {
       "allPartitions": {
-        "totalRecords": 5000,
-        "totalRecordsApprox": 2000,
-        "totalRecordsKnown": 3000
+        "totalRows": 5000,
+        "totalRowsApprox": 2000,
+        "totalRowsKnown": 3000
       },
       "leafPartitions": {
-        "totalRecords": 4000,
-        "totalRecordsApprox": 2000,
-        "totalRecordsKnown": 2000
+        "totalRows": 4000,
+        "totalRowsApprox": 2000,
+        "totalRowsKnown": 2000
       },
       "nonLeafPartitions": {
-        "totalRecords": 1000,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 1000
+        "totalRows": 1000,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 1000
       }
     },
     "fileReferences": {
@@ -45,7 +45,7 @@
       "internalReferences": [
         {
           "partitionId": "A",
-          "numberOfRecords": 1000,
+          "numberOfRows": 1000,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -59,7 +59,7 @@
       "internalReferences": [
         {
           "partitionId": "B",
-          "numberOfRecords": 2000,
+          "numberOfRows": 2000,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -73,14 +73,14 @@
       "internalReferences": [
         {
           "partitionId": "B",
-          "numberOfRecords": 1000,
+          "numberOfRows": 1000,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         },
         {
           "partitionId": "C",
-          "numberOfRecords": 1000,
+          "numberOfRows": 1000,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false

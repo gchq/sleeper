@@ -36,11 +36,11 @@ public interface JobRunEndUpdate extends JobRunStatusUpdate {
     Instant getFinishTime();
 
     /**
-     * Gets a summary of records processed by this run.
+     * Gets a summary of rows processed by this run.
      *
      * @return the summary
      */
-    RowsProcessed getRecordsProcessed();
+    RowsProcessed getRowsProcessed();
 
     default Optional<Duration> getTimeInProcess() {
         return Optional.empty();

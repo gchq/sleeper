@@ -33,19 +33,19 @@ public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
     private final int totalJobRuns;
     private final Duration timeSpentOnJobs;
-    private final long totalRecordsRead;
-    private final long totalRecordsWritten;
-    private final double recordsReadPerSecond;
-    private final double recordsWrittenPerSecond;
+    private final long totalRowsRead;
+    private final long totalRowsWritten;
+    private final double rowsReadPerSecond;
+    private final double rowsWrittenPerSecond;
 
     private CompactionTaskFinishedStatus(Builder builder) {
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
         totalJobRuns = builder.totalJobRuns;
         timeSpentOnJobs = Objects.requireNonNull(builder.timeSpentOnJobs, "timeSpentOnJobs must not be null");
-        totalRecordsRead = builder.totalRecordsRead;
-        totalRecordsWritten = builder.totalRecordsWritten;
-        recordsReadPerSecond = builder.recordsReadPerSecond;
-        recordsWrittenPerSecond = builder.recordsWrittenPerSecond;
+        totalRowsRead = builder.totalRowsRead;
+        totalRowsWritten = builder.totalRowsWritten;
+        rowsReadPerSecond = builder.rowsReadPerSecond;
+        rowsWrittenPerSecond = builder.rowsWrittenPerSecond;
     }
 
     public static Builder builder() {
@@ -64,20 +64,20 @@ public class CompactionTaskFinishedStatus {
         return timeSpentOnJobs;
     }
 
-    public long getTotalRecordsRead() {
-        return totalRecordsRead;
+    public long getTotalRowsRead() {
+        return totalRowsRead;
     }
 
-    public long getTotalRecordsWritten() {
-        return totalRecordsWritten;
+    public long getTotalRowsWritten() {
+        return totalRowsWritten;
     }
 
-    public double getRecordsReadPerSecond() {
-        return recordsReadPerSecond;
+    public double getRowsReadPerSecond() {
+        return rowsReadPerSecond;
     }
 
-    public double getRecordsWrittenPerSecond() {
-        return recordsWrittenPerSecond;
+    public double getRowsWrittenPerSecond() {
+        return rowsWrittenPerSecond;
     }
 
     /**
@@ -90,7 +90,7 @@ public class CompactionTaskFinishedStatus {
      */
     public JobRunSummary asSummary(Instant startTime) {
         return new JobRunSummary(
-                new RowsProcessed(totalRecordsRead, totalRecordsWritten),
+                new RowsProcessed(totalRowsRead, totalRowsWritten),
                 startTime, finishTime, timeSpentOnJobs);
     }
 
@@ -104,10 +104,10 @@ public class CompactionTaskFinishedStatus {
         }
         CompactionTaskFinishedStatus that = (CompactionTaskFinishedStatus) o;
         return timeSpentOnJobs.equals(that.timeSpentOnJobs)
-                && Double.compare(that.totalRecordsRead, totalRecordsRead) == 0
-                && Double.compare(that.totalRecordsWritten, totalRecordsWritten) == 0
-                && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
-                && Double.compare(that.recordsWrittenPerSecond, recordsWrittenPerSecond) == 0
+                && Double.compare(that.totalRowsRead, totalRowsRead) == 0
+                && Double.compare(that.totalRowsWritten, totalRowsWritten) == 0
+                && Double.compare(that.rowsReadPerSecond, rowsReadPerSecond) == 0
+                && Double.compare(that.rowsWrittenPerSecond, rowsWrittenPerSecond) == 0
                 && Objects.equals(finishTime, that.finishTime)
                 && Objects.equals(totalJobRuns, that.totalJobRuns);
     }
@@ -115,7 +115,7 @@ public class CompactionTaskFinishedStatus {
     @Override
     public int hashCode() {
         return Objects.hash(finishTime, totalJobRuns, timeSpentOnJobs,
-                totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
+                totalRowsRead, totalRowsWritten, rowsReadPerSecond, rowsWrittenPerSecond);
     }
 
     @Override
@@ -124,10 +124,10 @@ public class CompactionTaskFinishedStatus {
                 "finishTime=" + finishTime +
                 ", totalJobs=" + totalJobRuns +
                 ", timeSpentOnJobs=" + timeSpentOnJobs +
-                ", totalRecordsRead=" + totalRecordsRead +
-                ", totalRecordsWritten=" + totalRecordsWritten +
-                ", recordsReadPerSecond=" + recordsReadPerSecond +
-                ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
+                ", totalRowsRead=" + totalRowsRead +
+                ", totalRowsWritten=" + totalRowsWritten +
+                ", rowsReadPerSecond=" + rowsReadPerSecond +
+                ", rowsWrittenPerSecond=" + rowsWrittenPerSecond +
                 '}';
     }
 
@@ -138,10 +138,10 @@ public class CompactionTaskFinishedStatus {
         private Instant finishTime;
         private int totalJobRuns;
         private Duration timeSpentOnJobs;
-        private long totalRecordsRead;
-        private long totalRecordsWritten;
-        private double recordsReadPerSecond;
-        private double recordsWrittenPerSecond;
+        private long totalRowsRead;
+        private long totalRowsWritten;
+        private double rowsReadPerSecond;
+        private double rowsWrittenPerSecond;
         private final AverageRecordRate.Builder rateBuilder = AverageRecordRate.builder();
 
         private Builder() {
@@ -185,52 +185,52 @@ public class CompactionTaskFinishedStatus {
         }
 
         /**
-         * Sets the total number of records read during the task. This is the sum of the number of records read
+         * Sets the total number of rows read during the task. This is the sum of the number of rows read
          * during all jobs that ran in the task. This will usually be set with {@link #addJobSummary} and
          * {@link #finish}.
          *
-         * @param  totalRecordsRead the total number of records read
+         * @param  totalRowsRead the total number of rows read
+         * @return               this builder
+         */
+        public Builder totalRowsRead(long totalRowsRead) {
+            this.totalRowsRead = totalRowsRead;
+            return this;
+        }
+
+        /**
+         * Sets the total number of rows written during the task. This is the sum of the number of rows written
+         * during all jobs that ran in the task. This will usually be set with {@link #addJobSummary} and
+         * {@link #finish}.
+         *
+         * @param  totalRowsWritten the total number of rows written
          * @return                  this builder
          */
-        public Builder totalRecordsRead(long totalRecordsRead) {
-            this.totalRecordsRead = totalRecordsRead;
+        public Builder totalRowsWritten(long totalRowsWritten) {
+            this.totalRowsWritten = totalRowsWritten;
             return this;
         }
 
         /**
-         * Sets the total number of records written during the task. This is the sum of the number of records written
-         * during all jobs that ran in the task. This will usually be set with {@link #addJobSummary} and
+         * Sets the average number of rows read per second. This will usually be set with {@link #addJobSummary} and
          * {@link #finish}.
          *
-         * @param  totalRecordsWritten the total number of records written
-         * @return                     this builder
+         * @param  rowsReadPerSecond the average number of rows read per second
+         * @return                   this builder
          */
-        public Builder totalRecordsWritten(long totalRecordsWritten) {
-            this.totalRecordsWritten = totalRecordsWritten;
+        public Builder rowsReadPerSecond(double rowsReadPerSecond) {
+            this.rowsReadPerSecond = rowsReadPerSecond;
             return this;
         }
 
         /**
-         * Sets the average number of records read per second. This will usually be set with {@link #addJobSummary} and
-         * {@link #finish}.
-         *
-         * @param  recordsReadPerSecond the average number of records read per second
-         * @return                      this builder
-         */
-        public Builder recordsReadPerSecond(double recordsReadPerSecond) {
-            this.recordsReadPerSecond = recordsReadPerSecond;
-            return this;
-        }
-
-        /**
-         * Sets the average number of records written per second. This will usually be set with {@link #addJobSummary}
+         * Sets the average number of rows written per second. This will usually be set with {@link #addJobSummary}
          * and {@link #finish}.
          *
-         * @param  recordsWrittenPerSecond the average number of records written per second
-         * @return                         this builder
+         * @param  rowsWrittenPerSecond the average number of rows written per second
+         * @return                      this builder
          */
-        public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
-            this.recordsWrittenPerSecond = recordsWrittenPerSecond;
+        public Builder rowsWrittenPerSecond(double rowsWrittenPerSecond) {
+            this.rowsWrittenPerSecond = rowsWrittenPerSecond;
             return this;
         }
 
@@ -267,11 +267,11 @@ public class CompactionTaskFinishedStatus {
         public Builder finish(Instant finishTime) {
             AverageRecordRate rate = rateBuilder.finishTime(finishTime).build();
             totalJobRuns = rate.getRunCount();
-            totalRecordsRead = rate.getRecordsRead();
-            totalRecordsWritten = rate.getRecordsWritten();
+            totalRowsRead = rate.getRecordsRead();
+            totalRowsWritten = rate.getRecordsWritten();
             timeSpentOnJobs = rate.getTotalDuration();
-            recordsReadPerSecond = rate.getRecordsReadPerSecond();
-            recordsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
+            rowsReadPerSecond = rate.getRecordsReadPerSecond();
+            rowsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
             this.finishTime = finishTime;
             return this;
         }

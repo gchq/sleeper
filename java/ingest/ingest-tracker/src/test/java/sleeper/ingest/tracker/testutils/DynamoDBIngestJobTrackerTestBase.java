@@ -174,7 +174,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
-                        .recordsProcessed(defaultRecordsProcessed())
+                        .rowsProcessed(defaultRecordsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build()));
@@ -186,7 +186,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
-                        .recordsProcessed(defaultRecordsProcessed())
+                        .rowsProcessed(defaultRecordsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build(),

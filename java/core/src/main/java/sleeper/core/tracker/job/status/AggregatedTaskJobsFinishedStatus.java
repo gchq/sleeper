@@ -48,7 +48,7 @@ public class AggregatedTaskJobsFinishedStatus implements JobRunEndUpdate {
      * @return            an instance of this class
      */
     public static AggregatedTaskJobsFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return new AggregatedTaskJobsFinishedStatus(updateTime, summary.getFinishTime(), summary.getRecordsProcessed(), summary.getTimeInProcess());
+        return new AggregatedTaskJobsFinishedStatus(updateTime, summary.getFinishTime(), summary.getRowsProcessed(), summary.getTimeInProcess());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class AggregatedTaskJobsFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RowsProcessed getRecordsProcessed() {
+    public RowsProcessed getRowsProcessed() {
         return recordsProcessed;
     }
 

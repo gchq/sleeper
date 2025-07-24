@@ -102,7 +102,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
                 .statusUpdate(CompactionJobFinishedStatus.builder()
                         .updateTime(getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getFinishTime())))
                         .finishTime(event.getFinishTime())
-                        .recordsProcessed(event.getRecordsProcessed())
+                        .rowsProcessed(event.getRecordsProcessed())
                         .build())
                 .build());
     }

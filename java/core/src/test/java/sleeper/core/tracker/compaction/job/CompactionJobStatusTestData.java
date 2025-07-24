@@ -177,7 +177,7 @@ public class CompactionJobStatusTestData {
      * @return         CompactionJobFinishedStatus built with the given values.
      */
     public static CompactionJobFinishedStatus compactionFinishedStatus(JobRunSummary summary) {
-        return compactionFinishedStatus(summary.getFinishTime(), summary.getRecordsProcessed());
+        return compactionFinishedStatus(summary.getFinishTime(), summary.getRowsProcessed());
     }
 
     /**
@@ -191,7 +191,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
                 .finishTime(finishTime)
-                .recordsProcessed(recordsProcessed)
+                .rowsProcessed(recordsProcessed)
                 .build();
     }
 
