@@ -71,7 +71,7 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
         return summary.getFinishTime();
     }
 
-    public RowsProcessed getRecordsProcessed() {
+    public RowsProcessed getRowsProcessed() {
         return summary.getRowsProcessed();
     }
 
@@ -159,9 +159,9 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
         }
 
         /**
-         * Sets the records processed summary.
+         * Sets the rows processed summary.
          *
-         * @param  summary the records processed summary
+         * @param  summary the rows processed summary
          * @return         the builder
          */
         public Builder summary(JobRunSummary summary) {
