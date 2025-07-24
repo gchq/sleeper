@@ -15,7 +15,7 @@
  */
 package sleeper.clients.report.job;
 
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 
@@ -26,13 +26,13 @@ public class AverageRecordRateReport {
     private AverageRecordRateReport() {
     }
 
-    public static void printf(String format, AverageRecordRate average, PrintStream out) {
+    public static void printf(String format, AverageRowRate average, PrintStream out) {
         if (average.getRunCount() < 1) {
             return;
         }
         String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal2dp(average.getAverageRunRecordsReadPerSecond()),
-                formatDecimal2dp(average.getAverageRunRecordsWrittenPerSecond()));
+                formatDecimal2dp(average.getAverageRunRowsReadPerSecond()),
+                formatDecimal2dp(average.getAverageRunRowsWrittenPerSecond()));
         out.printf(format, rateString);
     }
 }

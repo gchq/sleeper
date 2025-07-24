@@ -39,7 +39,7 @@ public class AverageRecordRateTest {
     @Test
     public void shouldCalculateAverageOfSingleFinishedJob() {
         // Given / When
-        AverageRecordRate rate = rateFrom(new JobRunSummary(
+        AverageRowRate rate = rateFrom(new JobRunSummary(
                 new RowsProcessed(100L, 100L),
                 Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
@@ -53,7 +53,7 @@ public class AverageRecordRateTest {
     @Test
     public void shouldCalculateAverageOfTwoFinishedJobs() {
         // Given / When
-        AverageRecordRate rate = rateFrom(
+        AverageRowRate rate = rateFrom(
                 new JobRunSummary(
                         new RowsProcessed(100L, 100L), // rate 10/s
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
@@ -71,7 +71,7 @@ public class AverageRecordRateTest {
     @Test
     public void shouldCalculateAverageOfTwoFinishedJobsWithDifferentDurations() {
         // Given / When
-        AverageRecordRate rate = rateFrom(
+        AverageRowRate rate = rateFrom(
                 new JobRunSummary(
                         new RowsProcessed(900L, 900L), // rate 10/s
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(90)),
@@ -89,7 +89,7 @@ public class AverageRecordRateTest {
     @Test
     public void shouldReportNoJobs() {
         // Given
-        AverageRecordRate rate = rateFrom();
+        AverageRowRate rate = rateFrom();
 
         // When / Then
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
@@ -101,7 +101,7 @@ public class AverageRecordRateTest {
     @Test
     public void shouldCalculateWithStartAndEndTimeOutsideOfAnyRuns() {
         // Given / When
-        AverageRecordRate rate = AverageRecordRate.builder()
+        AverageRowRate rate = AverageRowRate.builder()
                 .startTime(Instant.parse("2022-10-13T10:17:55.000Z"))
                 .summary(new JobRunSummary(
                         new RowsProcessed(100L, 100L),
@@ -118,7 +118,7 @@ public class AverageRecordRateTest {
 
     @Test
     void shouldExcludeARunWithNoRecordsProcessedFromAverageRateCalculation() {
-        AverageRecordRate rate = rateFrom(
+        AverageRowRate rate = rateFrom(
                 new JobRunSummary(
                         new RowsProcessed(0L, 0L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
@@ -134,7 +134,7 @@ public class AverageRecordRateTest {
 
     @Test
     void shouldExcludeARunWithNoRecordsReadFromAverageReadRateCalculation() {
-        AverageRecordRate rate = rateFrom(
+        AverageRowRate rate = rateFrom(
                 new JobRunSummary(
                         new RowsProcessed(0L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
@@ -150,7 +150,7 @@ public class AverageRecordRateTest {
 
     @Test
     void shouldExcludeARunWithNoRecordsWrittenFromAverageWriteRateCalculation() {
-        AverageRecordRate rate = rateFrom(
+        AverageRowRate rate = rateFrom(
                 new JobRunSummary(
                         new RowsProcessed(10L, 0L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
@@ -166,7 +166,7 @@ public class AverageRecordRateTest {
 
     @Test
     void shouldExcludeARunWithZeroDurationFromAverageRateCalculation() {
-        AverageRecordRate rate = rateFrom(
+        AverageRowRate rate = rateFrom(
                 new JobRunSummary(
                         new RowsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(0)),
@@ -185,7 +185,7 @@ public class AverageRecordRateTest {
         Instant startTime = Instant.parse("2022-10-13T10:18:00.000Z");
         Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
 
-        assertThat(AverageRecordRate.of(Stream.of(
+        assertThat(AverageRowRate.of(Stream.of(
                 new CompactionJobRun(jobRunOnTask(DEFAULT_TASK_ID,
                         CompactionJobStatusTestData.compactionStartedStatus(startTime),
                         JobRunFailedStatus.builder()
@@ -201,7 +201,7 @@ public class AverageRecordRateTest {
     void shouldReadCompactionRunWithMissingStartUpdate() {
         Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
 
-        assertThat(AverageRecordRate.of(Stream.of(
+        assertThat(AverageRowRate.of(Stream.of(
                 new CompactionJobRun(jobRunOnTask(DEFAULT_TASK_ID,
                         compactionFinishedStatus(finishTime, new RowsProcessed(200, 100)))))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
@@ -212,15 +212,15 @@ public class AverageRecordRateTest {
     void shouldReadIngestRunWithMissingStartUpdate() {
         Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
 
-        assertThat(AverageRecordRate.of(Stream.of(
+        assertThat(AverageRowRate.of(Stream.of(
                 new IngestJobRun(jobRunOnTask(DEFAULT_TASK_ID,
                         ingestFinishedStatus(finishTime, 1, new RowsProcessed(200, 100)))))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(1, 200L, 100L, Duration.ofSeconds(0));
     }
 
-    private static AverageRecordRate rateFrom(JobRunSummary... summaries) {
-        return AverageRecordRate.of(Stream.of(summaries)
+    private static AverageRowRate rateFrom(JobRunSummary... summaries) {
+        return AverageRowRate.of(Stream.of(summaries)
                 .map(summary -> jobRunOnTask(DEFAULT_TASK_ID,
                         CompactionJobStatusTestData.compactionStartedStatus(summary.getStartTime()),
                         CompactionJobStatusTestData.compactionFinishedStatus(summary.getFinishTime(), summary.getRowsProcessed())))

@@ -21,7 +21,7 @@ import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -88,8 +88,8 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
         return tasks.stream().mapToInt(IngestTaskStatus::getJobRuns).sum();
     }
 
-    private static AverageRecordRate recordRate(List<IngestTaskStatus> tasks) {
-        return AverageRecordRate.of(tasks.stream()
+    private static AverageRowRate recordRate(List<IngestTaskStatus> tasks) {
+        return AverageRowRate.of(tasks.stream()
                 .map(IngestTaskStatus::asJobRunReport));
     }
 

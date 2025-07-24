@@ -21,33 +21,33 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * Calculates records read and written per second across multiple job runs.
+ * Calculates rows read and written per second across multiple job runs.
  */
-public class AverageRecordRate {
+public class AverageRowRate {
 
     private final int runCount;
-    private final long recordsRead;
-    private final long recordsWritten;
+    private final long rowsRead;
+    private final long rowsWritten;
     private final Duration totalDuration;
-    private final double recordsReadPerSecond;
-    private final double recordsWrittenPerSecond;
-    private final double averageJobRecordsReadPerSecond;
-    private final double averageJobRecordsWrittenPerSecond;
+    private final double rowsReadPerSecond;
+    private final double rowsWrittenPerSecond;
+    private final double averageRunRowsReadPerSecond;
+    private final double averageRunRowsWrittenPerSecond;
 
-    private AverageRecordRate(Builder builder) {
+    private AverageRowRate(Builder builder) {
         runCount = builder.runCount;
-        recordsRead = builder.recordsRead;
-        recordsWritten = builder.recordsWritten;
+        rowsRead = builder.rowsRead;
+        rowsWritten = builder.rowsWritten;
         if (builder.startTime == null || builder.finishTime == null) {
             totalDuration = builder.totalRunDuration;
         } else {
             totalDuration = Duration.between(builder.startTime, builder.finishTime);
         }
         double totalSeconds = totalDuration.toMillis() / 1000.0;
-        recordsReadPerSecond = recordsRead / totalSeconds;
-        recordsWrittenPerSecond = recordsWritten / totalSeconds;
-        averageJobRecordsReadPerSecond = builder.totalRecordsReadPerSecond / builder.runsWithRecordsRead;
-        averageJobRecordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / builder.runsWithRecordsWritten;
+        rowsReadPerSecond = rowsRead / totalSeconds;
+        rowsWrittenPerSecond = rowsWritten / totalSeconds;
+        averageRunRowsReadPerSecond = builder.totalRowsReadPerSecond / builder.runsWithRowsRead;
+        averageRunRowsWrittenPerSecond = builder.totalRowsWrittenPerSecond / builder.runsWithRowsWritten;
     }
 
     /**
@@ -56,7 +56,7 @@ public class AverageRecordRate {
      * @param  runs the stream of {@link JobRun}s
      * @return      an instance of this class
      */
-    public static AverageRecordRate of(Stream<JobRunReport> runs) {
+    public static AverageRowRate of(Stream<JobRunReport> runs) {
         return builder().summaries(runs
                 .filter(JobRunReport::isFinishedSuccessfully)
                 .map(JobRunReport::getFinishedSummary)
@@ -71,70 +71,70 @@ public class AverageRecordRate {
         return runCount;
     }
 
-    public long getRecordsRead() {
-        return recordsRead;
+    public long getRowsRead() {
+        return rowsRead;
     }
 
-    public long getRecordsWritten() {
-        return recordsWritten;
+    public long getRowsWritten() {
+        return rowsWritten;
     }
 
     public Duration getTotalDuration() {
         return totalDuration;
     }
 
-    public double getRecordsReadPerSecond() {
-        return recordsReadPerSecond;
+    public double getRowsReadPerSecond() {
+        return rowsReadPerSecond;
     }
 
-    public double getRecordsWrittenPerSecond() {
-        return recordsWrittenPerSecond;
+    public double getRowsWrittenPerSecond() {
+        return rowsWrittenPerSecond;
     }
 
-    public double getAverageRunRecordsReadPerSecond() {
-        return averageJobRecordsReadPerSecond;
+    public double getAverageRunRowsReadPerSecond() {
+        return averageRunRowsReadPerSecond;
     }
 
-    public double getAverageRunRecordsWrittenPerSecond() {
-        return averageJobRecordsWrittenPerSecond;
+    public double getAverageRunRowsWrittenPerSecond() {
+        return averageRunRowsWrittenPerSecond;
     }
 
     @Override
     public String toString() {
-        return "AverageRecordRate{" +
+        return "AverageRowRate{" +
                 "runCount=" + runCount +
-                ", recordsRead=" + recordsRead +
-                ", recordsWritten=" + recordsWritten +
+                ", rowsRead=" + rowsRead +
+                ", rowsWritten=" + rowsWritten +
                 ", totalDuration=" + totalDuration +
-                ", recordsReadPerSecond=" + recordsReadPerSecond +
-                ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
-                ", averageJobRecordsReadPerSecond=" + averageJobRecordsReadPerSecond +
-                ", averageJobRecordsWrittenPerSecond=" + averageJobRecordsWrittenPerSecond +
+                ", rowsReadPerSecond=" + rowsReadPerSecond +
+                ", rowsWrittenPerSecond=" + rowsWrittenPerSecond +
+                ", averageRunRowsReadPerSecond=" + averageRunRowsReadPerSecond +
+                ", averageRunRowsWrittenPerSecond=" + averageRunRowsWrittenPerSecond +
                 '}';
     }
 
     /**
-     * Builder to create a average record rate object.
+     * Builder to create an average row rate object.
      */
     public static final class Builder {
         private Instant startTime;
         private Instant finishTime;
         private int runCount;
-        private long recordsRead;
-        private long recordsWritten;
+        private long rowsRead;
+        private long rowsWritten;
         private Duration totalRunDuration = Duration.ZERO;
-        private int runsWithRecordsRead;
+        private int runsWithRowsRead;
         private Duration totalReadingDuration = Duration.ZERO;
-        private double totalRecordsReadPerSecond;
-        private int runsWithRecordsWritten;
+        private double totalRowsReadPerSecond;
+        private int runsWithRowsWritten;
         private Duration totalWritingDuration = Duration.ZERO;
-        private double totalRecordsWrittenPerSecond;
+        private double totalRowsWrittenPerSecond;
 
         private Builder() {
         }
 
         /**
-         * Calculates the average record rate from a stream of records processed summaries.
+         * Calculates the average row rate from a stream of rows processed summaries.
          *
          * @param  summaries the stream of {@link JobRunSummary}s
          * @return           the builder
@@ -145,26 +145,26 @@ public class AverageRecordRate {
         }
 
         /**
-         * Calculates and updates the average record rate from a records processed summary.
+         * Calculates and updates the average row rate from a rows processed summary.
          *
          * @param  summary a {@link JobRunSummary}
          * @return         the builder
          */
         public Builder summary(JobRunSummary summary) {
             runCount++;
-            recordsRead += summary.getRowsRead();
-            recordsWritten += summary.getRowsWritten();
+            rowsRead += summary.getRowsRead();
+            rowsWritten += summary.getRowsWritten();
             totalRunDuration = totalRunDuration.plus(summary.getTimeInProcess());
             if (!summary.getTimeInProcess().isZero()) { // Can't calculate average rate accurately if duration is zero
                 if (summary.getRowsReadPerSecond() > 0) {
-                    runsWithRecordsRead++;
+                    runsWithRowsRead++;
                     totalReadingDuration = totalReadingDuration.plus(summary.getTimeInProcess());
-                    totalRecordsReadPerSecond += summary.getRowsReadPerSecond();
+                    totalRowsReadPerSecond += summary.getRowsReadPerSecond();
                 }
                 if (summary.getRowsWrittenPerSecond() > 0) {
-                    runsWithRecordsWritten++;
+                    runsWithRowsWritten++;
                     totalWritingDuration = totalWritingDuration.plus(summary.getTimeInProcess());
-                    totalRecordsWrittenPerSecond += summary.getRowsWrittenPerSecond();
+                    totalRowsWrittenPerSecond += summary.getRowsWrittenPerSecond();
                 }
             }
             return this;
@@ -192,8 +192,8 @@ public class AverageRecordRate {
             return this;
         }
 
-        public AverageRecordRate build() {
-            return new AverageRecordRate(this);
+        public AverageRowRate build() {
+            return new AverageRowRate(this);
         }
     }
 }

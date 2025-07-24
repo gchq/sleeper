@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.reporting;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 import sleeper.core.tracker.job.run.JobRunReport;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public class JobsFinishedStatistics {
     private final int numFinishedJobs;
     private final int numJobRuns;
     private final int numFinishedJobRuns;
-    private final AverageRecordRate averageRecordRate;
+    private final AverageRowRate averageRecordRate;
 
     private JobsFinishedStatistics(Builder builder) {
         numJobs = builder.numJobs;
@@ -60,10 +60,10 @@ public class JobsFinishedStatistics {
     }
 
     public boolean isAverageRunRecordsPerSecondInRange(double minRate, double maxRate) {
-        return averageRecordRate.getAverageRunRecordsReadPerSecond() > minRate
-                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() > minRate
-                && averageRecordRate.getAverageRunRecordsReadPerSecond() < maxRate
-                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() < maxRate;
+        return averageRecordRate.getAverageRunRowsReadPerSecond() > minRate
+                && averageRecordRate.getAverageRunRowsWrittenPerSecond() > minRate
+                && averageRecordRate.getAverageRunRowsReadPerSecond() < maxRate
+                && averageRecordRate.getAverageRunRowsWrittenPerSecond() < maxRate;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class JobsFinishedStatistics {
         private int numFinishedJobs;
         private int numJobRuns;
         private int numFinishedJobRuns;
-        private AverageRecordRate averageRecordRate;
+        private AverageRowRate averageRecordRate;
 
         private Builder() {
         }
@@ -96,7 +96,7 @@ public class JobsFinishedStatistics {
             this.numFinishedJobRuns = jobs.stream()
                     .mapToInt(job -> (int) getJobRuns.apply(job).stream().filter(JobRunReport::isFinished).count())
                     .sum();
-            this.averageRecordRate = AverageRecordRate.of(jobs.stream()
+            this.averageRecordRate = AverageRowRate.of(jobs.stream()
                     .filter(isJobFinished)
                     .flatMap(job -> getJobRuns.apply(job).stream()));
             return this;

@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.compaction.task;
 
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RowsProcessed;
 
@@ -142,7 +142,7 @@ public class CompactionTaskFinishedStatus {
         private long totalRowsWritten;
         private double rowsReadPerSecond;
         private double rowsWrittenPerSecond;
-        private final AverageRecordRate.Builder rateBuilder = AverageRecordRate.builder();
+        private final AverageRowRate.Builder rateBuilder = AverageRowRate.builder();
 
         private Builder() {
         }
@@ -265,13 +265,13 @@ public class CompactionTaskFinishedStatus {
          * @return            this builder
          */
         public Builder finish(Instant finishTime) {
-            AverageRecordRate rate = rateBuilder.finishTime(finishTime).build();
+            AverageRowRate rate = rateBuilder.finishTime(finishTime).build();
             totalJobRuns = rate.getRunCount();
-            totalRowsRead = rate.getRecordsRead();
-            totalRowsWritten = rate.getRecordsWritten();
+            totalRowsRead = rate.getRowsRead();
+            totalRowsWritten = rate.getRowsWritten();
             timeSpentOnJobs = rate.getTotalDuration();
-            rowsReadPerSecond = rate.getRecordsReadPerSecond();
-            rowsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
+            rowsReadPerSecond = rate.getRowsReadPerSecond();
+            rowsWrittenPerSecond = rate.getRowsWrittenPerSecond();
             this.finishTime = finishTime;
             return this;
         }

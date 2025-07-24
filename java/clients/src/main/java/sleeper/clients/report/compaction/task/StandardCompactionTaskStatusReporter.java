@@ -21,7 +21,7 @@ import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -85,8 +85,8 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         return tasks.stream().mapToInt(CompactionTaskStatus::getJobRuns).sum();
     }
 
-    private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
-        return AverageRecordRate.of(tasks.stream()
+    private static AverageRowRate recordRate(List<CompactionTaskStatus> tasks) {
+        return AverageRowRate.of(tasks.stream()
                 .map(CompactionTaskStatus::asJobRunReport));
     }
 
