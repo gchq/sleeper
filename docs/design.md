@@ -261,6 +261,9 @@ either be of fixed size or use EMR managed scaling.
 The ingest batcher groups ingest requests for individual files into ingest or bulk import jobs. File ingest requests are
 submitted to an SQS queue. The batcher is then triggered periodically to group files into jobs and send them to the
 ingest queue configured for the table. The number of jobs created is determined by the configuration of the batcher.
+The advantage of using the ingest batcher is that the user does not have to think about how to group the data they
+want ingested into sensibly sized jobs; the batcher takes care of that for them. The user can just submit a file
+ingest request whenever they have a file to ingest and Sleeper will take care of asynchronously ingesting it.
 
 The files need to be accessible to the relevant ingest system, but are not read directly by the batcher.
 
@@ -315,6 +318,13 @@ number of concurrent compaction tasks is configurable.
 
 ![Execution of compaction tasks design diagram](design/compaction-task-running.png)
 
+There are two implementations of the code that compacts the files: a Java implementation and an implementation
+written in Rust that uses [Apache DataFusion](https://datafusion.apache.org/). The DataFusion implementation is
+much more performant than the Java one - often 10x quicker. It is also more cost effective even though it runs on
+more vCPUs (the Java compaction can run with 1 vCPU and 4GiB RAM, it is recommended that the DataFusion one runs
+with 4 vCPU and either 8 or 16GiB RAM - even with the additional resource usage, the DataFusion one is around 6x
+cheaper).
+
 ## Garbage collection
 
 A file is ready for garbage collection if there are no longer any references to the file in the state store,
@@ -354,16 +364,52 @@ Sleeper allows Athena queries to be run over Sleeper data. This is enabled by th
 lambda functions that read Sleeper data and pass it to Athena. This can be done in two ways: with or without the
 application of the iterators.
 
-## Iterators
+## Iterators and continual aggregation and filtering
 
-An iterator is a function that is called either during a compaction job or during a query. It allows
-logic to be inserted into the compaction or query path. This logic could be used to age-off old data or to
-aggregate together values for the same key (e.g. to sum counts associated with the same key). Each iterator is a
-function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
-iterators can be found in the `example-iterators` module.
+There are many use cases where we want to aggregate rows where the keys are the same, e.g. we have a three column
+table where the key field is a string called 'id', the first value field is a long called 'count' and the second
+value field is a long called 'last_seen'. If multiple rows with the same id are inserted then we want to add the
+counts and take the maximum of the values in the last_seen column. Other use cases require filtering of data
+based on the fields, e.g. if the rows in our table have a timestamp field we may want to remove them whenever
+the timestamp is more than a certain age.
 
-We are in the process of designing a replacement for this that will work with DataFusion rather than just in Java. See
-the following epic: https://github.com/gchq/sleeper/issues/5123
+Aggregation and filtering logic can be applied during compactions. This persistently applies the logic to the
+data. When a query is performed there will normally be multiple files in a partition so to ensure the user sees
+the filtered or aggregated results, the same logic is applied to the results of the query. As the data in a table
+is sorted by key, logic to merge two rows with the same key can efficiently be applied during compactions as
+the rows with the same key will be processed at the same time.
+
+There are two different ways of configuring this logic, depending on whether compactions are being run using
+Java or DataFusion. The table property `sleeper.table.compaction.method` controls which is used - the possible
+values are `java` and `datafusion`.
+
+If Java is being used then an iterator can be applied. An iterator is a function that takes as input a
+`CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of iterators that perform
+aggregation or filtering can be found in the `example-iterators` module. The iterator should respect the general
+constraints of a compaction: there could be many hundreds of millions of rows processed by a single compaction job,
+so there should be no attempt to buffer lots of rows in memory; there is no guarantee of the order the files in a
+partition will be compacted, or that all of them will be compacted at the same time so the logic should be
+commutative and associative; the output should be sorted by key so in general the row and sort keys should not be
+changed by the iterator.
+
+If one of the fields in a table is a byte array then that could be a serialised version of an arbitrary Java object.
+This allows aggregation of fields that contain complex values, e.g. Accumulo's iterators in
+[Gaffer](https://github.com/gchq/Gaffer) are used to maintain HyperLogLog sketches which are used to quickly
+approximate the degree of a vertex.
+
+If DataFusion is used for compactions then the aggregation and filtering logic can be applied using a table
+property. This is much simpler than writing an iterator, and DataFusion-based compactions that apply filtering and
+aggregation are much more efficient than Java-based compactions with iterators. The only down-side to the
+DataFusion-based compactions is that it is not possible to write arbitrary logic. The table property
+`sleeper.table.iterator.class.name` can be set to `AGGREGATORS` to specify that aggregation and filtering will
+be performed using DataFusion. The actual aggegation and filtering logic is specified in the
+`sleeper.table.iterator.config` property. The format of this will change. Currently to perform aggregation of
+a count field and to take the maximum of a last_seen field would require the property to be `;,sum(count),max(last_seen)`.
+See https://github.com/gchq/sleeper/issues/4344 for more details and see https://github.com/gchq/sleeper/issues/5102
+for the issue to improve this specification.
+
+Note that if DataFusion-based aggregation is specified then the same logic will be applied in a query-time Java
+iterator so that the user sees the correct results. In time this will be replaced by queries executed via DataFusion.
 
 ## Job and task trackers
 
