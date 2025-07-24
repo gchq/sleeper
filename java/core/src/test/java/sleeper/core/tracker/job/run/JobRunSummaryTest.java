@@ -25,16 +25,16 @@ public class JobRunSummaryTest {
 
     @Test
     public void shouldReturnInputs() {
-        long recordsRead = 100L;
-        long recordsWritten = 100L;
+        long rowsRead = 100L;
+        long rowsWritten = 100L;
         Instant startTime = Instant.parse("2022-09-22T09:44:00.000Z");
         Instant finishTime = Instant.parse("2022-09-22T09:45:00.000Z");
         JobRunSummary summary = new JobRunSummary(
-                new RowsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(rowsRead, rowsWritten),
                 startTime, finishTime);
 
-        assertThat(summary).extracting("recordsRead", "recordsWritten", "startTime", "finishTime")
-                .containsExactly(recordsRead, recordsWritten, startTime, finishTime);
+        assertThat(summary).extracting("rowsRead", "rowsWritten", "startTime", "finishTime")
+                .containsExactly(rowsRead, rowsWritten, startTime, finishTime);
     }
 
     @Test
@@ -54,7 +54,7 @@ public class JobRunSummaryTest {
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));
 
-        assertThat(summary).extracting("recordsReadPerSecond", "recordsWrittenPerSecond")
+        assertThat(summary).extracting("rowsReadPerSecond", "rowsWrittenPerSecond")
                 .containsExactly(7.5, 5.0);
     }
 }
