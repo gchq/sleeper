@@ -411,9 +411,6 @@ for the issue to improve this specification.
 Note that if DataFusion-based aggregation is specified then the same logic will be applied in a query-time Java
 iterator so that the user sees the correct results. In time this will be replaced by queries executed via DataFusion.
 
-We are in the process of designing a replacement for this that will work with DataFusion rather than just in Java. See
-the following epic: https://github.com/gchq/sleeper/issues/5123
-
 ## Job and task trackers
 
 Sleeper includes stores that track the status of jobs as they pass through the system. These status updates are stored
