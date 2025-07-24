@@ -604,10 +604,6 @@ num-traits (https://github.com/rust-num/num-traits)
 
 - Apache 2 License
 
-openssl (https://github.com/sfackler/rust-openssl)
-
-- Apache 2 License
-
 rand (https://github.com/rust-random/rand)
 
 - Apache 2 License
