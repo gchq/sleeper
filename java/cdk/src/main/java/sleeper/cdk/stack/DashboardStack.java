@@ -169,7 +169,7 @@ public class DashboardStack extends NestedStack {
                                                     .period(window)
                                                     .usingMetrics(Map.of("m" + i, Metric.Builder.create()
                                                             .namespace(metricsNamespace)
-                                                            .metricName("StandardIngestRecordsWritten")
+                                                            .metricName("StandardIngestRowsWritten")
                                                             .unit(Unit.COUNT)
                                                             .period(window)
                                                             .statistic("Sum")

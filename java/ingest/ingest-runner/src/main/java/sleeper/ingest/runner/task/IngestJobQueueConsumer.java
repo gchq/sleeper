@@ -164,7 +164,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
             cloudWatchClient.putMetricData(PutMetricDataRequest.builder()
                     .namespace(metricsNamespace)
                     .metricData(MetricDatum.builder()
-                            .metricName("StandardIngestRecordsWritten")
+                            .metricName("StandardIngestRowsWritten")
                             .value((double) summary.getRecordsWritten())
                             .unit(StandardUnit.COUNT)
                             .dimensions(

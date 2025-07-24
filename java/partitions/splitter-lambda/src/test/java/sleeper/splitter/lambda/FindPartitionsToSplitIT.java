@@ -37,7 +37,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
@@ -226,7 +226,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                                 .filePaths(TableFilePaths.fromPrefix("file://" + directory.getAbsolutePath()))
                                 .sketchesStore(new LocalFileSystemSketchesStore())
                                 .build())) {
-                    new IngestRecordsFromIterator(coordinator, list.iterator()).write();
+                    new IngestRowsFromIterator(coordinator, list.iterator()).write();
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);

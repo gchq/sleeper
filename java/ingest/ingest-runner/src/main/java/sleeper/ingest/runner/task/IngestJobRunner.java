@@ -44,7 +44,7 @@ import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
@@ -150,7 +150,7 @@ public class IngestJobRunner implements IngestJobHandler {
                 IngestCoordinator<Row> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                         .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
                         .build()) {
-            result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
+            result = new IngestRowsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRowsWritten(), paths);
         return result;

@@ -82,7 +82,7 @@ public class IngestFactory {
 
     public IngestResult ingestFromRowIterator(TableProperties tableProperties, Iterator<Row> rowIterator) throws StateStoreException, IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = createIngestCoordinator(tableProperties)) {
-            return new IngestRecordsFromIterator(ingestCoordinator, rowIterator).write();
+            return new IngestRowsFromIterator(ingestCoordinator, rowIterator).write();
         }
     }
 

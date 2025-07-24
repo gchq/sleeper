@@ -21,7 +21,7 @@ import sleeper.core.row.Row;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
@@ -63,7 +63,7 @@ public class WriteRandomDataDirect {
         try (IngestCoordinator<Row> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                 .addFilesToStateStore(addFilesToStateStore)
                 .build()) {
-            new IngestRecordsFromIterator(ingestCoordinator, rowIterator).write();
+            new IngestRowsFromIterator(ingestCoordinator, rowIterator).write();
         } catch (IteratorCreationException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

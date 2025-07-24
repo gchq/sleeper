@@ -31,13 +31,13 @@ import java.util.Iterator;
  * Writes records to the storage system from an iterator, partitioned and sorted. This class is an adapter to
  * {@link IngestCoordinator}.
  */
-public class IngestRecordsFromIterator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecordsFromIterator.class);
+public class IngestRowsFromIterator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestRowsFromIterator.class);
 
     private final Iterator<Row> rowsIterator;
     private final IngestRows ingestRecords;
 
-    public IngestRecordsFromIterator(IngestCoordinator<Row> ingestCoordinator, Iterator<Row> rowsIterator) {
+    public IngestRowsFromIterator(IngestCoordinator<Row> ingestCoordinator, Iterator<Row> rowsIterator) {
         this.rowsIterator = rowsIterator;
         this.ingestRecords = new IngestRows(ingestCoordinator);
     }

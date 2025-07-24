@@ -320,7 +320,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @param  tableName The table to add the rows to.
      * @return           The new {@link IngestCoordinator} object.
      */
-    public IngestCoordinator<Page> createIngestRecordsAsync(String tableName) {
+    public IngestCoordinator<Page> createIngestRowsAsync(String tableName) {
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         // Use of the state store provider is not thread-safe and this requires the use of a synchronized method.
         // The state store which is returned may not be thread-safe either.
