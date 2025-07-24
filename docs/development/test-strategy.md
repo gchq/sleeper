@@ -5,6 +5,8 @@ The Java code includes unit tests, integration tests and system tests. We use JU
 
 The Rust code includes unit tests and integration tests. We use the built-in test framework.
 
+The Python code includes unit tests and integration tests with Pytest.
+
 We also have a manual testing setup that combines system test tools with a deployed instance of Sleeper, documented in
 the [system tests guide](system-tests.md#manual-testing).
 
