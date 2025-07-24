@@ -97,23 +97,26 @@ void shouldFailIfInputContainsNonNumber() {
 
 ### Test design
 
-We avoid mocking wherever possible, and prefer to use test fakes, e.g. implement an interface to a database with a
-wrapper around an in-memory collection, e.g. HashMap or ArrayList.
-
 We use test helper methods to make tests as readable as possible, and as close as possible to a set of English
 given/when/then statements.
 
-For example, when writing code to send a message to SQS, we would write an interface with a method to send a message. We
-can then implement that as a method reference to the `add` method on a `LinkedList`, and use that to test the logic.
+We avoid mocking wherever possible, and prefer to use test fakes. For an example of a test fake, say we have a data
+store backed by a database. Our database code can implement an interface, and a test fake can implement that interface
+as a class that's a wrapper around an in-memory collection, e.g. HashMap or ArrayList. Any queries against the database
+can also be implemented in-memory in the test fake.
 
-That lets us minimise the tests that need to run against SQS, which we can do separately against LocalStack. We do the
-same thing for S3 and DynamoDB, but the in-memory fakes implement an interface with a class rather than a method
-reference.
+That lets us minimise the tests that need to run against the database. In Sleeper we do this with various data stores,
+usually DynamoDB and S3. We can test our DynamoDB and S3 code separately in integration tests against LocalStack, using
+Testcontainers.
 
-Below are some simplified examples based on real Sleeper code. In these examples, we send requests to commit a
-transaction to update a Sleeper table. A compaction removes some files from a Sleeper table and replaces them with its
-output file. We combine the results of multiple compactions into one transaction, and send the transaction to an
-SQS queue to be committed to the state store.
+For a simpler example, when we want to send a message to an SQS queue, we would write an interface with a method to send
+the message. We can then implement that as a method reference to the `add` method on a `LinkedList`, and use that to
+test the logic.
+
+Below is an example of this based on real Sleeper code. We send requests to SQS to commit a transaction to update a
+Sleeper table. A compaction removes some files from a Sleeper table and replaces them with its output file. We combine
+the results of multiple compactions into one transaction, and send the transaction to an SQS queue to be committed to
+the state store.
 
 ```java
 public class CompactionCommitBatcherTest {
