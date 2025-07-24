@@ -17,7 +17,6 @@ package sleeper.clients.api.aws;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -85,12 +84,7 @@ public class BulkImportJobSenderIT extends LocalStackTestBase {
     }
 
     private List<BulkImportJob> recieveJobs(InstanceProperty queueUrlProperty) {
-        return sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(queueUrlProperty))
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(1))
-                .messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(queueUrlProperty))
                 .map(new BulkImportJobSerDe()::fromJson)
                 .toList();
     }

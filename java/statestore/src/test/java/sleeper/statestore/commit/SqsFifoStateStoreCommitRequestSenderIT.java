@@ -17,11 +17,6 @@ package sleeper.statestore.commit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -43,7 +38,6 @@ import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,47 +54,43 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
-    private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryTransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
-    private final StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
 
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(CreateQueueRequest.builder()
-                .queueName(UUID.randomUUID().toString() + ".fifo")
-                .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")).build())
-                .queueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
+        tableProperties.set(TABLE_ID, "test-table");
     }
 
     @Test
     void shouldSendCommitToSqs() {
         // Given
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
-                new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+                new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         bodyStore.setStoreTransactions(false);
 
         // When
-        sender().send(StateStoreCommitRequest.create(tableId, transaction));
+        sender().send(StateStoreCommitRequest.create("test-table", transaction));
 
         // Then
         assertThat(receiveCommitRequests())
-                .containsExactly(StateStoreCommitRequest.create(tableId, transaction));
+                .containsExactly(StateStoreCommitRequest.create("test-table", transaction));
     }
 
     @Test
     void shouldStoreTransactionInS3WhenTooBigForSqsMessage() {
         // Given
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
-                new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+                new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         bodyStore.setStoreTransactionsWithObjectKeys(List.of("test/object"));
 
         // When
-        sender().send(StateStoreCommitRequest.create(tableId, transaction));
+        sender().send(StateStoreCommitRequest.create("test-table", transaction));
 
         // Then
         assertThat(receiveCommitRequests())
-                .containsExactly(StateStoreCommitRequest.create(tableId, "test/object", TransactionType.INITIALISE_PARTITIONS));
+                .containsExactly(StateStoreCommitRequest.create("test-table", "test/object", TransactionType.INITIALISE_PARTITIONS));
         assertThat(readTransaction("test/object", TransactionType.INITIALISE_PARTITIONS))
                 .isEqualTo(transaction);
     }
@@ -118,7 +108,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
                 .jobId("test-job").taskId("test-task").jobRunId("test-run").writtenTime(Instant.parse("2025-01-23T15:20:00Z"))
                 .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
                 .build();
-        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
+        StateStoreCommitRequest request = StateStoreCommitRequest.create("test-table", transaction);
         bodyStore.setStoreTransactionsWithObjectKeys(List.of("test/object"));
 
         // When
@@ -126,7 +116,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
         // Then
         assertThat(receiveCommitRequests())
-                .containsExactly(StateStoreCommitRequest.create(tableId, "test/object", TransactionType.ADD_FILES));
+                .containsExactly(StateStoreCommitRequest.create("test-table", "test/object", TransactionType.ADD_FILES));
         assertThat(readTransaction("test/object", TransactionType.ADD_FILES))
                 .isEqualTo(transaction);
     }
@@ -137,24 +127,13 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
-        return receiveCommitMessage().messages().stream()
-                .map(this::readCommitRequest)
-                .collect(Collectors.toList());
-    }
-
-    private ReceiveMessageResponse receiveCommitMessage() {
-        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .maxNumberOfMessages(10).build();
-        return sqsClient.receiveMessage(receiveMessageRequest);
-    }
-
-    private StateStoreCommitRequest readCommitRequest(Message message) {
-        return serDe.fromJson(message.body());
+        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .map(new StateStoreCommitRequestSerDe(tableProperties)::fromJson)
+                .toList();
     }
 
     private StateStoreTransaction<?> readTransaction(String key, TransactionType transactionType) {
-        return bodyStore.getBody(key, tableId, transactionType);
+        return bodyStore.getBody(key, tableProperties.get(TABLE_ID), transactionType);
     }
 
 }

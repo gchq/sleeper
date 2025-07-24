@@ -17,8 +17,6 @@ package sleeper.query.runner.output;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.partition.PartitionTree;
@@ -91,12 +89,8 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     }
 
     private List<ResultsBatch> receiveResults() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-                .waitTimeSeconds(1));
         JSONResultsBatchSerialiser serDe = new JSONResultsBatchSerialiser();
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
                 .map(serDe::deserialise)
                 .toList();
     }

@@ -19,7 +19,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
@@ -158,13 +157,9 @@ public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private List<BulkExportLeafPartitionQuery> receiveLeafPartitionQueries() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(1));
         BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(KEY_VALUE_SCHEMA);
-        return response.messages().stream()
-                .map(message -> serDe.fromJson(message.body()))
+        return receiveMessages(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
+                .map(serDe::fromJson)
                 .toList();
     }
 }

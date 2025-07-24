@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest;
 
@@ -420,11 +419,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private Stream<Message> messagesOnQueue(InstanceProperty queueProperty) {
-        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(queueProperty))
-                .messageSystemAttributeNames(List.of(MessageSystemAttributeName.MESSAGE_GROUP_ID))
-                .waitTimeSeconds(2).build())
-                .messages().stream();
+        return receiveMessagesAndMessageGroupId(instanceProperties.get(queueProperty));
     }
 
     private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
