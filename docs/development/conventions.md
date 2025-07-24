@@ -5,6 +5,10 @@ There are a number of ways we tend to write and structure our code, where if we 
 the maintainability of the codebase as a whole. We try to keep to these conventions unless there's a good reason within
 a specific part of the code. We try to remain open to alternative approaches if they improve maintainability.
 
+## Tests
+
+Please see [our test strategy](test-strategy.md), which also includes conventions when writing tests.
+
 ## Java keyword usage
 
 ### Access level modifiers

@@ -85,21 +85,21 @@ public class CompactionCommitBatcherTest {
 
     @Test
     void shouldSendMultipleCompactionCommitsForSameTableAsOneTransaction() {
-        // Given
+        // Given two compaction jobs for the same table
         TableProperties table = createTable("test-table");
         CompactionJob job1 = jobFactory(table).createCompactionJobWithFilenames(
-                "job1", List.of("test.parquet"), "root");
+                "job1", List.of("file1.parquet"), "root");
         CompactionJob job2 = jobFactory(table).createCompactionJobWithFilenames(
-                "job1", List.of("test.parquet"), "root");
+                "job2", List.of("file2.parquet"), "root");
         ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
         ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
 
-        // When
+        // When we send them as a batch
         batcher().sendBatch(List.of(
                 commitRequest("test-table", request1),
                 commitRequest("test-table", request2)));
 
-        // Then
+        // Then they are combined into one transaction
         assertThat(queue).containsExactly(
                 StateStoreCommitRequest.create("test-table",
                         new ReplaceFileReferencesTransaction(List.of(request1, request2))));

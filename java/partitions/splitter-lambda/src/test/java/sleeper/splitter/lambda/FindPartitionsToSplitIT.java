@@ -20,8 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
-import software.amazon.awssdk.services.sqs.model.Message;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -75,6 +76,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
+    private final Partition rootPartition = new PartitionTree(stateStore.getAllPartitions()).getRootPartition();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
 
@@ -97,15 +99,13 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         findPartitionsToSplit().run(tableProperties);
 
         // Then
-        List<Message> messages = receivePartitionSplittingMessages();
-        assertThat(messages).hasSize(1);
-
-        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).body());
-
-        assertThat(job.getFileNames()).hasSize(10);
-        assertThat(job.getTableId()).isEqualTo(tableId);
-        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
+        assertThat(receiveSplitPartitionJobs())
+                .singleElement()
+                .satisfies(job -> {
+                    assertThat(job.getFileNames()).hasSize(10);
+                    assertThat(job.getTableId()).isEqualTo(tableId);
+                    assertThat(job.getPartition()).isEqualTo(rootPartition);
+                });
     }
 
     @Test
@@ -119,7 +119,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         findPartitionsToSplit().run(tableProperties);
 
         // The
-        assertThat(receivePartitionSplittingMessages()).isEmpty();
+        assertThat(receiveSplitPartitionJobs()).isEmpty();
     }
 
     @Test
@@ -133,15 +133,13 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         findPartitionsToSplit().run(tableProperties);
 
         // Then
-        List<Message> messages = receivePartitionSplittingMessages();
-        assertThat(messages).hasSize(1);
-
-        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).body());
-
-        assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableId()).isEqualTo(tableId);
-        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
+        assertThat(receiveSplitPartitionJobs())
+                .singleElement()
+                .satisfies(job -> {
+                    assertThat(job.getFileNames()).hasSize(5);
+                    assertThat(job.getTableId()).isEqualTo(tableId);
+                    assertThat(job.getPartition()).isEqualTo(rootPartition);
+                });
     }
 
     @Test
@@ -155,23 +153,21 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         findPartitionsToSplit().run(tableProperties);
 
         // Then
-        List<Message> messages = receivePartitionSplittingMessages();
-        assertThat(messages).hasSize(1);
+        assertThat(receiveSplitPartitionJobs())
+                .singleElement()
+                .satisfies(job -> {
+                    assertThat(job.getFileNames()).hasSize(5);
+                    assertThat(job.getTableId()).isEqualTo(tableId);
+                    assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
-        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).body());
+                    List<FileReference> fileReferences = stateStore.getFileReferences();
+                    Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
+                            .filter(fi -> fi.getFilename().equals(fileName))
+                            .map(FileReference::getNumberOfRecords)).reduce(Long::sum);
 
-        assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableId()).isEqualTo(tableId);
-        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
-
-        List<FileReference> fileReferences = stateStore.getFileReferences();
-        Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
-                .filter(fi -> fi.getFilename().equals(fileName))
-                .map(FileReference::getNumberOfRecords)).reduce(Long::sum);
-
-        // 109 + 108 + 107 + 106 + 105 = 535
-        assertThat(numberOfRecords).contains(535L);
+                    // 109 + 108 + 107 + 106 + 105 = 535
+                    assertThat(numberOfRecords).contains(535L);
+                });
     }
 
     private FindPartitionsToSplit findPartitionsToSplit() {
@@ -238,9 +234,9 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         });
     }
 
-    private List<Message> receivePartitionSplittingMessages() {
-        return sqsClient.receiveMessage(builder -> builder
-                .queueUrl(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL)))
-                .messages();
+    private List<SplitPartitionJobDefinition> receiveSplitPartitionJobs() {
+        return receiveMessages(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL))
+                .map(new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)::fromJson)
+                .toList();
     }
 }

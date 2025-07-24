@@ -29,8 +29,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -438,7 +436,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(28);
+        assertThat(getNumberOfMessagesInResultsQueue(instanceProperties)).isEqualTo(28);
     }
 
     @Test
@@ -664,20 +662,14 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         }
     }
 
-    private long getNumberOfRecordsInSqsOutput(InstanceProperties instanceProperties) {
-        long recordCount = 0;
-        ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-                .maxNumberOfMessages(1)
-                .build();
-
-        int lastReceiveCount = -1;
-        while (lastReceiveCount != 0) {
-            ReceiveMessageResponse response = sqsClient.receiveMessage(request);
-            lastReceiveCount = response.messages().size();
-            recordCount += lastReceiveCount;
+    private long getNumberOfMessagesInResultsQueue(InstanceProperties instanceProperties) {
+        long count = 0;
+        long lastReceiveCount = receiveMessages(instanceProperties.get(QUERY_RESULTS_QUEUE_URL)).count();
+        while (lastReceiveCount > 0) {
+            count += lastReceiveCount;
+            lastReceiveCount = receiveMessages(instanceProperties.get(QUERY_RESULTS_QUEUE_URL)).count();
         }
-        return recordCount;
+        return count;
     }
 
     private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
@@ -689,8 +681,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
-            try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
-                ParquetReaderIterator it = new ParquetReaderIterator(reader);
+            try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build();
+                    ParquetReaderIterator it = new ParquetReaderIterator(reader)) {
                 while (it.hasNext()) {
                     it.next();
                 }
@@ -715,19 +707,15 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private void processLeafPartitionQuery(int maxMessages) {
-        List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClient.receiveMessage(
-                ReceiveMessageRequest.builder().queueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
-                        .maxNumberOfMessages(maxMessages).build())
-                .messages().forEach(message -> {
-                    SQSMessage leafMessage = new SQSMessage();
-                    leafMessage.setBody(message.body());
-                    leafPartitionQueries.add(leafMessage);
-                });
-
-        SQSEvent leafEvent = new SQSEvent();
-        leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
-        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+        SQSEvent event = new SQSEvent();
+        event.setRecords(receiveMessages(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                .map(body -> {
+                    SQSMessage message = new SQSMessage();
+                    message.setBody(body);
+                    return message;
+                })
+                .toList());
+        queyLeafPartitionQueryLambda.handleRequest(event, null);
     }
 
     private void processLeafPartitionQuery() {

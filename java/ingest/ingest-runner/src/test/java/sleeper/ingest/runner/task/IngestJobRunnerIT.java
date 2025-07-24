@@ -21,8 +21,6 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -293,15 +291,10 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> getCommitRequestsFromQueue(TableProperties tableProperties) {
-        String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
-        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
-                .queueUrl(commitQueueUrl));
-
         StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .map(serDe::fromJson)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<FileReference> getFilesAdded(List<StateStoreCommitRequest> commitRequests) {

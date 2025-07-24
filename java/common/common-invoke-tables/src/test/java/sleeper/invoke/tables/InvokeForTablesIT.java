@@ -16,8 +16,6 @@
 package sleeper.invoke.tables;
 
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -45,7 +43,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
                 uniqueIdAndName("table-id", "table-name")));
 
         // Then
-        assertThat(receiveTableIdMessages(queueUrl, 2))
+        assertThat(receiveMessages(queueUrl))
                 .containsExactly("table-id");
     }
 
@@ -60,10 +58,10 @@ public class InvokeForTablesIT extends LocalStackTestBase {
                         .mapToObj(i -> uniqueIdAndName("table-id-" + i, "table-name-" + i)));
 
         // Then we can receive those messages
-        assertThat(receiveTableIdMessages(queueUrl, 10)).containsExactly(
+        assertThat(receiveMessages(queueUrl)).containsExactly(
                 "table-id-1", "table-id-2", "table-id-3", "table-id-4", "table-id-5",
                 "table-id-6", "table-id-7", "table-id-8", "table-id-9", "table-id-10");
-        assertThat(receiveTableIdMessages(queueUrl, 10)).containsExactly(
+        assertThat(receiveMessages(queueUrl)).containsExactly(
                 "table-id-11");
     }
 
@@ -78,7 +76,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
         InvokeForTables.sendOneMessagePerTableByName(sqsClient, queueUrl, tableIndex, List.of("table-name"));
 
         // Then
-        assertThat(receiveTableIdMessages(queueUrl, 2))
+        assertThat(receiveMessages(queueUrl))
                 .containsExactly("table-id");
     }
 
@@ -92,7 +90,7 @@ public class InvokeForTablesIT extends LocalStackTestBase {
         assertThatThrownBy(() -> InvokeForTables.sendOneMessagePerTableByName(
                 sqsClient, queueUrl, tableIndex, List.of("missing-table")))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(receiveTableIdMessages(queueUrl, 1))
+        assertThat(receiveMessages(queueUrl))
                 .isEmpty();
     }
 
@@ -111,18 +109,8 @@ public class InvokeForTablesIT extends LocalStackTestBase {
                         .mapToObj(i -> "table-name-" + i)
                         .collect(toUnmodifiableList())))
                 .isInstanceOf(TableNotFoundException.class);
-        assertThat(receiveTableIdMessages(queueUrl, 10))
+        assertThat(receiveMessages(queueUrl))
                 .isEmpty();
-    }
-
-    private List<String> receiveTableIdMessages(String queueUrl, int maxMessages) {
-        ReceiveMessageResponse result = sqsClient.receiveMessage(request -> request
-                .queueUrl(queueUrl)
-                .maxNumberOfMessages(maxMessages)
-                .waitTimeSeconds(0));
-        return result.messages().stream()
-                .map(Message::body)
-                .collect(toUnmodifiableList());
     }
 
 }
