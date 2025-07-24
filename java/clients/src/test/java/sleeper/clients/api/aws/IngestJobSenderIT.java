@@ -17,7 +17,6 @@ package sleeper.clients.api.aws;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.api.IngestJobSender;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -56,12 +55,7 @@ public class IngestJobSenderIT extends LocalStackTestBase {
     }
 
     private List<IngestJob> recieveIngestJobs() {
-        return sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(1))
-                .messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(INGEST_JOB_QUEUE_URL))
                 .map(new IngestJobSerDe()::fromJson)
                 .toList();
     }

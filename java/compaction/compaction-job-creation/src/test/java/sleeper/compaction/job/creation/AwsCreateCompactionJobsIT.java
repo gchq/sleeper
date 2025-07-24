@@ -19,9 +19,6 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
@@ -133,12 +130,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
     }
 
     private List<CompactionJobDispatchRequest> receivePendingBatches() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .build());
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson)
                 .toList();
     }
@@ -153,20 +145,9 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> receiveJobIdAssignmentRequests() {
-        return receiveAssignJobIdQueueMessage().messages().stream()
-                .map(this::readAssignJobIdRequest)
+        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .map(new StateStoreCommitRequestSerDe(tableProperties)::fromJson)
                 .collect(Collectors.toList());
-    }
-
-    private ReceiveMessageResponse receiveAssignJobIdQueueMessage() {
-        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .build());
-    }
-
-    private StateStoreCommitRequest readAssignJobIdRequest(Message message) {
-        return new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.body());
     }
 
     private InstanceProperties createInstance() {

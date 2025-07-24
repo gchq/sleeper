@@ -17,7 +17,6 @@ package sleeper.clients.api.aws;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
@@ -55,12 +54,7 @@ public class BulkExportQuerySenderIT extends LocalStackTestBase {
     }
 
     private List<BulkExportQuery> recieveBulkExportQueries() {
-        return sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(BULK_EXPORT_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(1))
-                .messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(BULK_EXPORT_QUEUE_URL))
                 .map(new BulkExportQuerySerDe()::fromJson)
                 .toList();
     }

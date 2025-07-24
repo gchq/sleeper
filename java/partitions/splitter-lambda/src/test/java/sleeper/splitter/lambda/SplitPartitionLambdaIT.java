@@ -17,7 +17,6 @@ package sleeper.splitter.lambda;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -48,7 +47,6 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -133,16 +131,9 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> receiveSplitPartitionCommitMessages() {
-        return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.body()))
-                .collect(Collectors.toList());
-    }
-
-    private List<Message> receiveCommitMessages() {
-        return sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .maxNumberOfMessages(10))
-                .messages();
+        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .map(new StateStoreCommitRequestSerDe(tableProperties)::fromJson)
+                .toList();
     }
 
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {

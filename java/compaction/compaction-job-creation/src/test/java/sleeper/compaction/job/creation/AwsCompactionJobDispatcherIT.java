@@ -16,9 +16,6 @@
 package sleeper.compaction.job.creation;
 
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -211,32 +208,17 @@ public class AwsCompactionJobDispatcherIT extends LocalStackTestBase {
     }
 
     private List<CompactionJob> receiveCompactionJobs() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .build());
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .map(new CompactionJobSerDe()::fromJson).toList();
     }
 
     private List<CompactionJobDispatchRequest> recievePendingBatches() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .build());
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
 
     private List<CompactionJobDispatchRequest> receiveDeadLetters() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
-                .maxNumberOfMessages(10)
-                .build());
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
                 .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
 
