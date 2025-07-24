@@ -47,25 +47,25 @@ import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getLotsOfRows;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows2DimByteArrayKey;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRowsByteArrayKey;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRowsForAggregationIteratorTest;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRowsInFirstPartitionOnly;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRowsOscillatingBetween2Partitions;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getUnsortedRows;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getLotsOfRows;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows2DimByteArrayKey;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRowsByteArrayKey;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRowsForAggregationIteratorTest;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRowsInFirstPartitionOnly;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRowsOscillatingBetween2Partitions;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getUnsortedRows;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.readRowsFromParquetFile;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.schemaWithRowKeys;
 
-class IngestRecordsIT extends IngestRecordsTestBase {
+class IngestRowsIT extends IngestRowsTestBase {
     @BeforeEach
     void setUp() {
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
     }
 
     @Test
-    void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
+    void shouldWriteRowsSplitByPartitionLongKey() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -73,10 +73,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestRecords(stateStore, getRows()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRows()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(2);
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -90,10 +90,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         fileReferenceFactory.partitionFile("L", 1L),
                         fileReferenceFactory.partitionFile("R", 1L));
-        //  - Read files and check they have the correct records
-        assertThat(readRecords(leftFile))
+        //  - Read files and check they have the correct rows
+        assertThat(readRows(leftFile))
                 .containsExactly(getRows().get(0));
-        assertThat(readRecords(rightFile))
+        assertThat(readRows(rightFile))
                 .containsExactly(getRows().get(1));
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, leftFile, sketchesStore))
@@ -115,7 +115,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
+    void shouldWriteRowsSplitByPartitionByteArrayKey() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         setSchema(schemaWithRowKeys(field));
@@ -125,10 +125,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestRecords(stateStore, getRowsByteArrayKey()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsByteArrayKey()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(3);
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -142,12 +142,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         fileReferenceFactory.partitionFile("L", 2L),
                         fileReferenceFactory.partitionFile("R", 1L));
-        //  - Read files and check they have the correct records
-        assertThat(readRecordsFromParquetFile(leftFile.getFilename(), schema))
+        //  - Read files and check they have the correct rows
+        assertThat(readRowsFromParquetFile(leftFile.getFilename(), schema))
                 .containsExactly(
                         getRowsByteArrayKey().get(0),
                         getRowsByteArrayKey().get(1));
-        assertThat(readRecordsFromParquetFile(rightFile.getFilename(), schema))
+        assertThat(readRowsFromParquetFile(rightFile.getFilename(), schema))
                 .containsExactly(
                         getRowsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct
@@ -170,7 +170,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
+    void shouldWriteRowsSplitByPartition2DimensionalByteArrayKey() throws Exception {
         // Given
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
@@ -181,10 +181,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestRecords(stateStore, getRows2DimByteArrayKey()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRows2DimByteArrayKey()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(getRows2DimByteArrayKey().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -198,12 +198,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         fileReferenceFactory.partitionFile("L", 2L),
                         fileReferenceFactory.partitionFile("R", 3L));
-        //  - Read files and check they have the correct records
-        assertThat(readRecords(leftFile, schema))
+        //  - Read files and check they have the correct rows
+        assertThat(readRows(leftFile, schema))
                 .containsExactly(
                         getRows2DimByteArrayKey().get(0),
                         getRows2DimByteArrayKey().get(4));
-        assertThat(readRecords(rightFile, schema))
+        assertThat(readRows(rightFile, schema))
                 .containsExactly(
                         getRows2DimByteArrayKey().get(1),
                         getRows2DimByteArrayKey().get(2),
@@ -238,7 +238,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
+    void shouldWriteRowsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
         // Given
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
@@ -274,12 +274,11 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
-        //  appear in partition 1 then partition 2 then partition 1, then 2, etc
-        long numWritten = ingestRecords(stateStore, getRowsOscillatingBetween2Partitions()).getRecordsWritten();
+        //  - When sorted the rows appear in partition 1 then partition 2 then partition 1, then 2, etc
+        long numWritten = ingestRows(stateStore, getRowsOscillatingBetween2Partitions()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(getRowsOscillatingBetween2Partitions().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -293,12 +292,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .containsExactly(
                         fileReferenceFactory.partitionFile("L", 2L),
                         fileReferenceFactory.partitionFile("R", 2L));
-        //  - Read files and check they have the correct records
-        assertThat(readRecords(leftFile, schema))
+        //  - Read files and check they have the correct rows
+        assertThat(readRows(leftFile, schema))
                 .containsExactly(
                         getRowsOscillatingBetween2Partitions().get(0),
                         getRowsOscillatingBetween2Partitions().get(2));
-        assertThat(readRecords(rightFile, schema))
+        assertThat(readRows(rightFile, schema))
                 .containsExactly(
                         getRowsOscillatingBetween2Partitions().get(1),
                         getRowsOscillatingBetween2Partitions().get(3));
@@ -332,17 +331,17 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
+    void shouldWriteRowsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
 
         // When
-        long numWritten = ingestRecords(stateStore, getRowsInFirstPartitionOnly()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsInFirstPartitionOnly()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(getRowsInFirstPartitionOnly().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -352,9 +351,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(fileReferences)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.partitionFile("L", 2L));
-        //  - Read files and check they have the correct records
+        //  - Read files and check they have the correct rows
         FileReference leftFile = fileReferences.get(0);
-        assertThat(readRecords(leftFile, schema))
+        assertThat(readRows(leftFile, schema))
                 .containsExactly(
                         getRowsInFirstPartitionOnly().get(1),
                         getRowsInFirstPartitionOnly().get(0));
@@ -370,17 +369,17 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteDuplicateRecords() throws Exception {
+    void shouldWriteDuplicateRows() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        List<Row> records = new ArrayList<>(getRows());
-        records.addAll(getRows());
-        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
+        List<Row> rows = new ArrayList<>(getRows());
+        rows.addAll(getRows());
+        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(2L * getRows().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -391,8 +390,8 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile(4L));
         FileReference fileReference = fileReferences.get(0);
-        //  - Read file and check it has correct records
-        assertThat(readRecords(fileReference))
+        //  - Read file and check it has correct rows
+        assertThat(readRows(fileReference))
                 .containsExactly(
                         getRows().get(0),
                         getRows().get(0),
@@ -410,21 +409,21 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    void shouldWriteRowsWhenThereAreMoreRowsInAPartitionThanCanFitInMemory() throws Exception {
         // Given
         instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
-        List<Row> records = getLotsOfRows();
+        List<Row> rows = getLotsOfRows();
 
         // When
-        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(records.size());
+        //  - Check the correct number of rows were written
+        assertThat(numWritten).isEqualTo(rows.size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         List<FileReference> fileReferences = stateStore.getFileReferences().stream()
@@ -438,16 +437,16 @@ class IngestRecordsIT extends IngestRecordsTestBase {
 
         FileReference leftFile = fileReferences.get(0);
         FileReference rightFile = fileReferences.get(1);
-        List<Row> leftRecords = records.stream()
+        List<Row> leftRows = rows.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .collect(Collectors.toList());
-        assertThat(readRecords(leftFile, schema))
-                .containsExactlyInAnyOrderElementsOf(leftRecords);
-        List<Row> rightRecords = records.stream()
+        assertThat(readRows(leftFile, schema))
+                .containsExactlyInAnyOrderElementsOf(leftRows);
+        List<Row> rightRows = rows.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
-        assertThat(readRecords(rightFile, schema))
-                .containsExactlyInAnyOrderElementsOf(rightRecords);
+        assertThat(readRows(rightFile, schema))
+                .containsExactlyInAnyOrderElementsOf(rightRows);
 
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, leftFile, sketchesStore))
@@ -469,7 +468,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+    void shouldWriteRowsWhenThereAreMoreRowsThanCanFitInLocalFile() throws Exception {
         // Given
         instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 10L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
@@ -479,44 +478,44 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<Row> rows = getLotsOfRows();
 
         // When
-        long numWritten = ingestRecords(stateStore, rows).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(rows.size());
         //  - Check that the correct number of files have been written
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
         assertThat(partitionToFileMapping.get("L")).hasSize(40);
         assertThat(partitionToFileMapping.get("R")).hasSize(40);
         //  - Check that the files in each partition contain the correct data
-        List<Row> expectedLeftRecords = rows.stream()
+        List<Row> expectedLeftRows = rows.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .collect(Collectors.toList());
-        assertThat(readRecords(partitionToFileMapping.get("L").stream()))
-                .containsExactlyInAnyOrderElementsOf(expectedLeftRecords);
+        assertThat(readRows(partitionToFileMapping.get("L").stream()))
+                .containsExactlyInAnyOrderElementsOf(expectedLeftRows);
         //  - Merge the sketch files for the partition and check it has the right properties
         assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("L"), sketchesStore))
-                .isEqualTo(SketchesDeciles.from(schema, expectedLeftRecords));
-        List<Row> expectedRightRecords = rows.stream()
+                .isEqualTo(SketchesDeciles.from(schema, expectedLeftRows));
+        List<Row> expectedRightRows = rows.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .collect(Collectors.toList());
-        assertThat(readRecords(partitionToFileMapping.get("R").stream()))
-                .containsExactlyInAnyOrderElementsOf(expectedRightRecords);
+        assertThat(readRows(partitionToFileMapping.get("R").stream()))
+                .containsExactlyInAnyOrderElementsOf(expectedRightRows);
         //  - Merge the sketch files for the partition and check it has the right properties
         assertThat(SketchesDeciles.fromFiles(schema, partitionToFileMapping.get("R"), sketchesStore))
-                .isEqualTo(SketchesDeciles.from(schema, expectedRightRecords));
+                .isEqualTo(SketchesDeciles.from(schema, expectedRightRows));
     }
 
     @Test
-    void shouldSortRecords() throws Exception {
+    void shouldSortRows() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        long numWritten = ingestRecords(stateStore, getUnsortedRows()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getUnsortedRows()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(getUnsortedRows().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -526,8 +525,8 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(fileReferences)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile(20L));
-        //  - Read file and check it has correct records
-        assertThat(readRecords(fileReferences.get(0)))
+        //  - Read file and check it has correct rows
+        assertThat(readRows(fileReferences.get(0)))
                 .containsExactlyElementsOf(getUnsortedRows().stream()
                         .sorted(Comparator.comparing(o -> (Long) o.get("key")))
                         .collect(Collectors.toList()));
@@ -554,10 +553,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        long numWritten = ingestRecords(stateStore, getRowsForAggregationIteratorTest()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsForAggregationIteratorTest()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(2L);
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -567,8 +566,8 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(fileReferences)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile(2L));
-        //  - Read file and check it has correct records
-        assertThat(readRecords(fileReferences.get(0), schema))
+        //  - Read file and check it has correct rows
+        assertThat(readRows(fileReferences.get(0), schema))
                 .containsExactly(
                         new Row(Map.of(
                                 "key", new byte[]{1, 1},

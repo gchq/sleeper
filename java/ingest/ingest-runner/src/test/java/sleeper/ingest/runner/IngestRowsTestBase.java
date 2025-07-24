@@ -30,7 +30,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.core.IngestResult;
-import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
+import sleeper.ingest.runner.testutils.IngestRowsTestDataHelper;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 
@@ -42,12 +42,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.defaultInstanceProperties;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.defaultTableProperties;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.readRowsFromParquetFile;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.schemaWithRowKeys;
 
-public class IngestRecordsTestBase {
+public class IngestRowsTestBase {
     @TempDir
     public Path tempDir;
 
@@ -72,15 +72,15 @@ public class IngestRecordsTestBase {
         this.schema = schema;
     }
 
-    protected IngestResult ingestRecords(StateStore stateStore, List<Row> rows) throws Exception {
+    protected IngestResult ingestRows(StateStore stateStore, List<Row> rows) throws Exception {
         IngestFactory factory = createIngestFactory(stateStore);
 
-        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
-        ingestRecords.init();
+        IngestRows ingestRows = factory.createIngestRows(tableProperties);
+        ingestRows.init();
         for (Row row : rows) {
-            ingestRecords.write(row);
+            ingestRows.write(row);
         }
-        return ingestRecords.close();
+        return ingestRows.close();
     }
 
     protected IngestResult ingestFromRowIterator(StateStore stateStore, Iterator<Row> iterator) throws IteratorCreationException, IOException {
@@ -89,22 +89,22 @@ public class IngestRecordsTestBase {
     }
 
     private IngestFactory createIngestFactory(StateStore stateStore) {
-        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName,
+        return IngestRowsTestDataHelper.createIngestFactory(inputFolderName,
                 new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
 
-    protected static List<Row> readRecords(FileReference fileReference, Schema schema) throws Exception {
-        return readRecordsFromParquetFile(fileReference.getFilename(), schema);
+    protected static List<Row> readRows(FileReference fileReference, Schema schema) throws Exception {
+        return readRowsFromParquetFile(fileReference.getFilename(), schema);
     }
 
-    protected List<Row> readRecords(FileReference... fileReferences) {
-        return readRecords(Stream.of(fileReferences).map(FileReference::getFilename));
+    protected List<Row> readRows(FileReference... fileReferences) {
+        return readRows(Stream.of(fileReferences).map(FileReference::getFilename));
     }
 
-    protected List<Row> readRecords(Stream<String> filenames) {
+    protected List<Row> readRows(Stream<String> filenames) {
         return filenames.map(filename -> {
             try {
-                return readRecordsFromParquetFile(filename, schema);
+                return readRowsFromParquetFile(filename, schema);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

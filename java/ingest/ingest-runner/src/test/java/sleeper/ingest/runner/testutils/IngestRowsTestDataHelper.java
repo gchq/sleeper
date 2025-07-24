@@ -52,9 +52,9 @@ import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
-public class IngestRecordsTestDataHelper {
+public class IngestRowsTestDataHelper {
 
-    private IngestRecordsTestDataHelper() {
+    private IngestRowsTestDataHelper() {
     }
 
     public static TableProperties defaultTableProperties(Schema schema, InstanceProperties instanceProperties) {
@@ -269,22 +269,22 @@ public class IngestRecordsTestDataHelper {
         return rows;
     }
 
-    public static List<Row> readIngestedRecords(IngestResult result, Schema schema) {
+    public static List<Row> readIngestedRows(IngestResult result, Schema schema) {
         return result.getFileReferenceList().stream()
                 .map(FileReference::getFilename)
-                .flatMap(filename -> readRecordsFromParquetFileOrThrow(filename, schema).stream())
+                .flatMap(filename -> readRowsFromParquetFileOrThrow(filename, schema).stream())
                 .collect(Collectors.toList());
     }
 
-    public static List<Row> readRecordsFromParquetFileOrThrow(String filename, Schema schema) {
+    public static List<Row> readRowsFromParquetFileOrThrow(String filename, Schema schema) {
         try {
-            return readRecordsFromParquetFile(filename, schema);
+            return readRowsFromParquetFile(filename, schema);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed reading records", e);
+            throw new IllegalStateException("Failed reading rows", e);
         }
     }
 
-    public static List<Row> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
+    public static List<Row> readRowsFromParquetFile(String filename, Schema schema) throws IOException {
         ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
         List<Row> readRows = new ArrayList<>();
         Row row = reader.read();

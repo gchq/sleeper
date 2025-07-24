@@ -35,13 +35,13 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getSingleRow;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getSingleRow;
 
-class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
+class IngestRowsFromIteratorIT extends IngestRowsTestBase {
 
     @Test
-    void shouldWriteMultipleRecords() throws Exception {
+    void shouldWriteMultipleRows() throws Exception {
         // Given
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
@@ -53,7 +53,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         long numWritten = ingestFromRowIterator(stateStore, getRows().iterator()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(getRows().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -66,12 +66,12 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .containsExactly(
                         fileReferenceFactory.partitionFile("L", 1L),
                         fileReferenceFactory.partitionFile("R", 1L));
-        //  - Read files and check they have the correct records
+        //  - Read files and check they have the correct rows
         FileReference leftFile = fileReferences.get(0);
         FileReference rightFile = fileReferences.get(1);
-        assertThat(readRecords(leftFile))
+        assertThat(readRows(leftFile))
                 .containsExactly(getRows().get(0));
-        assertThat(readRecords(rightFile))
+        assertThat(readRows(rightFile))
                 .containsExactly(getRows().get(1));
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, leftFile, sketchesStore))
@@ -93,7 +93,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteSingleRecord() throws Exception {
+    void shouldWriteSingleRow() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -104,7 +104,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         long numWritten = ingestFromRowIterator(stateStore, getSingleRow().iterator()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(getSingleRow().size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -115,8 +115,8 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(fileReferences)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.partitionFile("L", 1L));
-        //  - Read files and check they have the correct records
-        assertThat(readRecords(fileReferences.get(0)))
+        //  - Read files and check they have the correct rows
+        assertThat(readRows(fileReferences.get(0)))
                 .containsExactly(getSingleRow().get(0));
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
@@ -130,7 +130,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     }
 
     @Test
-    void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
+    void shouldWriteNoRowsWhenIteratorIsEmpty() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .singlePartition("root")
@@ -140,7 +140,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         long numWritten = ingestFromRowIterator(stateStore, Collections.emptyIterator()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
         assertThat(stateStore.getFileReferences()).isEmpty();

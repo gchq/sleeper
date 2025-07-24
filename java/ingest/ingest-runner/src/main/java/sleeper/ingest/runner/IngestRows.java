@@ -24,13 +24,13 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import java.io.IOException;
 
 /**
- * Writes records to the storage system, partitioned and sorted. This class is an adapter to {@link IngestCoordinator}.
+ * Writes rows to the storage system, partitioned and sorted. This class is an adapter to {@link IngestCoordinator}.
  */
-public class IngestRecords {
+public class IngestRows {
 
     private final IngestCoordinator<Row> ingestCoordinator;
 
-    public IngestRecords(IngestCoordinator<Row> ingestCoordinator) {
+    public IngestRows(IngestCoordinator<Row> ingestCoordinator) {
         this.ingestCoordinator = ingestCoordinator;
     }
 

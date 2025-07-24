@@ -35,11 +35,11 @@ public class IngestRecordsFromIterator {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecordsFromIterator.class);
 
     private final Iterator<Row> rowsIterator;
-    private final IngestRecords ingestRecords;
+    private final IngestRows ingestRecords;
 
     public IngestRecordsFromIterator(IngestCoordinator<Row> ingestCoordinator, Iterator<Row> rowsIterator) {
         this.rowsIterator = rowsIterator;
-        this.ingestRecords = new IngestRecords(ingestCoordinator);
+        this.ingestRecords = new IngestRows(ingestCoordinator);
     }
 
     public IngestResult write() throws StateStoreException, IteratorCreationException, IOException {

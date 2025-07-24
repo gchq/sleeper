@@ -24,57 +24,38 @@ import sleeper.core.statestore.StateStore;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRows;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
 
-public class IngestRecordsLocalStackIT extends IngestRecordsLocalStackITBase {
+public class IngestRowsFromIteratorLocalStackIT extends IngestRowsLocalStackITBase {
     @Test
-    public void shouldWriteRecordsCorrectly() throws Exception {
+    public void shouldWriteRowsCorrectly() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
         List<Row> rows = getRows();
 
         // When
-        long numWritten = ingestRecords(stateStore, rows).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, rows.iterator()).getRecordsWritten();
 
         // Then:
-        //  - Check the correct number of records were written
+        //  - Check the correct number of rows were written
         assertThat(numWritten).isEqualTo(rows.size());
         //  - Check StateStore has correct information
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
-        List<FileReference> fileReferences = stateStore.getFileReferences().stream()
-                .sorted(Comparator.comparing(FileReference::getPartitionId))
-                .collect(Collectors.toList());
+        List<FileReference> fileReferences = stateStore.getFileReferences();
         assertThat(fileReferences)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileReferenceFactory.rootFile(2L));
-        //  - Read file and check it has correct records
-        assertThat(readRecords(fileReferences))
+                .containsExactly(
+                        fileReferenceFactory.rootFile(2L));
+        //  - Read file and check it has correct rows
+        assertThat(readRows(fileReferences))
                 .containsExactlyElementsOf(rows);
         //  - Local files should have been deleted
         assertThat(Paths.get(ingestLocalFiles)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct
         assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
                 .isEqualTo(SketchesDeciles.from(schema, rows));
-    }
-
-    @Test
-    public void shouldWriteNoRecordsSuccessfully() throws Exception {
-        // Given
-        StateStore stateStore = initialiseStateStore();
-
-        // When
-        long numWritten = ingestRecords(stateStore, Collections.emptyList()).getRecordsWritten();
-
-        // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isZero();
-        //  - Check StateStore has correct information
-        assertThat(stateStore.getFileReferences()).isEmpty();
     }
 }

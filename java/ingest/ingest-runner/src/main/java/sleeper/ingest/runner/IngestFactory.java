@@ -86,8 +86,8 @@ public class IngestFactory {
         }
     }
 
-    public IngestRecords createIngestRecords(TableProperties tableProperties) {
-        return new IngestRecords(createIngestCoordinator(tableProperties));
+    public IngestRows createIngestRows(TableProperties tableProperties) {
+        return new IngestRows(createIngestCoordinator(tableProperties));
     }
 
     public IngestCoordinator.Builder<Row> ingestCoordinatorBuilder(TableProperties tableProperties) {

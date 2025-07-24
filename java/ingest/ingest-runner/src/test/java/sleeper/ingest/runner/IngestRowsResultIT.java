@@ -37,9 +37,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readIngestedRecords;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.readIngestedRows;
 
-class IngestRecordsResultIT extends IngestRecordsTestBase {
+class IngestRowsResultIT extends IngestRowsTestBase {
 
     @BeforeEach
     void setUp() {
@@ -94,10 +94,10 @@ class IngestRecordsResultIT extends IngestRecordsTestBase {
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClass.getName());
         tableProperties.set(ITERATOR_CONFIG, iteratorConfig);
         StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
-        return ingestRecords(stateStore, rows);
+        return ingestRows(stateStore, rows);
     }
 
     private List<Row> readRecords(IngestResult result) {
-        return readIngestedRecords(result, schema);
+        return readIngestedRows(result, schema);
     }
 }

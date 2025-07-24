@@ -47,10 +47,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.schemaWithRowKeys;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
-public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
+public class IngestRowsLocalStackITBase extends LocalStackTestBase {
     @TempDir
     private static Path tempDir;
 
@@ -74,15 +74,15 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
         return stateStore;
     }
 
-    protected IngestResult ingestRecords(StateStore stateStore, List<Row> rows) throws Exception {
+    protected IngestResult ingestRows(StateStore stateStore, List<Row> rows) throws Exception {
         IngestFactory factory = createIngestFactory(stateStore);
 
-        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
-        ingestRecords.init();
+        IngestRows ingestRows = factory.createIngestRows(tableProperties);
+        ingestRows.init();
         for (Row row : rows) {
-            ingestRecords.write(row);
+            ingestRows.write(row);
         }
-        return ingestRecords.close();
+        return ingestRows.close();
     }
 
     protected IngestResult ingestFromRowIterator(StateStore stateStore, Iterator<Row> iterator) throws IteratorCreationException, IOException {
@@ -90,7 +90,7 @@ public class IngestRecordsLocalStackITBase extends LocalStackTestBase {
         return factory.ingestFromRowIterator(tableProperties, iterator);
     }
 
-    protected List<Row> readRecords(List<FileReference> fileReferences) {
+    protected List<Row> readRows(List<FileReference> fileReferences) {
         return readMergedRowsFromPartitionDataFiles(schema, fileReferences, hadoopConf);
     }
 
