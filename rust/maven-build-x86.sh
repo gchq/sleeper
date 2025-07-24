@@ -16,4 +16,4 @@
 set -e
 
 # Redirect stderr to stdout, so that Maven will log the output at INFO level instead of ERROR
-cross "$@" 2>&1
+cargo build --release --target x86_64-unknown-linux-gnu --verbose "$@" 2>&1

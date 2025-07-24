@@ -98,15 +98,9 @@
                                 </goals>
                                 <configuration>
                                     <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/maven-build-x86.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
-                                    <arguments>
-                                        <argument>build</argument>
-                                        <argument>--release</argument>
-                                        <argument>--target</argument>
-                                        <argument>x86_64-unknown-linux-gnu</argument>
-                                    </arguments>
                                 </configuration>
                             </execution>
                             <execution>
@@ -117,18 +111,9 @@
                                 </goals>
                                 <configuration>
                                     <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/maven-build-arm.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
-                                    <arguments>
-                                        <argument>build</argument>
-                                        <argument>--release</argument>
-                                        <argument>--target</argument>
-                                        <argument>aarch64-unknown-linux-gnu</argument>
-                                    </arguments>
-                                    <environmentVariables>
-                                        <RUSTFLAGS>-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1</RUSTFLAGS>
-                                    </environmentVariables>
                                 </configuration>
                             </execution>
                         </executions>
