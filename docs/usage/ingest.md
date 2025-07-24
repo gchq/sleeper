@@ -100,7 +100,7 @@ distributed process.
 For ingesting any significant volumes of data, the bulk import process is preferred because it is faster and results in
 less compaction work later. The standard ingest process is mainly used for testing purposes.
 
-The standard ingest process can be called from Java on any `Iterable` of `Record`s, with the class `IngestFactory`.
+The standard ingest process can be called from Java on any `Iterable` of `Row`s, with the class `IngestFactory`.
 There is also an `IngestStack` which deploys an ECS cluster, and creates ECS tasks to run ingest when you send a message
 to an ingest queue in SQS.
 
@@ -122,10 +122,10 @@ By default, a new Sleeper instance includes `EmrServerlessBulkImportStack`, `Ing
 ## What ingest rate does Sleeper support?
 
 In theory, an arbitrary number of ingest jobs can run simultaneously. If the limits on your AWS account allowed
-it, you could have 100 EMR clusters each running a job to import 10 billion records. Each job will be writing
+it, you could have 100 EMR clusters each running a job to import 10 billion rows. Each job will be writing
 files to S3, and when it is finished the state store will be updated. All of these operations are independent.
 Therefore the only limit is the capacity of the S3 bucket to receive data and the capacity of the state store to receive
-updates. Thus if the 100 bulk import jobs complete at roughly the same time, the number of records in the table would
+updates. Thus if the 100 bulk import jobs complete at roughly the same time, the number of rows in the table would
 increase by 1 trillion very quickly.
 
 However, in order for a query to return results quickly, there needs to be a modest number of files in each

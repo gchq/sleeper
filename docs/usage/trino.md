@@ -420,8 +420,8 @@ returned.
 ### Transactions
 
 Database transactions would help to avoid situations such as an index table containing data, but a base table not
-holding the correponding record, due to an error occurring during ingest. Trino supports transactions, but Sleeper does
-not.
+holding the correponding row, due to an error occurring during ingest. Trino supports transactions, but Sleeper does
+not support transactions across multiple tables.
 
 At the moment, during an insert operation, the Trino plugin creates a number of partition files in S3 and then updates
 the Sleeper state store. The files are not available to query until the state store has been updated, and this update is
@@ -465,11 +465,11 @@ This would be experimental work.
 Trino supports updates and deletes. Sleeper does not support them, but it could be made to support them in the following
 way:
 
-- Add a boolean column indicating whether the record has been deleted or not
-- Create an iterator which returns just the most recent record for any row key, or no record if the most recent record
+- Add a boolean column indicating whether the row has been deleted or not
+- Create an iterator which returns just the most recent row for any row key, or no row if the most recent row
   has been deleted
-- Updates and deletes add newer records which will eclipse the older records
-- Over time, the older records will disappear through compaction iterators
+- Updates and deletes add newer rows which will eclipse the older rows
+- Over time, the older rows will disappear through compaction iterators
 
 The SQL commands UPDATE and DELETE could be implemented to support these operations.
 
@@ -479,4 +479,4 @@ The SQL commands UPDATE and DELETE could be implemented to support these operati
   state, when they will be garbage-collected.
 - The EXPLAIN ANALYSE command provides various statistics to the user, such as the number of bytes read and the time
   elapsed. These figures are useful to a user to help them to optimise the queries. The plugin does not currently make
-  these values available to the Trino framework. 
+  these values available to the Trino framework.
