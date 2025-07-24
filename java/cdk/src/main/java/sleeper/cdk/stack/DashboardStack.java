@@ -160,7 +160,7 @@ public class DashboardStack extends NestedStack {
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
                             .stacked(true)
-                            .title("NumRecordsWritten")
+                            .title("NumRowsWritten")
                             .left(
                                     IntStream.range(0, tableNames.size())
                                             .mapToObj(i -> MathExpression.Builder.create()
@@ -215,10 +215,10 @@ public class DashboardStack extends NestedStack {
                             .build(),
                     GraphWidget.Builder.create()
                             .view(GraphWidgetView.TIME_SERIES)
-                            .title("RecordCount")
+                            .title("RowCount")
                             .left(List.of(Metric.Builder.create()
                                     .namespace(metricsNamespace)
-                                    .metricName("RecordCount")
+                                    .metricName("RowCount")
                                     .unit(Unit.COUNT)
                                     .period(window)
                                     .statistic("Average")

@@ -42,7 +42,7 @@ public class TableMetrics {
     private final String instanceId;
     private final String tableName;
     private final int fileCount;
-    private final long recordCount;
+    private final long rowCount;
     private final int partitionCount;
     private final int leafPartitionCount;
     private final double averageFileReferencesPerPartition;
@@ -51,7 +51,7 @@ public class TableMetrics {
         instanceId = builder.instanceId;
         tableName = builder.tableName;
         fileCount = builder.fileCount;
-        recordCount = builder.recordCount;
+        rowCount = builder.rowCount;
         partitionCount = builder.partitionCount;
         leafPartitionCount = builder.leafPartitionCount;
         averageFileReferencesPerPartition = builder.averageFileReferencesPerPartition;
@@ -77,8 +77,8 @@ public class TableMetrics {
         List<FileReference> fileReferences = files.streamFileReferences().toList();
         LOGGER.info("Found {} files for table {}", referencedFiles.size(), table);
         LOGGER.info("Found {} file references for table {}", fileReferences.size(), table);
-        long recordCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
-        LOGGER.info("Total number of records in table {} is {}", table, recordCount);
+        long rowCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        LOGGER.info("Total number of rows in table {} is {}", table, rowCount);
 
         Map<String, Long> fileCountByPartitionId = fileReferences.stream()
                 .collect(Collectors.groupingBy(FileReference::getPartitionId, Collectors.counting()));
@@ -98,7 +98,7 @@ public class TableMetrics {
                 .partitionCount(partitionCount)
                 .leafPartitionCount(leafPartitionCount)
                 .fileCount(referencedFiles.size())
-                .recordCount(recordCount)
+                .rowCount(rowCount)
                 .averageFileReferencesPerPartition(filesPerPartitionStats.getAverage())
                 .build();
     }
@@ -115,8 +115,8 @@ public class TableMetrics {
         return fileCount;
     }
 
-    public long getRecordCount() {
-        return recordCount;
+    public long getRowCount() {
+        return rowCount;
     }
 
     public int getPartitionCount() {
@@ -140,14 +140,14 @@ public class TableMetrics {
             return false;
         }
         TableMetrics that = (TableMetrics) object;
-        return fileCount == that.fileCount && recordCount == that.recordCount && partitionCount == that.partitionCount && leafPartitionCount == that.leafPartitionCount
+        return fileCount == that.fileCount && rowCount == that.rowCount && partitionCount == that.partitionCount && leafPartitionCount == that.leafPartitionCount
                 && Double.compare(averageFileReferencesPerPartition, that.averageFileReferencesPerPartition) == 0 && Objects.equals(instanceId, that.instanceId)
                 && Objects.equals(tableName, that.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(instanceId, tableName, fileCount, recordCount, partitionCount, leafPartitionCount, averageFileReferencesPerPartition);
+        return Objects.hash(instanceId, tableName, fileCount, rowCount, partitionCount, leafPartitionCount, averageFileReferencesPerPartition);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class TableMetrics {
                 "instanceId='" + instanceId + '\'' +
                 ", tableName='" + tableName + '\'' +
                 ", fileCount=" + fileCount +
-                ", recordCount=" + recordCount +
+                ", rowCount=" + rowCount +
                 ", partitionCount=" + partitionCount +
                 ", leafPartitionCount=" + leafPartitionCount +
                 ", averageFileReferencesPerPartition=" + averageFileReferencesPerPartition +
@@ -170,7 +170,7 @@ public class TableMetrics {
         private String instanceId;
         private String tableName;
         private int fileCount;
-        private long recordCount;
+        private long rowCount;
         private int partitionCount;
         private int leafPartitionCount;
         private double averageFileReferencesPerPartition;
@@ -213,13 +213,13 @@ public class TableMetrics {
         }
 
         /**
-         * Sets the number of records in the Sleeper table. This may include estimated counts.
+         * Sets the number of rows in the Sleeper table. This may include estimated counts.
          *
-         * @param  recordCount the number of records in the table
-         * @return             this builder
+         * @param  rowCount the number of rows in the table
+         * @return          this builder
          */
-        public Builder recordCount(long recordCount) {
-            this.recordCount = recordCount;
+        public Builder rowCount(long rowCount) {
+            this.rowCount = rowCount;
             return this;
         }
 

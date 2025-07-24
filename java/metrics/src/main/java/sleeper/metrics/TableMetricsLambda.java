@@ -133,7 +133,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
                 "tableName", tableMetrics.getTableName()));
 
         metrics.addMetric("NumberOfFilesWithReferences", tableMetrics.getFileCount(), MetricUnit.COUNT);
-        metrics.addMetric("RecordCount", tableMetrics.getRecordCount(), MetricUnit.COUNT);
+        metrics.addMetric("RowCount", tableMetrics.getRowCount(), MetricUnit.COUNT);
         metrics.addMetric("PartitionCount", tableMetrics.getPartitionCount(), MetricUnit.COUNT);
         metrics.addMetric("LeafPartitionCount", tableMetrics.getLeafPartitionCount(), MetricUnit.COUNT);
         // TODO: Work out how to publish min and max active files per partition too

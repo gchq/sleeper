@@ -65,7 +65,7 @@ public class TableMetricsDslTest {
         // Then
         assertThat(metrics).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(2).recordCount(123)
+                .fileCount(2).rowCount(123)
                 .averageFileReferencesPerPartition(1.5)
                 .build());
     }
@@ -92,17 +92,17 @@ public class TableMetricsDslTest {
         assertThat(sleeper.tables().list()).hasSize(3);
         assertThat(sleeper.table("A").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(2).recordCount(123)
+                .fileCount(2).rowCount(123)
                 .averageFileReferencesPerPartition(1.5)
                 .build());
         assertThat(sleeper.table("B").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(1).recordCount(100)
+                .fileCount(1).rowCount(100)
                 .averageFileReferencesPerPartition(1)
                 .build());
         assertThat(sleeper.table("C").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(1).recordCount(100)
+                .fileCount(1).rowCount(100)
                 .averageFileReferencesPerPartition(1)
                 .build());
     }
