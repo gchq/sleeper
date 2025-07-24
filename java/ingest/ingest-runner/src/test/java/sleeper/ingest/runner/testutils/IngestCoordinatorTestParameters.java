@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -222,11 +222,11 @@ public class IngestCoordinatorTestParameters {
         }
 
         public Builder backedByArrow() {
-            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow"));
+            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_ROW_BATCH_TYPE, "arrow"));
         }
 
         public Builder backedByArrayList() {
-            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist"));
+            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_ROW_BATCH_TYPE, "arraylist"));
         }
 
         public Builder localDirectWrite() {

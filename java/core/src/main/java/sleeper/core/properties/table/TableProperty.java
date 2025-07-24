@@ -77,7 +77,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
@@ -169,7 +169,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
-            .description("Partitions in this table with more than the following number of records in will be split.")
+            .description("Partitions in this table with more than the following number of rows in will be split.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty PARTITION_SPLIT_ASYNC_COMMIT = Index.propertyBuilder("sleeper.table.partition.splitting.commit.async")
@@ -412,17 +412,17 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty FILES_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.table.statestore.transactionlog.files.snapshot.batch.size")
             .defaultProperty(DEFAULT_FILES_SNAPSHOT_BATCH_SIZE)
-            .description("The number of elements to include per Arrow record batch in a snapshot derived from the " +
+            .description("The number of elements to include per Arrow row batch in a snapshot derived from the " +
                     "transaction log, of the state of files in a Sleeper table. Each file includes some number of " +
-                    "references on different partitions. Each reference will count for one element in a record " +
-                    "batch, but a file cannot currently be split between record batches. A record batch may contain " +
+                    "references on different partitions. Each reference will count for one element in a row " +
+                    "batch, but a file cannot currently be split between row batches. A row batch may contain " +
                     "more file references than this if a single file overflows the batch. A file with no references " +
                     "counts as one element.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty PARTITIONS_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.table.statestore.transactionlog.partitions.snapshot.batch.size")
             .defaultProperty(DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE)
-            .description("The number of partitions to include per Arrow record batch in a snapshot derived from the " +
+            .description("The number of partitions to include per Arrow row batch in a snapshot derived from the " +
                     "transaction log, of the state of partitions in a Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
@@ -634,11 +634,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Specifies the strategy that ingest uses to creates files and references in partitions.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(IngestFileWritingStrategy.class))
             .propertyGroup(TablePropertyGroup.INGEST).build();
-    TableProperty INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.table.ingest.record.batch.type")
-            .defaultProperty(DEFAULT_INGEST_RECORD_BATCH_TYPE)
-            .description("The way in which records are held in memory before they are written to a local store.\n" +
+    TableProperty INGEST_ROW_BATCH_TYPE = Index.propertyBuilder("sleeper.table.ingest.row.batch.type")
+            .defaultProperty(DEFAULT_INGEST_ROW_BATCH_TYPE)
+            .description("The way in which rows are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +
-                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
+                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of rows in each batch.")
             .propertyGroup(TablePropertyGroup.INGEST).build();
     TableProperty INGEST_PARTITION_FILE_WRITER_TYPE = Index.propertyBuilder("sleeper.table.ingest.partition.file.writer.type")
             .defaultProperty(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE)
