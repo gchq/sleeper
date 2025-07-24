@@ -73,7 +73,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestRows(stateStore, getRows()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRows()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -125,7 +125,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestRows(stateStore, getRowsByteArrayKey()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsByteArrayKey()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -181,7 +181,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestRows(stateStore, getRows2DimByteArrayKey()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRows2DimByteArrayKey()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -275,7 +275,7 @@ class IngestRowsIT extends IngestRowsTestBase {
 
         // When
         //  - When sorted the rows appear in partition 1 then partition 2 then partition 1, then 2, etc
-        long numWritten = ingestRows(stateStore, getRowsOscillatingBetween2Partitions()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsOscillatingBetween2Partitions()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -338,7 +338,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
 
         // When
-        long numWritten = ingestRows(stateStore, getRowsInFirstPartitionOnly()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsInFirstPartitionOnly()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -376,7 +376,7 @@ class IngestRowsIT extends IngestRowsTestBase {
         // When
         List<Row> rows = new ArrayList<>(getRows());
         rows.addAll(getRows());
-        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, rows).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -419,7 +419,7 @@ class IngestRowsIT extends IngestRowsTestBase {
         List<Row> rows = getLotsOfRows();
 
         // When
-        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, rows).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -478,7 +478,7 @@ class IngestRowsIT extends IngestRowsTestBase {
         List<Row> rows = getLotsOfRows();
 
         // When
-        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, rows).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -512,7 +512,7 @@ class IngestRowsIT extends IngestRowsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        long numWritten = ingestRows(stateStore, getUnsortedRows()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getUnsortedRows()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -553,7 +553,7 @@ class IngestRowsIT extends IngestRowsTestBase {
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        long numWritten = ingestRows(stateStore, getRowsForAggregationIteratorTest()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, getRowsForAggregationIteratorTest()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written

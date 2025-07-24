@@ -37,7 +37,7 @@ public class IngestRowsFromIteratorLocalStackIT extends IngestRowsLocalStackITBa
         List<Row> rows = getRows();
 
         // When
-        long numWritten = ingestFromRowIterator(stateStore, rows.iterator()).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, rows.iterator()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written

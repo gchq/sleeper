@@ -286,7 +286,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                     List<FileReference> filesWritten = ingestFutures.stream().map(CompletableFuture::join)
                             .flatMap(List::stream).collect(Collectors.toList());
                     IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
-                    long noOfRecordsWritten = result.getRecordsWritten();
+                    long noOfRecordsWritten = result.getRowsWritten();
                     LoggedDuration duration = LoggedDuration.withFullOutput(ingestCoordinatorCreationTime, Instant.now());
                     METRICS_LOGGER.info("Wrote {} records to S3 in {} at {} per second",
                             noOfRecordsWritten,

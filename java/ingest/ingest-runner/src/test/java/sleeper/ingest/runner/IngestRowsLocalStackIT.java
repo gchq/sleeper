@@ -40,7 +40,7 @@ public class IngestRowsLocalStackIT extends IngestRowsLocalStackITBase {
         List<Row> rows = getRows();
 
         // When
-        long numWritten = ingestRows(stateStore, rows).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, rows).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -69,7 +69,7 @@ public class IngestRowsLocalStackIT extends IngestRowsLocalStackITBase {
         StateStore stateStore = initialiseStateStore();
 
         // When
-        long numWritten = ingestRows(stateStore, Collections.emptyList()).getRecordsWritten();
+        long numWritten = ingestRows(stateStore, Collections.emptyList()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written

@@ -112,8 +112,8 @@ public class IngestTask {
                         .taskId(taskId).jobRunId(jobRunId).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
                 Instant jobFinishTime = timeSupplier.get();
-                LOGGER.info("{} records were written", result.getRecordsWritten());
-                JobRunSummary summary = new JobRunSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
+                LOGGER.info("{} records were written", result.getRowsWritten());
+                JobRunSummary summary = new JobRunSummary(result.asRowsProcessed(), jobStartTime, jobFinishTime);
                 jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
                         .committedBySeparateFileUpdates(true)

@@ -24,45 +24,45 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A data structure to store the results of an ingest. Stores file references which were created, and the records
+ * A data structure to store the results of an ingest. Stores file references which were created, and the rows
  * read/written.
  */
 public class IngestResult {
     private final List<FileReference> fileReferenceList;
-    private final long recordsRead;
-    private final long recordsWritten;
+    private final long rowsRead;
+    private final long rowsWritten;
 
-    private IngestResult(List<FileReference> fileReferenceList, long recordsRead, long recordsWritten) {
+    private IngestResult(List<FileReference> fileReferenceList, long rowsRead, long rowsWritten) {
         this.fileReferenceList = fileReferenceList;
-        this.recordsRead = recordsRead;
-        this.recordsWritten = recordsWritten;
+        this.rowsRead = rowsRead;
+        this.rowsWritten = rowsWritten;
     }
 
     /**
-     * Creates an instance of this class where all records in all files were read and written.
+     * Creates an instance of this class where all rows in all files were read and written.
      *
      * @param  fileReferenceList the file reference list
      * @return                   an instance of this class
      */
     public static IngestResult allReadWereWritten(List<FileReference> fileReferenceList) {
-        long recordsWritten = recordsWritten(fileReferenceList);
-        return new IngestResult(fileReferenceList, recordsWritten, recordsWritten);
+        long rowsWritten = rowsWritten(fileReferenceList);
+        return new IngestResult(fileReferenceList, rowsWritten, rowsWritten);
     }
 
     /**
-     * Creates an instance of this class where the provided number of records were read, and all records in all files
+     * Creates an instance of this class where the provided number of rows were read, and all rows in all files
      * were written.
      *
-     * @param  recordsRead       the number of records read
+     * @param  rowsRead          the number of rows read
      * @param  fileReferenceList the file reference list
      * @return                   an instance of this class
      */
-    public static IngestResult fromReadAndWritten(long recordsRead, List<FileReference> fileReferenceList) {
-        return new IngestResult(fileReferenceList, recordsRead, recordsWritten(fileReferenceList));
+    public static IngestResult fromReadAndWritten(long rowsRead, List<FileReference> fileReferenceList) {
+        return new IngestResult(fileReferenceList, rowsRead, rowsWritten(fileReferenceList));
     }
 
     /**
-     * Creates an instance of this class where no files were created, and no records were read or written.
+     * Creates an instance of this class where no files were created, and no rows were read or written.
      *
      * @return an instance of this class
      */
@@ -70,8 +70,8 @@ public class IngestResult {
         return new IngestResult(Collections.emptyList(), 0, 0);
     }
 
-    public long getRecordsWritten() {
-        return recordsWritten;
+    public long getRowsWritten() {
+        return rowsWritten;
     }
 
     public List<FileReference> getFileReferenceList() {
@@ -79,40 +79,37 @@ public class IngestResult {
     }
 
     /**
-     * Creates a records processed object from this class.
+     * Creates a rows processed object from this class.
      *
      * @return a {@link RecordsProcessed} object
      */
-    public RecordsProcessed asRecordsProcessed() {
-        return new RecordsProcessed(recordsRead, recordsWritten);
+    public RecordsProcessed asRowsProcessed() {
+        return new RecordsProcessed(rowsRead, rowsWritten);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof IngestResult)) {
             return false;
         }
-        IngestResult that = (IngestResult) o;
-        return fileReferenceList.equals(that.fileReferenceList);
+        IngestResult other = (IngestResult) obj;
+        return Objects.equals(fileReferenceList, other.fileReferenceList) && rowsRead == other.rowsRead && rowsWritten == other.rowsWritten;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileReferenceList);
+        return Objects.hash(fileReferenceList, rowsRead, rowsWritten);
     }
 
     @Override
     public String toString() {
-        return "IngestResult{" +
-                "recordsWritten=" + recordsWritten +
-                ",fileReferenceList=" + fileReferenceList +
-                '}';
+        return "IngestResult{fileReferenceList=" + fileReferenceList + ", rowsRead=" + rowsRead + ", rowsWritten=" + rowsWritten + "}";
     }
 
-    private static long recordsWritten(List<FileReference> fileReferenceList) {
+    private static long rowsWritten(List<FileReference> fileReferenceList) {
         return fileReferenceList.stream()
                 .mapToLong(FileReference::getNumberOfRecords)
                 .sum();

@@ -36,7 +36,7 @@ class IngestResultIT extends IngestRowsTestBase {
         IngestResult result = ingestRows(stateStore, getRows());
 
         // Then
-        assertThat(result.getRecordsWritten())
+        assertThat(result.getRowsWritten())
                 .isEqualTo(2L);
     }
 

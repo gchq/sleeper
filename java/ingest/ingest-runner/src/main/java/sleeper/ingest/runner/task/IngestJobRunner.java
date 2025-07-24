@@ -152,7 +152,7 @@ public class IngestJobRunner implements IngestJobHandler {
                         .build()) {
             result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
+        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRowsWritten(), paths);
         return result;
     }
 

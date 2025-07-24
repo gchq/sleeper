@@ -58,8 +58,8 @@ class IngestRowsResultIT extends IngestRowsTestBase {
         IngestResult result = ingestWithTableIterator(AdditionIterator.class, rows);
 
         // Then
-        assertThat(readRecords(result)).containsExactly(row("test-1", 3), row("test-2", 3));
-        assertThat(result).extracting("recordsRead", "recordsWritten")
+        assertThat(readRows(result)).containsExactly(row("test-1", 3), row("test-2", 3));
+        assertThat(result).extracting("rowsRead", "rowsWritten")
                 .containsExactly(3L, 2L);
     }
 
@@ -72,8 +72,8 @@ class IngestRowsResultIT extends IngestRowsTestBase {
         IngestResult result = ingestWithTableIterator(AgeOffIterator.class, "value,0", rows);
 
         // Then
-        assertThat(readRecords(result)).isEmpty();
-        assertThat(result).extracting("recordsRead", "recordsWritten")
+        assertThat(readRows(result)).isEmpty();
+        assertThat(result).extracting("rowsRead", "rowsWritten")
                 .containsExactly(3L, 0L);
     }
 
@@ -97,7 +97,7 @@ class IngestRowsResultIT extends IngestRowsTestBase {
         return ingestRows(stateStore, rows);
     }
 
-    private List<Row> readRecords(IngestResult result) {
+    private List<Row> readRows(IngestResult result) {
         return readIngestedRows(result, schema);
     }
 }

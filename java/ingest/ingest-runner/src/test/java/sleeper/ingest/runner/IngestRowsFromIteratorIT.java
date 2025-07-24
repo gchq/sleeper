@@ -50,7 +50,7 @@ class IngestRowsFromIteratorIT extends IngestRowsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRowIterator(stateStore, getRows().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, getRows().iterator()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -101,7 +101,7 @@ class IngestRowsFromIteratorIT extends IngestRowsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRowIterator(stateStore, getSingleRow().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, getSingleRow().iterator()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
@@ -137,7 +137,7 @@ class IngestRowsFromIteratorIT extends IngestRowsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRowIterator(stateStore, Collections.emptyIterator()).getRecordsWritten();
+        long numWritten = ingestFromRowIterator(stateStore, Collections.emptyIterator()).getRowsWritten();
 
         // Then:
         //  - Check the correct number of rows were written
