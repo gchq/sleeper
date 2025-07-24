@@ -42,8 +42,7 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")
             // For some reason, default Double comparator compares NaNs as object references instead of their double values
-            .withComparatorForFields(Comparator.naturalOrder(),
-                    "finishedStatus.rowsReadPerSecond", "finishedStatus.rowsWrittenPerSecond")
+            .withComparatorForType(Comparator.naturalOrder(), Double.class)
             .build();
     private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
     protected final IngestTaskTracker tracker = IngestTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
