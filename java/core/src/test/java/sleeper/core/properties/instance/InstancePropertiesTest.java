@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -317,7 +317,7 @@ class InstancePropertiesTest {
         instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "ARM64");
         instanceProperties.setNumber(COMPACTION_TASK_ARM_CPU, 2048);
         instanceProperties.setNumber(COMPACTION_TASK_ARM_MEMORY, 4096);
-        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 100_000_000L);
+        instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 100_000_000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000L);
         instanceProperties.set(S3A_INPUT_FADVISE, "normal");
 

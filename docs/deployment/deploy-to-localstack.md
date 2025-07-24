@@ -50,11 +50,11 @@ instance, as well as running partition and file status reports.
 You can generate some random data for your instance by running the following command:
 
 ```shell
-./scripts/deploy/localstack/generateRandomData.sh <instance-id> <table-name> <optional-number-of-records>
+./scripts/deploy/localstack/generateRandomData.sh <instance-id> <table-name> <optional-number-of-rows>
 ```
 
 This will place randomly generated parquet files in the `scripts/deploy/localstack/output` directory. The number of files
-generated will depend on the number of records that you pass into the script. By default only 1 file is generated.
+generated will depend on the number of rows that you pass into the script. By default only 1 file is generated.
 
 You can then use these files to ingest some data by running the following command:
 
@@ -73,10 +73,10 @@ You can skip the step of having to run `ingestFiles.sh` after generating some pa
 following command:
 
 ```shell
-./scripts/deploy/localstack/ingestRandomData.sh <instance-id> <table-name> <optional-number-of-records>
+./scripts/deploy/localstack/ingestRandomData.sh <instance-id> <table-name> <optional-number-of-rows>
 ```
 
-Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.
+Note: If you do not provide a number of rows in the data generation scripts, then a default of 100000 is used.
 
 ## Compaction
 

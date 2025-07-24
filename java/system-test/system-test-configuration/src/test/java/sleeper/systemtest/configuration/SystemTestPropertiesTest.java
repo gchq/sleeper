@@ -27,7 +27,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
@@ -120,7 +120,7 @@ class SystemTestPropertiesTest {
     private SystemTestProperties validProperties() {
         SystemTestProperties properties = new SystemTestProperties(createTestInstanceProperties().getProperties());
         properties.setNumber(NUMBER_OF_WRITERS, 1);
-        properties.setNumber(NUMBER_OF_RECORDS_PER_INGEST, 1);
+        properties.setNumber(NUMBER_OF_ROWS_PER_INGEST, 1);
         properties.setEnum(INGEST_MODE, DIRECT);
         properties.set(SYSTEM_TEST_REPO, "test-repo");
         return properties;

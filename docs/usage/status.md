@@ -19,7 +19,7 @@ graphs will appear.
 ## Status reports
 
 We provide utility classes for various administrative tasks, such as seeing the
-number of records in a table, and for pausing, restarting and changing properties
+number of rows in a table, and for pausing, restarting and changing properties
 in the system.
 
 You should make sure that you run any of the commands

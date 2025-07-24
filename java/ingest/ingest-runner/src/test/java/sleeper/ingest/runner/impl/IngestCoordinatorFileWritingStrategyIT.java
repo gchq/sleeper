@@ -59,7 +59,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static java.util.stream.LongStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
@@ -436,7 +436,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             long maxRecordsToWriteToLocalStore) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrayList().setInstanceProperties(properties -> {
-                    properties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
+                    properties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
                     properties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
                 }).buildCoordinator()) {
             for (Row row : rowListAndSchema.rowList) {
