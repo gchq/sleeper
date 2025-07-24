@@ -75,7 +75,7 @@ public class StateStoreCommitMessageFactory {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = factory.createCompactionJobWithFilenames(jobId, filenames, partitionId);
         return message(new ReplaceFileReferencesTransaction(List.of(
-                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsProcessed().getRecordsWritten())
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsProcessed().getRowsWritten())
                         .taskId(taskId)
                         .jobRunId(jobRunId)
                         .build())));

@@ -18,26 +18,26 @@ package sleeper.core.tracker.job.run;
 import java.util.Objects;
 
 /**
- * A data structure for storing the number of records read and written.
+ * A data structure for storing the number of rows read and written.
  */
-public class RecordsProcessed {
+public class RowsProcessed {
 
-    public static final RecordsProcessed NONE = new RecordsProcessed(0, 0);
+    public static final RowsProcessed NONE = new RowsProcessed(0, 0);
 
-    private final long recordsRead;
-    private final long recordsWritten;
+    private final long rowsRead;
+    private final long rowsWritten;
 
-    public RecordsProcessed(long recordsRead, long recordsWritten) {
-        this.recordsRead = recordsRead;
-        this.recordsWritten = recordsWritten;
+    public RowsProcessed(long rowsRead, long rowsWritten) {
+        this.rowsRead = rowsRead;
+        this.rowsWritten = rowsWritten;
     }
 
-    public long getRecordsRead() {
-        return recordsRead;
+    public long getRowsRead() {
+        return rowsRead;
     }
 
-    public long getRecordsWritten() {
-        return recordsWritten;
+    public long getRowsWritten() {
+        return rowsWritten;
     }
 
     @Override
@@ -48,20 +48,20 @@ public class RecordsProcessed {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RecordsProcessed that = (RecordsProcessed) o;
-        return recordsRead == that.recordsRead && recordsWritten == that.recordsWritten;
+        RowsProcessed that = (RowsProcessed) o;
+        return rowsRead == that.rowsRead && rowsWritten == that.rowsWritten;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recordsRead, recordsWritten);
+        return Objects.hash(rowsRead, rowsWritten);
     }
 
     @Override
     public String toString() {
-        return "RecordsProcessed{" +
-                "recordsRead=" + recordsRead +
-                ", recordsWritten=" + recordsWritten +
+        return "RowsProcessed{" +
+                "rowsRead=" + rowsRead +
+                ", rowsWritten=" + rowsWritten +
                 '}';
     }
 }

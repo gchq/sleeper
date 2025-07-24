@@ -23,7 +23,7 @@ import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
@@ -81,7 +81,7 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
 
     private static JobRunSummary defaultJobSummary() {
         return new JobRunSummary(
-                new RecordsProcessed(4800L, 2400L),
+                new RowsProcessed(4800L, 2400L),
                 defaultJobStartTime(), defaultJobFinishTime());
     }
 
@@ -129,7 +129,7 @@ public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
         return builder.startTime(startTime)
                 .finished(finishTime, IngestTaskFinishedStatus.builder()
                         .addJobSummary(new JobRunSummary(
-                                new RecordsProcessed(200, 100),
+                                new RowsProcessed(200, 100),
                                 startTime, finishTime)))
                 .build();
     }

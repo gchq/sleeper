@@ -17,7 +17,7 @@
 package sleeper.ingest.core;
 
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.util.Collections;
 import java.util.List;
@@ -81,10 +81,10 @@ public class IngestResult {
     /**
      * Creates a rows processed object from this class.
      *
-     * @return a {@link RecordsProcessed} object
+     * @return a {@link RowsProcessed} object
      */
-    public RecordsProcessed asRowsProcessed() {
-        return new RecordsProcessed(rowsRead, rowsWritten);
+    public RowsProcessed asRowsProcessed() {
+        return new RowsProcessed(rowsRead, rowsWritten);
     }
 
     @Override

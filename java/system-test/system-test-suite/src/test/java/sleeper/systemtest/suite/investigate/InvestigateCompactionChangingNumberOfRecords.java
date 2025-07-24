@@ -33,7 +33,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -115,7 +115,7 @@ public class InvestigateCompactionChangingNumberOfRecords {
         String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
         CompactionJob compactionJob = job.asCompactionJobToNewFile(check.tableProperties().get(TABLE_ID), outputFile);
         JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf, new LocalFileSystemSketchesStore());
-        RecordsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
+        RowsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
         long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
         LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);
         LOGGER.info("Compation job: {}", new CompactionJobSerDe().toJson(compactionJob));

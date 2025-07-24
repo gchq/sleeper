@@ -16,7 +16,7 @@
 package sleeper.core.tracker.ingest.task;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -85,7 +85,7 @@ public class IngestTaskStatusTestData {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(
                         new JobRunSummary(
-                                new RecordsProcessed(recordsRead, recordsWritten),
+                                new RowsProcessed(recordsRead, recordsWritten),
                                 startJobTime, finishJobTime))))
                 .build();
     }

@@ -18,7 +18,7 @@ package sleeper.core.tracker.ingest.task;
 
 import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -87,7 +87,7 @@ public class IngestTaskFinishedStatus {
      */
     public JobRunSummary asSummary(Instant startTime) {
         return new JobRunSummary(
-                new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
+                new RowsProcessed(totalRecordsRead, totalRecordsWritten),
                 startTime, finishTime, timeSpentOnJobs);
     }
 

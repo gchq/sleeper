@@ -36,7 +36,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetReaderIterator;
@@ -89,11 +89,11 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
         // When
-        RecordsProcessed summary = compact(job);
+        RowsProcessed summary = compact(job);
 
         // Then
-        assertThat(summary.getRecordsRead()).isEqualTo(2);
-        assertThat(summary.getRecordsWritten()).isEqualTo(2);
+        assertThat(summary.getRowsRead()).isEqualTo(2);
+        assertThat(summary.getRowsWritten()).isEqualTo(2);
         assertThat(readDataFile(schema, job.getOutputFile()))
                 .containsExactly(row1, row2);
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -104,7 +104,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected RecordsProcessed compact(CompactionJob job) throws Exception {
+    protected RowsProcessed compact(CompactionJob job) throws Exception {
         CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig());
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }

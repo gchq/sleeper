@@ -34,7 +34,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.ParquetReaderIterator;
@@ -65,7 +65,7 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RecordsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException {
+    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException {
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
@@ -114,7 +114,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         }
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
-        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
+        return new RowsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
     private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {

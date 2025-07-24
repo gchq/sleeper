@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -29,7 +29,7 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final Instant finishTime;
-    private final RecordsProcessed recordsProcessed;
+    private final RowsProcessed recordsProcessed;
 
     private CompactionJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
@@ -52,7 +52,7 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
+    public RowsProcessed getRecordsProcessed() {
         return recordsProcessed;
     }
 
@@ -84,7 +84,7 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
     public static class Builder {
         private Instant updateTime;
         private Instant finishTime;
-        private RecordsProcessed recordsProcessed;
+        private RowsProcessed recordsProcessed;
 
         private Builder() {
         }
@@ -117,7 +117,7 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
          * @param  recordsProcessed the counts of records processed
          * @return                  this builder
          */
-        public Builder recordsProcessed(RecordsProcessed recordsProcessed) {
+        public Builder recordsProcessed(RowsProcessed recordsProcessed) {
             this.recordsProcessed = recordsProcessed;
             return this;
         }

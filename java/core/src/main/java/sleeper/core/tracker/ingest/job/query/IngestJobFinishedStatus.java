@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -28,7 +28,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final Instant finishTime;
-    private final RecordsProcessed recordsProcessed;
+    private final RowsProcessed recordsProcessed;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
@@ -55,7 +55,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
+    public RowsProcessed getRecordsProcessed() {
         return recordsProcessed;
     }
 
@@ -97,7 +97,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     public static class Builder {
         private Instant updateTime;
         private Instant finishTime;
-        private RecordsProcessed recordsProcessed;
+        private RowsProcessed recordsProcessed;
         private int numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
 
@@ -132,7 +132,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
          * @param  recordsProcessed the records processed
          * @return                  the builder for chaining
          */
-        public Builder recordsProcessed(RecordsProcessed recordsProcessed) {
+        public Builder recordsProcessed(RowsProcessed recordsProcessed) {
             this.recordsProcessed = recordsProcessed;
             return this;
         }

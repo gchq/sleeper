@@ -28,7 +28,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
 import java.time.Duration;
@@ -143,7 +143,7 @@ public class IngestJobStatusTest {
             // Given
             Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant startTime2 = Instant.parse("2022-09-22T13:34:15.001Z");
-            RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
+            RowsProcessed recordsProcessed = new RowsProcessed(123L, 100L);
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
@@ -163,7 +163,7 @@ public class IngestJobStatusTest {
             // Given
             Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
-            RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
+            RowsProcessed recordsProcessed = new RowsProcessed(123L, 100L);
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
@@ -182,7 +182,7 @@ public class IngestJobStatusTest {
             // Given
             Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
-            RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
+            RowsProcessed recordsProcessed = new RowsProcessed(123L, 100L);
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
@@ -566,7 +566,7 @@ public class IngestJobStatusTest {
         return new JobRunSummary(defaultRecordsProcessed(), startTime, finishTime);
     }
 
-    private RecordsProcessed defaultRecordsProcessed() {
-        return new RecordsProcessed(450L, 300L);
+    private RowsProcessed defaultRecordsProcessed() {
+        return new RowsProcessed(450L, 300L);
     }
 }

@@ -67,7 +67,7 @@ public class CompactionJobCommitterOrSendToLambda {
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         TableStatus table = tableProperties.getStatus();
         tracker.jobFinished(finishedEvent);
-        ReplaceFileReferencesRequest.Builder requestBuilder = job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRecordsWritten());
+        ReplaceFileReferencesRequest.Builder requestBuilder = job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRowsWritten());
         if (tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
             ReplaceFileReferencesRequest request = requestBuilder.taskId(finishedEvent.getTaskId()).jobRunId(finishedEvent.getJobRunId()).build();
             if (tableProperties.getBoolean(COMPACTION_JOB_ASYNC_BATCHING)) {

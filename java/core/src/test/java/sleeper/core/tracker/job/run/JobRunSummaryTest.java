@@ -30,7 +30,7 @@ public class JobRunSummaryTest {
         Instant startTime = Instant.parse("2022-09-22T09:44:00.000Z");
         Instant finishTime = Instant.parse("2022-09-22T09:45:00.000Z");
         JobRunSummary summary = new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(recordsRead, recordsWritten),
                 startTime, finishTime);
 
         assertThat(summary).extracting("recordsRead", "recordsWritten", "startTime", "finishTime")
@@ -40,7 +40,7 @@ public class JobRunSummaryTest {
     @Test
     public void shouldCalculateDuration() {
         JobRunSummary summary = new JobRunSummary(
-                new RecordsProcessed(100L, 100L),
+                new RowsProcessed(100L, 100L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));
 
@@ -50,7 +50,7 @@ public class JobRunSummaryTest {
     @Test
     public void shouldCalculateRecordRate() {
         JobRunSummary summary = new JobRunSummary(
-                new RecordsProcessed(450L, 300L),
+                new RowsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));
 

@@ -32,7 +32,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.Iterator;
@@ -79,7 +79,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime, finishTime,
                     Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Task finish
             CompactionJob job1 = createJobOnQueue("job1");
-            RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
+            RowsProcessed job1Summary = new RowsProcessed(10L, 5L);
 
             // When
             runTask(processJobs(jobSucceeds(job1Summary)), times::next);
@@ -113,9 +113,9 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime1, finishTime1, startTime2, finishTime2,
                     Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
-            RecordsProcessed job1Records = new RecordsProcessed(10L, 10L);
+            RowsProcessed job1Records = new RowsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
-            RecordsProcessed job2Records = new RecordsProcessed(20L, 20L);
+            RowsProcessed job2Records = new RowsProcessed(20L, 20L);
 
             // When
             runTask(processJobs(
@@ -159,9 +159,9 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime1, finishTime1, startTime2, finishTime2, commitTime2,
                     Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
-            RecordsProcessed job1Records = new RecordsProcessed(10L, 10L);
+            RowsProcessed job1Records = new RowsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
-            RecordsProcessed job2Records = new RecordsProcessed(20L, 20L);
+            RowsProcessed job2Records = new RowsProcessed(20L, 20L);
 
             // When
             runTask(processJobs(
@@ -209,7 +209,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             send(job);
 
             // When a task runs
-            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
                     jobSucceeds(recordsProcessed),
                     jobSucceeds(recordsProcessed)),
@@ -251,7 +251,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime, finishTime,
                     Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Task finish
             CompactionJob job1 = createJobOnQueue("job1");
-            RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
+            RowsProcessed job1Summary = new RowsProcessed(10L, 5L);
 
             // When
             runTask(processJobs(jobSucceeds(job1Summary)), times::next);
@@ -310,7 +310,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             store2.fixFileUpdateTime(finishTime2);
 
             // When
-            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
                     jobSucceeds(recordsProcessed),
                     jobSucceeds(recordsProcessed)),
@@ -407,7 +407,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             send(job);
 
             // When
-            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
                     jobSucceeds(recordsProcessed)),
                     timesInTask::poll);
@@ -442,7 +442,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(recordsProcessed)),
                     times::poll);
@@ -477,8 +477,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            RecordsProcessed job1RecordsProcessed = new RecordsProcessed(10L, 10L);
-            RecordsProcessed job2RecordsProcessed = new RecordsProcessed(5L, 5L);
+            RowsProcessed job1RecordsProcessed = new RowsProcessed(10L, 10L);
+            RowsProcessed job2RecordsProcessed = new RowsProcessed(5L, 5L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1RecordsProcessed),
                     jobSucceeds(job2RecordsProcessed)),

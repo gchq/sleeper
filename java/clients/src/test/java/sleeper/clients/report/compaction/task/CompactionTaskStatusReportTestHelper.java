@@ -19,7 +19,7 @@ package sleeper.clients.report.compaction.task;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -71,7 +71,7 @@ public class CompactionTaskStatusReportTestHelper {
     private static JobRunSummary createSummary(
             String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(recordsRead, recordsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }
 }

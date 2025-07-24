@@ -26,7 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -66,12 +66,12 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output files and check that they contain the right results
-        assertThat(summary.getRecordsRead()).isEqualTo(200L);
-        assertThat(summary.getRecordsWritten()).isEqualTo(100L);
+        assertThat(summary.getRowsRead()).isEqualTo(200L);
+        assertThat(summary.getRowsWritten()).isEqualTo(100L);
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.builder()

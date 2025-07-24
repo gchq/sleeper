@@ -26,7 +26,7 @@ import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.JobRuns;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
@@ -187,7 +187,7 @@ public class CompactionJobStatusTestData {
      * @param  recordsProcessed RecordsProcessed to be detailed in the Finished Status.
      * @return                  CompactionJobFinishedStatus built with the given values.
      */
-    public static CompactionJobFinishedStatus compactionFinishedStatus(Instant finishTime, RecordsProcessed recordsProcessed) {
+    public static CompactionJobFinishedStatus compactionFinishedStatus(Instant finishTime, RowsProcessed recordsProcessed) {
         return CompactionJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
                 .finishTime(finishTime)

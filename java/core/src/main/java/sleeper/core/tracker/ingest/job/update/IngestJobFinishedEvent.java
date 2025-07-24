@@ -19,7 +19,7 @@ package sleeper.core.tracker.ingest.job.update;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -71,7 +71,7 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
         return summary.getFinishTime();
     }
 
-    public RecordsProcessed getRecordsProcessed() {
+    public RowsProcessed getRecordsProcessed() {
         return summary.getRecordsProcessed();
     }
 

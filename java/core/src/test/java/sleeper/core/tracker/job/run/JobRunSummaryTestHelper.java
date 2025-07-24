@@ -65,7 +65,7 @@ public class JobRunSummaryTestHelper {
      */
     public static JobRunSummary summary(Instant startTime, Instant finishTime, long recordsRead, long recordsWritten) {
         return new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(recordsRead, recordsWritten),
                 startTime, finishTime);
     }
 }

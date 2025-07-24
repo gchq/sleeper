@@ -38,7 +38,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -180,11 +180,11 @@ public class ECSBulkExportTaskRunner {
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
         Partition partition = stateStore.getPartition(bulkExportLeafPartitionQuery.getLeafPartitionId());
 
-        RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+        RowsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
         LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Records read: {}, records written: {}",
                 bulkExportLeafPartitionQuery.getTableId(),
                 bulkExportLeafPartitionQuery.getLeafPartitionId(),
-                recordsProcessed.getRecordsRead(),
-                recordsProcessed.getRecordsWritten());
+                recordsProcessed.getRowsRead(),
+                recordsProcessed.getRowsWritten());
     }
 }

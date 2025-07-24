@@ -35,7 +35,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransacti
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -175,7 +175,7 @@ class BulkImportJobDriverTest {
                 .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
-                        ingestFinishedStatusUncommitted(finishTime, 2, new RecordsProcessed(300, 300)))));
+                        ingestFinishedStatusUncommitted(finishTime, 2, new RowsProcessed(300, 300)))));
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()

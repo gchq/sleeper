@@ -67,7 +67,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileRefere
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.runner.IngestFactory;
@@ -327,7 +327,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .extracting(Message::body)
                 .containsExactly(
                         batchedCommitRequestOnQueue(job, "task-id", "job-run-id",
-                                new JobRunSummary(new RecordsProcessed(100, 100),
+                                new JobRunSummary(new RowsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))));
         // - Check new output file has been created with the correct records
@@ -373,7 +373,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .extracting(Message::body, this::getMessageGroupId)
                 .containsExactly(tuple(
                         commitRequestOnQueue(job, "task-id", "job-run-id",
-                                new JobRunSummary(new RecordsProcessed(100, 100),
+                                new JobRunSummary(new RowsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
                         tableId));
@@ -529,7 +529,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return new StateStoreCommitRequestSerDe(tablePropertiesProvider)
                 .toJson(StateStoreCommitRequest.create(tableId,
                         new ReplaceFileReferencesTransaction(List.of(
-                                job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRecordsWritten())
+                                job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRowsWritten())
                                         .taskId(taskId)
                                         .jobRunId(jobRunId)
                                         .build()))));
@@ -538,7 +538,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     private String batchedCommitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
         return new CompactionCommitMessageSerDe()
                 .toJson(new CompactionCommitMessage(tableId,
-                        job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRecordsWritten())
+                        job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRowsWritten())
                                 .taskId(taskId)
                                 .jobRunId(jobRunId)
                                 .build()));

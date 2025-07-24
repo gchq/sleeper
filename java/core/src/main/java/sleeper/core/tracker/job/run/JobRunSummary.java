@@ -27,29 +27,29 @@ import java.util.Objects;
  */
 public class JobRunSummary {
 
-    private final RecordsProcessed recordsProcessed;
+    private final RowsProcessed recordsProcessed;
     private final JobRunTime runTime;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
+    public JobRunSummary(RowsProcessed recordsProcessed, Instant startTime, Duration duration) {
         this(recordsProcessed, startTime, startTime.plus(duration), duration);
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
+    public JobRunSummary(RowsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
         this(recordsProcessed, startTime, finishTime, Duration.between(startTime, finishTime));
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
+    public JobRunSummary(RowsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
         this(recordsProcessed, new JobRunTime(startTime, finishTime, timeInProcess));
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, JobRunTime runTime) {
+    public JobRunSummary(RowsProcessed recordsProcessed, JobRunTime runTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
         this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         double secondsInProcess = runTime.getTimeInProcessInSeconds();
-        this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / secondsInProcess;
-        this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / secondsInProcess;
+        this.recordsReadPerSecond = recordsProcessed.getRowsRead() / secondsInProcess;
+        this.recordsWrittenPerSecond = recordsProcessed.getRowsWritten() / secondsInProcess;
     }
 
     /**
@@ -86,7 +86,7 @@ public class JobRunSummary {
      */
     public static JobRunSummary noProcessingDoneAtTime(Instant startTime) {
         return new JobRunSummary(
-                new RecordsProcessed(0, 0),
+                new RowsProcessed(0, 0),
                 startTime, Duration.ZERO);
     }
 
@@ -97,18 +97,18 @@ public class JobRunSummary {
      * @return         an instance of this class
      */
     public static JobRunSummary noRecordsProcessed(JobRunTime runTime) {
-        return new JobRunSummary(new RecordsProcessed(0, 0), runTime);
+        return new JobRunSummary(new RowsProcessed(0, 0), runTime);
     }
 
     public long getRecordsRead() {
-        return recordsProcessed.getRecordsRead();
+        return recordsProcessed.getRowsRead();
     }
 
     public long getRecordsWritten() {
-        return recordsProcessed.getRecordsWritten();
+        return recordsProcessed.getRowsWritten();
     }
 
-    public RecordsProcessed getRecordsProcessed() {
+    public RowsProcessed getRecordsProcessed() {
         return recordsProcessed;
     }
 

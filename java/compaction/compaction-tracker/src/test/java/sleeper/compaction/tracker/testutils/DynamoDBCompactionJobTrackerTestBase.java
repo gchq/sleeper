@@ -37,7 +37,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
@@ -159,7 +159,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
 
     protected static JobRunSummary defaultSummary() {
         return new JobRunSummary(
-                new RecordsProcessed(200L, 100L),
+                new RowsProcessed(200L, 100L),
                 defaultRunTime());
     }
 

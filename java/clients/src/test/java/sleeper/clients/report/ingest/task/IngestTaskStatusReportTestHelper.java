@@ -19,7 +19,7 @@ package sleeper.clients.report.ingest.task;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -67,7 +67,7 @@ public class IngestTaskStatusReportTestHelper {
     private static JobRunSummary createSummary(
             String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(recordsRead, recordsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }
 }

@@ -40,7 +40,7 @@ public class AverageRecordRateTest {
     public void shouldCalculateAverageOfSingleFinishedJob() {
         // Given / When
         AverageRecordRate rate = rateFrom(new JobRunSummary(
-                new RecordsProcessed(100L, 100L),
+                new RowsProcessed(100L, 100L),
                 Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
         // Then
@@ -55,10 +55,10 @@ public class AverageRecordRateTest {
         // Given / When
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
-                        new RecordsProcessed(100L, 100L), // rate 10/s
+                        new RowsProcessed(100L, 100L), // rate 10/s
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
                 new JobRunSummary(
-                        new RecordsProcessed(50L, 50L), // rate 5/s
+                        new RowsProcessed(50L, 50L), // rate 5/s
                         Instant.parse("2022-10-13T10:19:00.000Z"), Duration.ofSeconds(10)));
 
         // Then
@@ -73,10 +73,10 @@ public class AverageRecordRateTest {
         // Given / When
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
-                        new RecordsProcessed(900L, 900L), // rate 10/s
+                        new RowsProcessed(900L, 900L), // rate 10/s
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(90)),
                 new JobRunSummary(
-                        new RecordsProcessed(50L, 50L), // rate 5/s
+                        new RowsProcessed(50L, 50L), // rate 5/s
                         Instant.parse("2022-10-13T10:19:00.000Z"), Duration.ofSeconds(10)));
 
         // Then
@@ -104,7 +104,7 @@ public class AverageRecordRateTest {
         AverageRecordRate rate = AverageRecordRate.builder()
                 .startTime(Instant.parse("2022-10-13T10:17:55.000Z"))
                 .summary(new JobRunSummary(
-                        new RecordsProcessed(100L, 100L),
+                        new RowsProcessed(100L, 100L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)))
                 .finishTime(Instant.parse("2022-10-13T10:18:15.000Z"))
                 .build();
@@ -120,10 +120,10 @@ public class AverageRecordRateTest {
     void shouldExcludeARunWithNoRecordsProcessedFromAverageRateCalculation() {
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
-                        new RecordsProcessed(0L, 0L),
+                        new RowsProcessed(0L, 0L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
                 new JobRunSummary(
-                        new RecordsProcessed(10L, 10L),
+                        new RowsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
@@ -136,10 +136,10 @@ public class AverageRecordRateTest {
     void shouldExcludeARunWithNoRecordsReadFromAverageReadRateCalculation() {
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
-                        new RecordsProcessed(0L, 10L),
+                        new RowsProcessed(0L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
                 new JobRunSummary(
-                        new RecordsProcessed(10L, 10L),
+                        new RowsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
@@ -152,10 +152,10 @@ public class AverageRecordRateTest {
     void shouldExcludeARunWithNoRecordsWrittenFromAverageWriteRateCalculation() {
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
-                        new RecordsProcessed(10L, 0L),
+                        new RowsProcessed(10L, 0L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
                 new JobRunSummary(
-                        new RecordsProcessed(10L, 10L),
+                        new RowsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
@@ -168,10 +168,10 @@ public class AverageRecordRateTest {
     void shouldExcludeARunWithZeroDurationFromAverageRateCalculation() {
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
-                        new RecordsProcessed(10L, 10L),
+                        new RowsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(0)),
                 new JobRunSummary(
-                        new RecordsProcessed(10L, 10L),
+                        new RowsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
@@ -203,7 +203,7 @@ public class AverageRecordRateTest {
 
         assertThat(AverageRecordRate.of(Stream.of(
                 new CompactionJobRun(jobRunOnTask(DEFAULT_TASK_ID,
-                        compactionFinishedStatus(finishTime, new RecordsProcessed(200, 100)))))))
+                        compactionFinishedStatus(finishTime, new RowsProcessed(200, 100)))))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(1, 200L, 100L, Duration.ofSeconds(0));
     }
@@ -214,7 +214,7 @@ public class AverageRecordRateTest {
 
         assertThat(AverageRecordRate.of(Stream.of(
                 new IngestJobRun(jobRunOnTask(DEFAULT_TASK_ID,
-                        ingestFinishedStatus(finishTime, 1, new RecordsProcessed(200, 100)))))))
+                        ingestFinishedStatus(finishTime, 1, new RowsProcessed(200, 100)))))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(1, 200L, 100L, Duration.ofSeconds(0));
     }

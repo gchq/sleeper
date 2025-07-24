@@ -16,7 +16,7 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -61,7 +61,7 @@ public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, Job
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
+    public RowsProcessed getRecordsProcessed() {
         return summary.getRecordsProcessed();
     }
 

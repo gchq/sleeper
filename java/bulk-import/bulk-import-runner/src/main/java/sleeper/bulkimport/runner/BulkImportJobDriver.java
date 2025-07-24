@@ -45,7 +45,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -150,7 +150,7 @@ public class BulkImportJobDriver {
 
         tracker.jobFinished(IngestJobFinishedEvent.builder()
                 .jobRunIds(runIds)
-                .summary(new JobRunSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+                .summary(new JobRunSummary(new RowsProcessed(numRecords, numRecords), startTime, finishTime))
                 .fileReferencesAddedByJob(output.fileReferences())
                 .committedBySeparateFileUpdates(asyncCommit)
                 .build());

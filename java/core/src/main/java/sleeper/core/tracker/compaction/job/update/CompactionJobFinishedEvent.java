@@ -16,7 +16,7 @@
 package sleeper.core.tracker.compaction.job.update;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -63,7 +63,7 @@ public class CompactionJobFinishedEvent {
         return summary.getFinishTime();
     }
 
-    public RecordsProcessed getRecordsProcessed() {
+    public RowsProcessed getRecordsProcessed() {
         return summary.getRecordsProcessed();
     }
 

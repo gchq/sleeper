@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TaskUpdates;
 
@@ -235,7 +235,7 @@ public class IngestJobStatusInPeriodTest {
         return IngestJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishedTime))
                 .finishTime(finishedTime)
-                .recordsProcessed(new RecordsProcessed(100, 100))
+                .recordsProcessed(new RowsProcessed(100, 100))
                 .numFilesWrittenByJob(2)
                 .build();
     }

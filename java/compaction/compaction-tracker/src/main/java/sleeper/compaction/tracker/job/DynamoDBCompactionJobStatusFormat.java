@@ -31,7 +31,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
@@ -109,14 +109,14 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        RecordsProcessed recordsProcessed = event.getRecordsProcessed();
+        RowsProcessed recordsProcessed = event.getRecordsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, recordsProcessed.getRecordsRead())
-                .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
+                .number(RECORDS_READ, recordsProcessed.getRowsRead())
+                .number(RECORDS_WRITTEN, recordsProcessed.getRowsWritten())
                 .build();
     }
 
@@ -189,7 +189,7 @@ class DynamoDBCompactionJobStatusFormat {
                 return CompactionJobFinishedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .recordsProcessed(new RecordsProcessed(
+                        .recordsProcessed(new RowsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)))
                         .build();
