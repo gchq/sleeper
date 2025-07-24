@@ -7,7 +7,7 @@ a specific part of the code. We try to remain open to alternative approaches if 
 
 ## Tests
 
-Please see our [test strategy](test-strategy.md), which also includes conventions when writing tests.
+Please see [our test strategy](test-strategy.md), which also includes conventions when writing tests.
 
 ## Java keyword usage
 
