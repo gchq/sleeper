@@ -180,7 +180,8 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     }
 
     // Note that it is not necessary to test different transaction types here as serialisation/deserialisation
-    // is tested separately in in-memory unit tests.
+    // is tested separately in in-memory unit tests. The createSerDe method used below creates an object to serialise
+    // and deserialise to/from JSON, and it is tested elsewhere.
 
     private StateStoreCommitRequestSender sender() {
         return new SqsFifoStateStoreCommitRequestSender(instanceProperties, createSerDe(), sqsClient);
