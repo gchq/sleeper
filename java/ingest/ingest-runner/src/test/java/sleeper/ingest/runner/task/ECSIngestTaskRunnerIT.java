@@ -29,7 +29,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -65,7 +65,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     @Test
     public void shouldIngestParquetFilesPutOnTheQueue() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema recordListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
@@ -98,7 +98,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     @Test
     public void shouldContinueReadingFromQueueWhileMoreMessagesExist() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema recordListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         int noOfJobs = 10;

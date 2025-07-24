@@ -34,7 +34,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -74,7 +74,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-    private final RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+    private final RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
             new LongType(),
             LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
     private final PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)

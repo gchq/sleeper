@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestFilesAndRecords;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -47,7 +47,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -93,7 +93,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -144,7 +144,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     @Test
     void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -165,7 +165,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
+            RowGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
         try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrow().setInstanceProperties(config).buildCoordinator()) {

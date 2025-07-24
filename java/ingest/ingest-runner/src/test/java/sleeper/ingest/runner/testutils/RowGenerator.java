@@ -36,13 +36,13 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class RecordGenerator {
+public class RowGenerator {
 
-    private RecordGenerator() {
+    private RowGenerator() {
     }
 
     public static <T> RowListAndSchema genericKey1D(Type sleeperKeyTypeDimension0, List<T> keyObjectsDimension0) {
-        int noOfRecords = keyObjectsDimension0.size();
+        int noOfRows = keyObjectsDimension0.size();
         Random valueRandom = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
                 .usingRandom(valueRandom::nextInt)
@@ -51,7 +51,7 @@ public class RecordGenerator {
                 .rowKeyFields(new Field("key0", sleeperKeyTypeDimension0))
                 .valueFields(valueFields())
                 .build();
-        List<Row> rowList = IntStream.range(0, noOfRecords)
+        List<Row> rowList = IntStream.range(0, noOfRows)
                 .mapToObj(i -> {
                     Row row = new Row();
                     row.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
@@ -79,8 +79,8 @@ public class RecordGenerator {
     public static <T, U> RowListAndSchema genericKey2D(
             Type sleeperKeyTypeDimension0, Type sleeperKeyTypeDimension1,
             List<T> keyObjectsDimension0, List<U> keyObjectsDimension1) {
-        int noOfRecords = keyObjectsDimension0.size();
-        if (keyObjectsDimension1.size() != noOfRecords) {
+        int noOfRows = keyObjectsDimension0.size();
+        if (keyObjectsDimension1.size() != noOfRows) {
             throw new AssertionError();
         }
         Random valueRandom = new Random(0);
@@ -93,7 +93,7 @@ public class RecordGenerator {
                         new Field("key1", sleeperKeyTypeDimension1))
                 .valueFields(valueFields())
                 .build();
-        List<Row> rowList = IntStream.range(0, noOfRecords)
+        List<Row> rowList = IntStream.range(0, noOfRows)
                 .mapToObj(i -> {
                     Row row = new Row();
                     row.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));
@@ -122,8 +122,8 @@ public class RecordGenerator {
     public static <T, U> RowListAndSchema genericKey1DSort1D(
             Type sleeperKeyTypeDimension0, Type sleeperSortKeyTypeDimension0,
             List<T> keyObjectsDimension0, List<U> sortKeyObjectsDimension0) {
-        int noOfRecords = keyObjectsDimension0.size();
-        if (sortKeyObjectsDimension0.size() != noOfRecords) {
+        int noOfRows = keyObjectsDimension0.size();
+        if (sortKeyObjectsDimension0.size() != noOfRows) {
             throw new AssertionError();
         }
         Random valueRandom = new Random(0);
@@ -135,7 +135,7 @@ public class RecordGenerator {
                 .sortKeyFields(new Field("sortKey0", sleeperSortKeyTypeDimension0))
                 .valueFields(valueFields())
                 .build();
-        List<Row> rowList = IntStream.range(0, noOfRecords)
+        List<Row> rowList = IntStream.range(0, noOfRows)
                 .mapToObj(i -> {
                     Row row = new Row();
                     row.put(sleeperSchema.getRowKeyFieldNames().get(0), keyObjectsDimension0.get(i));

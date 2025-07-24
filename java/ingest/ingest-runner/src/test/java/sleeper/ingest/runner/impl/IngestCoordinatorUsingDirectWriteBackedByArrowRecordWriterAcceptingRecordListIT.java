@@ -28,7 +28,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
 import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriterAcceptingRows;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestFilesAndRecords;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -53,7 +53,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -98,7 +98,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -148,7 +148,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
 
     @Test
     void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -169,7 +169,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         })).isInstanceOf(OutOfMemoryException.class).hasNoSuppressedExceptions();
     }
 
-    private static List<RowList> buildScrambledRecordLists(RecordGenerator.RowListAndSchema rowListAndSchema) {
+    private static List<RowList> buildScrambledRecordLists(RowGenerator.RowListAndSchema rowListAndSchema) {
         RowList[] rowLists = new RowList[5];
         for (int i = 0; i < rowLists.length; i++) {
             rowLists[i] = new RowList();
@@ -186,7 +186,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
+            RowGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
         try (IngestCoordinator<RowList> ingestCoordinator = parameters
                 .toBuilder().localDirectWrite().setInstanceProperties(config).build()

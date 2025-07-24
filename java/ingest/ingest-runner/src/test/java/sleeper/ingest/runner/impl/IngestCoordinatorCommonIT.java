@@ -40,8 +40,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
-import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.ResultVerifier;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.ingest.runner.testutils.TestIngestType.WriteTarget;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -76,9 +76,9 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
+import static sleeper.ingest.runner.testutils.RowGenerator.genericKey1D;
 
 public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
@@ -120,7 +120,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         setSchema(rowListAndSchema.sleeperSchema);
@@ -158,7 +158,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
         setSchema(rowListAndSchema.sleeperSchema);
@@ -203,7 +203,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         setSchema(rowListAndSchema.sleeperSchema);
@@ -251,7 +251,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         List<String> keys = LongStream.range(0, 200)
                 .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
                 .collect(Collectors.toList());
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(new StringType(), keys);
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(new StringType(), keys);
         setSchema(rowListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -294,7 +294,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
                         new byte[]{1, 1},
@@ -351,7 +351,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         List<Long> longKeys = LongStream.range(-100, 100).boxed()
                 .flatMap(longValue -> Stream.of(longValue - 1000L, longValue, longValue + 1000L))
                 .collect(Collectors.toList());
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1DSort1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1DSort1D(
                 new StringType(),
                 new LongType(),
                 stringKeys, longKeys);
@@ -401,7 +401,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey2D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
                 Arrays.asList(new byte[]{2, 3}, new byte[]{2, 2}, new byte[]{67, 68}, new byte[]{99}));
@@ -455,7 +455,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey2D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
                 Arrays.asList(1L, 20L, 1L, 50L));
@@ -503,7 +503,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey2D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
                 LongStream.range(-100L, 100L).mapToObj(Long::toString).collect(Collectors.toList()));
@@ -557,7 +557,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
         setSchema(rowListAndSchema.sleeperSchema);
@@ -595,10 +595,10 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     public void shouldWriteDuplicateRecords(
             TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        RecordGenerator.RowListAndSchema duplicatedrowListAndSchema = new RecordGenerator.RowListAndSchema(
+        RowGenerator.RowListAndSchema duplicatedrowListAndSchema = new RowGenerator.RowListAndSchema(
                 Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
                         .flatMap(List::stream)
                         .collect(Collectors.toList()),
@@ -637,7 +637,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
         setSchema(rowListAndSchema.sleeperSchema);
@@ -663,7 +663,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     @MethodSource("parameterObjsForTests")
     public void shouldApplyIterator(TestIngestType ingestType) throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
                 Arrays.asList(1L, 2L, 3L, 4L));
@@ -712,7 +712,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             TestIngestType ingestType) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = ingestType.createIngestCoordinator(

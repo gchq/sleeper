@@ -36,7 +36,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
@@ -70,9 +70,9 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.accurateFileReferenceBuilder;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
-import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
+import static sleeper.ingest.runner.testutils.RowGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
 public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
@@ -110,7 +110,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
@@ -141,7 +141,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToOneLeafPartition() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -174,7 +174,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileInEachLeafPartition() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -216,7 +216,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -273,7 +273,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
@@ -305,7 +305,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileWithReferenceInOneLeafPartition() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -339,7 +339,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileWithReferencesInLeafPartitions() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -379,7 +379,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
             // Given
-            RecordGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -430,7 +430,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters parameters,
             int maxRecordsInMemory,
             long maxRecordsToWriteToLocalStore) throws IteratorCreationException, IOException {
@@ -446,7 +446,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
     }
 
     private static void ingestRecords(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
                 .createIngestCoordinator(ingestCoordinatorTestParameters)) {
@@ -469,7 +469,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                 .stateStore(stateStore);
     }
 
-    private static RecordGenerator.RowListAndSchema generateStringRecords(String formatString, LongStream range) {
+    private static RowGenerator.RowListAndSchema generateStringRecords(String formatString, LongStream range) {
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = range

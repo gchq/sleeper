@@ -44,7 +44,7 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
@@ -105,7 +105,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldIngestParquetFiles() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -134,7 +134,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldIgnoreFilesOfUnreadableFormats() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -166,7 +166,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldIngestParquetFilesInNestedDirectories() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -206,10 +206,10 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldWriteRecordsFromTwoBuckets() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rows1 = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rows1 = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
-        RecordGenerator.RowListAndSchema rows2 = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rows2 = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(10, 20).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rows1.sleeperSchema);
@@ -251,7 +251,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     @Test
     void shouldCommitFilesAsynchronously() throws Exception {
         // Given
-        RecordGenerator.RowListAndSchema rowListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(rowListAndSchema.sleeperSchema);
@@ -344,20 +344,20 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     }
 
     private List<String> writeParquetFilesForIngest(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             int numberOfFiles) throws IOException {
         return writeParquetFilesForIngestWithRoot(rowListAndSchema, ingestSourceBucketName, numberOfFiles);
     }
 
     private List<String> writeParquetFilesForIngest(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             String subDirectory,
             int numberOfFiles) throws IOException {
         return writeParquetFilesForIngestWithRoot(rowListAndSchema, ingestSourceBucketName + "/" + subDirectory, numberOfFiles);
     }
 
     private List<String> writeParquetFilesForIngestWithRoot(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             String rootDirectory,
             int numberOfFiles) throws IOException {
         List<String> files = new ArrayList<>();
@@ -373,7 +373,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     }
 
     private void writeParquetFileForIngest(
-            Path path, RecordGenerator.RowListAndSchema rowListAndSchema) throws IOException {
+            Path path, RowGenerator.RowListAndSchema rowListAndSchema) throws IOException {
         ParquetWriter<Row> writer = ParquetRecordWriterFactory
                 .createParquetRecordWriter(path, rowListAndSchema.sleeperSchema, hadoopConf);
         for (Row row : rowListAndSchema.rowList) {
