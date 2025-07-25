@@ -35,7 +35,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
-import sleeper.parquet.record.RowReadSupport;
+import sleeper.parquet.row.RowReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.statestore.StateStoreArrowFileReadStore;

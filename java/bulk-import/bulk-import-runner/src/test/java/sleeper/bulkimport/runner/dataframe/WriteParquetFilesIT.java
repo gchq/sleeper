@@ -30,7 +30,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.record.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReader;
 
 import java.io.IOException;
 import java.util.ArrayList;

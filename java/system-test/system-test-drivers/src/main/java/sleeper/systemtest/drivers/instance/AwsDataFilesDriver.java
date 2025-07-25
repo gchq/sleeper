@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.RowReadSupport;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.RowReadSupport;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 

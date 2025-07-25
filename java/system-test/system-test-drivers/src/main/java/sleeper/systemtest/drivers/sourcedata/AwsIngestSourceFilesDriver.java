@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;

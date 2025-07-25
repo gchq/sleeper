@@ -31,7 +31,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.parquet.record.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReader;
 
 import java.io.IOException;
 import java.util.ArrayList;

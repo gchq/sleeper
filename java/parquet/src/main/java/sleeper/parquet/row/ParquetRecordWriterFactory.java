@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.parquet.record;
+package sleeper.parquet.row;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
