@@ -35,6 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -176,7 +177,7 @@ public class ShowPageIndexesIT {
     }
 
     private static ParquetWriter<Row> createRecordWriter(Path file, TableProperties tableProperties) throws IOException {
-        return createParquetRowWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
+        return ParquetRowWriterFactory.createParquetRowWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
     }
 
     private static String example(String path) throws IOException {
