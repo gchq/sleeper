@@ -71,7 +71,7 @@ public class GarbageCollectorTestBase {
         return FileReferenceFactory.from(partitions);
     }
 
-    protected FileReference createActiveFile(String filename, StateStore stateStore) throws Exception {
+    protected FileReference createReferencedFile(String filename, StateStore stateStore) throws Exception {
         FileReference fileReference = fileReferenceFactory().rootFile(filename, 100L);
         update(stateStore).addFile(fileReference);
         filesInBucket.add(filename);
@@ -80,7 +80,7 @@ public class GarbageCollectorTestBase {
 
     protected void createFileWithNoReferencesByCompaction(StateStore stateStore,
             String oldFilePath, String newFilePath) throws Exception {
-        FileReference oldFile = createActiveFile(oldFilePath, stateStore);
+        FileReference oldFile = createReferencedFile(oldFilePath, stateStore);
         filesInBucket.add(newFilePath);
         update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
@@ -88,7 +88,7 @@ public class GarbageCollectorTestBase {
                 "job1", List.of(oldFile.getFilename()), fileReferenceFactory().rootFile(newFilePath.toString(), 100))));
     }
 
-    protected FileReference activeReference(String filePath) {
+    protected FileReference fileReference(String filePath) {
         return fileReferenceFactory().rootFile(filePath, 100);
     }
 

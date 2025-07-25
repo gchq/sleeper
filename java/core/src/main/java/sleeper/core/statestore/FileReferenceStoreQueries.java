@@ -121,7 +121,7 @@ public interface FileReferenceStoreQueries {
      * Files with internal references against partitions have rows in the Sleeper table. Files with no internal
      * references are either in use by long-running operations, or are waiting to be garbage collected.
      *
-     * @param  maxUnreferencedFiles Maximum number of files to return with no active references
+     * @param  maxUnreferencedFiles maximum number of files to return with no references
      * @return                      the report
      * @throws StateStoreException  if query fails
      */

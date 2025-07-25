@@ -65,8 +65,7 @@ public class BulkExportQuerySplitter {
     }
 
     /**
-     * Initialises the partitions and the mapping from partitions to active files if
-     * needed.
+     * Initialises the partitions and the mapping from partitions to file references if needed.
      *
      * @throws StateStoreException if the state store can't be accessed
      */

@@ -76,7 +76,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
@@ -385,7 +385,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(3))
-                    .isEqualTo(activeAndReadyForGCFiles(List.of(fileAfterCompaction), List.of()));
+                    .isEqualTo(referencedAndUnreferencedFiles(List.of(fileAfterCompaction), List.of()));
         }
 
         @Test

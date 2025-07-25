@@ -117,9 +117,9 @@ public class TransactionLogStateStoreStack extends NestedStack {
             latestSnapshotsTable.grantReadData(grantee);
         }
 
-        if (grants.canWriteActiveOrReadyForGCFiles()) {
+        if (grants.canWriteFileReferencesOrUnreferencedFiles()) {
             filesLogTable.grantReadWriteData(grantee);
-        } else if (grants.canReadActiveOrReadyForGCFiles()) {
+        } else if (grants.canReadFileReferencesOrUnreferencedFiles()) {
             filesLogTable.grantReadData(grantee);
         }
 

@@ -78,7 +78,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Initialises a query executor with partitions and the mapping from partitions to active files.
+     * Initialises a query executor with partitions and the mapping from partitions to file references.
      * Should be called periodically so that this class is aware of
      * new data arriving in the table. How often this method should be called is
      * a balance between having an up-to-date view of the data and the cost of
@@ -155,7 +155,7 @@ public class QueryExecutor {
      * row retrievers until they are needed. In the case of Parquet files,
      * initialisation of the readers requires reading the footers of the file
      * which takes a little time. If a query spanned many leaf partitions and
-     * each leaf partition had many active files, then the initialisation time
+     * each leaf partition had many file references, then the initialisation time
      * could be high. Using suppliers ensures that only files for a single
      * leaf partition are opened at a time.
      *

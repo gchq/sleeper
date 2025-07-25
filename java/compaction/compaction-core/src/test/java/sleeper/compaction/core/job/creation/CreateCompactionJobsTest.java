@@ -294,7 +294,7 @@ public class CreateCompactionJobsTest {
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            // And we have 2 active whole files in the state store (which the BasicCompactionStrategy will skip
+            // And we have 2 whole files in the state store (which the BasicCompactionStrategy will skip
             // as it does not create jobs with fewer files than the batch size)
             FileReference fileReference1 = fileFactory().rootFile("file1", 200L);
             FileReference fileReference2 = fileFactory().rootFile("file2", 200L);
@@ -317,7 +317,7 @@ public class CreateCompactionJobsTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .buildList());
-            // And we have 1 active file that has been split in the state store (which the BasicCompactionStrategy
+            // And we have 1 file that has been split in the state store (which the BasicCompactionStrategy
             // will skip as it does not create jobs with fewer files than the batch size)
             FileReference rootFile = fileFactory().rootFile("file1", 2L);
             FileReference fileReference1 = referenceForChildPartition(rootFile, "L");

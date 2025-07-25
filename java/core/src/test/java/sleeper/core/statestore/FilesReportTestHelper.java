@@ -55,8 +55,8 @@ public class FilesReportTestHelper {
      * @param  files the file references
      * @return       the report
      */
-    public static AllReferencesToAllFiles activeFiles(FileReference... files) {
-        return activeFiles(List.of(files));
+    public static AllReferencesToAllFiles referencedFiles(FileReference... files) {
+        return referencedFiles(List.of(files));
     }
 
     /**
@@ -65,8 +65,8 @@ public class FilesReportTestHelper {
      * @param  files the file references
      * @return       the report
      */
-    public static AllReferencesToAllFiles activeFiles(List<FileReference> files) {
-        return activeFilesReport(DEFAULT_UPDATE_TIME, files);
+    public static AllReferencesToAllFiles referencedFiles(List<FileReference> files) {
+        return referencedFilesReport(DEFAULT_UPDATE_TIME, files);
     }
 
     /**
@@ -77,8 +77,8 @@ public class FilesReportTestHelper {
      * @param  files      the file references
      * @return            the report
      */
-    public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, FileReference... files) {
-        return activeFilesReport(updateTime, List.of(files));
+    public static AllReferencesToAllFiles referencedFilesReport(Instant updateTime, FileReference... files) {
+        return referencedFilesReport(updateTime, List.of(files));
     }
 
     /**
@@ -89,7 +89,7 @@ public class FilesReportTestHelper {
      * @param  references the file references
      * @return            the report
      */
-    public static AllReferencesToAllFiles activeFilesReport(Instant updateTime, List<FileReference> references) {
+    public static AllReferencesToAllFiles referencedFilesReport(Instant updateTime, List<FileReference> references) {
         return new AllReferencesToAllFiles(
                 AllReferencesToAFile.newFilesWithReferences(references.stream())
                         .map(file -> file.withCreatedUpdateTime(updateTime))
@@ -100,25 +100,25 @@ public class FilesReportTestHelper {
     /**
      * Creates a report with specified files referenced in partitions, and files with no references.
      *
-     * @param  activeFiles     the file references
-     * @param  readyForGCFiles the filenames with no references
-     * @return                 the report
+     * @param  references        the file references
+     * @param  unreferencedFiles the filenames with no references
+     * @return                   the report
      */
-    public static AllReferencesToAllFiles activeAndReadyForGCFiles(List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return activeAndReadyForGCFilesReport(DEFAULT_UPDATE_TIME, activeFiles, readyForGCFiles);
+    public static AllReferencesToAllFiles referencedAndUnreferencedFiles(List<FileReference> references, List<String> unreferencedFiles) {
+        return referencedAndUnreferencedFilesReport(DEFAULT_UPDATE_TIME, references, unreferencedFiles);
     }
 
     /**
      * Creates a report with specified files referenced in partitions, and files with no references.
      *
-     * @param  updateTime      the time all the files were last updated
-     * @param  activeFiles     the file references
-     * @param  readyForGCFiles the filenames with no references
-     * @return                 the report
+     * @param  updateTime        the time all the files were last updated
+     * @param  references        the file references
+     * @param  unreferencedFiles the filenames with no references
+     * @return                   the report
      */
-    public static AllReferencesToAllFiles activeAndReadyForGCFilesReport(
-            Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
-        return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, activeFiles, readyForGCFiles), false);
+    public static AllReferencesToAllFiles referencedAndUnreferencedFilesReport(
+            Instant updateTime, List<FileReference> references, List<String> unreferencedFiles) {
+        return new AllReferencesToAllFiles(referencedAndUnreferencedFiles(updateTime, references, unreferencedFiles), false);
     }
 
     /**
@@ -127,8 +127,8 @@ public class FilesReportTestHelper {
      * @param  filenames the filenames
      * @return           the report
      */
-    public static AllReferencesToAllFiles readyForGCFiles(String... filenames) {
-        return readyForGCFilesReport(DEFAULT_UPDATE_TIME, filenames);
+    public static AllReferencesToAllFiles unreferencedFiles(String... filenames) {
+        return unreferencedFilesReport(DEFAULT_UPDATE_TIME, filenames);
     }
 
     /**
@@ -138,8 +138,8 @@ public class FilesReportTestHelper {
      * @param  filenames  the filenames
      * @return            the report
      */
-    public static AllReferencesToAllFiles readyForGCFilesReport(Instant updateTime, String... filenames) {
-        return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, List.of(), List.of(filenames)), false);
+    public static AllReferencesToAllFiles unreferencedFilesReport(Instant updateTime, String... filenames) {
+        return new AllReferencesToAllFiles(referencedAndUnreferencedFiles(updateTime, List.of(), List.of(filenames)), false);
     }
 
     /**
@@ -151,14 +151,14 @@ public class FilesReportTestHelper {
      * @param  filenames  the filenames
      * @return            the report
      */
-    public static AllReferencesToAllFiles partialReadyForGCFilesReport(Instant updateTime, String... filenames) {
-        return new AllReferencesToAllFiles(activeAndReadyForGCFiles(updateTime, List.of(), List.of(filenames)), true);
+    public static AllReferencesToAllFiles partialUnreferencedFilesReport(Instant updateTime, String... filenames) {
+        return new AllReferencesToAllFiles(referencedAndUnreferencedFiles(updateTime, List.of(), List.of(filenames)), true);
     }
 
-    private static List<AllReferencesToAFile> activeAndReadyForGCFiles(
-            Instant updateTime, List<FileReference> activeFiles, List<String> readyForGCFiles) {
+    private static List<AllReferencesToAFile> referencedAndUnreferencedFiles(
+            Instant updateTime, List<FileReference> references, List<String> unreferencedFiles) {
         return Stream.concat(
-                AllReferencesToAFile.newFilesWithReferences(activeFiles.stream()).map(file -> file.withCreatedUpdateTime(updateTime)),
-                readyForGCFiles.stream().map(filename -> AllReferencesToAFileTestHelper.fileWithNoReferences(filename, updateTime))).collect(Collectors.toUnmodifiableList());
+                AllReferencesToAFile.newFilesWithReferences(references.stream()).map(file -> file.withCreatedUpdateTime(updateTime)),
+                unreferencedFiles.stream().map(filename -> AllReferencesToAFileTestHelper.fileWithNoReferences(filename, updateTime))).collect(Collectors.toUnmodifiableList());
     }
 }

@@ -123,7 +123,7 @@ public class BulkExportQuerySplitterTest {
     }
 
     @Test
-    public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
+    public void shouldReloadFileReferencesFromStateStoreWhenTimedOut() throws Exception {
         // Given the second initialisation occurs after the cache expires
         BulkExportQuery bulkExportQuery = bulkExportQuery();
         tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
@@ -136,12 +136,12 @@ public class BulkExportQuerySplitterTest {
         addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
         splitter.initIfNeeded();
 
-        // Then active files are reloaded
+        // Then file references are reloaded
         assertThat(splitter.splitIntoLeafPartitionQueries(bulkExportQuery)).hasSize(1);
     }
 
     @Test
-    public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
+    public void shouldNotReloadFileReferencesBeforeTimeOut() throws Exception {
         // Given the second initialisation occurs before the cache expires
         BulkExportQuery bulkExportQuery = bulkExportQuery();
         tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
