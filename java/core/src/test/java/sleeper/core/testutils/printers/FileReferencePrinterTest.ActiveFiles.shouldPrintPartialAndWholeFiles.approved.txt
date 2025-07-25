@@ -2,8 +2,8 @@ Unreferenced files: 0
 Referenced files: 3
 File references: 4
 Partition at L:
-300 records in file 1
-50 records (approx) in partial file 2
+300 rows in file 1
+50 rows (approx) in partial file 2
 Partition at R:
-200 records in file 3
-50 records (approx) in partial file 2
+200 rows in file 3
+50 rows (approx) in partial file 2

@@ -63,7 +63,7 @@ public class CompactionOnEC2ST {
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_FILES_BATCH_SIZE, "5"));
-        // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
+        // Files with rows 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
         sleeper.ingest().direct(tempDir)
                 .numberedRecords(numbers.range(0, 9))
