@@ -223,7 +223,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
         if (parentState.isPresent()) {
             long totalRecordCount = children.stream()
-                    .mapToLong(query -> query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
+                    .mapToLong(query -> query.getRowCount() != null ? query.getRowCount() : 0).sum();
             LOGGER.info("Updating state of parent to {}", parentState.get());
             updateState(leafQueryEntry.updateParent(parentState.get(), totalRecordCount));
         }

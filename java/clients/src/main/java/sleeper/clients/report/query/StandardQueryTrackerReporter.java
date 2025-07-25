@@ -115,7 +115,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
                 .value(queryId, trackedQuery.getQueryId())
                 .value(subQueryId, trackedQuery.getSubQueryId())
                 .value(lastUpdateTime, Instant.ofEpochMilli(trackedQuery.getLastUpdateTime()))
-                .value(rowCount, trackedQuery.getRecordCount())
+                .value(rowCount, trackedQuery.getRowCount())
                 .value(errorMessage, trackedQuery.getErrorMessage());
     }
 

@@ -165,7 +165,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                 .containsExactly(trackedQuery()
                         .queryId("abc")
                         .lastKnownState(COMPLETED)
-                        .recordCount(0L)
+                        .rowCount(0L)
                         .build());
     }
 
@@ -190,19 +190,19 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
                 .containsExactlyInAnyOrder(
-                        builder.lastKnownState(IN_PROGRESS).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build());
+                        builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(IN_PROGRESS).recordCount(0L).build());
+                .isEqualTo(builder.lastKnownState(IN_PROGRESS).rowCount(0L).build());
     }
 
     @Test
@@ -227,19 +227,19 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
                 .containsExactlyInAnyOrder(
-                        builder.lastKnownState(COMPLETED).recordCount(1461L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(366L).build());
+                        builder.lastKnownState(COMPLETED).rowCount(1461L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(366L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate", "subQueryId")
-                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1461L).build());
     }
 
     @Test
@@ -264,12 +264,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
 
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1461L).build());
         // Given
         timeSeriesTable = createTimeSeriesTable(2000, 2020);
         query = Query.builder()
@@ -285,7 +285,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
@@ -320,13 +320,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                         .queryId("abc")
                         .subQueryId("-")
                         .lastKnownState(COMPLETED)
-                        .recordCount(10L)
+                        .rowCount(10L)
                         .build(),
                         trackedQuery()
                                 .queryId("abc")
                                 .subQueryId(subQueryId.orElseThrow())
                                 .lastKnownState(COMPLETED)
-                                .recordCount(10L)
+                                .rowCount(10L)
                                 .build());
     }
 
@@ -358,8 +358,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRecordCount().longValue());
+        assertThat(status.getRowCount().longValue()).isEqualTo(28);
+        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
     }
 
     @Test
@@ -396,8 +396,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRecordCount().longValue());
+        assertThat(status.getRowCount().longValue()).isEqualTo(28);
+        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
     }
 
     @Test
@@ -435,7 +435,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+        assertThat(status.getRowCount().longValue()).isEqualTo(28);
         assertThat(getNumberOfMessagesInResultsQueue(instanceProperties)).isEqualTo(28);
     }
 
@@ -484,7 +484,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-            assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+            assertThat(status.getRowCount().longValue()).isEqualTo(28);
             wireMockServer.verify(28, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
         } finally {
@@ -537,7 +537,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-            assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+            assertThat(status.getRowCount().longValue()).isEqualTo(28);
             wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 records each
         } finally {
             wireMockServer.stop();

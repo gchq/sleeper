@@ -125,7 +125,7 @@ class DynamoDBQueryTrackerEntry {
                 .lastUpdateTime(updateTime)
                 .expiryDate(expiryDate)
                 .lastKnownState(state)
-                .recordCount(recordCount)
+                .rowCount(recordCount)
                 .errorMessage(errorMessage)
                 .build();
     }

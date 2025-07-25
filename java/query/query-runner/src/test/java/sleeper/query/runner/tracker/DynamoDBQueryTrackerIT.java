@@ -72,7 +72,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker().getStatus("my-id");
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount()).isEqualTo(Long.valueOf(10));
+        assertThat(status.getRowCount()).isEqualTo(Long.valueOf(10));
     }
 
     @Test
@@ -118,8 +118,8 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         TrackedQuery child = queryTracker().getStatus("parent", "my-id");
         assertThat(parent.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(child.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(parent.getRecordCount()).isEqualTo(Long.valueOf(10));
-        assertThat(child.getRecordCount()).isEqualTo(Long.valueOf(10));
+        assertThat(parent.getRowCount()).isEqualTo(Long.valueOf(10));
+        assertThat(child.getRowCount()).isEqualTo(Long.valueOf(10));
     }
 
     @Test
@@ -172,9 +172,9 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(queryTracker().getStatus("parent", "my-id").getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(queryTracker().getStatus("parent", "my-other-id").getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(queryTracker().getStatus("parent").getRecordCount()).isEqualTo(Long.valueOf(35));
-        assertThat(queryTracker().getStatus("parent", "my-id").getRecordCount()).isEqualTo(Long.valueOf(10));
-        assertThat(queryTracker().getStatus("parent", "my-other-id").getRecordCount()).isEqualTo(Long.valueOf(25));
+        assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
+        assertThat(queryTracker().getStatus("parent", "my-id").getRowCount()).isEqualTo(Long.valueOf(10));
+        assertThat(queryTracker().getStatus("parent", "my-other-id").getRowCount()).isEqualTo(Long.valueOf(25));
     }
 
     @Test
@@ -203,7 +203,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
                 .containsExactly(TrackedQuery.builder()
                         .queryId("completed-query-that-errored")
                         .lastKnownState(PARTIALLY_FAILED)
-                        .recordCount(100L)
+                        .rowCount(100L)
                         .errorMessage("Query has failed").build());
     }
 

@@ -35,7 +35,7 @@ public class TrackedQueryTestHelper {
 
     public static TrackedQuery queryCompleted(String queryId, Instant lastUpdateTime, long records) {
         return queryWithState(queryId, lastUpdateTime, QueryState.COMPLETED)
-                .recordCount(records)
+                .rowCount(records)
                 .build();
     }
 
@@ -45,7 +45,7 @@ public class TrackedQueryTestHelper {
 
     public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long records, String errorMessage) {
         return queryWithState(queryId, lastUpdateTime, QueryState.PARTIALLY_FAILED)
-                .recordCount(records)
+                .rowCount(records)
                 .errorMessage(errorMessage)
                 .build();
     }
