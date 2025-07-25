@@ -38,7 +38,7 @@ class DynamoDBQueryTrackerEntry {
     static final String QUERY_ID = "queryId";
     static final String LAST_UPDATE_TIME = "lastUpdateTime";
     static final String LAST_KNOWN_STATE = "lastKnownState";
-    static final String RECORD_COUNT = "recordCount";
+    static final String ROW_COUNT = "rowCount";
     static final String SUB_QUERY_ID = "subQueryId";
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
@@ -47,14 +47,14 @@ class DynamoDBQueryTrackerEntry {
     private final String queryId;
     private final String subQueryId;
     private final QueryState state;
-    private final long recordCount;
+    private final long rowCount;
     private final String errorMessage;
 
     private DynamoDBQueryTrackerEntry(Builder builder) {
         queryId = builder.queryId;
         subQueryId = builder.subQueryId;
         state = builder.state;
-        recordCount = builder.recordCount;
+        rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
     }
 
@@ -91,8 +91,8 @@ class DynamoDBQueryTrackerEntry {
                 .value(AttributeValue.fromN(String.valueOf(expiryDate)))
                 .action(AttributeAction.PUT)
                 .build());
-        valueUpdate.put(RECORD_COUNT, AttributeValueUpdate.builder()
-                .value(AttributeValue.fromN(String.valueOf(recordCount)))
+        valueUpdate.put(ROW_COUNT, AttributeValueUpdate.builder()
+                .value(AttributeValue.fromN(String.valueOf(rowCount)))
                 .action(AttributeAction.PUT)
                 .build());
         valueUpdate.put(LAST_KNOWN_STATE, AttributeValueUpdate.builder()
@@ -112,7 +112,7 @@ class DynamoDBQueryTrackerEntry {
         String id = stringAttributeValueMap.get(QUERY_ID).s();
         Long updateTime = Long.valueOf(stringAttributeValueMap.get(LAST_UPDATE_TIME).n());
         Long expiryDate = Long.valueOf(stringAttributeValueMap.get(EXPIRY_DATE).n());
-        Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).n());
+        Long rowCount = Long.valueOf(stringAttributeValueMap.get(ROW_COUNT).n());
         QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).s());
         String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).s();
         String errorMessage = null;
@@ -125,7 +125,7 @@ class DynamoDBQueryTrackerEntry {
                 .lastUpdateTime(updateTime)
                 .expiryDate(expiryDate)
                 .lastKnownState(state)
-                .rowCount(recordCount)
+                .rowCount(rowCount)
                 .errorMessage(errorMessage)
                 .build();
     }
@@ -147,7 +147,7 @@ class DynamoDBQueryTrackerEntry {
         return builder()
                 .queryId(queryId)
                 .state(state)
-                .recordCount(totalRecordCount)
+                .rowCount(totalRecordCount)
                 .errorMessage(errorMessage)
                 .build();
     }
@@ -156,7 +156,7 @@ class DynamoDBQueryTrackerEntry {
         private String queryId;
         private String subQueryId = NON_NESTED_QUERY_PLACEHOLDER;
         private QueryState state;
-        private long recordCount;
+        private long rowCount;
         private String errorMessage;
 
         private Builder() {
@@ -177,8 +177,8 @@ class DynamoDBQueryTrackerEntry {
             return this;
         }
 
-        public Builder recordCount(long recordCount) {
-            this.recordCount = recordCount;
+        public Builder rowCount(long rowCount) {
+            this.rowCount = rowCount;
             return this;
         }
 
@@ -189,9 +189,9 @@ class DynamoDBQueryTrackerEntry {
 
         public Builder completed(ResultsOutputInfo outputInfo) {
             if (outputInfo.getError() != null) {
-                if (outputInfo.getRecordCount() > 0) {
+                if (outputInfo.getRowCount() > 0) {
                     return state(QueryState.PARTIALLY_FAILED)
-                            .recordCount(outputInfo.getRecordCount())
+                            .rowCount(outputInfo.getRowCount())
                             .errorMessage(outputInfo.getError().getMessage());
                 } else {
                     return state(QueryState.FAILED)
@@ -199,7 +199,7 @@ class DynamoDBQueryTrackerEntry {
                 }
             } else {
                 return state(QueryState.COMPLETED)
-                        .recordCount(outputInfo.getRecordCount());
+                        .rowCount(outputInfo.getRowCount());
             }
         }
 

@@ -22,12 +22,12 @@ import java.util.List;
  * and the location of where results are stored.
  */
 public class ResultsOutputInfo {
-    private final long recordCount;
+    private final long rowCount;
     private final List<ResultsOutputLocation> locations;
     private final Exception error;
 
-    public ResultsOutputInfo(long recordCount, List<ResultsOutputLocation> locations, Exception error) {
-        this.recordCount = recordCount;
+    public ResultsOutputInfo(long rowCount, List<ResultsOutputLocation> locations, Exception error) {
+        this.rowCount = rowCount;
         this.locations = locations;
         this.error = error;
     }
@@ -36,8 +36,8 @@ public class ResultsOutputInfo {
         this(recordCount, locations, null);
     }
 
-    public long getRecordCount() {
-        return recordCount;
+    public long getRowCount() {
+        return rowCount;
     }
 
     public List<ResultsOutputLocation> getLocations() {
@@ -51,7 +51,7 @@ public class ResultsOutputInfo {
     @Override
     public String toString() {
         return "ResultsOutputInfo{"
-                + "recordCount=" + recordCount
+                + "rowCount=" + rowCount
                 + ", locations=" + locations
                 + ", error=" + error
                 + '}';

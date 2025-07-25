@@ -74,9 +74,9 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
     private void queryCompleted(String queryId, ResultsOutputInfo outputInfo) {
         if (outputInfo.getError() != null) {
             String error = outputInfo.getError().getClass().getSimpleName() + ": " + outputInfo.getError().getMessage();
-            send(QueryWebSocketMessage.queryError(queryId, error, outputInfo.getRecordCount(), outputInfo.getLocations()));
+            send(QueryWebSocketMessage.queryError(queryId, error, outputInfo.getRowCount(), outputInfo.getLocations()));
         } else {
-            send(QueryWebSocketMessage.queryCompleted(queryId, outputInfo.getRecordCount(), outputInfo.getLocations()));
+            send(QueryWebSocketMessage.queryCompleted(queryId, outputInfo.getRowCount(), outputInfo.getLocations()));
         }
     }
 
