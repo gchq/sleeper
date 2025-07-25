@@ -74,7 +74,7 @@ public class AggregationIteratorImplTest {
     }
 
     @Test
-    public void shouldReturnFirstRecordNoAggregations() {
+    public void shouldReturnFirstRowNoAggregations() {
         // Given
         Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
@@ -90,7 +90,7 @@ public class AggregationIteratorImplTest {
     }
 
     @Test
-    public void shouldBeEqualRecords() throws Exception {
+    public void shouldBeEqualRows() throws Exception {
         // Given
         Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
@@ -108,7 +108,7 @@ public class AggregationIteratorImplTest {
     }
 
     @Test
-    public void shouldBeNonEqualRecords() throws Exception {
+    public void shouldBeNonEqualRows() throws Exception {
         // Given
         Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));

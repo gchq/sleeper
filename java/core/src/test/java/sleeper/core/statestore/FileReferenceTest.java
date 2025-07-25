@@ -107,7 +107,7 @@ public class FileReferenceTest {
     }
 
     @Test
-    void shouldNotCreateFileReferenceWithoutNumberOfRecords() {
+    void shouldNotCreateFileReferenceWithoutNumberOfRows() {
         // Given
         FileReference.Builder builder = FileReference.builder()
                 .partitionId("root")

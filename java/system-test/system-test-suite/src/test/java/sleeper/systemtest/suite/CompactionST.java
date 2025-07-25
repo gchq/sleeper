@@ -42,7 +42,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
-import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -111,7 +111,7 @@ public class CompactionST {
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRecordCounts(file))));
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
     }
 
     @Test
@@ -158,6 +158,6 @@ public class CompactionST {
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRecordCounts(file))));
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
     }
 }
