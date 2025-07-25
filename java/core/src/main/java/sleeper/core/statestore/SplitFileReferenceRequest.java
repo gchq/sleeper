@@ -39,7 +39,7 @@ public class SplitFileReferenceRequest {
 
     /**
      * Builds a request to split a file reference into the immediate child partitions of the original partition. This
-     * will estimate the number of records in the child partitions by assuming an even split between the two.
+     * will estimate the number of rows in the child partitions by assuming an even split between the two.
      *
      * @param  file           the original file reference
      * @param  leftPartition  the ID of the left child partition

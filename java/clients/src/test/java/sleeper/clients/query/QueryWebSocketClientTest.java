@@ -103,7 +103,7 @@ public class QueryWebSocketClientTest extends QueryWebSocketClientTestBase {
         }
 
         @Test
-        void shouldReturnResultsWhenRecordCountDoesNotMatchRowsReceived() throws Exception {
+        void shouldReturnResultsWhenRowCountDoesNotMatchRowsReceived() throws Exception {
             // Given
             Query query = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));

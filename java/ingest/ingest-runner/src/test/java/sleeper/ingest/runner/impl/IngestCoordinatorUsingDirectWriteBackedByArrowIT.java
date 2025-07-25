@@ -25,7 +25,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RowGenerator;
-import sleeper.ingest.runner.testutils.TestFilesAndRecords;
+import sleeper.ingest.runner.testutils.TestFilesAndRows;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.sketches.testutils.SketchesDecilesComparator;
@@ -46,7 +46,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
-    void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    void shouldWriteRowsWhenThereAreMoreInAPartitionThanCanFitInMemory() throws Exception {
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -60,14 +60,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, properties -> {
+        ingestRows(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 4 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 128 * 1024 * 1024L);
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRows actualActiveData = TestFilesAndRows.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -75,14 +75,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("left", parameters.getLocalFilePrefix() + "/data/partition_left/leftFile.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile.parquet"));
 
-        assertThat(actualActiveData.getSetOfAllRecords())
+        assertThat(actualActiveData.getSetOfAllRows())
                 .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
-        assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
-                .extracting(record -> record.get("key0"))
+        assertThat(actualActiveData.getPartitionData("left").streamAllRows())
+                .extracting(row -> row.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
                         .collect(Collectors.toList()));
-        assertThat(actualActiveData.getPartitionData("right").streamAllRecords())
-                .extracting(record -> record.get("key0"))
+        assertThat(actualActiveData.getPartitionData("right").streamAllRows())
+                .extracting(row -> row.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
         assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
@@ -91,7 +91,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
     }
 
     @Test
-    void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+    void shouldWriteRowsWhenThereAreMoreThanCanFitInLocalFile() throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
@@ -106,14 +106,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, properties -> {
+        ingestRows(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 4 * 1024 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 16 * 1024 * 1024L);
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRows actualActiveData = TestFilesAndRows.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -122,20 +122,20 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("left", parameters.getLocalFilePrefix() + "/data/partition_left/leftFile2.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile1.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile2.parquet"));
-        assertThat(actualActiveData.getSetOfAllRecords())
+        assertThat(actualActiveData.getSetOfAllRows())
                 .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
-                        file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
-                                data.getRecordsInFile(file),
+                        file -> assertThatRowsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRowsInFile(file),
                                 "key0", LongStream.range(-10_000, 0))))
-                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
+                .satisfies(data -> assertThat(data.getNumRows()).isEqualTo(10_000));
         assertThat(actualActiveData.getPartitionData("right"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
-                        file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
-                                data.getRecordsInFile(file),
+                        file -> assertThatRowsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRowsInFile(file),
                                 "key0", LongStream.range(0, 10_000))))
-                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
+                .satisfies(data -> assertThat(data.getNumRows()).isEqualTo(10_000));
         assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
                 .usingComparator(SketchesDecilesComparator.longsMaxDiff(rowListAndSchema.sleeperSchema, 50))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -157,14 +157,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .build();
 
         // When/Then
-        assertThatThrownBy(() -> ingestRecords(rowListAndSchema, parameters, properties -> {
+        assertThatThrownBy(() -> ingestRows(rowListAndSchema, parameters, properties -> {
             properties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 32 * 1024L);
             properties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 32 * 1024L);
             properties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 64 * 1024 * 1024L);
         })).isInstanceOf(OutOfMemoryException.class).hasNoSuppressedExceptions();
     }
 
-    private static void ingestRecords(
+    private static void ingestRows(
             RowGenerator.RowListAndSchema rowListAndSchema, IngestCoordinatorTestParameters parameters,
             Consumer<InstanceProperties> config) throws Exception {
         try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()

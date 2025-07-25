@@ -82,7 +82,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
 
     @Test
     void shouldNotUpdateTrackerWhenCommitIsNotForAnyIngestJob() {
-        // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
+        // Given we have a commit request without an ingest job (e.g. from an endless stream of rows)
         FileReference file = factory.rootFile("file.parquet", 100L);
         AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(file));
 

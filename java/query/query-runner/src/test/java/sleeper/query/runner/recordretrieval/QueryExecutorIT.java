@@ -53,6 +53,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -1207,7 +1208,7 @@ public class QueryExecutorIT {
 
     private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
         return new QueryExecutor(ObjectFactory.noUserJars(),
-                tableProperties, stateStore, new LeafPartitionRecordRetrieverImpl(executorService, new Configuration(), tableProperties));
+                tableProperties, stateStore, new LeafPartitionRowRetrieverImpl(executorService, new Configuration(), tableProperties));
     }
 
     private Query queryWithRegion(Region region) {

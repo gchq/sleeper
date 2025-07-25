@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Wraps a list of values for a record's key fields.
+ * Wraps a list of values for a row's key fields.
  */
 public class Key {
     private List<Object> key;

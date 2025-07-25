@@ -39,9 +39,9 @@ import sleeper.core.table.TableFilePaths;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.parquet.record.RecordReadSupport;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowWriterFactory;
+import sleeper.parquet.row.RowReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -124,7 +124,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);
@@ -146,7 +146,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private List<Row> readDataFile(Schema schema, String filename) throws IOException {
         List<Row> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
-                ParquetReader.builder(new RecordReadSupport(schema), new org.apache.hadoop.fs.Path(filename))
+                ParquetReader.builder(new RowReadSupport(schema), new org.apache.hadoop.fs.Path(filename))
                         .withConf(hadoopConf).build())) {
             while (reader.hasNext()) {
                 results.add(new Row(reader.next()));

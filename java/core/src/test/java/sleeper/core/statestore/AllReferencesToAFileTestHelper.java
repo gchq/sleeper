@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A test helper to work with file records for a state store.
+ * A test helper to work with file rows for a state store.
  */
 public class AllReferencesToAFileTestHelper {
 
@@ -29,22 +29,22 @@ public class AllReferencesToAFileTestHelper {
     }
 
     /**
-     * Builds an estimate of the number of records in a file by adding up all records in each file reference.
+     * Builds an estimate of the number of rows in a file by adding up all rows in each file reference.
      *
      * @param  file the file
-     * @return      the number of records
+     * @return      the number of rows
      */
-    public static long sumFileReferenceRecordCounts(AllReferencesToAFile file) {
+    public static long sumFileReferenceRowCounts(AllReferencesToAFile file) {
         return file.getReferences().stream().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     /**
-     * Builds an estimate of the number of records in all files by adding up all records in each file reference.
+     * Builds an estimate of the number of rows in all files by adding up all rows in each file reference.
      *
      * @param  files the files
-     * @return       the number of records
+     * @return       the number of rows
      */
-    public static long sumFileReferenceRecordCounts(AllReferencesToAllFiles files) {
+    public static long sumFileReferenceRowCounts(AllReferencesToAllFiles files) {
         return files.streamFileReferences().mapToLong(FileReference::getNumberOfRows).sum();
     }
 

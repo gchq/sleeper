@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.row.Row;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
@@ -80,7 +80,7 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path),
+            ParquetRowReader reader = new ParquetRowReader(new org.apache.hadoop.fs.Path(path),
                     instance.getTableProperties().getSchema());
 
             Row row = reader.read();

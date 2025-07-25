@@ -23,8 +23,8 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -76,10 +76,10 @@ public class ResultVerifier {
             Path filePath,
             Configuration hadoopConfiguration) {
         try {
-            ParquetReader<Row> recordParquetReader = new ParquetRecordReader.Builder(filePath, sleeperSchema)
+            ParquetReader<Row> parquetReader = new ParquetRowReader.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
-            return new ParquetReaderIterator(recordParquetReader);
+            return new ParquetReaderIterator(parquetReader);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

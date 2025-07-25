@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Implements a record aggregating iterator similiar to the DataFusion
+ * Implements a row aggregating iterator similiar to the DataFusion
  * aggregation functionality.
  *
  * The format for the iterator's configuration string mirrors that of the
@@ -206,7 +206,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
             } else if (lhs instanceof byte[]) {
                 return op((byte[]) lhs, (byte[]) rhs);
             } else if (lhs instanceof Map) {
-                // Clone the map to avoid aliasing problems: don't want to alter map in previous Record
+                // Clone the map to avoid aliasing problems: don't want to alter map in previous row
                 Map<?, ?> mapLhs = new HashMap<>((Map<?, ?>) lhs);
                 // Find first value of RHS if there is one
                 Object testValue = ((Map<?, ?>) rhs).values().stream().findFirst().orElse(null);
@@ -370,7 +370,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
      * </ol>
      *
      * @param  iteratorConfig           the configuration to check
-     * @param  schema                   the record schema to check against
+     * @param  schema                   the schema to check against
      * @throws IllegalArgumentException if {@code iteratorConfig} is invalid
      */
     private static void validate(FilterAggregationConfig iteratorConfig, Schema schema) {

@@ -48,7 +48,7 @@ public class JobRunSummaryTest {
     }
 
     @Test
-    public void shouldCalculateRecordRate() {
+    public void shouldCalculateRowRate() {
         JobRunSummary summary = new JobRunSummary(
                 new RowsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),

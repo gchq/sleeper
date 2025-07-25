@@ -113,14 +113,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime1, finishTime1, startTime2, finishTime2,
                     Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
-            RowsProcessed job1Records = new RowsProcessed(10L, 10L);
+            RowsProcessed job1Rows = new RowsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
-            RowsProcessed job2Records = new RowsProcessed(20L, 20L);
+            RowsProcessed job2Rows = new RowsProcessed(20L, 20L);
 
             // When
             runTask(processJobs(
-                    jobSucceeds(job1Records),
-                    jobSucceeds(job2Records)),
+                    jobSucceeds(job1Rows),
+                    jobSucceeds(job2Rows)),
                     times::poll);
 
             // Then
@@ -129,19 +129,19 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(jobsOnQueue).isEmpty();
             assertThat(stateStoreCommitQueue).containsExactly(
                     commitRequestFor(job1, "test-job-run-1",
-                            new JobRunSummary(job1Records, startTime1, finishTime1)),
+                            new JobRunSummary(job1Rows, startTime1, finishTime1)),
                     commitRequestFor(job2, "test-job-run-2",
-                            new JobRunSummary(job2Records, startTime2, finishTime2)));
+                            new JobRunSummary(job2Rows, startTime2, finishTime2)));
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             jobRunOnTask(DEFAULT_TASK_ID,
                                     compactionStartedStatus(startTime1),
-                                    compactionFinishedStatus(new JobRunSummary(job1Records, startTime1, finishTime1)))));
+                                    compactionFinishedStatus(new JobRunSummary(job1Rows, startTime1, finishTime1)))));
             assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                             jobRunOnTask(DEFAULT_TASK_ID,
                                     compactionStartedStatus(startTime2),
-                                    compactionFinishedStatus(new JobRunSummary(job2Records, startTime2, finishTime2)))));
+                                    compactionFinishedStatus(new JobRunSummary(job2Rows, startTime2, finishTime2)))));
         }
 
         @Test
@@ -159,14 +159,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime1, finishTime1, startTime2, finishTime2, commitTime2,
                     Instant.parse("2024-02-22T13:50:07Z"))); // Task finish
             CompactionJob job1 = createJobOnQueue("job1", table1, store1);
-            RowsProcessed job1Records = new RowsProcessed(10L, 10L);
+            RowsProcessed job1Rows = new RowsProcessed(10L, 10L);
             CompactionJob job2 = createJobOnQueue("job2", table2, store2);
-            RowsProcessed job2Records = new RowsProcessed(20L, 20L);
+            RowsProcessed job2Rows = new RowsProcessed(20L, 20L);
 
             // When
             runTask(processJobs(
-                    jobSucceeds(job1Records),
-                    jobSucceeds(job2Records)),
+                    jobSucceeds(job1Rows),
+                    jobSucceeds(job2Rows)),
                     times::poll);
 
             // Then
@@ -174,17 +174,17 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
             assertThat(stateStoreCommitQueue).containsExactly(
-                    commitRequestFor(job1, new JobRunSummary(job1Records, startTime1, finishTime1)));
+                    commitRequestFor(job1, new JobRunSummary(job1Rows, startTime1, finishTime1)));
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             jobRunOnTask(DEFAULT_TASK_ID,
                                     compactionStartedStatus(startTime1),
-                                    compactionFinishedStatus(new JobRunSummary(job1Records, startTime1, finishTime1)))));
+                                    compactionFinishedStatus(new JobRunSummary(job1Rows, startTime1, finishTime1)))));
             assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                             jobRunOnTask(DEFAULT_TASK_ID,
                                     compactionStartedStatus(startTime2),
-                                    compactionFinishedStatus(new JobRunSummary(job2Records, startTime2, finishTime2)),
+                                    compactionFinishedStatus(new JobRunSummary(job2Rows, startTime2, finishTime2)),
                                     compactionCommittedStatus(commitTime2))));
         }
 
@@ -209,10 +209,10 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             send(job);
 
             // When a task runs
-            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
+            RowsProcessed rowsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
-                    jobSucceeds(recordsProcessed),
-                    jobSucceeds(recordsProcessed)),
+                    jobSucceeds(rowsProcessed),
+                    jobSucceeds(rowsProcessed)),
                     jobRunIds::poll, timesInTask::poll);
             // And the commits are saved to the job tracker
             jobTracker.jobCommitted(job.committedEventBuilder(commitTime)
@@ -226,11 +226,11 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             jobRunOnTask("test-task",
                                     compactionStartedStatus(startTime2),
-                                    compactionFinishedStatus(new JobRunSummary(recordsProcessed, startTime2, finishTime2)),
+                                    compactionFinishedStatus(new JobRunSummary(rowsProcessed, startTime2, finishTime2)),
                                     compactionFailedStatus(commitFailTime, List.of("Could not commit same job twice"))),
                             jobRunOnTask("test-task",
                                     compactionStartedStatus(startTime1),
-                                    compactionFinishedStatus(new JobRunSummary(recordsProcessed, startTime1, finishTime1)),
+                                    compactionFinishedStatus(new JobRunSummary(rowsProcessed, startTime1, finishTime1)),
                                     compactionCommittedStatus(commitTime))));
         }
     }
@@ -310,10 +310,10 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             store2.fixFileUpdateTime(finishTime2);
 
             // When
-            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
+            RowsProcessed rowsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
-                    jobSucceeds(recordsProcessed),
-                    jobSucceeds(recordsProcessed)),
+                    jobSucceeds(rowsProcessed),
+                    jobSucceeds(rowsProcessed)),
                     timesInTask::poll);
 
             // Then
@@ -321,13 +321,13 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             jobRunOnTask("test-task",
                                     compactionStartedStatus(startTime1),
-                                    compactionFinishedStatus(new JobRunSummary(recordsProcessed, startTime1, finishTime1)),
+                                    compactionFinishedStatus(new JobRunSummary(rowsProcessed, startTime1, finishTime1)),
                                     compactionCommittedStatus(commitTime1))));
             assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                             jobRunOnTask("test-task",
                                     compactionStartedStatus(startTime2),
-                                    compactionFinishedStatus(new JobRunSummary(recordsProcessed, startTime2, finishTime2)),
+                                    compactionFinishedStatus(new JobRunSummary(rowsProcessed, startTime2, finishTime2)),
                                     compactionCommittedStatus(commitTime2))));
             assertThat(store1.getFileReferences()).containsExactly(
                     FileReferenceFactory.fromUpdatedAt(store1, finishTime1)
@@ -407,9 +407,9 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             send(job);
 
             // When
-            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
+            RowsProcessed rowsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task", processJobs(
-                    jobSucceeds(recordsProcessed)),
+                    jobSucceeds(rowsProcessed)),
                     timesInTask::poll);
 
             // Then
@@ -442,13 +442,13 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             CompactionJob job = createJobOnQueue("job1");
 
             // When
-            RowsProcessed recordsProcessed = new RowsProcessed(10L, 10L);
+            RowsProcessed rowsProcessed = new RowsProcessed(10L, 10L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(recordsProcessed)),
+                    jobSucceeds(rowsProcessed)),
                     times::poll);
 
             // Then
-            JobRunSummary jobSummary = new JobRunSummary(recordsProcessed,
+            JobRunSummary jobSummary = new JobRunSummary(rowsProcessed,
                     jobStartTime, jobFinishTime);
             assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1", taskStartTime, taskFinishTime, jobSummary));
@@ -477,17 +477,17 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             CompactionJob job2 = createJobOnQueue("job2");
 
             // When
-            RowsProcessed job1RecordsProcessed = new RowsProcessed(10L, 10L);
-            RowsProcessed job2RecordsProcessed = new RowsProcessed(5L, 5L);
+            RowsProcessed job1RowsProcessed = new RowsProcessed(10L, 10L);
+            RowsProcessed job2RowsProcessed = new RowsProcessed(5L, 5L);
             runTask("test-task-1", processJobs(
-                    jobSucceeds(job1RecordsProcessed),
-                    jobSucceeds(job2RecordsProcessed)),
+                    jobSucceeds(job1RowsProcessed),
+                    jobSucceeds(job2RowsProcessed)),
                     times::poll);
 
             // Then
-            JobRunSummary job1Summary = new JobRunSummary(job1RecordsProcessed,
+            JobRunSummary job1Summary = new JobRunSummary(job1RowsProcessed,
                     job1StartTime, job1FinishTime);
-            JobRunSummary job2Summary = new JobRunSummary(job2RecordsProcessed,
+            JobRunSummary job2Summary = new JobRunSummary(job2RowsProcessed,
                     job2StartTime, job2FinishTime);
             assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1", taskStartTime, taskFinishTime, job1Summary, job2Summary));

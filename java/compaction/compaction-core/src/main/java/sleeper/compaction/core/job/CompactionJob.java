@@ -101,19 +101,19 @@ public class CompactionJob {
                 .failureTime(failureTime);
     }
 
-    public FileReference createOutputFileReference(long recordsWritten) {
+    public FileReference createOutputFileReference(long rowsWritten) {
         return FileReference.builder()
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .numberOfRows(recordsWritten)
+                .numberOfRows(rowsWritten)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
     }
 
-    public ReplaceFileReferencesRequest.Builder replaceFileReferencesRequestBuilder(long recordsWritten) {
+    public ReplaceFileReferencesRequest.Builder replaceFileReferencesRequestBuilder(long rowsWritten) {
         return ReplaceFileReferencesRequest.builder().jobId(jobId).inputFiles(inputFiles)
-                .newReference(createOutputFileReference(recordsWritten));
+                .newReference(createOutputFileReference(rowsWritten));
     }
 
     /**

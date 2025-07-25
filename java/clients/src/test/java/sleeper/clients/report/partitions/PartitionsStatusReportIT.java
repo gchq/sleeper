@@ -62,7 +62,7 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
                 .buildTree();
         StateStore stateStore = stateStore();
         update(stateStore).initialise(tree.getAllPartitions());
-        update(stateStore).addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRecords(100).toList());
+        update(stateStore).addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRows(100).toList());
 
         // When / Then
         assertThat(runReport()).isEqualTo(

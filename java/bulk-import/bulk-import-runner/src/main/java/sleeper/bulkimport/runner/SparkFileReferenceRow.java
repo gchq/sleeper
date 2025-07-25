@@ -28,14 +28,14 @@ public class SparkFileReferenceRow {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILENAME_FIELD_NAME = "__fileName";
-    public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
+    public static final String NUM_ROWS_FIELD_NAME = "__numRows";
 
     public static FileReference createFileReference(Row row) {
         return FileReference.builder()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
-                .numberOfRows(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .numberOfRows(row.getAs(NUM_ROWS_FIELD_NAME))
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
@@ -45,6 +45,6 @@ public class SparkFileReferenceRow {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)
-                .add(NUM_RECORDS_FIELD_NAME, DataTypes.LongType);
+                .add(NUM_ROWS_FIELD_NAME, DataTypes.LongType);
     }
 }

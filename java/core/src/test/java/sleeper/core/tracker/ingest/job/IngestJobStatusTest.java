@@ -143,12 +143,12 @@ public class IngestJobStatusTest {
             // Given
             Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant startTime2 = Instant.parse("2022-09-22T13:34:15.001Z");
-            RowsProcessed recordsProcessed = new RowsProcessed(123L, 100L);
+            RowsProcessed rowsProcessed = new RowsProcessed(123L, 100L);
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     finishedIngestRun("test-task", new JobRunSummary(
-                            recordsProcessed, new JobRunTime(startTime2, Duration.ofMinutes(1)))),
+                            rowsProcessed, new JobRunTime(startTime2, Duration.ofMinutes(1)))),
                     failedIngestRun("test-task", startTime1, Duration.ofMinutes(1),
                             List.of("Failed reading input file", "Some IO failure")));
 
@@ -163,13 +163,13 @@ public class IngestJobStatusTest {
             // Given
             Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
-            RowsProcessed recordsProcessed = new RowsProcessed(123L, 100L);
+            RowsProcessed rowsProcessed = new RowsProcessed(123L, 100L);
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
                     finishedIngestRun("task-1", new JobRunSummary(
-                            recordsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
+                            rowsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -182,13 +182,13 @@ public class IngestJobStatusTest {
             // Given
             Instant startTime1 = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
-            RowsProcessed recordsProcessed = new RowsProcessed(123L, 100L);
+            RowsProcessed rowsProcessed = new RowsProcessed(123L, 100L);
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
                     finishedIngestRunUncommitted("task-1", new JobRunSummary(
-                            recordsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
+                            rowsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -546,7 +546,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant finishTime) {
-        return IngestJobStatusTestData.ingestFinishedStatus(finishTime, 2, defaultRecordsProcessed());
+        return IngestJobStatusTestData.ingestFinishedStatus(finishTime, 2, defaultRowsProcessed());
     }
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
@@ -563,10 +563,10 @@ public class IngestJobStatusTest {
     }
 
     private JobRunSummary summary(Instant startTime, Instant finishTime) {
-        return new JobRunSummary(defaultRecordsProcessed(), startTime, finishTime);
+        return new JobRunSummary(defaultRowsProcessed(), startTime, finishTime);
     }
 
-    private RowsProcessed defaultRecordsProcessed() {
+    private RowsProcessed defaultRowsProcessed() {
         return new RowsProcessed(450L, 300L);
     }
 }

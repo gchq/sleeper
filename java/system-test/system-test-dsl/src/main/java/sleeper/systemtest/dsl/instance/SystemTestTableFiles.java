@@ -51,7 +51,7 @@ public class SystemTestTableFiles {
     }
 
     public Map<String, Long> recordsByFilename() {
-        return all().recordsByFilename();
+        return all().rowsByFilename();
     }
 
     public SystemTestTableFiles waitForState(Predicate<AllReferencesToAllFiles> stateCheck, PollWithRetries poll) throws InterruptedException {

@@ -82,7 +82,7 @@ public class BespokeIngestCoordinator {
                 .iteratorClassName(sleeperIteratorClassName)
                 .iteratorConfig(sleeperIteratorConfig)
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
-                .recordBatchFactory(recordBatchFactory)
+                .rowBatchFactory(recordBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory)
                 .build();
     }

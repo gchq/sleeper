@@ -100,12 +100,12 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    public void shouldWriteRowsWhenThereAreMoreInAPartitionThanCanFitInMemory() throws Exception {
         // Given
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
         // When
-        ingestRecords(5, 1000L, ingestLocalWorkingDirectory, Stream.of("leftFile", "rightFile"));
+        ingestRows(5, 1000L, ingestLocalWorkingDirectory, Stream.of("leftFile", "rightFile"));
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -128,38 +128,38 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+    public void shouldWriteRowsWhenThereAreMoreThanCanFitInLocalStore() throws Exception {
         // Given
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
 
         // When
-        ingestRecords(5, 10L, ingestLocalWorkingDirectory, fileNames);
+        ingestRows(5, 10L, ingestLocalWorkingDirectory, fileNames);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree, stateStoreUpdateTime);
         FileReference firstLeftFile = fileReferenceFactory.partitionFile("left", "s3a://" + dataBucketName + "/data/partition_left/file0.parquet", 5);
         FileReference firstRightFile = fileReferenceFactory.partitionFile("right", "s3a://" + dataBucketName + "/data/partition_right/file1.parquet", 5);
-        List<Row> actualRecords = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
-        List<Row> firstLeftFileRecords = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstLeftFile, hadoopConf);
-        List<Row> firstRightFileRecords = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstRightFile, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> firstLeftFileRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstLeftFile, hadoopConf);
+        List<Row> firstRightFileRows = readRowsFromPartitionDataFile(rowListAndSchema.sleeperSchema, firstRightFile, hadoopConf);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).hasSize(40)
                 .contains(firstLeftFile, firstRightFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
+        assertThat(firstLeftFileRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(-90L, -79L, -68L, -50L, -2L);
-        assertThat(firstRightFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(firstRightFileRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(12L, 14L, 41L, 47L, 83L);
         assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
-    private void ingestRecords(
-            int maxNoOfRecordsInMemory,
-            long maxNoOfRecordsInLocalStore,
+    private void ingestRows(
+            int maxNoOfRowsInMemory,
+            long maxNoOfRowsInLocalStore,
             String ingestLocalWorkingDirectory,
             Stream<String> fileNames) throws IteratorCreationException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
@@ -169,8 +169,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalS
                 ArrayListRowBatchFactory.builder()
                         .parquetConfiguration(parquetConfiguration)
                         .localWorkingDirectory(ingestLocalWorkingDirectory)
-                        .maxNoOfRowsInMemory(maxNoOfRecordsInMemory)
-                        .maxNoOfRowsInLocalStore(maxNoOfRecordsInLocalStore)
+                        .maxNoOfRowsInMemory(maxNoOfRowsInMemory)
+                        .maxNoOfRowsInLocalStore(maxNoOfRowsInLocalStore)
                         .buildAcceptingRows(),
                 DirectPartitionFileWriterFactory.builder()
                         .parquetConfiguration(parquetConfiguration)

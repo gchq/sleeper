@@ -92,7 +92,7 @@ public class TableMetricsTest {
         }
 
         @Test
-        void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
+        void shouldReportMetricsForMultipleFilesWithDifferentRowCounts() {
             // Given
             update(stateStore).addFile(fileFactory().rootFile("file1.parquet", 100L));
             update(stateStore).addFile(fileFactory().rootFile("file2.parquet", 200L));

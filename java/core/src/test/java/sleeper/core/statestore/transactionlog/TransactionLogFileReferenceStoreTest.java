@@ -424,7 +424,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference nestedFile = splitFile(leftFile, "LL");
             update(store).addFile(file);
 
-            // Ideally this would fail as this produces duplicate references to the same records,
+            // Ideally this would fail as this produces duplicate references to the same rows,
             // but not all state stores may be able to implement that
             update(store).splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
 
@@ -1067,7 +1067,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToDeleteActiveFileWhenOneOfTwoSplitRecordsIsReadyForGC() {
+        public void shouldFailToDeleteFileWhenOneOfTwoSplitReferencesHasBeenRemoved() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);

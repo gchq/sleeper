@@ -86,8 +86,8 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
         List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
-        FileReference file1 = ingestRecordsGetFile(data1);
-        FileReference file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRowsGetFile(data1);
+        FileReference file2 = ingestRowsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
@@ -105,8 +105,8 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
                 .isEqualTo(SketchesDeciles.from(schema, expectedResults));
     }
 
-    protected FileReference ingestRecordsGetFile(List<Row> rows) throws Exception {
-        return ingestRecordsGetFile(rows, builder -> builder
+    protected FileReference ingestRowsGetFile(List<Row> rows) throws Exception {
+        return ingestRowsGetFile(rows, builder -> builder
                 .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient));
     }

@@ -396,22 +396,22 @@ public class CompactionTaskTestBase {
 
     protected class ProcessJob {
         private final RuntimeException failure;
-        private final RowsProcessed recordsProcessed;
+        private final RowsProcessed rowsProcessed;
         private ProcessJobAction action = () -> {
         };
 
         ProcessJob(RuntimeException failure) {
             this.failure = failure;
-            this.recordsProcessed = null;
+            this.rowsProcessed = null;
         }
 
-        ProcessJob(long records) {
-            this(new RowsProcessed(records, records));
+        ProcessJob(long rows) {
+            this(new RowsProcessed(rows, rows));
         }
 
         ProcessJob(RowsProcessed summary) {
             this.failure = null;
-            this.recordsProcessed = summary;
+            this.rowsProcessed = summary;
         }
 
         public ProcessJob withAction(ProcessJobAction action) {
@@ -428,7 +428,7 @@ public class CompactionTaskTestBase {
             if (failure != null) {
                 throw failure;
             } else {
-                return recordsProcessed;
+                return rowsProcessed;
             }
         }
     }

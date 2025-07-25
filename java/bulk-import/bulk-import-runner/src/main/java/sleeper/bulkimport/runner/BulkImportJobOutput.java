@@ -23,12 +23,12 @@ public class BulkImportJobOutput {
 
     private final List<FileReference> fileReferences;
     private final Runnable stopSparkContext;
-    private final long numRecords;
+    private final long numRows;
 
     public BulkImportJobOutput(List<FileReference> fileReferences, Runnable stopSparkContext) {
         this.fileReferences = fileReferences;
         this.stopSparkContext = stopSparkContext;
-        this.numRecords = fileReferences.stream()
+        this.numRows = fileReferences.stream()
                 .mapToLong(FileReference::getNumberOfRows)
                 .sum();
     }
@@ -41,8 +41,8 @@ public class BulkImportJobOutput {
         return fileReferences.size();
     }
 
-    public long numRecords() {
-        return numRecords;
+    public long numRows() {
+        return numRows;
     }
 
     public void stopSparkContext() {

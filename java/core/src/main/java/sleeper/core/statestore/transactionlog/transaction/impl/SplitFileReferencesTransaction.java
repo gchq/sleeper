@@ -37,13 +37,13 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Performs atomic updates to split file references. This is used to push file references down the partition tree,
- * eg. where records are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
+ * eg. where rows are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
  * larger, non-leaf partition may be split between smaller partitions which cover non-overlapping sub-ranges of the
- * original partition. This includes these records in compactions of the descendent partitions.
+ * original partition. This includes these rows in compactions of the descendent partitions.
  * <p>
- * The aim is to combine all records into a small number of files for each leaf partition, where the leaves of the
+ * The aim is to combine all rows into a small number of files for each leaf partition, where the leaves of the
  * partition tree should represent a separation of the data into manageable chunks. Compaction operates on file
- * references to pull records from multiple files into one, when they are referenced in the same partition. This
+ * references to pull rows from multiple files into one, when they are referenced in the same partition. This
  * reduces the number of files in the system, and improves statistics and indexing within each partition. This
  * should result in faster queries, and more accurate partitioning when a partition is split.
  * <p>

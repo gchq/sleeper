@@ -15,7 +15,7 @@
  */
 package sleeper.clients.report.ingest.task;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
@@ -37,8 +37,8 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
     private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION");
-    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_READ);
-    private static final TableField RECORDS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_WRITTEN);
+    private static final TableField ROWS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_READ);
+    private static final TableField ROWS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_WRITTEN);
     private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.READ_RATE);
     private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.WRITE_RATE);
 
@@ -65,7 +65,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
 
         TABLE_FACTORY.tableBuilder()
                 .showFields(query != IngestTaskQuery.UNFINISHED,
-                        FINISH_TIME, DURATION, JOB_RUNS, JOB_DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE)
+                        FINISH_TIME, DURATION, JOB_RUNS, JOB_DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }
@@ -81,14 +81,14 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
         if (tasks.stream().anyMatch(IngestTaskStatus::isFinished)) {
             out.printf("Total job runs: %s%n", getTotalJobsRun(tasks));
         }
-        AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(tasks), out);
+        AverageRowRateReport.printf("Average standard compaction rate: %s%n", rowRate(tasks), out);
     }
 
     private static int getTotalJobsRun(List<IngestTaskStatus> tasks) {
         return tasks.stream().mapToInt(IngestTaskStatus::getJobRuns).sum();
     }
 
-    private static AverageRowRate recordRate(List<IngestTaskStatus> tasks) {
+    private static AverageRowRate rowRate(List<IngestTaskStatus> tasks) {
         return AverageRowRate.of(tasks.stream()
                 .map(IngestTaskStatus::asJobRunReport));
     }

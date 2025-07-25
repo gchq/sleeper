@@ -73,7 +73,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -164,19 +164,19 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             configureJobQueuesWithMaxReceiveCount(1);
             // - Create four files of sorted data
             StateStore stateStore = getStateStore();
-            FileReference fileReference1 = ingestFileWith100Records(i -> new Row(Map.of(
+            FileReference fileReference1 = ingestFileWith100Rows(i -> new Row(Map.of(
                     "key", (long) 2 * i,
                     "value1", (long) 2 * i,
                     "value2", 987654321L)));
-            FileReference fileReference2 = ingestFileWith100Records(i -> new Row(Map.of(
+            FileReference fileReference2 = ingestFileWith100Rows(i -> new Row(Map.of(
                     "key", (long) 2 * i + 1,
                     "value1", 1001L,
                     "value2", 123456789L)));
-            FileReference fileReference3 = ingestFileWith100Records(i -> new Row(Map.of(
+            FileReference fileReference3 = ingestFileWith100Rows(i -> new Row(Map.of(
                     "key", (long) 2 * i,
                     "value1", (long) 2 * i,
                     "value2", 987654321L)));
-            FileReference fileReference4 = ingestFileWith100Records(i -> new Row(Map.of(
+            FileReference fileReference4 = ingestFileWith100Rows(i -> new Row(Map.of(
                     "key", (long) 2 * i + 1,
                     "value1", 1001L,
                     "value2", 123456789L)));
@@ -247,8 +247,8 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             // Given
             useInMemoryStateStore();
             configureJobQueuesWithMaxReceiveCount(2);
-            FileReference fileReference1 = ingestFileWith100Records();
-            FileReference fileReference2 = ingestFileWith100Records();
+            FileReference fileReference1 = ingestFileWith100Rows();
+            FileReference fileReference2 = ingestFileWith100Rows();
             CompactionJob job = compactionJobForFiles("job1", fileReference1, fileReference2);
             assignJobIdsToInputFiles(getStateStore(), job);
             String jobJson = sendJob(job);
@@ -271,8 +271,8 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
             // Given
             useInMemoryStateStore();
             configureJobQueuesWithMaxReceiveCount(1);
-            FileReference fileReference1 = ingestFileWith100Records();
-            FileReference fileReference2 = ingestFileWith100Records();
+            FileReference fileReference1 = ingestFileWith100Rows();
+            FileReference fileReference2 = ingestFileWith100Rows();
             CompactionJob job = compactionJobForFiles("job1", fileReference1, fileReference2);
             assignJobIdsToInputFiles(getStateStore(), job);
             String jobJson = sendJob(job);
@@ -301,9 +301,9 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         tablePropertiesStore.save(tableProperties);
         configureJobQueuesWithMaxReceiveCount(1);
         StateStore stateStore = getStateStore();
-        FileReference fileReference = ingestFileWith100Records();
-        List<Row> expectedRecords = IntStream.range(0, 100)
-                .mapToObj(defaultRecordCreator()::apply)
+        FileReference fileReference = ingestFileWith100Rows();
+        List<Row> expectedRows = IntStream.range(0, 100)
+                .mapToObj(defaultRowCreator()::apply)
                 .collect(Collectors.toList());
         CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
@@ -330,9 +330,9 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                                 new JobRunSummary(new RowsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))));
-        // - Check new output file has been created with the correct records
-        assertThat(readRecords(job.getOutputFile(), schema))
-                .containsExactlyElementsOf(expectedRecords);
+        // - Check new output file has been created with the correct rows
+        assertThat(readRows(job.getOutputFile(), schema))
+                .containsExactlyElementsOf(expectedRows);
         // - Check DynamoDBStateStore does not yet have correct file references
         assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
@@ -347,9 +347,9 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         tablePropertiesStore.save(tableProperties);
         configureJobQueuesWithMaxReceiveCount(1);
         StateStore stateStore = getStateStore();
-        FileReference fileReference = ingestFileWith100Records();
-        List<Row> expectedRecords = IntStream.range(0, 100)
-                .mapToObj(defaultRecordCreator()::apply)
+        FileReference fileReference = ingestFileWith100Rows();
+        List<Row> expectedRows = IntStream.range(0, 100)
+                .mapToObj(defaultRowCreator()::apply)
                 .collect(Collectors.toList());
         CompactionJob job = compactionJobForFiles("job1", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
@@ -377,9 +377,9 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
                         tableId));
-        // - Check new output file has been created with the correct records
-        assertThat(readRecords(job.getOutputFile(), schema))
-                .containsExactlyElementsOf(expectedRecords);
+        // - Check new output file has been created with the correct rows
+        assertThat(readRows(job.getOutputFile(), schema))
+                .containsExactlyElementsOf(expectedRows);
         // - Check DynamoDBStateStore does not yet have correct file references
         assertThat(stateStore.getFileReferences())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
@@ -473,18 +473,18 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return task;
     }
 
-    private Function<Integer, Row> defaultRecordCreator() {
+    private Function<Integer, Row> defaultRowCreator() {
         return i -> new Row(Map.of(
                 "key", (long) 2 * i,
                 "value1", (long) 2 * i,
                 "value2", 987654321L));
     }
 
-    private FileReference ingestFileWith100Records() throws Exception {
-        return ingestFileWith100Records(defaultRecordCreator());
+    private FileReference ingestFileWith100Rows() throws Exception {
+        return ingestFileWith100Rows(defaultRowCreator());
     }
 
-    private FileReference ingestFileWith100Records(Function<Integer, Row> recordCreator) throws Exception {
+    private FileReference ingestFileWith100Rows(Function<Integer, Row> rowCreator) throws Exception {
         IngestFactory ingestFactory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .hadoopConfiguration(hadoopConf)
@@ -495,7 +495,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .build();
         IngestCoordinator<Row> coordinator = ingestFactory.createIngestCoordinator(tableProperties);
         for (int i = 0; i < 100; i++) {
-            coordinator.write(recordCreator.apply(i));
+            coordinator.write(rowCreator.apply(i));
         }
         return coordinator.closeReturningResult().getFileReferenceList().get(0);
     }
@@ -548,15 +548,15 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         return reference.toBuilder().jobId(job.getId()).build();
     }
 
-    private List<Row> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Row> reader = new ParquetRecordReader(new Path(filename), schema)) {
-            List<Row> records = new ArrayList<>();
-            for (Row record = reader.read(); record != null; record = reader.read()) {
-                records.add(new Row(record));
+    private List<Row> readRows(String filename, Schema schema) {
+        try (ParquetReader<Row> reader = new ParquetRowReader(new Path(filename), schema)) {
+            List<Row> rows = new ArrayList<>();
+            for (Row row = reader.read(); row != null; row = reader.read()) {
+                rows.add(new Row(row));
             }
-            return records;
+            return rows;
         } catch (IOException e) {
-            throw new RuntimeException("Failed reading records", e);
+            throw new RuntimeException("Failed reading rows", e);
         }
     }
 }

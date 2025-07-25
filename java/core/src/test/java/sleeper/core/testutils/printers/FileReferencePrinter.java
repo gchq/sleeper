@@ -92,7 +92,7 @@ public class FileReferencePrinter {
                 out.print(" ");
             }
             for (FileReference file : partitionFiles) {
-                out.print(file.getNumberOfRows() + " records ");
+                out.print(file.getNumberOfRows() + " rows ");
                 if (file.isCountApproximate()) {
                     out.print("(approx) ");
                 }

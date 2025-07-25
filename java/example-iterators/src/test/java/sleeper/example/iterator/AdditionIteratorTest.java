@@ -90,7 +90,7 @@ public class AdditionIteratorTest {
     }
 
     @Test
-    public void shouldOutputNoRecordsIfNoRowsInInput() {
+    public void shouldOutputNoRowsIfNoRowsInInput() {
         // Given
         Iterator<Row> iterator = List.<Row>of().iterator();
         AdditionIterator additionIterator = new AdditionIterator();

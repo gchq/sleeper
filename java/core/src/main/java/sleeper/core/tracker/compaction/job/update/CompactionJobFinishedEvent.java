@@ -126,9 +126,9 @@ public class CompactionJobFinishedEvent {
         }
 
         /**
-         * Sets the records processed summary.
+         * Sets the rows processed summary.
          *
-         * @param  summary the records processed summary
+         * @param  summary the rows processed summary
          * @return         the builder
          */
         public Builder summary(JobRunSummary summary) {

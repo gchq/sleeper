@@ -29,15 +29,15 @@ public class InMemoryIngest {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
-    private final InMemoryRowStore recordStore;
+    private final InMemoryRowStore rowStore;
     private final InMemorySketchesStore sketchesStore;
 
     public InMemoryIngest(InstanceProperties instanceProperties, TableProperties tableProperties,
-            StateStore stateStore, InMemoryRowStore recordStore, InMemorySketchesStore sketchesStore) {
+            StateStore stateStore, InMemoryRowStore rowStore, InMemorySketchesStore sketchesStore) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
-        this.recordStore = recordStore;
+        this.rowStore = rowStore;
         this.sketchesStore = sketchesStore;
     }
 
@@ -48,8 +48,8 @@ public class InMemoryIngest {
     public IngestCoordinator.Builder<Row> coordinatorBuilder() {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
-                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(recordStore, sketchesStore, instanceProperties, tableProperties))
+                .rowBatchFactory(() -> new InMemoryRowBatch(tableProperties.getSchema()))
+                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(rowStore, sketchesStore, instanceProperties, tableProperties))
                 .stateStore(stateStore);
     }
 

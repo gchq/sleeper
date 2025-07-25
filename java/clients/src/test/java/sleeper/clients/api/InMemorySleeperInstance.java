@@ -67,7 +67,7 @@ public class InMemorySleeperInstance {
                 .tablePropertiesStore(tablePropertiesStore)
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(stateStoreProvider)
-                .recordRetrieverProvider(new InMemoryLeafPartitionRowRetriever(dataStore))
+                .rowRetrieverProvider(new InMemoryLeafPartitionRowRetriever(dataStore))
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())
                 .ingestBatcherSender(ingestBatcherQueue::add)

@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Combines records with identical row keys and sort keys by summing the values in each column. It assumes that all
+ * Combines rows with identical row keys and sort keys by summing the values in each column. It assumes that all
  * value fields are longs. This is an example implementation of a {@link SortedRowIterator}. This implementation
  * is very generic and is provided as an example. More efficient implementations can be written for any specific
  * schema, e.g. by directly comparing the key and sort fields in the equalRowAndSort method, rather than explicitly

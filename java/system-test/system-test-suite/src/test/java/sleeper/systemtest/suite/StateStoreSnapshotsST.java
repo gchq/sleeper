@@ -84,7 +84,7 @@ public class StateStoreSnapshotsST {
         AllReferencesToAllFiles snapshotFiles = sleeper.stateStore().waitForFilesSnapshot(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
                 snapshot -> snapshot.getFiles().size() == 10_000);
-        assertThat(snapshotFiles.recordsByFilename())
+        assertThat(snapshotFiles.rowsByFilename())
                 .isEqualTo(recordsByFilename);
         assertThat(sleeper.tableFiles().recordsByFilename())
                 .isEqualTo(recordsByFilename);

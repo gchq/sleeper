@@ -46,7 +46,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -112,7 +112,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         StateStore stateStore = initialiseStateStore();
 
         List<String> files = writeParquetFilesForIngest(rowListAndSchema, 2);
-        List<Row> doubledRecords = Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
+        List<Row> doubledRows = Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
@@ -126,7 +126,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(doubledRecords);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(doubledRows);
         assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
@@ -204,7 +204,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldWriteRecordsFromTwoBuckets() throws Exception {
+    void shouldWriteRowsFromTwoBuckets() throws Exception {
         // Given
         RowGenerator.RowListAndSchema rows1 = RowGenerator.genericKey1D(
                 new LongType(),
@@ -374,8 +374,8 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private void writeParquetFileForIngest(
             Path path, RowGenerator.RowListAndSchema rowListAndSchema) throws IOException {
-        ParquetWriter<Row> writer = ParquetRecordWriterFactory
-                .createParquetRecordWriter(path, rowListAndSchema.sleeperSchema, hadoopConf);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory
+                .createParquetRowWriter(path, rowListAndSchema.sleeperSchema, hadoopConf);
         for (Row row : rowListAndSchema.rowList) {
             writer.write(row);
         }

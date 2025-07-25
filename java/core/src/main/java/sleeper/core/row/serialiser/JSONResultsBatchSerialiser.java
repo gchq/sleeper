@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Serialises and deserialises a batch of records to and from a JSON string.
+ * Serialises and deserialises a batch of rows to and from a JSON string.
  */
 public class JSONResultsBatchSerialiser implements ResultsBatchSerialiser {
     private final Gson gson;

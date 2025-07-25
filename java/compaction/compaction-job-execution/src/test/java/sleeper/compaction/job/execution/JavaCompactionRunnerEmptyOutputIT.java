@@ -47,7 +47,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Row> data = keyAndTwoValuesSortedEvenLongs();
-        FileReference file1 = ingestRecordsGetFile(data);
+        FileReference file1 = ingestRowsGetFile(data);
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");

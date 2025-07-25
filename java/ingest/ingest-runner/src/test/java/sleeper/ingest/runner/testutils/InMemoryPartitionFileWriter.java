@@ -44,7 +44,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     private final InMemorySketchesStore sketchesStore;
     private final Partition partition;
     private final String filename;
-    private final List<Row> records = new ArrayList<>();
+    private final List<Row> rows = new ArrayList<>();
     private final Sketches sketches;
 
     private InMemoryPartitionFileWriter(InMemoryRowStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
@@ -63,20 +63,20 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     }
 
     @Override
-    public void append(Row record) {
-        records.add(record);
-        sketches.update(record);
+    public void append(Row row) {
+        rows.add(row);
+        sketches.update(row);
     }
 
     @Override
     public CompletableFuture<FileReference> close() {
-        dataStore.addFile(filename, records);
+        dataStore.addFile(filename, rows);
         sketchesStore.saveFileSketches(filename, sketches);
-        LOGGER.info("Wrote file with {} records: {}", records.size(), filename);
+        LOGGER.info("Wrote file with {} rows: {}", rows.size(), filename);
         return CompletableFuture.completedFuture(FileReference.builder()
                 .filename(filename)
                 .partitionId(partition.getId())
-                .numberOfRows((long) records.size())
+                .numberOfRows((long) rows.size())
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build());
