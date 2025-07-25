@@ -34,18 +34,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Writes records to a Parquet file via a record consumer.
+ * Writes rows to a Parquet file.
  */
-public class RecordWriter {
+class ParquetRowWriter {
     private final RecordConsumer recordConsumer;
     private final Schema schema;
 
-    public RecordWriter(RecordConsumer recordConsumer, sleeper.core.schema.Schema schema) {
+    ParquetRowWriter(RecordConsumer recordConsumer, sleeper.core.schema.Schema schema) {
         this.recordConsumer = recordConsumer;
         this.schema = schema;
     }
 
-    public void write(Row row) {
+    void write(Row row) {
         recordConsumer.startMessage();
         int count = 0;
         for (Field entry : schema.getAllFields()) {

@@ -32,7 +32,7 @@ import java.util.HashMap;
 public class RecordWriteSupport extends WriteSupport<Row> {
     private final MessageType messageType;
     private final Schema schema;
-    private RecordWriter recordWriter;
+    private ParquetRowWriter recordWriter;
 
     public RecordWriteSupport(MessageType messageType, Schema schema) {
         this.messageType = messageType;
@@ -45,7 +45,7 @@ public class RecordWriteSupport extends WriteSupport<Row> {
 
     @Override
     public void prepareForWrite(RecordConsumer recordConsumer) {
-        recordWriter = new RecordWriter(recordConsumer, schema);
+        recordWriter = new ParquetRowWriter(recordConsumer, schema);
     }
 
     @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
