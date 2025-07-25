@@ -9,7 +9,7 @@
       "newReference": {
         "filename": "file3.parquet",
         "partitionId": "root",
-        "numberOfRecords": 100,
+        "numberOfRows": 100,
         "countApproximate": false,
         "onlyContainsDataForThisPartition": true
       }
