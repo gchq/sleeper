@@ -67,21 +67,21 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException {
         Instant startTime = timeSupplier.get();
-        long recordsReturned = 0L;
+        long rowsReturned = 0L;
         try {
             out.println("Submitting query with ID: " + query.getQueryId());
             List<Row> results = queryWebSocketClient.submitQuery(query).join();
             RowJsonSerDe serDe = new RowJsonSerDe(tableProperties.getSchema());
             out.println("Query results:");
             results.stream().map(row -> serDe.toJson(row, true)).forEach(out::println);
-            recordsReturned = results.size();
+            rowsReturned = results.size();
         } catch (CompletionException e) {
             out.println("Query failed: " + e.getCause().getMessage());
         } catch (RuntimeException | InterruptedException e) {
             out.println("Query failed: " + e.getMessage());
             throw e;
         } finally {
-            out.println("Query took " + LoggedDuration.withFullOutput(startTime, timeSupplier.get()) + " to return " + recordsReturned + " records");
+            out.println("Query took " + LoggedDuration.withFullOutput(startTime, timeSupplier.get()) + " to return " + rowsReturned + " rows");
         }
     }
 
