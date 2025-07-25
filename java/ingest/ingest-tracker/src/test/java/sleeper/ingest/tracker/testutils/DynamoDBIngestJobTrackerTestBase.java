@@ -101,11 +101,11 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
 
     protected static JobRunSummary defaultSummary(Instant startTime, Instant finishTime) {
         return new JobRunSummary(
-                defaultRecordsProcessed(),
+                defaultRowsProcessed(),
                 startTime, finishTime);
     }
 
-    protected static RowsProcessed defaultRecordsProcessed() {
+    protected static RowsProcessed defaultRowsProcessed() {
         return new RowsProcessed(200, 200);
     }
 
@@ -174,7 +174,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
-                        .rowsProcessed(defaultRecordsProcessed())
+                        .rowsProcessed(defaultRowsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build()));
@@ -186,7 +186,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
-                        .rowsProcessed(defaultRecordsProcessed())
+                        .rowsProcessed(defaultRowsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build(),
