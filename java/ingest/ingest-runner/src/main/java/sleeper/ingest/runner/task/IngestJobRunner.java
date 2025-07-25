@@ -124,7 +124,7 @@ public class IngestJobRunner implements IngestJobHandler {
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 
-        // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
+        // Create supplier of iterator of rows from each file (using a supplier avoids having multiple files open
         // at the same time)
         List<Supplier<CloseableIterator<Row>>> inputIterators = new ArrayList<>();
         for (String path : paths) {
@@ -152,7 +152,7 @@ public class IngestJobRunner implements IngestJobHandler {
                         .build()) {
             result = new IngestRowsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRowsWritten(), paths);
+        LOGGER.info("Ingest job {}: Wrote {} rows from files {}", job.getId(), result.getRowsWritten(), paths);
         return result;
     }
 
