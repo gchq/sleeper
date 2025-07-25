@@ -74,7 +74,7 @@ public class IngestFactory {
         return new Builder();
     }
 
-    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Row> rowIterator) throws StateStoreException, IteratorCreationException, IOException {
+    public IngestResult ingestFromRowIteratorAndClose(TableProperties tableProperties, CloseableIterator<Row> rowIterator) throws StateStoreException, IteratorCreationException, IOException {
         try (rowIterator) {
             return ingestFromRowIterator(tableProperties, rowIterator);
         }
@@ -95,7 +95,7 @@ public class IngestFactory {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
-                .recordBatchFactory(standardRecordBatchFactory(tableProperties, parquetConfiguration))
+                .recordBatchFactory(standardRowBatchFactory(tableProperties, parquetConfiguration))
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration));
     }
 
@@ -103,21 +103,21 @@ public class IngestFactory {
         return ingestCoordinatorBuilder(tableProperties).build();
     }
 
-    private RowBatchFactory<Row> standardRecordBatchFactory(
+    private RowBatchFactory<Row> standardRowBatchFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
-        String recordBatchType = tableProperties.get(INGEST_ROW_BATCH_TYPE).toLowerCase(Locale.ROOT);
-        if ("arraylist".equals(recordBatchType)) {
+        String rowBatchType = tableProperties.get(INGEST_ROW_BATCH_TYPE).toLowerCase(Locale.ROOT);
+        if ("arraylist".equals(rowBatchType)) {
             return ArrayListRowBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
                     .buildAcceptingRows();
-        } else if ("arrow".equals(recordBatchType)) {
+        } else if ("arrow".equals(rowBatchType)) {
             return ArrowRowBatchFactory.builderWith(instanceProperties)
                     .schema(parquetConfiguration.getTableProperties().getSchema())
                     .localWorkingDirectory(localDir)
                     .buildAcceptingRows();
         } else {
-            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+            throw new UnsupportedOperationException(String.format("Row batch type %s not supported", rowBatchType));
         }
     }
 

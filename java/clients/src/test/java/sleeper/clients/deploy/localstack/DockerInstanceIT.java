@@ -158,7 +158,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .hadoopConfiguration(hadoopConf)
                     .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .s3AsyncClient(s3AsyncClient)
-                    .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(rows.iterator()));
+                    .build().ingestFromRowIteratorAndClose(tableProperties, new WrappedIterator<>(rows.iterator()));
         }
     }
 }
