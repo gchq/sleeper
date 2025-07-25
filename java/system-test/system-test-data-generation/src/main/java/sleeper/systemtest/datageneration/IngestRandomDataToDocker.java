@@ -46,16 +46,16 @@ public class IngestRandomDataToDocker {
     private final TableProperties tableProperties;
     private final S3Client s3;
     private final DynamoDbClient dynamoDB;
-    private final long numberOfRecords;
+    private final long numberOfRows;
 
     public IngestRandomDataToDocker(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            S3Client s3, DynamoDbClient dynamoDB, long numberOfRecords) {
+            S3Client s3, DynamoDbClient dynamoDB, long numberOfRows) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.numberOfRecords = numberOfRecords;
+        this.numberOfRows = numberOfRows;
     }
 
     private void run() throws IOException {
@@ -63,7 +63,7 @@ public class IngestRandomDataToDocker {
                 dynamoDB);
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
-                .rowsPerIngest(numberOfRecords)
+                .rowsPerIngest(numberOfRows)
                 .build();
         WriteRandomDataDirect.writeWithIngestFactory(
                 IngestFactory.builder()
@@ -102,13 +102,13 @@ public class IngestRandomDataToDocker {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-number-of-records>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-number-of-rows>");
         }
         String instanceId = args[0];
         String tableName = args[1];
-        long numberOfRecords = 100000;
+        long numberOfRows = 100000;
         if (args.length > 2) {
-            numberOfRecords = Long.parseLong(args[2]);
+            numberOfRows = Long.parseLong(args[2]);
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
@@ -117,7 +117,7 @@ public class IngestRandomDataToDocker {
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
-            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRecords)
+            new IngestRandomDataToDocker(instanceProperties, tableProperties, s3Client, dynamoClient, numberOfRows)
                     .run();
         }
     }
