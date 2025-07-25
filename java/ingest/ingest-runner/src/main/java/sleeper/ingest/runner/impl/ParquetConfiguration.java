@@ -56,7 +56,7 @@ public class ParquetConfiguration {
     }
 
     /**
-     * Create a writer to write records to a Parquet file. It is the responsibility of the caller to close the writer
+     * Create a writer to write rows to a Parquet file. It is the responsibility of the caller to close the writer
      * after use.
      *
      * @param  outputFile  The name of the Parquet file to write to
