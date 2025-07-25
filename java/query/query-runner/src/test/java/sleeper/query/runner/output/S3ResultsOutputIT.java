@@ -35,7 +35,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
@@ -164,7 +164,7 @@ class S3ResultsOutputIT {
     private List<Row> getRecordsFromOutput(String path) {
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(path, schema);
+            ParquetRowReader reader = new ParquetRowReader(path, schema);
 
             Row row = reader.read();
             while (null != row) {

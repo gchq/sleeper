@@ -25,7 +25,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.RecordReadSupport;
+import sleeper.parquet.record.RowReadSupport;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
@@ -46,7 +46,7 @@ public class AwsDataFilesDriver implements DataFilesDriver {
         try {
             LOGGER.info("Reading records from file {}", filename);
             return new ParquetReaderIterator(
-                    ParquetReader.builder(new RecordReadSupport(schema), new Path(filename))
+                    ParquetReader.builder(new RowReadSupport(schema), new Path(filename))
                             .withConf(hadoopConf)
                             .build());
         } catch (IOException e) {

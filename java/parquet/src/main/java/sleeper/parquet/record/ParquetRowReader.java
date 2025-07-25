@@ -25,16 +25,16 @@ import sleeper.core.schema.Schema;
 import java.io.IOException;
 
 /**
- * Reads Parquet files. Uses {@link RecordReadSupport}.
+ * Reads Parquet files. Uses {@link RowReadSupport}.
  */
-public class ParquetRecordReader extends ParquetReader<Row> {
+public class ParquetRowReader extends ParquetReader<Row> {
 
-    public ParquetRecordReader(String file, Schema schema) throws IOException {
-        super(new Path(file), new RecordReadSupport(schema));
+    public ParquetRowReader(String file, Schema schema) throws IOException {
+        super(new Path(file), new RowReadSupport(schema));
     }
 
-    public ParquetRecordReader(Path path, Schema schema) throws IOException {
-        super(path, new RecordReadSupport(schema));
+    public ParquetRowReader(Path path, Schema schema) throws IOException {
+        super(path, new RowReadSupport(schema));
     }
 
     public static class Builder extends ParquetReader.Builder<Row> {
@@ -52,7 +52,7 @@ public class ParquetRecordReader extends ParquetReader<Row> {
 
         @Override
         protected ReadSupport<Row> getReadSupport() {
-            return new RecordReadSupport(schema);
+            return new RowReadSupport(schema);
         }
     }
 }

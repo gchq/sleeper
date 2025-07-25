@@ -44,8 +44,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -246,7 +246,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     private List<Row> readOutputFile(BulkExportLeafPartitionQuery query) {
         Path path = new Path(query.getOutputFile(instanceProperties));
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
-                new ParquetRecordReader.Builder(path, schema).withConf(hadoopConf).build())) {
+                new ParquetRowReader.Builder(path, schema).withConf(hadoopConf).build())) {
             List<Row> rows = new ArrayList<>();
             reader.forEachRemaining(rows::add);
             return rows;

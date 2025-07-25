@@ -57,8 +57,8 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -307,7 +307,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             relevantFiles.stream()
                     .map(af -> {
                         try {
-                            return new ParquetRecordReader(new Path(af.getFilename()), schema);
+                            return new ParquetRowReader(new Path(af.getFilename()), schema);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -413,7 +413,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Row> readRows(String filename, Schema schema) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(filename, schema)) {
+        try (ParquetRowReader reader = new ParquetRowReader(filename, schema)) {
             List<Row> readRows = new ArrayList<>();
             Row row = reader.read();
             while (null != row) {

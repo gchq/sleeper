@@ -35,7 +35,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
-import sleeper.parquet.record.RecordReadSupport;
+import sleeper.parquet.record.RowReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.statestore.StateStoreArrowFileReadStore;
@@ -144,7 +144,7 @@ public class InvestigateCompactionChangingNumberOfRecords {
     private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
         var path = new org.apache.hadoop.fs.Path(filename);
         long count = 0;
-        try (ParquetReader<Row> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
+        try (ParquetReader<Row> reader = ParquetReader.builder(new RowReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
                 .withConf(hadoopConf)
                 .build()) {
             for (Row record = reader.read(); record != null; record = reader.read()) {

@@ -36,7 +36,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
@@ -233,7 +233,7 @@ class SingleFileWritingIteratorIT {
     }
 
     private List<sleeper.core.row.Row> readRows(String path) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), schema)) {
+        try (ParquetRowReader reader = new ParquetRowReader(new Path(path), schema)) {
             List<sleeper.core.row.Row> rows = new ArrayList<>();
             sleeper.core.row.Row row = reader.read();
             while (null != row) {

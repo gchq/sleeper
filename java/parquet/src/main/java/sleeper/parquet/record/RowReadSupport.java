@@ -18,6 +18,7 @@ package sleeper.parquet.record;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.api.InitContext;
 import org.apache.parquet.hadoop.api.ReadSupport;
+import org.apache.parquet.io.api.RecordMaterializer;
 import org.apache.parquet.schema.MessageType;
 
 import sleeper.core.row.Row;
@@ -25,15 +26,15 @@ import sleeper.core.schema.Schema;
 
 import java.util.Map;
 
-public class RecordReadSupport extends ReadSupport<Row> {
+public class RowReadSupport extends ReadSupport<Row> {
     private final Schema schema;
 
-    public RecordReadSupport(Schema schema) {
+    public RowReadSupport(Schema schema) {
         this.schema = schema;
     }
 
     @Override
-    public org.apache.parquet.io.api.RecordMaterializer<Row> prepareForRead(
+    public RecordMaterializer<Row> prepareForRead(
             Configuration configuration,
             Map<String, String> keyValueMetaData,
             MessageType fileSchema,

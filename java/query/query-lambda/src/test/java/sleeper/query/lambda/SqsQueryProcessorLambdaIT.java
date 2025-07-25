@@ -55,7 +55,7 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
@@ -681,7 +681,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
-            try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build();
+            try (ParquetReader<Row> reader = new ParquetRowReader.Builder(outputFile.getPath(), SCHEMA).build();
                     ParquetReaderIterator it = new ParquetReaderIterator(reader)) {
                 while (it.hasNext()) {
                     it.next();

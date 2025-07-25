@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedWriter;
@@ -88,7 +88,7 @@ public class EstimateSplitPointsClient {
         return () -> {
             try {
                 return new LimitingIterator<>(maxRecords,
-                        new ParquetReaderIterator(new ParquetRecordReader.Builder(dataFile, schema)
+                        new ParquetReaderIterator(new ParquetRowReader.Builder(dataFile, schema)
                                 .withConf(conf)
                                 .build()));
             } catch (IOException e) {

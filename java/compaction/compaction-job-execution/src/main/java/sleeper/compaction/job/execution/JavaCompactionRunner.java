@@ -38,8 +38,8 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRowReader;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
@@ -122,7 +122,7 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(file), schema)
+            ParquetReader<Row> reader = new ParquetRowReader.Builder(new Path(file), schema)
                     .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();

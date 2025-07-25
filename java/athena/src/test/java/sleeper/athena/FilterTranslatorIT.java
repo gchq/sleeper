@@ -42,8 +42,8 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.record.ParquetRowReader;
 
 import java.io.File;
 import java.io.IOException;
@@ -645,7 +645,7 @@ public class FilterTranslatorIT {
     }
 
     private List<Row> readData(String dataFile, FilterPredicate filterPredicate) throws IOException {
-        ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(dataFile), SCHEMA)
+        ParquetReader<Row> reader = new ParquetRowReader.Builder(new Path(dataFile), SCHEMA)
                 .withFilter(FilterCompat.get(filterPredicate))
                 .build();
 
