@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.runner.rowretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,7 +59,7 @@ public interface SleeperClientHadoopQueryProvider {
     static SleeperClientHadoopQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
         return hadoopConf -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-            LeafPartitionRowRetrieverProvider provider = LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf);
+            LeafPartitionRowRetrieverProvider provider = LeafPartitionRowRetrieverImpl.createProvider(executorService, hadoopConf);
             return ShutdownWrapper.shutdown(provider, executorService::shutdown);
         };
     }
@@ -84,7 +84,7 @@ public interface SleeperClientHadoopQueryProvider {
         @Override
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf) {
             return ShutdownWrapper.noShutdown(
-                    LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf));
+                    LeafPartitionRowRetrieverImpl.createProvider(executorService, hadoopConf));
         }
 
         @Override

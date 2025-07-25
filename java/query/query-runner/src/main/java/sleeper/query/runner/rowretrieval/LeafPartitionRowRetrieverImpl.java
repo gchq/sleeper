@@ -52,26 +52,26 @@ import java.util.concurrent.Future;
 import static sleeper.core.properties.table.TableProperty.PARQUET_QUERY_COLUMN_INDEX_ENABLED;
 
 /**
- * Pulls back records for a single leaf partition according to a provided predicate.
+ * Pulls back rows for a single leaf partition according to a provided predicate.
  */
-public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriever {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionRecordRetrieverImpl.class);
+public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionRowRetrieverImpl.class);
 
     private final Configuration filesConfig;
     private final ExecutorService executorService;
     private final TableProperties tableProperties;
 
-    public LeafPartitionRecordRetrieverImpl(ExecutorService executorService, Configuration conf, TableProperties tableProperties) {
+    public LeafPartitionRowRetrieverImpl(ExecutorService executorService, Configuration conf, TableProperties tableProperties) {
         this.executorService = executorService;
         this.filesConfig = conf;
         this.tableProperties = tableProperties;
     }
 
     public static LeafPartitionRowRetrieverProvider createProvider(ExecutorService executorService, Configuration conf) {
-        return tableProperties -> new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties);
+        return tableProperties -> new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties);
     }
 
-    public CloseableIterator<Row> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RowRetrievalException {
+    public CloseableIterator<Row> getRows(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RowRetrievalException {
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
         }
@@ -94,7 +94,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
             throw new RowRetrievalException("Interrupted while invoking retrieve tasks", e);
         }
 
-        // First record from each iterator is returned separately - this forces
+        // First row from each iterator is returned separately - this forces
         // the initialisation of the reader and the retrieval of the first
         // batch to be done in parallel.
         Map<Integer, Row> currentValues = new HashMap<>();
@@ -104,7 +104,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
             try {
                 pair = future.get();
             } catch (InterruptedException | ExecutionException e) {
-                throw new RowRetrievalException("Failed to retrieve records due to an exception", e);
+                throw new RowRetrievalException("Failed to retrieve rows due to an exception", e);
             }
             if (null != pair) {
                 indexToReader.put(count, pair.getRight());
@@ -138,7 +138,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
 
         FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
                 leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
-        return getRecords(files, dataReadSchema, filterPredicate);
+        return getRows(files, dataReadSchema, filterPredicate);
     }
 
     private ParquetReader<Row> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
