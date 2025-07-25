@@ -15,7 +15,7 @@
  */
 package sleeper.clients.report.compaction.task;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
@@ -78,7 +78,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         if (tasks.stream().anyMatch(CompactionTaskStatus::isFinished)) {
             out.printf("Total job runs: %s%n", getTotalJobsRun(tasks));
         }
-        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(tasks), out);
+        AverageRowRateReport.printf("Average compaction rate: %s%n", recordRate(tasks), out);
     }
 
     private static int getTotalJobsRun(List<CompactionTaskStatus> tasks) {

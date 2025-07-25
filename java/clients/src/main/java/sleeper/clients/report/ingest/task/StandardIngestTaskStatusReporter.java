@@ -15,7 +15,7 @@
  */
 package sleeper.clients.report.ingest.task;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
@@ -81,7 +81,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
         if (tasks.stream().anyMatch(IngestTaskStatus::isFinished)) {
             out.printf("Total job runs: %s%n", getTotalJobsRun(tasks));
         }
-        AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(tasks), out);
+        AverageRowRateReport.printf("Average standard compaction rate: %s%n", recordRate(tasks), out);
     }
 
     private static int getTotalJobsRun(List<IngestTaskStatus> tasks) {

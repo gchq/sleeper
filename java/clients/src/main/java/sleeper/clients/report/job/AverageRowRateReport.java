@@ -21,9 +21,9 @@ import java.io.PrintStream;
 
 import static sleeper.core.util.NumberFormatUtils.formatDecimal2dp;
 
-public class AverageRecordRateReport {
+public class AverageRowRateReport {
 
-    private AverageRecordRateReport() {
+    private AverageRowRateReport() {
     }
 
     public static void printf(String format, AverageRowRate average, PrintStream out) {

@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.util.tablewriter.TableField;
@@ -179,7 +179,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunSuccessful).count());
-        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+        AverageRowRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
@@ -199,7 +199,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printRangeSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
         queueMessages.print(out);
         out.printf("Total jobs in defined range: %d%n", statusList.size());
-        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+        AverageRowRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
     private void printRejectedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
