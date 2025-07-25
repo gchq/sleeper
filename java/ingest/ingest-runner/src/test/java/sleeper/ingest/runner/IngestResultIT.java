@@ -28,7 +28,7 @@ import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
 
 class IngestResultIT extends IngestRowsTestBase {
     @Test
-    void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
+    void shouldReturnNumberOfRowsFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
 

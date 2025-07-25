@@ -112,7 +112,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         StateStore stateStore = initialiseStateStore();
 
         List<String> files = writeParquetFilesForIngest(rowListAndSchema, 2);
-        List<Row> doubledRecords = Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
+        List<Row> doubledRows = Stream.of(rowListAndSchema.rowList, rowListAndSchema.rowList)
                 .flatMap(List::stream).collect(Collectors.toList());
 
         // When
@@ -126,7 +126,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         assertThat(actualFiles)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactly(fileReferenceFactory.rootFile("anyfilename", 20));
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(doubledRecords);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(doubledRows);
         assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
@@ -204,7 +204,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldWriteRecordsFromTwoBuckets() throws Exception {
+    void shouldWriteRowsFromTwoBuckets() throws Exception {
         // Given
         RowGenerator.RowListAndSchema rows1 = RowGenerator.genericKey1D(
                 new LongType(),
