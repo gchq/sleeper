@@ -40,7 +40,7 @@ public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, Lis
                         .getReferenceForPartitionId(job.getPartitionId()).orElseThrow())
                 .toList();
         FileReference outputFile = job.getNewReference();
-        if (outputFile.getNumberOfRecords() != inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum()) {
+        if (outputFile.getNumberOfRows() != inputFiles.stream().mapToLong(FileReference::getNumberOfRows).sum()) {
             FileReference outputFileAfter = outputFile.toBuilder().lastStateStoreUpdateTime(entry.getUpdateTime()).build();
             return Optional.of(new CompactionChangedRecordCount(job, inputFiles, outputFileAfter));
         } else {
@@ -57,11 +57,11 @@ public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, Lis
     }
 
     public long recordsBefore() {
-        return inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        return inputFiles.stream().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     public long recordsAfter() {
-        return outputFile.getNumberOfRecords();
+        return outputFile.getNumberOfRows();
     }
 
     public CompactionJob asCompactionJobToNewFile(String tableId, String outputFile) {

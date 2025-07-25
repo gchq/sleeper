@@ -111,7 +111,7 @@ public class IngestResult {
 
     private static long rowsWritten(List<FileReference> fileReferenceList) {
         return fileReferenceList.stream()
-                .mapToLong(FileReference::getNumberOfRecords)
+                .mapToLong(FileReference::getNumberOfRows)
                 .sum();
     }
 }

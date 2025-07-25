@@ -88,7 +88,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
 
         // Then
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
-                .extracting(FileReference::getNumberOfRecords)
+                .extracting(FileReference::getNumberOfRows)
                 .containsExactly(12L, 12L);
     }
 

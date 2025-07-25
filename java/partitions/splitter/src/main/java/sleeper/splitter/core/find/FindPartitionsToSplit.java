@@ -73,7 +73,7 @@ public class FindPartitionsToSplit {
                 filesForJob.addAll(
                         result.getRelevantFiles()
                                 .stream()
-                                .sorted((f1, f2) -> Long.compare(f2.getNumberOfRecords(), f1.getNumberOfRecords()))
+                                .sorted((f1, f2) -> Long.compare(f2.getNumberOfRows(), f1.getNumberOfRows()))
                                 .limit(maxFilesInJob)
                                 .map(FileReference::getFilename)
                                 .collect(Collectors.toList()));

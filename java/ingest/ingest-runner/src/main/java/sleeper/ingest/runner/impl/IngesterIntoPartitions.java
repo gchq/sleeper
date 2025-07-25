@@ -210,7 +210,7 @@ class IngesterIntoPartitions {
                 .map(entry -> FileReference.builder()
                         .partitionId(entry.getKey())
                         .filename(rootFile.getFilename())
-                        .numberOfRecords(entry.getValue())
+                        .numberOfRows(entry.getValue())
                         .countApproximate(false)
                         .onlyContainsDataForThisPartition(hasOnePartition)
                         .build())

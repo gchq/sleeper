@@ -256,7 +256,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                 .collect(Collectors.toList());
         sortRows(rightPartition);
         assertThat(stateStore.getFileReferences())
-                .extracting(FileReference::getNumberOfRecords,
+                .extracting(FileReference::getNumberOfRows,
                         file -> readRows(file.getFilename(), schema))
                 .containsExactlyInAnyOrder(
                         tuple(100L, leftPartition),
@@ -298,7 +298,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                     .collect(Collectors.toList());
 
             long totalRows = relevantFiles.stream()
-                    .map(FileReference::getNumberOfRecords)
+                    .map(FileReference::getNumberOfRows)
                     .reduce(Long::sum)
                     .orElseThrow();
 
@@ -360,7 +360,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
         sortRows(rows);
         assertThat(stateStore.getFileReferences())
-                .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
+                .extracting(FileReference::getNumberOfRows, FileReference::getPartitionId,
                         file -> readRows(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, rows));
         IngestJob ingestJob = job.toIngestJob();

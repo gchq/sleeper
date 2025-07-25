@@ -76,7 +76,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
         return CompletableFuture.completedFuture(FileReference.builder()
                 .filename(filename)
                 .partitionId(partition.getId())
-                .numberOfRecords((long) records.size())
+                .numberOfRows((long) records.size())
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build());

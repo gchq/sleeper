@@ -70,7 +70,7 @@ public class IngestCoordinatorTestHelper {
         return FileReference.builder()
                 .partitionId(partitionId)
                 .filename(filename)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRecords)
                 .countApproximate(false)
                 .lastStateStoreUpdateTime(updateTime);
     }

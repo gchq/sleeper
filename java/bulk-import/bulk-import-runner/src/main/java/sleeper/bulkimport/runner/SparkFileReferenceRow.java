@@ -35,7 +35,7 @@ public class SparkFileReferenceRow {
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
-                .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .numberOfRows(row.getAs(NUM_RECORDS_FIELD_NAME))
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();

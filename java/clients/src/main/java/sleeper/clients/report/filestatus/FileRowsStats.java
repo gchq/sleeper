@@ -37,9 +37,9 @@ public class FileRowsStats {
         long totalRowsExact = 0;
         for (FileReference reference : references) {
             if (reference.isCountApproximate()) {
-                totalRowsApprox += reference.getNumberOfRecords();
+                totalRowsApprox += reference.getNumberOfRows();
             } else {
-                totalRowsExact += reference.getNumberOfRecords();
+                totalRowsExact += reference.getNumberOfRows();
             }
         }
         return new FileRowsStats(totalRowsApprox + totalRowsExact, totalRowsApprox, totalRowsExact);

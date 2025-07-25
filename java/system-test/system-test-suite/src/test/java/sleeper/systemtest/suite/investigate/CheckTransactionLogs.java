@@ -106,7 +106,7 @@ public class CheckTransactionLogs {
 
     public long totalRecordsAtTransaction(long transactionNumber) {
         return filesStateAtTransaction(transactionNumber)
-                .references().mapToLong(FileReference::getNumberOfRecords).sum();
+                .references().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     public long countCompactionCommitTransactions() {

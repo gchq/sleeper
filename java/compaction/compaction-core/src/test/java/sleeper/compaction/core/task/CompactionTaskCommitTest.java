@@ -267,7 +267,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             .newReference(FileReference.builder()
                                     .filename(job1.getOutputFile())
                                     .partitionId("root")
-                                    .numberOfRecords(5L)
+                                    .numberOfRows(5L)
                                     .countApproximate(false)
                                     .onlyContainsDataForThisPartition(true)
                                     .build())

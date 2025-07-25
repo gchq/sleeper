@@ -77,7 +77,7 @@ public class TableMetrics {
         List<FileReference> fileReferences = files.streamFileReferences().toList();
         LOGGER.info("Found {} files for table {}", referencedFiles.size(), table);
         LOGGER.info("Found {} file references for table {}", fileReferences.size(), table);
-        long rowCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        long rowCount = fileReferences.stream().mapToLong(FileReference::getNumberOfRows).sum();
         LOGGER.info("Total number of rows in table {} is {}", table, rowCount);
 
         Map<String, Long> fileCountByPartitionId = fileReferences.stream()

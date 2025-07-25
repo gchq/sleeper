@@ -111,7 +111,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
 
     private void printFileReference(FileReference reference) {
         out.println("\tReference in partition " + reference.getPartitionId()
-                + ", " + reference.getNumberOfRecords() + " rows" + (reference.isCountApproximate() ? " (approx)" : "")
+                + ", " + reference.getNumberOfRows() + " rows" + (reference.isCountApproximate() ? " (approx)" : "")
                 + ", last updated at " + reference.getLastStateStoreUpdateTime()
                 + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
     }

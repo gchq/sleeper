@@ -113,7 +113,7 @@ public class SystemTestStateStoreFakeCommits {
             Map<String, List<FileReference>> partitionIdToReferences = allReferences
                     .stream().collect(groupingBy(FileReference::getPartitionId));
             Map<String, Long> partitionIdToRecords = allReferences
-                    .stream().collect(groupingBy(FileReference::getPartitionId, summingLong(FileReference::getNumberOfRecords)));
+                    .stream().collect(groupingBy(FileReference::getPartitionId, summingLong(FileReference::getNumberOfRows)));
             List<CompactionJob> jobs = partitionIdToReferences.entrySet().stream()
                     .map(entry -> jobFactory.createCompactionJob(entry.getValue(), entry.getKey()))
                     .toList();

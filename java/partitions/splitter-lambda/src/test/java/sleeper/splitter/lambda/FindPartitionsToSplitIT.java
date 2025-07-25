@@ -163,7 +163,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                     List<FileReference> fileReferences = stateStore.getFileReferences();
                     Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
                             .filter(fi -> fi.getFilename().equals(fileName))
-                            .map(FileReference::getNumberOfRecords)).reduce(Long::sum);
+                            .map(FileReference::getNumberOfRows)).reduce(Long::sum);
 
                     // 109 + 108 + 107 + 106 + 105 = 535
                     assertThat(numberOfRecords).contains(535L);

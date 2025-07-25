@@ -35,7 +35,7 @@ public class AllReferencesToAFileTestHelper {
      * @return      the number of records
      */
     public static long sumFileReferenceRecordCounts(AllReferencesToAFile file) {
-        return file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        return file.getReferences().stream().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     /**
@@ -45,7 +45,7 @@ public class AllReferencesToAFileTestHelper {
      * @return       the number of records
      */
     public static long sumFileReferenceRecordCounts(AllReferencesToAllFiles files) {
-        return files.streamFileReferences().mapToLong(FileReference::getNumberOfRecords).sum();
+        return files.streamFileReferences().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     /**

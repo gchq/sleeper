@@ -103,9 +103,9 @@ public class PartitionSplitCheck {
     public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, PartitionTree partitionTree, Partition partition, Map<String, List<FileReference>> fileReferencesByPartition) {
         List<FileReference> partitionFileReferences = fileReferencesByPartition.getOrDefault(partition.getId(), List.of());
         long estimatedInPartitionFromTree = estimateRecordsInPartitionFromTree(partition, partitionTree, fileReferencesByPartition);
-        long estimatedInPartition = partitionFileReferences.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        long estimatedInPartition = partitionFileReferences.stream().mapToLong(FileReference::getNumberOfRows).sum();
         List<FileReference> filesWhollyInPartition = partitionFileReferences.stream().filter(FileReference::onlyContainsDataForThisPartition).collect(toUnmodifiableList());
-        long known = filesWhollyInPartition.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRecords).sum();
+        long known = filesWhollyInPartition.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRows).sum();
         return new PartitionSplitCheck(properties.getStatus(), partition,
                 partitionFileReferences, filesWhollyInPartition,
                 estimatedInPartitionFromTree, estimatedInPartition, known,
@@ -120,7 +120,7 @@ public class PartitionSplitCheck {
     private static long estimateRecordsInPartitionDescendents(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
         return tree.descendentsOf(partition)
                 .flatMap(descendent -> fileReferencesByPartition.getOrDefault(descendent.getId(), List.of()).stream())
-                .mapToLong(FileReference::getNumberOfRecords)
+                .mapToLong(FileReference::getNumberOfRows)
                 .sum();
     }
 
@@ -130,7 +130,7 @@ public class PartitionSplitCheck {
         long treeDivisor = 1;
         do {
             List<FileReference> partitionFiles = fileReferencesByPartition.getOrDefault(current.getId(), List.of());
-            long partitionCount = partitionFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+            long partitionCount = partitionFiles.stream().mapToLong(FileReference::getNumberOfRows).sum();
             count += partitionCount / treeDivisor;
             treeDivisor *= 2;
             current = tree.getParent(current);

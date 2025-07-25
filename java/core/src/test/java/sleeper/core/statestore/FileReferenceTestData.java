@@ -52,7 +52,7 @@ public class FileReferenceTestData {
         return FileReference.builder()
                 .filename(filename)
                 .partitionId("root")
-                .numberOfRecords(records)
+                .numberOfRows(records)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
