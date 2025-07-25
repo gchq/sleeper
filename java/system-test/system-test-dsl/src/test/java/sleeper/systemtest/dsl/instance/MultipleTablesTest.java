@@ -58,7 +58,7 @@ public class MultipleTablesTest {
         // Given we have several tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(NUMBER_OF_TABLES, schema);
-        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows(schema, "file.parquet", LongStream.range(0, 100));
 
         // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
@@ -84,8 +84,8 @@ public class MultipleTablesTest {
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.sourceFiles()
-                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
-                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+                .createWithNumberedRows(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRows(schema, "file2.parquet", LongStream.range(50, 100));
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")
@@ -114,7 +114,7 @@ public class MultipleTablesTest {
         sleeper.setGeneratorOverrides(
                 overrideField(ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .waitForTask().waitForJobs();
 
@@ -147,8 +147,8 @@ public class MultipleTablesTest {
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.sourceFiles()
-                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
-                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+                .createWithNumberedRows(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRows(schema, "file2.parquet", LongStream.range(50, 100));
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")

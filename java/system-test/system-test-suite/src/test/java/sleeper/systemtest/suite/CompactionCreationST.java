@@ -64,8 +64,8 @@ public class CompactionCreationST {
         PartitionTree partitions = createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper);
         sleeper.partitioning().setPartitions(partitions);
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 655360))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(0, 655360));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 655360))
+                .createWithNumberedRows("file2.parquet", LongStream.range(0, 655360));
         sleeper.ingest().toStateStore()
                 .addFileOnEveryPartition("file1.parquet", 655360)
                 .addFileOnEveryPartition("file2.parquet", 655360);

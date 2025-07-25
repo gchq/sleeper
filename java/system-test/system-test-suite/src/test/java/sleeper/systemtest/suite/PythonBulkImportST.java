@@ -45,8 +45,8 @@ public class PythonBulkImportST {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200));
 
         // When
         sleeper.pythonApi()

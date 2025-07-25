@@ -63,8 +63,8 @@ public class PythonIngestST {
     void shouldIngestTwoFilesFromS3(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200));
 
         // When
         sleeper.pythonApi()
@@ -81,8 +81,8 @@ public class PythonIngestST {
     void shouldIngestDirectoryFromS3(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
+                .createWithNumberedRows("test-dir/file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("test-dir/file2.parquet", LongStream.range(100, 200));
 
         // When
         sleeper.pythonApi()

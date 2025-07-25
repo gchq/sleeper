@@ -40,7 +40,7 @@ public class AwsDataFilesDriverIT {
     void shouldReadFile(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket()
-                .createWithNumberedRecords("test.parquet", LongStream.of(1, 3, 2));
+                .createWithNumberedRows("test.parquet", LongStream.of(1, 3, 2));
         sleeper.ingest().toStateStore().addFileOnEveryPartition("test.parquet", 3);
 
         // When / Then

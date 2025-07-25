@@ -63,7 +63,7 @@ public class UserJarsST {
     @Test
     void shouldApplyTableIteratorFromUserJarDuringIngest(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));

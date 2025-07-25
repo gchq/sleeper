@@ -50,8 +50,8 @@ public class CreateManyCompactionsTest {
         sleeper.partitioning().setPartitions(
                 createPartitionTreeWithRecordsPerPartitionAndTotal(10, 10240, sleeper));
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 10240))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(0, 10240));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 10240))
+                .createWithNumberedRows("file2.parquet", LongStream.range(0, 10240));
         sleeper.ingest().toStateStore()
                 .addFileOnEveryPartition("file1.parquet", 10240)
                 .addFileOnEveryPartition("file2.parquet", 10240);

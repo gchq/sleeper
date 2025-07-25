@@ -59,10 +59,10 @@ public class IngestBatcherST {
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", numbers.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
+                .createWithNumberedRows("file1.parquet", numbers.range(0, 100))
+                .createWithNumberedRows("file2.parquet", numbers.range(100, 200))
+                .createWithNumberedRows("file3.parquet", numbers.range(200, 300))
+                .createWithNumberedRows("file4.parquet", numbers.range(300, 400));
 
         // When
         sleeper.ingest().batcher()
@@ -86,10 +86,10 @@ public class IngestBatcherST {
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", numbers.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
+                .createWithNumberedRows("file1.parquet", numbers.range(0, 100))
+                .createWithNumberedRows("file2.parquet", numbers.range(100, 200))
+                .createWithNumberedRows("file3.parquet", numbers.range(200, 300))
+                .createWithNumberedRows("file4.parquet", numbers.range(300, 400));
 
         // When
         sleeper.ingest().batcher()

@@ -73,7 +73,7 @@ public class EmrPersistentBulkImportST {
         sleeper.setGeneratorOverrides(overrideField(
                 SystemTestSchema.ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().bulkImportByQueue()

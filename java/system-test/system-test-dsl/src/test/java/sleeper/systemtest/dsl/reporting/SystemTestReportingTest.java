@@ -44,7 +44,7 @@ public class SystemTestReportingTest {
     void shouldReportFinishedIngestJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.of(1, 2, 3));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.of(1, 2, 3));
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
         // When / Then

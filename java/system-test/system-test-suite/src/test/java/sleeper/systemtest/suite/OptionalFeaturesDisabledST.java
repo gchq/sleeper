@@ -53,7 +53,7 @@ public class OptionalFeaturesDisabledST {
     void shouldIngest1FileFromDataBucketWhenSourceBucketAndTrackerAreDisabled(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet");

@@ -79,7 +79,7 @@ public class CompactionTest {
                 .numberedRecords(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file.parquet", LongStream.range(50, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(50, 100));
         sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
         // When

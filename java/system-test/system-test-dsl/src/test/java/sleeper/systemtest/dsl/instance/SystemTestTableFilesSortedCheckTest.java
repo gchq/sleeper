@@ -55,7 +55,7 @@ public class SystemTestTableFilesSortedCheckTest {
     @Test
     void shouldFindFileIsNotSortedAfterAddingSourceFile(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.sourceFiles().inDataBucket().createWithNumberedRecords("test.parquet", LongStream.of(1, 3, 2));
+        sleeper.sourceFiles().inDataBucket().createWithNumberedRows("test.parquet", LongStream.of(1, 3, 2));
         sleeper.ingest().toStateStore().addFileOnEveryPartition("test.parquet", 3);
 
         // When / Then

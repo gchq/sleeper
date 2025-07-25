@@ -49,7 +49,7 @@ public class IngestST {
     void shouldIngest1File(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
@@ -65,10 +65,10 @@ public class IngestST {
     void shouldIngest4FilesInOneJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200))
+                .createWithNumberedRows("file3.parquet", LongStream.range(200, 300))
+                .createWithNumberedRows("file4.parquet", LongStream.range(300, 400));
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
@@ -84,10 +84,10 @@ public class IngestST {
     void shouldIngest4FilesInTwoJobs(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200))
+                .createWithNumberedRows("file3.parquet", LongStream.range(200, 300))
+                .createWithNumberedRows("file4.parquet", LongStream.range(300, 400));
 
         // When
         sleeper.ingest().byQueue()
@@ -106,7 +106,7 @@ public class IngestST {
     void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 20000));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 20000));
 
         // When
         sleeper.ingest().setType(ingestType)
