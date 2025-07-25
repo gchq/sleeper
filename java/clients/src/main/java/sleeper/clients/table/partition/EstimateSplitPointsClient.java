@@ -47,12 +47,12 @@ public class EstimateSplitPointsClient {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 6) {
-            throw new IllegalArgumentException("Usage: <schema-file> <num-partitions> <read-max-records-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>");
+            throw new IllegalArgumentException("Usage: <schema-file> <num-partitions> <read-max-rows-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>");
         }
 
         Path schemaFile = Paths.get(args[0]);
         int numPartitions = Integer.parseInt(args[1]);
-        long recordsPerFile = Long.parseLong(args[2]);
+        long rowsPerFile = Long.parseLong(args[2]);
         int sketchSize = Integer.parseInt(args[3]);
         Path outputFile = Paths.get(args[4]);
         List<org.apache.hadoop.fs.Path> parquetPaths = List.of(args).subList(5, args.length).stream()
@@ -62,32 +62,32 @@ public class EstimateSplitPointsClient {
         String schemaJson = Files.readString(schemaFile);
         Schema schema = new SchemaSerDe().fromJson(schemaJson);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
-        List<Object> splitPoints = estimate(schema, conf, numPartitions, recordsPerFile, sketchSize, parquetPaths);
+        List<Object> splitPoints = estimate(schema, conf, numPartitions, rowsPerFile, sketchSize, parquetPaths);
         try (BufferedWriter writer = Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8)) {
             writeSplitPoints(splitPoints, writer, false);
         }
     }
 
     public static List<Object> estimate(
-            Schema schema, Configuration conf, int numPartitions, long recordsPerFile, int sketchSize,
+            Schema schema, Configuration conf, int numPartitions, long rowsPerFile, int sketchSize,
             List<org.apache.hadoop.fs.Path> parquetPaths) throws IOException {
-        try (CloseableIterator<Row> iterator = openRecordIterator(schema, conf, recordsPerFile, parquetPaths)) {
+        try (CloseableIterator<Row> iterator = openRowIterator(schema, conf, rowsPerFile, parquetPaths)) {
             return new EstimateSplitPoints(schema, () -> iterator, numPartitions, sketchSize).estimate();
         }
     }
 
-    private static ConcatenatingIterator openRecordIterator(
-            Schema schema, Configuration conf, long recordsPerFile, List<org.apache.hadoop.fs.Path> parquetPaths) {
+    private static ConcatenatingIterator openRowIterator(
+            Schema schema, Configuration conf, long rowsPerFile, List<org.apache.hadoop.fs.Path> parquetPaths) {
         return new ConcatenatingIterator(parquetPaths.stream()
-                .map(path -> recordIteratorSupplier(schema, conf, recordsPerFile, path))
+                .map(path -> rowIteratorSupplier(schema, conf, rowsPerFile, path))
                 .collect(toUnmodifiableList()));
     }
 
-    private static Supplier<CloseableIterator<Row>> recordIteratorSupplier(
-            Schema schema, Configuration conf, long maxRecords, org.apache.hadoop.fs.Path dataFile) {
+    private static Supplier<CloseableIterator<Row>> rowIteratorSupplier(
+            Schema schema, Configuration conf, long maxRows, org.apache.hadoop.fs.Path dataFile) {
         return () -> {
             try {
-                return new LimitingIterator<>(maxRecords,
+                return new LimitingIterator<>(maxRows,
                         new ParquetReaderIterator(new ParquetRowReader.Builder(dataFile, schema)
                                 .withConf(conf)
                                 .build()));
