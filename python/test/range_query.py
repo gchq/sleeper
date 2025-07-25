@@ -31,10 +31,10 @@ if __name__ == "__main__":
     # Setting use_threads as a workaround for the following bug in Arrow:
     # https://github.com/apache/arrow/issues/34314
     sleeper_client = SleeperClient(args.instance, use_threads=False)
-    records = sleeper_client.range_key_query(args.table, [args.query], args.queryid)
+    rows = sleeper_client.range_key_query(args.table, [args.query], args.queryid)
 
     with open(args.outdir + "/" + args.queryid + ".txt", "wb") as file:
         writer = ParquetSerialiser(file)
-        for record in records:
-            writer.write_record(record)
+        for row in rows:
+            writer.write_record(row)
         writer.write_tail()
