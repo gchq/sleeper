@@ -47,7 +47,7 @@ public class PartitionSplittingTest {
     }
 
     @Test
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
+    void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(ROW_KEY_FIELD_NAME,
