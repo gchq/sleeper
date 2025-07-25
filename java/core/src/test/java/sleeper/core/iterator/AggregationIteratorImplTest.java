@@ -100,7 +100,7 @@ public class AggregationIteratorImplTest {
                 new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When
-        boolean equal = iteratorImpl.recordsEqual(r1, r2);
+        boolean equal = iteratorImpl.rowsEqual(r1, r2);
         iteratorImpl.close();
 
         // Then
@@ -119,7 +119,7 @@ public class AggregationIteratorImplTest {
                 new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When
-        boolean equal = iteratorImpl.recordsEqual(r1, r2);
+        boolean equal = iteratorImpl.rowsEqual(r1, r2);
         iteratorImpl.close();
 
         // Then
