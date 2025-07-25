@@ -42,7 +42,7 @@ public class SplitFileReference {
      * @return                  the reference to the new copy
      */
     public static FileReference referenceForChildPartition(FileReference file, String childPartitionId) {
-        return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);
+        return referenceForChildPartition(file, childPartitionId, file.getNumberOfRows() / 2);
     }
 
     /**
@@ -61,7 +61,7 @@ public class SplitFileReference {
         return FileReference.builder()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRecords)
                 .countApproximate(true)
                 .onlyContainsDataForThisPartition(false)
                 .build();

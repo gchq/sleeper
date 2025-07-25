@@ -32,6 +32,6 @@ public class FileReferenceSystemTestHelper {
     }
 
     public static long numberOfRecordsIn(List<? extends FileReference> files) {
-        return files.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        return files.stream().mapToLong(FileReference::getNumberOfRows).sum();
     }
 }

@@ -32,7 +32,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRun;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -207,8 +207,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         out.printf("Total jobs rejected: %d%n", statusList.size());
     }
 
-    private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {
-        return AverageRecordRate.of(jobs.stream()
+    private static AverageRowRate recordRate(List<IngestJobStatus> jobs) {
+        return AverageRowRate.of(jobs.stream()
                 .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
 

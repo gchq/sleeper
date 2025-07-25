@@ -64,7 +64,7 @@ public class AllReferencesToAllFiles {
         return getFilesWithReferences().stream()
                 .collect(toMap(
                         AllReferencesToAFile::getFilename,
-                        file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum()));
+                        file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRows).sum()));
     }
 
     /**

@@ -28,7 +28,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.DurationStatistics;
 
@@ -185,8 +185,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .orElse("no jobs committed"));
     }
 
-    private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
-        return AverageRecordRate.of(jobs.stream()
+    private static AverageRowRate recordRate(List<CompactionJobStatus> jobs) {
+        return AverageRowRate.of(jobs.stream()
                 .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
 

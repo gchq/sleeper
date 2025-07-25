@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -54,12 +54,12 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        assertThat(summary.getRecordsRead()).isEqualTo(data.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(data.size());
+        assertThat(summary.getRowsRead()).isEqualTo(data.size());
+        assertThat(summary.getRowsWritten()).isEqualTo(data.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
     }
 
@@ -77,12 +77,12 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        assertThat(summary.getRecordsRead()).isZero();
-        assertThat(summary.getRecordsWritten()).isZero();
+        assertThat(summary.getRowsRead()).isZero();
+        assertThat(summary.getRowsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
     }
 

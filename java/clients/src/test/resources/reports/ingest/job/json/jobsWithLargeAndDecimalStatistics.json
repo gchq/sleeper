@@ -19,9 +19,9 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:04:13.123Z",
               "finishTime": "2022-10-13T14:04:13.456Z",
-              "recordsProcessed": {
-                "recordsRead": 1234000,
-                "recordsWritten": 1234000
+              "rowsProcessed": {
+                "rowsRead": 1234000,
+                "rowsWritten": 1234000
               },
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 4
@@ -46,9 +46,9 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:02:10.123Z",
               "finishTime": "2022-10-13T14:02:10Z",
-              "recordsProcessed": {
-                "recordsRead": 1000600,
-                "recordsWritten": 500300
+              "rowsProcessed": {
+                "rowsRead": 1000600,
+                "rowsWritten": 500300
               },
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 3
@@ -73,9 +73,9 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:01:10.123Z",
               "finishTime": "2022-10-13T14:01:10Z",
-              "recordsProcessed": {
-                "recordsRead": 1000600,
-                "recordsWritten": 500300
+              "rowsProcessed": {
+                "rowsRead": 1000600,
+                "rowsWritten": 500300
               },
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 2
@@ -100,9 +100,9 @@
               "type": "FINISHED",
               "updateTime": "2022-10-13T10:02:13.123Z",
               "finishTime": "2022-10-13T10:02:13.123Z",
-              "recordsProcessed": {
-                "recordsRead": 600000,
-                "recordsWritten": 300000
+              "rowsProcessed": {
+                "rowsRead": 600000,
+                "rowsWritten": 300000
               },
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 1

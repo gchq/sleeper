@@ -30,14 +30,14 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriter;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
 
 import java.util.List;
 
 /**
- * A record writer to accept data as Trino pages. Implements {@link ArrowRecordWriter}.
+ * A record writer to accept data as Trino pages. Implements {@link ArrowRowWriter}.
  */
-public class ArrowRecordWriterAcceptingPages implements ArrowRecordWriter<Page> {
+public class ArrowRecordWriterAcceptingPages implements ArrowRowWriter<Page> {
 
     /**
      * Add a single Page to a VectorSchemaRoot, starting at a specified row. Note that the field order in the supplied

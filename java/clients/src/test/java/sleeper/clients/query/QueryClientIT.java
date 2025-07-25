@@ -41,7 +41,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
+import sleeper.ingest.runner.testutils.IngestRowsTestDataHelper;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -338,7 +338,7 @@ public class QueryClientIT {
 
     private void ingestData(TableProperties tableProperties, Iterator<Row> recordIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
+        IngestFactory factory = IngestRowsTestDataHelper.createIngestFactory(tempDir.toString(),
                 InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
                 instanceProperties);
         factory.ingestFromRowIterator(tableProperties, recordIterator);

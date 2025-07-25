@@ -165,7 +165,7 @@ public class StateStoreFilesArrowFormat {
             writeVarChar(struct, allocator, PARTITION_ID, reference.getPartitionId());
             writeTimeStampMilli(struct, REFERENCE_UPDATE_TIME, reference.getLastStateStoreUpdateTime());
             writeVarCharNullable(struct, allocator, JOB_ID, reference.getJobId());
-            writeUInt8(struct, NUMBER_OF_RECORDS, reference.getNumberOfRecords());
+            writeUInt8(struct, NUMBER_OF_RECORDS, reference.getNumberOfRows());
             writeBit(struct, COUNT_APPROXIMATE, reference.isCountApproximate());
             writeBit(struct, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, reference.onlyContainsDataForThisPartition());
             struct.end();
@@ -184,7 +184,7 @@ public class StateStoreFilesArrowFormat {
                     .partitionId(reader.reader(PARTITION_ID.getName()).readText().toString())
                     .lastStateStoreUpdateTime(reader.reader(REFERENCE_UPDATE_TIME.getName()).readLocalDateTime().toInstant(ZoneOffset.UTC))
                     .jobId(Optional.ofNullable(reader.reader(JOB_ID.getName()).readText()).map(Text::toString).orElse(null))
-                    .numberOfRecords(reader.reader(NUMBER_OF_RECORDS.getName()).readLong())
+                    .numberOfRows(reader.reader(NUMBER_OF_RECORDS.getName()).readLong())
                     .countApproximate(reader.reader(COUNT_APPROXIMATE.getName()).readBoolean())
                     .onlyContainsDataForThisPartition(reader.reader(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION.getName()).readBoolean())
                     .build());

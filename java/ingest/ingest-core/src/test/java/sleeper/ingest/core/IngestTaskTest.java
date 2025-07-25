@@ -446,7 +446,7 @@ public class IngestTaskTest {
     }
 
     private JobRunSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
-        return new JobRunSummary(result.asRecordsProcessed(), startTime, finishTime);
+        return new JobRunSummary(result.asRowsProcessed(), startTime, finishTime);
     }
 
     private IngestJobHandler jobsSucceed(int numJobs) {

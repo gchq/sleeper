@@ -30,7 +30,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Duration;
@@ -98,7 +98,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(2).build();
             JobRunSummary summary = new JobRunSummary(
-                    new RecordsProcessed(200L, 200L), startTime, finishTime);
+                    new RowsProcessed(200L, 200L), startTime, finishTime);
 
             tracker.jobStarted(job);
             tracker.jobFinished(ingestJobFinishedEventBuilder(job, summary).taskId(taskId).numFilesWrittenByJob(1).build());
@@ -115,7 +115,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(2).build();
             JobRunSummary summary = new JobRunSummary(
-                    new RecordsProcessed(200L, 200L), startTime, finishTime);
+                    new RowsProcessed(200L, 200L), startTime, finishTime);
 
             IngestJobFinishedEvent event = ingestJobFinishedEventBuilder(job, summary)
                     .taskId(taskId).numFilesWrittenByJob(1).build();
@@ -130,9 +130,9 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             JobRunSummary summary1 = new JobRunSummary(
-                    new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+                    new RowsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
             JobRunSummary summary2 = new JobRunSummary(
-                    new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+                    new RowsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
             IngestJobStartedEvent run1 = ingestJobStartedEventBuilder(startTime1).jobId(jobId).taskId(taskId).fileCount(2).build();
             IngestJobStartedEvent run2 = ingestJobStartedEventBuilder(startTime2).jobId(jobId).taskId(taskId).fileCount(2).build();
             tracker.jobStarted(run1);
@@ -152,9 +152,9 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             JobRunSummary summary1 = new JobRunSummary(
-                    new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+                    new RowsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
             JobRunSummary summary2 = new JobRunSummary(
-                    new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+                    new RowsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
             IngestJobStartedEvent job1 = ingestJobStartedEventBuilder(startTime1).taskId(taskId).fileCount(1).build();
             IngestJobStartedEvent job2 = ingestJobStartedEventBuilder(startTime2).taskId(taskId).fileCount(2).build();
 
@@ -177,9 +177,9 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             JobRunSummary summary1 = new JobRunSummary(
-                    new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+                    new RowsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
             JobRunSummary summary2 = new JobRunSummary(
-                    new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+                    new RowsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
             IngestJobStartedEvent job1 = ingestJobStartedEventBuilder(startTime1).taskId(taskId).tableId(tableId1).fileCount(1).build();
             IngestJobStartedEvent job2 = ingestJobStartedEventBuilder(startTime2).taskId(taskId).tableId(tableId2).fileCount(2).build();
 

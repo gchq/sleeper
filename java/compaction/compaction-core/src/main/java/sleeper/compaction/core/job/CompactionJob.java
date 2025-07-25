@@ -105,7 +105,7 @@ public class CompactionJob {
         return FileReference.builder()
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .numberOfRecords(recordsWritten)
+                .numberOfRows(recordsWritten)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();

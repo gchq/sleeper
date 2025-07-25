@@ -3,21 +3,21 @@
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
   "statistics": {
-    "records": {
+    "rows": {
       "allPartitions": {
-        "totalRecords": 400000036,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 400000036
+        "totalRows": 400000036,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 400000036
       },
       "leafPartitions": {
-        "totalRecords": 400000036,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 400000036
+        "totalRows": 400000036,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 400000036
       },
       "nonLeafPartitions": {
-        "totalRecords": 0,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 0
+        "totalRows": 0,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 0
       }
     },
     "fileReferences": {
@@ -42,7 +42,7 @@
       "internalReferences": [
         {
           "partitionId": "A",
-          "numberOfRecords": 50000001,
+          "numberOfRows": 50000001,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -56,7 +56,7 @@
       "internalReferences": [
         {
           "partitionId": "B",
-          "numberOfRecords": 50000002,
+          "numberOfRows": 50000002,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -70,7 +70,7 @@
       "internalReferences": [
         {
           "partitionId": "C",
-          "numberOfRecords": 50000003,
+          "numberOfRows": 50000003,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -84,7 +84,7 @@
       "internalReferences": [
         {
           "partitionId": "D",
-          "numberOfRecords": 50000004,
+          "numberOfRows": 50000004,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -98,7 +98,7 @@
       "internalReferences": [
         {
           "partitionId": "E",
-          "numberOfRecords": 50000005,
+          "numberOfRows": 50000005,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -112,7 +112,7 @@
       "internalReferences": [
         {
           "partitionId": "F",
-          "numberOfRecords": 50000006,
+          "numberOfRows": 50000006,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -126,7 +126,7 @@
       "internalReferences": [
         {
           "partitionId": "G",
-          "numberOfRecords": 50000007,
+          "numberOfRows": 50000007,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
@@ -140,7 +140,7 @@
       "internalReferences": [
         {
           "partitionId": "H",
-          "numberOfRecords": 50000008,
+          "numberOfRows": 50000008,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true

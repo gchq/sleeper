@@ -21,7 +21,7 @@ import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -36,8 +36,8 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
     private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION");
-    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.RECORDS_READ);
-    private static final TableField RECORDS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.RECORDS_WRITTEN);
+    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_READ);
+    private static final TableField RECORDS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_WRITTEN);
     private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.READ_RATE);
     private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.WRITE_RATE);
     private static final TableWriterFactory TABLE_WRITER_FACTORY = TABLE_FACTORY_BUILDER.build();
@@ -85,8 +85,8 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         return tasks.stream().mapToInt(CompactionTaskStatus::getJobRuns).sum();
     }
 
-    private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
-        return AverageRecordRate.of(tasks.stream()
+    private static AverageRowRate recordRate(List<CompactionTaskStatus> tasks) {
+        return AverageRowRate.of(tasks.stream()
                 .map(CompactionTaskStatus::asJobRunReport));
     }
 

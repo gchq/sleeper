@@ -83,13 +83,13 @@ public class ParallelCompactionsST {
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
                 .hasSize(8192)
-                .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRecords).sum())
+                .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRows).sum())
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
                         "only contains data for one partition")
                 .allMatch(file -> file.getJobId() == null,
                         "not assigned to any job")
-                .allSatisfy(file -> assertThat(file.getNumberOfRecords())
+                .allSatisfy(file -> assertThat(file.getNumberOfRows())
                         .describedAs("contains an even distribution of records for the partition")
                         .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once

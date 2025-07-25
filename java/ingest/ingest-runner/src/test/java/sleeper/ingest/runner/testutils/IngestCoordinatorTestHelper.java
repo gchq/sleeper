@@ -27,7 +27,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
 
 import java.time.Instant;
 
@@ -49,13 +49,13 @@ public class IngestCoordinatorTestHelper {
 
     public static <T> IngestCoordinator<T> standardIngestCoordinator(
             StateStore stateStore, Schema schema,
-            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+            RowBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
     }
 
     public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
             StateStore stateStore, Schema schema,
-            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+            RowBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return IngestCoordinator.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
@@ -70,7 +70,7 @@ public class IngestCoordinatorTestHelper {
         return FileReference.builder()
                 .partitionId(partitionId)
                 .filename(filename)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRecords)
                 .countApproximate(false)
                 .lastStateStoreUpdateTime(updateTime);
     }

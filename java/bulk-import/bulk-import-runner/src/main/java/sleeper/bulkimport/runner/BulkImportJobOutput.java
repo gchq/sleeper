@@ -29,7 +29,7 @@ public class BulkImportJobOutput {
         this.fileReferences = fileReferences;
         this.stopSparkContext = stopSparkContext;
         this.numRecords = fileReferences.stream()
-                .mapToLong(FileReference::getNumberOfRecords)
+                .mapToLong(FileReference::getNumberOfRows)
                 .sum();
     }
 

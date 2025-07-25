@@ -36,9 +36,9 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 
 import java.util.List;
 import java.util.Objects;
@@ -62,7 +62,7 @@ public class SleeperClient implements AutoCloseable {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
-    private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+    private final LeafPartitionRowRetrieverProvider recordRetrieverProvider;
     private final IngestJobSender ingestJobSender;
     private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
@@ -192,7 +192,7 @@ public class SleeperClient implements AutoCloseable {
     public QueryExecutor getQueryExecutor(String tableName) {
         TableProperties tableProperties = getTableProperties(tableName);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        LeafPartitionRecordRetriever recordRetriever = recordRetrieverProvider.getRecordRetriever(tableProperties);
+        LeafPartitionRowRetriever recordRetriever = recordRetrieverProvider.getRowRetriever(tableProperties);
         QueryExecutor executor = new QueryExecutor(objectFactory, tableProperties, stateStore, recordRetriever);
         executor.init();
         return executor;
@@ -353,7 +353,7 @@ public class SleeperClient implements AutoCloseable {
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
-        private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+        private LeafPartitionRowRetrieverProvider recordRetrieverProvider;
         private IngestJobSender ingestJobSender;
         private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
@@ -433,7 +433,7 @@ public class SleeperClient implements AutoCloseable {
          * @param  recordRetrieverProvider the record retriever
          * @return                         this builder for chaining
          */
-        public Builder recordRetrieverProvider(LeafPartitionRecordRetrieverProvider recordRetrieverProvider) {
+        public Builder recordRetrieverProvider(LeafPartitionRowRetrieverProvider recordRetrieverProvider) {
             this.recordRetrieverProvider = recordRetrieverProvider;
             return this;
         }

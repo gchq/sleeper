@@ -41,7 +41,7 @@ public class PartitionFileWriterUtils {
         return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRecords)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();

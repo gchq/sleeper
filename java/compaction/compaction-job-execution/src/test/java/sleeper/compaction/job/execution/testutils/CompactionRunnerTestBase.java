@@ -33,7 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
@@ -77,11 +77,11 @@ public class CompactionRunnerTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected RecordsProcessed compact(Schema schema, CompactionJob job) throws Exception {
+    protected RowsProcessed compact(Schema schema, CompactionJob job) throws Exception {
         return compact(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
     }
 
-    protected RecordsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
+    protected RowsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));

@@ -76,7 +76,7 @@ public class CompactionCommitThroughputST {
         assertThat(sleeper.tableFiles().recordsByFilename())
                 .isEqualTo(compactions.streamOutputFiles()
                         .collect(groupingBy(FileReference::getFilename,
-                                summingLong(FileReference::getNumberOfRecords))));
+                                summingLong(FileReference::getNumberOfRows))));
     }
 
 }

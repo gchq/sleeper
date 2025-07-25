@@ -135,7 +135,7 @@ public class BasicCompactionStrategyTest extends CompactionStrategyTestBase {
                 .filename("file1.parquet")
                 .partitionId("root")
                 .jobId("test-job")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .build();
 
         // When

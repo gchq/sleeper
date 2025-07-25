@@ -92,7 +92,7 @@ public class FileReferencePrinter {
                 out.print(" ");
             }
             for (FileReference file : partitionFiles) {
-                out.print(file.getNumberOfRecords() + " records ");
+                out.print(file.getNumberOfRows() + " records ");
                 if (file.isCountApproximate()) {
                     out.print("(approx) ");
                 }
@@ -117,7 +117,7 @@ public class FileReferencePrinter {
         return files.getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream())
                 .sorted(comparing(FileReference::onlyContainsDataForThisPartition)
-                        .thenComparing(FileReference::getNumberOfRecords)
+                        .thenComparing(FileReference::getNumberOfRows)
                         .reversed())
                 .collect(toUnmodifiableList());
     }

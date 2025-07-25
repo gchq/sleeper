@@ -30,9 +30,9 @@
               "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:45.123Z",
               "finishTime": "2022-10-12T10:01:45.001Z",
-              "recordsProcessed": {
-                "recordsRead": 300,
-                "recordsWritten": 200
+              "rowsProcessed": {
+                "rowsRead": 300,
+                "rowsWritten": 200
               },
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 2
@@ -52,9 +52,9 @@
               "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:20.123Z",
               "finishTime": "2022-10-12T10:01:20.001Z",
-              "recordsProcessed": {
-                "recordsRead": 300,
-                "recordsWritten": 200
+              "rowsProcessed": {
+                "rowsRead": 300,
+                "rowsWritten": 200
               },
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 1

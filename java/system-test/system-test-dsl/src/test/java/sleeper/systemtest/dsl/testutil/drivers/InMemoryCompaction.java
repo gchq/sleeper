@@ -45,7 +45,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.sketches.Sketches;
@@ -217,9 +217,9 @@ public class InMemoryCompaction {
         Instant startTime = run.getStartTime();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
-        RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
+        RowsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRowsWritten())
                         .taskId(run.getTaskId()).jobRunId(job.getId()).build()));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);
@@ -230,7 +230,7 @@ public class InMemoryCompaction {
         return partitionTree.getPartition(job.getPartitionId());
     }
 
-    private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
+    private RowsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
         List<CloseableIterator<Row>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
@@ -249,7 +249,7 @@ public class InMemoryCompaction {
         });
         dataStore.addFile(job.getOutputFile(), records);
         sketchesStore.saveFileSketches(job.getOutputFile(), sketches);
-        return new RecordsProcessed(records.size(), inputIterators.stream()
+        return new RowsProcessed(records.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
                 .sum());

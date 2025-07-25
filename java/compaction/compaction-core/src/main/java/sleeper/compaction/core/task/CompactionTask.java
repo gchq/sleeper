@@ -39,7 +39,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -227,7 +227,7 @@ public class CompactionTask {
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+        RowsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
         Instant jobFinishTime = timeSupplier.get();
         JobRunSummary summary = new JobRunSummary(recordsProcessed, jobStartTime, jobFinishTime);
         return summary;
@@ -237,9 +237,9 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
-                summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+                summary.getRowsRead(), String.format("%.1f", summary.getRowsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
-                summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+                summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
     }
 
     @FunctionalInterface

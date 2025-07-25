@@ -42,7 +42,7 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -299,7 +299,7 @@ public class CompactionTaskTestBase {
                 .toArray(ProcessJob[]::new));
     }
 
-    protected ProcessJob jobSucceeds(RecordsProcessed summary) {
+    protected ProcessJob jobSucceeds(RowsProcessed summary) {
         return new ProcessJob(summary);
     }
 
@@ -357,7 +357,7 @@ public class CompactionTaskTestBase {
                 .newReference(FileReference.builder()
                         .filename(job.getOutputFile())
                         .partitionId(job.getPartitionId())
-                        .numberOfRecords(summary.getRecordsWritten())
+                        .numberOfRows(summary.getRowsWritten())
                         .countApproximate(false)
                         .onlyContainsDataForThisPartition(true)
                         .build())
@@ -396,7 +396,7 @@ public class CompactionTaskTestBase {
 
     protected class ProcessJob {
         private final RuntimeException failure;
-        private final RecordsProcessed recordsProcessed;
+        private final RowsProcessed recordsProcessed;
         private ProcessJobAction action = () -> {
         };
 
@@ -406,10 +406,10 @@ public class CompactionTaskTestBase {
         }
 
         ProcessJob(long records) {
-            this(new RecordsProcessed(records, records));
+            this(new RowsProcessed(records, records));
         }
 
-        ProcessJob(RecordsProcessed summary) {
+        ProcessJob(RowsProcessed summary) {
             this.failure = null;
             this.recordsProcessed = summary;
         }
@@ -419,7 +419,7 @@ public class CompactionTaskTestBase {
             return this;
         }
 
-        private RecordsProcessed run(CompactionJob job) {
+        private RowsProcessed run(CompactionJob job) {
             try {
                 action.run();
             } catch (Exception e) {

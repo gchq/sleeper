@@ -37,7 +37,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputInfo;
-import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;

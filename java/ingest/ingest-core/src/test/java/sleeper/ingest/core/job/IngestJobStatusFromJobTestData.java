@@ -157,7 +157,7 @@ public class IngestJobStatusFromJobTestData {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(summary.getFinishTime()))
                         .finishTime(summary.getFinishTime())
-                        .recordsProcessed(summary.getRecordsProcessed())
+                        .rowsProcessed(summary.getRowsProcessed())
                         .numFilesWrittenByJob(numFilesWrittenByJob).build());
     }
 
@@ -283,7 +283,7 @@ public class IngestJobStatusFromJobTestData {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(summary.getFinishTime()))
                         .finishTime(summary.getFinishTime())
-                        .recordsProcessed(summary.getRecordsProcessed())
+                        .rowsProcessed(summary.getRowsProcessed())
                         .numFilesWrittenByJob(numFilesWrittenByJob)
                         .build());
     }

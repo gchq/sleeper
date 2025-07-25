@@ -20,7 +20,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -186,7 +186,7 @@ public class IngestJobStatusReporterTestData {
         return List.of(ingestJobStatus(job8, jobRunOnTask("bulk-import-cluster-8",
                 ingestAcceptedStatus(startTime8, 8),
                 validatedIngestStartedStatus(job8, startTime8.plus(Duration.ofMinutes(5))),
-                ingestFinishedStatusUncommitted(startTime8.plus(Duration.ofMinutes(10)), 1, new RecordsProcessed(3000, 1500)),
+                ingestFinishedStatusUncommitted(startTime8.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
                 ingestAddedFilesStatus(startTime8.plus(Duration.ofMinutes(11)), 1))));
     }
 

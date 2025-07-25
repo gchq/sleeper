@@ -42,7 +42,7 @@ public class StateStoreCommitMessage {
                 List.of(FileReference.builder()
                         .partitionId(partitionId)
                         .filename(filename)
-                        .numberOfRecords(records)
+                        .numberOfRows(records)
                         .countApproximate(false)
                         .onlyContainsDataForThisPartition(true)
                         .build()));

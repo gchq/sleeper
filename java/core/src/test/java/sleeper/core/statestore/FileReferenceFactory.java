@@ -226,7 +226,7 @@ public class FileReferenceFactory {
         return FileReference.builder()
                 .filename(partitionId + ".parquet")
                 .partitionId(partitionId)
-                .numberOfRecords(records)
+                .numberOfRows(records)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true);

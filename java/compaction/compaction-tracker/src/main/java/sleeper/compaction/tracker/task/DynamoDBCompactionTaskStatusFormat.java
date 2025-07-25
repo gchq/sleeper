@@ -46,8 +46,8 @@ public class DynamoDBCompactionTaskStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String MILLIS_SPENT_ON_JOBS = "MillisecondsOnJobs";
     public static final String NUMBER_OF_JOBS = "NumberOfJobs";
-    public static final String RECORDS_READ = "RecordsRead";
-    public static final String RECORDS_WRITTEN = "RecordsWritten";
+    public static final String ROWS_READ = "RowsRead";
+    public static final String ROWS_WRITTEN = "RowsWritten";
     public static final String READ_RATE = "ReadRate";
     public static final String WRITE_RATE = "WriteRate";
     public static final String EXPIRY_DATE = "ExpiryDate";
@@ -75,10 +75,10 @@ public class DynamoDBCompactionTaskStatusFormat {
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(MILLIS_SPENT_ON_JOBS, taskStatus.getFinishedStatus().getTimeSpentOnJobs().toMillis())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
-                .number(RECORDS_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
-                .number(RECORDS_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
-                .number(READ_RATE, taskStatus.getFinishedStatus().getRecordsReadPerSecond())
-                .number(WRITE_RATE, taskStatus.getFinishedStatus().getRecordsWrittenPerSecond())
+                .number(ROWS_READ, taskStatus.getFinishedStatus().getTotalRowsRead())
+                .number(ROWS_WRITTEN, taskStatus.getFinishedStatus().getTotalRowsWritten())
+                .number(READ_RATE, taskStatus.getFinishedStatus().getRowsReadPerSecond())
+                .number(WRITE_RATE, taskStatus.getFinishedStatus().getRowsWrittenPerSecond())
                 .build();
     }
 
@@ -110,10 +110,10 @@ public class DynamoDBCompactionTaskStatusFormat {
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
                         .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
-                        .totalRecordsRead(getLongAttribute(item, RECORDS_READ, 0))
-                        .totalRecordsWritten(getLongAttribute(item, RECORDS_WRITTEN, 0))
-                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
-                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
+                        .totalRowsRead(getLongAttribute(item, ROWS_READ, 0))
+                        .totalRowsWritten(getLongAttribute(item, ROWS_WRITTEN, 0))
+                        .rowsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
+                        .rowsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
                         .build());
                 break;
             default:

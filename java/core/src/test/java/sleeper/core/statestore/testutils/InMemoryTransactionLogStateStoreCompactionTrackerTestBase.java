@@ -22,7 +22,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -90,7 +90,7 @@ public abstract class InMemoryTransactionLogStateStoreCompactionTrackerTestBase 
     protected JobRun defaultFailedCommitRun(int numberOfRecords, List<String> reasons) {
         return jobRunOnTask(DEFAULT_TASK_ID,
                 compactionStartedStatus(DEFAULT_START_TIME),
-                compactionFinishedStatus(DEFAULT_FINISH_TIME, new RecordsProcessed(numberOfRecords, numberOfRecords)),
+                compactionFinishedStatus(DEFAULT_FINISH_TIME, new RowsProcessed(numberOfRecords, numberOfRecords)),
                 compactionFailedStatus(DEFAULT_COMMIT_TIME, reasons));
     }
 }

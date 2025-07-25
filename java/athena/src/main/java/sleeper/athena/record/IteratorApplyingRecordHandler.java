@@ -52,7 +52,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.recordretrieval.RecordRetrievalException;
+import sleeper.query.core.rowretrieval.RowRetrievalException;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.io.Serializable;
@@ -125,7 +125,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     @Override
     protected CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema,
-            TableProperties tableProperties) throws RecordRetrievalException, IteratorCreationException {
+            TableProperties tableProperties) throws RowRetrievalException, IteratorCreationException {
         Split split = recordsRequest.getSplit();
         Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
         List<Field> rowKeyFields = schema.getRowKeyFields();
@@ -185,11 +185,11 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * @param  valueSets                 a summary of the predicates associated with this query
      * @return                           a single iterator of records
      * @throws IteratorCreationException if something goes wrong creating the iterators
-     * @throws RecordRetrievalException  if something goes wrong retrieving records
+     * @throws RowRetrievalException     if something goes wrong retrieving records
      */
     private CloseableIterator<Row> createIterator(
             Set<String> relevantFiles, List<Object> minRowKeys, List<Object> maxRowKeys,
-            Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws IteratorCreationException, RecordRetrievalException {
+            Schema schema, TableProperties tableProperties, Map<String, ValueSet> valueSets) throws IteratorCreationException, RowRetrievalException {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);

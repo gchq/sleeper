@@ -25,7 +25,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.JobRuns;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -180,7 +180,7 @@ public abstract class CompactionJobStatusReporterTestBase {
                 forJobRunOnTask("job-1",
                         compactionFinishedStatus(
                                 Instant.parse("2025-05-14T10:47:00Z"),
-                                new RecordsProcessed(10, 5)),
+                                new RowsProcessed(10, 5)),
                         compactionCommittedStatus(
                                 Instant.parse("2025-05-14T10:47:01Z"))))
                 .stream());

@@ -40,7 +40,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.IngestRecords;
+import sleeper.ingest.runner.IngestRows;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
@@ -228,7 +228,7 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .hadoopConfiguration(hadoopConf)
                 .build();
 
-        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
+        IngestRows ingestRecords = factory.createIngestRows(tableProperties);
         ingestRecords.init();
         for (Row row : rows) {
             ingestRecords.write(row);

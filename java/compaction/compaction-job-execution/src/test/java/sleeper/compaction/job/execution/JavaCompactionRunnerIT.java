@@ -29,7 +29,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -57,13 +57,13 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
         List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
     }
 
@@ -132,13 +132,13 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            RecordsProcessed summary = compact(schema, compactionJob);
+            RowsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
             List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
-            assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-            assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }
@@ -185,13 +185,13 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            RecordsProcessed summary = compact(schema, compactionJob);
+            RowsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
             List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(data1, data2);
-            assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-            assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }

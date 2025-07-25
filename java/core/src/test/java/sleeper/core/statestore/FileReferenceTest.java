@@ -32,7 +32,7 @@ public class FileReferenceTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
-                .numberOfRecords(100L)
+                .numberOfRows(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
@@ -52,7 +52,7 @@ public class FileReferenceTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
-                .numberOfRecords(100L)
+                .numberOfRows(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
@@ -61,7 +61,7 @@ public class FileReferenceTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(Instant.ofEpochMilli(1_000_000L))
-                .numberOfRecords(100L)
+                .numberOfRows(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
@@ -70,7 +70,7 @@ public class FileReferenceTest {
                 .filename("abc")
                 .jobId("Job3")
                 .lastStateStoreUpdateTime(Instant.ofEpochMilli(2_000_000L))
-                .numberOfRecords(100L)
+                .numberOfRows(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
@@ -87,7 +87,7 @@ public class FileReferenceTest {
         // Given
         FileReference.Builder builder = FileReference.builder()
                 .partitionId("root")
-                .numberOfRecords(100L);
+                .numberOfRows(100L);
 
         // When / Then
         assertThatThrownBy(builder::build)
@@ -99,7 +99,7 @@ public class FileReferenceTest {
         // Given
         FileReference.Builder builder = FileReference.builder()
                 .filename("test.parquet")
-                .numberOfRecords(100L);
+                .numberOfRows(100L);
 
         // When / Then
         assertThatThrownBy(builder::build)
@@ -124,7 +124,7 @@ public class FileReferenceTest {
         FileReference file = FileReference.builder()
                 .partitionId("root")
                 .filename("test.parquet")
-                .numberOfRecords(100L)
+                .numberOfRows(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
@@ -136,7 +136,7 @@ public class FileReferenceTest {
         assertThat(copy).isEqualTo(FileReference.builder()
                 .partitionId("L")
                 .filename("test.parquet")
-                .numberOfRecords(50L)
+                .numberOfRows(50L)
                 .countApproximate(true)
                 .onlyContainsDataForThisPartition(false)
                 .build());

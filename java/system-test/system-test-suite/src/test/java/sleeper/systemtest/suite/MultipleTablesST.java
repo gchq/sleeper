@@ -174,7 +174,7 @@ public class MultipleTablesST {
         sleeper.tables().forEach(() -> {
             assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                     .partitionCount(1).leafPartitionCount(1)
-                    .fileCount(2).recordCount(100)
+                    .fileCount(2).rowCount(100)
                     .averageFileReferencesPerPartition(2)
                     .build());
         });

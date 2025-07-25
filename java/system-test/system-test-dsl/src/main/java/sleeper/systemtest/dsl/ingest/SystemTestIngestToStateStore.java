@@ -46,7 +46,7 @@ public class SystemTestIngestToStateStore {
                 .partitionId(partitionId)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRecords)
                 .build()));
         return this;
     }
@@ -61,7 +61,7 @@ public class SystemTestIngestToStateStore {
                         .partitionId(entry.getKey())
                         .countApproximate(true)
                         .onlyContainsDataForThisPartition(singlePartition)
-                        .numberOfRecords(entry.getValue())
+                        .numberOfRows(entry.getValue())
                         .build())
                 .collect(Collectors.toUnmodifiableList()));
         return this;
@@ -78,7 +78,7 @@ public class SystemTestIngestToStateStore {
                         .partitionId(partition.getId())
                         .countApproximate(true)
                         .onlyContainsDataForThisPartition(false)
-                        .numberOfRecords(recordsPerPartition)
+                        .numberOfRows(recordsPerPartition)
                         .build())
                 .collect(Collectors.toUnmodifiableList()));
         return this;
