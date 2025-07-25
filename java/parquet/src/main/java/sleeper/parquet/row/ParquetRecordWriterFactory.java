@@ -93,7 +93,7 @@ public class ParquetRecordWriterFactory {
 
         @Override
         protected WriteSupport<Row> getWriteSupport(Configuration conf) {
-            return new RecordWriteSupport(messageType, schema);
+            return new RowWriteSupport(messageType, schema);
         }
 
         @Override

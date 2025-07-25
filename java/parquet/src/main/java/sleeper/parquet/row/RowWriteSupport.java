@@ -27,29 +27,31 @@ import sleeper.core.schema.Schema;
 import java.util.HashMap;
 
 /**
- * Support for writing Sleeper records to Parquet files.
+ * Support for writing Sleeper rows to Parquet files.
  */
-public class RecordWriteSupport extends WriteSupport<Row> {
+class RowWriteSupport extends WriteSupport<Row> {
     private final MessageType messageType;
     private final Schema schema;
-    private ParquetRowWriter recordWriter;
+    private ParquetRowWriter rowWriter;
 
-    public RecordWriteSupport(MessageType messageType, Schema schema) {
+    RowWriteSupport(MessageType messageType, Schema schema) {
         this.messageType = messageType;
         this.schema = schema;
     }
 
+    @Override
     public WriteContext init(Configuration configuration) {
         return new WriteContext(messageType, new HashMap<>());
     }
 
     @Override
     public void prepareForWrite(RecordConsumer recordConsumer) {
-        recordWriter = new ParquetRowWriter(recordConsumer, schema);
+        rowWriter = new ParquetRowWriter(recordConsumer, schema);
     }
 
+    @Override
     @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
-    public void write(Row record) {
-        recordWriter.write(record);
+    public void write(Row row) {
+        rowWriter.write(row);
     }
 }
