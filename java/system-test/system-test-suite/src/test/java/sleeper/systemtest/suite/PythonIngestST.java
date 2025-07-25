@@ -46,7 +46,7 @@ public class PythonIngestST {
     void shouldBatchWriteOneFile(SleeperSystemTest sleeper) {
         // Given
         sleeper.localFiles(tempDir)
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.pythonApi()
