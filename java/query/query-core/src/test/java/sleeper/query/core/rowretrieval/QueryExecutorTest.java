@@ -348,7 +348,7 @@ public class QueryExecutorTest {
 
     private QueryExecutor uninitialisedExecutorAtTime(Instant time) {
         return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRecordRetriever(rowStore), time);
+                new InMemoryLeafPartitionRowRetriever(rowStore), time);
     }
 
     private List<Row> getRows(Query query) throws Exception {

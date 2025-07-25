@@ -34,21 +34,21 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * An in memory version of a partition record retriever.
+ * An in memory version of a partition row retriever.
  */
-public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRowRetriever, LeafPartitionRowRetrieverProvider {
+public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetriever, LeafPartitionRowRetrieverProvider {
 
-    private final InMemoryRowStore recordStore;
+    private final InMemoryRowStore rowStore;
 
-    public InMemoryLeafPartitionRecordRetriever(InMemoryRowStore recordStore) {
-        this.recordStore = recordStore;
+    public InMemoryLeafPartitionRowRetriever(InMemoryRowStore rowStore) {
+        this.rowStore = rowStore;
     }
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
-        return new WrappedIterator<>(getRecordsOrRecordRetrievalException(leafPartitionQuery.getFiles())
-                .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
-                .map(record -> mapToReadSchema(record, dataReadSchema))
+        return new WrappedIterator<>(getRowsOrThrow(leafPartitionQuery.getFiles())
+                .filter(row -> isRowInRegion(row, leafPartitionQuery, dataReadSchema))
+                .map(row -> mapToReadSchema(row, dataReadSchema))
                 .iterator());
     }
 
@@ -57,9 +57,9 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRowRet
         return this;
     }
 
-    private Stream<Row> getRecordsOrRecordRetrievalException(List<String> files) throws RowRetrievalException {
+    private Stream<Row> getRowsOrThrow(List<String> files) throws RowRetrievalException {
         try {
-            return recordStore.streamRows(files)
+            return rowStore.streamRows(files)
                     .collect(toUnmodifiableList())
                     .stream();
         } catch (NoSuchElementException e) {
@@ -67,25 +67,25 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRowRet
         }
     }
 
-    private static boolean isRecordInRegion(Row record, LeafPartitionQuery query, Schema tableSchema) {
-        if (!isInRegion(record, query.getPartitionRegion(), tableSchema)) {
+    private static boolean isRowInRegion(Row row, LeafPartitionQuery query, Schema tableSchema) {
+        if (!isInRegion(row, query.getPartitionRegion(), tableSchema)) {
             return false;
         }
         for (Region region : query.getRegions()) {
-            if (isInRegion(record, region, tableSchema)) {
+            if (isInRegion(row, region, tableSchema)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean isInRegion(Row record, Region region, Schema tableSchema) {
-        Key key = Key.create(record.getValues(tableSchema.getRowKeyFieldNames()));
+    private static boolean isInRegion(Row row, Region region, Schema tableSchema) {
+        Key key = Key.create(row.getValues(tableSchema.getRowKeyFieldNames()));
         return region.isKeyInRegion(tableSchema, key);
     }
 
-    private static Row mapToReadSchema(Row record, Schema dataReadSchema) {
+    private static Row mapToReadSchema(Row row, Schema dataReadSchema) {
         return new Row(dataReadSchema.getAllFieldNames().stream()
-                .collect(Collectors.toMap(Function.identity(), record::get)));
+                .collect(Collectors.toMap(Function.identity(), row::get)));
     }
 }

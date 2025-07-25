@@ -31,7 +31,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
-import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRecordRetriever;
+import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
 import java.util.HashMap;
@@ -67,7 +67,7 @@ public class InMemorySleeperInstance {
                 .tablePropertiesStore(tablePropertiesStore)
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(stateStoreProvider)
-                .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
+                .recordRetrieverProvider(new InMemoryLeafPartitionRowRetriever(dataStore))
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())
                 .ingestBatcherSender(ingestBatcherQueue::add)
