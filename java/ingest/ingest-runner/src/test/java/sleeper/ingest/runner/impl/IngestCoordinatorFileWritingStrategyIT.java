@@ -110,7 +110,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
@@ -121,7 +121,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            ingestRecords(rowListAndSchema, parameters);
+            ingestRows(rowListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -141,7 +141,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToOneLeafPartition() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 25));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -154,7 +154,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            ingestRecords(rowListAndSchema, parameters);
+            ingestRows(rowListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -174,7 +174,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileInEachLeafPartition() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -189,7 +189,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            ingestRecords(rowListAndSchema, parameters);
+            ingestRows(rowListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -214,9 +214,9 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+        public void shouldWriteRowsWhenThereAreMoreThanCanFitInLocalStore() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 20));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -229,9 +229,9 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            int maxRecordsInMemory = 5;
-            long maxRecordsToWriteToLocalStore = 10L;
-            ingestRecords(rowListAndSchema, parameters, maxRecordsInMemory, maxRecordsToWriteToLocalStore);
+            int maxRowsInMemory = 5;
+            long maxRowsToWriteToLocalStore = 10L;
+            ingestRows(rowListAndSchema, parameters, maxRowsInMemory, maxRowsToWriteToLocalStore);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -273,7 +273,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
@@ -284,7 +284,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            ingestRecords(rowListAndSchema, parameters);
+            ingestRows(rowListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -305,7 +305,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileWithReferenceInOneLeafPartition() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 25));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -318,7 +318,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            ingestRecords(rowListAndSchema, parameters);
+            ingestRows(rowListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -339,7 +339,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         @Test
         public void shouldWriteOneFileWithReferencesInLeafPartitions() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 100));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -354,7 +354,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            ingestRecords(rowListAndSchema, parameters);
+            ingestRows(rowListAndSchema, parameters);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -377,9 +377,9 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
+        public void shouldWriteRowsWhenThereAreMoreThanCanFitInLocalStore() throws Exception {
             // Given
-            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
+            RowGenerator.RowListAndSchema rowListAndSchema = generateStringRows("%09d-%s", range(0, 20));
             setSchema(rowListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                     .rootFirst("root")
@@ -392,9 +392,9 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .build();
 
             // When
-            int maxRecordsInMemory = 5;
-            long maxRecordsToWriteToLocalStore = 10L;
-            ingestRecords(rowListAndSchema, parameters, maxRecordsInMemory, maxRecordsToWriteToLocalStore);
+            int maxRowsInMemory = 5;
+            long maxRowsToWriteToLocalStore = 10L;
+            ingestRows(rowListAndSchema, parameters, maxRowsInMemory, maxRowsToWriteToLocalStore);
 
             // Then
             List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -429,15 +429,15 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         return () -> randomStringGenerator.generate(random.nextInt(maxLength));
     }
 
-    private static void ingestRecords(
+    private static void ingestRows(
             RowGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters parameters,
-            int maxRecordsInMemory,
-            long maxRecordsToWriteToLocalStore) throws IteratorCreationException, IOException {
+            int maxRowsInMemory,
+            long maxRowsToWriteToLocalStore) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = parameters.toBuilder()
                 .localDirectWrite().backedByArrayList().setInstanceProperties(properties -> {
-                    properties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, maxRecordsToWriteToLocalStore);
-                    properties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRecordsInMemory);
+                    properties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, maxRowsToWriteToLocalStore);
+                    properties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxRowsInMemory);
                 }).buildCoordinator()) {
             for (Row row : rowListAndSchema.rowList) {
                 ingestCoordinator.write(row);
@@ -445,7 +445,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         }
     }
 
-    private static void ingestRecords(
+    private static void ingestRows(
             RowGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = directWriteBackedByArrowWriteToLocalFile()
@@ -469,7 +469,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                 .stateStore(stateStore);
     }
 
-    private static RowGenerator.RowListAndSchema generateStringRecords(String formatString, LongStream range) {
+    private static RowGenerator.RowListAndSchema generateStringRows(String formatString, LongStream range) {
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = range
