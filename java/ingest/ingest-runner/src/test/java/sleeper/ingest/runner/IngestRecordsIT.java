@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -412,7 +412,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         // Given
-        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
+        instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -471,7 +471,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
-        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
+        instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 10L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")

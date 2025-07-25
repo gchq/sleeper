@@ -32,7 +32,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 
 public class SystemTestDataGenerationJob {
@@ -178,7 +178,7 @@ public class SystemTestDataGenerationJob {
             return ingestMode(properties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class))
                     .ingestQueue(properties.getEnumValue(INGEST_QUEUE, IngestQueue.class))
                     .numberOfIngests(properties.getInt(NUMBER_OF_INGESTS_PER_WRITER))
-                    .recordsPerIngest(properties.getLong(NUMBER_OF_RECORDS_PER_INGEST))
+                    .recordsPerIngest(properties.getLong(NUMBER_OF_ROWS_PER_INGEST))
                     .randomDataSettings(SystemTestRandomDataSettings.fromProperties(properties));
         }
 

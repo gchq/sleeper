@@ -28,7 +28,7 @@ import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 
 public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchFactory.class);
@@ -103,7 +103,7 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
 
         public Builder<T> instanceProperties(InstanceProperties instanceProperties) {
             return maxNoOfRecordsInMemory(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
-                    .maxNoOfRecordsInLocalStore(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
+                    .maxNoOfRecordsInLocalStore(instanceProperties.getLong(MAX_ROWS_TO_WRITE_LOCALLY));
         }
 
         public <INCOMINGDATATYPE> Builder<INCOMINGDATATYPE> recordMapper(ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper) {
