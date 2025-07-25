@@ -40,9 +40,9 @@ import static sleeper.systemtest.dsl.sourcedata.KeyType.ROW;
 import static sleeper.systemtest.dsl.sourcedata.KeyType.SORT;
 import static sleeper.systemtest.dsl.sourcedata.KeyType.VALUE;
 
-public class GenerateNumberedRecordsTest {
+public class GenerateNumberedRowsTest {
     @Test
-    void shouldGenerateTwoRecordsWithStringType() {
+    void shouldGenerateTwoRowsWithStringType() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new StringType()))
@@ -64,7 +64,7 @@ public class GenerateNumberedRecordsTest {
     }
 
     @Test
-    void shouldGenerateTwoRecordsWithIntType() {
+    void shouldGenerateTwoRowsWithIntType() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new IntType()))
@@ -86,7 +86,7 @@ public class GenerateNumberedRecordsTest {
     }
 
     @Test
-    void shouldGenerateTwoRecordsWithLongType() {
+    void shouldGenerateTwoRowsWithLongType() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new LongType()))
@@ -108,7 +108,7 @@ public class GenerateNumberedRecordsTest {
     }
 
     @Test
-    void shouldGenerateTwoRecordsWithByteArrayType() {
+    void shouldGenerateTwoRowsWithByteArrayType() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new ByteArrayType()))

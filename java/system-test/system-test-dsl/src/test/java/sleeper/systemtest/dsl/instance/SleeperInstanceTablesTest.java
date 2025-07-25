@@ -116,35 +116,35 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldQueryRecordsForNamedTables(SleeperSystemTest sleeper) {
+        void shouldQueryRowsForNamedTables(SleeperSystemTest sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
             sleeper.table("A").ingest().direct(null).numberedRows(LongStream.of(1, 2));
             sleeper.table("B").ingest().direct(null).numberedRows(LongStream.of(3, 4));
 
             // When / Then
-            Map<String, List<Row>> expectedRecords = Map.of(
+            Map<String, List<Row>> expectedRows = Map.of(
                     "A", List.of(
                             new Row(Map.of("key", 1L)),
                             new Row(Map.of("key", 2L))),
                     "B", List.of(
                             new Row(Map.of("key", 3L)),
                             new Row(Map.of("key", 4L))));
-            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRecords);
-            assertThat(sleeper.query().byQueue().allRowsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRows);
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEqualTo(expectedRows);
         }
 
         @Test
-        void shouldQueryNoRecordsForNamedTables(SleeperSystemTest sleeper) {
+        void shouldQueryNoRowsForNamedTables(SleeperSystemTest sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
 
             // When / Then
-            Map<String, List<Row>> expectedRecords = Map.of(
+            Map<String, List<Row>> expectedRows = Map.of(
                     "A", List.of(),
                     "B", List.of());
-            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRecords);
-            assertThat(sleeper.query().byQueue().allRowsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRows);
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEqualTo(expectedRows);
         }
 
         @Test

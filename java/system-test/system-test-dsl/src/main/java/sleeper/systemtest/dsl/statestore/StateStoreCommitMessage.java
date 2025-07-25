@@ -37,12 +37,12 @@ public class StateStoreCommitMessage {
         return factory -> factory.addFiles(List.of(file));
     }
 
-    public static Commit addPartitionFile(String partitionId, String filename, long records) {
+    public static Commit addPartitionFile(String partitionId, String filename, long rows) {
         return factory -> factory.addFiles(
                 List.of(FileReference.builder()
                         .partitionId(partitionId)
                         .filename(filename)
-                        .numberOfRows(records)
+                        .numberOfRows(rows)
                         .countApproximate(false)
                         .onlyContainsDataForThisPartition(true)
                         .build()));

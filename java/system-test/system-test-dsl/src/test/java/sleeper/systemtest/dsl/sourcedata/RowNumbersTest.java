@@ -22,9 +22,9 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordNumbersTest {
+public class RowNumbersTest {
     @Test
-    void shouldShuffleRecordsWithFixedRandomSeed() {
+    void shouldShuffleRowsWithFixedRandomSeed() {
         // Given
         LongStream longStream = LongStream.of(1L, 2L, 3L, 4L, 5L);
 
@@ -34,13 +34,13 @@ public class RecordNumbersTest {
     }
 
     @Test
-    void shouldGetRangeOfShuffledRecordsWithFixedRandomSeed() {
+    void shouldGetRangeOfShuffledRowsWithFixedRandomSeed() {
         // Given
         LongStream longStream = LongStream.of(1L, 2L, 3L, 4L, 5L);
-        RowNumbers recordNumbers = RowNumbers.scrambleNumberedRows(longStream);
+        RowNumbers rowNumbers = RowNumbers.scrambleNumberedRows(longStream);
 
         // When/Then
-        assertThat(recordNumbers.range(1, 4))
+        assertThat(rowNumbers.range(1, 4))
                 .containsExactly(3L, 2L, 4L);
     }
 }

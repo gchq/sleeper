@@ -64,11 +64,11 @@ public class MultipleTablesTest {
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then all tables should contain the source file records
+        // Then all tables should contain the source file rows
         // And all tables should have one active file
         assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
-                .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
+                .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
                         sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(NUMBER_OF_TABLES)
@@ -95,10 +95,10 @@ public class MultipleTablesTest {
         sleeper.compaction().createJobs(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().invoke().waitFor();
 
-        // Then all tables should have one active file with the expected records, and none ready for GC
+        // Then all tables should have one active file with the expected rows, and none ready for GC
         assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
-                .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
+                .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
                         sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
@@ -108,7 +108,7 @@ public class MultipleTablesTest {
     @Test
     void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
-        // And we ingest a file of 100 records to each table
+        // And we ingest a file of 100 rows to each table
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
@@ -126,10 +126,10 @@ public class MultipleTablesTest {
         sleeper.partitioning().split();
         sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 8);
 
-        // Then all tables have their records split over 8 leaf partitions
+        // Then all tables have their rows split over 8 leaf partitions
         assertThat(sleeper.directQuery().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
-                .allSatisfy((table, records) -> assertThat(records)
+                .allSatisfy((table, rows) -> assertThat(rows)
                         .containsExactlyInAnyOrderElementsOf(
                                 sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();

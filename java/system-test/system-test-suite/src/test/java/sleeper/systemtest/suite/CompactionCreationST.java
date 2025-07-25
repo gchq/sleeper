@@ -39,7 +39,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
+import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CREATION;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.fileFactory;
@@ -61,7 +61,7 @@ public class CompactionCreationST {
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        PartitionTree partitions = createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper);
+        PartitionTree partitions = createPartitionTreeWithRowsPerPartitionAndTotal(10, 655360, sleeper);
         sleeper.partitioning().setPartitions(partitions);
         sleeper.sourceFiles().inDataBucket().writeSketches()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 655360))
