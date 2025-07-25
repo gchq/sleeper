@@ -42,7 +42,7 @@ public class TestFilesAndRows {
         this.rowsByFilename = rowsByFilename;
     }
 
-    public static TestFilesAndRows loadActiveFiles(
+    public static TestFilesAndRows loadFileReferences(
             StateStore stateStore, Schema schema, Configuration configuration) {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         Map<String, List<Row>> rowsByFilename = fileReferences.stream()

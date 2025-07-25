@@ -60,7 +60,7 @@ import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue. This is done as follows:
- * <p>- Queries the {@link StateStore} for active files which do not have a job id.
+ * <p>- Queries the {@link StateStore} for file references which do not have a job ID.
  * <p>- Groups these by partition.
  * <p>- For each partition, uses the configurable {@link CompactionStrategy} to decide what compaction jobs to create.
  * <p>- These compaction jobs are then sent to SQS.
@@ -127,7 +127,7 @@ public class CreateCompactionJobs {
         Instant loadPartitionStartTime = Instant.now();
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
-        // NB We retrieve the information about all the active file references and filter
+        // NB We retrieve the information about all the file references and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
         Instant loadFilesStartTime = Instant.now();
