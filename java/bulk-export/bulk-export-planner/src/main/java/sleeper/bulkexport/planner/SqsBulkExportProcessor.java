@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+import sleeper.bulkexport.core.BulkExportQuerySplitter;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQuery;
-import sleeper.bulkexport.core.recordretrieval.BulkExportQuerySplitter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
