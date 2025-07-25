@@ -86,7 +86,7 @@ public class StateStoreSnapshotsST {
                 snapshot -> snapshot.getFiles().size() == 10_000);
         assertThat(snapshotFiles.rowsByFilename())
                 .isEqualTo(recordsByFilename);
-        assertThat(sleeper.tableFiles().recordsByFilename())
+        assertThat(sleeper.tableFiles().rowsByFilename())
                 .isEqualTo(recordsByFilename);
     }
 
