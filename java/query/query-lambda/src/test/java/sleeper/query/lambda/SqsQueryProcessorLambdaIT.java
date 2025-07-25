@@ -359,7 +359,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRowCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
+        assertThat(getNumberOfRowsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
     }
 
     @Test
@@ -397,7 +397,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRowCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
+        assertThat(getNumberOfRowsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
     }
 
     @Test
@@ -538,7 +538,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRowCount().longValue()).isEqualTo(28);
-            wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 records each
+            wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 rows each
         } finally {
             wireMockServer.stop();
         }
@@ -672,12 +672,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         return count;
     }
 
-    private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
+    private long getNumberOfRowsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
         String fileSystem = instanceProperties.get(FILE_SYSTEM);
         String resultsBucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
         String outputDir = fileSystem + resultsBucket + "/query-" + query.getQueryId();
 
-        long numberOfRecordsInOutput = 0;
+        long numberOfRowsInOutput = 0;
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
@@ -686,10 +686,10 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                 while (it.hasNext()) {
                     it.next();
                 }
-                numberOfRecordsInOutput = it.getNumberOfRowsRead();
+                numberOfRowsInOutput = it.getNumberOfRowsRead();
             }
         }
-        return numberOfRecordsInOutput;
+        return numberOfRowsInOutput;
     }
 
     private void processQuery(Query query) {

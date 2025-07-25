@@ -99,7 +99,7 @@ class S3ResultsOutputIT {
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There is only one block as rowGroup size is large").isOne();
     }
 
@@ -117,7 +117,7 @@ class S3ResultsOutputIT {
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
@@ -134,7 +134,7 @@ class S3ResultsOutputIT {
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
@@ -161,7 +161,7 @@ class S3ResultsOutputIT {
         }
     }
 
-    private List<Row> getRecordsFromOutput(String path) {
+    private List<Row> getRowsFromOutput(String path) {
         List<Row> rows = new ArrayList<>();
         try {
             ParquetRowReader reader = new ParquetRowReader(path, schema);
