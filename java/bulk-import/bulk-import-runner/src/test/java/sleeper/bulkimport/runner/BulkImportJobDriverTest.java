@@ -124,7 +124,7 @@ class BulkImportJobDriverTest {
     }
 
     @Test
-    void shouldReportJobFinishedWithNoRecordsWhenStateStoreUpdateFailed() throws Exception {
+    void shouldReportJobFinishedWithNoRowsWhenStateStoreUpdateFailed() throws Exception {
         // Given
         BulkImportJob job = singleFileImportJob();
         Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");

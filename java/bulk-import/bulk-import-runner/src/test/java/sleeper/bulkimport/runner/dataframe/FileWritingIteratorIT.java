@@ -89,7 +89,7 @@ class FileWritingIteratorIT {
     }
 
     @Test
-    void shouldGroupRecordsByFinalColumn() {
+    void shouldGroupRowsByFinalColumn() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -111,7 +111,7 @@ class FileWritingIteratorIT {
     }
 
     @Test
-    void shouldWriteAllRecordsToParquetFiles() {
+    void shouldWriteAllRowsToParquetFiles() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -135,7 +135,7 @@ class FileWritingIteratorIT {
     }
 
     @Test
-    void shouldHandleExamplesWhereTheLastRecordBelongsToADifferentPartition() {
+    void shouldHandleExamplesWhereTheLastRowBelongsToADifferentPartition() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
