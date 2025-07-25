@@ -533,7 +533,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static void writeRowsToFile(List<Row> rows, String file) throws IllegalArgumentException, IOException {
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(file), getSchema());
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(file), getSchema());
         for (Row row : rows) {
             writer.write(row);
         }

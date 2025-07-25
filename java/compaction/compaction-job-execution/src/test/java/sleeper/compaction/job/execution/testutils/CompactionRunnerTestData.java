@@ -154,7 +154,7 @@ public class CompactionRunnerTestData {
 
     public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<Row> rows) throws Exception {
         Sketches sketches = Sketches.from(schema);
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(filename), schema)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);

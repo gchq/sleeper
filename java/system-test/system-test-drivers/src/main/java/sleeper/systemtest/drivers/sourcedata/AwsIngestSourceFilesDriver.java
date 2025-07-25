@@ -51,7 +51,7 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
         Configuration conf = clients.createHadoopConf(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         LOGGER.info("Writing to {}", path);
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                 new Path(path), tableProperties, conf)) {
             for (Row row : (Iterable<Row>) () -> rows) {
                 sketches.update(row);

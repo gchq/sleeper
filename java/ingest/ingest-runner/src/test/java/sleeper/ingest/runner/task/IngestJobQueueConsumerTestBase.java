@@ -109,7 +109,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                     path, rowListAndSchema.sleeperSchema, hadoopConf)) {
                 for (Row row : rowListAndSchema.rowList) {
                     writer.write(row);

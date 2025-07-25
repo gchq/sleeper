@@ -32,7 +32,7 @@ public class HadoopLocalFilesDriver implements IngestLocalFilesDriver {
 
     @Override
     public void writeFile(TableProperties tableProperties, Path filePath, Iterator<Row> rows) {
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                 new org.apache.hadoop.fs.Path("file://" + filePath),
                 tableProperties, new Configuration())) {
             for (Row row : (Iterable<Row>) () -> rows) {

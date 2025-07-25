@@ -47,7 +47,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
-import static sleeper.parquet.row.ParquetRowWriterFactory.createParquetRecordWriter;
 
 public class ShowPageIndexesIT {
     @TempDir
@@ -177,7 +176,7 @@ public class ShowPageIndexesIT {
     }
 
     private static ParquetWriter<Row> createRecordWriter(Path file, TableProperties tableProperties) throws IOException {
-        return createParquetRecordWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
+        return createParquetRowWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
     }
 
     private static String example(String path) throws IOException {

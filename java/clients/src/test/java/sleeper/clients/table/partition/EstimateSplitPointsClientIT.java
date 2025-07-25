@@ -120,7 +120,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     }
 
     private void writeRecords(Path path, Schema schema, List<Row> records) throws IOException {
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema, hadoopConf)) {
             for (Row record : records) {
                 writer.write(record);
             }

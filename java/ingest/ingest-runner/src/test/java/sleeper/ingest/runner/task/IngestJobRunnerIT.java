@@ -375,7 +375,7 @@ class IngestJobRunnerIT extends LocalStackTestBase {
     private void writeParquetFileForIngest(
             Path path, RowGenerator.RowListAndSchema rowListAndSchema) throws IOException {
         ParquetWriter<Row> writer = ParquetRowWriterFactory
-                .createParquetRecordWriter(path, rowListAndSchema.sleeperSchema, hadoopConf);
+                .createParquetRowWriter(path, rowListAndSchema.sleeperSchema, hadoopConf);
         for (Row row : rowListAndSchema.rowList) {
             writer.write(row);
         }

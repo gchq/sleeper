@@ -80,7 +80,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
         // update the state store, it will overwrite the existing output file written
         // by the previous run
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                 outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());

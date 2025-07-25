@@ -183,7 +183,7 @@ public class FileWritingIterator implements Iterator<Row> {
 
         LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
 
-        return ParquetRowWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+        return ParquetRowWriterFactory.createParquetRowWriter(new Path(path), tableProperties, conf);
     }
 
     private String getPartitionId(Row row) {

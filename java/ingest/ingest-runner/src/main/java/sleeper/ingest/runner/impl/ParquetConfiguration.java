@@ -64,7 +64,7 @@ public class ParquetConfiguration {
      * @throws IOException Thrown when the writer cannot be created
      */
     public ParquetWriter<Row> createParquetWriter(String outputFile) throws IOException {
-        return ParquetRowWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
+        return ParquetRowWriterFactory.createParquetRowWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
     }
 
     public static final class Builder {

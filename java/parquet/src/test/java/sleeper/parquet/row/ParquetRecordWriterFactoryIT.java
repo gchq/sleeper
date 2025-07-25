@@ -59,7 +59,7 @@ class ParquetRecordWriterFactoryIT {
                 .valueFields(new Field("column2", new StringType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
@@ -96,7 +96,7 @@ class ParquetRecordWriterFactoryIT {
                 .valueFields(new Field("column3", new LongType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
@@ -140,7 +140,7 @@ class ParquetRecordWriterFactoryIT {
                 .valueFields(new Field("column2", new ByteArrayType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", byteArray1);
@@ -213,7 +213,7 @@ class ParquetRecordWriterFactoryIT {
     }
 
     private void writeParquetFile(Path path, TableProperties tableProperties, Row row) throws IOException {
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, tableProperties, new Configuration());
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, tableProperties, new Configuration());
         writeRecordNTimes(writer, row, 10_000);
         writer.close();
     }

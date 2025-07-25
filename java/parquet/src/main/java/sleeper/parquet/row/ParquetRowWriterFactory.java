@@ -48,27 +48,27 @@ public class ParquetRowWriterFactory {
     private ParquetRowWriterFactory() {
     }
 
-    public static ParquetWriter<Row> createParquetRecordWriter(Path path, Schema schema) throws IOException {
-        return createParquetRecordWriter(path, schema, new Configuration());
+    public static ParquetWriter<Row> createParquetRowWriter(Path path, Schema schema) throws IOException {
+        return createParquetRowWriter(path, schema, new Configuration());
     }
 
-    public static ParquetWriter<Row> createParquetRecordWriter(Path path, Schema schema, Configuration conf) throws IOException {
+    public static ParquetWriter<Row> createParquetRowWriter(Path path, Schema schema, Configuration conf) throws IOException {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(schema);
-        return createParquetRecordWriter(path, tableProperties, conf);
+        return createParquetRowWriter(path, tableProperties, conf);
     }
 
-    public static ParquetWriter<Row> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
-        return createParquetRecordWriter(path, tableProperties, conf, ParquetFileWriter.Mode.CREATE);
+    public static ParquetWriter<Row> createParquetRowWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
+        return createParquetRowWriter(path, tableProperties, conf, ParquetFileWriter.Mode.CREATE);
     }
 
-    public static ParquetWriter<Row> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf, ParquetFileWriter.Mode writeMode) throws IOException {
-        return parquetRecordWriterBuilder(path, tableProperties)
+    public static ParquetWriter<Row> createParquetRowWriter(Path path, TableProperties tableProperties, Configuration conf, ParquetFileWriter.Mode writeMode) throws IOException {
+        return parquetRowWriterBuilder(path, tableProperties)
                 .withConf(conf)
                 .withWriteMode(writeMode).build();
     }
 
-    public static Builder parquetRecordWriterBuilder(Path path, TableProperties tableProperties) {
+    public static Builder parquetRowWriterBuilder(Path path, TableProperties tableProperties) {
         return new Builder(path, tableProperties.getSchema())
                 .withCompressionCodec(tableProperties.get(COMPRESSION_CODEC))
                 .withRowGroupSize(tableProperties.getLong(ROW_GROUP_SIZE))

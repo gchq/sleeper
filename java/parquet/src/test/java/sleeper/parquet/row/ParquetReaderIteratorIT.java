@@ -47,7 +47,7 @@ class ParquetReaderIteratorIT {
     void shouldReturnCorrectIterator() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
 
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
@@ -78,7 +78,7 @@ class ParquetReaderIteratorIT {
     void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
         writer.close();
         ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).build();
 

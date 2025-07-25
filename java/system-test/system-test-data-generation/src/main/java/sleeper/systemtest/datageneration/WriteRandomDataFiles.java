@@ -67,7 +67,7 @@ public class WriteRandomDataFiles {
         }
         String filename = dir + fileNumber + ".parquet";
         String path = filePathPrefix + filename;
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(path), tableProperties, conf);
         long count = 0L;
         LOGGER.info("Created writer to path {}", path);
         while (rowIterator.hasNext()) {
@@ -81,7 +81,7 @@ public class WriteRandomDataFiles {
                     fileNumber++;
                     filename = dir + fileNumber + ".parquet";
                     path = filePathPrefix + filename;
-                    writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+                    writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(path), tableProperties, conf);
                 }
             }
         }

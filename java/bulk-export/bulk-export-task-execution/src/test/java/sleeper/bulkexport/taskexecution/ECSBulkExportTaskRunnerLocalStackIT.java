@@ -232,7 +232,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     private FileReference addPartitionFile(String partitionId, String name, List<Row> rows) {
         FileReference reference = fileFactory().partitionFile(partitionId, name, rows.size());
         Path path = new Path(reference.getFilename());
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, tableProperties, hadoopConf)) {
             for (Row row : rows) {
                 writer.write(row);
             }
