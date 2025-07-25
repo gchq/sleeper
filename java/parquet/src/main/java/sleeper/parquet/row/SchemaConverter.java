@@ -36,12 +36,12 @@ import java.util.List;
 /**
  * Converts a Sleeper schema to Parquet format. Produces a Parquet {@link MessageType}.
  */
-public class SchemaConverter {
+class SchemaConverter {
 
     private SchemaConverter() {
     }
 
-    public static MessageType getSchema(Schema schema) {
+    static MessageType getSchema(Schema schema) {
         List<Field> types = schema.getAllFields();
         List<org.apache.parquet.schema.Type> primitiveTypes = new ArrayList<>();
         for (Field field : types) {

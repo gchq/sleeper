@@ -16,14 +16,15 @@
 package sleeper.parquet.row;
 
 import org.apache.parquet.io.api.GroupConverter;
+import org.apache.parquet.io.api.RecordMaterializer;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
-public class SleeperRowMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Row> {
+class SleeperRowMaterializer extends RecordMaterializer<Row> {
     private final RowConverter rowConverter;
 
-    public SleeperRowMaterializer(Schema schema) {
+    SleeperRowMaterializer(Schema schema) {
         this.rowConverter = new RowConverter(schema);
     }
 

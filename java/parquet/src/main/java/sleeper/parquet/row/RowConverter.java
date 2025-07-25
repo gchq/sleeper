@@ -39,11 +39,11 @@ import java.util.Map;
 /**
  * Converts rows of Parquet data into Sleeper rows.
  */
-public class RowConverter extends GroupConverter {
+class RowConverter extends GroupConverter {
     private final Row currentRow;
     private final Converter[] converters;
 
-    public RowConverter(Schema schema) {
+    RowConverter(Schema schema) {
         currentRow = new Row();
         List<Field> fields = schema.getAllFields();
         this.converters = new Converter[fields.size()];
@@ -90,11 +90,11 @@ public class RowConverter extends GroupConverter {
         return currentRow;
     }
 
-    public static class IntConverter extends PrimitiveConverter {
+    private static class IntConverter extends PrimitiveConverter {
         private final String name;
         private final Row row;
 
-        public IntConverter(String name, Row row) {
+        IntConverter(String name, Row row) {
             this.name = name;
             this.row = row;
         }
@@ -105,11 +105,11 @@ public class RowConverter extends GroupConverter {
         }
     }
 
-    public static class LongConverter extends PrimitiveConverter {
+    private static class LongConverter extends PrimitiveConverter {
         private final String name;
         private final Row row;
 
-        public LongConverter(String name, Row row) {
+        LongConverter(String name, Row row) {
             this.name = name;
             this.row = row;
         }
@@ -120,11 +120,11 @@ public class RowConverter extends GroupConverter {
         }
     }
 
-    public static class StringConverter extends PrimitiveConverter {
+    private static class StringConverter extends PrimitiveConverter {
         private final String name;
         private final Row row;
 
-        public StringConverter(String name, Row row) {
+        StringConverter(String name, Row row) {
             this.name = name;
             this.row = row;
         }
@@ -135,11 +135,11 @@ public class RowConverter extends GroupConverter {
         }
     }
 
-    public static class ByteArrayConverter extends PrimitiveConverter {
+    private static class ByteArrayConverter extends PrimitiveConverter {
         private final String name;
         private final Row row;
 
-        public ByteArrayConverter(String name, Row row) {
+        ByteArrayConverter(String name, Row row) {
             this.name = name;
             this.row = row;
         }
@@ -150,13 +150,13 @@ public class RowConverter extends GroupConverter {
         }
     }
 
-    public static class ListConverter<E> extends GroupConverter {
+    private static class ListConverter<E> extends GroupConverter {
         private final String name;
         private final Row row;
         private final List<E> elements;
         private final ElementConverter<E> elementConverter;
 
-        public ListConverter(String name, PrimitiveType elementType, Row row) {
+        ListConverter(String name, PrimitiveType elementType, Row row) {
             this.name = name;
             this.row = row;
             this.elements = new ArrayList<>();
@@ -183,14 +183,14 @@ public class RowConverter extends GroupConverter {
         }
     }
 
-    public static class MapConverter<K, V> extends GroupConverter {
+    private static class MapConverter<K, V> extends GroupConverter {
         private final String name;
         private final Row row;
         private final List<K> keys;
         private final List<V> values;
         private final KeyValueConverter<K, V> keyValueConverter;
 
-        public MapConverter(String name, PrimitiveType keyType, PrimitiveType valueType, Row row) {
+        MapConverter(String name, PrimitiveType keyType, PrimitiveType valueType, Row row) {
             this.name = name;
             this.row = row;
             this.keys = new ArrayList<>();

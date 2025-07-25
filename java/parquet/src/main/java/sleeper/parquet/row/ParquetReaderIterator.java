@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
- * Iterates through records read from a Parquet file. Wraps a {@link ParquetReader}.
+ * Iterates through rows read from a Parquet file. Wraps a {@link ParquetReader}.
  */
 public class ParquetReaderIterator implements CloseableIterator<Row> {
     private final ParquetReader<Row> reader;
