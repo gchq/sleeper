@@ -25,7 +25,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RowGenerator;
-import sleeper.ingest.runner.testutils.TestFilesAndRecords;
+import sleeper.ingest.runner.testutils.TestFilesAndRows;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.sketches.testutils.SketchesDecilesComparator;
@@ -67,7 +67,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRows actualActiveData = TestFilesAndRows.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -75,13 +75,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("left", parameters.getLocalFilePrefix() + "/data/partition_left/leftFile.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile.parquet"));
 
-        assertThat(actualActiveData.getSetOfAllRecords())
+        assertThat(actualActiveData.getSetOfAllRows())
                 .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
-        assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
+        assertThat(actualActiveData.getPartitionData("left").streamAllRows())
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
                         .collect(Collectors.toList()));
-        assertThat(actualActiveData.getPartitionData("right").streamAllRecords())
+        assertThat(actualActiveData.getPartitionData("right").streamAllRows())
                 .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
@@ -113,7 +113,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         });
 
         // Then
-        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRows actualActiveData = TestFilesAndRows.loadActiveFiles(stateStore, rowListAndSchema.sleeperSchema, configuration);
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileReference::getPartitionId, FileReference::getFilename)
@@ -122,20 +122,20 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("left", parameters.getLocalFilePrefix() + "/data/partition_left/leftFile2.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile1.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/data/partition_right/rightFile2.parquet"));
-        assertThat(actualActiveData.getSetOfAllRecords())
+        assertThat(actualActiveData.getSetOfAllRows())
                 .isEqualTo(new HashSet<>(rowListAndSchema.rowList));
         assertThat(actualActiveData.getPartitionData("left"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
                         file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
-                                data.getRecordsInFile(file),
+                                data.getRowsInFile(file),
                                 "key0", LongStream.range(-10_000, 0))))
-                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
+                .satisfies(data -> assertThat(data.getNumRows()).isEqualTo(10_000));
         assertThat(actualActiveData.getPartitionData("right"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(
                         file -> assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
-                                data.getRecordsInFile(file),
+                                data.getRowsInFile(file),
                                 "key0", LongStream.range(0, 10_000))))
-                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
+                .satisfies(data -> assertThat(data.getNumRows()).isEqualTo(10_000));
         assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualActiveData.getFiles(), new LocalFileSystemSketchesStore()))
                 .usingComparator(SketchesDecilesComparator.longsMaxDiff(rowListAndSchema.sleeperSchema, 50))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));

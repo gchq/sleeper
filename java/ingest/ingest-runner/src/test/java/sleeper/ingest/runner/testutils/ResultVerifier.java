@@ -76,10 +76,10 @@ public class ResultVerifier {
             Path filePath,
             Configuration hadoopConfiguration) {
         try {
-            ParquetReader<Row> recordParquetReader = new ParquetRowReader.Builder(filePath, sleeperSchema)
+            ParquetReader<Row> parquetReader = new ParquetRowReader.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
-            return new ParquetReaderIterator(recordParquetReader);
+            return new ParquetReaderIterator(parquetReader);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

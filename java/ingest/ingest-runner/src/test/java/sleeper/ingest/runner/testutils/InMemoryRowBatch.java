@@ -29,13 +29,13 @@ import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryRecordBatch implements RowBatch<Row> {
-    public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryRecordBatch.class);
+public class InMemoryRowBatch implements RowBatch<Row> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryRowBatch.class);
 
     private final Schema schema;
     private final List<Row> rows = new ArrayList<>();
 
-    public InMemoryRecordBatch(Schema schema) {
+    public InMemoryRowBatch(Schema schema) {
         this.schema = schema;
     }
 

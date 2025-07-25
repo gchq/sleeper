@@ -32,52 +32,52 @@ import java.util.stream.Stream;
 
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 
-public class TestFilesAndRecords {
+public class TestFilesAndRows {
 
     private final List<FileReference> files;
     private final Map<String, List<Row>> rowsByFilename;
 
-    private TestFilesAndRecords(List<FileReference> files, Map<String, List<Row>> rowsByFilename) {
+    private TestFilesAndRows(List<FileReference> files, Map<String, List<Row>> rowsByFilename) {
         this.files = files;
         this.rowsByFilename = rowsByFilename;
     }
 
-    public static TestFilesAndRecords loadActiveFiles(
+    public static TestFilesAndRows loadActiveFiles(
             StateStore stateStore, Schema schema, Configuration configuration) {
         List<FileReference> fileReferences = stateStore.getFileReferences();
         Map<String, List<Row>> rowsByFilename = fileReferences.stream()
                 .map(file -> Map.entry(file.getFilename(), readRowsFromPartitionDataFile(schema, file, configuration)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new TestFilesAndRecords(fileReferences, rowsByFilename);
+        return new TestFilesAndRows(fileReferences, rowsByFilename);
     }
 
     public List<FileReference> getFiles() {
         return files;
     }
 
-    public Stream<Row> streamAllRecords() {
+    public Stream<Row> streamAllRows() {
         return rowsByFilename.values().stream().flatMap(List::stream);
     }
 
-    public Set<Row> getSetOfAllRecords() {
-        return streamAllRecords().collect(Collectors.toSet());
+    public Set<Row> getSetOfAllRows() {
+        return streamAllRows().collect(Collectors.toSet());
     }
 
-    public List<Row> getRecordsInFile(FileReference file) {
+    public List<Row> getRowsInFile(FileReference file) {
         return rowsByFilename.get(file.getFilename());
     }
 
-    public int getNumRecords() {
+    public int getNumRows() {
         return rowsByFilename.values().stream().mapToInt(List::size).sum();
     }
 
-    public TestFilesAndRecords getPartitionData(String partitionId) {
+    public TestFilesAndRows getPartitionData(String partitionId) {
         List<FileReference> partitionFiles = files.stream()
                 .filter(file -> Objects.equals(partitionId, file.getPartitionId()))
                 .collect(Collectors.toUnmodifiableList());
-        Map<String, List<Row>> partitionRecords = partitionFiles.stream()
+        Map<String, List<Row>> partitionRows = partitionFiles.stream()
                 .map(file -> Map.entry(file.getFilename(), rowsByFilename.get(file.getFilename())))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new TestFilesAndRecords(partitionFiles, partitionRecords);
+        return new TestFilesAndRows(partitionFiles, partitionRows);
     }
 }

@@ -96,14 +96,14 @@ public class IngestCoordinatorTestParameters {
         return coordinatorBuilder(instanceProperties, tableProperties).build();
     }
 
-    public <T extends ArrowRowWriter<U>, U> IngestCoordinator<U> buildCoordinatorWithArrowWriter(T recordWriter) {
+    public <T extends ArrowRowWriter<U>, U> IngestCoordinator<U> buildCoordinatorWithArrowWriter(T rowWriter) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         setProperties.setProperties(instanceProperties, tableProperties, this);
         ArrowRowBatchFactory.Builder<U> arrowConfigBuilder = ArrowRowBatchFactory.builderWith(instanceProperties)
                 .schema(schema)
                 .localWorkingDirectory(localWorkingDir)
-                .rowWriter(recordWriter);
+                .rowWriter(rowWriter);
         return coordinatorBuilder(instanceProperties, tableProperties)
                 .rowBatchFactory(arrowConfigBuilder.build())
                 .build();
