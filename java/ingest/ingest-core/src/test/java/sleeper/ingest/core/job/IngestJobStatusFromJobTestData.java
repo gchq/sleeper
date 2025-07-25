@@ -70,7 +70,7 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job                  the ingest job
      * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
+     * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      an {@link IngestJobStatus}
      */
@@ -83,7 +83,7 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job     the ingest job
      * @param  taskId  the ingest task ID
-     * @param  summary the records processed summary
+     * @param  summary the summary of the job run
      * @return         an {@link IngestJobStatus}
      */
     public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, JobRunSummary summary) {
@@ -95,7 +95,7 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job                  the ingest job
      * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
+     * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      an {@link IngestJobStatus}
      */
@@ -123,7 +123,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  taskId         the ingest task ID
      * @param  validationTime the validation time
      * @param  startTime      the start time
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun acceptedRunWhichStarted(
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
@@ -141,7 +141,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  job                  the ingest job
      * @param  taskId               the ingest task ID
      * @param  validationTime       the validation time
-     * @param  summary              the records processed summary
+     * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files that were written by the job
      * @return                      a job run
      */
@@ -169,7 +169,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  validationTime the validation time
      * @param  runTime        the process run time
      * @param  failureReasons a list of failure reasons
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun acceptedRunWhichFailed(
             IngestJob job, String taskId, Instant validationTime, JobRunTime runTime, List<String> failureReasons) {
@@ -192,7 +192,7 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job            the ingest job
      * @param  validationTime the validation time
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun acceptedRun(IngestJob job, Instant validationTime) {
         return validationRun(
@@ -205,7 +205,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  job            the ingest job
      * @param  validationTime the validation time
      * @param  reasons        the reasons
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun rejectedRun(IngestJob job, Instant validationTime, String... reasons) {
         return rejectedRun(job, null, validationTime, List.of(reasons));
@@ -217,7 +217,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  job            the ingest job
      * @param  validationTime the validation time
      * @param  reasons        the list of reasons
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {
         return rejectedRun(job, null, validationTime, reasons);
@@ -230,7 +230,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  jsonMessage    the JSON string used in ingest job deserialisation
      * @param  validationTime the validation time
      * @param  reasons        the list of reasons
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun rejectedRun(IngestJob job, String jsonMessage, Instant validationTime, List<String> reasons) {
         return validationRun(IngestJobRejectedStatus.builder()
@@ -248,7 +248,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  job       the ingest job
      * @param  taskId    the ingest task ID
      * @param  startTime the start time
-     * @return           a {@link JobRun}
+     * @return           a job run
      */
     public static JobRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return jobRunOnTask(taskId, ingestStartedStatus(job, startTime));
@@ -259,8 +259,8 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job     the ingest job
      * @param  taskId  the ingest task ID
-     * @param  summary the records processed summary
-     * @return         a {@link JobRun}
+     * @param  summary the summary of the job run
+     * @return         a job run
      */
     public static JobRun finishedIngestRun(
             IngestJob job, String taskId, JobRunSummary summary) {
@@ -272,9 +272,9 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job                  the ingest job
      * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
+     * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      a {@link JobRun}
+     * @return                      a job run
      */
     public static JobRun finishedIngestRun(
             IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
@@ -293,9 +293,9 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job                  the ingest job
      * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
+     * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      a {@link JobRun}
+     * @return                      a job run
      */
     public static JobRun finishedIngestRunUncommitted(
             IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
@@ -311,7 +311,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  taskId         the ingest task ID
      * @param  runTime        the process run time
      * @param  failureReasons a list of failure reasons
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun failedIngestRun(
             IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
@@ -331,7 +331,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  validationTime the validation time
      * @param  failureTime    the failure time
      * @param  failureReasons a list of failure reasons
-     * @return                a {@link JobRun}
+     * @return                a job run
      */
     public static JobRun acceptedAndFailedToStartIngestRun(
             IngestJob job, Instant validationTime, Instant failureTime, List<String> failureReasons) {

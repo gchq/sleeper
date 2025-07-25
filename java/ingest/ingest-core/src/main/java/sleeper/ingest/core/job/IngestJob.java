@@ -131,7 +131,7 @@ public class IngestJob {
     /**
      * Creates a builder for an event when the job finished. Used with the ingest job tracker.
      *
-     * @param  summary a summary of the time spent on the job and records processed
+     * @param  summary a summary of the time spent on the job and rows processed
      * @return         the builder
      */
     public IngestJobFinishedEvent.Builder finishedEventBuilder(JobRunSummary summary) {
