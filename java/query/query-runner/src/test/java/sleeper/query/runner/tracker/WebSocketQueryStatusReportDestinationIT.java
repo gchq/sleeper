@@ -227,7 +227,7 @@ class WebSocketQueryStatusReportDestinationIT {
                 .build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
-                new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")), new IOException("error writing record #2"));
+                new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")), new IOException("error writing row #2"));
 
         // When
         config.getListener().queryCompleted(query, result);
@@ -247,7 +247,7 @@ class WebSocketQueryStatusReportDestinationIT {
                       "type" : "sketches",
                       "location" : "s3://bucket/sketches.parquet"
                     }
-                  ], "error" : "IOException: error writing record #2"
+                  ], "error" : "IOException: error writing row #2"
                 }
                 """)));
     }

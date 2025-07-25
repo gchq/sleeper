@@ -328,7 +328,7 @@ public class QueryWebSocketMessageSerDeTest {
         }
 
         @Test
-        void shouldResetRemainingSizeBetweenBatchesWhenSizeIsMetByNumberOfRecords() throws Exception {
+        void shouldResetRemainingSizeBetweenBatchesWhenSizeIsMetByNumberOfRows() throws Exception {
             // Given
             List<Row> rows = List.of(
                     new Row(Map.of("key", 10L)),

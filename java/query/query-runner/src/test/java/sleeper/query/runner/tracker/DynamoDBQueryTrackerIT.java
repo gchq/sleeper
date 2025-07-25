@@ -162,7 +162,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     }
 
     @Test
-    public void shouldUpdateParentStateWithTotalRecordsReturnedByAllChildren() throws QueryTrackerException {
+    public void shouldUpdateParentStateWithTotalRowsReturnedByAllChildren() throws QueryTrackerException {
         // When
         queryTracker().queryInProgress(createQueryWithId("parent"));
         queryTracker().queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
@@ -285,16 +285,16 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         return TrackedQueryTestHelper.queryInProgress(query.getQueryId(), Instant.now());
     }
 
-    private TrackedQuery queryCompleted(Query query, long records) {
-        return TrackedQueryTestHelper.queryCompleted(query.getQueryId(), Instant.now(), records);
+    private TrackedQuery queryCompleted(Query query, long rows) {
+        return TrackedQueryTestHelper.queryCompleted(query.getQueryId(), Instant.now(), rows);
     }
 
     private TrackedQuery queryFailed(Query query, String errorMessage) {
         return TrackedQueryTestHelper.queryFailed(query.getQueryId(), Instant.now(), errorMessage);
     }
 
-    private TrackedQuery queryPartiallyFailed(Query query, long records, String errorMessage) {
-        return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), records, errorMessage);
+    private TrackedQuery queryPartiallyFailed(Query query, long rows, String errorMessage) {
+        return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), rows, errorMessage);
     }
 
     private Query createQueryWithId(String id) {
