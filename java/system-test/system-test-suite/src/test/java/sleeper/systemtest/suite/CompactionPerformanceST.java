@@ -40,7 +40,7 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to compact this many records on fairly large ECS instances.
+@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
 public class CompactionPerformanceST {
 
     @BeforeEach
@@ -72,7 +72,7 @@ public class CompactionPerformanceST {
         assertThat(sumFileReferenceRowCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);
         assertThat(files.getFilesWithReferences()).hasSize(10)
-                .first() // Only check one file because it's time consuming to read all records
+                .first() // Only check one file because it's time consuming to read all rows
                 .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())

@@ -51,7 +51,7 @@ public class QueryST {
     @DisplayName("Direct query")
     class DirectQuery {
         @Test
-        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
+        void shouldRunQueryForAllRows(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -119,7 +119,7 @@ public class QueryST {
         }
 
         @Test
-        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
+        void shouldRunQueryForAllRows(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -182,7 +182,7 @@ public class QueryST {
     @DisplayName("WebSocket query")
     class WebSocketQuery {
         @Test
-        void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
+        void shouldRunQueryForAllRows(SleeperSystemTest sleeper) {
             // Given
             sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -241,7 +241,7 @@ public class QueryST {
         }
 
         @Test
-        void shouldRunQueryReturningNoRecords(SleeperSystemTest sleeper) {
+        void shouldRunQueryReturningNoRows(SleeperSystemTest sleeper) {
             // When/Then
             assertThat(sleeper.query().webSocket()
                     .allRowsInTable())

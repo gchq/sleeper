@@ -101,10 +101,10 @@ public class UserJarsST {
                 ITERATOR_CONFIG, "timestamp,50"));
 
         // When
-        List<Row> records = sleeper.query().byQueue().allRowsInTable();
+        List<Row> rows = sleeper.query().byQueue().allRowsInTable();
 
         // Then
-        assertThat(records)
+        assertThat(rows)
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
@@ -114,12 +114,12 @@ public class UserJarsST {
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When
-        List<Row> records = sleeper.query().byQueue().allRowsWithProcessingConfig(builder -> builder
+        List<Row> rows = sleeper.query().byQueue().allRowsWithProcessingConfig(builder -> builder
                 .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
                 .queryTimeIteratorConfig("timestamp,50"));
 
         // Then
-        assertThat(records)
+        assertThat(rows)
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 

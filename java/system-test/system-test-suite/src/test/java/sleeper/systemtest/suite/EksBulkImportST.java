@@ -68,7 +68,7 @@ public class EksBulkImportST {
     }
 
     @Test
-    void shouldBulkImport100Records(SleeperSystemTest sleeper, SystemTestParameters parameters) {
+    void shouldBulkImport100Rows(SleeperSystemTest sleeper, SystemTestParameters parameters) {
         // This is intended to ignore this test when running in an environment where log retention must not be set.
         // This is because we're currently unable to prevent an EKS cluster deployment from creating log groups with log
         // retention set. See the following issue:

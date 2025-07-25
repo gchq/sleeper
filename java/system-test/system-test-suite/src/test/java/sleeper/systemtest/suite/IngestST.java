@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
+import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
 public class IngestST {
@@ -102,8 +102,8 @@ public class IngestST {
     }
 
     @ParameterizedTest
-    @MethodSource("ingestTypesToTestWithManyRecords")
-    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
+    @MethodSource("ingestTypesToTestWithManyRows")
+    void shouldIngest20kRowsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 20000));
@@ -118,11 +118,11 @@ public class IngestST {
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 20000)));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1)
-                .matches(files -> numberOfRecordsIn(files) == 20_000L,
-                        "contain 20K records");
+                .matches(files -> numberOfRowsIn(files) == 20_000L,
+                        "contain 20K rows");
     }
 
-    private static Stream<Arguments> ingestTypesToTestWithManyRecords() {
+    private static Stream<Arguments> ingestTypesToTestWithManyRows() {
         return Stream.of(
                 Arguments.of(Named.of("Direct write, backed by Arrow",
                         SystemTestIngestType.directWriteBackedByArrow())),

@@ -75,12 +75,12 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
     }
 
     private Iterable<Row> generateRows(SystemTestDataGenerationJob job, TableProperties tableProperties) {
-        List<Long> recordNumbers = LongStream.range(0, job.getRowsPerIngest())
+        List<Long> rowNumbers = LongStream.range(0, job.getRowsPerIngest())
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());
-        Collections.shuffle(recordNumbers, random);
+        Collections.shuffle(rowNumbers, random);
         GenerateNumberedRows generator = instance.numberedRows(tableProperties.getSchema());
-        return () -> recordNumbers.stream().map(generator::generateRow).iterator();
+        return () -> rowNumbers.stream().map(generator::generateRow).iterator();
     }
 
 }

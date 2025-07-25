@@ -33,10 +33,10 @@ import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create128StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
-import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
+import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to ingest this many records on fairly large ECS instances.
+@Expensive // Expensive because it takes a long time to ingest this many rows on fairly large ECS instances.
 public class IngestPerformanceST {
 
     @BeforeEach
@@ -60,8 +60,8 @@ public class IngestPerformanceST {
 
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1408)
-                .matches(files -> numberOfRecordsIn(files) == 440_000_000,
-                        "contain 440 million records");
+                .matches(files -> numberOfRowsIn(files) == 440_000_000,
+                        "contain 440 million rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
                         && stats.isAverageRunRowsPerSecondInRange(150_000, 250_000),

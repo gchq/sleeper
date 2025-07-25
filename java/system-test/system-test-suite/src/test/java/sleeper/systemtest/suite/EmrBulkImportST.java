@@ -41,21 +41,21 @@ public class EmrBulkImportST {
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrByQueue(SleeperSystemTest sleeper) {
+    void shouldBulkImportOneRowWithEmrByQueue(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        Row record = new Row(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
 
         // When
-        sleeper.sourceFiles().create("file.parquet", record);
+        sleeper.sourceFiles().create("file.parquet", row);
         sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_JOB_QUEUE_URL, "file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
-                .containsExactly(record);
+                .containsExactly(row);
     }
 }

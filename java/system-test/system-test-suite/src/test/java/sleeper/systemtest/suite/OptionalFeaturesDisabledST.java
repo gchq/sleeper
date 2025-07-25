@@ -71,7 +71,7 @@ public class OptionalFeaturesDisabledST {
     void shouldAllowForCompactionWhenTrackerIsDisabled(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
-        // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
+        // Files with rows 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
 
         // When

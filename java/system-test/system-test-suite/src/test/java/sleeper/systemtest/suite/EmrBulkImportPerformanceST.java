@@ -33,10 +33,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create512StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
-import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
+import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-@Expensive // Expensive because it takes a lot of very costly EMR instances to import this many records.
+@Expensive // Expensive because it takes a lot of very costly EMR instances to import this many rows.
 public class EmrBulkImportPerformanceST {
 
     @BeforeEach
@@ -61,8 +61,8 @@ public class EmrBulkImportPerformanceST {
 
         assertThat(sleeper.tableFiles().references())
                 .hasSize(2560)
-                .matches(files -> numberOfRecordsIn(files) == 5_000_000_000L,
-                        "contain 5 billion records");
+                .matches(files -> numberOfRowsIn(files) == 5_000_000_000L,
+                        "contain 5 billion rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5)
                         && stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
