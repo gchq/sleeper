@@ -57,7 +57,7 @@ public class PartitionSplittingST {
     }
 
     @Test
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
+    void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
