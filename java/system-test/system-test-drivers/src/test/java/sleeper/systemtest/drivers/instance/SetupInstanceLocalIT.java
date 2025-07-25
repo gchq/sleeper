@@ -47,7 +47,7 @@ public class SetupInstanceLocalIT {
     }
 
     @Test
-    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
+    void shouldIngestOneRow(SleeperSystemTest sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",
