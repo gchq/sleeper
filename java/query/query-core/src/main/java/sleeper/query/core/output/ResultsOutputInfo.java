@@ -18,7 +18,7 @@ package sleeper.query.core.output;
 import java.util.List;
 
 /**
- * Provides information about the results from running a query. Contains details of the number of records in the result
+ * Provides information about the results from running a query. Contains details of the number of rows in the result
  * and the location of where results are stored.
  */
 public class ResultsOutputInfo {
@@ -32,8 +32,8 @@ public class ResultsOutputInfo {
         this.error = error;
     }
 
-    public ResultsOutputInfo(long recordCount, List<ResultsOutputLocation> locations) {
-        this(recordCount, locations, null);
+    public ResultsOutputInfo(long numberOfRows, List<ResultsOutputLocation> locations) {
+        this(numberOfRows, locations, null);
     }
 
     public long getRowCount() {

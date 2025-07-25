@@ -143,11 +143,11 @@ class DynamoDBQueryTrackerEntry {
         return queryId;
     }
 
-    public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRecordCount) {
+    public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRowCount) {
         return builder()
                 .queryId(queryId)
                 .state(state)
-                .rowCount(totalRecordCount)
+                .rowCount(totalRowCount)
                 .errorMessage(errorMessage)
                 .build();
     }
