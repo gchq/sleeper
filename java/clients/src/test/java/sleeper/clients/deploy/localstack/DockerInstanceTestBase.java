@@ -55,7 +55,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .build().deploy(instanceId);
     }
 
-    public CloseableIterator<Row> queryAllRecords(
+    public CloseableIterator<Row> queryAllRows(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
@@ -63,7 +63,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
                 new LeafPartitionRowRetrieverImpl(Executors.newSingleThreadExecutor(), hadoopConf, tableProperties));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
-        return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
+        return executor.execute(createQueryAllRows(tree, tableProperties.get(TABLE_NAME)));
     }
 
     protected IngestJob receiveIngestJob(String queueUrl) {
@@ -75,7 +75,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         return new IngestJobSerDe().fromJson(json);
     }
 
-    private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
+    private static Query createQueryAllRows(PartitionTree tree, String tableName) {
         return Query.builder()
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())
