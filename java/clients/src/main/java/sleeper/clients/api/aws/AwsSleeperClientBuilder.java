@@ -58,7 +58,7 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
-        ShutdownWrapper<LeafPartitionRowRetrieverProvider> recordRetrieverProvider = queryProvider.getRecordRetrieverProvider(hadoopConf);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoopConf);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
 
         return new SleeperClient.Builder()
@@ -68,12 +68,12 @@ public class AwsSleeperClientBuilder {
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordRetrieverProvider(recordRetrieverProvider.get())
+                .rowRetrieverProvider(rowRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkExportQuerySender(BulkExportQuerySender.toSqs(instanceProperties, awsClients.sqs()))
-                .shutdown(new UncheckedAutoCloseables(List.of(awsClients, recordRetrieverProvider)))
+                .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
     }
 

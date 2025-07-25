@@ -26,18 +26,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Provides record retrievers for running Sleeper queries with Hadoop.
+ * Provides row retrievers for running Sleeper queries with Hadoop.
  */
 @FunctionalInterface
 public interface SleeperClientHadoopQueryProvider {
 
     /**
-     * Creates or retrieves a record retriever provider.
+     * Creates or retrieves a row retriever provider.
      *
      * @param  hadoopConf the Hadoop configuration
-     * @return            the record retriever
+     * @return            the row retriever
      */
-    ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf);
+    ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf);
 
     /**
      * Creates a provider that will create a thread pool of the default size. A new thread pool will be created for each
@@ -82,7 +82,7 @@ public interface SleeperClientHadoopQueryProvider {
         }
 
         @Override
-        public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf) {
+        public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf) {
             return ShutdownWrapper.noShutdown(
                     LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf));
         }
