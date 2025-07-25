@@ -34,9 +34,9 @@ import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.core.model.LeafPartitionQuery;
-import sleeper.query.core.recordretrieval.LeafPartitionRowRetriever;
-import sleeper.query.core.recordretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.core.recordretrieval.RowRetrievalException;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -35,7 +35,7 @@ import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.core.recordretrieval;
+package sleeper.query.core.rowretrieval;
 
 /**
  * Custom exception for exceptions encountered during row retrieval.

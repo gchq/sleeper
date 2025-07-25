@@ -52,7 +52,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.recordretrieval.RowRetrievalException;
+import sleeper.query.core.rowretrieval.RowRetrievalException;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.io.Serializable;

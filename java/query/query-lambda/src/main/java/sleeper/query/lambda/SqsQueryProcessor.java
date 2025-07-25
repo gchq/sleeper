@@ -35,7 +35,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;

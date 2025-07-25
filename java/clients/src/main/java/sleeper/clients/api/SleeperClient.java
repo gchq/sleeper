@@ -36,9 +36,9 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.query.core.recordretrieval.LeafPartitionRowRetriever;
-import sleeper.query.core.recordretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 
 import java.util.List;
 import java.util.Objects;

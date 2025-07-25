@@ -31,7 +31,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.statestore.StateStoreFactory;
 

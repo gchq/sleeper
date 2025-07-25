@@ -31,7 +31,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
-import sleeper.query.core.recordretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
