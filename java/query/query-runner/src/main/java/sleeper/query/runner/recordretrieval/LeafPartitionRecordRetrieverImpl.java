@@ -34,8 +34,8 @@ import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.core.model.LeafPartitionQuery;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
+import sleeper.query.core.recordretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.recordretrieval.RecordRetrievalException;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ import static sleeper.core.properties.table.TableProperty.PARQUET_QUERY_COLUMN_I
 /**
  * Pulls back records for a single leaf partition according to a provided predicate.
  */
-public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetriever {
+public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionRecordRetrieverImpl.class);
 
     private final Configuration filesConfig;

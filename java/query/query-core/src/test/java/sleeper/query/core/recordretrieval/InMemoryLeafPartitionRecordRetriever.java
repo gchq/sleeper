@@ -36,7 +36,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 /**
  * An in memory version of a partition record retriever.
  */
-public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever, LeafPartitionRecordRetrieverProvider {
+public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRowRetriever, LeafPartitionRecordRetrieverProvider {
 
     private final InMemoryRowStore recordStore;
 
@@ -53,7 +53,7 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecord
     }
 
     @Override
-    public LeafPartitionRecordRetriever getRecordRetriever(TableProperties tableProperties) {
+    public LeafPartitionRowRetriever getRecordRetriever(TableProperties tableProperties) {
         return this;
     }
 

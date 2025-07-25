@@ -29,6 +29,6 @@ public interface LeafPartitionRecordRetrieverProvider {
      * @param  tableProperties the Sleeper table properties
      * @return                 the record retriever
      */
-    LeafPartitionRecordRetriever getRecordRetriever(TableProperties tableProperties);
+    LeafPartitionRowRetriever getRecordRetriever(TableProperties tableProperties);
 
 }

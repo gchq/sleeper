@@ -55,7 +55,7 @@ public class QueryExecutor {
     private final ObjectFactory objectFactory;
     private final StateStore stateStore;
     private final TableProperties tableProperties;
-    private final LeafPartitionRecordRetriever recordRetriever;
+    private final LeafPartitionRowRetriever recordRetriever;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
@@ -63,13 +63,13 @@ public class QueryExecutor {
 
     public QueryExecutor(
             ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
-            LeafPartitionRecordRetriever recordRetriever) {
+            LeafPartitionRowRetriever recordRetriever) {
         this(objectFactory, stateStore, tableProperties, recordRetriever, Instant.now());
     }
 
     public QueryExecutor(
             ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
-            LeafPartitionRecordRetriever recordRetriever, Instant timeNow) {
+            LeafPartitionRowRetriever recordRetriever, Instant timeNow) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;

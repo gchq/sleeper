@@ -50,12 +50,12 @@ public class LeafPartitionQueryExecutor {
 
     private final ObjectFactory objectFactory;
     private final TableProperties tableProperties;
-    private final LeafPartitionRecordRetriever retriever;
+    private final LeafPartitionRowRetriever retriever;
 
     public LeafPartitionQueryExecutor(
             ObjectFactory objectFactory,
             TableProperties tableProperties,
-            LeafPartitionRecordRetriever retriever) {
+            LeafPartitionRowRetriever retriever) {
         this.objectFactory = objectFactory;
         this.tableProperties = tableProperties;
         this.retriever = retriever;
