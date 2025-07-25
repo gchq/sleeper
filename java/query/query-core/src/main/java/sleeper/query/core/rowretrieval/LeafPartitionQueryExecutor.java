@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 /**
  * Executes a sub-query for a leaf partition, retrieving and processing rows.
- * This class orchestrates the retrieval of records from a leaf partition
+ * This class orchestrates the retrieval of rows from a leaf partition
  * and applies compaction-time and query-time iterators.
  *
  */
@@ -64,7 +64,7 @@ public class LeafPartitionQueryExecutor {
     /**
      * Retrieves the rows from a given LeafPartitionQuery.
      * This method initialises and applies both compaction-time and query-time iterators
-     * to the retrieved records before returning them.
+     * to the retrieved rows before returning them.
      *
      * @param  leafPartitionQuery the Sleeper leaf partition query
      * @return                    the rows extracted by the query

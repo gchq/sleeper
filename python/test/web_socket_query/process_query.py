@@ -199,16 +199,16 @@ async def process_query(query: Query, use_envrion_auth: bool) -> dict:
                 query_ids = result_json.get("queryIds")
                 for subquery in query_ids:
                     logger.info(f"Subquery ID: {subquery}")
-            elif message == MessageType.RECORDS:
+            elif message == MessageType.ROWS:
                 try:
-                    records = result_json["records"]
+                    rows = result_json["rows"]
                 except KeyError as err:
-                    logger.error("Error processing records")
+                    logger.error("Error processing rows")
                     logger.error(err.with_traceback())
                     continue
-                logger.debug(records)
-                results_accumulator["results"].extend(records)
-                total_results += len(records)
+                logger.debug(rows)
+                results_accumulator["results"].extend(rows)
+                total_results += len(rows)
 
             logger.info(f"Found a total of {total_results} results")
 

@@ -249,7 +249,7 @@ public class StateStoreCommitterTest {
 
         @Test
         void shouldApplyIngestStreamAddFilesCommitRequest() throws Exception {
-            // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
+            // Given we have a commit request without an ingest job (e.g. from an endless stream of rows)
             StateStore stateStore = createTableGetStateStore("test-table");
             FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
             AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(outputFile));

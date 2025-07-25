@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
+import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
 public class IngestST {
@@ -49,15 +49,15 @@ public class IngestST {
     void shouldIngest1File(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -65,18 +65,18 @@ public class IngestST {
     void shouldIngest4FilesInOneJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200))
+                .createWithNumberedRows("file3.parquet", LongStream.range(200, 300))
+                .createWithNumberedRows("file4.parquet", LongStream.range(300, 400));
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -84,10 +84,10 @@ public class IngestST {
     void shouldIngest4FilesInTwoJobs(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200))
+                .createWithNumberedRows("file3.parquet", LongStream.range(200, 300))
+                .createWithNumberedRows("file4.parquet", LongStream.range(300, 400));
 
         // When
         sleeper.ingest().byQueue()
@@ -96,17 +96,17 @@ public class IngestST {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
     @ParameterizedTest
-    @MethodSource("ingestTypesToTestWithManyRecords")
-    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
+    @MethodSource("ingestTypesToTestWithManyRows")
+    void shouldIngest20kRowsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 20000));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 20000));
 
         // When
         sleeper.ingest().setType(ingestType)
@@ -114,15 +114,15 @@ public class IngestST {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 20000)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 20000)));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1)
-                .matches(files -> numberOfRecordsIn(files) == 20_000L,
-                        "contain 20K records");
+                .matches(files -> numberOfRowsIn(files) == 20_000L,
+                        "contain 20K rows");
     }
 
-    private static Stream<Arguments> ingestTypesToTestWithManyRecords() {
+    private static Stream<Arguments> ingestTypesToTestWithManyRows() {
         return Stream.of(
                 Arguments.of(Named.of("Direct write, backed by Arrow",
                         SystemTestIngestType.directWriteBackedByArrow())),

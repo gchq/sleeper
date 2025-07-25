@@ -58,9 +58,9 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
                 new InMemoryLeafPartitionRowRetriever(dataStore), Instant.now());
         executor.init();
         try (CloseableIterator<Row> iterator = executor.execute(query)) {
-            List<Row> records = new ArrayList<>();
-            iterator.forEachRemaining(records::add);
-            return records;
+            List<Row> rows = new ArrayList<>();
+            iterator.forEachRemaining(rows::add);
+            return rows;
         } catch (IOException | QueryException e) {
             throw new RuntimeException(e);
         }

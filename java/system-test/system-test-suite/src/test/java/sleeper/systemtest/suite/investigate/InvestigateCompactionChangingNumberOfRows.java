@@ -60,13 +60,13 @@ import java.util.UUID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
- * This was an investigation after a failed system test where a compaction changed the number of records in a Sleeper
+ * This was an investigation after a failed system test where a compaction changed the number of rows in a Sleeper
  * table unexpectedly.
  */
-public class InvestigateCompactionChangingNumberOfRecords {
-    public static final Logger LOGGER = LoggerFactory.getLogger(InvestigateCompactionChangingNumberOfRecords.class);
+public class InvestigateCompactionChangingNumberOfRows {
+    public static final Logger LOGGER = LoggerFactory.getLogger(InvestigateCompactionChangingNumberOfRows.class);
 
-    private InvestigateCompactionChangingNumberOfRecords() {
+    private InvestigateCompactionChangingNumberOfRows() {
     }
 
     public static void main(String[] args) throws Exception {
@@ -85,39 +85,39 @@ public class InvestigateCompactionChangingNumberOfRecords {
         PartitionTree partitions = check.partitionTree();
         LOGGER.info("Compaction commit transactions: {}", check.countCompactionCommitTransactions());
         LOGGER.info("Compaction jobs committed: {}", check.countCompactionJobsCommitted());
-        var reports = check.reportCompactionTransactionsChangedRecordCount();
-        LOGGER.info("Compaction transactions which changed number of records: {}", reports.size());
+        var reports = check.reportCompactionTransactionsChangedRowCount();
+        LOGGER.info("Compaction transactions which changed number of rows: {}", reports.size());
         for (var report : reports) {
-            LOGGER.info("Transaction {} had {} jobs changing records", report.transactionNumber(), report.jobs().size());
+            LOGGER.info("Transaction {} had {} jobs changing rows", report.transactionNumber(), report.jobs().size());
         }
-        CompactionChangedRecordCount job = reports.stream()
+        CompactionChangedRowCount job = reports.stream()
                 .flatMap(report -> report.jobs().stream())
                 .findFirst().orElse(null);
         if (job == null) {
-            LOGGER.info("Found no compaction changing the number of records.");
+            LOGGER.info("Found no compaction changing the number of rows.");
             return;
         }
 
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
 
         for (FileReference file : job.inputFiles()) {
-            long actualRecords = countActualRecords(file.getFilename(), hadoopConf);
-            LOGGER.info("Counted {} actual records in file {}", actualRecords, file.getFilename());
+            long actualRows = countActualRows(file.getFilename(), hadoopConf);
+            LOGGER.info("Counted {} actual rows in file {}", actualRows, file.getFilename());
         }
-        LOGGER.info("Job {} had {} input files, {} records before, {} records after",
-                job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
+        LOGGER.info("Job {} had {} input files, {} rows before, {} rows after",
+                job.jobId(), job.inputFiles().size(), job.rowsBefore(), job.rowsAfter());
 
         Partition partition = partitions.getPartition(job.partitionId());
         LOGGER.info("Partition: {}", partition);
 
-        // Rerun compaction to a local file & count actual records
+        // Rerun compaction to a local file & count actual rows
         Path tempDir = Files.createTempDirectory("sleeper-test");
         String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
         CompactionJob compactionJob = job.asCompactionJobToNewFile(check.tableProperties().get(TABLE_ID), outputFile);
         JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf, new LocalFileSystemSketchesStore());
         RowsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
-        long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
-        LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);
+        long actualOutputRows = countActualRows(outputFile, hadoopConf);
+        LOGGER.info("Counted {} actual rows in compaction output, reported {}", actualOutputRows, processed);
         LOGGER.info("Compation job: {}", new CompactionJobSerDe().toJson(compactionJob));
 
         DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(check.instanceProperties(), check.tableProperties(), dynamoClient);
@@ -141,13 +141,13 @@ public class InvestigateCompactionChangingNumberOfRecords {
         }
     }
 
-    private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
+    private static long countActualRows(String filename, Configuration hadoopConf) throws IOException {
         var path = new org.apache.hadoop.fs.Path(filename);
         long count = 0;
         try (ParquetReader<Row> reader = ParquetReader.builder(new RowReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
                 .withConf(hadoopConf)
                 .build()) {
-            for (Row record = reader.read(); record != null; record = reader.read()) {
+            for (Row row = reader.read(); row != null; row = reader.read()) {
                 count++;
             }
         }

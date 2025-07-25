@@ -95,7 +95,7 @@ public class HadoopConfigurationProvider {
             conf.set("fs.s3a.aws.credentials.provider", ContainerCredentialsProvider.class.getName());
         }
         // See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise
-        // Some quick experiments showed that the following setting increases the number of records processed per second
+        // Some quick experiments showed that the following setting increases the number of rows processed per second
         // by 21% in comparison to the default value of "normal".
         conf.set("fs.s3a.experimental.input.fadvise", "sequential");
         return conf;

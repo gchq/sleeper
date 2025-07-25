@@ -65,7 +65,7 @@ public class WriteRandomDataDirect {
                 .build()) {
             new IngestRowsFromIterator(ingestCoordinator, rowIterator).write();
         } catch (IteratorCreationException e) {
-            throw new IOException("Failed to write records using iterator", e);
+            throw new IOException("Failed to write rows using iterator", e);
         }
     }
 

@@ -23,13 +23,13 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileRefere
 import java.util.List;
 import java.util.Optional;
 
-public record CompactionChangedRecordCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<CompactionChangedRecordCount> jobs) {
+public record CompactionChangedRowCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<CompactionChangedRowCount> jobs) {
 
-    public static List<CompactionChangedRecordCountReport> findChanges(List<TransactionLogEntryHandle> filesLog) {
+    public static List<CompactionChangedRowCountReport> findChanges(List<TransactionLogEntryHandle> filesLog) {
         StateStoreFiles state = new StateStoreFiles();
-        List<CompactionChangedRecordCountReport> reports = filesLog.stream()
+        List<CompactionChangedRowCountReport> reports = filesLog.stream()
                 .flatMap(entry -> {
-                    Optional<CompactionChangedRecordCountReport> change = findChange(entry, state);
+                    Optional<CompactionChangedRowCountReport> change = findChange(entry, state);
                     entry.apply(state);
                     return change.stream();
                 })
@@ -37,14 +37,14 @@ public record CompactionChangedRecordCountReport(TransactionLogEntry entry, Repl
         return reports;
     }
 
-    private static Optional<CompactionChangedRecordCountReport> findChange(TransactionLogEntryHandle entry, StateStoreFiles state) {
+    private static Optional<CompactionChangedRowCountReport> findChange(TransactionLogEntryHandle entry, StateStoreFiles state) {
         if (!entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
             return Optional.empty();
         }
         ReplaceFileReferencesTransaction transaction = entry.castTransaction();
-        List<CompactionChangedRecordCount> changes = CompactionChangedRecordCount.detectChanges(transaction, entry, state);
+        List<CompactionChangedRowCount> changes = CompactionChangedRowCount.detectChanges(transaction, entry, state);
         if (!changes.isEmpty()) {
-            return Optional.of(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
+            return Optional.of(new CompactionChangedRowCountReport(entry.original(), entry.castTransaction(), changes));
         } else {
             return Optional.empty();
         }

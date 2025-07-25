@@ -40,16 +40,16 @@ public class AwsDataFilesDriverIT {
     void shouldReadFile(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket()
-                .createWithNumberedRecords("test.parquet", LongStream.of(1, 3, 2));
+                .createWithNumberedRows("test.parquet", LongStream.of(1, 3, 2));
         sleeper.ingest().toStateStore().addFileOnEveryPartition("test.parquet", 3);
 
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    try (CloseableIterator<Row> iterator = sleeper.getRecords(file)) {
+                    try (CloseableIterator<Row> iterator = sleeper.getRows(file)) {
                         assertThat(iterator)
                                 .toIterable()
-                                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.of(1, 3, 2)));
+                                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 3, 2)));
                     }
                 });
     }

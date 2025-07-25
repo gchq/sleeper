@@ -75,8 +75,8 @@ public class QueryExecutorTest {
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
     @Nested
-    @DisplayName("Query records")
-    class QueryRecords {
+    @DisplayName("Query rows")
+    class QueryRows {
 
         @Test
         void shouldReturnSubRangeInSinglePartition() throws Exception {
@@ -91,7 +91,7 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldReturnRecordInOneOfTwoRanges() throws Exception {
+        void shouldReturnRowInOneOfTwoRanges() throws Exception {
             // Given
             addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
@@ -103,7 +103,7 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldNotFindRecordOutsideSubRangeInSinglePartition() throws Exception {
+        void shouldNotFindRowOutsideSubRangeInSinglePartition() throws Exception {
             // Given
             addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
@@ -115,7 +115,7 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldNotFindRecordOutsidePartitionRangeWhenFileContainsAnInactiveRecord() throws Exception {
+        void shouldNotFindRowOutsidePartitionRangeWhenFileContainsAnInactiveRow() throws Exception {
             // Given
             update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -126,7 +126,7 @@ public class QueryExecutorTest {
                     new Row(Map.of("key", 7L))));
 
             // When
-            List<Row> rows = getRows(queryAllRecords());
+            List<Row> rows = getRows(queryAllRows());
 
             // Then
             assertThat(rows).containsExactly(
@@ -138,7 +138,7 @@ public class QueryExecutorTest {
             addFileMetadata(fileReferenceFactory().rootFile("file.parquet", 10L));
 
             // When / Then
-            assertThatThrownBy(() -> getRows(queryAllRecords()))
+            assertThatThrownBy(() -> getRows(queryAllRows()))
                     .isInstanceOf(RuntimeException.class)
                     .cause().isInstanceOf(QueryException.class)
                     .cause().isInstanceOf(RowRetrievalException.class)
@@ -176,7 +176,7 @@ public class QueryExecutorTest {
                             "C", new byte[]{1, 1}))));
 
             // When
-            List<Row> rows = getRows(queryAllRecords());
+            List<Row> rows = getRows(queryAllRows());
 
             // Then
             assertThat(rows).containsExactly(
@@ -198,7 +198,7 @@ public class QueryExecutorTest {
                             "C", new byte[]{1, 1}))));
 
             // When
-            List<Row> rows = getRows(queryAllRecordsBuilder()
+            List<Row> rows = getRows(queryAllRowsBuilder()
                     .processingConfig(requestValueFields("A"))
                     .build());
 
@@ -234,7 +234,7 @@ public class QueryExecutorTest {
             tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName());
 
             // When
-            List<Row> rows = getRows(queryAllRecords());
+            List<Row> rows = getRows(queryAllRows());
 
             // Then
             assertThat(rows).containsExactly(
@@ -245,7 +245,7 @@ public class QueryExecutorTest {
         @Test
         void shouldApplyQueryIterator() throws Exception {
             // When
-            List<Row> rows = getRows(queryAllRecordsBuilder()
+            List<Row> rows = getRows(queryAllRowsBuilder()
                     .processingConfig(applyIterator(AdditionIterator.class))
                     .build());
 
@@ -258,7 +258,7 @@ public class QueryExecutorTest {
         @Test
         void shouldApplyQueryIteratorWithConfig() throws Exception {
             // When
-            List<Row> rows = getRows(queryAllRecordsBuilder()
+            List<Row> rows = getRows(queryAllRowsBuilder()
                     .processingConfig(applyIterator(SecurityFilteringIterator.class, "key,B"))
                     .build());
 
@@ -275,7 +275,7 @@ public class QueryExecutorTest {
             tableProperties.set(ITERATOR_CONFIG, "key,B");
 
             // When
-            List<Row> rows = getRows(queryAllRecordsBuilder()
+            List<Row> rows = getRows(queryAllRowsBuilder()
                     .processingConfig(applyIterator(AdditionIterator.class))
                     .build());
 
@@ -300,7 +300,7 @@ public class QueryExecutorTest {
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:35:00Z"));
 
             // Then the rows that were added are found
-            assertThat(getRows(queryExecutor, queryAllRecords()))
+            assertThat(getRows(queryExecutor, queryAllRows()))
                     .containsExactly(new Row(Map.of("key", 123L)));
         }
 
@@ -315,7 +315,7 @@ public class QueryExecutorTest {
             queryExecutor.initIfNeeded(Instant.parse("2023-11-27T09:31:00Z"));
 
             // Then the rows that were added are not found
-            assertThat(getRows(queryExecutor, queryAllRecords())).isEmpty();
+            assertThat(getRows(queryExecutor, queryAllRows())).isEmpty();
         }
     }
 
@@ -369,11 +369,11 @@ public class QueryExecutorTest {
                 .tableName(tableProperties.get(TABLE_NAME));
     }
 
-    private Query queryAllRecords() {
-        return queryAllRecordsBuilder().build();
+    private Query queryAllRows() {
+        return queryAllRowsBuilder().build();
     }
 
-    private Query.Builder queryAllRecordsBuilder() {
+    private Query.Builder queryAllRowsBuilder() {
         return query()
                 .regions(List.of(partitionTree().getRootPartition().getRegion()));
     }

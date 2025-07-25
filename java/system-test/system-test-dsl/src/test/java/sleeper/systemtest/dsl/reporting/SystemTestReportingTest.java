@@ -44,7 +44,7 @@ public class SystemTestReportingTest {
     void shouldReportFinishedIngestJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.of(1, 2, 3));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.of(1, 2, 3));
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
         // When / Then
@@ -57,7 +57,7 @@ public class SystemTestReportingTest {
     void shouldReportFinishedCompactionJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2, 3));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 2, 3));
         sleeper.compaction().forceCreateJobs(1).waitForTasks(1).waitForJobs();
 
         // When / Then

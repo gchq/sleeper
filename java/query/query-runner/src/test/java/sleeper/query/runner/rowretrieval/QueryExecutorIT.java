@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.recordretrieval;
+package sleeper.query.runner.rowretrieval;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
@@ -53,7 +53,6 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -133,7 +132,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartition() throws Exception {
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartition() throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -203,7 +202,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenMultipleIdenticalRecordsInOneFileInOnePartition() throws Exception {
+    public void shouldReturnCorrectDataWhenMultipleIdenticalRowsInOneFileInOnePartition() throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -225,7 +224,7 @@ public class QueryExecutorIT {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
         }
 
         // When 2
@@ -242,7 +241,7 @@ public class QueryExecutorIT {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
         }
 
         // When 4
@@ -265,7 +264,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenIdenticalRecordsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenIdenticalRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -289,7 +288,7 @@ public class QueryExecutorIT {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
         }
 
         // When 2
@@ -306,7 +305,7 @@ public class QueryExecutorIT {
 
             // Then 3
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getRows().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
         }
 
         // When 4
@@ -329,7 +328,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -353,7 +352,7 @@ public class QueryExecutorIT {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
         }
 
         // When 2
@@ -362,7 +361,7 @@ public class QueryExecutorIT {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(4)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
         }
 
         // When 3
@@ -455,7 +454,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitions() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitions() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -490,7 +489,7 @@ public class QueryExecutorIT {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
         }
 
         // When 2
@@ -499,7 +498,7 @@ public class QueryExecutorIT {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRows().get(4)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
         }
 
         // When 3
@@ -605,7 +604,7 @@ public class QueryExecutorIT {
 
             // Then 1
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
         }
 
         // When 2
@@ -616,7 +615,7 @@ public class QueryExecutorIT {
 
             // Then 2
             assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
         }
 
         // When 3
@@ -686,7 +685,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws QueryException, IOException, IteratorCreationException, ObjectFactoryException {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws QueryException, IOException, IteratorCreationException, ObjectFactoryException {
         // Given
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
@@ -710,7 +709,7 @@ public class QueryExecutorIT {
         //           |           |           |
         //        "" +-----------+-----------+
         //           ""         "I"          null      (Dimension 1)
-        // Add 4 records - record i is in the center of partition i
+        // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
         Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
         Row row3 = createRowMultidimensionalKey("C", "X", 100000L, 1000000L);
@@ -1041,7 +1040,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartitionAndCompactionIteratorApplied() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("id", new StringType());
         Schema schema = Schema.builder()

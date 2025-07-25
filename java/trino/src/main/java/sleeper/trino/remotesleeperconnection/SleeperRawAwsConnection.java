@@ -92,7 +92,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private static final int NO_OF_EXECUTOR_THREADS = 10;
     private static final int PARTITION_CACHE_EXPIRY_VALUE = 60;
     private static final TimeUnit PARTITION_CACHE_EXPIRY_UNITS = TimeUnit.MINUTES;
-    public static final int MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
+    public static final int MAX_NO_OF_ROWS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
     public static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
     public static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
     private static final int INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = 120;

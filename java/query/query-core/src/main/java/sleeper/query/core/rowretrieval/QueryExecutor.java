@@ -55,7 +55,7 @@ public class QueryExecutor {
     private final ObjectFactory objectFactory;
     private final StateStore stateStore;
     private final TableProperties tableProperties;
-    private final LeafPartitionRowRetriever recordRetriever;
+    private final LeafPartitionRowRetriever rowRetriever;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
@@ -63,17 +63,17 @@ public class QueryExecutor {
 
     public QueryExecutor(
             ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
-            LeafPartitionRowRetriever recordRetriever) {
-        this(objectFactory, stateStore, tableProperties, recordRetriever, Instant.now());
+            LeafPartitionRowRetriever rowRetriever) {
+        this(objectFactory, stateStore, tableProperties, rowRetriever, Instant.now());
     }
 
     public QueryExecutor(
             ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
-            LeafPartitionRowRetriever recordRetriever, Instant timeNow) {
+            LeafPartitionRowRetriever rowRetriever, Instant timeNow) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
-        this.recordRetriever = recordRetriever;
+        this.rowRetriever = rowRetriever;
         this.nextInitialiseTime = timeNow;
     }
 
@@ -152,7 +152,7 @@ public class QueryExecutor {
      * Executes a query. This method first splits up the query into one or more
      * {@link LeafPartitionQuery}s. For each of these a Supplier of CloseableIterator
      * is created. This is done using suppliers to avoid the initialisation of
-     * record retrievers until they are needed. In the case of Parquet files,
+     * row retrievers until they are needed. In the case of Parquet files,
      * initialisation of the readers requires reading the footers of the file
      * which takes a little time. If a query spanned many leaf partitions and
      * each leaf partition had many active files, then the initialisation time
@@ -160,17 +160,17 @@ public class QueryExecutor {
      * leaf partition are opened at a time.
      *
      * @param  query          the query
-     * @return                an iterator containing the relevant records
+     * @return                an iterator containing the relevant rows
      * @throws QueryException if it errors
      */
     public CloseableIterator<Row> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
-        List<Supplier<CloseableIterator<Row>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
+        List<Supplier<CloseableIterator<Row>>> iteratorSuppliers = createRowIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
     /**
-     * Executes the sub query and returns records. The records are not returned in any
+     * Executes the sub query and returns rows. The rows are not returned in any
      * particular order.
      * This is used internally by Sleeper.
      *
@@ -179,7 +179,7 @@ public class QueryExecutor {
      * @throws QueryException if an error occurs during query execution
      */
     public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {
-        return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
+        return new ConcatenatingIterator(createRowIteratorSuppliers(List.of(query)));
     }
 
     /**
@@ -213,7 +213,7 @@ public class QueryExecutor {
             // files that need to be read and the filter that needs to be applied
             // (this filter will restrict the results returned to both the range
             // requested and to the range of that leaf partition, this ensures
-            // that records are not returned twice if they are in a non-leaf
+            // that rows are not returned twice if they are in a non-leaf
             // partition).
             LeafPartitionQuery leafQuery = LeafPartitionQuery.builder()
                     .parentQuery(query)
@@ -231,16 +231,16 @@ public class QueryExecutor {
         return leafPartitionQueriesList;
     }
 
-    private List<Supplier<CloseableIterator<Row>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
+    private List<Supplier<CloseableIterator<Row>>> createRowIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
         List<Supplier<CloseableIterator<Row>>> iterators = new ArrayList<>();
 
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {
-                    LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, recordRetriever);
+                    LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever);
                     return leafPartitionQueryExecutor.getRows(leafPartitionQuery);
                 } catch (QueryException e) {
-                    throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery, e);
+                    throw new RuntimeException("Exception returning rows for leaf partition " + leafPartitionQuery, e);
                 }
             });
         }

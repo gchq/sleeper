@@ -33,7 +33,7 @@ import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
-import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
+import sleeper.systemtest.drivers.util.ReadRowsFromS3;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -113,7 +113,7 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(
                 request -> request.bucket(bucketName).prefix("query-" + query.getQueryId()));
         return response.contents().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRows(bucketName, object.key(), schema, clients.createHadoopConf()))
+                .flatMap(object -> ReadRowsFromS3.getRows(bucketName, object.key(), schema, clients.createHadoopConf()))
                 .toList();
     }
 }

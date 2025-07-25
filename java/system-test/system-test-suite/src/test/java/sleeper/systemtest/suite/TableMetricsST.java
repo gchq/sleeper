@@ -64,8 +64,8 @@ public class TableMetricsST {
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .buildTree());
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 100))
-                .numberedRecords(LongStream.range(0, 23));
+                .numberedRows(LongStream.range(0, 100))
+                .numberedRows(LongStream.range(0, 23));
 
         // When
         TableMetrics metrics = sleeper.tableMetrics().generate().get();
@@ -89,10 +89,10 @@ public class TableMetricsST {
                             .splitToNewChildren("root", "L", "R", "row-50")
                             .buildTree());
                     sleeper.ingest().direct(tempDir)
-                            .numberedRecords(LongStream.range(0, 100));
+                            .numberedRows(LongStream.range(0, 100));
                 });
         sleeper.table("A").ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 23));
+                .numberedRows(LongStream.range(0, 23));
 
         // When
         sleeper.tableMetrics().generate();

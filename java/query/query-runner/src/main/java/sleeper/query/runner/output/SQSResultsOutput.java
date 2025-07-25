@@ -110,7 +110,7 @@ public class SQSResultsOutput implements ResultsOutput {
 
     private void sendBatchToSQS(ResultsBatch resultsBatch, int batchNumber, String sqsUrl) {
         sendResultsToSQS(resultsBatch, sqsUrl);
-        LOGGER.info("Sent " + resultsBatch.getRows().size() + " records to SQS (batch number " + batchNumber + ")");
+        LOGGER.info("Sent " + resultsBatch.getRows().size() + " rows to SQS (batch number " + batchNumber + ")");
     }
 
     private void sendResultsToSQS(ResultsBatch resultsBatch, String sqsUrl) {

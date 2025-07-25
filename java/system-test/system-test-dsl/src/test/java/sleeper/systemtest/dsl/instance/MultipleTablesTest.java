@@ -58,18 +58,18 @@ public class MultipleTablesTest {
         // Given we have several tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(NUMBER_OF_TABLES, schema);
-        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows(schema, "file.parquet", LongStream.range(0, 100));
 
         // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then all tables should contain the source file records
+        // Then all tables should contain the source file rows
         // And all tables should have one active file
-        assertThat(sleeper.query().byQueue().allRecordsByTable())
+        assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
-                .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
-                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+                .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
+                        sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1));
@@ -84,8 +84,8 @@ public class MultipleTablesTest {
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.sourceFiles()
-                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
-                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+                .createWithNumberedRows(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRows(schema, "file2.parquet", LongStream.range(50, 100));
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")
@@ -95,11 +95,11 @@ public class MultipleTablesTest {
         sleeper.compaction().createJobs(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().invoke().waitFor();
 
-        // Then all tables should have one active file with the expected records, and none ready for GC
-        assertThat(sleeper.query().byQueue().allRecordsByTable())
+        // Then all tables should have one active file with the expected rows, and none ready for GC
+        assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
-                .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
-                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+                .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
+                        sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
         Approvals.verify(printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
@@ -108,13 +108,13 @@ public class MultipleTablesTest {
     @Test
     void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
-        // And we ingest a file of 100 records to each table
+        // And we ingest a file of 100 rows to each table
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
                 Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
                 .waitForTask().waitForJobs();
 
@@ -126,12 +126,12 @@ public class MultipleTablesTest {
         sleeper.partitioning().split();
         sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 8);
 
-        // Then all tables have their records split over 8 leaf partitions
-        assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
+        // Then all tables have their rows split over 8 leaf partitions
+        assertThat(sleeper.directQuery().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
-                .allSatisfy((table, records) -> assertThat(records)
+                .allSatisfy((table, rows) -> assertThat(rows)
                         .containsExactlyInAnyOrderElementsOf(
-                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+                                sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
         Approvals.verify(printTablePartitionsExpectingIdentical(schema, partitionsByTable) + "\n" +
@@ -147,8 +147,8 @@ public class MultipleTablesTest {
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.sourceFiles()
-                .createWithNumberedRecords(schema, "file1.parquet", LongStream.range(0, 50))
-                .createWithNumberedRecords(schema, "file2.parquet", LongStream.range(50, 100));
+                .createWithNumberedRows(schema, "file1.parquet", LongStream.range(0, 50))
+                .createWithNumberedRows(schema, "file2.parquet", LongStream.range(50, 100));
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")

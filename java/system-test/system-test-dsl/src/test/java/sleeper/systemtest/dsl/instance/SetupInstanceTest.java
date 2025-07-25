@@ -43,7 +43,7 @@ public class SetupInstanceTest {
     }
 
     @Test
-    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
+    void shouldIngestOneRow(SleeperSystemTest sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",
@@ -54,7 +54,7 @@ public class SetupInstanceTest {
         sleeper.ingest().direct(null).rows(row);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
     }
 }

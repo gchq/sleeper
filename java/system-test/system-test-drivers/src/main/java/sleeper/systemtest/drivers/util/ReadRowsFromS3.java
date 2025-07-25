@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ReadRecordsFromS3 {
+public class ReadRowsFromS3 {
 
-    private ReadRecordsFromS3() {
+    private ReadRowsFromS3() {
     }
 
     public static Stream<Row> getRows(String bucketName, String objectKey, Schema schema, Configuration conf) {

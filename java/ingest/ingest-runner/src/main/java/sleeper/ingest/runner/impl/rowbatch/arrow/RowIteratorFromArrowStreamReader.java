@@ -25,16 +25,15 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 
 /**
- * Reads through records read into memory with Arrow. This is a {@link CloseableIterator} of {@link Row}s, where
- * those records are read from a {@link ArrowStreamReader}.
+ * Reads through rows read into memory with Arrow. This is a {@link CloseableIterator} of {@link Row}s, where
+ * those rows are read from a {@link ArrowStreamReader}.
  * <p>
  * The rows are read from the file in small batches, which correspond to the small batches that were used when the file
  * was orginally written.
  */
 class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
     private final ArrowStreamReader arrowStreamReader;
-    private int currentRecordNoInBatch;
-    private long totalNoOfRecordsRead = 0L;
+    private int currentRowNumInBatch;
     private boolean nextBatchLoaded;
 
     RowIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader) throws IOException {
@@ -50,7 +49,7 @@ class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
      */
     private void loadNextBatch() throws IOException {
         nextBatchLoaded = arrowStreamReader.loadNextBatch();
-        currentRecordNoInBatch = 0;
+        currentRowNumInBatch = 0;
     }
 
     @Override
@@ -69,14 +68,13 @@ class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
             throw new NoSuchElementException();
         }
         try {
-            // Retrieve the current small batch from within the ArrowStreamReader, read the value from
-            // row currentRecordNoInBatch and use these values to construct a Record object.
+            // Retrieve the current small batch from within the ArrowStreamReader, read the values from the
+            // vector and use these values to construct a row object.
             VectorSchemaRoot smallBatchVectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
-            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(smallBatchVectorSchemaRoot, currentRecordNoInBatch);
-            currentRecordNoInBatch++;
-            totalNoOfRecordsRead++;
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(smallBatchVectorSchemaRoot, currentRowNumInBatch);
+            currentRowNumInBatch++;
             // Load a new batch when this one has been read fully
-            if (currentRecordNoInBatch >= smallBatchVectorSchemaRoot.getRowCount()) {
+            if (currentRowNumInBatch >= smallBatchVectorSchemaRoot.getRowCount()) {
                 loadNextBatch();
             }
             return row;
@@ -88,9 +86,5 @@ class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
     @Override
     public void close() throws IOException {
         arrowStreamReader.close();
-    }
-
-    public long getNumberOfRecordsRead() {
-        return totalNoOfRecordsRead;
     }
 }

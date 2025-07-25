@@ -92,7 +92,7 @@ public class SplitPartitionTest {
                         row.put("key", r);
                         rows.add(row);
                     }
-                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
+                    ingestRowsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
                 }
             }
 
@@ -134,7 +134,7 @@ public class SplitPartitionTest {
                             rows.add(row);
                         }
                     }
-                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
+                    ingestRowsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
                 }
             }
 
@@ -183,7 +183,7 @@ public class SplitPartitionTest {
                             rows.add(row);
                         }
                     }
-                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
+                    ingestRowsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
                 }
             }
 
@@ -232,7 +232,7 @@ public class SplitPartitionTest {
                             rows.add(row);
                         }
                     }
-                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
+                    ingestRowsToSketchOnPartition(stateStore, partition.getId(), rows.stream());
                 }
             }
 
@@ -255,7 +255,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(100 * i, 100 * (i + 1))
                                     .mapToObj(r -> new Row(Map.of("key", r)))));
 
@@ -278,7 +278,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             LongStream.range(100L * i, 100L * (i + 1))
                                     .mapToObj(r -> new Row(Map.of("key", r)))));
 
@@ -301,7 +301,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of("key", String.format("A%1d%02d", i, r))))));
 
@@ -324,7 +324,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of("key", new byte[]{(byte) r})))));
 
@@ -353,7 +353,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of(
                                             "key1", r,
@@ -380,7 +380,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of(
                                             "key1", 10,
@@ -407,7 +407,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of(
                                             "key1", r,
@@ -434,7 +434,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     // The majority of the values are 10; so min should equal median
                                     .mapToObj(r -> new Row(Map.of(
@@ -463,7 +463,7 @@ public class SplitPartitionTest {
                     .buildList());
 
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of(
                                             "key1", new byte[]{(byte) r},
@@ -490,7 +490,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
+                    .forEach(i -> ingestRowsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Row(Map.of(
                                             "key1", new byte[]{(byte) -100},
@@ -519,7 +519,7 @@ public class SplitPartitionTest {
                     .singlePartition("A")
                     .buildTree();
             StateStore stateStore = initialiseStateStore(tree.getAllPartitions());
-            String filename = ingestRecordsToSketchOnPartition(stateStore, "A",
+            String filename = ingestRowsToSketchOnPartition(stateStore, "A",
                     IntStream.rangeClosed(1, 100)
                             .mapToObj(i -> new Row(Map.of("key", i))));
             tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
@@ -548,25 +548,25 @@ public class SplitPartitionTest {
         return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }
 
-    private String ingestRecordsToSketchOnPartition(StateStore stateStore, String partitionId, Stream<Row> rowsStream) {
+    private String ingestRowsToSketchOnPartition(StateStore stateStore, String partitionId, Stream<Row> rowsStream) {
         Sketches sketches = Sketches.from(tableProperties.getSchema());
-        AtomicLong recordCount = new AtomicLong();
+        AtomicLong rowCount = new AtomicLong();
 
         rowsStream.forEach(rec -> {
             sketches.update(rec);
-            recordCount.incrementAndGet();
+            rowCount.incrementAndGet();
         });
 
-        FileReference recordFileReference = FileReferenceFactory.from(instanceProperties, tableProperties, stateStore)
-                .partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
+        FileReference fileReference = FileReferenceFactory.from(instanceProperties, tableProperties, stateStore)
+                .partitionFile(partitionId, UUID.randomUUID().toString(), rowCount.get());
         try {
-            update(stateStore).addFile(recordFileReference);
+            update(stateStore).addFile(fileReference);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
 
-        filenameToSketches.saveFileSketches(recordFileReference.getFilename(), tableProperties.getSchema(), sketches);
-        return recordFileReference.getFilename();
+        filenameToSketches.saveFileSketches(fileReference.getFilename(), tableProperties.getSchema(), sketches);
+        return fileReference.getFilename();
     }
 
     private void splitSinglePartition(StateStore stateStore, Supplier<String> generateIds) throws Exception {

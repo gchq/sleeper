@@ -71,11 +71,11 @@ public class StateStoreCommitMessageFactory {
     }
 
     public StateStoreCommitRequest commitCompactionForPartitionOnTaskInRun(
-            String jobId, String partitionId, List<String> filenames, String taskId, String jobRunId, JobRunSummary recordsProcessed) {
+            String jobId, String partitionId, List<String> filenames, String taskId, String jobRunId, JobRunSummary summary) {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = factory.createCompactionJobWithFilenames(jobId, filenames, partitionId);
         return message(new ReplaceFileReferencesTransaction(List.of(
-                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRowsProcessed().getRowsWritten())
+                job.replaceFileReferencesRequestBuilder(summary.getRowsProcessed().getRowsWritten())
                         .taskId(taskId)
                         .jobRunId(jobRunId)
                         .build())));

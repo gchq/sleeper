@@ -74,7 +74,7 @@ public class WriteRandomDataFiles {
             writer.write(rowIterator.next());
             count++;
             if (0 == count % 1_000_000L) {
-                LOGGER.info("Wrote {} records", count);
+                LOGGER.info("Wrote {} rows", count);
                 if (0 == count % 100_000_000L) {
                     writer.close();
                     LOGGER.info("Closed writer to path {}", path);
@@ -87,6 +87,6 @@ public class WriteRandomDataFiles {
         }
         LOGGER.info("Closed writer to path {}", path);
         writer.close();
-        LOGGER.info("Wrote {} records", count);
+        LOGGER.info("Wrote {} rows", count);
     }
 }

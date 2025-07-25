@@ -75,7 +75,7 @@ class ParquetReaderIteratorIT {
     }
 
     @Test
-    void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
+    void shouldReturnCorrectIteratorWhenNoRowsInReader() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);

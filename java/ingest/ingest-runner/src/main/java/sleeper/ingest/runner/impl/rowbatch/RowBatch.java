@@ -25,7 +25,7 @@ import java.io.IOException;
  * source data to an iterator of Sleeper {@link Row} objects. Data may be supplied in any format and it is the
  * responsibility of implementing classes to handle any type conversion.
  *
- * @param <INCOMINGDATATYPE> The type of data that this record batch accepts
+ * @param <INCOMINGDATATYPE> The type of data that this row batch accepts
  */
 public interface RowBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**

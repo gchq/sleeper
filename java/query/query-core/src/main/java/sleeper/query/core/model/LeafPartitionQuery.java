@@ -23,11 +23,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A query for records that are within the range of a leaf partition. The
+ * A query for rows that are within the range of a leaf partition. The
  * query contains information about which files should be read. Typically
  * {@link LeafPartitionQuery}s are created from a query for a set of regions.
  * That query is broken down over leaf partitions into subqueries. Each
- * subquery retrieves records from a leaf partition and restricts the records
+ * subquery retrieves rows from a leaf partition and restricts the rows
  * returned to those which are within the boundaries of the leaf partition
  * and within the regions specified.
  */

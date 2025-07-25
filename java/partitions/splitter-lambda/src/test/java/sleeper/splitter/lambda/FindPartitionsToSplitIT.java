@@ -93,7 +93,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -113,7 +113,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -127,7 +127,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -143,11 +143,11 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     }
 
     @Test
-    public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws IOException {
+    public void shouldPrioritiseFilesContainingTheLargestNumberOfRows() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createAscendingRecordList(100, 10));
+        writeFiles(createAscendingRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -161,12 +161,12 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                     assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
                     List<FileReference> fileReferences = stateStore.getFileReferences();
-                    Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
+                    Optional<Long> numberOfRows = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
                             .filter(fi -> fi.getFilename().equals(fileName))
                             .map(FileReference::getNumberOfRows)).reduce(Long::sum);
 
                     // 109 + 108 + 107 + 106 + 105 = 535
-                    assertThat(numberOfRecords).contains(535L);
+                    assertThat(numberOfRows).contains(535L);
                 });
     }
 
@@ -176,11 +176,11 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
-    private List<List<Row>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
+    private List<List<Row>> createEvenRowList(Integer rowsPerList, Integer numberOfLists) {
         List<List<Row>> rowLists = new ArrayList<>();
         for (int i = 0; i < numberOfLists; i++) {
             List<Row> rows = new ArrayList<>();
-            for (int j = 0; j < recordsPerList; j++) {
+            for (int j = 0; j < rowsPerList; j++) {
                 Row row = new Row();
                 row.put("key", j);
                 rows.add(row);
@@ -191,9 +191,9 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         return rowLists;
     }
 
-    private List<List<Row>> createAscendingRecordList(Integer startingRecordsPerList, Integer numberOfLists) {
+    private List<List<Row>> createAscendingRowList(Integer startingRowsPerList, Integer numberOfLists) {
         List<List<Row>> rowLists = new ArrayList<>();
-        Integer rowsPerList = startingRecordsPerList;
+        Integer rowsPerList = startingRowsPerList;
         for (int i = 0; i < numberOfLists; i++) {
             List<Row> rows = new ArrayList<>();
             for (int j = 0; j < rowsPerList; j++) {

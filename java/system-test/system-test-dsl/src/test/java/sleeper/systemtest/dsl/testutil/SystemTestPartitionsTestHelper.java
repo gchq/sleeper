@@ -62,10 +62,10 @@ public class SystemTestPartitionsTestHelper {
         return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 
-    public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, int totalRecords, SleeperSystemTest sleeper) {
+    public static PartitionTree createPartitionTreeWithRowsPerPartitionAndTotal(int rowsPerPartition, int totalRows, SleeperSystemTest sleeper) {
         return PartitionTreeTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal(
-                recordsPerPartition, totalRecords,
-                sleeper.numberedRecords()::generateRecord,
+                rowsPerPartition, totalRows,
+                sleeper.numberedRows()::generateRow,
                 sleeper.tableProperties().getSchema());
     }
 

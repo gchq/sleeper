@@ -44,7 +44,7 @@ public class AwsDataFilesDriver implements DataFilesDriver {
     @Override
     public CloseableIterator<Row> getRows(Schema schema, String filename) {
         try {
-            LOGGER.info("Reading records from file {}", filename);
+            LOGGER.info("Reading rows from file {}", filename);
             return new ParquetReaderIterator(
                     ParquetReader.builder(new RowReadSupport(schema), new Path(filename))
                             .withConf(hadoopConf)

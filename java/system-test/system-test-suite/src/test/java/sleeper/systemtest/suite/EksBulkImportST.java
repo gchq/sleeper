@@ -68,7 +68,7 @@ public class EksBulkImportST {
     }
 
     @Test
-    void shouldBulkImport100Records(SleeperSystemTest sleeper, SystemTestParameters parameters) {
+    void shouldBulkImport100Rows(SleeperSystemTest sleeper, SystemTestParameters parameters) {
         // This is intended to ignore this test when running in an environment where log retention must not be set.
         // This is because we're currently unable to prevent an EKS cluster deployment from creating log groups with log
         // retention set. See the following issue:
@@ -85,7 +85,7 @@ public class EksBulkImportST {
         sleeper.setGeneratorOverrides(overrideField(
                 SystemTestSchema.ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().bulkImportByQueue()
@@ -93,8 +93,8 @@ public class EksBulkImportST {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 }

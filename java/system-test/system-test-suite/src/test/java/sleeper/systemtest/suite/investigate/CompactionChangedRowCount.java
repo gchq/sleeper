@@ -25,16 +25,16 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileRefere
 import java.util.List;
 import java.util.Optional;
 
-public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, List<FileReference> inputFiles, FileReference outputFile) {
+public record CompactionChangedRowCount(ReplaceFileReferencesRequest job, List<FileReference> inputFiles, FileReference outputFile) {
 
-    public static List<CompactionChangedRecordCount> detectChanges(
+    public static List<CompactionChangedRowCount> detectChanges(
             ReplaceFileReferencesTransaction transaction, TransactionLogEntryHandle entry, StateStoreFiles state) {
         return transaction.getJobs().stream()
                 .flatMap(job -> detectChange(job, entry.original(), state).stream())
                 .toList();
     }
 
-    private static Optional<CompactionChangedRecordCount> detectChange(ReplaceFileReferencesRequest job, TransactionLogEntry entry, StateStoreFiles state) {
+    private static Optional<CompactionChangedRowCount> detectChange(ReplaceFileReferencesRequest job, TransactionLogEntry entry, StateStoreFiles state) {
         List<FileReference> inputFiles = job.getInputFiles().stream()
                 .map(filename -> state.file(filename).orElseThrow()
                         .getReferenceForPartitionId(job.getPartitionId()).orElseThrow())
@@ -42,7 +42,7 @@ public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, Lis
         FileReference outputFile = job.getNewReference();
         if (outputFile.getNumberOfRows() != inputFiles.stream().mapToLong(FileReference::getNumberOfRows).sum()) {
             FileReference outputFileAfter = outputFile.toBuilder().lastStateStoreUpdateTime(entry.getUpdateTime()).build();
-            return Optional.of(new CompactionChangedRecordCount(job, inputFiles, outputFileAfter));
+            return Optional.of(new CompactionChangedRowCount(job, inputFiles, outputFileAfter));
         } else {
             return Optional.empty();
         }
@@ -56,11 +56,11 @@ public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, Lis
         return job.getPartitionId();
     }
 
-    public long recordsBefore() {
+    public long rowsBefore() {
         return inputFiles.stream().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
-    public long recordsAfter() {
+    public long rowsAfter() {
         return outputFile.getNumberOfRows();
     }
 

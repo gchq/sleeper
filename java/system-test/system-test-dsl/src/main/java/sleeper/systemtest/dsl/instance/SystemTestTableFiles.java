@@ -50,7 +50,7 @@ public class SystemTestTableFiles {
         return instance.getStateStore().getFileReferences();
     }
 
-    public Map<String, Long> recordsByFilename() {
+    public Map<String, Long> rowsByFilename() {
         return all().rowsByFilename();
     }
 

@@ -35,9 +35,9 @@ import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
 import java.util.List;
 
 /**
- * A record writer to accept data as Trino pages. Implements {@link ArrowRowWriter}.
+ * A row writer to accept data as Trino pages. Implements {@link ArrowRowWriter}.
  */
-public class ArrowRecordWriterAcceptingPages implements ArrowRowWriter<Page> {
+public class ArrowRowWriterAcceptingPages implements ArrowRowWriter<Page> {
 
     /**
      * Add a single Page to a VectorSchemaRoot, starting at a specified row. Note that the field order in the supplied
