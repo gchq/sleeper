@@ -49,6 +49,6 @@ public class IngestResultTestData {
     public static IngestResult defaultFileIngestResultReadAndWritten(
             String filename, long recordsRead, long recordsWritten) {
         return IngestResult.fromReadAndWritten(recordsRead, Collections.singletonList(
-                FileReferenceTestData.defaultFileOnRootPartitionWithRecords(filename, recordsWritten)));
+                FileReferenceTestData.defaultFileOnRootPartitionWithRows(filename, recordsWritten)));
     }
 }

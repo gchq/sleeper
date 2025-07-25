@@ -27,7 +27,7 @@ public class FileReferenceTestData {
 
     public static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
     public static final Instant AFTER_DEFAULT_UPDATE_TIME = DEFAULT_UPDATE_TIME.plus(Duration.ofMinutes(1));
-    public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
+    public static final long DEFAULT_NUMBER_OF_ROWS = 100L;
 
     /**
      * Sets up a file reference on the root partition. Only use this when most fields won't matter, including the
@@ -37,7 +37,7 @@ public class FileReferenceTestData {
      * @return          the file reference
      */
     public static FileReference defaultFileOnRootPartition(String filename) {
-        return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
+        return defaultFileOnRootPartitionWithRows(filename, DEFAULT_NUMBER_OF_ROWS);
     }
 
     /**
@@ -45,14 +45,14 @@ public class FileReferenceTestData {
      * partition ID, the state store update time. For most use cases {@link FileReferenceFactory} is preferable.
      *
      * @param  filename the filename
-     * @param  records  the number of records in the file
+     * @param  rows     the number of rows in the file
      * @return          the file reference
      */
-    public static FileReference defaultFileOnRootPartitionWithRecords(String filename, long records) {
+    public static FileReference defaultFileOnRootPartitionWithRows(String filename, long rows) {
         return FileReference.builder()
                 .filename(filename)
                 .partitionId("root")
-                .numberOfRows(records)
+                .numberOfRows(rows)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
