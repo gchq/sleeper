@@ -25,39 +25,36 @@ import java.util.stream.Stream;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
 /**
- * This class is used to generate test data for CompactionTaskStatuses in different states.
+ * Generates compaction task statuses for tests.
  */
 public class CompactionTaskStatusTestData {
     private CompactionTaskStatusTestData() {
     }
 
     /**
-     * This method starts the default StatusBuilder with taskId 'test-task-id' at the StartTime '2023-03-30T11:44:00Z'.
+     * Creates a builder for the status of a compaction task that started. Uses default values for the task ID, the
+     * start time.
      *
-     * @return CompactionTaskStatus Builder of the started task.
+     * @return the builder
      */
     public static CompactionTaskStatus.Builder startedStatusBuilderWithDefaults() {
         return startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"));
     }
 
     /**
-     * This method starts the default StatusBuilder with taskId 'test-task-id' at the provided start time.
+     * Creates a builder for the status of a compaction task that started. Uses a default value for the task ID.
      *
-     * @param  startTime Instant that the task should be started from.
-     * @return           CompactionTaskStatus Builder of the started task.
+     * @param  startTime the time the task started
+     * @return           the builder
      */
     public static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
         return CompactionTaskStatus.builder().taskId("test-task-id").startTime(startTime);
     }
 
     /**
-     * This method returns a CompactionTaskStatus for a finished task with default settings.
-     * Default settings are taskId: test-task-id.
-     * startTime: 2023-03-30T11:44:00Z.
-     * finishTime: 2023-03-30T12:00:00Z.
-     * JobRunSummay: startTime, 5 minute duration, 100L lines read and 100L records written.
+     * Creates the status of a compaction task that finished. Uses default values.
      *
-     * @return CompactionTaskStatus
+     * @return the status
      */
     public static CompactionTaskStatus finishedStatusWithDefaults() {
         return finishedStatus("test-task-id",
@@ -68,13 +65,12 @@ public class CompactionTaskStatusTestData {
     }
 
     /**
-     * This method returns a CompactionTaskStatus for a finished task with default summary.
-     * Default JobRunSummay: startTime, 5 minute duration, 100L lines read and 100L records written.
+     * Creates the status of a compaction task that finished.
      *
-     * @param  taskId     String of the taskId for the finished task.
-     * @param  startTime  Instant of the start time for the finished task.
-     * @param  finishTime Instant of the finish time for the finished task.
-     * @return            CompactionTaskStatus
+     * @param  taskId     the task ID
+     * @param  startTime  the time the task started
+     * @param  finishTime the time the task finished
+     * @return            the status
      */
     public static CompactionTaskStatus finishedStatusWithDefaultSummary(
             String taskId, Instant startTime, Instant finishTime) {
@@ -82,13 +78,13 @@ public class CompactionTaskStatusTestData {
     }
 
     /**
-     * This method returns a CompactionTaskStatus for a finished task with provided details.
+     * Creates the status of a compaction task that finished.
      *
-     * @param  taskId     String of the taskId for the finished task.
-     * @param  startTime  Instant of the start time for the finished task.
-     * @param  finishTime Instant of the finish time for the finished task.
-     * @param  summary    Optional JobRunSummary of the task that has finished.
-     * @return            CompactionTaskStatus
+     * @param  taskId     the task ID
+     * @param  startTime  the time the task started
+     * @param  finishTime the time the task finished
+     * @param  summary    summaries of job runs that happened in the task
+     * @return            the status
      */
     public static CompactionTaskStatus finishedStatus(
             String taskId, Instant startTime, Instant finishTime, JobRunSummary... summary) {
@@ -98,10 +94,11 @@ public class CompactionTaskStatusTestData {
     }
 
     /**
-     * This method takes a JobRunSummary and returns a builder with the job summarised.
+     * Creates a builder for a status update for when a compaction task finished. Populates the status update with
+     * information about the job runs that happened in the task.
      *
-     * @param  jobSummaries Optional JobRunSummary of the task that has finished to be summarised.
-     * @return              CompactionTaskFinishedStatus Builder
+     * @param  jobSummaries summaries of job runs that happened in the task
+     * @return              the builder
      */
     public static CompactionTaskFinishedStatus.Builder finishedStatusBuilder(JobRunSummary... jobSummaries) {
         return CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(jobSummaries));
