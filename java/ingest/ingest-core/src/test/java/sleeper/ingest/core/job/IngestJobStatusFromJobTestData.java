@@ -47,7 +47,7 @@ public class IngestJobStatusFromJobTestData {
      *
      * @param  job  the ingest job
      * @param  runs the process runs
-     * @return      an {@link IngestJobStatus}
+     * @return      an ingest job status
      */
     public static IngestJobStatus ingestJobStatus(IngestJob job, JobRun... runs) {
         return IngestJobStatusTestData.ingestJobStatus(job.getId(), runs);
@@ -59,7 +59,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  job       the ingest job
      * @param  taskId    the ingest task ID
      * @param  startTime the start time
-     * @return           an {@link IngestJobStatus}
+     * @return           an ingest job status
      */
     public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
         return IngestJobStatusTestData.ingestJobStatus(job.getId(), startedIngestRun(job, taskId, startTime));
@@ -72,7 +72,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  taskId               the ingest task ID
      * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      an {@link IngestJobStatus}
+     * @return                      an ingest job status
      */
     public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return ingestJobStatus(job, finishedIngestRun(job, taskId, summary, numFilesWrittenByJob));
@@ -84,7 +84,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  job     the ingest job
      * @param  taskId  the ingest task ID
      * @param  summary the summary of the job run
-     * @return         an {@link IngestJobStatus}
+     * @return         an ingest job status
      */
     public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, JobRunSummary summary) {
         return finishedIngestJobUncommitted(job, taskId, summary, 1);
@@ -97,7 +97,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  taskId               the ingest task ID
      * @param  summary              the summary of the job run
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      an {@link IngestJobStatus}
+     * @return                      an ingest job status
      */
     public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return ingestJobStatus(job, finishedIngestRunUncommitted(job, taskId, summary, numFilesWrittenByJob));
@@ -110,7 +110,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  taskId         the ingest task ID
      * @param  runTime        the process run time
      * @param  failureReasons a list of failure reasons
-     * @return                an {@link IngestJobStatus}
+     * @return                an ingest job status
      */
     public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
         return ingestJobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
