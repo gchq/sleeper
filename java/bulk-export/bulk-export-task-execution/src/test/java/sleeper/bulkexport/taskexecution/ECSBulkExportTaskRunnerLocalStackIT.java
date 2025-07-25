@@ -44,8 +44,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
 import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -232,7 +232,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     private FileReference addPartitionFile(String partitionId, String name, List<Row> rows) {
         FileReference reference = fileFactory().partitionFile(partitionId, name, rows.size());
         Path path = new Path(reference.getFilename());
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
             for (Row row : rows) {
                 writer.write(row);
             }

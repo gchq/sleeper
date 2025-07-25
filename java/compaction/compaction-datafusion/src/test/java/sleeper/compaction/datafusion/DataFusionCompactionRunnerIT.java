@@ -47,7 +47,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.row.RowReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
@@ -340,7 +340,7 @@ public class DataFusionCompactionRunnerIT {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);

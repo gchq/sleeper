@@ -38,8 +38,8 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
 import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
@@ -80,7 +80,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
         // update the state store, it will overwrite the existing output file written
         // by the previous run
-        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
                 outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());

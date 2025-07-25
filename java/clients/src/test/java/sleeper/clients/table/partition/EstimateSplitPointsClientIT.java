@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -120,7 +120,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     }
 
     private void writeRecords(Path path, Schema schema, List<Row> records) throws IOException {
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
             for (Row record : records) {
                 writer.write(record);
             }

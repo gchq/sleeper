@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -51,7 +51,7 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
         Configuration conf = clients.createHadoopConf(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         LOGGER.info("Writing to {}", path);
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
                 new Path(path), tableProperties, conf)) {
             for (Row row : (Iterable<Row>) () -> rows) {
                 sketches.update(row);

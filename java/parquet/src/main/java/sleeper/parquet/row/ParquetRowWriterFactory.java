@@ -43,9 +43,9 @@ import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
-public class ParquetRecordWriterFactory {
+public class ParquetRowWriterFactory {
 
-    private ParquetRecordWriterFactory() {
+    private ParquetRowWriterFactory() {
     }
 
     public static ParquetWriter<Row> createParquetRecordWriter(Path path, Schema schema) throws IOException {

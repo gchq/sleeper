@@ -25,8 +25,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
 import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
@@ -154,7 +154,7 @@ public class CompactionRunnerTestData {
 
     public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<Row> rows) throws Exception {
         Sketches sketches = Sketches.from(schema);
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);

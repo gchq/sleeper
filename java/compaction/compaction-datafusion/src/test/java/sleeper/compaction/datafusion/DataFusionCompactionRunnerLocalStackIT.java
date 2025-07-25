@@ -40,7 +40,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.row.RowReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.S3SketchesStore;
@@ -124,7 +124,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);

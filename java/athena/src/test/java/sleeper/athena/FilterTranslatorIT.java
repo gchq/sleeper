@@ -42,8 +42,8 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
 import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -661,7 +661,7 @@ public class FilterTranslatorIT {
     }
 
     private void writeData(String dataDir) throws IOException {
-        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(dataDir), SCHEMA);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(dataDir), SCHEMA);
 
         generateRows(0, 20).forEach(row -> {
             try {

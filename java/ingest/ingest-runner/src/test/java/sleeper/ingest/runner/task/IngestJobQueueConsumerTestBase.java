@@ -31,7 +31,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.statestore.StateStoreFactory;
@@ -109,7 +109,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(
                     path, rowListAndSchema.sleeperSchema, hadoopConf)) {
                 for (Row row : rowListAndSchema.rowList) {
                     writer.write(row);

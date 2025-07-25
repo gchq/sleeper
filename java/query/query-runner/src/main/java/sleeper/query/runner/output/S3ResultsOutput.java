@@ -25,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.util.LoggedDuration;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -42,7 +42,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
-import static sleeper.parquet.row.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
+import static sleeper.parquet.row.ParquetRowWriterFactory.parquetRecordWriterBuilder;
 
 /**
  * A query results output that writes results to Parquet files in an S3 bucket.
@@ -111,7 +111,7 @@ public class S3ResultsOutput implements ResultsOutput {
     private ParquetWriter<Row> buildParquetWriter(Path path) throws IOException {
         String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
         String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
-        ParquetRecordWriterFactory.Builder builder = parquetRecordWriterBuilder(path, tableProperties)
+        ParquetRowWriterFactory.Builder builder = parquetRecordWriterBuilder(path, tableProperties)
                 .withRowGroupSize(Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize)))
                 .withPageSize(Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize)));
         Optional.ofNullable(config.get(COMPRESSION_CODEC)).ifPresent(builder::withCompressionCodec);

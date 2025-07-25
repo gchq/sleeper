@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
-import sleeper.parquet.row.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -67,7 +67,7 @@ public class WriteRandomDataFiles {
         }
         String filename = dir + fileNumber + ".parquet";
         String path = filePathPrefix + filename;
-        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
         long count = 0L;
         LOGGER.info("Created writer to path {}", path);
         while (rowIterator.hasNext()) {
@@ -81,7 +81,7 @@ public class WriteRandomDataFiles {
                     fileNumber++;
                     filename = dir + fileNumber + ".parquet";
                     path = filePathPrefix + filename;
-                    writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+                    writer = ParquetRowWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
                 }
             }
         }
