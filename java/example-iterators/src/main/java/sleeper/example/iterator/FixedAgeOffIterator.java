@@ -24,7 +24,7 @@ import sleeper.core.schema.Schema;
 import java.util.List;
 
 /**
- * Filter to exclude records from before a certain date. This is an example implementation of
+ * Filter to exclude rows from before a certain date. This is an example implementation of
  * {@link SortedRowIterator}.
  */
 public class FixedAgeOffIterator implements SortedRowIterator {
@@ -33,8 +33,8 @@ public class FixedAgeOffIterator implements SortedRowIterator {
 
     @Override
     public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
-        return new FilteringIterator<>(input, record -> {
-            Long value = (Long) record.get(fieldName);
+        return new FilteringIterator<>(input, row -> {
+            Long value = (Long) row.get(fieldName);
             return null != value && value >= minValue;
         });
     }
