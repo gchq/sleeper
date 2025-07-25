@@ -39,23 +39,23 @@ public class PartitionSplitCheck {
     private final Partition partition;
     private final List<FileReference> partitionFileReferences;
     private final List<FileReference> filesWhollyInPartition;
-    private final long estimatedRecordsFromReferencesInPartitionTree;
-    private final long estimatedRecordsFromReferencesInPartition;
-    private final long knownRecordsWhollyInPartition;
+    private final long estimatedRowsFromReferencesInPartitionTree;
+    private final long estimatedRowsFromReferencesInPartition;
+    private final long knownRowsWhollyInPartition;
     private final long splitThreshold;
 
     private PartitionSplitCheck(TableStatus table, Partition partition,
             List<FileReference> partitionFileReferences,
             List<FileReference> filesWhollyInPartition,
-            long estimatedRecordsFromReferencesInPartitionTree, long estimatedRecordsFromReferencesInPartition,
-            long knownRecordsWhollyInPartition, long splitThreshold) {
+            long estimatedRowsFromReferencesInPartitionTree, long estimatedRowsFromReferencesInPartition,
+            long knownRowsWhollyInPartition, long splitThreshold) {
         this.table = table;
         this.partition = partition;
         this.partitionFileReferences = partitionFileReferences;
         this.filesWhollyInPartition = filesWhollyInPartition;
-        this.estimatedRecordsFromReferencesInPartitionTree = estimatedRecordsFromReferencesInPartitionTree;
-        this.estimatedRecordsFromReferencesInPartition = estimatedRecordsFromReferencesInPartition;
-        this.knownRecordsWhollyInPartition = knownRecordsWhollyInPartition;
+        this.estimatedRowsFromReferencesInPartitionTree = estimatedRowsFromReferencesInPartitionTree;
+        this.estimatedRowsFromReferencesInPartition = estimatedRowsFromReferencesInPartition;
+        this.knownRowsWhollyInPartition = knownRowsWhollyInPartition;
         this.splitThreshold = splitThreshold;
     }
 
@@ -63,35 +63,35 @@ public class PartitionSplitCheck {
         return partitionFileReferences;
     }
 
-    public long getEstimatedRecordsFromReferencesInPartitionTree() {
-        return estimatedRecordsFromReferencesInPartitionTree;
+    public long getEstimatedRowsFromReferencesInPartitionTree() {
+        return estimatedRowsFromReferencesInPartitionTree;
     }
 
-    public long getEstimatedRecordsFromReferencesInPartition() {
-        return estimatedRecordsFromReferencesInPartition;
+    public long getEstimatedRowsFromReferencesInPartition() {
+        return estimatedRowsFromReferencesInPartition;
     }
 
-    public long getKnownRecordsWhollyInPartition() {
-        return knownRecordsWhollyInPartition;
+    public long getKnownRowsWhollyInPartition() {
+        return knownRowsWhollyInPartition;
     }
 
     public boolean isNeedsSplitting() {
-        return knownRecordsWhollyInPartition >= splitThreshold;
+        return knownRowsWhollyInPartition >= splitThreshold;
     }
 
     public boolean maySplitIfCompacted() {
         if (!partition.isLeafPartition()) {
             return false;
         }
-        return estimatedRecordsFromReferencesInPartitionTree >= splitThreshold;
+        return estimatedRowsFromReferencesInPartitionTree >= splitThreshold;
     }
 
     Optional<FindPartitionToSplitResult> splitIfNecessary() {
         LOGGER.info("Analyzed partition {} of table {}", partition.getId(), table);
-        LOGGER.info("Estimated records from file references in partition tree: {}", estimatedRecordsFromReferencesInPartitionTree);
-        LOGGER.info("Estimated records from file references in partition: {}", estimatedRecordsFromReferencesInPartition);
-        LOGGER.info("Known exact records from files wholly in partition: {}", knownRecordsWhollyInPartition);
-        if (knownRecordsWhollyInPartition >= splitThreshold) {
+        LOGGER.info("Estimated rows from file references in partition tree: {}", estimatedRowsFromReferencesInPartitionTree);
+        LOGGER.info("Estimated rows from file references in partition: {}", estimatedRowsFromReferencesInPartition);
+        LOGGER.info("Known exact rows from files wholly in partition: {}", knownRowsWhollyInPartition);
+        if (knownRowsWhollyInPartition >= splitThreshold) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
             return Optional.of(new FindPartitionToSplitResult(table.getTableUniqueId(), partition, filesWhollyInPartition));
         } else {
@@ -102,7 +102,7 @@ public class PartitionSplitCheck {
 
     public static PartitionSplitCheck fromFilesInPartition(TableProperties properties, PartitionTree partitionTree, Partition partition, Map<String, List<FileReference>> fileReferencesByPartition) {
         List<FileReference> partitionFileReferences = fileReferencesByPartition.getOrDefault(partition.getId(), List.of());
-        long estimatedInPartitionFromTree = estimateRecordsInPartitionFromTree(partition, partitionTree, fileReferencesByPartition);
+        long estimatedInPartitionFromTree = estimateRowsInPartitionFromTree(partition, partitionTree, fileReferencesByPartition);
         long estimatedInPartition = partitionFileReferences.stream().mapToLong(FileReference::getNumberOfRows).sum();
         List<FileReference> filesWhollyInPartition = partitionFileReferences.stream().filter(FileReference::onlyContainsDataForThisPartition).collect(toUnmodifiableList());
         long known = filesWhollyInPartition.stream().filter(not(FileReference::isCountApproximate)).mapToLong(FileReference::getNumberOfRows).sum();
@@ -112,19 +112,19 @@ public class PartitionSplitCheck {
                 properties.getLong(PARTITION_SPLIT_THRESHOLD));
     }
 
-    private static long estimateRecordsInPartitionFromTree(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
-        return estimateRecordsInPartitionDescendents(partition, tree, fileReferencesByPartition)
-                + estimateRecordsInPartitionAndAncestors(partition, tree, fileReferencesByPartition);
+    private static long estimateRowsInPartitionFromTree(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
+        return estimateRowsInPartitionDescendents(partition, tree, fileReferencesByPartition)
+                + estimateRowsInPartitionAndAncestors(partition, tree, fileReferencesByPartition);
     }
 
-    private static long estimateRecordsInPartitionDescendents(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
+    private static long estimateRowsInPartitionDescendents(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
         return tree.descendentsOf(partition)
                 .flatMap(descendent -> fileReferencesByPartition.getOrDefault(descendent.getId(), List.of()).stream())
                 .mapToLong(FileReference::getNumberOfRows)
                 .sum();
     }
 
-    private static long estimateRecordsInPartitionAndAncestors(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
+    private static long estimateRowsInPartitionAndAncestors(Partition partition, PartitionTree tree, Map<String, List<FileReference>> fileReferencesByPartition) {
         Partition current = partition;
         long count = 0;
         long treeDivisor = 1;
