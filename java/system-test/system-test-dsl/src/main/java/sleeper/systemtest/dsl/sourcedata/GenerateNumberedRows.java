@@ -27,21 +27,21 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public class GenerateNumberedRecords {
+public class GenerateNumberedRows {
     private final Configuration configuration;
     private final Schema schema;
 
-    private GenerateNumberedRecords(Configuration configuration, Schema schema) {
+    private GenerateNumberedRows(Configuration configuration, Schema schema) {
         this.configuration = configuration;
         this.schema = schema;
     }
 
-    public static GenerateNumberedRecords from(Schema schema, GenerateNumberedValueOverrides overrides) {
-        return new GenerateNumberedRecords(configureOverrides(overrides), schema);
+    public static GenerateNumberedRows from(Schema schema, GenerateNumberedValueOverrides overrides) {
+        return new GenerateNumberedRows(configureOverrides(overrides), schema);
     }
 
-    public static GenerateNumberedRecords from(Schema schema) {
-        return new GenerateNumberedRecords(GenerateNumberedValue::forField, schema);
+    public static GenerateNumberedRows from(Schema schema) {
+        return new GenerateNumberedRows(GenerateNumberedValue::forField, schema);
     }
 
     private static Configuration configureOverrides(GenerateNumberedValueOverrides overrides) {
@@ -50,7 +50,7 @@ public class GenerateNumberedRecords {
     }
 
     public Stream<Row> streamFrom(LongStream numbers) {
-        return numbers.mapToObj(this::generateRecord);
+        return numbers.mapToObj(this::generateRow);
     }
 
     public Iterator<Row> iteratorFrom(LongStream numbers) {
@@ -61,7 +61,7 @@ public class GenerateNumberedRecords {
         return () -> iteratorFrom(numbers);
     }
 
-    public Row generateRecord(long number) {
+    public Row generateRow(long number) {
         return new Row(mapForNumber(number));
     }
 

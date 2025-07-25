@@ -26,7 +26,7 @@ import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,8 +79,8 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());
         Collections.shuffle(recordNumbers, random);
-        GenerateNumberedRecords generator = instance.numberedRecords(tableProperties.getSchema());
-        return () -> recordNumbers.stream().map(generator::generateRecord).iterator();
+        GenerateNumberedRows generator = instance.numberedRecords(tableProperties.getSchema());
+        return () -> recordNumbers.stream().map(generator::generateRow).iterator();
     }
 
 }

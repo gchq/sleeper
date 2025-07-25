@@ -26,7 +26,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.SystemTestDrivers;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.util.TestContext;
 
@@ -170,12 +170,12 @@ public class SystemTestInstanceContext {
         return currentTables().getStateStoreProvider();
     }
 
-    public GenerateNumberedRecords numberedRecords() {
+    public GenerateNumberedRows numberedRecords() {
         return numberedRecords(currentTables().getSchema());
     }
 
-    public GenerateNumberedRecords numberedRecords(Schema schema) {
-        return GenerateNumberedRecords.from(schema, generatorOverrides);
+    public GenerateNumberedRows numberedRecords(Schema schema) {
+        return GenerateNumberedRows.from(schema, generatorOverrides);
     }
 
     public StateStore getStateStore() {
