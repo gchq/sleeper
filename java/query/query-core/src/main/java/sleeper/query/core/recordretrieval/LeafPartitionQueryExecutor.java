@@ -99,7 +99,7 @@ public class LeafPartitionQueryExecutor {
             }
 
             return iterator;
-        } catch (RecordRetrievalException e) {
+        } catch (RowRetrievalException e) {
             throw new QueryException("QueryException retrieving rows for LeafPartitionQuery", e);
         }
     }

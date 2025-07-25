@@ -29,14 +29,14 @@ public interface LeafPartitionRowRetriever {
     /**
      * Retrieves all rows in the regions and files specified by a sub query.
      *
-     * @param  leafPartitionQuery       the sub query
-     * @param  dataReadSchema           a schema containing all key fields for the table, and all value fields required
-     *                                  for the query
-     * @return                          An iterator over all rows in the specified files that are in the specified
-     *                                  partition, and are in one of the specified regions. Only values specified in the
-     *                                  data read schema will be returned. Other processing specified in the query will
-     *                                  be applied by the caller.
-     * @throws RecordRetrievalException if the first row of any file could not be read
+     * @param  leafPartitionQuery    the sub query
+     * @param  dataReadSchema        a schema containing all key fields for the table, and all value fields required
+     *                               for the query
+     * @return                       An iterator over all rows in the specified files that are in the specified
+     *                               partition, and are in one of the specified regions. Only values specified in the
+     *                               data read schema will be returned. Other processing specified in the query will
+     *                               be applied by the caller.
+     * @throws RowRetrievalException if the first row of any file could not be read
      */
-    CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
+    CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException;
 }

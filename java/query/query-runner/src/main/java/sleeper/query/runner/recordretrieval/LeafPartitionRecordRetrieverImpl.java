@@ -36,7 +36,7 @@ import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRowRetriever;
-import sleeper.query.core.recordretrieval.RecordRetrievalException;
+import sleeper.query.core.recordretrieval.RowRetrievalException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,7 +71,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
         return tableProperties -> new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties);
     }
 
-    public CloseableIterator<Row> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RecordRetrievalException {
+    public CloseableIterator<Row> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RowRetrievalException {
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
         }
@@ -82,7 +82,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
             try {
                 tasks.add(new RetrieveTask(createParquetReader(dataReadSchema, file, filterPredicate)));
             } catch (IOException e) {
-                throw new RecordRetrievalException("Failed to create a parquet reader", e);
+                throw new RowRetrievalException("Failed to create a parquet reader", e);
             }
             LOGGER.debug("Created reader for file {}", file);
         }
@@ -91,7 +91,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
         try {
             futures = executorService.invokeAll(tasks);
         } catch (InterruptedException e) {
-            throw new RecordRetrievalException("Interrupted while invoking retrieve tasks", e);
+            throw new RowRetrievalException("Interrupted while invoking retrieve tasks", e);
         }
 
         // First record from each iterator is returned separately - this forces
@@ -104,7 +104,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
             try {
                 pair = future.get();
             } catch (InterruptedException | ExecutionException e) {
-                throw new RecordRetrievalException("Failed to retrieve records due to an exception", e);
+                throw new RowRetrievalException("Failed to retrieve records due to an exception", e);
             }
             if (null != pair) {
                 indexToReader.put(count, pair.getRight());
@@ -130,7 +130,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
     }
 
     @Override
-    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());

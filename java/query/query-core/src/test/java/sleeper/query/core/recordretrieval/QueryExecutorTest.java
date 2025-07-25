@@ -141,7 +141,7 @@ public class QueryExecutorTest {
             assertThatThrownBy(() -> getRows(queryAllRecords()))
                     .isInstanceOf(RuntimeException.class)
                     .cause().isInstanceOf(QueryException.class)
-                    .cause().isInstanceOf(RecordRetrievalException.class)
+                    .cause().isInstanceOf(RowRetrievalException.class)
                     .cause().isInstanceOf(NoSuchElementException.class)
                     .hasNoCause();
         }

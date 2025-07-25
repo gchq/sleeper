@@ -45,7 +45,7 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRowRet
     }
 
     @Override
-    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
         return new WrappedIterator<>(getRecordsOrRecordRetrievalException(leafPartitionQuery.getFiles())
                 .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
                 .map(record -> mapToReadSchema(record, dataReadSchema))
@@ -57,13 +57,13 @@ public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRowRet
         return this;
     }
 
-    private Stream<Row> getRecordsOrRecordRetrievalException(List<String> files) throws RecordRetrievalException {
+    private Stream<Row> getRecordsOrRecordRetrievalException(List<String> files) throws RowRetrievalException {
         try {
             return recordStore.streamRows(files)
                     .collect(toUnmodifiableList())
                     .stream();
         } catch (NoSuchElementException e) {
-            throw new RecordRetrievalException("", e);
+            throw new RowRetrievalException("", e);
         }
     }
 
