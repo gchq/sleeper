@@ -73,7 +73,7 @@ class SleeperClientTest {
         assertThatThrownBy(() -> instance.sleeperClientBuilder().objectFactory(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("objectFactory");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().rowRetrieverProvider(null).build())
-                .isInstanceOf(NullPointerException.class).hasMessageContaining("recordRetrieverProvider");
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("rowRetrieverProvider");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().ingestJobSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestJobSender");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().bulkImportJobSender(null).build())
