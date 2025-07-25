@@ -77,7 +77,7 @@ public class CompactionPerformanceST {
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRecordsPerSecondInRange(180_000, 400_000),
+                        && stats.isAverageRunRowsPerSecondInRange(180_000, 400_000),
                         "meets expected performance");
     }
 }

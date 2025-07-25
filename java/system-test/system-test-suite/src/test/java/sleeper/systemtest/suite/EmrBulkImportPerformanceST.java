@@ -65,7 +65,7 @@ public class EmrBulkImportPerformanceST {
                         "contain 5 billion records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5)
-                        && stats.isAverageRunRecordsPerSecondInRange(3_500_000, 5_000_000),
+                        && stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
                         "meets expected performance");
     }
 }
