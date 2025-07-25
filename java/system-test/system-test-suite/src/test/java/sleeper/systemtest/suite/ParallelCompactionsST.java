@@ -63,7 +63,7 @@ public class ParallelCompactionsST {
         // And we have records spread across all partitions in many files per partition
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(10,
-                        builder -> builder.ingestMode(DIRECT).recordsPerIngest(1_000_000),
+                        builder -> builder.ingestMode(DIRECT).rowsPerIngest(1_000_000),
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .waitForTotalFileReferences(81920);

@@ -44,7 +44,7 @@ public class GenerateRandomDataFiles {
     private void run() throws IOException {
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
-                .recordsPerIngest(numberOfRecords)
+                .rowsPerIngest(numberOfRecords)
                 .build();
         WriteRandomDataFiles.writeFilesToDirectory(outputDirectory, new InstanceProperties(),
                 tableProperties, WriteRandomData.createRowIterator(job, tableProperties));

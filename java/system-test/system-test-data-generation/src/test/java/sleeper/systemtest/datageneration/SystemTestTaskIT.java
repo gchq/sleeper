@@ -79,7 +79,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
                 .jobId("test-job")
                 .tableName(tableName)
                 .numberOfIngests(2)
-                .recordsPerIngest(12)
+                .rowsPerIngest(12)
                 .ingestMode(DIRECT)
                 .build());
 

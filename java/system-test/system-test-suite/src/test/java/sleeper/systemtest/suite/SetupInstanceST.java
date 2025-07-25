@@ -74,7 +74,7 @@ public class SetupInstanceST {
 
         // When
         sleeper.systemTestCluster().runDataGenerationJobs(2,
-                builder -> builder.ingestMode(QUEUE).ingestQueue(STANDARD_INGEST).recordsPerIngest(123))
+                builder -> builder.ingestMode(QUEUE).ingestQueue(STANDARD_INGEST).rowsPerIngest(123))
                 .waitForStandardIngestTask().waitForIngestJobs();
 
         // Then
@@ -93,7 +93,7 @@ public class SetupInstanceST {
 
         // When
         sleeper.systemTestCluster().runDataGenerationJobs(2,
-                builder -> builder.ingestMode(DIRECT).recordsPerIngest(123))
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(123))
                 .waitForTotalFileReferences(2);
 
         // Then

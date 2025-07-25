@@ -44,7 +44,7 @@ public class SystemTestDataGenerationJob {
     private final SystemTestIngestMode ingestMode;
     private final IngestQueue ingestQueue;
     private final int numberOfIngests;
-    private final long recordsPerIngest;
+    private final long rowsPerIngest;
     private final SystemTestRandomDataSettings randomDataSettings;
 
     private SystemTestDataGenerationJob(Builder builder) {
@@ -55,7 +55,7 @@ public class SystemTestDataGenerationJob {
         ingestMode = Optional.ofNullable(builder.ingestMode).orElse(SystemTestIngestMode.DIRECT);
         ingestQueue = Optional.ofNullable(builder.ingestQueue).orElse(IngestQueue.STANDARD_INGEST);
         numberOfIngests = builder.numberOfIngests;
-        recordsPerIngest = builder.recordsPerIngest;
+        rowsPerIngest = builder.rowsPerIngest;
         randomDataSettings = Optional.ofNullable(builder.randomDataSettings).orElseGet(SystemTestRandomDataSettings::fromDefaults);
     }
 
@@ -102,8 +102,8 @@ public class SystemTestDataGenerationJob {
         return numberOfIngests;
     }
 
-    public long getRecordsPerIngest() {
-        return recordsPerIngest;
+    public long getRowsPerIngest() {
+        return rowsPerIngest;
     }
 
     public SystemTestRandomDataSettings getRandomDataSettings() {
@@ -113,12 +113,12 @@ public class SystemTestDataGenerationJob {
     @Override
     public String toString() {
         return "SystemTestClusterJob{jobId=" + jobId + ", configBucket=" + configBucket + ", roleArnToLoadConfig=" + roleArnToLoadConfig + ", tableName=" + tableName + ", ingestMode=" + ingestMode
-                + ", ingestQueue=" + ingestQueue + ", numberOfIngests=" + numberOfIngests + ", recordsPerIngest=" + recordsPerIngest + ", randomDataSettings=" + randomDataSettings + "}";
+                + ", ingestQueue=" + ingestQueue + ", numberOfIngests=" + numberOfIngests + ", rowsPerIngest=" + rowsPerIngest + ", randomDataSettings=" + randomDataSettings + "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, configBucket, roleArnToLoadConfig, tableName, ingestMode, ingestQueue, numberOfIngests, recordsPerIngest, randomDataSettings);
+        return Objects.hash(jobId, configBucket, roleArnToLoadConfig, tableName, ingestMode, ingestQueue, numberOfIngests, rowsPerIngest, randomDataSettings);
     }
 
     @Override
@@ -132,7 +132,7 @@ public class SystemTestDataGenerationJob {
         SystemTestDataGenerationJob other = (SystemTestDataGenerationJob) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(configBucket, other.configBucket) && Objects.equals(roleArnToLoadConfig, other.roleArnToLoadConfig)
                 && Objects.equals(tableName, other.tableName) && ingestMode == other.ingestMode && ingestQueue == other.ingestQueue && numberOfIngests == other.numberOfIngests
-                && recordsPerIngest == other.recordsPerIngest && Objects.equals(randomDataSettings, other.randomDataSettings);
+                && rowsPerIngest == other.rowsPerIngest && Objects.equals(randomDataSettings, other.randomDataSettings);
     }
 
     public static class Builder {
@@ -143,7 +143,7 @@ public class SystemTestDataGenerationJob {
         private SystemTestIngestMode ingestMode;
         private IngestQueue ingestQueue;
         private int numberOfIngests = 1;
-        private long recordsPerIngest;
+        private long rowsPerIngest;
         private SystemTestRandomDataSettings randomDataSettings;
 
         private Builder() {
@@ -178,7 +178,7 @@ public class SystemTestDataGenerationJob {
             return ingestMode(properties.getEnumValue(INGEST_MODE, SystemTestIngestMode.class))
                     .ingestQueue(properties.getEnumValue(INGEST_QUEUE, IngestQueue.class))
                     .numberOfIngests(properties.getInt(NUMBER_OF_INGESTS_PER_WRITER))
-                    .recordsPerIngest(properties.getLong(NUMBER_OF_ROWS_PER_INGEST))
+                    .rowsPerIngest(properties.getLong(NUMBER_OF_ROWS_PER_INGEST))
                     .randomDataSettings(SystemTestRandomDataSettings.fromProperties(properties));
         }
 
@@ -197,8 +197,8 @@ public class SystemTestDataGenerationJob {
             return this;
         }
 
-        public Builder recordsPerIngest(long recordsPerIngest) {
-            this.recordsPerIngest = recordsPerIngest;
+        public Builder rowsPerIngest(long rowsPerIngest) {
+            this.rowsPerIngest = rowsPerIngest;
             return this;
         }
 

@@ -50,7 +50,7 @@ public class EmrBulkImportPerformanceST {
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(100,
-                        builder -> builder.ingestMode(GENERATE_ONLY).recordsPerIngest(10_000_000),
+                        builder -> builder.ingestMode(GENERATE_ONLY).rowsPerIngest(10_000_000),
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)

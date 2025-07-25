@@ -63,7 +63,7 @@ public class IngestRandomDataToDocker {
                 dynamoDB);
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
-                .recordsPerIngest(numberOfRecords)
+                .rowsPerIngest(numberOfRecords)
                 .build();
         WriteRandomDataDirect.writeWithIngestFactory(
                 IngestFactory.builder()

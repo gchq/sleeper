@@ -62,7 +62,7 @@ public class CompactionDataFusionPerformanceST {
                 TABLE_ONLINE, "false",
                 COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
-                builder -> builder.ingestMode(DIRECT).recordsPerIngest(40_000_000),
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 

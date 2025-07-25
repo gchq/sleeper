@@ -52,7 +52,7 @@ public class IngestPerformanceST {
                 .runDataGenerationJobs(11,
                         builder -> builder.ingestMode(QUEUE)
                                 .ingestQueue(STANDARD_INGEST)
-                                .recordsPerIngest(40_000_000),
+                                .rowsPerIngest(40_000_000),
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))

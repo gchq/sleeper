@@ -75,7 +75,7 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
     }
 
     private Iterable<Row> generateRows(SystemTestDataGenerationJob job, TableProperties tableProperties) {
-        List<Long> recordNumbers = LongStream.range(0, job.getRecordsPerIngest())
+        List<Long> recordNumbers = LongStream.range(0, job.getRowsPerIngest())
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());
         Collections.shuffle(recordNumbers, random);
