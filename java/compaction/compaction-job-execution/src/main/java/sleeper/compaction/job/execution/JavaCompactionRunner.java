@@ -86,15 +86,15 @@ public class JavaCompactionRunner implements CompactionRunner {
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Sketches sketches = Sketches.from(schema);
 
-        long recordsWritten = 0L;
+        long rowsWritten = 0L;
         while (mergingIterator.hasNext()) {
             Row row = mergingIterator.next();
             sketches.update(row);
             // Write out
             writer.write(row);
-            recordsWritten++;
-            if (0 == recordsWritten % 1_000_000) {
-                LOGGER.info("Compaction job {}: Written {} records", compactionJob.getId(), recordsWritten);
+            rowsWritten++;
+            if (0 == rowsWritten % 1_000_000) {
+                LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
         writer.close();
@@ -108,13 +108,13 @@ public class JavaCompactionRunner implements CompactionRunner {
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
-        long totalNumberOfRecordsRead = 0L;
+        long totalNumberOfRowsRead = 0L;
         for (CloseableIterator<Row> iterator : inputIterators) {
-            totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRowsRead();
+            totalNumberOfRowsRead += ((ParquetReaderIterator) iterator).getNumberOfRowsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
-        return new RowsProcessed(totalNumberOfRecordsRead, recordsWritten);
+        LOGGER.info("Compaction job {}: Read {} rows and wrote {} rows", compactionJob.getId(), totalNumberOfRowsRead, rowsWritten);
+        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
     private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
@@ -126,8 +126,8 @@ public class JavaCompactionRunner implements CompactionRunner {
                     .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();
-            ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
-            inputIterators.add(recordIterator);
+            ParquetReaderIterator rowIterator = new ParquetReaderIterator(reader);
+            inputIterators.add(rowIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
                     partition.getRegion().getRanges().toString());

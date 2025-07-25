@@ -91,12 +91,12 @@ public class CompactionRunnerTestBase {
         return new LocalFileSystemSketchesStore();
     }
 
-    protected FileReference ingestRecordsGetFile(List<Row> rowss) throws Exception {
-        return ingestRecordsGetFile(rowss, builder -> {
+    protected FileReference ingestRowsGetFile(List<Row> rows) throws Exception {
+        return ingestRowsGetFile(rows, builder -> {
         });
     }
 
-    protected FileReference ingestRecordsGetFile(List<Row> rows, Consumer<IngestFactory.Builder> config) throws Exception {
+    protected FileReference ingestRowsGetFile(List<Row> rows, Consumer<IngestFactory.Builder> config) throws Exception {
         String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())

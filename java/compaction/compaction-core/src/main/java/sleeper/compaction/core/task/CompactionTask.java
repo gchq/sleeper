@@ -227,18 +227,18 @@ public class CompactionTask {
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RowsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition);
         Instant jobFinishTime = timeSupplier.get();
-        JobRunSummary summary = new JobRunSummary(recordsProcessed, jobStartTime, jobFinishTime);
+        JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;
     }
 
     private void logMetrics(CompactionJob job, JobRunSummary summary) {
         LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
-        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
+        METRICS_LOGGER.info("Compaction job {}: compaction read {} rows at {} per second", job.getId(),
                 summary.getRowsRead(), String.format("%.1f", summary.getRowsReadPerSecond()));
-        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
+        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} rows at {} per second", job.getId(),
                 summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
     }
 

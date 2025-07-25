@@ -46,18 +46,18 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Row> data1 = CompactionRunnerTestData.specifiedFromEvens((even, record) -> {
-            record.put("key", (long) even);
-            record.put("timestamp", System.currentTimeMillis());
-            record.put("value", 987654321L);
+        List<Row> data1 = CompactionRunnerTestData.specifiedFromEvens((even, row) -> {
+            row.put("key", (long) even);
+            row.put("timestamp", System.currentTimeMillis());
+            row.put("value", 987654321L);
         });
-        List<Row> data2 = CompactionRunnerTestData.specifiedFromOdds((odd, record) -> {
-            record.put("key", (long) odd);
-            record.put("timestamp", 0L);
-            record.put("value", 123456789L);
+        List<Row> data2 = CompactionRunnerTestData.specifiedFromOdds((odd, row) -> {
+            row.put("key", (long) odd);
+            row.put("timestamp", 0L);
+            row.put("value", 123456789L);
         });
-        FileReference file1 = ingestRecordsGetFile(data1);
-        FileReference file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRowsGetFile(data1);
+        FileReference file2 = ingestRowsGetFile(data2);
 
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");

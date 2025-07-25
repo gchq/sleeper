@@ -197,7 +197,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  job              the compaction job
      * @param  compactionParams the compaction input parameters
      * @param  runtime          the JNR FFI runtime object
-     * @return                  records read/written
+     * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     public static RowsProcessed invokeDataFusion(CompactionJob job,
@@ -213,13 +213,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             throw new IOException("DataFusion compaction failed with return code " + result);
         }
 
-        long totalNumberOfRecordsRead = compactionData.rows_read.get();
-        long recordsWritten = compactionData.rows_written.get();
+        long totalNumberOfRowsRead = compactionData.rows_read.get();
+        long rowsWritten = compactionData.rows_written.get();
 
-        LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
-                job.getId(), totalNumberOfRecordsRead, recordsWritten);
+        LOGGER.info("Compaction job {}: Read {} rows and wrote {} rows",
+                job.getId(), totalNumberOfRowsRead, rowsWritten);
 
-        return new RowsProcessed(totalNumberOfRecordsRead, recordsWritten);
+        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
     @Override
