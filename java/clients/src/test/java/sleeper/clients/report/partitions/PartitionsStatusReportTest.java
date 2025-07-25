@@ -154,7 +154,7 @@ class PartitionsStatusReportTest {
     }
 
     @Test
-    void shouldReportApproxAndKnownNumberOfRecordsWithSplitFilesInPartition() throws Exception {
+    void shouldReportApproxAndKnownNumberOfRowsWithSplitFilesInPartition() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
         update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
@@ -174,7 +174,7 @@ class PartitionsStatusReportTest {
     }
 
     @Test
-    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThreshold() throws Exception {
+    void shouldReportWhenNonLeafPartitionRowCountExceedsSplitThreshold() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
         tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
@@ -185,11 +185,11 @@ class PartitionsStatusReportTest {
 
         // When
         assertThat(getStandardReport()).isEqualTo(
-                example("reports/partitions/nonLeafPartitionRecordCountExceedsThreshold.txt"));
+                example("reports/partitions/nonLeafPartitionRowCountExceedsThreshold.txt"));
     }
 
     @Test
-    void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThresholdWithRecordsFurtherUpTree() throws Exception {
+    void shouldReportWhenNonLeafPartitionRowCountExceedsSplitThresholdWithRowsFurtherUpTree() throws Exception {
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 100);
         tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
         update(stateStore).initialise(partitionsBuilder().rootFirst("root")
@@ -203,7 +203,7 @@ class PartitionsStatusReportTest {
 
         // When
         assertThat(getStandardReport()).isEqualTo(
-                example("reports/partitions/combinedPartitionRecordCountExceedsThreshold.txt"));
+                example("reports/partitions/combinedPartitionRowCountExceedsThreshold.txt"));
     }
 
     @Test
