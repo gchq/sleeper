@@ -33,7 +33,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private final TableField queryId;
     private final TableField subQueryId;
     private final TableField lastUpdateTime;
-    private final TableField recordCount;
+    private final TableField rowCount;
     private final TableField errorMessage;
     private final TableWriterFactory tableFactory;
 
@@ -48,7 +48,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         queryId = tableFactoryBuilder.addField("QUERY_ID");
         subQueryId = tableFactoryBuilder.addField("SUB_QUERY_ID");
         lastUpdateTime = tableFactoryBuilder.addField("LAST_UPDATE_TIME");
-        recordCount = tableFactoryBuilder.addField("RECORD_COUNT");
+        rowCount = tableFactoryBuilder.addField("ROW_COUNT");
         errorMessage = tableFactoryBuilder.addField("ERRORS");
         tableFactory = tableFactoryBuilder.build();
     }
@@ -115,7 +115,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
                 .value(queryId, trackedQuery.getQueryId())
                 .value(subQueryId, trackedQuery.getSubQueryId())
                 .value(lastUpdateTime, Instant.ofEpochMilli(trackedQuery.getLastUpdateTime()))
-                .value(recordCount, trackedQuery.getRecordCount())
+                .value(rowCount, trackedQuery.getRecordCount())
                 .value(errorMessage, trackedQuery.getErrorMessage());
     }
 
