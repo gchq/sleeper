@@ -18,17 +18,17 @@ package sleeper.query.core.recordretrieval;
 import sleeper.core.properties.table.TableProperties;
 
 /**
- * Creates record retrievers to read underlying data files.
+ * Creates row retrievers to read underlying data files.
  */
 @FunctionalInterface
-public interface LeafPartitionRecordRetrieverProvider {
+public interface LeafPartitionRowRetrieverProvider {
 
     /**
-     * Creates a record retriever to read files in a given Sleeper table.
+     * Creates a row retriever to read files in a given Sleeper table.
      *
      * @param  tableProperties the Sleeper table properties
-     * @return                 the record retriever
+     * @return                 the row retriever
      */
-    LeafPartitionRowRetriever getRecordRetriever(TableProperties tableProperties);
+    LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties);
 
 }

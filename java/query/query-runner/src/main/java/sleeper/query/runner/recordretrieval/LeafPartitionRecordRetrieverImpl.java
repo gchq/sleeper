@@ -34,8 +34,8 @@ import sleeper.core.schema.Schema;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.core.model.LeafPartitionQuery;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.recordretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.recordretrieval.RowRetrievalException;
 
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRowRetriev
         this.tableProperties = tableProperties;
     }
 
-    public static LeafPartitionRecordRetrieverProvider createProvider(ExecutorService executorService, Configuration conf) {
+    public static LeafPartitionRowRetrieverProvider createProvider(ExecutorService executorService, Configuration conf) {
         return tableProperties -> new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties);
     }
 

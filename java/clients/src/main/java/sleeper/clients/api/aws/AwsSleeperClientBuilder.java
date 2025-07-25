@@ -31,7 +31,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
+import sleeper.query.core.recordretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
@@ -58,7 +58,7 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
-        ShutdownWrapper<LeafPartitionRecordRetrieverProvider> recordRetrieverProvider = queryProvider.getRecordRetrieverProvider(hadoopConf);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> recordRetrieverProvider = queryProvider.getRecordRetrieverProvider(hadoopConf);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
 
         return new SleeperClient.Builder()

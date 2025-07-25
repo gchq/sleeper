@@ -19,7 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
+import sleeper.query.core.recordretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.util.concurrent.ExecutorService;
@@ -37,7 +37,7 @@ public interface SleeperClientHadoopQueryProvider {
      * @param  hadoopConf the Hadoop configuration
      * @return            the record retriever
      */
-    ShutdownWrapper<LeafPartitionRecordRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf);
+    ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf);
 
     /**
      * Creates a provider that will create a thread pool of the default size. A new thread pool will be created for each
@@ -59,7 +59,7 @@ public interface SleeperClientHadoopQueryProvider {
     static SleeperClientHadoopQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
         return hadoopConf -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-            LeafPartitionRecordRetrieverProvider provider = LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf);
+            LeafPartitionRowRetrieverProvider provider = LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf);
             return ShutdownWrapper.shutdown(provider, executorService::shutdown);
         };
     }
@@ -82,7 +82,7 @@ public interface SleeperClientHadoopQueryProvider {
         }
 
         @Override
-        public ShutdownWrapper<LeafPartitionRecordRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf) {
+        public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRecordRetrieverProvider(Configuration hadoopConf) {
             return ShutdownWrapper.noShutdown(
                     LeafPartitionRecordRetrieverImpl.createProvider(executorService, hadoopConf));
         }
