@@ -408,7 +408,7 @@ public class RunCompactionTasksTest {
     }
 
     private void runTasks(QueueMessageCount.Client queueClient, TaskCounts taskCounts) {
-        taskRunner(taskCounts).run(queueClient);
+        taskRunner(taskCounts).runCompaction(queueClient);
     }
 
     private void runToMeetTargetTasks(int requestedTasks, TaskCounts taskCounts) {
