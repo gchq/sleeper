@@ -23,7 +23,7 @@ import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
@@ -75,7 +75,7 @@ public class GarbageCollectionTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", UUID.randomUUID().toString(), UUID.randomUUID().toString(), "row-50000")
                 .buildTree());
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))

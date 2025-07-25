@@ -40,7 +40,7 @@ import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
@@ -178,8 +178,8 @@ public class SleeperSystemTest {
         return context.instance().numberedRows(schema).iterableFrom(numbers);
     }
 
-    public RecordNumbers scrambleNumberedRows(LongStream longStream) {
-        return RecordNumbers.scrambleNumberedRows(longStream);
+    public RowNumbers scrambleNumberedRows(LongStream longStream) {
+        return RowNumbers.scrambleNumberedRows(longStream);
     }
 
     public Path getSplitPointsDirectory() {

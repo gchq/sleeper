@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.HashSet;
@@ -87,7 +87,7 @@ public class SystemTestIngestTest {
     @Test
     void shouldIngestSplitIntoFiles(SleeperSystemTest sleeper) {
         // Given
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
 
         // When
         sleeper.ingest().direct(null)
@@ -103,7 +103,7 @@ public class SystemTestIngestTest {
     @Test
     void shouldNotSplitIntoFilesIfNotExactSplit(SleeperSystemTest sleeper) {
         // Given
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 10));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 10));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(null);
 
         // When / Then

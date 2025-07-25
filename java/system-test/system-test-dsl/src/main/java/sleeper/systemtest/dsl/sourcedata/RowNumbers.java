@@ -22,28 +22,28 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-public class RecordNumbers {
-    private final List<Long> records;
+public class RowNumbers {
+    private final List<Long> numbers;
 
-    private RecordNumbers(List<Long> records) {
-        this.records = records;
+    private RowNumbers(List<Long> numbers) {
+        this.numbers = numbers;
     }
 
-    public static RecordNumbers scrambleNumberedRows(LongStream longStream) {
-        List<Long> records = longStream.boxed().collect(Collectors.toList());
-        Collections.shuffle(records, new Random(0L));
-        return new RecordNumbers(records);
+    public static RowNumbers scrambleNumberedRows(LongStream longStream) {
+        List<Long> numbers = longStream.boxed().collect(Collectors.toList());
+        Collections.shuffle(numbers, new Random(0L));
+        return new RowNumbers(numbers);
     }
 
-    public int numRecords() {
-        return records.size();
+    public int numRows() {
+        return numbers.size();
     }
 
     public LongStream stream() {
-        return records.stream().mapToLong(Long::longValue);
+        return numbers.stream().mapToLong(Long::longValue);
     }
 
     public LongStream range(int from, int to) {
-        return records.subList(from, to).stream().mapToLong(Long::longValue);
+        return numbers.subList(from, to).stream().mapToLong(Long::longValue);
     }
 }

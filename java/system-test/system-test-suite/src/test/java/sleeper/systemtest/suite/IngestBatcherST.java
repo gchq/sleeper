@@ -23,7 +23,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -57,7 +57,7 @@ public class IngestBatcherST {
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
@@ -84,7 +84,7 @@ public class IngestBatcherST {
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "10",
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))

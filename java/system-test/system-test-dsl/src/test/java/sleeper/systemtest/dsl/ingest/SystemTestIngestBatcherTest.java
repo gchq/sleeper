@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
@@ -52,7 +52,7 @@ public class SystemTestIngestBatcherTest {
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
         drivers.fixSizeOfFilesSeenByBatcherInBytes(1024);
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))

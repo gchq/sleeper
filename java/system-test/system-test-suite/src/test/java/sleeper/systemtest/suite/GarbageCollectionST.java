@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -61,7 +61,7 @@ public class GarbageCollectionST {
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
-        RecordNumbers records = sleeper.scrambleNumberedRows(LongStream.range(0, numberOfRecords));
+        RowNumbers records = sleeper.scrambleNumberedRows(LongStream.range(0, numberOfRecords));
         sleeper.ingest().direct(tempDir)
                 .splitIngests(numberOfFilesToGC, records);
         sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();

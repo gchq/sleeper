@@ -20,7 +20,7 @@ import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,11 +40,11 @@ public class SystemTestDirectIngest {
         this.tempDir = tempDir;
     }
 
-    public SystemTestDirectIngest splitIngests(int numIngests, RecordNumbers numbers) {
-        if (numbers.numRecords() % numIngests != 0) {
+    public SystemTestDirectIngest splitIngests(int numIngests, RowNumbers numbers) {
+        if (numbers.numRows() % numIngests != 0) {
             throw new IllegalArgumentException("Number of ingests must split number of records exactly");
         }
-        int recordsPerIngest = numbers.numRecords() / numIngests;
+        int recordsPerIngest = numbers.numRows() / numIngests;
         List<FileReference> fileReferences = new ArrayList<>();
         IntStream.range(0, numIngests)
                 .mapToObj(i -> numbers.range(i * recordsPerIngest, i * recordsPerIngest + recordsPerIngest))

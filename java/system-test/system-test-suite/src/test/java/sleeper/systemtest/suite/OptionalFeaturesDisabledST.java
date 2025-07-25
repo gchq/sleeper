@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -72,7 +72,7 @@ public class OptionalFeaturesDisabledST {
         // Given
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
         // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
-        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
 
         // When
         sleeper.ingest().direct(tempDir)
