@@ -64,13 +64,13 @@ public class StateStoreFilesArrowFormat {
     private static final Field PARTITION_ID = Field.notNullable("partitionId", Utf8.INSTANCE);
     private static final Field REFERENCE_UPDATE_TIME = Field.notNullable("updateTime", Types.MinorType.TIMESTAMPMILLI.getType());
     private static final Field JOB_ID = Field.nullable("jobId", Utf8.INSTANCE);
-    private static final Field NUMBER_OF_RECORDS = Field.notNullable("numberOfRecords", Types.MinorType.UINT8.getType());
+    private static final Field NUMBER_OF_ROWS = Field.notNullable("numberOfRows", Types.MinorType.UINT8.getType());
     private static final Field COUNT_APPROXIMATE = Field.notNullable("countApproximate", Types.MinorType.BIT.getType());
     private static final Field ONLY_CONTAINS_DATA_FOR_THIS_PARTITION = Field.notNullable("onlyContainsDataForThisPartition", Types.MinorType.BIT.getType());
     private static final Field REFERENCE = new Field("reference",
             FieldType.notNullable(Types.MinorType.STRUCT.getType()),
             List.of(PARTITION_ID, REFERENCE_UPDATE_TIME, JOB_ID,
-                    NUMBER_OF_RECORDS, COUNT_APPROXIMATE, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION));
+                    NUMBER_OF_ROWS, COUNT_APPROXIMATE, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION));
     private static final Field REFERENCES = new Field("partitionReferences",
             FieldType.notNullable(Types.MinorType.LIST.getType()), List.of(REFERENCE));
     private static final Schema SCHEMA = new Schema(List.of(FILENAME, UPDATE_TIME, REFERENCES));
@@ -165,7 +165,7 @@ public class StateStoreFilesArrowFormat {
             writeVarChar(struct, allocator, PARTITION_ID, reference.getPartitionId());
             writeTimeStampMilli(struct, REFERENCE_UPDATE_TIME, reference.getLastStateStoreUpdateTime());
             writeVarCharNullable(struct, allocator, JOB_ID, reference.getJobId());
-            writeUInt8(struct, NUMBER_OF_RECORDS, reference.getNumberOfRows());
+            writeUInt8(struct, NUMBER_OF_ROWS, reference.getNumberOfRows());
             writeBit(struct, COUNT_APPROXIMATE, reference.isCountApproximate());
             writeBit(struct, ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, reference.onlyContainsDataForThisPartition());
             struct.end();
@@ -184,7 +184,7 @@ public class StateStoreFilesArrowFormat {
                     .partitionId(reader.reader(PARTITION_ID.getName()).readText().toString())
                     .lastStateStoreUpdateTime(reader.reader(REFERENCE_UPDATE_TIME.getName()).readLocalDateTime().toInstant(ZoneOffset.UTC))
                     .jobId(Optional.ofNullable(reader.reader(JOB_ID.getName()).readText()).map(Text::toString).orElse(null))
-                    .numberOfRows(reader.reader(NUMBER_OF_RECORDS.getName()).readLong())
+                    .numberOfRows(reader.reader(NUMBER_OF_ROWS.getName()).readLong())
                     .countApproximate(reader.reader(COUNT_APPROXIMATE.getName()).readBoolean())
                     .onlyContainsDataForThisPartition(reader.reader(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION.getName()).readBoolean())
                     .build());
