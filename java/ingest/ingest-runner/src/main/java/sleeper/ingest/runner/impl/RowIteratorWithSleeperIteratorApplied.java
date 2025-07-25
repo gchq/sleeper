@@ -15,9 +15,6 @@
  */
 package sleeper.ingest.runner.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.row.Row;
@@ -30,12 +27,10 @@ import java.io.IOException;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Iterates over a source of records with a Sleeper iterator applied to it. If the Sleeper iterator requires the records
+ * Iterates over a source of rows with a Sleeper iterator applied to it. If the Sleeper iterator requires the rows
  * to be in a specific order then the source iterator must supply them in that order.
  */
-class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RecordIteratorWithSleeperIteratorApplied.class);
-
+class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
     private final CloseableIterator<Row> inputIterator;
     private final CloseableIterator<Row> outputIterator;
 
@@ -49,7 +44,7 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Row>
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Row} objects
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
-    RecordIteratorWithSleeperIteratorApplied(
+    RowIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
             Schema sleeperSchema,
             String sleeperIteratorClassName,
@@ -72,7 +67,7 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Row>
      * @param  sleeperIteratorClassName  the Sleeper iterator to apply
      * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Row} objects
-     * @return                           the record iterator, with the Sleeper iterator applied
+     * @return                           the row iterator, with the Sleeper iterator applied
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     private static CloseableIterator<Row> applyIterator(
