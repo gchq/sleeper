@@ -97,7 +97,7 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
-        AllReferencesToAFile file = ingestRecords(table, List.of(
+        AllReferencesToAFile file = ingestRows(table, List.of(
                 new Row(Map.of("key1", 25L)),
                 new Row(Map.of("key1", 100L))));
         assertThat(listDataBucketObjectKeys())
@@ -123,7 +123,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
         StateStore stateStore1 = createStateStore(table1);
         update(stateStore1).initialise(schema);
-        AllReferencesToAFile file1 = ingestRecords(table1, List.of(
+        AllReferencesToAFile file1 = ingestRows(table1, List.of(
                 new Row(Map.of("key1", 25L))));
         assertThat(listDataBucketObjectKeys())
                 .extracting(FilenameUtils::getName)
@@ -133,7 +133,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
         StateStore stateStore2 = createStateStore(table2);
         update(stateStore2).initialise(schema);
-        AllReferencesToAFile file2 = ingestRecords(table2, List.of(new Row(Map.of("key1", 25L))));
+        AllReferencesToAFile file2 = ingestRows(table2, List.of(new Row(Map.of("key1", 25L))));
 
         // When
         deleteTable("table-1");
@@ -163,7 +163,7 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
-        AllReferencesToAFile file = ingestRecords(table, List.of(
+        AllReferencesToAFile file = ingestRows(table, List.of(
                 new Row(Map.of("key1", 25L)),
                 new Row(Map.of("key1", 100L))));
 
@@ -218,7 +218,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
-    private AllReferencesToAFile ingestRecords(TableProperties tableProperties, List<Row> rows) throws Exception {
+    private AllReferencesToAFile ingestRows(TableProperties tableProperties, List<Row> rows) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
@@ -228,12 +228,12 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .hadoopConfiguration(hadoopConf)
                 .build();
 
-        IngestRows ingestRecords = factory.createIngestRows(tableProperties);
-        ingestRecords.init();
+        IngestRows ingestRows = factory.createIngestRows(tableProperties);
+        ingestRows.init();
         for (Row row : rows) {
-            ingestRecords.write(row);
+            ingestRows.write(row);
         }
-        IngestResult result = ingestRecords.close();
+        IngestResult result = ingestRows.close();
         List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(result.getFileReferenceList());
         if (files.size() != 1) {
             throw new IllegalStateException("Expected one file ingested, found " + files.size());
