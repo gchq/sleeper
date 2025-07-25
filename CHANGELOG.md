@@ -6,6 +6,42 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.32.0
+
+This contains fixes to compaction with DataFusion, and preparation for deployment from published artefacts.
+
+Ingest:
+- All ingest systems (standard, bulk import, batcher) now allow filenames including a scheme such as s3a:// or s3://
+
+Compaction:
+- Experimental DataFusion aggregation support is now applied automatically for Java compactions
+
+Query:
+- Returned parsed records to the client for queries via a web socket, where previously they were returned as strings
+
+Reporting:
+- Included reasons for failure in reports on unfinished jobs
+
+Misc:
+- Renamed the concept of "records" to use "rows" instead
+- Removed the concept of "active files" in favour of referenced/unreferenced files
+
+Build:
+- Added `scripts/deploy/deployToDockerRepository.sh` to publish all Docker images to a repository
+
+Documentation:
+- Documented which Docker images are needed when manually deploying the system
+
+Upgrades:
+- Updated to latest version of Athena Query Federation SDK
+- Updated to Trino 435
+- Removed all use of AWS SDK v1
+
+Bugfixes:
+- Compactions with DataFusion now produce correctly sorted data at large scales
+- Fixed `scripts/utility/runCompactionTasks.sh` to invoke the correct Java class
+
+
 ## Version 0.31.1
 
 This is a bug fix release for the Python API.
