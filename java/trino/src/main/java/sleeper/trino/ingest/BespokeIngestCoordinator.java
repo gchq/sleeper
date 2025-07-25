@@ -54,7 +54,7 @@ public class BespokeIngestCoordinator {
         long maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
         long maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();
 
-        RowBatchFactory<Page> recordBatchFactory = ArrowRowBatchFactory.builder()
+        RowBatchFactory<Page> rowBatchFactory = ArrowRowBatchFactory.builder()
                 .bufferAllocator(arrowBufferAllocator)
                 .schema(tableProperties.getSchema())
                 .localWorkingDirectory(localWorkingDirectory)
@@ -62,8 +62,8 @@ public class BespokeIngestCoordinator {
                 .minBatchBufferAllocatorBytes(SleeperRawAwsConnection.BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN)
                 .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
                 .maxNoOfBytesToWriteLocally(maxBytesToWriteLocally)
-                .maxNoOfRowsToWriteToArrowFileAtOnce(SleeperRawAwsConnection.MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE)
-                .rowWriter(new ArrowRecordWriterAcceptingPages())
+                .maxNoOfRowsToWriteToArrowFileAtOnce(SleeperRawAwsConnection.MAX_NO_OF_ROWS_TO_WRITE_TO_ARROW_FILE_AT_ONCE)
+                .rowWriter(new ArrowRowWriterAcceptingPages())
                 .build();
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.builder()
                 .tableProperties(tableProperties)
@@ -82,7 +82,7 @@ public class BespokeIngestCoordinator {
                 .iteratorClassName(sleeperIteratorClassName)
                 .iteratorConfig(sleeperIteratorConfig)
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
-                .rowBatchFactory(recordBatchFactory)
+                .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory)
                 .build();
     }
