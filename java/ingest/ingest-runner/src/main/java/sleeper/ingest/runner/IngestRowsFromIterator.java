@@ -28,28 +28,28 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Writes records to the storage system from an iterator, partitioned and sorted. This class is an adapter to
+ * Writes rows to the storage system from an iterator, partitioned and sorted. This class is an adapter to
  * {@link IngestCoordinator}.
  */
 public class IngestRowsFromIterator {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestRowsFromIterator.class);
 
     private final Iterator<Row> rowsIterator;
-    private final IngestRows ingestRecords;
+    private final IngestRows ingestRows;
 
     public IngestRowsFromIterator(IngestCoordinator<Row> ingestCoordinator, Iterator<Row> rowsIterator) {
         this.rowsIterator = rowsIterator;
-        this.ingestRecords = new IngestRows(ingestCoordinator);
+        this.ingestRows = new IngestRows(ingestCoordinator);
     }
 
     public IngestResult write() throws StateStoreException, IteratorCreationException, IOException {
-        ingestRecords.init();
+        ingestRows.init();
         long count = 0L;
         while (rowsIterator.hasNext()) {
-            ingestRecords.write(rowsIterator.next());
+            ingestRows.write(rowsIterator.next());
             count++;
         }
-        LOGGER.info("Ingested {} records", count);
-        return ingestRecords.close();
+        LOGGER.info("Ingested {} rows", count);
+        return ingestRows.close();
     }
 }
