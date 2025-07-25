@@ -475,8 +475,8 @@ The SQL commands UPDATE and DELETE could be implemented to support these operati
 
 ### Other
 
-- Trino supports TRUNCATE TABLE. This could be implemented by moving all the active files in a partition into an expired
-  state, when they will be garbage-collected.
+- Trino supports TRUNCATE TABLE. This could be implemented by removing all the file references in a partition, so they
+  will be garbage-collected.
 - The EXPLAIN ANALYSE command provides various statistics to the user, such as the number of bytes read and the time
   elapsed. These figures are useful to a user to help them to optimise the queries. The plugin does not currently make
   these values available to the Trino framework.

@@ -33,10 +33,10 @@ import java.util.Map;
 
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
-import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.unreferencedFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 
 public class FileReferencePrinterTest {
@@ -45,8 +45,8 @@ public class FileReferencePrinterTest {
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema);
 
     @Nested
-    @DisplayName("Active files")
-    class ActiveFiles {
+    @DisplayName("Referenced files")
+    class ReferencedFiles {
 
         @Test
         void shouldPrintMultipleFilesInPartition() {
@@ -56,7 +56,7 @@ public class FileReferencePrinterTest {
 
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     fileReferenceFactory.partitionFile("L", "l1.parquet", 40),
                     fileReferenceFactory.partitionFile("L", "l2.parquet", 30),
                     fileReferenceFactory.partitionFile("R", "r1.parquet", 20),
@@ -75,7 +75,7 @@ public class FileReferencePrinterTest {
             FileReference file2 = fileReferenceFactory().rootFile("b.parquet", 100);
 
             // When
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     referenceForChildPartition(file1, "L"),
                     referenceForChildPartition(file2, "L"),
                     referenceForChildPartition(file1, "R"),
@@ -95,7 +95,7 @@ public class FileReferencePrinterTest {
             FileReference splitFile = fileReferenceFactory().rootFile("a.parquet", 100);
 
             // When
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     referenceForChildPartition(splitFile, "L"),
                     referenceForChildPartition(splitFile, "R"),
                     leftFile, rightFile));
@@ -118,7 +118,7 @@ public class FileReferencePrinterTest {
 
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     fileReferenceFactory.partitionFile("LLL", 12),
                     fileReferenceFactory.partitionFile("LLR", 13),
                     fileReferenceFactory.partitionFile("LRL", 12),
@@ -140,7 +140,7 @@ public class FileReferencePrinterTest {
 
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     withJobId("left-job", fileReferenceFactory.partitionFile("L", "l1.parquet", 12)),
                     withJobId("left-job", fileReferenceFactory.partitionFile("L", "l2.parquet", 34)),
                     withJobId("right-job", fileReferenceFactory.partitionFile("R", "r1.parquet", 56)),
@@ -152,8 +152,8 @@ public class FileReferencePrinterTest {
     }
 
     @Nested
-    @DisplayName("Display active files by their location in the partition tree")
-    class DisplayActiveFilesByPartition {
+    @DisplayName("Display referenced files by their location in the partition tree")
+    class DisplayReferencedFilesByPartition {
 
         @Test
         void shouldPrintWholeFileBeforePartialFileWithSameNumberOfRowsInSamePartition() {
@@ -166,7 +166,7 @@ public class FileReferencePrinterTest {
 
             // When
             String printed = FileReferencePrinter.printFiles(
-                    partitions.buildTree(), activeFiles(partialFile, wholeFile));
+                    partitions.buildTree(), referencedFiles(partialFile, wholeFile));
 
             // Then see approved output
             Approvals.verify(printed);
@@ -183,7 +183,7 @@ public class FileReferencePrinterTest {
 
             // When
             String printed = FileReferencePrinter.printFiles(
-                    partitions.buildTree(), activeFiles(
+                    partitions.buildTree(), referencedFiles(
                             referenceForChildPartition(splitFile1, "L"),
                             referenceForChildPartition(splitFile2, "L"),
                             referenceForChildPartition(splitFile2, "RL"),
@@ -203,7 +203,7 @@ public class FileReferencePrinterTest {
 
             // When
             String printed = FileReferencePrinter.printFiles(
-                    partitions.buildTree(), activeFiles(
+                    partitions.buildTree(), referencedFiles(
                             referenceForChildPartition(splitFile1, "L", 50),
                             referenceForChildPartition(splitFile2, "L", 50),
                             referenceForChildPartition(splitFile2, "R", 50),
@@ -227,7 +227,7 @@ public class FileReferencePrinterTest {
 
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     fileReferenceFactory.partitionFile("L", 50),
                     fileReferenceFactory.partitionFile("LRL", 12),
                     fileReferenceFactory.partitionFile("root", 100),
@@ -258,7 +258,7 @@ public class FileReferencePrinterTest {
 
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     fileReferenceFactory.partitionFile("1", 12),
                     fileReferenceFactory.partitionFile("2", 13),
                     fileReferenceFactory.partitionFile("3", 12),
@@ -282,7 +282,7 @@ public class FileReferencePrinterTest {
 
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     fileReferenceFactory.rootFile("first.parquet", 200),
                     fileReferenceFactory.rootFile("another.parquet", 400),
                     fileReferenceFactory.rootFile("file.parquet", 100),
@@ -304,7 +304,7 @@ public class FileReferencePrinterTest {
             FileReference other = fileReferenceFactory.rootFile("other.parquet", 300);
 
             // When
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     referenceForChildPartition(first, "L"),
                     referenceForChildPartition(first, "R"),
                     referenceForChildPartition(another, "L"),
@@ -329,7 +329,7 @@ public class FileReferencePrinterTest {
             FileReference small = fileReferenceFactory.rootFile("small.parquet", 100);
 
             // When
-            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), activeFiles(
+            String printed = FileReferencePrinter.printFiles(partitions.buildTree(), referencedFiles(
                     referenceForChildPartition(big, "L"),
                     referenceForChildPartition(big, "R"),
                     referenceForChildPartition(small, "LL"),
@@ -348,7 +348,7 @@ public class FileReferencePrinterTest {
         void shouldPrintFilesOnceWhenTwoTablesAreIdentical() {
             // Given
             partitions.rootFirst("root");
-            AllReferencesToAllFiles files = activeFiles(
+            AllReferencesToAllFiles files = referencedFiles(
                     fileReferenceFactory().partitionFile("root", 10));
 
             // When
@@ -364,9 +364,9 @@ public class FileReferencePrinterTest {
         void shouldPrintDifferentFilesForOneTable() {
             // Given
             partitions.rootFirst("root");
-            AllReferencesToAllFiles files1 = activeFiles(
+            AllReferencesToAllFiles files1 = referencedFiles(
                     fileReferenceFactory().partitionFile("root", 10));
-            AllReferencesToAllFiles files2 = activeFiles(
+            AllReferencesToAllFiles files2 = referencedFiles(
                     fileReferenceFactory().partitionFile("root", 20));
 
             // When
@@ -382,7 +382,7 @@ public class FileReferencePrinterTest {
         void shouldPrintOnlyOneTable() {
             // Given
             partitions.rootFirst("root");
-            AllReferencesToAllFiles files = activeFiles(
+            AllReferencesToAllFiles files = referencedFiles(
                     fileReferenceFactory().partitionFile("root", 10));
 
             // When
@@ -408,7 +408,7 @@ public class FileReferencePrinterTest {
             // When
             FileReferenceFactory fileReferenceFactory = fileReferenceFactory();
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
-                    activeAndReadyForGCFiles(
+                    referencedAndUnreferencedFiles(
                             List.of(fileReferenceFactory.partitionFile("L", 10)),
                             List.of("oldFile1.parquet", "oldFile2.parquet")));
 
@@ -423,7 +423,7 @@ public class FileReferencePrinterTest {
 
             // When
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(),
-                    readyForGCFiles("oldFile1.parquet", "oldFile2.parquet"));
+                    unreferencedFiles("oldFile1.parquet", "oldFile2.parquet"));
 
             // Then see approved output
             Approvals.verify(printed);
