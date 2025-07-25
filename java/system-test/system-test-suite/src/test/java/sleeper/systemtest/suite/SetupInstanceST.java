@@ -62,7 +62,7 @@ public class SetupInstanceST {
         sleeper.ingest().direct(tempDir).rows(row);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
     }
 
@@ -78,7 +78,7 @@ public class SetupInstanceST {
                 .waitForStandardIngestTask().waitForIngestJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .hasSize(2)
@@ -97,7 +97,7 @@ public class SetupInstanceST {
                 .waitForTotalFileReferences(2);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .isEmpty();

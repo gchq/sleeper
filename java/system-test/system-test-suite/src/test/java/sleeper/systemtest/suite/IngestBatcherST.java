@@ -70,7 +70,7 @@ public class IngestBatcherST {
                 .waitForStandardIngestTask().waitForIngestJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
@@ -98,7 +98,7 @@ public class IngestBatcherST {
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }

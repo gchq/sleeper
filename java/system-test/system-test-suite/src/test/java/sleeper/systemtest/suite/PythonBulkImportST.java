@@ -54,7 +54,7 @@ public class PythonBulkImportST {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 200)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }

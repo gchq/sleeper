@@ -87,7 +87,7 @@ public class GarbageCollectionTest {
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
 
         // Then
-        assertThat(new HashSet<>(sleeper.query().byQueue().allRecordsInTable()))
+        assertThat(new HashSet<>(sleeper.query().byQueue().allRowsInTable()))
                 .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();

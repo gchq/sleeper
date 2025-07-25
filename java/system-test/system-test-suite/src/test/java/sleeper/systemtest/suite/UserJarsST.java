@@ -72,7 +72,7 @@ public class UserJarsST {
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.query().byQueue().allRecordsInTable())
+        assertThat(sleeper.query().byQueue().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
@@ -88,7 +88,7 @@ public class UserJarsST {
         sleeper.compaction().forceCreateJobs(1);
 
         // Then
-        assertThat(sleeper.query().byQueue().allRecordsInTable())
+        assertThat(sleeper.query().byQueue().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
@@ -101,7 +101,7 @@ public class UserJarsST {
                 ITERATOR_CONFIG, "timestamp,50"));
 
         // When
-        List<Row> records = sleeper.query().byQueue().allRecordsInTable();
+        List<Row> records = sleeper.query().byQueue().allRowsInTable();
 
         // Then
         assertThat(records)
@@ -114,7 +114,7 @@ public class UserJarsST {
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
-        List<Row> records = sleeper.query().byQueue().allRecordsWithProcessingConfig(builder -> builder
+        List<Row> records = sleeper.query().byQueue().allRowsWithProcessingConfig(builder -> builder
                 .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
                 .queryTimeIteratorConfig("timestamp,50"));
 

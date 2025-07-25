@@ -58,7 +58,7 @@ public class SystemTestIngestTest {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
@@ -78,7 +78,7 @@ public class SystemTestIngestTest {
                 .sendSourceFiles("test.parquet").waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
@@ -94,7 +94,7 @@ public class SystemTestIngestTest {
                 .splitIngests(1_000, numbers);
 
         // Then
-        assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
+        assertThat(new HashSet<>(sleeper.directQuery().allRowsInTable()))
                 .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1_000);

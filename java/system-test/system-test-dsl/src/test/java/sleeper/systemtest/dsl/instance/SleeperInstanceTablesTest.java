@@ -130,8 +130,8 @@ public class SleeperInstanceTablesTest {
                     "B", List.of(
                             new Row(Map.of("key", 3L)),
                             new Row(Map.of("key", 4L))));
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRecords);
-            assertThat(sleeper.query().byQueue().allRecordsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEqualTo(expectedRecords);
         }
 
         @Test
@@ -143,8 +143,8 @@ public class SleeperInstanceTablesTest {
             Map<String, List<Row>> expectedRecords = Map.of(
                     "A", List.of(),
                     "B", List.of());
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRecords);
-            assertThat(sleeper.query().byQueue().allRecordsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEqualTo(expectedRecords);
         }
 
         @Test
@@ -158,8 +158,8 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.tables().list()).isEmpty();
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEmpty();
-            assertThat(sleeper.query().byQueue().allRecordsByTable()).isEmpty();
+            assertThat(sleeper.directQuery().allRowsByTable()).isEmpty();
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEmpty();
         }
 
         @Test
@@ -169,8 +169,8 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.tables().list()).hasSize(2);
-            assertThat(sleeper.directQuery().allRecordsByTable()).hasSize(2);
-            assertThat(sleeper.query().byQueue().allRecordsByTable()).hasSize(2);
+            assertThat(sleeper.directQuery().allRowsByTable()).hasSize(2);
+            assertThat(sleeper.query().byQueue().allRowsByTable()).hasSize(2);
         }
     }
 

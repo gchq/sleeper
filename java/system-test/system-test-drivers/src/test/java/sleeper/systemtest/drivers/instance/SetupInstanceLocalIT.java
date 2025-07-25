@@ -58,7 +58,7 @@ public class SetupInstanceLocalIT {
         sleeper.ingest().direct(tempDir).rows(row);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
     }
 }

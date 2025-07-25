@@ -130,7 +130,7 @@ public class SleeperInstanceTablesLocalIT {
                     "B", List.of(
                             new Row(Map.of("key", 3L)),
                             new Row(Map.of("key", 4L))));
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRows);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRows);
         }
 
         @Test
@@ -142,7 +142,7 @@ public class SleeperInstanceTablesLocalIT {
             Map<String, List<Row>> expectedRows = Map.of(
                     "A", List.of(),
                     "B", List.of());
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRows);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRows);
         }
 
         @Test
@@ -156,8 +156,8 @@ public class SleeperInstanceTablesLocalIT {
 
             // Then
             assertThat(sleeper.tables().list()).isEmpty();
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEmpty();
-            assertThat(sleeper.query().byQueue().allRecordsByTable()).isEmpty();
+            assertThat(sleeper.directQuery().allRowsByTable()).isEmpty();
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEmpty();
         }
 
         @Test
@@ -167,7 +167,7 @@ public class SleeperInstanceTablesLocalIT {
 
             // Then
             assertThat(sleeper.tables().list()).hasSize(2);
-            assertThat(sleeper.directQuery().allRecordsByTable()).hasSize(2);
+            assertThat(sleeper.directQuery().allRowsByTable()).hasSize(2);
         }
     }
 

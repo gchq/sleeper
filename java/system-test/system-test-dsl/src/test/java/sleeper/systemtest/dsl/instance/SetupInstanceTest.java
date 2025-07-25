@@ -54,7 +54,7 @@ public class SetupInstanceTest {
         sleeper.ingest().direct(null).rows(row);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
     }
 }

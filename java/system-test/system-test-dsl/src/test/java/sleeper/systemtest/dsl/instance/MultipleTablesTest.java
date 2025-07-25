@@ -66,7 +66,7 @@ public class MultipleTablesTest {
 
         // Then all tables should contain the source file records
         // And all tables should have one active file
-        assertThat(sleeper.query().byQueue().allRecordsByTable())
+        assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
                         sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
@@ -96,7 +96,7 @@ public class MultipleTablesTest {
         sleeper.garbageCollection().invoke().waitFor();
 
         // Then all tables should have one active file with the expected records, and none ready for GC
-        assertThat(sleeper.query().byQueue().allRecordsByTable())
+        assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
                         sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
@@ -127,7 +127,7 @@ public class MultipleTablesTest {
         sleeper.compaction().splitFilesAndRunJobs(NUMBER_OF_TABLES * 8);
 
         // Then all tables have their records split over 8 leaf partitions
-        assertThat(sleeper.directQuery().byQueue().allRecordsByTable())
+        assertThat(sleeper.directQuery().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(

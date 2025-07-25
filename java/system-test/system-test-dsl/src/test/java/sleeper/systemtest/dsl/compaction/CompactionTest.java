@@ -90,7 +90,7 @@ public class CompactionTest {
                 .createJobs(4).waitForTasks(1).waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();

@@ -41,7 +41,7 @@ public class SystemTestClusterTest {
                 .waitForTotalFileReferences(2);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .isEmpty();

@@ -76,7 +76,7 @@ public class CompactionOnEC2ST {
         sleeper.compaction().createJobs(1).waitForTasks(1).waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 46)));
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
                 .isEqualTo(exampleString("compaction/compacted5ToSingleFile.txt"));

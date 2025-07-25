@@ -57,7 +57,7 @@ public class QueryST {
 
             // When/Then
             assertThat(sleeper.query().direct()
-                    .allRecordsInTable())
+                    .allRowsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         }
 
@@ -125,7 +125,7 @@ public class QueryST {
 
             // When/Then
             assertThat(sleeper.query().byQueue()
-                    .allRecordsInTable())
+                    .allRowsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         }
 
@@ -188,7 +188,7 @@ public class QueryST {
 
             // When/Then
             assertThat(sleeper.query().webSocket()
-                    .allRecordsInTable())
+                    .allRowsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         }
 
@@ -244,7 +244,7 @@ public class QueryST {
         void shouldRunQueryReturningNoRecords(SleeperSystemTest sleeper) {
             // When/Then
             assertThat(sleeper.query().webSocket()
-                    .allRecordsInTable())
+                    .allRowsInTable())
                     .isEmpty();
         }
     }
