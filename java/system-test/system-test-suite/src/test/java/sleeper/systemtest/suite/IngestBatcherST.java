@@ -57,7 +57,7 @@ public class IngestBatcherST {
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
+        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
@@ -71,7 +71,7 @@ public class IngestBatcherST {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
@@ -84,7 +84,7 @@ public class IngestBatcherST {
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "10",
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
+        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
@@ -99,7 +99,7 @@ public class IngestBatcherST {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

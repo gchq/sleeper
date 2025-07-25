@@ -29,7 +29,7 @@ public class RecordNumbersTest {
         LongStream longStream = LongStream.of(1L, 2L, 3L, 4L, 5L);
 
         // When/Then
-        assertThat(RecordNumbers.scrambleNumberedRecords(longStream).stream())
+        assertThat(RecordNumbers.scrambleNumberedRows(longStream).stream())
                 .containsExactly(5L, 3L, 2L, 4L, 1L);
     }
 
@@ -37,7 +37,7 @@ public class RecordNumbersTest {
     void shouldGetRangeOfShuffledRecordsWithFixedRandomSeed() {
         // Given
         LongStream longStream = LongStream.of(1L, 2L, 3L, 4L, 5L);
-        RecordNumbers recordNumbers = RecordNumbers.scrambleNumberedRecords(longStream);
+        RecordNumbers recordNumbers = RecordNumbers.scrambleNumberedRows(longStream);
 
         // When/Then
         assertThat(recordNumbers.range(1, 4))

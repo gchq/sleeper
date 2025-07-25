@@ -65,7 +65,7 @@ public class SystemTestPartitionsTestHelper {
     public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, int totalRecords, SleeperSystemTest sleeper) {
         return PartitionTreeTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal(
                 recordsPerPartition, totalRecords,
-                sleeper.numberedRecords()::generateRow,
+                sleeper.numberedRows()::generateRow,
                 sleeper.tableProperties().getSchema());
     }
 

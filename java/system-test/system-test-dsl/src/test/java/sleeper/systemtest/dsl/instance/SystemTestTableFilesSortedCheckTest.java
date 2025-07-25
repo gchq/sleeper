@@ -47,7 +47,7 @@ public class SystemTestTableFilesSortedCheckTest {
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                             .isEqualTo(SortedRowsCheck.sorted(3));
                 });
     }
@@ -61,10 +61,10 @@ public class SystemTestTableFilesSortedCheckTest {
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                             .isEqualTo(SortedRowsCheck.outOfOrderAt(3,
-                                    sleeper.numberedRecords().generateRow(3),
-                                    sleeper.numberedRecords().generateRow(2)));
+                                    sleeper.numberedRows().generateRow(3),
+                                    sleeper.numberedRows().generateRow(2)));
                 });
     }
 

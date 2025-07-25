@@ -82,7 +82,7 @@ public class EmrPersistentBulkImportST {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 }

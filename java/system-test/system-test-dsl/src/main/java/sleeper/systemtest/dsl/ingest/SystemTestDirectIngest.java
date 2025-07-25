@@ -48,14 +48,14 @@ public class SystemTestDirectIngest {
         List<FileReference> fileReferences = new ArrayList<>();
         IntStream.range(0, numIngests)
                 .mapToObj(i -> numbers.range(i * recordsPerIngest, i * recordsPerIngest + recordsPerIngest))
-                .map(range -> instance.numberedRecords().iteratorFrom(range))
+                .map(range -> instance.numberedRows().iteratorFrom(range))
                 .forEach(records -> driver.ingest(tempDir, records, fileReferences::addAll));
         AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(instance.getStateStore());
         return this;
     }
 
     public SystemTestDirectIngest numberedRecords(LongStream numbers) {
-        driver.ingest(tempDir, instance.numberedRecords().iteratorFrom(numbers));
+        driver.ingest(tempDir, instance.numberedRows().iteratorFrom(numbers));
         return this;
     }
 

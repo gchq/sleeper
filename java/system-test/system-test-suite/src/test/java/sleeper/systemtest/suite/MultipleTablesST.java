@@ -79,7 +79,7 @@ public class MultipleTablesST {
         assertThat(sleeper.query().byQueue().allRecordsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
-                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+                        sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1));
@@ -110,7 +110,7 @@ public class MultipleTablesST {
         assertThat(sleeper.query().byQueue().allRecordsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records).containsExactlyElementsOf(
-                        sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+                        sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
         Approvals.verify(printTableFilesExpectingIdentical(partitionsByTable, filesByTable));
@@ -143,7 +143,7 @@ public class MultipleTablesST {
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, records) -> assertThat(records)
                         .containsExactlyInAnyOrderElementsOf(
-                                sleeper.generateNumberedRecords(schema, LongStream.range(0, 100))));
+                                sleeper.generateNumberedRows(schema, LongStream.range(0, 100))));
         var partitionsByTable = sleeper.partitioning().treeByTable();
         var filesByTable = sleeper.tableFiles().filesByTable();
         Approvals.verify(printTablePartitionsExpectingIdentical(schema, partitionsByTable) + "\n" +

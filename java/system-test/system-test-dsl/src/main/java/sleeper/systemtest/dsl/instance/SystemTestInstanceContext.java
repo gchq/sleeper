@@ -170,11 +170,11 @@ public class SystemTestInstanceContext {
         return currentTables().getStateStoreProvider();
     }
 
-    public GenerateNumberedRows numberedRecords() {
-        return numberedRecords(currentTables().getSchema());
+    public GenerateNumberedRows numberedRows() {
+        return numberedRows(currentTables().getSchema());
     }
 
-    public GenerateNumberedRows numberedRecords(Schema schema) {
+    public GenerateNumberedRows numberedRows(Schema schema) {
         return GenerateNumberedRows.from(schema, generatorOverrides);
     }
 

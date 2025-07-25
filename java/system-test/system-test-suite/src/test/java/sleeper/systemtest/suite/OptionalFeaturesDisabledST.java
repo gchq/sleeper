@@ -63,7 +63,7 @@ public class OptionalFeaturesDisabledST {
                 files -> files.countFileReferences() > 0,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(6)));
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -72,7 +72,7 @@ public class OptionalFeaturesDisabledST {
         // Given
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
         // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
+        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
 
         // When
         sleeper.ingest().direct(tempDir)
@@ -88,6 +88,6 @@ public class OptionalFeaturesDisabledST {
                         && files.getFilesWithReferences().size() == 1,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)));
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 46)));
     }
 }

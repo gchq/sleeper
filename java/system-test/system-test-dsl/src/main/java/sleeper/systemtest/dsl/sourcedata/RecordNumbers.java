@@ -29,7 +29,7 @@ public class RecordNumbers {
         this.records = records;
     }
 
-    public static RecordNumbers scrambleNumberedRecords(LongStream longStream) {
+    public static RecordNumbers scrambleNumberedRows(LongStream longStream) {
         List<Long> records = longStream.boxed().collect(Collectors.toList());
         Collections.shuffle(records, new Random(0L));
         return new RecordNumbers(records);

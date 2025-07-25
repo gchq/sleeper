@@ -76,7 +76,7 @@ public class CompactionTest {
         // And we have a file B containing data for all partitions, referenced on each
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(sleeper.scrambleNumberedRecords(LongStream.range(0, 100)).stream());
+                .numberedRecords(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
                 .createWithNumberedRecords("file.parquet", LongStream.range(50, 100));
@@ -91,13 +91,13 @@ public class CompactionTest {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         Approvals.verify(printFiles(sleeper.partitioning().tree(), files));
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
-                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
     }
 

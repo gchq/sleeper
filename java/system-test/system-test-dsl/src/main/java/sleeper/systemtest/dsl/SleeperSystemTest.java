@@ -166,20 +166,20 @@ public class SleeperSystemTest {
         context.instance().setGeneratorOverrides(overrides);
     }
 
-    public GenerateNumberedRows numberedRecords() {
-        return context.instance().numberedRecords();
+    public GenerateNumberedRows numberedRows() {
+        return context.instance().numberedRows();
     }
 
-    public Iterable<Row> generateNumberedRecords(LongStream numbers) {
-        return context.instance().numberedRecords().iterableFrom(numbers);
+    public Iterable<Row> generateNumberedRows(LongStream numbers) {
+        return context.instance().numberedRows().iterableFrom(numbers);
     }
 
-    public Iterable<Row> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return context.instance().numberedRecords(schema).iterableFrom(numbers);
+    public Iterable<Row> generateNumberedRows(Schema schema, LongStream numbers) {
+        return context.instance().numberedRows(schema).iterableFrom(numbers);
     }
 
-    public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
-        return RecordNumbers.scrambleNumberedRecords(longStream);
+    public RecordNumbers scrambleNumberedRows(LongStream longStream) {
+        return RecordNumbers.scrambleNumberedRows(longStream);
     }
 
     public Path getSplitPointsDirectory() {
@@ -187,7 +187,7 @@ public class SleeperSystemTest {
                 .resolve("test/splitpoints");
     }
 
-    public CloseableIterator<Row> getRecords(AllReferencesToAFile file) {
+    public CloseableIterator<Row> getRows(AllReferencesToAFile file) {
         Schema schema = context.instance().getTableProperties().getSchema();
         DataFilesDriver driver = context.instance().adminDrivers().dataFiles(context);
         return driver.getRows(schema, file.getFilename());

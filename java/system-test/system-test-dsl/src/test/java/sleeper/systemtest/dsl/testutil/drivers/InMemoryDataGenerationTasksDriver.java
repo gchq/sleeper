@@ -79,7 +79,7 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());
         Collections.shuffle(recordNumbers, random);
-        GenerateNumberedRows generator = instance.numberedRecords(tableProperties.getSchema());
+        GenerateNumberedRows generator = instance.numberedRows(tableProperties.getSchema());
         return () -> recordNumbers.stream().map(generator::generateRow).iterator();
     }
 

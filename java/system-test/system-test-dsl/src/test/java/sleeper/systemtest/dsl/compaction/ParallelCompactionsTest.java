@@ -93,7 +93,7 @@ public class ParallelCompactionsTest {
                 .hasSize(NUMBER_OF_COMPACTIONS);
         // And we have the same records afterwards
         assertThat(inAnyOrder(sleeper.directQuery().allRecordsInTable()))
-                .isEqualTo(inAnyOrder(sleeper.generateNumberedRecords(
+                .isEqualTo(inAnyOrder(sleeper.generateNumberedRows(
                         LongStream.range(0, 10000))));
     }
 

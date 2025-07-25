@@ -64,7 +64,7 @@ public class CompactionOnEC2ST {
                 TABLE_ONLINE, "false",
                 COMPACTION_FILES_BATCH_SIZE, "5"));
         // Files with rows 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
+        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
         sleeper.ingest().direct(tempDir)
                 .numberedRecords(numbers.range(0, 9))
                 .numberedRecords(numbers.range(9, 18))
@@ -77,7 +77,7 @@ public class CompactionOnEC2ST {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 46)));
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
                 .isEqualTo(exampleString("compaction/compacted5ToSingleFile.txt"));
     }

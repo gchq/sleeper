@@ -61,7 +61,7 @@ public class GarbageCollectionST {
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
-        RecordNumbers records = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
+        RecordNumbers records = sleeper.scrambleNumberedRows(LongStream.range(0, numberOfRecords));
         sleeper.ingest().direct(tempDir)
                 .splitIngests(numberOfFilesToGC, records);
         sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();

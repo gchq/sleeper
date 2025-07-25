@@ -52,7 +52,7 @@ public class SystemTestIngestBatcherTest {
                 INGEST_BATCHER_MIN_JOB_SIZE, "1K",
                 INGEST_BATCHER_MAX_JOB_FILES, "3"));
         drivers.fixSizeOfFilesSeenByBatcherInBytes(1024);
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
+        RecordNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
@@ -66,7 +66,7 @@ public class SystemTestIngestBatcherTest {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 

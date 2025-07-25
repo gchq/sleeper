@@ -58,7 +58,7 @@ public class QueryST {
             // When/Then
             assertThat(sleeper.query().direct()
                     .allRecordsInTable())
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         }
 
         @Test
@@ -73,7 +73,7 @@ public class QueryST {
             assertThat(sleeper.query().direct()
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-20")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
         }
 
         @Test
@@ -89,7 +89,7 @@ public class QueryST {
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-30"),
                             range("row-20", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 40)));
         }
 
         @Test
@@ -105,7 +105,7 @@ public class QueryST {
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-20"),
                             range("row-30", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.concat(
                             LongStream.range(10, 20), LongStream.range(30, 40))));
         }
     }
@@ -126,7 +126,7 @@ public class QueryST {
             // When/Then
             assertThat(sleeper.query().byQueue()
                     .allRecordsInTable())
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         }
 
         @Test
@@ -141,7 +141,7 @@ public class QueryST {
             assertThat(sleeper.query().byQueue()
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-20")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
         }
 
         @Test
@@ -157,7 +157,7 @@ public class QueryST {
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-30"),
                             range("row-20", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 40)));
         }
 
         @Test
@@ -173,7 +173,7 @@ public class QueryST {
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-20"),
                             range("row-30", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.concat(
                             LongStream.range(10, 20), LongStream.range(30, 40))));
         }
     }
@@ -189,7 +189,7 @@ public class QueryST {
             // When/Then
             assertThat(sleeper.query().webSocket()
                     .allRecordsInTable())
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         }
 
         @Test
@@ -204,7 +204,7 @@ public class QueryST {
             assertThat(sleeper.query().webSocket()
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-20")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
         }
 
         @Test
@@ -220,7 +220,7 @@ public class QueryST {
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-30"),
                             range("row-20", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 40)));
         }
 
         @Test
@@ -236,7 +236,7 @@ public class QueryST {
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             range("row-10", "row-20"),
                             range("row-30", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.concat(
                             LongStream.range(10, 20), LongStream.range(30, 40))));
         }
 

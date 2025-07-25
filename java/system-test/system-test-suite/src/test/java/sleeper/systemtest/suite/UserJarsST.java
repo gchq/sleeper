@@ -73,7 +73,7 @@ public class UserJarsST {
 
         // Then
         assertThat(sleeper.query().byQueue().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class UserJarsST {
 
         // Then
         assertThat(sleeper.query().byQueue().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
     @Test
@@ -105,7 +105,7 @@ public class UserJarsST {
 
         // Then
         assertThat(records)
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
     @Test
@@ -120,7 +120,7 @@ public class UserJarsST {
 
         // Then
         assertThat(records)
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
 }
