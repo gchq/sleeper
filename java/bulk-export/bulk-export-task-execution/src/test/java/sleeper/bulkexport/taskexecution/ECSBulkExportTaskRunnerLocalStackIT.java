@@ -229,12 +229,12 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
-    private FileReference addPartitionFile(String partitionId, String name, List<Row> records) {
-        FileReference reference = fileFactory().partitionFile(partitionId, name, records.size());
+    private FileReference addPartitionFile(String partitionId, String name, List<Row> rows) {
+        FileReference reference = fileFactory().partitionFile(partitionId, name, rows.size());
         Path path = new Path(reference.getFilename());
         try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, hadoopConf)) {
-            for (Row record : records) {
-                writer.write(record);
+            for (Row row : rows) {
+                writer.write(row);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -247,9 +247,9 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         Path path = new Path(query.getOutputFile(instanceProperties));
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 new ParquetRecordReader.Builder(path, schema).withConf(hadoopConf).build())) {
-            List<Row> records = new ArrayList<>();
-            reader.forEachRemaining(records::add);
-            return records;
+            List<Row> rows = new ArrayList<>();
+            reader.forEachRemaining(rows::add);
+            return rows;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
