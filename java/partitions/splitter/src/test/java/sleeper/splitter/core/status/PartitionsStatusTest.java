@@ -156,7 +156,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRows(5).toList());
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
@@ -173,7 +173,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRows(100).toList());
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);

@@ -70,7 +70,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
         update(stateStore).initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schema, List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B").buildList());
-        update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRows(5).toList());
 
         // When
         String output = runClient()
