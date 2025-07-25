@@ -37,7 +37,7 @@ import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runner.rowretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.time.Instant;

@@ -53,6 +53,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRecordRetrieverImpl;
 
 import java.io.IOException;
 import java.nio.file.Path;
