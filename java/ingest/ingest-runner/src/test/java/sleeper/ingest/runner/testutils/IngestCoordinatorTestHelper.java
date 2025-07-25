@@ -61,7 +61,7 @@ public class IngestCoordinatorTestHelper {
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
                 .stateStore(stateStore)
                 .schema(schema)
-                .recordBatchFactory(recordBatchFactory)
+                .rowBatchFactory(recordBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory);
     }
 

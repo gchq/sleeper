@@ -105,7 +105,7 @@ public class IngestCoordinatorTestParameters {
                 .localWorkingDirectory(localWorkingDir)
                 .rowWriter(recordWriter);
         return coordinatorBuilder(instanceProperties, tableProperties)
-                .recordBatchFactory(arrowConfigBuilder.build())
+                .rowBatchFactory(arrowConfigBuilder.build())
                 .build();
     }
 

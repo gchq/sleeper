@@ -95,7 +95,7 @@ public class IngestFactory {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
-                .recordBatchFactory(standardRowBatchFactory(tableProperties, parquetConfiguration))
+                .rowBatchFactory(standardRowBatchFactory(tableProperties, parquetConfiguration))
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration));
     }
 

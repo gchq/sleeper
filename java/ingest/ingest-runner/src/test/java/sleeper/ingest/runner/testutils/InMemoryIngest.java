@@ -48,7 +48,7 @@ public class InMemoryIngest {
     public IngestCoordinator.Builder<Row> coordinatorBuilder() {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
+                .rowBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
                 .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(recordStore, sketchesStore, instanceProperties, tableProperties))
                 .stateStore(stateStore);
     }
