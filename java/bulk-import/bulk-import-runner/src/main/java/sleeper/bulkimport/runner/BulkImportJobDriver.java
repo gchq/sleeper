@@ -144,13 +144,13 @@ public class BulkImportJobDriver {
 
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
-        long numRecords = output.numRecords();
-        double rate = numRecords / (double) duration.getSeconds();
+        long numRows = output.numRows();
+        double rate = numRows / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
 
         tracker.jobFinished(IngestJobFinishedEvent.builder()
                 .jobRunIds(runIds)
-                .summary(new JobRunSummary(new RowsProcessed(numRecords, numRecords), startTime, finishTime))
+                .summary(new JobRunSummary(new RowsProcessed(numRows, numRows), startTime, finishTime))
                 .fileReferencesAddedByJob(output.fileReferences())
                 .committedBySeparateFileUpdates(asyncCommit)
                 .build());

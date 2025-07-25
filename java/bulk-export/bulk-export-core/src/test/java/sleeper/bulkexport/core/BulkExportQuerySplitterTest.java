@@ -154,7 +154,7 @@ public class BulkExportQuerySplitterTest {
         addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
         splitter.initIfNeeded();
 
-        // Then the records that were added are not found
+        // Then the rows that were added are not found
         assertThat(splitter.splitIntoLeafPartitionQueries(bulkExportQuery)).isEmpty();
     }
 
