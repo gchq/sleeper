@@ -178,14 +178,14 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
-        AverageRowRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
+        AverageRowRateReport.printf("Average compaction rate: %s%n", rowRate(jobs), out);
         out.println("Statistics for delay between finish and commit time:");
         out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs)
                 .map(DurationStatistics::toString)
                 .orElse("no jobs committed"));
     }
 
-    private static AverageRowRate recordRate(List<CompactionJobStatus> jobs) {
+    private static AverageRowRate rowRate(List<CompactionJobStatus> jobs) {
         return AverageRowRate.of(jobs.stream()
                 .flatMap(job -> job.getRunsLatestFirst().stream()));
     }

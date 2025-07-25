@@ -179,7 +179,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunSuccessful).count());
-        AverageRowRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+        AverageRowRateReport.printf("Average ingest rate: %s%n", rowRate(statusList), out);
     }
 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
@@ -199,7 +199,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printRangeSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
         queueMessages.print(out);
         out.printf("Total jobs in defined range: %d%n", statusList.size());
-        AverageRowRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+        AverageRowRateReport.printf("Average ingest rate: %s%n", rowRate(statusList), out);
     }
 
     private void printRejectedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
@@ -207,7 +207,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         out.printf("Total jobs rejected: %d%n", statusList.size());
     }
 
-    private static AverageRowRate recordRate(List<IngestJobStatus> jobs) {
+    private static AverageRowRate rowRate(List<IngestJobStatus> jobs) {
         return AverageRowRate.of(jobs.stream()
                 .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
