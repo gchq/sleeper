@@ -118,7 +118,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsCorrectly(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRows(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
@@ -135,7 +135,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -146,7 +146,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(fileReference);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(actualRows).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(actualRows).extracting(row -> row.getValues(List.of("key0")))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
@@ -156,7 +156,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartitionIntKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new IntType(),
@@ -174,7 +174,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -191,9 +191,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(leftRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(-100, 2).boxed().toArray());
-        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(IntStream.range(2, 100).boxed().toArray());
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -201,7 +201,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartitionLongKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
@@ -219,7 +219,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -234,9 +234,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(leftRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(-100, 2).boxed().toArray());
-        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(2, 100).boxed().toArray());
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -244,7 +244,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartitionStringKey(TestIngestType ingestType) throws Exception {
         // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
@@ -265,7 +265,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -282,9 +282,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(leftRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(0, 102));
-        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(keys.subList(102, 200));
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -292,7 +292,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartitionByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new ByteArrayType(),
@@ -313,7 +313,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -330,9 +330,9 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(leftRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{1, 1}, new byte[]{2, 2});
-        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{64, 65});
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -340,7 +340,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType) throws Exception {
         // Given
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
@@ -368,7 +368,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -385,13 +385,13 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(leftRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(leftRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(stringKeys.subList(0, 306));
-        assertThat(leftRows).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
+        assertThat(leftRows).extracting(row -> row.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(0, 306));
-        assertThat(rightRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(rightRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(stringKeys.subList(306, 600));
-        assertThat(rightRows).extracting(record -> record.getValues(List.of("sortKey0")).get(0))
+        assertThat(rightRows).extracting(row -> row.getValues(List.of("sortKey0")).get(0))
                 .containsExactlyElementsOf(longKeys.subList(306, 600));
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -399,7 +399,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
@@ -418,7 +418,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -436,16 +436,16 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
         assertThat(leftRows)
-                .extracting(record -> record.getValues(List.of("key0")).get(0))
+                .extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{1, 1}, new byte[]{5});
         assertThat(leftRows)
-                .extracting(record -> record.getValues(List.of("key1")).get(0))
+                .extracting(row -> row.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 3}, new byte[]{99});
         assertThat(rightRows)
-                .extracting(record -> record.getValues(List.of("key0")).get(0))
+                .extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{11, 2}, new byte[]{64, 65});
         assertThat(rightRows)
-                .extracting(record -> record.getValues(List.of("key1")).get(0))
+                .extracting(row -> row.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -453,7 +453,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
                 new IntType(), new LongType(),
@@ -472,7 +472,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -490,10 +490,10 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
         assertThat(leftRows)
-                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .extracting(row -> row.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 1L), List.of(100, 1L));
         assertThat(rightRows)
-                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .extracting(row -> row.getValues(List.of("key0", "key1")))
                 .containsExactly(List.of(0, 20L), List.of(100, 50L));
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -501,7 +501,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey2D(
                 new LongType(), new StringType(),
@@ -520,7 +520,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -538,13 +538,13 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
         assertThat(leftRows)
-                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .extracting(row -> row.getValues(List.of("key0", "key1")))
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(-100L, 2L), LongStream.range(10L, 20L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
                         .collect(Collectors.toList()));
         assertThat(rightRows)
-                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .extracting(row -> row.getValues(List.of("key0", "key1")))
                 .containsExactlyElementsOf(LongStream.concat(LongStream.range(2L, 10L), LongStream.range(20L, 100L))
                         .boxed()
                         .map(x -> List.<Object>of(x, String.valueOf(x)))
@@ -555,7 +555,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(TestIngestType ingestType) throws Exception {
+    public void shouldWriteRowsSplitByPartitionWhenThereIsOnlyDataInOnePartition(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
@@ -573,7 +573,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -584,7 +584,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(actualRows).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(actualRows).extracting(row -> row.getValues(List.of("key0")))
                 .containsExactly(List.of(0L), List.of(1L));
         assertThat(readSketchesDeciles(rowListAndSchema.sleeperSchema, actualFiles, ingestType))
                 .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
@@ -592,7 +592,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteDuplicateRecords(
+    public void shouldWriteDuplicateRows(
             TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
@@ -615,7 +615,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(duplicatedrowListAndSchema, parameters, ingestType);
+        ingestRows(duplicatedrowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -625,7 +625,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(duplicatedrowListAndSchema.rowList);
-        assertThat(actualRows).extracting(record -> record.getValues(List.of("key0")).get(0))
+        assertThat(actualRows).extracting(row -> row.getValues(List.of("key0")).get(0))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
                         .flatMap(longValue -> Stream.of(longValue, longValue))
                         .collect(Collectors.toList()));
@@ -635,7 +635,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType) throws Exception {
+    public void shouldWriteNoRows(TestIngestType ingestType) throws Exception {
         // Given
         RowGenerator.RowListAndSchema rowListAndSchema = genericKey1D(
                 new LongType(),
@@ -650,7 +650,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -689,7 +689,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .build();
 
         // When
-        ingestRecords(rowListAndSchema, parameters, ingestType);
+        ingestRows(rowListAndSchema, parameters, ingestType);
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
@@ -711,14 +711,14 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         return () -> randomStringGenerator.generate(random.nextInt(maxLength));
     }
 
-    private static void ingestRecords(
+    private static void ingestRows(
             RowGenerator.RowListAndSchema rowListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             TestIngestType ingestType) throws IteratorCreationException, IOException {
         try (IngestCoordinator<Row> ingestCoordinator = ingestType.createIngestCoordinator(
                 ingestCoordinatorTestParameters)) {
-            for (Row record : rowListAndSchema.rowList) {
-                ingestCoordinator.write(record);
+            for (Row row : rowListAndSchema.rowList) {
+                ingestCoordinator.write(row);
             }
         }
     }
