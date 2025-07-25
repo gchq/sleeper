@@ -79,7 +79,7 @@ public class UserJarsST {
     @Test
     void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
@@ -95,7 +95,7 @@ public class UserJarsST {
     @Test
     void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
@@ -111,7 +111,7 @@ public class UserJarsST {
     @Test
     void shouldApplyQueryIteratorFromUserJar(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When
         List<Row> records = sleeper.query().byQueue().allRowsWithProcessingConfig(builder -> builder

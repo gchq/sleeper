@@ -66,7 +66,7 @@ public class PartitionSplittingST {
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When
         sleeper.partitioning().split();

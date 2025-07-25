@@ -53,7 +53,7 @@ public class PartitionSplittingTest {
                 overrideField(ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
-        sleeper.ingest().direct(null).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(null).numberedRows(LongStream.range(0, 100));
 
         // When
         sleeper.partitioning().split();

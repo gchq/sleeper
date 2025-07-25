@@ -119,8 +119,8 @@ public class SleeperInstanceTablesTest {
         void shouldQueryRecordsForNamedTables(SleeperSystemTest sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
-            sleeper.table("A").ingest().direct(null).numberedRecords(LongStream.of(1, 2));
-            sleeper.table("B").ingest().direct(null).numberedRecords(LongStream.of(3, 4));
+            sleeper.table("A").ingest().direct(null).numberedRows(LongStream.of(1, 2));
+            sleeper.table("B").ingest().direct(null).numberedRows(LongStream.of(3, 4));
 
             // When / Then
             Map<String, List<Row>> expectedRecords = Map.of(
@@ -227,7 +227,7 @@ public class SleeperInstanceTablesTest {
             var ingest = sleeper.ingest().direct(null);
 
             // When / Then
-            assertThatThrownBy(() -> ingest.numberedRecords(LongStream.of(1, 2, 3)))
+            assertThatThrownBy(() -> ingest.numberedRows(LongStream.of(1, 2, 3)))
                     .isInstanceOf(NoTableChosenException.class);
         }
     }

@@ -42,19 +42,19 @@ public class SystemTestDirectIngest {
 
     public SystemTestDirectIngest splitIngests(int numIngests, RowNumbers numbers) {
         if (numbers.numRows() % numIngests != 0) {
-            throw new IllegalArgumentException("Number of ingests must split number of records exactly");
+            throw new IllegalArgumentException("Number of ingests must split number of rows exactly");
         }
-        int recordsPerIngest = numbers.numRows() / numIngests;
+        int rowsPerIngest = numbers.numRows() / numIngests;
         List<FileReference> fileReferences = new ArrayList<>();
         IntStream.range(0, numIngests)
-                .mapToObj(i -> numbers.range(i * recordsPerIngest, i * recordsPerIngest + recordsPerIngest))
+                .mapToObj(i -> numbers.range(i * rowsPerIngest, i * rowsPerIngest + rowsPerIngest))
                 .map(range -> instance.numberedRows().iteratorFrom(range))
-                .forEach(records -> driver.ingest(tempDir, records, fileReferences::addAll));
+                .forEach(rows -> driver.ingest(tempDir, rows, fileReferences::addAll));
         AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(instance.getStateStore());
         return this;
     }
 
-    public SystemTestDirectIngest numberedRecords(LongStream numbers) {
+    public SystemTestDirectIngest numberedRows(LongStream numbers) {
         driver.ingest(tempDir, instance.numberedRows().iteratorFrom(numbers));
         return this;
     }

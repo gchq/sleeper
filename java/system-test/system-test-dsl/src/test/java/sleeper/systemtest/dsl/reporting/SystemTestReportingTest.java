@@ -57,7 +57,7 @@ public class SystemTestReportingTest {
     void shouldReportFinishedCompactionJob(SleeperSystemTest sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2, 3));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 2, 3));
         sleeper.compaction().forceCreateJobs(1).waitForTasks(1).waitForJobs();
 
         // When / Then

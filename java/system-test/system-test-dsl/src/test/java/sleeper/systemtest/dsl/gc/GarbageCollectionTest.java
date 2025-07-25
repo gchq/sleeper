@@ -79,7 +79,7 @@ public class GarbageCollectionTest {
         SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
-                .forEach(range -> ingest.numberedRecords(range));
+                .forEach(range -> ingest.numberedRows(range));
         sleeper.compaction().createJobs(200).waitForTasks(1).waitForJobs();
 
         // When

@@ -53,7 +53,7 @@ public class QueryST {
         @Test
         void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().direct()
@@ -67,7 +67,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().direct()
@@ -82,7 +82,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().direct()
@@ -98,7 +98,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().direct()
@@ -121,7 +121,7 @@ public class QueryST {
         @Test
         void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().byQueue()
@@ -135,7 +135,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().byQueue()
@@ -150,7 +150,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().byQueue()
@@ -166,7 +166,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().byQueue()
@@ -184,7 +184,7 @@ public class QueryST {
         @Test
         void shouldRunQueryForAllRecords(SleeperSystemTest sleeper) {
             // Given
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().webSocket()
@@ -198,7 +198,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().webSocket()
@@ -213,7 +213,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().webSocket()
@@ -229,7 +229,7 @@ public class QueryST {
             sleeper.setGeneratorOverrides(
                     overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                             numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.query().webSocket()

@@ -50,7 +50,7 @@ public class PythonQueryST {
     @Test
     void shouldRunExactKeyQuery(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
         assertThat(sleeper.pythonApi()
@@ -64,7 +64,7 @@ public class PythonQueryST {
     @Test
     void shouldRunRangeKeyQuery(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
         assertThat(sleeper.pythonApi()
@@ -78,7 +78,7 @@ public class PythonQueryST {
     @Test
     void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
         assertThat(sleeper.pythonApi()

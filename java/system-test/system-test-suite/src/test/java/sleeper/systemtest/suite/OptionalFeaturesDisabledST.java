@@ -76,11 +76,11 @@ public class OptionalFeaturesDisabledST {
 
         // When
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 9))
-                .numberedRecords(numbers.range(9, 18))
-                .numberedRecords(numbers.range(18, 27))
-                .numberedRecords(numbers.range(27, 36))
-                .numberedRecords(numbers.range(36, 46));
+                .numberedRows(numbers.range(0, 9))
+                .numberedRows(numbers.range(9, 18))
+                .numberedRows(numbers.range(18, 27))
+                .numberedRows(numbers.range(27, 36))
+                .numberedRows(numbers.range(36, 46));
 
         // Then
         sleeper.tableFiles().waitForState(

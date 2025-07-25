@@ -84,11 +84,11 @@ public class CompactionST {
         // And half the partitions have a file A wholly on each partition
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 50));
+                .numberedRows(LongStream.range(0, 50));
         // And we have a file B containing data for all partitions, referenced on each
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
+                .numberedRows(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
                 .createWithNumberedRows("file.parquet", LongStream.range(50, 100));
@@ -131,11 +131,11 @@ public class CompactionST {
         // And half the partitions have a file A wholly on each partition
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 50));
+                .numberedRows(LongStream.range(0, 50));
         // And we have a file B containing data for all partitions, referenced on each
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
+                .numberedRows(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
                 .createWithNumberedRows("file.parquet", LongStream.range(50, 100));

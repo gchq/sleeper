@@ -79,8 +79,8 @@ public class ParallelCompactionsTest {
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
-                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
+                .numberedRows(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
+                .numberedRows(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
 
         // When we run compaction
         sleeper.compaction()

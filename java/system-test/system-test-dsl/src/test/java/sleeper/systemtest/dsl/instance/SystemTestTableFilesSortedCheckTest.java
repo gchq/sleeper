@@ -42,7 +42,7 @@ public class SystemTestTableFilesSortedCheckTest {
     @Test
     void shouldFindFileIsSortedAfterIngest(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 3, 2));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 3, 2));
 
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
