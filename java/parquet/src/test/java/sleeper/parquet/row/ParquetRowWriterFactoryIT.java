@@ -46,13 +46,13 @@ import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FO
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 
-class ParquetRecordWriterFactoryIT {
+class ParquetRowWriterFactoryIT {
 
     @TempDir
     public java.nio.file.Path folder;
 
     @Test
-    void shouldWriteRecordsCorrectlyForStringStringSchema() throws IOException {
+    void shouldWriteRowsCorrectlyForStringStringSchema() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new StringType()))
@@ -88,7 +88,7 @@ class ParquetRecordWriterFactoryIT {
     }
 
     @Test
-    void shouldWriteRecordsCorrectlyForLongLongLongSchema() throws IOException {
+    void shouldWriteRowsCorrectlyForLongLongLongSchema() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new LongType()))
@@ -129,7 +129,7 @@ class ParquetRecordWriterFactoryIT {
     }
 
     @Test
-    void shouldWriteRecordsCorrectlyForByteArraySchema() throws IOException {
+    void shouldWriteRowsCorrectlyForByteArraySchema() throws IOException {
         // Given
         byte[] byteArray1 = new byte[]{1, 2, 3, 4, 5};
         byte[] byteArray2 = new byte[]{6, 7, 8, 9, 10};
@@ -214,11 +214,11 @@ class ParquetRecordWriterFactoryIT {
 
     private void writeParquetFile(Path path, TableProperties tableProperties, Row row) throws IOException {
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, tableProperties, new Configuration());
-        writeRecordNTimes(writer, row, 10_000);
+        writeRowNTimes(writer, row, 10_000);
         writer.close();
     }
 
-    private void writeRecordNTimes(ParquetWriter<Row> writer, Row row, int numTimes) throws IOException {
+    private void writeRowNTimes(ParquetWriter<Row> writer, Row row, int numTimes) throws IOException {
         for (int i = 0; i < numTimes; i++) {
             writer.write(row);
         }
