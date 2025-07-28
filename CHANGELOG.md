@@ -8,6 +8,9 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.32.0
 
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.32.0*
+
 This contains fixes to compaction with DataFusion, and preparation for deployment from published artefacts.
 
 Ingest:
