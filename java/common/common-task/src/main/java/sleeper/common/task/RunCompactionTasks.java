@@ -64,44 +64,56 @@ public class RunCompactionTasks {
     private final TaskCounts taskCounts;
     private final CompactionTaskHostScaler hostScaler;
     private final TaskLauncher taskLauncher;
-    static CompactionECSLaunchType launchType;
-    static String containerName;
-    static String clusterName;
-    static String fargateDefinitionFamily;
+    private CompactionECSLaunchType launchType;
+    private String containerName;
+    private String clusterName;
+    private String fargateDefinitionFamily;
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client, CompactionTaskType compactionTaskType) {
-        this(instanceProperties,
-                () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(compactionTaskType == CompactionTaskType.BULK_EXPORT ? BULK_EXPORT_CLUSTER : COMPACTION_CLUSTER), ecsClient),
-                EC2Scaler.create(instanceProperties, asClient, ec2Client),
-                (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
+            InstanceProperties instanceProperties,
+            EcsClient ecsClient,
+            AutoScalingClient asClient,
+            Ec2Client ec2Client,
+            CompactionTaskType compactionTaskType) {
 
-        switch (compactionTaskType) {
-            case BULK_EXPORT:
-                containerName = BULK_EXPORT_CONTAINER_NAME;
-                clusterName = instanceProperties.get(BULK_EXPORT_CLUSTER);
-                fargateDefinitionFamily = instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY);
-                launchType = CompactionECSLaunchType.FARGATE;
-                break;
-            case COMPACTION:
-            default:
-                containerName = COMPACTION_CONTAINER_NAME;
-                clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-                fargateDefinitionFamily = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-                launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
-                break;
+        this.instanceProperties = instanceProperties;
+
+        // Initialize taskCounts lambda
+        this.taskCounts = () -> ECSTaskCount.getNumPendingAndRunningTasks(
+                instanceProperties.get(compactionTaskType == CompactionTaskType.BULK_EXPORT ? BULK_EXPORT_CLUSTER : COMPACTION_CLUSTER),
+                ecsClient);
+
+        // Initialize hostScaler
+        this.hostScaler = EC2Scaler.create(instanceProperties, asClient, ec2Client);
+
+        // Set taskLauncher to call internal method
+        this.taskLauncher = (numberOfTasks, checkAbort) -> this.launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort);
+
+        // Determine launch type and related configs
+        if (compactionTaskType == CompactionTaskType.BULK_EXPORT) {
+            containerName = BULK_EXPORT_CONTAINER_NAME;
+            clusterName = instanceProperties.get(BULK_EXPORT_CLUSTER);
+            fargateDefinitionFamily = instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY);
+            launchType = CompactionECSLaunchType.FARGATE;
+        } else { // default to COMPACTION
+            containerName = COMPACTION_CONTAINER_NAME;
+            clusterName = instanceProperties.get(COMPACTION_CLUSTER);
+            fargateDefinitionFamily = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
         }
-
     }
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
+            InstanceProperties instanceProperties,
+            TaskCounts taskCounts,
+            CompactionTaskHostScaler hostScaler,
+            TaskLauncher taskLauncher) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.hostScaler = hostScaler;
         this.taskLauncher = taskLauncher;
-        //ToDo check this
-        launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
+
+        this.launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
     }
 
     public interface TaskCounts {
@@ -190,7 +202,7 @@ public class RunCompactionTasks {
      * @param numberOfTasksToCreate number of tasks to create
      * @param checkAbort            a condition under which launching will be aborted
      */
-    private static void launchTasks(
+    private void launchTasks(
             EcsClient ecsClient, InstanceProperties instanceProperties,
             int numberOfTasksToCreate, BooleanSupplier checkAbort) {
         RunECSTasks.runTasks(builder -> builder
@@ -207,7 +219,7 @@ public class RunCompactionTasks {
      * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
-    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
+    private RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
 
         // CHoose either compaction or export
         TaskOverride override = createOverride(instanceProperties);
@@ -241,7 +253,7 @@ public class RunCompactionTasks {
      * @param  instanceProperties the instance properties
      * @return                    the container definition overrides
      */
-    private static TaskOverride createOverride(InstanceProperties instanceProperties) {
+    private TaskOverride createOverride(InstanceProperties instanceProperties) {
         ContainerOverride containerOverride = ContainerOverride.builder()
                 .name(containerName)
                 .command(List.of(instanceProperties.get(CONFIG_BUCKET)))
@@ -257,7 +269,7 @@ public class RunCompactionTasks {
      * @param  instanceProperties the instance properties
      * @return                    task network configuration
      */
-    private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
+    private NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
         AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
                 .subnets(instanceProperties.getList(SUBNETS))
                 .securityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS))
